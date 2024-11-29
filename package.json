@@ -1,0 +1,179 @@
+{
+  "name": "svn-ai-commit",
+  "displayName": "SVN Commit Gen",
+  "description": "",
+  "version": "0.0.1",
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "extensionDependencies": [
+    "johnstoncode.svn-scm"
+  ],
+  "main": "./out/extension.js",
+  "activationEvents": [
+    "onCommand:svn-ai-commit"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "extension.svn-ai-commit",
+        "title": "SVN AI Commit"
+      },
+      {
+        "command": "svn-ai-commit.showAvailableModels",
+        "title": "Show Available AI Models"
+      },
+      {
+        "command": "svn-ai-commit.refreshModels",
+        "title": "SVN AI Commit: 刷新可用模型列表"
+      }
+    ],
+    "configuration": {
+      "title": "SVN AI Commit",
+      "properties": {
+        "svn-ai-commit.AI_COMMIT_LANGUAGE": {
+          "default": "English",
+          "description": "Commit message language",
+          "enum": [
+            "Simplified Chinese",
+            "Traditional Chinese",
+            "Japanese",
+            "Korean",
+            "Czech",
+            "German",
+            "French",
+            "Italian",
+            "Dutch",
+            "Portuguese",
+            "Vietnamese",
+            "English",
+            "Spanish",
+            "Swedish",
+            "Russian",
+            "Bahasa",
+            "Polish",
+            "Turkish",
+            "Thai"
+          ],
+          "enumDescriptions": [
+            "简体中文",
+            "繁體中文",
+            "にほんご",
+            "한국어",
+            "česky",
+            "Deutsch",
+            "française",
+            "italiano",
+            "Nederlands",
+            "português",
+            "tiếng Việt",
+            "english",
+            "español",
+            "Svenska",
+            "русский",
+            "bahasa",
+            "Polski",
+            "Turkish",
+            "ไทย"
+          ],
+          "type": "string"
+        },
+        "svn-ai-commit.AI_COMMIT_SYSTEM_PROMPT": {
+          "type": "string",
+          "default": "",
+          "description": "Custom system prompt for generating commit messages"
+        },
+        "svn-ai-commit.defaultProvider": {
+          "type": "string",
+          "enum": [
+            "openai",
+            "ollama"
+          ],
+          "default": "openai",
+          "description": "默认的 AI 提供商"
+        },
+        "svn-ai-commit.openai.apiKey": {
+          "type": "string",
+          "description": "OpenAI API 密钥"
+        },
+        "svn-ai-commit.openai.baseUrl": {
+          "type": "string",
+          "default": "https://api.openai.com/v1",
+          "description": "OpenAI API 基础 URL"
+        },
+        "svn-ai-commit.openai.model": {
+          "type": "string",
+          "default": "gpt-3.5-turbo",
+          "description": "OpenAI 模型"
+        },
+        "svn-ai-commit.ollama.baseUrl": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Ollama API 基础 URL"
+        },
+        "svn-ai-commit.ollama.model": {
+          "type": "string",
+          "default": "llama2",
+          "description": "Ollama 模型"
+        }
+      }
+    },
+    "menus": {
+      "scm/title": [
+        {
+          "command": "extension.svn-ai-commit",
+          "group": "navigation"
+        }
+      ],
+      "scm/resourceState/context": [
+        {
+          "command": "extension.svn-ai-commit",
+          "when": "scmProvider == svn",
+          "group": "1_modification"
+        }
+      ],
+      "scm/resourceFolder/context": [
+        {
+          "command": "extension.svn-ai-commit",
+          "when": "scmProvider == svn",
+          "group": "inline"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "svn.commit",
+          "when": "config.svn.enabled && svnOpenRepositoryCount != 0"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "pretest": "pnpm run compile && pnpm run lint",
+    "lint": "eslint src --ext ts",
+    "test": "vscode-test"
+  },
+  "devDependencies": {
+    "@types/mocha": "^10.0.7",
+    "@types/node": "20.x",
+    "@types/vscode": "^1.95.0",
+    "@typescript-eslint/eslint-plugin": "^7.14.1",
+    "@typescript-eslint/parser": "^7.11.0",
+    "@vscode/test-cli": "^0.0.9",
+    "@vscode/test-electron": "^2.4.0",
+    "eslint": "^8.57.0",
+    "typescript": "^5.4.5"
+  },
+  "dependencies": {
+    "ollama": "^0.5.10",
+    "openai": "^4.73.1"
+  },
+  "resolutions": {
+    "@types/node": "16.x"
+  }
+}
