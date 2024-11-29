@@ -1,71 +1,53 @@
-# svn-commit-gen README
+# SVN AI Commit
 
-This is the README for your extension "svn-commit-gen". After writing up a brief description, we recommend including the following sections.
+一个 VS Code 扩展，用于使用 AI 自动生成 SVN 提交信息。
 
-## Features
+## 功能特性
 
-Describe specific features of your extension including screenshots of your extension in action. Image paths are relative to this README file.
+- 🤖 支持 OpenAI 和 Ollama 两种 AI 服务提供商
+- 📝 自动分析 SVN 变更并生成相应的提交信息
+- 🔍 支持选择特定文件生成提交信息
+- 🔄 提供模型列表实时刷新功能
+- ✅ 完整的配置验证和错误提示
 
-For example if there is an image subfolder under your extension project workspace:
+## 命令列表
 
-\!\[feature X\]\(images/feature-x.png\)
+- `SVN AI Commit: Generate Commit Message` - 生成提交信息
+- `SVN AI Commit: Show Available Models` - 显示可用的 AI 模型
+- `SVN AI Commit: Refresh Models` - 刷新模型列表
 
-> Tip: Many popular extensions utilize animations. This is an excellent way to show off your extension! We recommend short, focused animations that are easy to follow.
+## 配置项
 
-## Requirements
+在 VS Code 设置中配置以下参数：
 
-If you have any requirements or dependencies, add a section describing those and how to install and configure them.
+```json
+{
+  "svn-ai-commit.OPENAI_API_KEY": "你的 OpenAI API 密钥",
+  "svn-ai-commit.OLLAMA_BASE_URL": "Ollama 服务地址",
+  "svn-ai-commit.defaultProvider": "选择默认 AI 提供商 (openai/ollama)",
+  "svn-ai-commit.language": "生成的提交信息语言"
+}
+```
 
-## Extension Settings
+## 📋 依赖要求
 
-Include if your extension adds any VS Code settings through the `contributes.configuration` extension point.
+- VS Code
+- SVN 命令行工具
+- 有效的 AI 服务配置(OpenAI API Key 或 Ollama 服务)
 
-For example:
+## 💡 常见问题
 
-This extension contributes the following settings:
+- 确保 SVN 命令行工具已正确安装并可访问
+- 配置正确的 AI 服务参数
+- 确保网络可以访问选择的 AI 服务
 
-* `myExtension.enable`: Enable/disable this extension.
-* `myExtension.thing`: Set to `blah` to do something.
+## 🛠️ 开发指南
 
-## Known Issues
+1. 克隆仓库
+2. 运行 `npm install` 安装依赖
+3. 运行 `npm run compile` 编译代码
+4. 按 `F5` 启动调试
 
-Calling out known issues can help limit users opening duplicate issues against your extension.
+## 📄 许可证
 
-## Release Notes
-
-Users appreciate release notes as you update your extension.
-
-### 1.0.0
-
-Initial release of ...
-
-### 1.0.1
-
-Fixed issue #.
-
-### 1.1.0
-
-Added features X, Y, and Z.
-
----
-
-## Following extension guidelines
-
-Ensure that you've read through the extensions guidelines and follow the best practices for creating your extension.
-
-* [Extension Guidelines](https://code.visualstudio.com/api/references/extension-guidelines)
-
-## Working with Markdown
-
-You can author your README using Visual Studio Code. Here are some useful editor keyboard shortcuts:
-
-* Split the editor (`Cmd+\` on macOS or `Ctrl+\` on Windows and Linux).
-* Toggle preview (`Shift+Cmd+V` on macOS or `Shift+Ctrl+V` on Windows and Linux).
-* Press `Ctrl+Space` (Windows, Linux, macOS) to see a list of Markdown snippets.
-
-## For more information
-
-* [Visual Studio Code's Markdown Support](http://code.visualstudio.com/docs/languages/markdown)
-* [Markdown Syntax Reference](https://help.github.com/articles/markdown-basics/)
-
-**Enjoy!**
+MIT License
