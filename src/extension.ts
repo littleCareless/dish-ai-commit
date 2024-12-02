@@ -10,7 +10,7 @@ import { ConfigValidator } from './configValidator';
 export function activate(context: vscode.ExtensionContext) {
   try {
     
-    console.log('Extension "svn-ai-commit-gen" is now active!');
+    console.log('Extension "dish-ai-commit-gen" is now active!');
     
     // 初始化配置管理器并添加到订阅列表
     context.subscriptions.push(ConfigurationManager.getInstance(    ));

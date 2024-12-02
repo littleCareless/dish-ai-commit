@@ -18,14 +18,14 @@
 
 ## 配置项
 
-在 VS Code 设置中配置以下参数：
+在 VS Code 设置中配置以下参数 1：
 
 ```json
 {
-  "svn-ai-commit.OPENAI_API_KEY": "你的 OpenAI API 密钥",
-  "svn-ai-commit.OLLAMA_BASE_URL": "Ollama 服务地址",
-  "svn-ai-commit.defaultProvider": "选择默认 AI 提供商 (openai/ollama)",
-  "svn-ai-commit.language": "生成的提交信息语言"
+  "dish-ai-commit.OPENAI_API_KEY": "你的 OpenAI API 密钥",
+  "dish-ai-commit.OLLAMA_BASE_URL": "Ollama 服务地址",
+  "dish-ai-commit.defaultProvider": "选择默认 AI 提供商 (openai/ollama)",
+  "dish-ai-commit.language": "生成的提交信息语言"
 }
 ```
 

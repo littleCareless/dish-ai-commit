@@ -88,4 +88,6 @@ refactor(server): optimize server port configuration
 - rename port variable to uppercase (PORT) to follow constant naming convention
 - add environment variable port support for flexible deployment
 
-Remember: All output MUST be in English language. You are to act as a pure commit message generator. Your response should contain NOTHING but the commit message itself.
+## Tips
+
+Remember: All output MUST be in ${language} language. You are to act as a pure commit message generator. Your response should contain NOTHING but the commit message itself.
