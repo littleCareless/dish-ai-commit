@@ -1,15 +1,19 @@
-import { ExtensionConfiguration, AIProvider } from './types';
+import { generateCommitMessageSystemPrompt } from "../prompt/prompt";
+import { ExtensionConfiguration, AIProvider } from "./types";
 
 export const DEFAULT_CONFIG: ExtensionConfiguration = {
-    language: 'English',
-    defaultProvider: AIProvider.OPENAI,
-    systemPrompt: '你是一个提交消息生成助手',
-    openai: {
-        baseUrl: 'https://api.openai.com/v1',
-        model: 'gpt-3.5-turbo'
-    },
-    ollama: {
-        baseUrl: 'http://localhost:11434',
-        model: 'llama2'
-    }
+  language: "Simplified Chinese",
+  systemPrompt: generateCommitMessageSystemPrompt("Simplified Chinese"),
+  defaultProvider: AIProvider.OPENAI,
+  openai: {
+    baseUrl: "https://api.openai.com/v1",
+    model: "gpt-3.5-turbo",
+  },
+  ollama: {
+    baseUrl: "http://localhost:11434",
+    model: "llama2",
+  },
+  vscode: {
+    model: "default",
+  },
 };

@@ -1,41 +1,56 @@
 {
-  "name": "svn-ai-commit",
-  "displayName": "SVN Commit Gen",
+  "name": "dish-ai-commit",
+  "displayName": "Dish Commit Gen",
   "description": "",
   "version": "0.0.1",
   "engines": {
     "vscode": "^1.95.0"
   },
+  "publisher": "littleCareless",
+  "repository": "https://github.com/littleCareless/dish-ai-commit",
   "categories": [
-    "Other"
+    "Other",
+    "SCM Providers"
+  ],
+  "keywords": [
+    "OpenAI",
+    "ChatGPT",
+    "GitEmoji",
+    "Git Commit",
+    "Conventional Commits",
+    "Commitizen",
+    "Commit Message",
+    "Commit Message Generator",
+    "AI Commit",
+    "Auto Commit",
+    "SCM Providers",
+    "SCM",
+    "Dish Ai Commit"
   ],
   "extensionDependencies": [
-    "johnstoncode.svn-scm"
+    "johnstoncode.svn-scm",
+    "vscode.git"
   ],
   "main": "./out/extension.js",
   "activationEvents": [
-    "onCommand:svn-ai-commit"
+    "onCommand:dish-ai-commit"
   ],
   "contributes": {
     "commands": [
       {
-        "command": "extension.svn-ai-commit",
-        "title": "SVN AI Commit"
+        "command": "extension.dish-ai-commit",
+        "title": "Dish AI Commit"
       },
       {
-        "command": "svn-ai-commit.showAvailableModels",
+        "command": "dish-ai-commit.showAvailableModels",
         "title": "Show Available AI Models"
-      },
-      {
-        "command": "svn-ai-commit.refreshModels",
-        "title": "SVN AI Commit: 刷新可用模型列表"
       }
     ],
     "configuration": {
-      "title": "SVN AI Commit",
+      "title": "Dish AI Commit",
       "properties": {
-        "svn-ai-commit.AI_COMMIT_LANGUAGE": {
-          "default": "English",
+        "dish-ai-commit.AI_COMMIT_LANGUAGE": {
+          "default": "Simplified Chinese",
           "description": "Commit message language",
           "enum": [
             "Simplified Chinese",
@@ -81,40 +96,41 @@
           ],
           "type": "string"
         },
-        "svn-ai-commit.AI_COMMIT_SYSTEM_PROMPT": {
+        "dish-ai-commit.AI_COMMIT_SYSTEM_PROMPT": {
           "type": "string",
           "default": "",
           "description": "Custom system prompt for generating commit messages"
         },
-        "svn-ai-commit.defaultProvider": {
+        "dish-ai-commit.defaultProvider": {
           "type": "string",
           "enum": [
-            "openai",
-            "ollama"
+            "OpenAI",
+            "Ollama",
+            "VS Code Provided "
           ],
-          "default": "openai",
+          "default": "OpenAI",
           "description": "默认的 AI 提供商"
         },
-        "svn-ai-commit.openai.apiKey": {
+        "dish-ai-commit.openai.apiKey": {
           "type": "string",
           "description": "OpenAI API 密钥"
         },
-        "svn-ai-commit.openai.baseUrl": {
+        "dish-ai-commit.openai.baseUrl": {
           "type": "string",
           "default": "https://api.openai.com/v1",
           "description": "OpenAI API 基础 URL"
         },
-        "svn-ai-commit.openai.model": {
+        "dish-ai-commit.openai.model": {
           "type": "string",
           "default": "gpt-3.5-turbo",
           "description": "OpenAI 模型"
         },
-        "svn-ai-commit.ollama.baseUrl": {
+        "dish-ai-commit.ollama.baseUrl": {
           "type": "string",
           "default": "http://localhost:11434",
           "description": "Ollama API 基础 URL"
         },
-        "svn-ai-commit.ollama.model": {
+        "dish-ai-commit.ollama.model": {
           "type": "string",
           "default": "llama2",
           "description": "Ollama 模型"
@@ -124,20 +140,20 @@
     "menus": {
       "scm/title": [
         {
-          "command": "extension.svn-ai-commit",
+          "command": "extension.dish-ai-commit",
           "group": "navigation"
         }
       ],
       "scm/resourceState/context": [
         {
-          "command": "extension.svn-ai-commit",
+          "command": "extension.dish-ai-commit",
           "when": "scmProvider == svn",
           "group": "1_modification"
         }
       ],
       "scm/resourceFolder/context": [
         {
-          "command": "extension.svn-ai-commit",
+          "command": "extension.dish-ai-commit",
           "when": "scmProvider == svn",
           "group": "inline"
         }
@@ -170,10 +186,12 @@
     "typescript": "^5.4.5"
   },
   "dependencies": {
+    "@vscode/vsce": "^3.2.1",
     "ollama": "^0.5.10",
     "openai": "^4.73.1"
   },
   "resolutions": {
     "@types/node": "16.x"
-  }
+  },
+  "license": "MIT"
 }
