@@ -2,7 +2,7 @@
   "name": "dish-ai-commit",
   "displayName": "Dish Commit Gen",
   "description": "",
-  "version": "0.0.2",
+  "version": "0.0.3",
   "engines": {
     "vscode": "^1.95.0"
   },
