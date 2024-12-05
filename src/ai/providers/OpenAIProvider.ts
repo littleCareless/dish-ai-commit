@@ -176,6 +176,10 @@ export class OpenAIProvider implements AIProvider {
 
   async generateResponse(params: AIRequestParams): Promise<AIResponse> {
     const { language } = params;
+    console.log(
+      "params.language || DEFAULT_CONFIG.language",
+      params.language || DEFAULT_CONFIG.language
+    );
     const messages: ChatCompletionMessageParam[] = [
       {
         role: "system",

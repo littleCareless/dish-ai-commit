@@ -1,5 +1,5 @@
 export enum AIProvider {
-  OPENAI = "openAI",
+  OPENAI = "openai",
   OLLAMA = "ollama",
   VSCODE = "vs code provided",
 }

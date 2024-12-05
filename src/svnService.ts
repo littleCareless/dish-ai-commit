@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
-import * as child_process from "child_process";
+import * as childProcess from "child_process";
 import { promisify } from "util";
 
-const exec = promisify(child_process.exec);
+const exec = promisify(childProcess.exec);
 
 export class SVNService {
   constructor(private workspaceRoot: string) {}

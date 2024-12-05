@@ -34,5 +34,6 @@ export function getOpenAIConfig() {
 
 export function createOpenAIApi(): OpenAI {
   const config = getOpenAIConfig();
+  console.log("config", config);
   return new OpenAI(config);
 }

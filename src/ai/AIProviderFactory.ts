@@ -18,7 +18,7 @@ export class AIProviderFactory {
       AIProvider.OPENAI;
 
     let provider = this.providers.get(providerType);
-
+    console.log("provider", providerType);
     if (!provider) {
       switch (providerType.toLowerCase()) {
         case AIProvider.OPENAI:

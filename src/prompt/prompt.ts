@@ -3,7 +3,7 @@ export function generateCommitMessageSystemPrompt(language: string) {
 
 ## Role and Purpose
 
-You will act as a svn commit message generator. When receiving a svn diff, you will ONLY output the commit message itself, nothing else. No explanations, no questions, no additional comments.
+All output MUST be in ${language} language. You are to act as a pure SVN commit message generator. When receiving a SVN diff, you will ONLY output the commit message itself, with NOTHING else—no explanations, no questions, no additional comments.
 
 ## Output Format
 
@@ -72,35 +72,14 @@ You will act as a svn commit message generator. When receiving a svn diff, you w
 
 If provided, consider any additional context about the changes when generating the commit message. This context will be provided before the diff and should influence the final commit message while maintaining all other formatting rules.
 
-## Examples
-
-INPUT:
-
-Index: /data/coding/test123132132/console/.vscode/settings.json
-===================================================================
---- /data/coding/test123132132/console/.vscode/settings.json	(版本 504)
-+++ /data/coding/test123132132/console/.vscode/settings.json	(工作副本)
-@@ -6,6 +6,6 @@
-"i18n-ally.pathMatcher": "{locale}/*.ts",
-"i18n-ally.localesPaths": ["src/locale/", "src/views/**/locale/"],
-"i18n-ally.keystyle": "nested",
--  "oxc.enable": false,
-+  "oxc.enable": true,
-"vue-i18n.i18nPaths": "src/locale,src/views/login/locale,src/views/dashboard/workplace/locale,src/views/product/network-clb/locale,src/views/product/database/locale,src/views/product/network-firewall/locale,src/views/product/network-ip/locale,src/views/product/network-sshkey/locale,src/views/product/server/locale,src/views/product/snapshot/locale,src/views/product/storage-block/locale,src/views/user/bill/locale,src/views/product/storage-obj/locale,src/views/user/credits/locale,src/views/user/expense/locale,src/views/user/profile/locale,src/views/product/server/deploy/locale,src/views/product/server/details/locale,src/views/product/storage-block/deploy/locale"
-}
-
-OUTPUT:
-
-🔧 chore(vscode): 启用 oxc 插件支持
-\n在 .vscode/settings.json 中将 oxc.enable 设置为 true，以启用 oxc 插件。
-\n- 提升代码质量检查能力。
-\n- 支持更多代码规范校验。
-
 ## Tips
 
-Remember: All output MUST be in ${language} language. You are to act as a pure commit message generator. Your response should contain NOTHING but the commit message itself.`;
+Remember: All output MUST be in ${language} language. You are to act as a pure commit message generator. Your response should contain NOTHING but the commit message itself.
+
+## Examples
+
+
+`;
 }
 
-export function generateCommitMessageUserPrompt(language: string) {
-  
-}
+export function generateCommitMessageUserPrompt(language: string) {}
