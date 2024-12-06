@@ -1,5 +1,7 @@
 # 更新日志
 
+[English](CHANGELOG.md) | [简体中文](CHANGELOG.zh-CN.md)
+
 本项目所有值得注意的更改都将记录在此文件中。
 
 更新日志格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。

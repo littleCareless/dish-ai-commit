@@ -1,5 +1,7 @@
 # Dish AI Commit Gen
 
+[English](README.md) | [简体中文](README.zh-CN.md)
+
 A VSCode extension for generating standardized Git/SVN commit messages using AI. Supports OpenAI, Ollama, and VSCode built-in AI services.
 
 ## Features
@@ -17,11 +19,11 @@ A VSCode extension for generating standardized Git/SVN commit messages using AI.
 
 ### 🌍 Multi-language Commit Message Generation:
 
-  - English
-  - Simplified Chinese
-  - Traditional Chinese
-  - Japanese
-  - Korean
+- English
+- Simplified Chinese
+- Traditional Chinese
+- Japanese
+- Korean
   and 19 other languages
 
 ### 🎨 Conventional Commits Compliant

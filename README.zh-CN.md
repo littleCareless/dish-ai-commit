@@ -1,6 +1,8 @@
 # Dish AI Commit Gen
 
-用AI辅助生成规范的Git/SVN提交信息的VSCode扩展。支持OpenAI、Ollama和VSCode内置AI服务。
+[English](README.md) | [简体中文](README.zh-CN.md)
+
+用 AI 辅助生成规范的 Git/SVN 提交信息的 VSCode 扩展。支持 OpenAI、Ollama 和 VSCode 内置 AI 服务。
 
 ## 功能特性
 
@@ -17,16 +19,16 @@
 
 ### 🌍 支持多语言提交信息生成：
 
-  - 简体中文
-  - 繁體中文
-  - English
-  - 日本語
-  - 한국어
-  等19种语言
+- 简体中文
+- 繁體中文
+- English
+- 日本語
+- 한국어
+  等 19 种语言
 
-### 🎨 符合Conventional Commits规范
+### 🎨 符合 Conventional Commits 规范
 
-### 😄 自动添加emoji表情
+### 😄 自动添加 emoji 表情
 
 ### 配置项
 
@@ -77,7 +79,7 @@
 - 从源代码管理器中选择要提交的文件
 - 点击源代码管理器标题栏中的"Dish AI Commit"图标
 - 或在命令面板中执行"Dish AI Commit"命令
-- AI将自动生成符合规范的提交信息
+- AI 将自动生成符合规范的提交信息
 
 ## 📥 安装
 
@@ -100,6 +102,7 @@
 - 完善文档
 
 请确保在提交 PR 之前：
+
 1. 代码经过测试
 2. 更新相关文档
 3. 遵循项目代码规范
