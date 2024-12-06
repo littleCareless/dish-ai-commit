@@ -1,8 +1,8 @@
 {
   "name": "dish-ai-commit",
-  "displayName": "Dish Commit Gen",
+  "displayName": "Dish AI Commit Gen",
   "description": "",
-  "version": "0.0.3",
+  "version": "0.0.4",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -16,8 +16,12 @@
   "keywords": [
     "OpenAI",
     "ChatGPT",
+    "Ollama",
+    "Vscode",
     "GitEmoji",
+    "SvnEmoji",
     "Git Commit",
+    "Svn Commit",
     "Conventional Commits",
     "Commitizen",
     "Commit Message",
@@ -40,11 +44,17 @@
     "commands": [
       {
         "command": "extension.dish-ai-commit",
-        "title": "Dish AI Commit"
+        "title": "Dish AI Commit",
+        "category": "SVN",
+        "icon": "/images/icon.svg"
       },
       {
-        "command": "dish-ai-commit.showAvailableModels",
-        "title": "Show Available AI Models"
+        "command": "dish-ai-commit.selectModel",
+        "title": "Select AI Model for Commit Generation",
+        "category": "[Dish AI Commit]",
+        "icon": "/images/icon.svg",
+        "description": "选择用于生成提交信息的AI模型(OpenAI/Ollama/VS Code Provided)",
+        "when": "(config.svn.enabled && svnOpenRepositoryCount > 0) || (config.git.enabled && gitOpenRepositoryCount > 0)"
       }
     ],
     "configuration": {
@@ -102,7 +112,7 @@
           "default": "",
           "description": "Custom system prompt for generating commit messages"
         },
-        "dish-ai-commit.defaultProvider": {
+        "dish-ai-commit.provider": {
           "type": "string",
           "enum": [
             "OpenAI",
@@ -111,6 +121,11 @@
           ],
           "default": "OpenAI",
           "description": "默认的 AI 提供商"
+        },
+        "dish-ai-commit.model": {
+          "type": "string",
+          "default": "gpt-3.5-turbo",
+          "description": "AI模型选择"
         },
         "dish-ai-commit.openai.apiKey": {
           "type": "string",
@@ -121,20 +136,10 @@
           "default": "https://api.openai.com/v1",
           "description": "OpenAI API 基础 URL"
         },
-        "dish-ai-commit.openai.model": {
-          "type": "string",
-          "default": "gpt-3.5-turbo",
-          "description": "OpenAI 模型"
-        },
         "dish-ai-commit.ollama.baseUrl": {
           "type": "string",
           "default": "http://localhost:11434",
           "description": "Ollama API 基础 URL"
-        },
-        "dish-ai-commit.ollama.model": {
-          "type": "string",
-          "default": "llama2",
-          "description": "Ollama 模型"
         }
       }
     },
@@ -142,27 +147,33 @@
       "scm/title": [
         {
           "command": "extension.dish-ai-commit",
+          "when": "scmProvider =~ /(git|svn)/",
           "group": "navigation"
         }
       ],
       "scm/resourceState/context": [
         {
           "command": "extension.dish-ai-commit",
-          "when": "scmProvider == svn",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
           "group": "1_modification"
         }
       ],
       "scm/resourceFolder/context": [
         {
           "command": "extension.dish-ai-commit",
-          "when": "scmProvider == svn",
+          "when": "scmProvider =~ /(git|svn)/",
           "group": "inline"
         }
       ],
       "commandPalette": [
         {
-          "command": "svn.commit",
-          "when": "config.svn.enabled && svnOpenRepositoryCount != 0"
+          "command": "extension.dish-ai-commit",
+          "when": "(config.svn.enabled && svnOpenRepositoryCount > 0) || (config.git.enabled && gitOpenRepositoryCount > 0)"
+        },
+        {
+          "command": "dish-ai-commit.selectModel",
+          "group": "navigation",
+          "when": "(config.svn.enabled && svnOpenRepositoryCount > 0) || (config.git.enabled && gitOpenRepositoryCount > 0)"
         }
       ]
     }

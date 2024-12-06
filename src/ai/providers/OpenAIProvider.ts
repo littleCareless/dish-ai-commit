@@ -1,14 +1,11 @@
 import OpenAI from "openai";
-import { createOpenAIApi, getOpenAIConfig } from "../../api/openai";
 import { ChatCompletionMessageParam } from "openai/resources";
 import { ConfigurationManager } from "../../config/ConfigurationManager";
-import { ConfigKeys } from "../../config/types";
 import { AIProvider, AIRequestParams, AIResponse } from "../types";
 import { NotificationHandler } from "../../utils/NotificationHandler";
 import { generateCommitMessageSystemPrompt } from "../../prompt/prompt";
 import { DEFAULT_CONFIG } from "../../config/default";
 
-// : OpenAIModel[]
 const provider = { id: "openai", name: "OpenAI" } as const;
 const models = [
   {
@@ -171,7 +168,37 @@ export class OpenAIProvider implements AIProvider {
   private openai: OpenAI;
 
   constructor() {
-    this.openai = createOpenAIApi();
+    this.openai = new OpenAI(this.getOpenAIConfig());
+  }
+
+  private getOpenAIConfig() {
+    const configManager = ConfigurationManager.getInstance();
+    const apiKey = configManager.getConfig<string>("OPENAI_API_KEY", false);
+    const baseURL = configManager.getConfig<string>("OPENAI_BASE_URL", false);
+    const apiVersion = configManager.getConfig<string>("MODEL", false);
+
+    const config: {
+      apiKey: string;
+      baseURL?: string;
+      defaultQuery?: { "api-version": string };
+      defaultHeaders?: { "api-key": string };
+    } = {
+      apiKey,
+    };
+
+    if (baseURL) {
+      config.baseURL = baseURL;
+      if (apiVersion) {
+        config.defaultQuery = { "api-version": apiVersion };
+        config.defaultHeaders = { "api-key": apiKey };
+      }
+    }
+
+    return config;
+  }
+
+  public reinitialize(): void {
+    this.openai = new OpenAI(this.getOpenAIConfig());
   }
 
   async generateResponse(params: AIRequestParams): Promise<AIResponse> {
@@ -212,7 +239,7 @@ export class OpenAIProvider implements AIProvider {
 
   async isAvailable(): Promise<boolean> {
     try {
-      const config = getOpenAIConfig();
+      const config = this.getOpenAIConfig();
       return !!config.apiKey;
     } catch {
       return false;

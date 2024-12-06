@@ -32,24 +32,6 @@ export interface AIProvider {
   getId(): string;
 }
 
-export type AnthropicModels =
-  | "claude-3-5-sonnet-latest"
-  | "claude-3-5-sonnet-20241022"
-  | "claude-3-5-sonnet-20240620"
-  | "claude-3-5-haiku-20241022"
-  | "claude-3-5-haiku-latest"
-  | "claude-3-opus-latest"
-  | "claude-3-opus-20240229"
-  | "claude-3-sonnet-20240229"
-  | "claude-3-haiku-20240307"
-  | "claude-2.1";
-
-export type GeminiModels =
-  | "gemini-1.5-pro-latest"
-  | "gemini-1.5-flash-latest"
-  | "gemini-1.5-flash-8b"
-  | "gemini-1.0-pro";
-
 export type GitHubModels =
   | "gpt-4o"
   | "gpt-4o-mini"
@@ -59,13 +41,6 @@ export type GitHubModels =
   | "Phi-3.5-mini-instruct"
   | "AI21-Jamba-1.5-Large"
   | "AI21-Jamba-1.5-Mini";
-
-export type HuggingFaceModels =
-  | "meta-llama/Llama-3.2-11B-Vision-Instruct"
-  | "Qwen/Qwen2.5-72B-Instruct"
-  | "NousResearch/Hermes-3-Llama-3.1-8B"
-  | "mistralai/Mistral-Nemo-Instruct-2407"
-  | "microsoft/Phi-3.5-mini-instruct";
 
 export type OpenAIModels =
   | "o1-preview"
@@ -96,18 +71,15 @@ export type VSCodeAIModels = `${string}:${string}`;
 
 export type AIProviders = "anthropic" | "github" | "openai" | "vscode";
 export type AIModels<Provider extends AIProviders = AIProviders> =
-  Provider extends "anthropic"
-    ? AnthropicModels
-    : Provider extends "github"
+  Provider extends "github"
     ? GitHubModels
     : Provider extends "openai"
     ? OpenAIModels
     : Provider extends "vscode"
     ? VSCodeAIModels
-    : AnthropicModels | OpenAIModels;
+    : OpenAIModels;
 
 export type SupportedAIModels =
-  | `anthropic:${AIModels<"anthropic">}`
   | `github:${AIModels<"github">}`
   | `openai:${AIModels<"openai">}`
   | "vscode";

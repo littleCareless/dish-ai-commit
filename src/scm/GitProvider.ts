@@ -1,10 +1,21 @@
 import * as vscode from "vscode";
 import { ISCMProvider } from "./SCMProvider";
+import { promisify } from "util";
+import * as childProcess from "child_process";
+
+const exec = promisify(childProcess.exec);
 
 export class GitProvider implements ISCMProvider {
   type = "git" as const;
+  private workspaceRoot: string;
 
-  constructor(private readonly gitExtension: any) {}
+  constructor(private readonly gitExtension: any) {
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    if (!workspaceRoot) {
+      throw new Error("No workspace folder found");
+    }
+    this.workspaceRoot = workspaceRoot;
+  }
 
   async isAvailable(): Promise<boolean> {
     const api = this.gitExtension.getAPI(1);
@@ -13,25 +24,36 @@ export class GitProvider implements ISCMProvider {
   }
 
   async getDiff(files?: string[]): Promise<string | undefined> {
-    const api = this.gitExtension.getAPI(1);
-    const repository = api.repositories[0];
+    try {
+      let command: string;
+      if (files && files.length > 0) {
+        // 对特定文件执行 diff
+        const filesPaths = files.map((file) => `"${file}"`).join(" ");
+        command = `git diff HEAD ${filesPaths}`;
+      } else {
+        // 对所有暂存文件执行 diff
+        command = "git diff HEAD";
+      }
 
-    if (!repository) {
-      return undefined;
+      const { stdout, stderr } = await exec(command, {
+        cwd: this.workspaceRoot,
+      });
+
+      if (stderr) {
+        throw new Error(stderr);
+      }
+
+      if (!stdout.trim()) {
+        throw new Error("No changes found");
+      }
+
+      return stdout;
+    } catch (error) {
+      if (error instanceof Error) {
+        vscode.window.showErrorMessage(`Git diff failed: ${error.message}`);
+      }
+      throw error;
     }
-
-    // 如果指定了文件，则获取这些文件的diff
-    if (files && files.length > 0) {
-      const diffs = await Promise.all(
-        files.map((file) =>
-          repository.diffWith(repository.state.HEAD.commit, file)
-        )
-      );
-      return diffs.join("\n");
-    }
-
-    // 否则获取所有改动的diff
-    return await repository.diff();
   }
 
   async commit(message: string, files?: string[]): Promise<void> {
@@ -43,5 +65,16 @@ export class GitProvider implements ISCMProvider {
     }
 
     await repository.commit(message, { all: files ? false : true, files });
+  }
+
+  async setCommitInput(message: string): Promise<void> {
+    const api = this.gitExtension.getAPI(1);
+    const repository = api.repositories[0];
+
+    if (!repository) {
+      throw new Error("No Git repository found");
+    }
+
+    repository.inputBox.value = message;
   }
 }

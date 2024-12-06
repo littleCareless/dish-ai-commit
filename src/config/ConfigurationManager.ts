@@ -1,12 +1,13 @@
 import * as vscode from "vscode";
 import { ConfigKeys, ConfigKey, ExtensionConfiguration } from "./types";
 import { DEFAULT_CONFIG } from "./default";
-import type { AIProvider } from "../config/types";
+import { AIProvider } from "../config/types";
 import { OpenAIProvider } from "../ai/providers/OpenAIProvider";
 import { NotificationHandler } from "../utils/NotificationHandler";
 import { OllamaProvider } from "../ai/providers/OllamaProvider";
 import { EXTENSION_NAME } from "../constants";
 import { generateCommitMessageSystemPrompt } from "../prompt/prompt";
+import { AIProviderFactory } from "../ai/AIProviderFactory";
 
 export class ConfigurationManager {
   private static instance: ConfigurationManager;
@@ -44,7 +45,7 @@ export class ConfigurationManager {
 
         // 检查特定配置项的变化
         const configs = [
-          "defaultProvider",
+          "provider",
           "openai.model",
           "ollama.model",
           "openai.baseUrl",
@@ -111,25 +112,19 @@ export class ConfigurationManager {
           this.getConfig<string>("AI_COMMIT_LANGUAGE", false) ||
             DEFAULT_CONFIG.language
         ),
-      defaultProvider:
-        this.getConfig<AIProvider>("DEFAULT_PROVIDER", false) ||
-        DEFAULT_CONFIG.defaultProvider,
+      provider:
+        this.getConfig<string>("PROVIDER", false) || DEFAULT_CONFIG.provider,
+      model: this.getConfig<string>("MODEL", false) || DEFAULT_CONFIG.model,
       openai: {
         apiKey: this.getConfig<string>("OPENAI_API_KEY", false),
         baseUrl:
           this.getConfig<string>("OPENAI_BASE_URL", false) ||
           DEFAULT_CONFIG.openai.baseUrl,
-        model:
-          this.getConfig<string>("OPENAI_MODEL", false) ||
-          DEFAULT_CONFIG.openai.model,
       },
       ollama: {
         baseUrl:
           this.getConfig<string>("OLLAMA_BASE_URL", false) ||
           DEFAULT_CONFIG.ollama.baseUrl,
-        model:
-          this.getConfig<string>("OLLAMA_MODEL", false) ||
-          DEFAULT_CONFIG.ollama.model,
       },
     };
   }
@@ -161,11 +156,35 @@ export class ConfigurationManager {
   ): void {
     const configPrefix = `${EXTENSION_NAME}.`;
 
+    // 检查是否是 OpenAI 相关配置变更
+    const isOpenAIConfigChanged = ["openai.apiKey", "openai.baseUrl"].some(
+      (key) => event.affectsConfiguration(`${configPrefix}${key}`)
+    );
+
+    // 如果 OpenAI 配置发生变更，重新初始化 provider
+    if (isOpenAIConfigChanged) {
+      AIProviderFactory.reinitializeProvider("OpenAI");
+      console.log(
+        "OpenAI provider has been reinitialized due to config changes"
+      );
+    }
+
+    // 检查是否是 Ollama 相关配置变更
+    const isOllamaConfigChanged = ["ollama.baseUrl"].some((key) =>
+      event.affectsConfiguration(`${configPrefix}${key}`)
+    );
+
+    // 如果 Ollama 配置发生变更，重新初始化 provider
+    if (isOllamaConfigChanged) {
+      AIProviderFactory.reinitializeProvider("Ollama");
+      console.log(
+        "Ollama provider has been reinitialized due to config changes"
+      );
+    }
+
     // 添加日志输出具体的配置变更
     console.log("处理配置变更:", {
-      defaultProvider: event.affectsConfiguration(
-        `${configPrefix}defaultProvider`
-      ),
+      provider: event.affectsConfiguration(`${configPrefix}provider`),
       openaiBaseUrl: event.affectsConfiguration(
         `${configPrefix}openai.baseUrl`
       ),
@@ -179,49 +198,86 @@ export class ConfigurationManager {
   }
 
   /**
-   * 更新模型配置的可选项
+   * 验证配置是否有效
    */
-  private async updateModelConfigEnum(
-    provider: string,
-    models: string[]
-  ): Promise<void> {
-    try {
-      const config = vscode.workspace.getConfiguration();
-      const configKey = `${
-        ConfigKeys[`${provider.toUpperCase()}_MODEL` as keyof typeof ConfigKeys]
-      }` as ConfigKey;
-      const currentValue = config.get<string>(configKey);
-      const selected = await vscode.window.showQuickPick(models, {
-        placeHolder: "选择要使用的模型",
-      });
-      if (selected) {
-        // 更新配置值
-        console.log("configKey", configKey);
-        await config.update(
-          configKey,
-          selected,
-          vscode.ConfigurationTarget.Global
-        );
-        vscode.window.showInformationMessage(
-          `Configuration updated to: ${selected}`
-        );
-      }
-      // 如果当前选择的模型不在可用列表中，设置为默认值
-      const currentModel = this.getConfig<string>(
-        `${provider.toUpperCase()}_MODEL` as ConfigKey
+  public async validateConfiguration(): Promise<boolean> {
+    const config = this.getConfiguration();
+    const provider = this.getProviderFromModel(config.model);
+
+    switch (provider) {
+      case "openai":
+        return this.validateOpenAIConfig();
+      case "ollama":
+        return this.validateOllamaConfig();
+      default:
+        return Promise.resolve(true);
+    }
+  }
+
+  private async validateOpenAIConfig(): Promise<boolean> {
+    const config = this.getConfiguration();
+
+    if (!config.openai.apiKey) {
+      const action = await vscode.window.showErrorMessage(
+        "OpenAI API Key is not configured. Would you like to configure it now?",
+        "Yes",
+        "No"
       );
-      if (models.length > 0 && !models.includes(currentModel)) {
-        const defaultModel =
-          provider === "openai"
-            ? DEFAULT_CONFIG.openai.model
-            : DEFAULT_CONFIG.ollama.model;
-        await this.updateConfig(
-          `${provider.toUpperCase()}_MODEL` as ConfigKey,
-          defaultModel
+
+      if (action === "Yes") {
+        await vscode.commands.executeCommand(
+          "workbench.action.openSettings",
+          "dish-ai-commit.OPENAI_API_KEY"
         );
       }
-    } catch (error) {
-      console.error("Failed to update model configuration:", error);
+      return false;
+    }
+    return true;
+  }
+
+  private async validateOllamaConfig(): Promise<boolean> {
+    const config = this.getConfiguration();
+
+    if (!config.ollama.baseUrl) {
+      const action = await vscode.window.showErrorMessage(
+        "Ollama Base URL is not configured. Would you like to configure it now?",
+        "Yes",
+        "No"
+      );
+
+      if (action === "Yes") {
+        await vscode.commands.executeCommand(
+          "workbench.action.openSettings",
+          "dish-ai-commit.OLLAMA_BASE_URL"
+        );
+      }
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * 更新 AI 提供商和模型配置
+   * @param provider AI 提供商名称
+   * @param model 模型名称
+   */
+  public async updateAIConfiguration(
+    provider: string,
+    model: string
+  ): Promise<void> {
+    const modelConfigKey = `MODEL` as ConfigKey;
+    const providerConfigKey = `PROVIDER` as ConfigKey;
+    await this.updateConfig(modelConfigKey, model);
+    await this.updateConfig(providerConfigKey, provider);
+  }
+
+  public getProviderFromModel(model: string): string {
+    if (model.startsWith("gpt-")) {
+      return "openai";
+    } else if (model === "vscode-default") {
+      return "vscode";
+    } else {
+      return "ollama";
     }
   }
 }

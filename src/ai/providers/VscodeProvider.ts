@@ -55,7 +55,7 @@ export class VSCodeProvider implements AIProvider {
   async getModels(): Promise<string[]> {
     const models = await vscode.lm.selectChatModels();
     // name: `${capitalize(model.vendor)} ${model.name}`,
-    return models.map((model) => `${model.vendor}:${model.family}`);
+    return models.map((model) => `${model.family}`);
   }
 
   async isAvailable(): Promise<boolean> {

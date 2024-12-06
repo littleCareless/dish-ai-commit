@@ -41,7 +41,7 @@ export class OllamaProvider implements AIProvider {
       const { language } = params;
       const model =
         params.model ||
-        ConfigurationManager.getInstance().getConfig<string>("OLLAMA_MODEL");
+        ConfigurationManager.getInstance().getConfig<string>("MODEL");
 
       const response = await this.ollama.chat({
         model,

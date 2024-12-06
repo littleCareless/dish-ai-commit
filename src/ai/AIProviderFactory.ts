@@ -12,9 +12,7 @@ export class AIProviderFactory {
     // 如果未指定类型，使用默认提供商
     const providerType =
       type ||
-      ConfigurationManager.getInstance().getConfig<string>(
-        "DEFAULT_PROVIDER"
-      ) ||
+      ConfigurationManager.getInstance().getConfig<string>("PROVIDER") ||
       AIProvider.OPENAI;
 
     let provider = this.providers.get(providerType);
@@ -42,5 +40,12 @@ export class AIProviderFactory {
   public static getAllProviders(): AIProviderInterface[] {
     // 返回所有可用的 AI Provider 实例
     return [new OpenAIProvider(), new OllamaProvider(), new VSCodeProvider()];
+  }
+
+  public static reinitializeProvider(providerId: string): void {
+    const provider = this.providers.get(providerId);
+    if (provider && "reinitialize" in provider) {
+      (provider as any).reinitialize();
+    }
   }
 }
