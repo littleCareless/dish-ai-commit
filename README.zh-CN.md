@@ -1,4 +1,24 @@
-# Dish AI Commit Gen
+<div align="center">
+
+<h1>Dish AI Commit Gen</h1>
+
+用 AI 辅助生成规范的 Git/SVN 提交信息的 VSCode 扩展
+
+[报告错误][github-issues-link] · [请求功能][github-issues-link]
+<!-- SHIELD GROUP -->
+
+[![][github-contributors-shield]][github-contributors-link]
+[![][github-forks-shield]][github-forks-link]
+[![][github-stars-shield]][github-stars-link]
+[![][github-issues-shield]][github-issues-link]
+[![][vscode-marketplace-shield]][vscode-marketplace-link]
+[![][total-installs-shield]][total-installs-link]
+[![][avarage-rating-shield]][avarage-rating-link]
+[![][github-license-shield]][github-license-link]
+
+![演示](images/demo.gif)
+
+</div>
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
@@ -32,13 +52,15 @@
 
 ### 配置项
 
-- `dish-ai-commit.PROVIDER`: AI 提供商选择 (openai/ollama/vscode)
-- `dish-ai-commit.MODEL`: 使用的 AI 模型
-- `dish-ai-commit.OPENAI_API_KEY`: OpenAI API 密钥
-- `dish-ai-commit.OPENAI_BASE_URL`: OpenAI API 基础地址
-- `dish-ai-commit.OLLAMA_BASE_URL`: Ollama API 地址
-- `dish-ai-commit.AI_COMMIT_LANGUAGE`: 生成提交信息的语言
-- `dish-ai-commit.AI_COMMIT_SYSTEM_PROMPT`: 自定义系统提示词
+| 配置项 | 类型 | 默认值 | 必填 |
+|--------|------|--------|------|
+| dish-ai-commit.AI_COMMIT_LANGUAGE | string | Simplified Chinese | 是 |
+| dish-ai-commit.AI_COMMIT_SYSTEM_PROMPT | string | "" | 否 |
+| dish-ai-commit.provider | string | OpenAI | 是 |
+| dish-ai-commit.model | string | gpt-3.5-turbo | 是 |
+| dish-ai-commit.openai.apiKey | string | - | 是 |
+| dish-ai-commit.openai.baseUrl | string | https://api.openai.com/v1 | 否 |
+| dish-ai-commit.ollama.baseUrl | string | http://localhost:11434 | 否 |
 
 ### 命令
 
@@ -79,7 +101,7 @@
 - 从源代码管理器中选择要提交的文件
 - 点击源代码管理器标题栏中的"Dish AI Commit"图标
 - 或在命令面板中执行"Dish AI Commit"命令
-- AI 将自动生成符合规范��提交信息
+- AI 将自动生成符合规范的提交信息
 
 ## 📥 安装
 
@@ -144,6 +166,42 @@
 - [ ] **🔒 安全性功能**  
        加密存储 API 密钥，确保敏感信息不被泄露，并提供额外的身份验证机制来提高安全性。
 
+## 🙏 致谢
+
+本项目参考了以下优秀的开源项目：
+
+- [svn-scm](https://github.com/JohnstonCode/svn-scm) - VSCode 的 SVN 源代码管理扩展
+- [vscode](https://github.com/microsoft/vscode) - Visual Studio Code 编辑器
+- [vscode-gitlens](https://github.com/gitkraken/vscode-gitlens) - VSCode 的 Git 增强扩展
+- [ai-commit](https://github.com/Sitoi/ai-commit) - AI 辅助生成 Git 提交信息
+
 ## 📄 许可证
 
-MIT License
+该项目是 [MIT](./LICENSE) 许可证。
+
+
+
+<!-- LINK GROUP -->
+
+[github-codespace-link]: https://codespaces.new/littleCareless/dish-ai-commit
+[github-codespace-shield]: https://github.com/littleCareless/dish-ai-commit/blob/main/images/codespaces.png?raw=true
+[github-contributors-link]: https://github.com/littleCareless/dish-ai-commit/graphs/contributors
+[github-contributors-shield]: https://img.shields.io/github/contributors/littleCareless/dish-ai-commit?color=c4f042&labelColor=black&style=flat-square
+[github-forks-link]: https://github.com/littleCareless/dish-ai-commit/network/members
+[github-forks-shield]: https://img.shields.io/github/forks/littleCareless/dish-ai-commit?color=8ae8ff&labelColor=black&style=flat-square
+[github-issues-link]: https://github.com/littleCareless/dish-ai-commit/issues
+[github-issues-shield]: https://img.shields.io/github/issues/littleCareless/dish-ai-commit?color=ff80eb&labelColor=black&style=flat-square
+[github-license-link]: https://github.com/littleCareless/dish-ai-commit/blob/main/LICENSE
+[github-license-shield]: https://img.shields.io/github/license/littleCareless/dish-ai-commit?color=white&labelColor=black&style=flat-square
+[github-stars-link]: https://github.com/littleCareless/dish-ai-commit/network/stargazers
+[github-stars-shield]: https://img.shields.io/github/stars/littleCareless/dish-ai-commit?color=ffcb47&labelColor=black&style=flat-square
+[pr-welcome-link]: https://github.com/littleCareless/dish-ai-commit/pulls
+[pr-welcome-shield]: https://img.shields.io/badge/🤯_pr_welcome-%E2%86%92-ffcb47?labelColor=black&style=for-the-badge
+[github-contrib-link]: https://github.com/littleCareless/dish-ai-commit/graphs/contributors
+[github-contrib-shield]: https://contrib.rocks/image?repo=littleCareless%2Fdish-ai-commit
+[vscode-marketplace-link]: https://marketplace.visualstudio.com/items?itemName=littleCareless.dish-ai-commit
+[vscode-marketplace-shield]: https://img.shields.io/vscode-marketplace/v/littleCareless.dish-ai-commit.svg?label=vscode%20marketplace&color=blue&labelColor=black&style=flat-square
+[total-installs-link]: https://marketplace.visualstudio.com/items?itemName=littleCareless.dish-ai-commit
+[total-installs-shield]: https://img.shields.io/vscode-marketplace/d/littleCareless.dish-ai-commit.svg?&color=greeen&labelColor=black&style=flat-square
+[avarage-rating-link]: https://marketplace.visualstudio.com/items?itemName=littleCareless.dish-ai-commit
+[avarage-rating-shield]: https://img.shields.io/vscode-marketplace/r/littleCareless.dish-ai-commit.svg?&color=green&labelColor=black&style=flat-square
