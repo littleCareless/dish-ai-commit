@@ -30,6 +30,13 @@ A VSCode extension for generating standardized Git/SVN commit messages using AI.
 
 ### 😄 Automatic Emoji Addition
 
+## 📋 Requirements
+
+- VS Code 1.80.0+
+- [SVN Command Line Tool](http://subversion.apache.org/packages.html)
+- SVN SCM (Optional) - Install [SVN SCM v2.18.1+](https://github.com/littleCareless/svn-scm/releases/tag/v2.18.1) if you need to enter commit messages in VSCode's SCM input box
+- Valid AI service configuration (OpenAI API Key or Ollama service)
+
 ### Configuration
 
 - `dish-ai-commit.PROVIDER`: AI provider selection (openai/ollama/vscode)

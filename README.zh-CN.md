@@ -79,7 +79,7 @@
 - 从源代码管理器中选择要提交的文件
 - 点击源代码管理器标题栏中的"Dish AI Commit"图标
 - 或在命令面板中执行"Dish AI Commit"命令
-- AI 将自动生成符合规范的提交信息
+- AI 将自动生成符合规范��提交信息
 
 ## 📥 安装
 
@@ -109,8 +109,9 @@
 
 ## 📋 依赖要求
 
-- VS Code
-- SVN 命令行工具
+- VS Code 1.80.0+
+- [SVN 命令行工具](http://subversion.apache.org/packages.html)
+- SVN SCM (可选) - 如需在 VSCode 的 SCM 输入框中输入提交信息，请安装 [SVN SCM v2.18.1+](https://github.com/littleCareless/svn-scm/releases/tag/v2.18.1)
 - 有效的 AI 服务配置(OpenAI API Key 或 Ollama 服务)
 
 ## 💡 常见问题
