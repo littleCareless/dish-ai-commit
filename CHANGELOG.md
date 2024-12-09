@@ -1,3 +1,20 @@
+# 更新记录 
+
+
+### 0.0.10 (2024-12-09)
+
+
+### ♻️ Code Refactoring | 代码重构
+
+* rename project from SVN AI Commit to Dish AI Commit ([64cc221](https://github.com/littleCareless/dish-ai-commit/commit/64cc221b287192a548669b9300924890ef05e833))
+
+### 0.0.9 (2024-12-09)
+
+
+### ♻️ Code Refactoring | 代码重构
+
+* rename project from SVN AI Commit to Dish AI Commit ([64cc221](https://github.com/littleCareless/dish-ai-commit/commit/64cc221b287192a548669b9300924890ef05e833))
+
 # Changelog
 
 [English](CHANGELOG.md) | [简体中文](CHANGELOG.zh-CN.md)
