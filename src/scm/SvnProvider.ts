@@ -2,6 +2,8 @@ import * as vscode from "vscode";
 import { ISCMProvider } from "./SCMProvider";
 import { promisify } from "util";
 import * as childProcess from "child_process";
+import { DiffSimplifier } from "../utils/DiffSimplifier";
+import { LocalizationManager } from "../utils/LocalizationManager";
 
 const exec = promisify(childProcess.exec);
 
@@ -15,7 +17,9 @@ export class SvnProvider implements ISCMProvider {
     this.api = svnExtension;
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (!workspaceRoot) {
-      throw new Error("No workspace folder found");
+      throw new Error(
+        LocalizationManager.getInstance().getMessage("workspace.not.found")
+      );
     }
     this.workspaceRoot = workspaceRoot;
   }
@@ -69,13 +73,37 @@ export class SvnProvider implements ISCMProvider {
       }
 
       if (!stdout.trim()) {
-        throw new Error("No changes found");
+        throw new Error(
+          LocalizationManager.getInstance().getMessage("diff.noChanges")
+        );
       }
 
+      // 获取配置
+      const config = vscode.workspace.getConfiguration("dish-ai-commit");
+      const enableSimplification = config.get<boolean>(
+        "enableDiffSimplification"
+      );
+
+      // 根据配置决定是否显示警告和简化diff
+      if (enableSimplification) {
+        vscode.window.showWarningMessage(
+          LocalizationManager.getInstance().getMessage(
+            "diff.simplification.warning"
+          )
+        );
+        return DiffSimplifier.simplify(stdout);
+      }
+
+      // 如果未启用简化，直接返回原始diff
       return stdout;
     } catch (error) {
       if (error instanceof Error) {
-        vscode.window.showErrorMessage(`SVN diff failed: ${error.message}`);
+        vscode.window.showErrorMessage(
+          LocalizationManager.getInstance().format(
+            "git.diff.failed",
+            error.message
+          )
+        );
       }
       throw error;
     }
@@ -84,21 +112,27 @@ export class SvnProvider implements ISCMProvider {
   async commit(message: string, files?: string[]): Promise<void> {
     const repository = this.api?.repositories?.[0];
     if (!repository) {
-      throw new Error("No SVN repository found");
+      throw new Error(
+        LocalizationManager.getInstance().getMessage("git.repository.not.found")
+      );
     }
 
     try {
       await repository.commitFiles(files || [], message);
     } catch (error) {
       console.error("Failed to commit to SVN:", error);
-      throw new Error(`SVN commit failed: ${error}`);
+      throw new Error(
+        LocalizationManager.getInstance().format("svn.commit.failed", error)
+      );
     }
   }
 
   async setCommitInput(message: string): Promise<void> {
     const repository = this.api?.repositories?.[0];
     if (!repository) {
-      throw new Error("No SVN repository found");
+      throw new Error(
+        LocalizationManager.getInstance().getMessage("git.repository.not.found")
+      );
     }
 
     repository.inputBox.value = message;
