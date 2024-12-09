@@ -1,6 +1,8 @@
 # 更新记录 
 
 
+### [0.0.9](https://github.com/littleCareless/dish-ai-commit/compare/v0.0.10...v0.0.9) (2024-12-09)
+
 ### 0.0.10 (2024-12-09)
 
 
