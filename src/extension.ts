@@ -3,12 +3,19 @@
 import * as vscode from "vscode";
 import { ConfigurationManager } from "./config/ConfigurationManager";
 import { registerCommands } from "./commands";
+import { LocalizationManager } from "./utils/LocalizationManager";
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed
 export function activate(context: vscode.ExtensionContext) {
   try {
     console.log('Extension "dish-ai-commit-gen" is now active!');
+
+    // 初始化本地化管理器
+    LocalizationManager.initialize(context);
+
+    // 初始化本地化管理器
+    LocalizationManager.initialize(context);
 
     // 初始化配置管理器并添加到订阅列表
     context.subscriptions.push(ConfigurationManager.getInstance());

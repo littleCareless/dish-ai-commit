@@ -5,6 +5,7 @@
 A VSCode extension for generating standardized Git/SVN commit messages using AI
 
 [Report Bug][github-issues-link] · [Request Feature][github-issues-link]
+
 <!-- SHIELD GROUP -->
 
 [![][github-contributors-shield]][github-contributors-link]
@@ -40,6 +41,7 @@ A VSCode extension for generating standardized Git/SVN commit messages using AI.
 ### 🌍 Multi-language Commit Message Generation:
 
 Supports 19 languages including:
+
 - English
 - Simplified Chinese
 - Traditional Chinese
@@ -59,15 +61,15 @@ Supports 19 languages including:
 
 ### Configuration
 
-| Configuration | Type | Default | Required |
-|--------------|------|---------|-----------|
-| dish-ai-commit.AI_COMMIT_LANGUAGE | string | Simplified Chinese | Yes |
-| dish-ai-commit.AI_COMMIT_SYSTEM_PROMPT | string | "" | No |
-| dish-ai-commit.provider | string | OpenAI | Yes |
-| dish-ai-commit.model | string | gpt-3.5-turbo | Yes |
-| dish-ai-commit.openai.apiKey | string | - | Yes |
-| dish-ai-commit.openai.baseUrl | string | https://api.openai.com/v1 | No |
-| dish-ai-commit.ollama.baseUrl | string | http://localhost:11434 | No |
+| Configuration                 | Type   | Default                   | Required |
+| ----------------------------- | ------ | ------------------------- | -------- |
+| dish-ai-commit.commitLanguage | string | Simplified Chinese        | Yes      |
+| dish-ai-commit.systemPrompt   | string | ""                        | No       |
+| dish-ai-commit.provider       | string | OpenAI                    | Yes      |
+| dish-ai-commit.model          | string | gpt-3.5-turbo             | Yes      |
+| dish-ai-commit.openai.apiKey  | string | -                         | Yes      |
+| dish-ai-commit.openai.baseUrl | string | https://api.openai.com/v1 | No       |
+| dish-ai-commit.ollama.baseUrl | string | http://localhost:11434    | No       |
 
 ### Commands
 

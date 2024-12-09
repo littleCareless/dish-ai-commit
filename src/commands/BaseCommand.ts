@@ -7,7 +7,7 @@ export abstract class BaseCommand {
 
   protected async validateConfig(): Promise<boolean> {
     if (!(await ConfigurationManager.getInstance().validateConfiguration())) {
-      await NotificationHandler.error(`执行命令失败`);
+      await NotificationHandler.error("command.execution.failed");
       return false;
     }
     return true;

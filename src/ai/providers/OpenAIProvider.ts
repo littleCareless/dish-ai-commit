@@ -1,13 +1,19 @@
 import OpenAI from "openai";
 import { ChatCompletionMessageParam } from "openai/resources";
 import { ConfigurationManager } from "../../config/ConfigurationManager";
-import { AIProvider, AIRequestParams, AIResponse } from "../types";
+import {
+  AIProvider,
+  AIRequestParams,
+  AIResponse,
+  type AIModel,
+} from "../types";
 import { NotificationHandler } from "../../utils/NotificationHandler";
 import { generateCommitMessageSystemPrompt } from "../../prompt/prompt";
 import { DEFAULT_CONFIG } from "../../config/default";
+import { LocalizationManager } from "../../utils/LocalizationManager";
 
 const provider = { id: "openai", name: "OpenAI" } as const;
-const models = [
+const models: AIModel[] = [
   {
     id: "o1-preview",
     name: "o1 preview",
@@ -202,39 +208,71 @@ export class OpenAIProvider implements AIProvider {
   }
 
   async generateResponse(params: AIRequestParams): Promise<AIResponse> {
-    const { language } = params;
-    console.log(
-      "params.language || DEFAULT_CONFIG.language",
-      params.language || DEFAULT_CONFIG.language
-    );
-    const messages: ChatCompletionMessageParam[] = [
-      {
-        role: "system",
-        content:
-          params.systemPrompt ||
-          generateCommitMessageSystemPrompt(
-            params.language || DEFAULT_CONFIG.language
-          ),
-      },
-      {
-        role: "user",
-        content: params.prompt,
-      },
-    ];
-    console.log("message", messages);
-    const completion = await this.openai.chat.completions.create({
-      model: params.model || "gpt-3.5-turbo",
-      messages,
-    });
+    let retries = 0;
+    const maxRetries = 2;
+    let maxInputLength = params.model?.maxTokens?.input || 16385;
 
-    return {
-      content: completion.choices[0]?.message?.content || "",
-      usage: {
-        promptTokens: completion.usage?.prompt_tokens,
-        completionTokens: completion.usage?.completion_tokens,
-        totalTokens: completion.usage?.total_tokens,
-      },
-    };
+    while (true) {
+      try {
+        const truncatedPrompt = params.diff.substring(0, maxInputLength);
+        const messages: ChatCompletionMessageParam[] = [
+          {
+            role: "system",
+            content:
+              params.systemPrompt ||
+              generateCommitMessageSystemPrompt(
+                params.language || DEFAULT_CONFIG.language,
+                params.allowMergeCommits || false,
+                params.splitChangesInSingleFile || false,
+                params.scm || "git"
+              ),
+          },
+          {
+            role: "user",
+            content: truncatedPrompt,
+          },
+        ];
+
+        const completion = await this.openai.chat.completions.create({
+          model: (params.model && params.model.id) || "gpt-3.5-turbo",
+          messages,
+        });
+
+        // 如果原始prompt被截断，发出警告
+        if (params.diff.length > maxInputLength) {
+          NotificationHandler.warn(
+            LocalizationManager.getInstance().getMessage(
+              "openai.input.truncated"
+            )
+          );
+        }
+
+        return {
+          content: completion.choices[0]?.message?.content || "",
+          usage: {
+            promptTokens: completion.usage?.prompt_tokens,
+            completionTokens: completion.usage?.completion_tokens,
+            totalTokens: completion.usage?.total_tokens,
+          },
+        };
+      } catch (error: any) {
+        if (
+          retries < maxRetries &&
+          error.message?.includes("maximum context length")
+        ) {
+          retries++;
+          maxInputLength = Math.floor(maxInputLength * 0.8); // 减少20%的输入长度
+          continue;
+        }
+
+        const errorMessage = LocalizationManager.getInstance().format(
+          "openai.generation.failed",
+          error.message
+        );
+        NotificationHandler.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+    }
   }
 
   async isAvailable(): Promise<boolean> {
@@ -252,22 +290,34 @@ export class OpenAIProvider implements AIProvider {
   async refreshModels(): Promise<string[]> {
     try {
       const models = await this.openai.models.list();
-      NotificationHandler.info("OpenAI模型列表已更新");
+      NotificationHandler.info(
+        LocalizationManager.getInstance().getMessage(
+          "openai.models.update.success"
+        )
+      );
       return models.data.map((model) => model.id);
     } catch (error) {
       console.error("Failed to fetch OpenAI models:", error);
-      NotificationHandler.error("获取OpenAI模型列表失败");
+      NotificationHandler.error(
+        LocalizationManager.getInstance().getMessage(
+          "openai.models.fetch.failed"
+        )
+      );
       return [];
     }
   }
 
-  async getModels(): Promise<string[]> {
+  async getModels(): Promise<AIModel[]> {
     try {
-      return models.map((model) => model.id);
+      return Promise.resolve(models);
     } catch (error) {
       console.error("Failed to fetch OpenAI models:", error);
-      NotificationHandler.error("获取OpenAI模型列表失败");
-      return [];
+      NotificationHandler.error(
+        LocalizationManager.getInstance().getMessage(
+          "openai.models.fetch.failed"
+        )
+      );
+      return Promise.reject(error);
     }
   }
 

@@ -8,6 +8,8 @@ import { OllamaProvider } from "../ai/providers/OllamaProvider";
 import { EXTENSION_NAME } from "../constants";
 import { generateCommitMessageSystemPrompt } from "../prompt/prompt";
 import { AIProviderFactory } from "../ai/AIProviderFactory";
+import { LocalizationManager } from "../utils/LocalizationManager";
+import { SCMFactory } from "../scm/SCMProvider";
 
 export class ConfigurationManager {
   private static instance: ConfigurationManager;
@@ -88,7 +90,6 @@ export class ConfigurationManager {
 
   public getConfig<T>(key: ConfigKey, useCache: boolean = true): T {
     const configKey = ConfigKeys[key].replace("dish-ai-commit.", "");
-    console.log("configKey", configKey);
 
     if (!useCache) {
       // 直接从 configuration 获取最新值
@@ -102,15 +103,20 @@ export class ConfigurationManager {
   }
 
   public getConfiguration(): ExtensionConfiguration {
+    const currentScm = SCMFactory.getCurrentSCMType() || "git";
     return {
       language:
-        this.getConfig<string>("AI_COMMIT_LANGUAGE", false) ||
+        this.getConfig<string>("COMMIT_LANGUAGE", false) ||
         DEFAULT_CONFIG.language,
       systemPrompt:
-        this.getConfig<string>("AI_COMMIT_SYSTEM_PROMPT", false) ||
+        this.getConfig<string>("SYSTEM_PROMPT", false) ||
         generateCommitMessageSystemPrompt(
-          this.getConfig<string>("AI_COMMIT_LANGUAGE", false) ||
-            DEFAULT_CONFIG.language
+          this.getConfig<string>("COMMIT_LANGUAGE", false) ||
+            DEFAULT_CONFIG.language,
+          this.getConfig<boolean>("ALLOW_MERGE_COMMITS", false) ||
+            DEFAULT_CONFIG.allowMergeCommits,
+          false,
+          currentScm
         ),
       provider:
         this.getConfig<string>("PROVIDER", false) || DEFAULT_CONFIG.provider,
@@ -126,6 +132,9 @@ export class ConfigurationManager {
           this.getConfig<string>("OLLAMA_BASE_URL", false) ||
           DEFAULT_CONFIG.ollama.baseUrl,
       },
+      allowMergeCommits:
+        this.getConfig<boolean>("ALLOW_MERGE_COMMITS", false) ||
+        DEFAULT_CONFIG.allowMergeCommits,
     };
   }
 
@@ -216,15 +225,16 @@ export class ConfigurationManager {
 
   private async validateOpenAIConfig(): Promise<boolean> {
     const config = this.getConfiguration();
+    const locManager = LocalizationManager.getInstance();
 
     if (!config.openai.apiKey) {
       const action = await vscode.window.showErrorMessage(
-        "OpenAI API Key is not configured. Would you like to configure it now?",
-        "Yes",
-        "No"
+        locManager.getMessage("openai.apikey.missing"),
+        locManager.getMessage("button.yes"),
+        locManager.getMessage("button.no")
       );
 
-      if (action === "Yes") {
+      if (action === locManager.getMessage("button.yes")) {
         await vscode.commands.executeCommand(
           "workbench.action.openSettings",
           "dish-ai-commit.OPENAI_API_KEY"
@@ -237,15 +247,16 @@ export class ConfigurationManager {
 
   private async validateOllamaConfig(): Promise<boolean> {
     const config = this.getConfiguration();
+    const locManager = LocalizationManager.getInstance();
 
     if (!config.ollama.baseUrl) {
       const action = await vscode.window.showErrorMessage(
-        "Ollama Base URL is not configured. Would you like to configure it now?",
-        "Yes",
-        "No"
+        locManager.getMessage("ollama.baseurl.missing"),
+        locManager.getMessage("button.yes"),
+        locManager.getMessage("button.no")
       );
 
-      if (action === "Yes") {
+      if (action === locManager.getMessage("button.yes")) {
         await vscode.commands.executeCommand(
           "workbench.action.openSettings",
           "dish-ai-commit.OLLAMA_BASE_URL"

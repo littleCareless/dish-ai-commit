@@ -3,7 +3,12 @@ import { ExtensionConfiguration } from "./types";
 
 export const DEFAULT_CONFIG: ExtensionConfiguration = {
   language: "Simplified Chinese",
-  systemPrompt: generateCommitMessageSystemPrompt("Simplified Chinese"),
+  systemPrompt: generateCommitMessageSystemPrompt(
+    "Simplified Chinese",
+    false, // 使用默认配置
+    false, // 使用默认配置
+    "git"
+  ),
   provider: "openai",
   model: "gpt-3.5-turbo",
   openai: {
@@ -15,4 +20,5 @@ export const DEFAULT_CONFIG: ExtensionConfiguration = {
   vscode: {
     model: "default",
   },
+  allowMergeCommits: false,
 };

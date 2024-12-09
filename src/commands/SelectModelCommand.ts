@@ -4,6 +4,7 @@ import { ConfigurationManager } from "../config/ConfigurationManager";
 import { NotificationHandler } from "../utils/NotificationHandler";
 import { AIProviderFactory } from "../ai/AIProviderFactory";
 import { getProviderModelConfig } from "../config/types";
+import { LocalizationManager } from "../utils/LocalizationManager";
 
 export class SelectModelCommand extends BaseCommand {
   async execute(): Promise<void> {
@@ -22,7 +23,9 @@ export class SelectModelCommand extends BaseCommand {
       await config.updateConfig("MODEL", modelSelection.model);
       await config.updateConfig("PROVIDER", modelSelection.provider);
       await NotificationHandler.info(
-        `已更新 AI 模型设置为: ${modelSelection.provider} - ${modelSelection.model}`
+        "model.update.success",
+        modelSelection.provider,
+        modelSelection.model
       );
     }
   }
@@ -37,7 +40,10 @@ export class SelectModelCommand extends BaseCommand {
         providers.map(async (provider) => {
           if (await provider.isAvailable()) {
             const models = await provider.getModels();
-            modelsMap.set(provider.getName(), models);
+            modelsMap.set(
+              provider.getName(),
+              models.map((model) => model.name)
+            );
           }
         })
       );
@@ -59,8 +65,11 @@ export class SelectModelCommand extends BaseCommand {
 
       const quickPick = vscode.window.createQuickPick();
       quickPick.items = items;
-      quickPick.title = "选择 AI 模型";
-      quickPick.placeholder = "选择用于生成提交信息的 AI 模型";
+      quickPick.title =
+        LocalizationManager.getInstance().getMessage("model.picker.title");
+      quickPick.placeholder = LocalizationManager.getInstance().getMessage(
+        "model.picker.placeholder"
+      );
       quickPick.ignoreFocusOut = true;
 
       const result = await new Promise<vscode.QuickPickItem | undefined>(
@@ -73,13 +82,15 @@ export class SelectModelCommand extends BaseCommand {
 
       quickPick.dispose();
 
+      console.log('result:', result);
+
       if (result && result.description) {
         return { provider: result.description, model: result.label };
       }
       return undefined;
     } catch (error) {
       console.error("获取模型列表失败:", error);
-      await NotificationHandler.error("获取模型列表失败");
+      await NotificationHandler.error("model.list.failed");
       return undefined;
     }
   }

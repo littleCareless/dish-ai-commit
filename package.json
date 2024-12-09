@@ -2,7 +2,7 @@
   "name": "dish-ai-commit",
   "displayName": "Dish AI Commit Gen",
   "description": "",
-  "version": "0.0.6",
+  "version": "0.0.8",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -60,7 +60,7 @@
     "configuration": {
       "title": "Dish AI Commit",
       "properties": {
-        "dish-ai-commit.AI_COMMIT_LANGUAGE": {
+        "dish-ai-commit.commitLanguage": {
           "default": "Simplified Chinese",
           "description": "Commit message language",
           "enum": [
@@ -107,7 +107,7 @@
           ],
           "type": "string"
         },
-        "dish-ai-commit.AI_COMMIT_SYSTEM_PROMPT": {
+        "dish-ai-commit.systemPrompt": {
           "type": "string",
           "default": "",
           "description": "Custom system prompt for generating commit messages"
@@ -117,7 +117,7 @@
           "enum": [
             "OpenAI",
             "Ollama",
-            "VS Code Provided "
+            "VS Code Provided"
           ],
           "default": "OpenAI",
           "description": "默认的 AI 提供商"
@@ -140,6 +140,26 @@
           "type": "string",
           "default": "http://localhost:11434",
           "description": "Ollama API 基础 URL"
+        },
+        "dish-ai-commit.enableDiffSimplification": {
+          "type": "boolean",
+          "default": false,
+          "description": "启用 diff 内容简化功能（警告：启用此功能可能会导致生成的提交信息不够准确）"
+        },
+        "dish-ai-commit.diffSimplification.maxLineLength": {
+          "type": "number",
+          "default": 120,
+          "description": "简化后每行的最大长度"
+        },
+        "dish-ai-commit.diffSimplification.contextLines": {
+          "type": "number",
+          "default": 3,
+          "description": "保留的上下文行数"
+        },
+        "dish-ai-commit.allowMergeCommits": {
+          "type": "boolean",
+          "default": false,
+          "description": "是否允许将多个文件的变更合并为一条提交信息"
         }
       }
     },

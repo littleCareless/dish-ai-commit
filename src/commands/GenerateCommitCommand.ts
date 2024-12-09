@@ -7,12 +7,15 @@ import { AIProviderFactory } from "../ai/AIProviderFactory";
 import { SCMFactory } from "../scm/SCMProvider";
 import { getProviderModelConfig } from "../config/types";
 import { DISPLAY_NAME } from "../constants";
+import { getMaxCharacters } from "../ai/types";
+import { LocalizationManager } from "../utils/LocalizationManager";
 
 export class GenerateCommitCommand extends BaseCommand {
   private async showConfigWizard(): Promise<boolean> {
+    const locManager = LocalizationManager.getInstance();
     const baseURL = await vscode.window.showInputBox({
-      prompt: "请输入 OpenAI API 地址",
-      placeHolder: "例如: https://api.openai.com/v1",
+      prompt: locManager.getMessage("openai.baseurl.prompt"),
+      placeHolder: locManager.getMessage("openai.baseurl.placeholder"),
       ignoreFocusOut: true,
     });
 
@@ -21,7 +24,7 @@ export class GenerateCommitCommand extends BaseCommand {
     }
 
     const apiKey = await vscode.window.showInputBox({
-      prompt: "请输入 OpenAI API Key",
+      prompt: locManager.getMessage("openai.apikey.prompt"),
       password: true,
       ignoreFocusOut: true,
     });
@@ -37,22 +40,103 @@ export class GenerateCommitCommand extends BaseCommand {
   }
 
   private async ensureConfiguration(): Promise<boolean> {
+    const locManager = LocalizationManager.getInstance();
     const config = ConfigurationManager.getInstance();
     const baseURL = config.getConfig<string>("OPENAI_BASE_URL", false);
     const apiKey = config.getConfig<string>("OPENAI_API_KEY", false);
 
     if (!baseURL || !apiKey) {
       const result = await vscode.window.showInformationMessage(
-        "需要配置 OpenAI API 信息才能使用该功能，是否现在配置？",
-        "是",
-        "否"
+        locManager.getMessage("openai.config.required"),
+        locManager.getMessage("button.yes"),
+        locManager.getMessage("button.no")
       );
-      return result === "是" ? this.showConfigWizard() : false;
+      return result === locManager.getMessage("button.yes")
+        ? this.showConfigWizard()
+        : false;
     }
     return true;
   }
+  // 提取一个函数来处理获取和更新模型配置的逻辑
+  private async getModelAndUpdateConfiguration(
+    provider = "Ollama",
+    model = "Ollama"
+  ) {
+    const locManager = LocalizationManager.getInstance();
+    let aiProvider = AIProviderFactory.getProvider(provider);
+    // 获取模型列表
+    let models = await aiProvider.getModels();
+
+    // 如果模型为空或无法获取，直接让用户选择模型
+    if (!models || models.length === 0) {
+      const { provider: newProvider, model: newModel } =
+        await this.selectAndUpdateModelConfiguration(provider, model);
+      provider = newProvider;
+      model = newModel;
+
+      // 获取更新后的模型列表
+      aiProvider = AIProviderFactory.getProvider(provider);
+      models = await aiProvider.getModels();
+
+      // 如果新的模型列表仍然为空，则抛出错误
+      if (!models || models.length === 0) {
+        throw new Error(locManager.getMessage("model.list.empty"));
+      }
+    }
+
+    // 查找已选择的模型
+    let selectedModel = models.find((m) => m.name === model);
+
+    // 如果没有找到对应的模型，弹窗让用户重新选择
+    if (!selectedModel) {
+      const { provider: newProvider, model: newModel } =
+        await this.selectAndUpdateModelConfiguration(provider, model);
+      provider = newProvider;
+      model = newModel;
+
+      // 获取更新后的模型列表
+      aiProvider = AIProviderFactory.getProvider(provider);
+      models = await aiProvider.getModels();
+
+      // 选择有效的模型
+      selectedModel = models.find((m) => m.name === model);
+
+      // 如果依然没有找到对应的模型，抛出错误
+      if (!selectedModel) {
+        throw new Error(locManager.getMessage("model.notFound"));
+      }
+    }
+
+    return { provider, model, selectedModel, aiProvider };
+  }
+
+  // 封装选择模型并更新配置的函数，返回更新后的 provider 和 model
+  private async selectAndUpdateModelConfiguration(
+    provider = "Ollama",
+    model = "Ollama"
+  ) {
+    // 获取模型选择
+    const modelSelection = await this.showModelPicker(provider, model);
+
+    // 如果没有选择模型，则直接返回当前的 provider 和 model
+    if (!modelSelection) {
+      return { provider, model };
+    }
+
+    const config = ConfigurationManager.getInstance();
+    const configuration = config.getConfiguration();
+    // 使用新的封装方法更新配置
+    await config.updateAIConfiguration(
+      modelSelection.provider,
+      modelSelection.model
+    );
+
+    // 返回更新后的 provider 和 model
+    return { provider: modelSelection.provider, model: modelSelection.model };
+  }
 
   async execute(resources: vscode.SourceControlResourceState[]): Promise<void> {
+    const locManager = LocalizationManager.getInstance();
     if (!(await this.ensureConfiguration()) || !(await this.validateConfig())) {
       return;
     }
@@ -61,7 +145,9 @@ export class GenerateCommitCommand extends BaseCommand {
       // 检测当前 SCM 类型
       const scmProvider = await SCMFactory.detectSCM();
       if (!scmProvider) {
-        await NotificationHandler.error("未检测到支持的版本控制系统");
+        await NotificationHandler.error(
+          locManager.getMessage("scm.not.detected")
+        );
         return;
       }
 
@@ -74,75 +160,117 @@ export class GenerateCommitCommand extends BaseCommand {
 
       // 如果没有配置提供商或模型，提示用户选择
       if (!provider || !model) {
-        const modelSelection = await this.showModelPicker(
-          provider || "Ollama",
-          model || "Ollama"
-        );
+        // const modelSelection = await this.showModelPicker(
+        //   provider || "Ollama",
+        //   model || "Ollama"
+        // );
 
-        if (!modelSelection) {
-          return;
-        }
+        // if (!modelSelection) {
+        //   return;
+        // }
 
-        // 使用新的封装方法更新配置
-        await config.updateAIConfiguration(
-          modelSelection.provider,
-          modelSelection.model
-        );
+        // // 使用新的封装方法更新配置
+        // await config.updateAIConfiguration(
+        //   modelSelection.provider,
+        //   modelSelection.model
+        // );
 
-        provider = modelSelection.provider;
-        model = modelSelection.model;
+        // provider = modelSelection.provider;
+        // model = modelSelection.model;
+
+        const { provider: newProvider, model: newModel } =
+          await this.selectAndUpdateModelConfiguration(provider, model);
+
+        provider = newProvider;
+        model = newModel;
       }
 
       const response = await ProgressHandler.withProgress(
-        `Generating ${scmProvider?.type.toLocaleUpperCase()} commit message...`,
+        locManager.format(
+          "progress.generating.commit",
+          scmProvider?.type.toLocaleUpperCase()
+        ),
         async (progress) => {
           const selectedFiles = this.getSelectedFiles(resources);
-          // progress.report({ message: "正在分析变更内容..." });
+          // progress.report({
+          //   message: locManager.getMessage("progress.analyzing.changes"),
+          // });
           const diffContent = await scmProvider.getDiff(selectedFiles);
           if (!diffContent) {
-            await NotificationHandler.info("没有可提交的更改");
-            return;
+            await NotificationHandler.info(locManager.getMessage("no.changes"));
+            throw new Error(locManager.getMessage("no.changes"));
           }
+
+          console.log("diffContent", diffContent, selectedFiles);
+
+          const {
+            provider: newProvider,
+            model: newModel,
+            aiProvider,
+            selectedModel,
+          } = await this.getModelAndUpdateConfiguration(provider, model);
+
+          // if (selectedModel) {
+          //   const maxChars = getMaxCharacters(selectedModel, 2600) - 1000;
+          //   if (diffContent.length > maxChars) {
+          //     throw new Error(
+          //       locManager.format("diff.too.long", diffContent.length, maxChars)
+          //     );
+          //   }
+          // }
 
           // progress.report({ message: "正在生成提交信息..." });
 
-          const aiProvider = AIProviderFactory.getProvider(provider);
           const result = await aiProvider.generateResponse({
-            prompt: diffContent,
+            diff: diffContent,
             systemPrompt: configuration.systemPrompt,
-            model: model,
+            model: selectedModel,
             language: configuration.language,
+            scm: scmProvider.type ?? "git",
+            allowMergeCommits: configuration.allowMergeCommits,
+            splitChangesInSingleFile: false,
           });
 
-          // progress.report({ message: "生成完成" });
+          // progress.report({
+          //   message: locManager.getMessage("progress.generation.complete"),
+          // });
           return result;
         }
       );
-
+      if (!response) {
+        return await NotificationHandler.info(
+          locManager.getMessage("no.commit.message.generated")
+        );
+      }
       if (response?.content) {
         try {
           // 统一使用 setCommitInput 写入提交信息
           await scmProvider.setCommitInput(response.content);
           await NotificationHandler.info(
-            `已将提交信息填入 ${scmProvider.type.toUpperCase()} 提交框`
+            locManager.format(
+              "commit.message.generated",
+              scmProvider.type.toUpperCase()
+            )
           );
         } catch (error) {
           if (error instanceof Error) {
             await NotificationHandler.error(
-              `写入提交信息失败: ${error.message}`
+              locManager.format("commit.message.write.failed", error.message)
             );
             try {
               // 如果写入失败，尝试复制到剪贴板
               vscode.env.clipboard.writeText(response.content);
-              await NotificationHandler.info("提交信息已复制到剪贴板");
+              await NotificationHandler.info(
+                locManager.getMessage("commit.message.copied")
+              );
             } catch (error) {
               if (error instanceof Error) {
                 await NotificationHandler.error(
-                  `复制提交信息失败: ${error.message}`
+                  locManager.format("commit.message.copy.failed", error.message)
                 );
                 // 如果复制失败，提示用户手动复制 并将信息显示在消息框
                 vscode.window.showInformationMessage(
-                  "提交信息已生成，请手动复制到提交框",
+                  locManager.getMessage("commit.message.manual.copy"),
                   response.content
                 );
               }
@@ -153,7 +281,9 @@ export class GenerateCommitCommand extends BaseCommand {
     } catch (error) {
       console.log("error", error);
       if (error instanceof Error) {
-        await NotificationHandler.error(`生成提交信息失败: ${error.message}`);
+        await NotificationHandler.error(
+          locManager.format("generate.commit.failed", error.message)
+        );
       }
     }
   }
@@ -175,7 +305,7 @@ export class GenerateCommitCommand extends BaseCommand {
         states
           .map(
             (state) =>
-              (state as any)._resourceUri?.fsPath || state.resourceUri?.fsPath
+              (state as any)?._resourceUri?.fsPath || state?.resourceUri?.fsPath
           )
           .filter(Boolean)
       ),
@@ -186,6 +316,7 @@ export class GenerateCommitCommand extends BaseCommand {
     currentProvider: string,
     currentModel: string
   ): Promise<{ provider: string; model: string } | undefined> {
+    const locManager = LocalizationManager.getInstance();
     try {
       const providers = AIProviderFactory.getAllProviders();
       const modelsMap = new Map<string, string[]>();
@@ -194,7 +325,10 @@ export class GenerateCommitCommand extends BaseCommand {
         providers.map(async (provider) => {
           if (await provider.isAvailable()) {
             const models = await provider.getModels();
-            modelsMap.set(provider.getName(), models);
+            modelsMap.set(
+              provider.getName(),
+              models.map((model) => model.name)
+            );
           }
         })
       );
@@ -216,8 +350,10 @@ export class GenerateCommitCommand extends BaseCommand {
 
       const quickPick = vscode.window.createQuickPick();
       quickPick.items = items;
-      quickPick.title = "选择 AI 模型";
-      quickPick.placeholder = "选择用于生成提交信息的 AI 模型";
+      quickPick.title = locManager.getMessage("ai.model.picker.title");
+      quickPick.placeholder = locManager.getMessage(
+        "ai.model.picker.placeholder"
+      );
       quickPick.ignoreFocusOut = true;
 
       const result = await new Promise<vscode.QuickPickItem | undefined>(

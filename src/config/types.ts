@@ -6,8 +6,8 @@ export enum AIProvider {
 
 export const ConfigKeys = {
   // Language settings
-  AI_COMMIT_LANGUAGE: "dish-ai-commit.AI_COMMIT_LANGUAGE",
-  AI_COMMIT_SYSTEM_PROMPT: "dish-ai-commit.AI_COMMIT_SYSTEM_PROMPT",
+  COMMIT_LANGUAGE: "dish-ai-commit.commitLanguage",
+  SYSTEM_PROMPT: "dish-ai-commit.systemPrompt",
 
   PROVIDER: "dish-ai-commit.provider",
 
@@ -20,6 +20,9 @@ export const ConfigKeys = {
 
   // Ollama settings
   OLLAMA_BASE_URL: "dish-ai-commit.ollama.baseUrl",
+
+  // Merge commits setting
+  ALLOW_MERGE_COMMITS: "dish-ai-commit.allowMergeCommits",
 };
 
 // 创建一个类型，包含所有可能的配置键
@@ -41,6 +44,7 @@ export interface ExtensionConfiguration {
   vscode?: {
     model?: string;
   };
+  allowMergeCommits: boolean;
 }
 
 export function getProviderModelConfig(

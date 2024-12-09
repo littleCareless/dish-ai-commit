@@ -5,6 +5,7 @@
 用 AI 辅助生成规范的 Git/SVN 提交信息的 VSCode 扩展
 
 [报告错误][github-issues-link] · [请求功能][github-issues-link]
+
 <!-- SHIELD GROUP -->
 
 [![][github-contributors-shield]][github-contributors-link]
@@ -52,15 +53,15 @@
 
 ### 配置项
 
-| 配置项 | 类型 | 默认值 | 必填 |
-|--------|------|--------|------|
-| dish-ai-commit.AI_COMMIT_LANGUAGE | string | Simplified Chinese | 是 |
-| dish-ai-commit.AI_COMMIT_SYSTEM_PROMPT | string | "" | 否 |
-| dish-ai-commit.provider | string | OpenAI | 是 |
-| dish-ai-commit.model | string | gpt-3.5-turbo | 是 |
-| dish-ai-commit.openai.apiKey | string | - | 是 |
-| dish-ai-commit.openai.baseUrl | string | https://api.openai.com/v1 | 否 |
-| dish-ai-commit.ollama.baseUrl | string | http://localhost:11434 | 否 |
+| 配置项                        | 类型   | 默认值                    | 必填 |
+| ----------------------------- | ------ | ------------------------- | ---- |
+| dish-ai-commit.commitLanguage | string | Simplified Chinese        | 是   |
+| dish-ai-commit.systemPrompt   | string | ""                        | 否   |
+| dish-ai-commit.provider       | string | OpenAI                    | 是   |
+| dish-ai-commit.model          | string | gpt-3.5-turbo             | 是   |
+| dish-ai-commit.openai.apiKey  | string | -                         | 是   |
+| dish-ai-commit.openai.baseUrl | string | https://api.openai.com/v1 | 否   |
+| dish-ai-commit.ollama.baseUrl | string | http://localhost:11434    | 否   |
 
 ### 命令
 
@@ -178,8 +179,6 @@
 ## 📄 许可证
 
 该项目是 [MIT](./LICENSE) 许可证。
-
-
 
 <!-- LINK GROUP -->
 

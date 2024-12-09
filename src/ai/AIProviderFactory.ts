@@ -4,6 +4,7 @@ import { OllamaProvider } from "./providers/OllamaProvider";
 import { AIProvider, ConfigKeys } from "../config/types";
 import { ConfigurationManager } from "../config/ConfigurationManager";
 import { VSCodeProvider } from "./providers/VscodeProvider";
+import { LocalizationManager } from "../utils/LocalizationManager";
 
 export class AIProviderFactory {
   private static providers: Map<string, AIProviderInterface> = new Map();
@@ -29,7 +30,12 @@ export class AIProviderFactory {
           provider = new VSCodeProvider();
           break;
         default:
-          throw new Error(`Unknown AI provider type: ${type}`);
+          throw new Error(
+            LocalizationManager.getInstance().format(
+              "provider.type.unknown",
+              type
+            )
+          );
       }
       this.providers.set(providerType, provider);
     }

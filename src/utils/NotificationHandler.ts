@@ -1,46 +1,19 @@
 import * as vscode from "vscode";
-import { DISPLAY_NAME } from "../constants";
+import { LocalizationManager } from "./LocalizationManager";
 
-/**
- * 提供通用的通知功能
- */
 export class NotificationHandler {
-  /**
-   * 显示信息通知
-   */
-  static info(
-    message: string,
-    ...items: string[]
-  ): Thenable<string | undefined> {
-    return vscode.window.showInformationMessage(
-      `[${DISPLAY_NAME}]: ${message}`,
-      ...items
-    );
+  public static async info(key: string, ...args: any[]): Promise<void> {
+    const message = LocalizationManager.getInstance().format(key, ...args);
+    await vscode.window.showInformationMessage(message);
   }
 
-  /**
-   * 显示警告通知
-   */
-  static warn(
-    message: string,
-    ...items: string[]
-  ): Thenable<string | undefined> {
-    return vscode.window.showWarningMessage(
-      `[${DISPLAY_NAME}]: ${message}`,
-      ...items
-    );
+  public static async warn(key: string, ...args: any[]): Promise<void> {
+    const message = LocalizationManager.getInstance().format(key, ...args);
+    await vscode.window.showWarningMessage(message);
   }
 
-  /**
-   * 显示错误通知
-   */
-  static error(
-    message: string,
-    ...items: string[]
-  ): Thenable<string | undefined> {
-    return vscode.window.showErrorMessage(
-      `[${DISPLAY_NAME}]: ${message}`,
-      ...items
-    );
+  public static async error(key: string, ...args: any[]): Promise<void> {
+    const message = LocalizationManager.getInstance().format(key, ...args);
+    await vscode.window.showErrorMessage(message);
   }
 }

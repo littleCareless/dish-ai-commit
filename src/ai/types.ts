@@ -17,17 +17,36 @@ export interface AIResponse {
 }
 
 export interface AIRequestParams {
-  prompt: string;
+  diff: string;
   systemPrompt?: string;
-  model?: string;
+  model: AIModel;
   language?: string;
+  scm?: "git" | "svn"; // 新增SCM类型
+  allowMergeCommits?: boolean;
+  splitChangesInSingleFile?: boolean;
+}
+
+export interface AIModel<
+  Provider extends AIProviders = AIProviders,
+  Model extends AIModels<Provider> = AIModels<Provider>
+> {
+  readonly id: Model;
+  readonly name: string;
+  readonly maxTokens: { input: number; output: number };
+  readonly provider: {
+    id: Provider;
+    name: string;
+  };
+
+  readonly default?: boolean;
+  readonly hidden?: boolean;
 }
 
 export interface AIProvider {
   generateResponse(params: AIRequestParams): Promise<AIResponse>;
   isAvailable(): Promise<boolean>;
   refreshModels(): Promise<string[]>;
-  getModels(): Promise<string[]>;
+  getModels(): Promise<AIModel[]>; // 更新返回类型
   getName(): string;
   getId(): string;
 }
@@ -83,3 +102,20 @@ export type SupportedAIModels =
   | `github:${AIModels<"github">}`
   | `openai:${AIModels<"openai">}`
   | "vscode";
+
+export interface VSCodeModelInfo {
+  id: string;
+  family: string;
+  name: string;
+  vendor: string;
+  version: string;
+  maxTokens: number; // 新增maxTokens字段
+}
+
+export function getMaxCharacters(model: AIModel, outputLength: number): number {
+  const tokensPerCharacter = 3.1;
+  const max =
+    model.maxTokens.input * tokensPerCharacter -
+    outputLength / tokensPerCharacter;
+  return Math.floor(max - max * 0.1);
+}
