@@ -2,7 +2,7 @@
   "name": "dish-ai-commit",
   "displayName": "Dish AI Commit Gen",
   "description": "",
-  "version": "0.0.10",
+  "version": "0.0.8",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -220,9 +220,12 @@
     "@vscode/test-cli": "^0.0.9",
     "@vscode/test-electron": "^2.4.0",
     "commitizen": "^4.3.1",
+    "commitlint-config-gitmoji": "^2.3.1",
     "cz-conventional-changelog": "^3.3.0",
+    "cz-customizable": "^7.3.0",
     "eslint": "^8.57.0",
     "husky": "^8.0.0",
+    "lint-staged": "^15.2.10",
     "standard-version": "^9.5.0",
     "typescript": "^5.4.5"
   },
@@ -237,7 +240,44 @@
   "license": "MIT",
   "config": {
     "commitizen": {
-      "path": "./node_modules/cz-conventional-changelog"
+      "path": "node_modules/cz-customizable"
+    }
+  },
+  "lint-staged": {
+    "src/**/*.{ts}": "npm run lint"
+  },
+  "commitlint": {
+    "extends": [
+      "gitmoji"
+    ],
+    "rules": {
+      "header-max-length": [
+        2,
+        "always",
+        108
+      ],
+      "type-empty": [
+        2,
+        "never"
+      ],
+      "type-enum": [
+        2,
+        "always",
+        [
+          "✨ feat",
+          "🐛 fix",
+          "🎉 init",
+          "📚 docs",
+          "🎨 style",
+          "♻️ refactor",
+          "⚡ perf",
+          "✅ test",
+          "⏪ revert",
+          "🔧 chore",
+          "🔨 build",
+          "⚙️ ci"
+        ]
+      ]
     }
   }
 }

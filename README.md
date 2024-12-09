@@ -61,15 +61,19 @@ Supports 19 languages including:
 
 ### Configuration
 
-| Configuration                 | Type   | Default                   | Required |
-| ----------------------------- | ------ | ------------------------- | -------- |
-| dish-ai-commit.commitLanguage | string | Simplified Chinese        | Yes      |
-| dish-ai-commit.systemPrompt   | string | ""                        | No       |
-| dish-ai-commit.provider       | string | OpenAI                    | Yes      |
-| dish-ai-commit.model          | string | gpt-3.5-turbo             | Yes      |
-| dish-ai-commit.openai.apiKey  | string | -                         | Yes      |
-| dish-ai-commit.openai.baseUrl | string | https://api.openai.com/v1 | No       |
-| dish-ai-commit.ollama.baseUrl | string | http://localhost:11434    | No       |
+| Configuration                                   | Type    | Default                   | Description                                         |
+| ----------------------------------------------- | ------- | ------------------------- | --------------------------------------------------- |
+| dish-ai-commit.commitLanguage                   | string  | Simplified Chinese        | Commit message language                             |
+| dish-ai-commit.systemPrompt                     | string  | ""                        | Custom system prompt for generating commit messages |
+| dish-ai-commit.provider                         | string  | OpenAI                    | Default AI provider                                 |
+| dish-ai-commit.model                            | string  | gpt-3.5-turbo             | AI model selection                                  |
+| dish-ai-commit.openai.apiKey                    | string  | -                         | OpenAI API key                                      |
+| dish-ai-commit.openai.baseUrl                   | string  | https://api.openai.com/v1 | OpenAI API base URL                                 |
+| dish-ai-commit.ollama.baseUrl                   | string  | http://localhost:11434    | Ollama API base URL                                 |
+| dish-ai-commit.enableDiffSimplification         | boolean | false                     | Enable diff content simplification                  |
+| dish-ai-commit.diffSimplification.maxLineLength | number  | 120                       | Maximum line length after simplification            |
+| dish-ai-commit.diffSimplification.contextLines  | number  | 3                         | Number of context lines to preserve                 |
+| dish-ai-commit.allowMergeCommits                | boolean | false                     | Allow merging multiple file changes into one commit |
 
 ### Commands
 

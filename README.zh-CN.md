@@ -53,15 +53,19 @@
 
 ### 配置项
 
-| 配置项                        | 类型   | 默认值                    | 必填 |
-| ----------------------------- | ------ | ------------------------- | ---- |
-| dish-ai-commit.commitLanguage | string | Simplified Chinese        | 是   |
-| dish-ai-commit.systemPrompt   | string | ""                        | 否   |
-| dish-ai-commit.provider       | string | OpenAI                    | 是   |
-| dish-ai-commit.model          | string | gpt-3.5-turbo             | 是   |
-| dish-ai-commit.openai.apiKey  | string | -                         | 是   |
-| dish-ai-commit.openai.baseUrl | string | https://api.openai.com/v1 | 否   |
-| dish-ai-commit.ollama.baseUrl | string | http://localhost:11434    | 否   |
+| 配置项                                          | 类型    | 默认值                    | 说明                                       |
+| ----------------------------------------------- | ------- | ------------------------- | ------------------------------------------ |
+| dish-ai-commit.commitLanguage                   | string  | Simplified Chinese        | 提交信息语言                               |
+| dish-ai-commit.systemPrompt                     | string  | ""                        | 自定义生成提交信息的系统提示               |
+| dish-ai-commit.provider                         | string  | OpenAI                    | 默认的 AI 提供商                           |
+| dish-ai-commit.model                            | string  | gpt-3.5-turbo             | AI 模型选择                                |
+| dish-ai-commit.openai.apiKey                    | string  | -                         | OpenAI API 密钥                            |
+| dish-ai-commit.openai.baseUrl                   | string  | https://api.openai.com/v1 | OpenAI API 基础 URL                        |
+| dish-ai-commit.ollama.baseUrl                   | string  | http://localhost:11434    | Ollama API 基础 URL                        |
+| dish-ai-commit.enableDiffSimplification         | boolean | false                     | 启用 diff 内容简化功能                     |
+| dish-ai-commit.diffSimplification.maxLineLength | number  | 120                       | 简化后每行的最大长度                       |
+| dish-ai-commit.diffSimplification.contextLines  | number  | 3                         | 保留上下文行数                             |
+| dish-ai-commit.allowMergeCommits                | boolean | false                     | 是否允许将多个文件的变更合并为一条提交信息 |
 
 ### 命令
 
