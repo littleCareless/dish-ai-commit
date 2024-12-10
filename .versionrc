@@ -55,7 +55,7 @@
   "skip": {
     "bump": false,
     "changelog": false,
-    "commit": false,
+    "commit": true,
     "tag": false
   }
 }

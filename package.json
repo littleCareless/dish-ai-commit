@@ -136,6 +136,18 @@
           "default": "https://api.openai.com/v1",
           "description": "OpenAI API 基础 URL"
         },
+        "dish-ai-commit.zhipuai.apiKey": {
+          "type": "string",
+          "description": "智谱 AI API 密钥"
+        },
+        "dish-ai-commit.dashscope.apiKey": {
+          "type": "string",
+          "description": "DashScope API 密钥"
+        },
+        "dish-ai-commit.doubao.apiKey": {
+          "type": "string",
+          "description": "豆包 API 密钥"
+        },
         "dish-ai-commit.ollama.baseUrl": {
           "type": "string",
           "default": "http://localhost:11434",
