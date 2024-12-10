@@ -8,18 +8,23 @@ export class ProgressHandler {
   static async withProgress<T>(
     title: string,
     task: (
-      progress: vscode.Progress<{ message?: string; increment?: number }>
+      progress: vscode.Progress<{ message?: string; increment?: number }>,
+      token: vscode.CancellationToken
     ) => Promise<T>
   ): Promise<T> {
     return vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification,
         title: `[${DISPLAY_NAME}]: ${title}`,
-        cancellable: false,
+        cancellable: true,
       },
-      async (progress) => {
-        // progress.report({ increment: 0 });
-        return await task(progress);
+      async (progress, token) => {
+        try {
+          return await task(progress, token);
+        } catch (error) {
+          console.error(`Progress task failed:`, error);
+          throw error;
+        }
       }
     );
   }

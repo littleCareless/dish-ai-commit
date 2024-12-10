@@ -55,10 +55,27 @@ export class LocalizationManager {
   }
 
   public format(key: string, ...args: any[]): string {
-    let message = this.getMessage(key);
-    args.forEach((arg, index) => {
-      message = message.replace(`{${index}}`, arg.toString());
-    });
-    return message;
+    try {
+      let message = this.getMessage(key);
+      if (!message) {
+        console.warn(`Missing localization key: ${key}`);
+        return key;
+      }
+
+      args.forEach((arg, index) => {
+        const value = arg?.toString() ?? "";
+        message = message.replace(`{${index}}`, value);
+      });
+      return message;
+    } catch (error) {
+      console.error(`Error formatting message for key ${key}:`, error);
+      return key;
+    }
+  }
+
+  // 添加新方法用于验证所有翻译键是否存在
+  public validateMessages(keys: string[]): string[] {
+    const missingKeys = keys.filter((key) => !this.messages[key]);
+    return missingKeys;
   }
 }

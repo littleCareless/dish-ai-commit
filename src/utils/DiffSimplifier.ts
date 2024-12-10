@@ -1,14 +1,31 @@
 import * as vscode from "vscode";
 
 export class DiffSimplifier {
+  private static configCache: {
+    enabled: boolean;
+    contextLines: number;
+    maxLineLength: number;
+  } | null = null;
+
   private static getConfig() {
+    if (this.configCache) {
+      return this.configCache;
+    }
+
     const config = vscode.workspace.getConfiguration("dish-ai-commit");
-    return {
-      enabled: config.get<boolean>("enableDiffSimplification") || false,
-      contextLines: config.get<number>("diffSimplification.contextLines") || 3,
+    this.configCache = {
+      enabled: config.get<boolean>("enableDiffSimplification") ?? false,
+      contextLines: config.get<number>("diffSimplification.contextLines") ?? 3,
       maxLineLength:
-        config.get<number>("diffSimplification.maxLineLength") || 120,
+        config.get<number>("diffSimplification.maxLineLength") ?? 120,
     };
+
+    return this.configCache;
+  }
+
+  // 添加配置更新方法
+  static clearConfigCache() {
+    this.configCache = null;
   }
 
   private static readonly CONTEXT_LINES = 3;
@@ -60,10 +77,12 @@ export class DiffSimplifier {
     return simplified.join("\n");
   }
 
+  // 优化 truncateLine 方法
   private static truncateLine(line: string, maxLength: number): string {
-    if (line.length <= maxLength) {
+    if (!line || line.length <= maxLength) {
       return line;
     }
-    return line.substring(0, maxLength - 3) + "...";
+    const ellipsis = "...";
+    return `${line.substring(0, maxLength - ellipsis.length)}${ellipsis}`;
   }
 }
