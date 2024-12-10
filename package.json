@@ -1,8 +1,8 @@
 {
   "name": "dish-ai-commit",
   "displayName": "Dish AI Commit Gen",
-  "description": "",
-  "version": "0.0.9",
+  "description": "Use AI to assist in generating standardized Git/SVN submission information VSCode extensions. Support OpenAI, Olama, and VSCode built-in AI services.",
+  "version": "0.1.0",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -219,7 +219,8 @@
     "test": "vscode-test",
     "prepare": "husky install",
     "commit": "git add . && git-cz",
-    "release": "standard-version"
+    "release": "standard-version --preset gitmoji-config",
+    "changelog": "conventional-changelog -i CHANGELOG.md -s -r 0"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.0",
@@ -233,6 +234,7 @@
     "@vscode/test-electron": "^2.4.0",
     "commitizen": "^4.3.1",
     "commitlint-config-gitmoji": "^2.3.1",
+    "conventional-changelog-gitmoji-config": "^1.5.2",
     "cz-conventional-changelog": "^3.3.0",
     "cz-customizable": "^7.3.0",
     "eslint": "^8.57.0",

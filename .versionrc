@@ -1,55 +1,55 @@
 {
-  "header": "# 更新记录 \n\n",
+  "header": "# Changelog \n\n[English](CHANGELOG.md) | [简体中文](CHANGELOG.zh-CN.md) \n\nAll notable changes to this project will be documented in this file. \n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。",
   "types": [
     {
       "type": "feat",
-      "section": "✨ Features | 新功能"
+      "section": "✨ Features"
     },
     {
       "type": "fix",
-      "section": "🐛 Bug Fixes | Bug 修复"
+      "section": "🐛 Bug Fixes"
     },
     {
       "type": "init",
-      "section": "🎉 Init | 初始化"
+      "section": "🎉 Init"
     },
     {
       "type": "docs",
-      "section": "📝 Documentation | 文档"
+      "section": "📝 Documentation"
     },
     {
       "type": "style",
-      "section": "💄 Styles | 风格",
+      "section": "💄 Styles",
       "hidden": true
     },
     {
       "type": "refactor",
-      "section": "♻️ Code Refactoring | 代码重构"
+      "section": "♻️ Code Refactoring"
     },
     {
       "type": "perf",
-      "section": "⚡ Performance Improvements | 性能优化"
+      "section": "⚡ Performance Improvements"
     },
     {
       "type": "test",
-      "section": "✅ Tests | 测试"
+      "section": "✅ Tests"
     },
     {
       "type": "revert",
-      "section": "⏪ Revert | 回退",
+      "section": "⏪ Revert",
       "hidden": true
     },
     {
       "type": "build",
-      "section": "📦‍ Build System | 打包构建"
+      "section": "📦‍ Build System"
     },
     {
       "type": "chore",
-      "section": "🚀 Chore | 部署相关"
+      "section": "🚀 Chore"
     },
     {
       "type": "ci",
-      "section": "👷 Continuous Integration | CI/CD 配置"
+      "section": "👷 Continuous Integration"
     }
   ],
   "skip": {
