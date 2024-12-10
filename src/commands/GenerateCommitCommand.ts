@@ -9,6 +9,7 @@ import { getProviderModelConfig } from "../config/types";
 import { DISPLAY_NAME } from "../constants";
 import { getMaxCharacters } from "../ai/types";
 import { LocalizationManager } from "../utils/LocalizationManager";
+import { ModelPickerService } from "../services/ModelPickerService";
 
 export class GenerateCommitCommand extends BaseCommand {
   private async showConfigWizard(): Promise<boolean> {
@@ -135,12 +136,38 @@ export class GenerateCommitCommand extends BaseCommand {
     return { provider: modelSelection.provider, model: modelSelection.model };
   }
 
-  async execute(resources: vscode.SourceControlResourceState[]): Promise<void> {
-    const locManager = LocalizationManager.getInstance();
+  private async handleConfiguration(): Promise<
+    { provider: string; model: string } | undefined
+  > {
     if (!(await this.ensureConfiguration()) || !(await this.validateConfig())) {
       return;
     }
 
+    const config = ConfigurationManager.getInstance();
+    const configuration = config.getConfiguration();
+    let { provider, model } = configuration;
+
+    if (!provider || !model) {
+      const result = await this.selectAndUpdateModelConfiguration(
+        provider,
+        model
+      );
+      if (!result) {
+        return;
+      }
+      return result;
+    }
+
+    return { provider, model };
+  }
+
+  async execute(resources: vscode.SourceControlResourceState[]): Promise<void> {
+    const configResult = await this.handleConfiguration();
+    if (!configResult) {
+      return;
+    }
+
+    const locManager = LocalizationManager.getInstance();
     try {
       // 检测当前 SCM 类型
       const scmProvider = await SCMFactory.detectSCM();
@@ -160,24 +187,6 @@ export class GenerateCommitCommand extends BaseCommand {
 
       // 如果没有配置提供商或模型，提示用户选择
       if (!provider || !model) {
-        // const modelSelection = await this.showModelPicker(
-        //   provider || "Ollama",
-        //   model || "Ollama"
-        // );
-
-        // if (!modelSelection) {
-        //   return;
-        // }
-
-        // // 使用新的封装方法更新配置
-        // await config.updateAIConfiguration(
-        //   modelSelection.provider,
-        //   modelSelection.model
-        // );
-
-        // provider = modelSelection.provider;
-        // model = modelSelection.model;
-
         const { provider: newProvider, model: newModel } =
           await this.selectAndUpdateModelConfiguration(provider, model);
 
@@ -244,12 +253,13 @@ export class GenerateCommitCommand extends BaseCommand {
       }
       if (response?.content) {
         try {
-          // 统一使用 setCommitInput 写入提交信息
           await scmProvider.setCommitInput(response.content);
           await NotificationHandler.info(
             locManager.format(
               "commit.message.generated",
-              scmProvider.type.toUpperCase()
+              scmProvider.type.toUpperCase(),
+              provider,
+              model
             )
           );
         } catch (error) {
@@ -312,68 +322,7 @@ export class GenerateCommitCommand extends BaseCommand {
     ];
   }
 
-  private async showModelPicker(
-    currentProvider: string,
-    currentModel: string
-  ): Promise<{ provider: string; model: string } | undefined> {
-    const locManager = LocalizationManager.getInstance();
-    try {
-      const providers = AIProviderFactory.getAllProviders();
-      const modelsMap = new Map<string, string[]>();
-
-      await Promise.all(
-        providers.map(async (provider) => {
-          if (await provider.isAvailable()) {
-            const models = await provider.getModels();
-            modelsMap.set(
-              provider.getName(),
-              models.map((model) => model.name)
-            );
-          }
-        })
-      );
-
-      const items: vscode.QuickPickItem[] = [];
-      for (const [provider, models] of modelsMap) {
-        items.push({
-          label: provider,
-          kind: vscode.QuickPickItemKind.Separator,
-        });
-        models.forEach((model) => {
-          items.push({
-            label: model,
-            description: provider,
-            picked: provider === currentProvider && model === currentModel,
-          });
-        });
-      }
-
-      const quickPick = vscode.window.createQuickPick();
-      quickPick.items = items;
-      quickPick.title = locManager.getMessage("ai.model.picker.title");
-      quickPick.placeholder = locManager.getMessage(
-        "ai.model.picker.placeholder"
-      );
-      quickPick.ignoreFocusOut = true;
-
-      const result = await new Promise<vscode.QuickPickItem | undefined>(
-        (resolve) => {
-          quickPick.onDidAccept(() => resolve(quickPick.selectedItems[0]));
-          quickPick.onDidHide(() => resolve(undefined));
-          quickPick.show();
-        }
-      );
-
-      quickPick.dispose();
-
-      if (result && result.description) {
-        return { provider: result.description, model: result.label };
-      }
-      return undefined;
-    } catch (error) {
-      console.error("获取模型列表失败:", error);
-      await NotificationHandler.error("获取模型列表失败");
-      return undefined;
-    }
+  private async showModelPicker(currentProvider: string, currentModel: string) {
+    return ModelPickerService.showModelPicker(currentProvider, currentModel);
   }
 }
