@@ -23,7 +23,7 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-用 AI 辅助生成规范的 Git/SVN 提交信息的 VSCode 扩展。支持 OpenAI、Ollama 和 VSCode 内置 AI 服务。
+用 AI 辅助生成规范的 Git/SVN 提交信息的 VSCode 扩展。支持 OpenAI、Ollama、VSCode 内置 AI 服务、智谱 AI、DashScope 和 豆包 AI。
 
 ## 功能特性
 
@@ -32,6 +32,9 @@
 - OpenAI API 支持 (GPT-3.5/GPT-4/Other)
 - Ollama 本地模型支持
 - VSCode 内置 AI 支持
+- 智谱 AI 支持
+- DashScope 支持
+- 豆包 AI 支持
 
 ### 📝 版本控制系统支持
 
@@ -61,6 +64,9 @@
 | dish-ai-commit.model                            | string  | gpt-3.5-turbo             | AI 模型选择                                |
 | dish-ai-commit.openai.apiKey                    | string  | -                         | OpenAI API 密钥                            |
 | dish-ai-commit.openai.baseUrl                   | string  | https://api.openai.com/v1 | OpenAI API 基础 URL                        |
+| dish-ai-commit.zhipuai.apiKey                   | string  | -                         | 智谱 AI API 密钥                           |
+| dish-ai-commit.dashscope.apiKey                 | string  | -                         | DashScope API 密钥                         |
+| dish-ai-commit.doubao.apiKey                    | string  | -                         | 豆包 API 密钥                              |
 | dish-ai-commit.ollama.baseUrl                   | string  | http://localhost:11434    | Ollama API 基础 URL                        |
 | dish-ai-commit.enableDiffSimplification         | boolean | false                     | 启用 diff 内容简化功能                     |
 | dish-ai-commit.diffSimplification.maxLineLength | number  | 120                       | 简化后每行的最大长度                       |
@@ -117,22 +123,7 @@
 
 ## 📝 更新日志
 
-查看 [CHANGELOG.md](CHANGELOG.md) 了解详细的版本更新历史。
-
-## 🤝 贡献指南
-
-我们欢迎所有形式的贡献，包括但不限于：
-
-- 提交 Issue 报告 bug
-- 提出新功能建议
-- 提交 Pull Request 改进代码
-- 完善文档
-
-请确保在提交 PR 之前：
-
-1. 代码经过测试
-2. 更新相关文档
-3. 遵循项目代码规范
+查看 [CHANGELOG.zh-CN.md](CHANGELOG.zh-CN.md) 了解详细的版本更新历史。
 
 ## 📋 依赖要求
 
@@ -144,15 +135,46 @@
 ## 💡 常见问题
 
 - 确保 SVN 命令行工具已正确安装并可访问
+- 确保 SVN SCM 扩展已正确安装并启用
 - 配置正确的 AI 服务参数
 - 确保网络可以访问选择的 AI 服务
 
 ## 🛠️ 开发指南
 
-1. 克隆仓库
-2. 运行 `npm install` 安装依赖
-3. 运行 `npm run compile` 编译代码
-4. 按 `F5` 启动调试
+可以使用 Github Codespaces 进行在线开发：
+
+[![github-codespace][github-codespace-shield]][github-codespace-link]
+
+或者，可以克隆存储库并运行以下命令进行本地开发：
+
+```bash
+$ git clone https://github.com/littleCareless/dish-ai-commit
+$ cd ai-commit
+$ npm install
+```
+
+在 VSCode 中打开项目文件夹。按 F5 键运行项目。会弹出一个新的 Extension Development Host 窗口，并在其中启动插件。
+
+## 🤝 贡献指南
+
+我们欢迎所有形式的贡献，包括但不限于：
+
+- 提交 [Issues][github-issues-link] 报告 bug
+- 提出新功能建议
+- 提交 Pull Request 改进代码
+- 完善文档
+
+请确保在提交 PR 之前：
+
+1. 代码经过测试
+2. 更新相关文档
+3. 遵循项目代码规范
+
+[![][pr-welcome-shield]][pr-welcome-link]
+
+### 💗 感谢我们的贡献者
+
+[![][github-contrib-shield]][github-contrib-link]
 
 ### 功能特性（补充）
 
@@ -166,10 +188,7 @@
        允许用户自定义提交信息的模板格式（如：包括关联的 Jira 票号、功能描述等），AI 会根据模板生成符合要求的提交信息。
 
 - [ ] **⚙️ 深度配置选项**  
-       提供更多的配置项，比如是否启用 AI 生成的建议，生成提交信息的详细程度，是否自动修改现有提交信息等。
-
-- [ ] **🔒 安全性功能**  
-       加密存储 API 密钥，确保敏感信息不被泄露，并提供额外的身份验证机制来提高安全性。
+       提供更多的配置项，比如是否启用 AI 生成的建议，生成提交信息的详细程度，是否自动修改现有提交信息, 是否要添加 emoji 等。
 
 ## 🙏 致谢
 

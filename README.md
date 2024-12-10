@@ -23,7 +23,7 @@ A VSCode extension for generating standardized Git/SVN commit messages using AI
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-A VSCode extension for generating standardized Git/SVN commit messages using AI. Supports OpenAI, Ollama, and VSCode built-in AI services.
+A VSCode extension for generating standardized Git/SVN commit messages using AI. Supports OpenAI, Ollama, VSCode built-in AI services, Zhipu AI, DashScope, and Doubao AI.
 
 ## Features
 
@@ -32,6 +32,9 @@ A VSCode extension for generating standardized Git/SVN commit messages using AI.
 - OpenAI API support (GPT-3.5/GPT-4/Other)
 - Ollama local model support
 - VSCode built-in AI support
+- Zhipu AI support
+- DashScope support
+- Doubao AI support
 
 ### 📝 Version Control System Support
 
@@ -42,9 +45,9 @@ A VSCode extension for generating standardized Git/SVN commit messages using AI.
 
 Supports 19 languages including:
 
-- English
 - Simplified Chinese
 - Traditional Chinese
+- English
 - Japanese
 - Korean
 
@@ -69,6 +72,9 @@ Supports 19 languages including:
 | dish-ai-commit.model                            | string  | gpt-3.5-turbo             | AI model selection                                  |
 | dish-ai-commit.openai.apiKey                    | string  | -                         | OpenAI API key                                      |
 | dish-ai-commit.openai.baseUrl                   | string  | https://api.openai.com/v1 | OpenAI API base URL                                 |
+| dish-ai-commit.zhipuai.apiKey                   | string  | -                         | Zhipu AI API key                                    |
+| dish-ai-commit.dashscope.apiKey                 | string  | -                         | DashScope API key                                   |
+| dish-ai-commit.doubao.apiKey                    | string  | -                         | Doubao API key                                      |
 | dish-ai-commit.ollama.baseUrl                   | string  | http://localhost:11434    | Ollama API base URL                                 |
 | dish-ai-commit.enableDiffSimplification         | boolean | false                     | Enable diff content simplification                  |
 | dish-ai-commit.diffSimplification.maxLineLength | number  | 120                       | Maximum line length after simplification            |
@@ -80,15 +86,105 @@ Supports 19 languages including:
 - `Generate Commit Message`: Generate commit message based on current changes
 - `Select AI Model`: Choose the AI model to use
 
-## Configuration Guide
+## Configuration Instructions
 
 1. OpenAI Configuration
 
-## 🛠️ Local Development
+```json
+{
+  "dish-ai-commit.PROVIDER": "openai",
+  "dish-ai-commit.OPENAI_API_KEY": "your-api-key",
+  "dish-ai-commit.OPENAI_BASE_URL": "https://api.openai.com/v1"
+}
+```
 
-You can follow these steps for local development:
+2. Ollama onfiguration
 
-1. Clone the repository
+```json
+{
+  "dish-ai-commit.PROVIDER": "ollama",
+  "dish-ai-commit.OLLAMA_BASE_URL": "http://localhost:11434"
+}
+```
+
+3. VSCode onfiguration
+
+```json
+{
+  "dish-ai-commit.PROVIDER": "vscode"
+}
+```
+
+## 📋 How to use
+
+- Select the file to be submitted from the source code manager
+- Click the "Dish AI Commit" icon in the source code manager title bar
+- Or execute the "Dish AI Commit" command in the command panel
+- AI will automatically generate a submission message that meets the specifications
+
+## 📥 Install
+
+1. Search "Dish AI Commit" from the VS Code extension market
+2. Click to install
+3. Restart VS Code
+4. Configure AI service parameters according to actual needs
+
+## 📝 Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a detailed version history.
+
+## 📋 Dependency Requirements
+
+- VS Code 1.80.0+
+- [SVN command line tool](http://subversion.apache.org/packages.html)
+- SVN SCM (optional) - To enter commit information in the SCM input box of VSCode, please install [SVN SCM v2.18.1+](https://github.com/littleCareless/svn-scm/releases/tag/v2.18.1)
+- Valid AI service configuration (OpenAI API Key or Ollama service)
+
+## 💡 Frequently asked questions
+
+- Ensure that the SVN command line tool is correctly installed and accessible
+- Ensure that the SVN SCM extension is correctly installed and enabled
+- Configure the correct AI service parameters
+- Ensure that the network can access the selected AI service
+
+## 🛠️ Development Guide
+
+You can use Github Codespaces for online development:
+
+[![github-codespace][github-codespace-shield]][github-codespace-link]
+
+Alternatively, you can clone the repository and run the following command for local development:
+
+```bash
+$ git clone https://github.com/littleCareless/dish-ai-commit
+$ cd ai-commit
+$ npm install
+```
+
+Open the project folder in VSCode. Press F5 to run the project. A new Extension Development Host window will pop up and start the extension.
+
+## 🤝 Contribution Guidelines
+
+We welcome all forms of contributions, including but not limited to:
+
+- Submit [Issues][github-issues-link] to report bugs
+- Propose new features
+- Submit Pull Request to improve the code
+- Improve the documentation
+
+Please make sure before submitting a PR:
+
+1. The code has been tested
+
+2. Update the relevant documents
+
+3. Follow the project code specifications
+
+[![][pr-welcome-shield]][pr-welcome-link]
+
+### 💗 Thanks to our contributors
+
+[![][github-contrib-shield]][github-contrib-link]
 
 ## 🙏 Acknowledgments
 
