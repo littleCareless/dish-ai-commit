@@ -11,6 +11,7 @@ import { NotificationHandler } from "../../utils/NotificationHandler";
 import { generateCommitMessageSystemPrompt } from "../../prompt/prompt";
 import { DEFAULT_CONFIG } from "../../config/default";
 import { LocalizationManager } from "../../utils/LocalizationManager";
+import { generateWithRetry, getSystemPrompt } from "../utils/generateHelper";
 
 export class OllamaProvider implements AIProvider {
   private ollama: Ollama;
@@ -53,13 +54,9 @@ export class OllamaProvider implements AIProvider {
   }
 
   async generateResponse(params: AIRequestParams): Promise<AIResponse> {
-    let retries = 0;
-    const maxRetries = 2;
-    let maxInputLength = 4096; // Ollama默认context window
-
-    while (true) {
-      try {
-        const truncatedPrompt = params.diff.substring(0, maxInputLength);
+    return generateWithRetry(
+      params,
+      async (truncatedDiff) => {
         const model =
           params.model ||
           ConfigurationManager.getInstance().getConfig<string>("MODEL");
@@ -69,31 +66,15 @@ export class OllamaProvider implements AIProvider {
           messages: [
             {
               role: "system",
-              content:
-                params.systemPrompt ||
-                generateCommitMessageSystemPrompt(
-                  params.language || DEFAULT_CONFIG.language,
-                  params.allowMergeCommits || false,
-                  params.splitChangesInSingleFile || false,
-                  params.scm || "git"
-                ),
+              content: getSystemPrompt(params),
             },
             {
               role: "user",
-              content: truncatedPrompt,
+              content: truncatedDiff,
             },
           ],
           stream: false,
         });
-
-        // 如果原始prompt被截断，发出警告
-        if (params.diff.length > maxInputLength) {
-          NotificationHandler.warn(
-            LocalizationManager.getInstance().getMessage(
-              "ollama.input.truncated"
-            )
-          );
-        }
 
         let content = "";
         try {
@@ -109,24 +90,12 @@ export class OllamaProvider implements AIProvider {
             totalTokens: response.total_duration,
           },
         };
-      } catch (error: any) {
-        if (
-          retries < maxRetries &&
-          error.message?.includes("context length exceeded")
-        ) {
-          retries++;
-          maxInputLength = Math.floor(maxInputLength * 0.8); // 减少20%的输入长度
-          continue;
-        }
-
-        const errorMessage = LocalizationManager.getInstance().format(
-          "ollama.generation.failed",
-          error
-        );
-        NotificationHandler.error(errorMessage);
-        throw new Error(errorMessage);
+      },
+      {
+        initialMaxLength: 4096,
+        provider: this.getId(),
       }
-    }
+    );
   }
 
   async isAvailable(): Promise<boolean> {

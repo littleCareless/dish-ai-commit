@@ -64,14 +64,13 @@ export class VSCodeProvider implements AIProvider {
         console.log("messages", messages);
 
         try {
-          const response = await chatModel.sendRequest(messages);
-
           if (params.diff.length > maxCodeCharacters) {
-            // 显示截断警告
             console.warn(
-              `Diff内容超过最大字符数${maxCodeCharacters}，已被截断`
+              LocalizationManager.getInstance().getMessage("input.truncated")
             );
           }
+
+          const response = await chatModel.sendRequest(messages);
 
           let result = "";
           for await (const fragment of response.text) {
@@ -99,15 +98,19 @@ export class VSCodeProvider implements AIProvider {
           }
 
           throw new Error(
-            `VSCode AI生成失败: (${this.provider.name}:${ex.code}) ${message}`
+            LocalizationManager.getInstance().format(
+              "vscode.generation.failed",
+              message
+            )
           );
         }
       }
     } catch (error) {
       throw new Error(
-        `VSCode AI生成失败: ${
+        LocalizationManager.getInstance().format(
+          "vscode.generation.failed",
           error instanceof Error ? error.message : String(error)
-        }`
+        )
       );
     }
   }

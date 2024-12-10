@@ -5,19 +5,34 @@ import { AIProvider, ConfigKeys } from "../config/types";
 import { ConfigurationManager } from "../config/ConfigurationManager";
 import { VSCodeProvider } from "./providers/VscodeProvider";
 import { LocalizationManager } from "../utils/LocalizationManager";
+import { ZhipuAIProvider } from "./providers/ZhipuAIProvider";
+import { DashScopeProvider } from "./providers/DashScopeProvider";
+import { DoubaoProvider } from "./providers/DoubaoProvider";
 
 export class AIProviderFactory {
   private static providers: Map<string, AIProviderInterface> = new Map();
+  private static readonly PROVIDER_CACHE_TTL = 1000 * 60 * 30; // 30分钟缓存
+  private static providerTimestamps: Map<string, number> = new Map();
+
+  private static cleanStaleProviders() {
+    const now = Date.now();
+    for (const [id, timestamp] of this.providerTimestamps.entries()) {
+      if (now - timestamp > this.PROVIDER_CACHE_TTL) {
+        this.providers.delete(id);
+        this.providerTimestamps.delete(id);
+      }
+    }
+  }
 
   public static getProvider(type?: string): AIProviderInterface {
-    // 如果未指定类型，使用默认提供商
+    this.cleanStaleProviders();
     const providerType =
       type ||
       ConfigurationManager.getInstance().getConfig<string>("PROVIDER") ||
       AIProvider.OPENAI;
 
     let provider = this.providers.get(providerType);
-    console.log("provider", providerType);
+
     if (!provider) {
       switch (providerType.toLowerCase()) {
         case AIProvider.OPENAI:
@@ -29,6 +44,15 @@ export class AIProviderFactory {
         case AIProvider.VSCODE:
           provider = new VSCodeProvider();
           break;
+        case AIProvider.ZHIPU:
+          provider = new ZhipuAIProvider();
+          break;
+        case AIProvider.DASHSCOPE:
+          provider = new DashScopeProvider();
+          break;
+        case AIProvider.DOUBAO:
+          provider = new DoubaoProvider();
+          break;
         default:
           throw new Error(
             LocalizationManager.getInstance().format(
@@ -38,14 +62,21 @@ export class AIProviderFactory {
           );
       }
       this.providers.set(providerType, provider);
+      this.providerTimestamps.set(providerType, Date.now());
     }
 
     return provider;
   }
 
   public static getAllProviders(): AIProviderInterface[] {
-    // 返回所有可用的 AI Provider 实例
-    return [new OpenAIProvider(), new OllamaProvider(), new VSCodeProvider()];
+    return [
+      new OpenAIProvider(),
+      new OllamaProvider(),
+      new VSCodeProvider(),
+      new ZhipuAIProvider(),
+      new DashScopeProvider(),
+      new DoubaoProvider(),
+    ];
   }
 
   public static reinitializeProvider(providerId: string): void {

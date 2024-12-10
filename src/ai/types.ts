@@ -1,3 +1,5 @@
+import type { AIGenerationErrorType } from "./utils/generateHelper";
+
 export interface AIRequestOptions {
   prompt: string;
   systemPrompt?: string;
@@ -26,6 +28,13 @@ export interface AIRequestParams {
   splitChangesInSingleFile?: boolean;
 }
 
+// 添加通用错误处理接口
+export interface AIError extends Error {
+  code: string;
+  type: AIGenerationErrorType;
+  retryable: boolean;
+}
+
 export interface AIModel<
   Provider extends AIProviders = AIProviders,
   Model extends AIModels<Provider> = AIModels<Provider>
@@ -40,6 +49,14 @@ export interface AIModel<
 
   readonly default?: boolean;
   readonly hidden?: boolean;
+  readonly capabilities?: {
+    streaming?: boolean;
+    functionCalling?: boolean;
+  };
+  readonly cost?: {
+    input: number;
+    output: number;
+  };
 }
 
 export interface AIProvider {
@@ -88,7 +105,48 @@ export type OpenAIModels =
 
 export type VSCodeAIModels = `${string}:${string}`;
 
-export type AIProviders = "anthropic" | "github" | "openai" | "vscode";
+export type ZhipuAIModels =
+  | "glm-4-plus" // 最强大通用模型
+  | "glm-4-0520" // 最新基础版本
+  | "glm-4" // 基础通用版本
+  | "glm-4-air" // 轻量快速版本
+  | "glm-4-airx" // 轻量增强版本
+  | "glm-4-long" // 长文本版本
+  | "glm-4-flashx" // 快速版本增强
+  | "glm-4-flash"; // 快速版本基础
+
+export type DashScopeModels =
+  | "qwen-max"
+  | "qwen-max-latest"
+  | "qwen-plus"
+  | "qwen-plus-latest"
+  | "qwen-turbo"
+  | "qwen-turbo-latest"
+  | "qwen-coder-turbo" // 稳定版本
+  | "qwen-coder-turbo-latest"; // 最新版本
+
+export type DoubaoModels =
+  | "doubao-lite-4k"
+  | "doubao-lite-character"
+  | "doubao-lite-32k"
+  | "doubao-lite-128k"
+  | "doubao-pro-4k"
+  | "doubao-pro-character"
+  | "doubao-pro-functioncall"
+  | "doubao-pro-32k"
+  | "doubao-pro-128k"
+  | "doubao-pro-256k"
+  | "doubao-vision-pro-32k";
+
+export type AIProviders =
+  | "anthropic"
+  | "github"
+  | "openai"
+  | "vscode"
+  | "zhipu"
+  | "dashscope"
+  | "doubao"; // 添加doubao
+
 export type AIModels<Provider extends AIProviders = AIProviders> =
   Provider extends "github"
     ? GitHubModels
@@ -96,6 +154,12 @@ export type AIModels<Provider extends AIProviders = AIProviders> =
     ? OpenAIModels
     : Provider extends "vscode"
     ? VSCodeAIModels
+    : Provider extends "zhipu"
+    ? ZhipuAIModels
+    : Provider extends "dashscope"
+    ? DashScopeModels
+    : Provider extends "doubao"
+    ? DoubaoModels
     : OpenAIModels;
 
 export type SupportedAIModels =
