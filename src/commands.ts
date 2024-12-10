@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { COMMANDS } from "./constants";
 import { GenerateCommitCommand } from "./commands/GenerateCommitCommand";
 import { SelectModelCommand } from "./commands/SelectModelCommand";
+import { NotificationHandler } from "./utils/NotificationHandler";
 
 export class CommandManager implements vscode.Disposable {
   private disposables: vscode.Disposable[] = [];
@@ -11,23 +12,35 @@ export class CommandManager implements vscode.Disposable {
   }
 
   private registerCommands() {
-    const generateCommand = new GenerateCommitCommand(this.context);
-    const selectModelCommand = new SelectModelCommand(this.context);
+    try {
+      const generateCommand = new GenerateCommitCommand(this.context);
+      const selectModelCommand = new SelectModelCommand(this.context);
 
-    this.disposables.push(
-      vscode.commands.registerCommand(
-        COMMANDS.GENERATE,
-        async (...resources: vscode.SourceControlResourceState[]) => {
-          await generateCommand.execute(resources);
-        }
-      ),
-      vscode.commands.registerCommand(
-        "dish-ai-commit.selectModel",
-        async () => {
-          await selectModelCommand.execute();
-        }
-      )
-    );
+      this.disposables.push(
+        vscode.commands.registerCommand(
+          COMMANDS.COMMIT.GENERATE,
+          async (...resources: vscode.SourceControlResourceState[]) => {
+            try {
+              await generateCommand.execute(resources);
+            } catch (error) {
+              NotificationHandler.error("command.generate.failed", error instanceof Error ? error.message : String(error));
+            }
+          }
+        ),
+        vscode.commands.registerCommand(
+          COMMANDS.MODEL.SHOW,
+          async () => {
+            try {
+              await selectModelCommand.execute();
+            } catch (error) {
+              NotificationHandler.error("command.select.model.failed", error instanceof Error ? error.message : String(error));
+            }
+          }
+        )
+      );
+    } catch (error) {
+      NotificationHandler.error("command.register.failed", error instanceof Error ? error.message : String(error));
+    }
   }
 
   dispose() {
