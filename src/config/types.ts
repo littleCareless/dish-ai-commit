@@ -2,6 +2,9 @@ export enum AIProvider {
   OPENAI = "openai",
   OLLAMA = "ollama",
   VSCODE = "vs code provided",
+  ZHIPU = "zhipu",
+  DASHSCOPE = "dashscope",
+  DOUBAO = "doubao"
 }
 
 export const ConfigKeys = {
@@ -18,8 +21,17 @@ export const ConfigKeys = {
   OPENAI_API_KEY: "dish-ai-commit.openai.apiKey",
   OPENAI_BASE_URL: "dish-ai-commit.openai.baseUrl",
 
+  // ZhipuAI settings
+  ZHIPUAI_API_KEY: "dish-ai-commit.zhipuai.apiKey",
+
   // Ollama settings
   OLLAMA_BASE_URL: "dish-ai-commit.ollama.baseUrl",
+
+  // DashScope settings
+  DASHSCOPE_API_KEY: "dish-ai-commit.dashscope.apiKey",
+
+  // 豆包 AI settings
+  DOUBAO_API_KEY: "dish-ai-commit.doubao.apiKey",
 
   // Merge commits setting
   ALLOW_MERGE_COMMITS: "dish-ai-commit.allowMergeCommits",
@@ -37,8 +49,17 @@ export interface ExtensionConfiguration {
     apiKey?: string;
     baseUrl?: string;
   };
+  zhipuai: {
+    apiKey?: string;
+  };
   ollama: {
     baseUrl: string;
+  };
+  dashscope: {
+    apiKey?: string;
+  };
+  doubao: {
+    apiKey?: string;
   };
   azureApiVersion?: string;
   vscode?: {

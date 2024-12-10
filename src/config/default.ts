@@ -1,5 +1,5 @@
 import { generateCommitMessageSystemPrompt } from "../prompt/prompt";
-import { ExtensionConfiguration } from "./types";
+import type { ExtensionConfiguration } from "./config-schema";
 
 export const DEFAULT_CONFIG: ExtensionConfiguration = {
   language: "Simplified Chinese",
@@ -14,6 +14,9 @@ export const DEFAULT_CONFIG: ExtensionConfiguration = {
   openai: {
     baseUrl: "https://api.openai.com/v1",
   },
+  zhipuai: {},
+  dashscope: {},
+  doubao: {},
   ollama: {
     baseUrl: "http://localhost:11434",
   },

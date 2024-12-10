@@ -127,10 +127,20 @@ export class ConfigurationManager {
           this.getConfig<string>("OPENAI_BASE_URL", false) ||
           DEFAULT_CONFIG.openai.baseUrl,
       },
+      zhipuai: {
+        apiKey: this.getConfig<string>("ZHIPUAI_API_KEY", false),
+      },
+      dashscope: {
+        apiKey: this.getConfig<string>("DASHSCOPE_API_KEY", false),
+      },
+      doubao: {
+        apiKey: this.getConfig<string>("DOUBAO_API_KEY", false),
+      },
       ollama: {
         baseUrl:
           this.getConfig<string>("OLLAMA_BASE_URL", false) ||
-          DEFAULT_CONFIG.ollama.baseUrl,
+          DEFAULT_CONFIG.ollama.baseUrl ||
+          "",
       },
       allowMergeCommits:
         this.getConfig<boolean>("ALLOW_MERGE_COMMITS", false) ||
