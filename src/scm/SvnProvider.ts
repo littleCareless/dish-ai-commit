@@ -26,11 +26,7 @@ export class SvnProvider implements ISCMProvider {
 
   async isAvailable(): Promise<boolean> {
     try {
-      console.log("typeof", this.svnExtension, this.svnExtension.name);
-      if (
-        !this.svnExtension ||
-        typeof this.svnExtension.getAPI !== "function"
-      ) {
+      if (!this.svnExtension?.getAPI) {
         return false;
       }
 
@@ -43,7 +39,7 @@ export class SvnProvider implements ISCMProvider {
       }
       return false;
     } catch (error) {
-      console.error("Failed to check SVN availability:", error);
+      console.error("SVN availability check failed:", error instanceof Error ? error.message : error);
       return false;
     }
   }
@@ -97,6 +93,7 @@ export class SvnProvider implements ISCMProvider {
       // 如果未启用简化，直接返回原始diff
       return stdout;
     } catch (error) {
+      console.error("SVN diff failed:", error instanceof Error ? error.message : error);
       if (error instanceof Error) {
         vscode.window.showErrorMessage(
           LocalizationManager.getInstance().format(
@@ -118,9 +115,12 @@ export class SvnProvider implements ISCMProvider {
     }
 
     try {
-      await repository.commitFiles(files || [], message);
+      if (!files?.length) {
+        throw new Error(LocalizationManager.getInstance().getMessage("svn.no.files.selected"));
+      }
+      await repository.commitFiles(files, message);
     } catch (error) {
-      console.error("Failed to commit to SVN:", error);
+      console.error("SVN commit failed:", error instanceof Error ? error.message : error);
       throw new Error(
         LocalizationManager.getInstance().format("svn.commit.failed", error)
       );

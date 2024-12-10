@@ -7,11 +7,25 @@ import { LocalizationManager } from "../utils/LocalizationManager";
 
 const exec = promisify(childProcess.exec);
 
+interface GitAPI {
+  repositories: GitRepository[];
+  getAPI(version: number): GitAPI;
+}
+
+interface GitRepository {
+  inputBox: {
+    value: string;
+  };
+  commit(message: string, options: { all: boolean; files?: string[] }): Promise<void>;
+}
+
 export class GitProvider implements ISCMProvider {
   type = "git" as const;
   private workspaceRoot: string;
+  private readonly api: GitAPI;
 
   constructor(private readonly gitExtension: any) {
+    this.api = gitExtension.getAPI(1);
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (!workspaceRoot) {
       throw new Error(
@@ -27,39 +41,20 @@ export class GitProvider implements ISCMProvider {
     return repositories.length > 0;
   }
 
+  // 优化 getFileStatus 方法
   private async getFileStatus(file: string): Promise<string> {
     try {
-      // 检查文件是否是新文件
-      const { stdout: lsFiles } = await exec(`git ls-files "${file}"`, {
+      const { stdout: status } = await exec(`git status --porcelain "${file}"`, {
         cwd: this.workspaceRoot,
       });
 
-      if (!lsFiles) {
-        const { stdout: status } = await exec(
-          `git status --porcelain "${file}"`,
-          {
-            cwd: this.workspaceRoot,
-          }
-        );
-        if (status.startsWith("??")) {
-          return "New File";
-        }
-      }
-
-      // 检查文件是否被删除
-      const { stdout: status } = await exec(
-        `git status --porcelain "${file}"`,
-        {
-          cwd: this.workspaceRoot,
-        }
-      );
-      if (status.startsWith(" D") || status.startsWith("D ")) {
-        return "Deleted File";
-      }
-
+      if (!status) return "Unknown";
+      
+      if (status.startsWith("??")) return "New File";
+      if (status.startsWith(" D") || status.startsWith("D ")) return "Deleted File";
       return "Modified File";
     } catch (error) {
-      console.error(`Error getting file status: ${error}`);
+      console.error("Failed to get file status:", error instanceof Error ? error.message : error);
       return "Unknown";
     }
   }
