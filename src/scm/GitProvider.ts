@@ -16,7 +16,10 @@ interface GitRepository {
   inputBox: {
     value: string;
   };
-  commit(message: string, options: { all: boolean; files?: string[] }): Promise<void>;
+  commit(
+    message: string,
+    options: { all: boolean; files?: string[] }
+  ): Promise<void>;
 }
 
 export class GitProvider implements ISCMProvider {
@@ -44,17 +47,29 @@ export class GitProvider implements ISCMProvider {
   // 优化 getFileStatus 方法
   private async getFileStatus(file: string): Promise<string> {
     try {
-      const { stdout: status } = await exec(`git status --porcelain "${file}"`, {
-        cwd: this.workspaceRoot,
-      });
+      const { stdout: status } = await exec(
+        `git status --porcelain "${file}"`,
+        {
+          cwd: this.workspaceRoot,
+        }
+      );
 
-      if (!status) return "Unknown";
-      
-      if (status.startsWith("??")) return "New File";
-      if (status.startsWith(" D") || status.startsWith("D ")) return "Deleted File";
+      if (!status) {
+        return "Unknown";
+      }
+
+      if (status.startsWith("??")) {
+        return "New File";
+      }
+      if (status.startsWith(" D") || status.startsWith("D ")) {
+        return "Deleted File";
+      }
       return "Modified File";
     } catch (error) {
-      console.error("Failed to get file status:", error instanceof Error ? error.message : error);
+      console.error(
+        "Failed to get file status:",
+        error instanceof Error ? error.message : error
+      );
       return "Unknown";
     }
   }
@@ -128,7 +143,7 @@ export class GitProvider implements ISCMProvider {
         );
       }
       throw new Error(
-        LocalizationManager.getInstance().getMessage("diff.failed")
+        LocalizationManager.getInstance().getMessage("git.diff.failed")
       );
     }
   }
