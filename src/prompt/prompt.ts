@@ -1,8 +1,80 @@
+function getMergeCommitsSection(
+  allowMergeCommits: boolean,
+  splitChangesInSingleFile: boolean,
+  useEmoji: boolean
+) {
+  const formatExample = useEmoji
+    ? "<emoji> <type>(<scope>): <subject>"
+    : "<type>(<scope>): <subject>";
+
+  if (!allowMergeCommits) {
+    return `### Separate Commits
+
+- If multiple file diffs are provided, generate separate commit messages for each file.
+- If only one file diff is provided, ${
+      splitChangesInSingleFile
+        ? "split different types of changes in the file into separate commit messages"
+        : "combine all changes in the file into a single commit message"
+    }.
+\`\`\`
+${formatExample}
+<body for changes in file>
+\`\`\`
+`;
+  }
+
+  return `### Merged Commit
+
+If multiple file diffs are provided, merge them into a single commit message:
+\`\`\`
+${formatExample}
+<body of merged changes>
+\`\`\`
+`;
+}
+
+function getVCSExamples(
+  vcsType: "svn" | "git",
+  allowMergeCommits: boolean,
+  splitChangesInSingleFile: boolean,
+  useEmoji: boolean
+) {
+  const exampleContent =
+    vcsType === "git"
+      ? getGitExamples(allowMergeCommits, splitChangesInSingleFile, useEmoji)
+      : getSVNExamples(allowMergeCommits, splitChangesInSingleFile, useEmoji);
+
+  return `### Example (${vcsType.toUpperCase()})
+
+${exampleContent}`;
+}
+
+function getGitExamples(
+  allowMergeCommits: boolean,
+  splitChangesInSingleFile: boolean,
+  useEmoji: boolean
+) {
+  return allowMergeCommits
+    ? getMergedGitExample(useEmoji)
+    : getSeparateGitExample(splitChangesInSingleFile, useEmoji);
+}
+
+function getSVNExamples(
+  allowMergeCommits: boolean,
+  splitChangesInSingleFile: boolean,
+  useEmoji: boolean
+) {
+  return allowMergeCommits
+    ? getMergedSVNExample(useEmoji)
+    : getSeparateSVNExample(splitChangesInSingleFile, useEmoji);
+}
+
 export function generateCommitMessageSystemPrompt(
   language: string,
   allowMergeCommits: boolean,
   splitChangesInSingleFile: boolean,
-  vcsType: "svn" | "git"
+  vcsType: "svn" | "git",
+  useEmoji: boolean = true
 ) {
   const VCSUpper = vcsType?.toUpperCase();
   return `# ${VCSUpper} Commit Message Guide
@@ -13,30 +85,7 @@ All output MUST be in ${language} language. You are to act as a pure ${VCSUpper}
 
 ## Output Format
 
-${
-  allowMergeCommits
-    ? `### Merged Commit
-
-If multiple file diffs are provided, merge them into a single commit message:
-\`\`\`
-<emoji> <type>(<scope>): <subject>
-<body of merged changes>
-\`\`\`
-`
-    : `### Separate Commits
-
-- If multiple file diffs are provided, generate separate commit messages for each file.
-- If only one file diff is provided, ${
-        splitChangesInSingleFile
-          ? "split different types of changes in the file into separate commit messages"
-          : "combine all changes in the file into a single commit message"
-      }.
-\`\`\`
-<emoji> <type>(<scope>): <subject>
-<body for changes in file>
-\`\`\`
-`
-}
+${getMergeCommitsSection(allowMergeCommits, splitChangesInSingleFile, useEmoji)}
 
 ## File Status Detection
 
@@ -69,7 +118,9 @@ By analyzing both the file status and the changes within the file (e.g., diff), 
 
 ## Type Reference
 
-| Type     | Emoji | Description          | Example Scopes      |
+${
+  useEmoji
+    ? `| Type     | Emoji | Description          | Example Scopes      |
 | -------- | ----- | -------------------- | ------------------- |
 | feat     | ✨    | New feature          | user, payment       |
 | fix      | 🐛    | Bug fix              | auth, data          |
@@ -81,7 +132,21 @@ By analyzing both the file status and the changes within the file (e.g., diff), 
 | build    | 📦    | Build system         | webpack, npm        |
 | ci       | 👷    | CI config            | Travis, Jenkins     |
 | chore    | 🔧    | Other changes        | scripts, config     |
-| i18n     | 🌐    | Internationalization | locale, translation |
+| i18n     | 🌐    | Internationalization | locale, translation |`
+    : `| Type     | Description          | Example Scopes      |
+| -------- | -------------------- | ------------------- |
+| feat     | New feature          | user, payment       |
+| fix      | Bug fix              | auth, data          |
+| docs     | Documentation        | README, API         |
+| style    | Code style           | formatting          |
+| refactor | Code refactoring     | utils, helpers      |
+| perf     | Performance          | query, cache        |
+| test     | Testing              | unit, e2e           |
+| build    | Build system         | webpack, npm        |
+| ci       | CI config            | Travis, Jenkins     |
+| chore    | Other changes        | scripts, config     |
+| i18n     | Internationalization | locale, translation |`
+}
 
 ## Writing Rules
 
@@ -126,13 +191,18 @@ Remember: All output MUST be in ${language} language. You are to act as a pure c
 
 ## ${VCSUpper} Examples
 
-${
-  vcsType === "git"
-    ? `### Example (Git)
+${getVCSExamples(
+  vcsType,
+  allowMergeCommits,
+  splitChangesInSingleFile,
+  useEmoji
+)}`;
+}
 
-${
-  allowMergeCommits
-    ? `#### Merged Commit (allowMergeCommits: true)
+// Helper functions for examples generation (implementations omitted for brevity)
+function getMergedGitExample(useEmoji: boolean) {
+  const prefix = useEmoji ? "✨ " : "";
+  return `#### Merged Commit (allowMergeCommits: true)
 
 - **Input (Multiple Diffs)**:
   \`\`\`
@@ -154,16 +224,21 @@ ${
 
 - **Generated Commit Message**:
   \`\`\`
-  ✨ feat(app): 添加多个新文件
+  ${prefix}feat(app): 添加多个新文件
   - 添加 file1.js 文件
   - 添加 file2.js 文件，包含基础日志输出
-  \`\`\`
-`
-    : `#### Separate Commits (allowMergeCommits: false)
+  \`\`\``;
+}
 
-${
-  splitChangesInSingleFile
-    ? `- **Input (Single File with Multiple Changes)**:
+function getSeparateGitExample(
+  splitChangesInSingleFile: boolean,
+  useEmoji: boolean
+) {
+  const featPrefix = useEmoji ? "✨ " : "";
+  const fixPrefix = useEmoji ? "🐛 " : "";
+
+  if (splitChangesInSingleFile) {
+    return `- **Input (Single File with Multiple Changes)**:
   \`\`\`
   diff --git a/file.js b/file.js
   index e69de29..b6fc4c6 100644
@@ -176,14 +251,15 @@ ${
 
 - **Generated Commit Messages**:
   \`\`\`
-  ✨ feat(file): 添加功能 A
+  ${featPrefix}feat(file): 添加功能 A
   - 在 file.js 中添加了 "Feature A"
 
-  🐛 fix(file): 修复 B 的问题
+  ${fixPrefix}fix(file): 修复 B 的问题
   - 在 file.js 中修复了与 B 相关的问题
-  \`\`\`
-`
-    : `- **Input (Single File with Multiple Changes)**:
+  \`\`\``;
+  }
+
+  return `- **Input (Single File with Multiple Changes)**:
   \`\`\`
   diff --git a/file.js b/file.js
   index e69de29..b6fc4c6 100644
@@ -196,20 +272,15 @@ ${
 
 - **Generated Commit Message**:
   \`\`\`
-  ✨ feat(file): 添加功能 A 和修复问题 B
+  ${featPrefix}feat(file): 添加功能 A 和修复问题 B
   - 在 file.js 中添加了 "Feature A"
   - 修复了与 B 相关的问题
-  \`\`\`
-`
+  \`\`\``;
 }
-`
-}
-`
-    : `### Example (SVN)
 
-${
-  allowMergeCommits
-    ? `#### Merged Commit (allowMergeCommits: true)
+function getMergedSVNExample(useEmoji: boolean) {
+  const prefix = useEmoji ? "✨ " : "";
+  return `#### Merged Commit (allowMergeCommits: true)
 
 - **Input (Multiple Diffs)**:
   \`\`\`
@@ -230,16 +301,21 @@ ${
 
 - **Generated Commit Message**:
   \`\`\`
-  ✨ feat(app): 添加多个新文件
+  ${prefix}feat(app): 添加多个新文件
   - 添加 file1.js 文件
   - 添加 file2.js 文件，包含基础日志输出
-  \`\`\`
-`
-    : `#### Separate Commits (allowMergeCommits: false)
+  \`\`\``;
+}
 
-${
-  splitChangesInSingleFile
-    ? `- **Input (Single File with Multiple Changes)**:
+function getSeparateSVNExample(
+  splitChangesInSingleFile: boolean,
+  useEmoji: boolean
+) {
+  const featPrefix = useEmoji ? "✨ " : "";
+  const fixPrefix = useEmoji ? "🐛 " : "";
+
+  if (splitChangesInSingleFile) {
+    return `- **Input (Single File with Multiple Changes)**:
   \`\`\`
   Index: file.js
   ===================================================================
@@ -252,14 +328,15 @@ ${
 
 - **Generated Commit Messages**:
   \`\`\`
-  ✨ feat(file): 添加功能 A
+  ${featPrefix}feat(file): 添加功能 A
   - 在 file.js 中添加了 "Feature A"
 
-  🐛 fix(file): 修复 B 的问题
+  ${fixPrefix}fix(file): 修复 B 的问题
   - 在 file.js 中修复了与 B 相关的问题
-  \`\`\`
-`
-    : `- **Input (Single File with Multiple Changes)**:
+  \`\`\``;
+  }
+
+  return `- **Input (Single File with Multiple Changes)**:
   \`\`\`
   Index: file.js
   ===================================================================
@@ -272,17 +349,10 @@ ${
 
 - **Generated Commit Message**:
   \`\`\`
-  ✨ feat(file): 添加功能 A 和修复问题 B
+  ${featPrefix}feat(file): 添加功能 A 和修复问题 B
   - 在 file.js 中添加了 "Feature A"
-  - 修复了与 B 相关的问题
-  \`\`\`
-`
-}
-`
-}
-`
-}
-`;
+  - 修复了与 B 相��的问题
+  \`\`\``;
 }
 
 export function generateCommitMessageUserPrompt(language: string) {}
