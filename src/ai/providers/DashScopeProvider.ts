@@ -122,7 +122,10 @@ export class DashScopeProvider extends BaseOpenAIProvider {
   constructor() {
     const configManager = ConfigurationManager.getInstance();
     super({
-      apiKey: configManager.getConfig<string>("DASHSCOPE_API_KEY", false),
+      apiKey: configManager.getConfig<string>(
+        "PROVIDERS_DASHSCOPE_APIKEY",
+        false
+      ),
       baseURL: "https://api.dashscope.com/v1/services/chat/completions",
       providerId: "dashscope",
       providerName: "DashScope",

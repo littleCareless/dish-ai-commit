@@ -8,8 +8,6 @@ import {
 } from "../types";
 import { ConfigurationManager } from "../../config/ConfigurationManager";
 import { NotificationHandler } from "../../utils/NotificationHandler";
-import { generateCommitMessageSystemPrompt } from "../../prompt/prompt";
-import { DEFAULT_CONFIG } from "../../config/default";
 import { LocalizationManager } from "../../utils/LocalizationManager";
 import { generateWithRetry, getSystemPrompt } from "../utils/generateHelper";
 
@@ -30,7 +28,7 @@ export class OllamaProvider implements AIProvider {
   private getBaseUrl(): string {
     const configManager = ConfigurationManager.getInstance();
     return (
-      configManager.getConfig<string>("OLLAMA_BASE_URL") ||
+      configManager.getConfig<string>("PROVIDERS_OLLAMA_BASEURL") ||
       "http://localhost:11434"
     );
   }

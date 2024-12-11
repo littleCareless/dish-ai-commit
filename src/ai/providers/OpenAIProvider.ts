@@ -1,17 +1,7 @@
-import OpenAI from "openai";
-import { ChatCompletionMessageParam } from "openai/resources";
 import { ConfigurationManager } from "../../config/ConfigurationManager";
-import {
-  AIProvider,
-  AIRequestParams,
-  AIResponse,
-  type AIModel,
-} from "../types";
+import { type AIModel } from "../types";
 import { NotificationHandler } from "../../utils/NotificationHandler";
-import { generateCommitMessageSystemPrompt } from "../../prompt/prompt";
-import { DEFAULT_CONFIG } from "../../config/default";
 import { LocalizationManager } from "../../utils/LocalizationManager";
-import { generateWithRetry, getSystemPrompt } from "../utils/generateHelper";
 import { BaseOpenAIProvider } from "./BaseOpenAIProvider";
 
 const provider = { id: "openai", name: "OpenAI" } as const;
@@ -71,9 +61,9 @@ export class OpenAIProvider extends BaseOpenAIProvider {
   constructor() {
     const configManager = ConfigurationManager.getInstance();
     super({
-      apiKey: configManager.getConfig<string>("OPENAI_API_KEY", false),
-      baseURL: configManager.getConfig<string>("OPENAI_BASE_URL", false),
-      apiVersion: configManager.getConfig<string>("MODEL", false),
+      apiKey: configManager.getConfig<string>("PROVIDERS_OPENAI_APIKEY", false),
+      baseURL: configManager.getConfig<string>("PROVIDERS_OPENAI_BASEURL", false),
+      apiVersion: configManager.getConfig<string>("BASE_MODEL", false),
       providerId: "openai",
       providerName: "OpenAI",
       models: models,

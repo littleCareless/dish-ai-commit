@@ -9,20 +9,22 @@ import { ModelPickerService } from "../services/ModelPickerService";
 
 export class SelectModelCommand extends BaseCommand {
   async execute(): Promise<void> {
-    if (!(await this.validateConfig())) {
-      return;
-    }
+    // if (!(await this.validateConfig())) {
+    //   return;
+    // }
 
     const config = ConfigurationManager.getInstance();
     const configuration = config.getConfiguration();
     const modelSelection = await this.showModelPicker(
-      configuration.provider,
-      getProviderModelConfig(configuration, configuration.provider)
+      configuration.base.provider,
+      getProviderModelConfig(configuration, configuration.base.provider)
     );
 
     if (modelSelection) {
-      await config.updateConfig("MODEL", modelSelection.model);
-      await config.updateConfig("PROVIDER", modelSelection.provider);
+      await config.updateAIConfiguration(
+        modelSelection.provider,
+        modelSelection.model
+      );
       await NotificationHandler.info(
         "model.update.success",
         modelSelection.provider,

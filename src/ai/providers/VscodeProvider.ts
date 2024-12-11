@@ -7,8 +7,8 @@ import {
   type AIResponse,
 } from "../types";
 import { generateCommitMessageSystemPrompt } from "../../prompt/prompt";
-import { DEFAULT_CONFIG } from "../../config/default";
 import { LocalizationManager } from "../../utils/LocalizationManager";
+import { getSystemPrompt } from "../utils/generateHelper";
 
 interface DiffBlock {
   header: string;
@@ -48,15 +48,7 @@ export class VSCodeProvider implements AIProvider {
 
       while (true) {
         const messages = [
-          vscode.LanguageModelChatMessage.User(
-            params.systemPrompt ||
-              generateCommitMessageSystemPrompt(
-                params.language || DEFAULT_CONFIG.language,
-                params.allowMergeCommits || false,
-                params.splitChangesInSingleFile || false,
-                params.scm || "git"
-              )
-          ),
+          vscode.LanguageModelChatMessage.User(getSystemPrompt(params)),
           vscode.LanguageModelChatMessage.User(
             params.diff.substring(0, maxCodeCharacters)
           ),

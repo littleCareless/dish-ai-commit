@@ -26,6 +26,8 @@ export interface AIRequestParams {
   scm?: "git" | "svn"; // 新增SCM类型
   allowMergeCommits?: boolean;
   splitChangesInSingleFile?: boolean;
+  additionalContext: string;
+  useEmoji: boolean;
 }
 
 // 添加通用错误处理接口

@@ -5,7 +5,7 @@ import { NotificationHandler } from "../utils/NotificationHandler";
 import { ProgressHandler } from "../utils/ProgressHandler";
 import { AIProviderFactory } from "../ai/AIProviderFactory";
 import { SCMFactory } from "../scm/SCMProvider";
-import { getProviderModelConfig } from "../config/types";
+import { getProviderModelConfig, type ConfigKey } from "../config/types";
 import { DISPLAY_NAME } from "../constants";
 import { getMaxCharacters } from "../ai/types";
 import { LocalizationManager } from "../utils/LocalizationManager";
@@ -35,16 +35,17 @@ export class GenerateCommitCommand extends BaseCommand {
     }
 
     const config = ConfigurationManager.getInstance();
-    await config.updateConfig("OPENAI_BASE_URL", baseURL);
-    await config.updateConfig("OPENAI_API_KEY", apiKey);
+    await config.updateConfig("PROVIDERS_OPENAI_BASEURL" as ConfigKey, baseURL);
+    await config.updateConfig("PROVIDERS_OPENAI_APIKEY" as ConfigKey, apiKey);
     return true;
   }
 
   private async ensureConfiguration(): Promise<boolean> {
     const locManager = LocalizationManager.getInstance();
     const config = ConfigurationManager.getInstance();
-    const baseURL = config.getConfig<string>("OPENAI_BASE_URL", false);
-    const apiKey = config.getConfig<string>("OPENAI_API_KEY", false);
+    const configuration = config.getConfiguration();
+    const baseURL = configuration.providers.openai.baseUrl;
+    const apiKey = configuration.providers.openai.apiKey;
 
     if (!baseURL || !apiKey) {
       const result = await vscode.window.showInformationMessage(
@@ -145,7 +146,8 @@ export class GenerateCommitCommand extends BaseCommand {
 
     const config = ConfigurationManager.getInstance();
     const configuration = config.getConfiguration();
-    let { provider, model } = configuration;
+    let provider = configuration.base.provider;
+    let model = configuration.base.model;
 
     if (!provider || !model) {
       const result = await this.selectAndUpdateModelConfiguration(
@@ -169,7 +171,6 @@ export class GenerateCommitCommand extends BaseCommand {
 
     const locManager = LocalizationManager.getInstance();
     try {
-      // 检测当前 SCM 类型
       const scmProvider = await SCMFactory.detectSCM();
       if (!scmProvider) {
         await NotificationHandler.error(
@@ -178,12 +179,15 @@ export class GenerateCommitCommand extends BaseCommand {
         return;
       }
 
+      // 获取当前提交消息输入框的内容
+      const currentInput = await scmProvider.getCommitInput();
+
       const config = ConfigurationManager.getInstance();
       const configuration = config.getConfiguration();
 
       // 检查是否已配置 AI 提供商和模型
-      let provider = configuration.provider;
-      let model = configuration.model;
+      let provider = configuration.base.provider;
+      let model = configuration.base.model;
 
       // 如果没有配置提供商或模型，提示用户选择
       if (!provider || !model) {
@@ -201,9 +205,7 @@ export class GenerateCommitCommand extends BaseCommand {
         ),
         async (progress) => {
           const selectedFiles = this.getSelectedFiles(resources);
-          // progress.report({
-          //   message: locManager.getMessage("progress.analyzing.changes"),
-          // });
+
           const diffContent = await scmProvider.getDiff(selectedFiles);
           if (!diffContent) {
             await NotificationHandler.info(locManager.getMessage("no.changes"));
@@ -219,25 +221,17 @@ export class GenerateCommitCommand extends BaseCommand {
             selectedModel,
           } = await this.getModelAndUpdateConfiguration(provider, model);
 
-          // if (selectedModel) {
-          //   const maxChars = getMaxCharacters(selectedModel, 2600) - 1000;
-          //   if (diffContent.length > maxChars) {
-          //     throw new Error(
-          //       locManager.format("diff.too.long", diffContent.length, maxChars)
-          //     );
-          //   }
-          // }
-
-          // progress.report({ message: "正在生成提交信息..." });
-
           const result = await aiProvider.generateResponse({
             diff: diffContent,
-            systemPrompt: configuration.systemPrompt,
+            systemPrompt: configuration.base.systemPrompt,
             model: selectedModel,
-            language: configuration.language,
+            language: configuration.base.language,
             scm: scmProvider.type ?? "git",
-            allowMergeCommits: configuration.allowMergeCommits,
+            allowMergeCommits:
+              configuration.features.commitOptions.allowMergeCommits,
             splitChangesInSingleFile: false,
+            additionalContext: currentInput, // 添加额外上下文
+            useEmoji: configuration.features.commitOptions.useEmoji, // 添加这一行
           });
 
           // progress.report({
