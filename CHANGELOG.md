@@ -5,6 +5,44 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+# 0.2.0 (2024-12-11)
+
+
+### ♻ Code Refactoring
+
+* **config**: 重构配置系统和 AI 提供商配置结构 ([480f7d0](https://github.com/littleCareless/dish-ai-commit/commit/480f7d0))
+* **config**: 重构配置系统架构 ([7eb3ff2](https://github.com/littleCareless/dish-ai-commit/commit/7eb3ff2))
+* **localization**: 统一配置项命名风格 ([74ae537](https://github.com/littleCareless/dish-ai-commit/commit/74ae537))
+* **prompt**: 重构提交消息生成器功能 ([791cb75](https://github.com/littleCareless/dish-ai-commit/commit/791cb75))
+
+
+### ✨ Features
+
+* **scm**: 添加获取提交信息输入框内容功能 ([e670326](https://github.com/littleCareless/dish-ai-commit/commit/e670326))
+* **scripts**: 添加配置更新脚本功能 ([96fa854](https://github.com/littleCareless/dish-ai-commit/commit/96fa854))
+
+
+### 🎫 Chores
+
+* **config**: 重构配置系统架构 ([36ba4d7](https://github.com/littleCareless/dish-ai-commit/commit/36ba4d7))
+* **deps**: 添加依赖和配置相关更新 ([2bd795a](https://github.com/littleCareless/dish-ai-commit/commit/2bd795a))
+* **extension**: 移除配置验证并优化错误处理格式 ([28662ab](https://github.com/littleCareless/dish-ai-commit/commit/28662ab))
+* **release**: 发布 0.1.0 版本 ([9a39771](https://github.com/littleCareless/dish-ai-commit/commit/9a39771))
+
+
+### 💄 Styles
+
+* **git**: 优化代码格式和错误处理逻辑 ([b413151](https://github.com/littleCareless/dish-ai-commit/commit/b413151))
+
+
+### 📝 Documentation
+
+* **readme**: 更新 README 文件以包含更多 AI 服务支持 ([79eda9d](https://github.com/littleCareless/dish-ai-commit/commit/79eda9d))
+
+
+
+
+
 # 0.1.0 (2024-12-10)
 
 
