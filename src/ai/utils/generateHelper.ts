@@ -1,7 +1,6 @@
 import { NotificationHandler } from "../../utils/NotificationHandler";
 import { LocalizationManager } from "../../utils/LocalizationManager";
 import { generateCommitMessageSystemPrompt } from "../../prompt/prompt";
-import { DEFAULT_CONFIG } from "../../config/default";
 import { AIRequestParams } from "../types";
 
 // 添加错误类型枚举
@@ -80,7 +79,7 @@ export function getSystemPrompt(params: AIRequestParams): string {
   return (
     params.systemPrompt ||
     generateCommitMessageSystemPrompt(
-      params.language || DEFAULT_CONFIG.language,
+      params.language ||  "",
       params.allowMergeCommits || false,
       params.splitChangesInSingleFile || false,
       params.scm || "git"

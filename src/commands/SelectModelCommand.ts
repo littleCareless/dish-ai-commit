@@ -9,10 +9,6 @@ import { ModelPickerService } from "../services/ModelPickerService";
 
 export class SelectModelCommand extends BaseCommand {
   async execute(): Promise<void> {
-    // if (!(await this.validateConfig())) {
-    //   return;
-    // }
-
     const config = ConfigurationManager.getInstance();
     const configuration = config.getConfiguration();
     const modelSelection = await this.showModelPicker(

@@ -126,7 +126,6 @@ export class GenerateCommitCommand extends BaseCommand {
     }
 
     const config = ConfigurationManager.getInstance();
-    const configuration = config.getConfiguration();
     // 使用新的封装方法更新配置
     await config.updateAIConfiguration(
       modelSelection.provider,
@@ -211,9 +210,6 @@ export class GenerateCommitCommand extends BaseCommand {
             await NotificationHandler.info(locManager.getMessage("no.changes"));
             throw new Error(locManager.getMessage("no.changes"));
           }
-
-          console.log("diffContent", diffContent, selectedFiles);
-
           const {
             provider: newProvider,
             model: newModel,
@@ -222,21 +218,14 @@ export class GenerateCommitCommand extends BaseCommand {
           } = await this.getModelAndUpdateConfiguration(provider, model);
 
           const result = await aiProvider.generateResponse({
+            ...configuration.base, // 包含 systemPrompt, language 等基础配置
+            ...configuration.features.commitOptions, // 包含 allowMergeCommits, useEmoji 等选项
+            additionalContext: currentInput,
             diff: diffContent,
-            systemPrompt: configuration.base.systemPrompt,
             model: selectedModel,
-            language: configuration.base.language,
             scm: scmProvider.type ?? "git",
-            allowMergeCommits:
-              configuration.features.commitOptions.allowMergeCommits,
-            splitChangesInSingleFile: false,
-            additionalContext: currentInput, // 添加额外上下文
-            useEmoji: configuration.features.commitOptions.useEmoji, // 添加这一行
           });
 
-          // progress.report({
-          //   message: locManager.getMessage("progress.generation.complete"),
-          // });
           return result;
         }
       );

@@ -1,5 +1,10 @@
 import * as vscode from "vscode";
-import { ConfigKeys, ConfigKey, ExtensionConfiguration } from "./types";
+import {
+  ConfigKeys,
+  ConfigKey,
+  ExtensionConfiguration,
+  type ConfigurationValueType,
+} from "./types";
 import { EXTENSION_NAME } from "../constants";
 import { generateCommitMessageSystemPrompt } from "../prompt/prompt";
 import { AIProviderFactory } from "../ai/AIProviderFactory";
@@ -101,19 +106,27 @@ export class ConfigurationManager {
     this.context = context;
   }
 
-  public getConfig<T>(key: ConfigKey, useCache: boolean = true): T {
+  // 修改 getConfig 方法的类型处理
+  public getConfig<K extends ConfigKey>(
+    key: K,
+    useCache: boolean = true
+  ): ConfigurationValueType[K] {
     console.log("获取配置项:", key, ConfigKeys);
     const configKey = ConfigKeys[key].replace("dish-ai-commit.", "");
 
     if (!useCache) {
-      // 直接从 configuration 获取最新值
-      return this.configuration.get<T>(configKey) as T;
+      // 直接从 configuration 获取最新值，确保返回正确的类型
+      const value =
+        this.configuration.get<ConfigurationValueType[K]>(configKey);
+      return value as ConfigurationValueType[K];
     }
 
     if (!this.configCache.has(configKey)) {
-      this.configCache.set(configKey, this.configuration.get<T>(configKey));
+      const value =
+        this.configuration.get<ConfigurationValueType[K]>(configKey);
+      this.configCache.set(configKey, value);
     }
-    return this.configCache.get(configKey);
+    return this.configCache.get(configKey) as ConfigurationValueType[K];
   }
 
   public getConfiguration(): ExtensionConfiguration {
@@ -137,7 +150,11 @@ export class ConfigurationManager {
     return config as ExtensionConfiguration;
   }
 
-  public async updateConfig<T>(key: ConfigKey, value: T): Promise<void> {
+  // 修改updateConfig方法签名
+  public async updateConfig<K extends ConfigKey>(
+    key: K,
+    value: ConfigurationValueType[K]
+  ): Promise<void> {
     await this.configuration.update(
       ConfigKeys[key].replace("dish-ai-commit.", ""),
       value,
@@ -289,8 +306,8 @@ export class ConfigurationManager {
     model: string
   ): Promise<void> {
     await Promise.all([
-      this.updateConfig("BASE_PROVIDER" as ConfigKey, provider),
-      this.updateConfig("BASE_MODEL" as ConfigKey, model),
+      this.updateConfig("BASE_PROVIDER", provider),
+      this.updateConfig("BASE_MODEL", model),
     ]);
   }
 }

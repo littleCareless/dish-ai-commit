@@ -30,7 +30,7 @@ export const CONFIG_SCHEMA = {
         "简体中文",
         "繁體中文",
         "にほんご",
-        "한국��",
+        "한국어",
         "česky",
         "Deutsch",
         "française",
@@ -51,14 +51,13 @@ export const CONFIG_SCHEMA = {
     systemPrompt: {
       type: "string",
       description: "Custom system prompt",
-      default: "", // 动态生成
-      isSpecial: true, // 标记需要特殊处理的配置
+      default: "",
     },
     provider: {
       type: "string",
-      default: "OpenAI",
+      default: "OpenAI", // 其他都是用OpenAI的SDK适配
       enum: ["OpenAI", "Ollama", "VS Code Provided"],
-      description: "默认的 AI 提供商",
+      description: "AI provider",
     },
     model: {
       type: "string",
