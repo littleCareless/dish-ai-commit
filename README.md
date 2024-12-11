@@ -50,6 +50,7 @@ Supports 19 languages including:
 - English
 - Japanese
 - Korean
+  Others
 
 ### 🎨 Conventional Commits Compliant
 

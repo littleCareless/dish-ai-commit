@@ -172,6 +172,133 @@
           "type": "boolean",
           "default": false,
           "description": "是否允许将多个文件的变更合并为一条提交信息"
+        },
+        "dish-ai-commit.useEmoji": {
+          "type": "boolean",
+          "default": true,
+          "description": "在提交信息中使用 emoji"
+        },
+        "dish-ai-commit.base.language": {
+          "type": "string",
+          "default": "Simplified Chinese",
+          "description": "Commit message language",
+          "enum": [
+            "Simplified Chinese",
+            "Traditional Chinese",
+            "Japanese",
+            "Korean",
+            "Czech",
+            "German",
+            "French",
+            "Italian",
+            "Dutch",
+            "Portuguese",
+            "Vietnamese",
+            "English",
+            "Spanish",
+            "Swedish",
+            "Russian",
+            "Bahasa",
+            "Polish",
+            "Turkish",
+            "Thai"
+          ],
+          "enumDescriptions": [
+            "简体中文",
+            "繁體中文",
+            "にほんご",
+            "한국��",
+            "česky",
+            "Deutsch",
+            "française",
+            "italiano",
+            "Nederlands",
+            "português",
+            "tiếng Việt",
+            "english",
+            "español",
+            "Svenska",
+            "русский",
+            "bahasa",
+            "Polski",
+            "Turkish",
+            "ไทย"
+          ]
+        },
+        "dish-ai-commit.base.systemPrompt": {
+          "type": "string",
+          "default": "",
+          "description": "Custom system prompt"
+        },
+        "dish-ai-commit.base.provider": {
+          "type": "string",
+          "default": "OpenAI",
+          "description": "默认的 AI 提供商",
+          "enum": [
+            "OpenAI",
+            "Ollama",
+            "VS Code Provided"
+          ]
+        },
+        "dish-ai-commit.base.model": {
+          "type": "string",
+          "default": "gpt-3.5-turbo",
+          "description": "AI Model"
+        },
+        "dish-ai-commit.providers.openai.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "OpenAI API 密钥"
+        },
+        "dish-ai-commit.providers.openai.baseUrl": {
+          "type": "string",
+          "default": "https://api.openai.com/v1",
+          "description": "OpenAI API 基础 URL"
+        },
+        "dish-ai-commit.providers.zhipuai.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "智谱 AI API 密钥"
+        },
+        "dish-ai-commit.providers.dashscope.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "DashScope API 密钥"
+        },
+        "dish-ai-commit.providers.doubao.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "豆包 API 密钥"
+        },
+        "dish-ai-commit.providers.ollama.baseUrl": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "Ollama API 基础 URL"
+        },
+        "dish-ai-commit.features.diffSimplification.enabled": {
+          "type": "boolean",
+          "default": false,
+          "description": "启用 diff 内容简化功能（警告：启用此功能可能会导致生成的提交信息不够准确）"
+        },
+        "dish-ai-commit.features.diffSimplification.maxLineLength": {
+          "type": "number",
+          "default": 120,
+          "description": "简化后每行的最大长度"
+        },
+        "dish-ai-commit.features.diffSimplification.contextLines": {
+          "type": "number",
+          "default": 3,
+          "description": "保留的上下文行数"
+        },
+        "dish-ai-commit.features.commitOptions.allowMergeCommits": {
+          "type": "boolean",
+          "default": false,
+          "description": "是否允许将多个文件的变更合并为一条提交信息"
+        },
+        "dish-ai-commit.features.commitOptions.useEmoji": {
+          "type": "boolean",
+          "default": true,
+          "description": "在提交信息中使用 emoji"
         }
       }
     },
@@ -220,7 +347,8 @@
     "prepare": "husky install",
     "commit": "git add . && git-cz",
     "release": "standard-version --preset gitmoji-config",
-    "changelog": "conventional-changelog -i CHANGELOG.md -s -r 0"
+    "changelog": "conventional-changelog -i CHANGELOG.md -s -r 0",
+    "update-config": "ts-node scripts/updateConfig.ts"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.0",
@@ -246,7 +374,8 @@
   "dependencies": {
     "@vscode/vsce": "^3.2.1",
     "ollama": "^0.5.10",
-    "openai": "^4.73.1"
+    "openai": "^4.73.1",
+    "ts-node": "^10.9.2"
   },
   "resolutions": {
     "@types/node": "16.x"
