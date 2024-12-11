@@ -1,15 +1,17 @@
 import * as vscode from "vscode";
 import { ConfigKeys, ConfigKey, ExtensionConfiguration } from "./types";
-import { DEFAULT_CONFIG } from "./default";
-import { AIProvider } from "../config/types";
-import { OpenAIProvider } from "../ai/providers/OpenAIProvider";
-import { NotificationHandler } from "../utils/NotificationHandler";
-import { OllamaProvider } from "../ai/providers/OllamaProvider";
 import { EXTENSION_NAME } from "../constants";
 import { generateCommitMessageSystemPrompt } from "../prompt/prompt";
 import { AIProviderFactory } from "../ai/AIProviderFactory";
 import { LocalizationManager } from "../utils/LocalizationManager";
 import { SCMFactory } from "../scm/SCMProvider";
+import {
+  CONFIG_SCHEMA,
+  ConfigValue,
+  ConfigObject,
+  generateConfiguration,
+  isConfigValue,
+} from "./ConfigSchema";
 
 export class ConfigurationManager {
   private static instance: ConfigurationManager;
@@ -42,27 +44,10 @@ export class ConfigurationManager {
     // 修改配置监听方式
     this.disposables.push(
       vscode.workspace.onDidChangeConfiguration((event) => {
-        // 添加更详细的日志
         console.log("Configuration changed event triggered");
 
-        // 检查特定配置项的变化
-        const configs = [
-          "provider",
-          "openai.model",
-          "ollama.model",
-          "openai.baseUrl",
-          "openai.apiKey",
-          "ollama.baseUrl",
-        ];
-
-        const changedKeys: string[] = [];
-        configs.forEach((key) => {
-          const fullKey = `${EXTENSION_NAME}.${key}`;
-          if (event.affectsConfiguration(fullKey)) {
-            console.log(`配置项 ${key} 发生变化`);
-            changedKeys.push(key);
-          }
-        });
+        // 获取所有配置路径
+        const changedKeys = this.getChangedConfigurationKeys(event);
 
         if (changedKeys.length > 0) {
           // 更新配置缓存
@@ -71,10 +56,38 @@ export class ConfigurationManager {
           this.configuration =
             vscode.workspace.getConfiguration(EXTENSION_NAME);
           // 处理配置变更
-          this.handleConfigurationChange(event);
+          this.handleConfigurationChange(changedKeys);
         }
       })
     );
+  }
+
+  /**
+   * 获取所有发生变化的配置项的键
+   */
+  private getChangedConfigurationKeys(
+    event: vscode.ConfigurationChangeEvent
+  ): string[] {
+    const changedKeys: string[] = [];
+
+    function traverse(obj: ConfigObject, path: string = "") {
+      for (const [key, value] of Object.entries(obj)) {
+        const newPath = path ? `${path}.${key}` : key;
+        if (isConfigValue(value)) {
+          // 是配置项
+          const fullKey = `${EXTENSION_NAME}.${newPath}`;
+          if (event.affectsConfiguration(fullKey)) {
+            changedKeys.push(newPath);
+          }
+        } else {
+          // 是分类，继续遍历
+          traverse(value as ConfigObject, newPath);
+        }
+      }
+    }
+
+    traverse(CONFIG_SCHEMA as unknown as ConfigObject);
+    return changedKeys;
   }
 
   public static getInstance(): ConfigurationManager {
@@ -89,6 +102,7 @@ export class ConfigurationManager {
   }
 
   public getConfig<T>(key: ConfigKey, useCache: boolean = true): T {
+    console.log("获取配置项:", key, ConfigKeys);
     const configKey = ConfigKeys[key].replace("dish-ai-commit.", "");
 
     if (!useCache) {
@@ -103,49 +117,24 @@ export class ConfigurationManager {
   }
 
   public getConfiguration(): ExtensionConfiguration {
+    // 使用generateConfiguration自动生成配置
+    const config = generateConfiguration(CONFIG_SCHEMA, (key: string) => {
+      return this.configuration.get<any>(`${key}`);
+    });
+
+    // 处理特殊情况：system prompt
     const currentScm = SCMFactory.getCurrentSCMType() || "git";
-    return {
-      language:
-        this.getConfig<string>("COMMIT_LANGUAGE", false) ||
-        DEFAULT_CONFIG.language,
-      systemPrompt:
-        this.getConfig<string>("SYSTEM_PROMPT", false) ||
-        generateCommitMessageSystemPrompt(
-          this.getConfig<string>("COMMIT_LANGUAGE", false) ||
-            DEFAULT_CONFIG.language,
-          this.getConfig<boolean>("ALLOW_MERGE_COMMITS", false) ||
-            DEFAULT_CONFIG.allowMergeCommits,
-          false,
-          currentScm
-        ),
-      provider:
-        this.getConfig<string>("PROVIDER", false) || DEFAULT_CONFIG.provider,
-      model: this.getConfig<string>("MODEL", false) || DEFAULT_CONFIG.model,
-      openai: {
-        apiKey: this.getConfig<string>("OPENAI_API_KEY", false),
-        baseUrl:
-          this.getConfig<string>("OPENAI_BASE_URL", false) ||
-          DEFAULT_CONFIG.openai.baseUrl,
-      },
-      zhipuai: {
-        apiKey: this.getConfig<string>("ZHIPUAI_API_KEY", false),
-      },
-      dashscope: {
-        apiKey: this.getConfig<string>("DASHSCOPE_API_KEY", false),
-      },
-      doubao: {
-        apiKey: this.getConfig<string>("DOUBAO_API_KEY", false),
-      },
-      ollama: {
-        baseUrl:
-          this.getConfig<string>("OLLAMA_BASE_URL", false) ||
-          DEFAULT_CONFIG.ollama.baseUrl ||
-          "",
-      },
-      allowMergeCommits:
-        this.getConfig<boolean>("ALLOW_MERGE_COMMITS", false) ||
-        DEFAULT_CONFIG.allowMergeCommits,
-    };
+    if (!config.base.systemPrompt) {
+      config.base.systemPrompt = generateCommitMessageSystemPrompt(
+        config.base.language,
+        config.features.commitOptions.allowMergeCommits,
+        false,
+        currentScm,
+        config.features.commitOptions.useEmoji
+      );
+    }
+
+    return config as ExtensionConfiguration;
   }
 
   public async updateConfig<T>(key: ConfigKey, value: T): Promise<void> {
@@ -170,50 +159,66 @@ export class ConfigurationManager {
   /**
    * 处理配置变更事件
    */
-  private handleConfigurationChange(
-    event: vscode.ConfigurationChangeEvent
-  ): void {
-    const configPrefix = `${EXTENSION_NAME}.`;
+  private handleConfigurationChange(changedKeys: string[]): void {
+    console.log("发生变化的配置项:", changedKeys);
 
-    // 检查是否是 OpenAI 相关配置变更
-    const isOpenAIConfigChanged = ["openai.apiKey", "openai.baseUrl"].some(
-      (key) => event.affectsConfiguration(`${configPrefix}${key}`)
+    // 处理提供商相关的配置变更
+    const providerChanges = new Set(
+      changedKeys.map((key) => key.split(".")[0])
     );
 
-    // 如果 OpenAI 配置发生变更，重新初始化 provider
-    if (isOpenAIConfigChanged) {
-      AIProviderFactory.reinitializeProvider("OpenAI");
-      console.log(
-        "OpenAI provider has been reinitialized due to config changes"
-      );
+    // 检查各提供商的配置变更
+    if (providerChanges.has("providers")) {
+      // OpenAI 配置变更
+      if (changedKeys.some((key) => key.startsWith("providers.openai"))) {
+        AIProviderFactory.reinitializeProvider("OpenAI");
+        console.log(
+          "OpenAI provider has been reinitialized due to config changes"
+        );
+      }
+
+      // Ollama 配置变更
+      if (changedKeys.some((key) => key.startsWith("providers.ollama"))) {
+        AIProviderFactory.reinitializeProvider("Ollama");
+        console.log(
+          "Ollama provider has been reinitialized due to config changes"
+        );
+      }
+
+      // 其他提供商的配置变更...
+      if (changedKeys.some((key) => key.startsWith("providers.zhipuai"))) {
+        AIProviderFactory.reinitializeProvider("ZhipuAI");
+        console.log(
+          "ZhipuAI provider has been reinitialized due to config changes"
+        );
+      }
+
+      if (changedKeys.some((key) => key.startsWith("providers.dashscope"))) {
+        AIProviderFactory.reinitializeProvider("DashScope");
+        console.log(
+          "DashScope provider has been reinitialized due to config changes"
+        );
+      }
+
+      if (changedKeys.some((key) => key.startsWith("providers.doubao"))) {
+        AIProviderFactory.reinitializeProvider("Doubao");
+        console.log(
+          "Doubao provider has been reinitialized due to config changes"
+        );
+      }
     }
 
-    // 检查是否是 Ollama 相关配置变更
-    const isOllamaConfigChanged = ["ollama.baseUrl"].some((key) =>
-      event.affectsConfiguration(`${configPrefix}${key}`)
-    );
-
-    // 如果 Ollama 配置发生变更，重新初始化 provider
-    if (isOllamaConfigChanged) {
-      AIProviderFactory.reinitializeProvider("Ollama");
-      console.log(
-        "Ollama provider has been reinitialized due to config changes"
-      );
+    // 处理基础配置变更
+    if (changedKeys.some((key) => key.startsWith("base."))) {
+      // 可以添加基础配置变更的处理逻辑
+      console.log("Base configuration changed");
     }
 
-    // 添加日志输出具体的配置变更
-    console.log("处理配置变更:", {
-      provider: event.affectsConfiguration(`${configPrefix}provider`),
-      openaiBaseUrl: event.affectsConfiguration(
-        `${configPrefix}openai.baseUrl`
-      ),
-      openaiApiKey: event.affectsConfiguration(`${configPrefix}openai.apiKey`),
-      ollamaBaseUrl: event.affectsConfiguration(
-        `${configPrefix}ollama.baseUrl`
-      ),
-      openaiModel: event.affectsConfiguration(`${configPrefix}openai.model`),
-      ollamaModel: event.affectsConfiguration(`${configPrefix}ollama.model`),
-    });
+    // 处理功能配置变更
+    if (changedKeys.some((key) => key.startsWith("features."))) {
+      // 可以添加功能配置变更的处理逻辑
+      console.log("Features configuration changed");
+    }
   }
 
   /**
@@ -221,25 +226,46 @@ export class ConfigurationManager {
    */
   public async validateConfiguration(): Promise<boolean> {
     const config = this.getConfiguration();
-    const provider = this.getProviderFromModel(config.model);
+    const provider = config.base.provider.toLowerCase();
 
     switch (provider) {
       case "openai":
-        return this.validateOpenAIConfig();
+        return this.validateProviderConfig("openai", "apiKey");
       case "ollama":
-        return this.validateOllamaConfig();
-      default:
+        return this.validateProviderConfig("ollama", "baseUrl");
+      case "zhipuai":
+        return this.validateProviderConfig("zhipuai", "apiKey");
+      case "dashscope":
+        return this.validateProviderConfig("dashscope", "apiKey");
+      case "doubao":
+        return this.validateProviderConfig("doubao", "apiKey");
+      case "vs code provided":
         return Promise.resolve(true);
+      default:
+        return Promise.resolve(false);
     }
   }
 
-  private async validateOpenAIConfig(): Promise<boolean> {
+  /**
+   * 通用的提供商配置验证方法
+   */
+  private async validateProviderConfig(
+    provider: keyof ExtensionConfiguration["providers"],
+    requiredField: "apiKey" | "baseUrl"
+  ): Promise<boolean> {
     const config = this.getConfiguration();
     const locManager = LocalizationManager.getInstance();
+    const providerConfig = config.providers[provider];
 
-    if (!config.openai.apiKey) {
+    // 类型守卫：检查必需字段是否存在于提供商配置中
+    if (
+      !providerConfig ||
+      !(requiredField in providerConfig) ||
+      !providerConfig[requiredField as keyof typeof providerConfig]
+    ) {
+      const settingKey = `PROVIDERS_${provider.toUpperCase()}_${requiredField.toUpperCase()}`;
       const action = await vscode.window.showErrorMessage(
-        locManager.getMessage("openai.apikey.missing"),
+        locManager.getMessage(`${provider}.${requiredField}.missing`),
         locManager.getMessage("button.yes"),
         locManager.getMessage("button.no")
       );
@@ -247,29 +273,7 @@ export class ConfigurationManager {
       if (action === locManager.getMessage("button.yes")) {
         await vscode.commands.executeCommand(
           "workbench.action.openSettings",
-          "dish-ai-commit.OPENAI_API_KEY"
-        );
-      }
-      return false;
-    }
-    return true;
-  }
-
-  private async validateOllamaConfig(): Promise<boolean> {
-    const config = this.getConfiguration();
-    const locManager = LocalizationManager.getInstance();
-
-    if (!config.ollama.baseUrl) {
-      const action = await vscode.window.showErrorMessage(
-        locManager.getMessage("ollama.baseurl.missing"),
-        locManager.getMessage("button.yes"),
-        locManager.getMessage("button.no")
-      );
-
-      if (action === locManager.getMessage("button.yes")) {
-        await vscode.commands.executeCommand(
-          "workbench.action.openSettings",
-          "dish-ai-commit.OLLAMA_BASE_URL"
+          `dish-ai-commit.${settingKey}`
         );
       }
       return false;
@@ -279,26 +283,14 @@ export class ConfigurationManager {
 
   /**
    * 更新 AI 提供商和模型配置
-   * @param provider AI 提供商名称
-   * @param model 模型名称
    */
   public async updateAIConfiguration(
     provider: string,
     model: string
   ): Promise<void> {
-    const modelConfigKey = `MODEL` as ConfigKey;
-    const providerConfigKey = `PROVIDER` as ConfigKey;
-    await this.updateConfig(modelConfigKey, model);
-    await this.updateConfig(providerConfigKey, provider);
-  }
-
-  public getProviderFromModel(model: string): string {
-    if (model.startsWith("gpt-")) {
-      return "openai";
-    } else if (model === "vscode-default") {
-      return "vscode";
-    } else {
-      return "ollama";
-    }
+    await Promise.all([
+      this.updateConfig("BASE_PROVIDER" as ConfigKey, provider),
+      this.updateConfig("BASE_MODEL" as ConfigKey, model),
+    ]);
   }
 }
