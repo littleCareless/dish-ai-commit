@@ -158,4 +158,17 @@ export class GitProvider implements ISCMProvider {
 
     repository.inputBox.value = message;
   }
+
+  async getCommitInput(): Promise<string> {
+    const api = this.gitExtension.getAPI(1);
+    const repository = api.repositories[0];
+
+    if (!repository) {
+      throw new Error(
+        LocalizationManager.getInstance().getMessage("git.repository.not.found")
+      );
+    }
+
+    return repository.inputBox.value;
+  }
 }

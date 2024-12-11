@@ -9,6 +9,7 @@ export interface ISCMProvider {
   getDiff(files?: string[]): Promise<string | undefined>;
   commit(message: string, files?: string[]): Promise<void>;
   setCommitInput(message: string): Promise<void>;
+  getCommitInput(): Promise<string>;
 }
 
 export class SCMFactory {
