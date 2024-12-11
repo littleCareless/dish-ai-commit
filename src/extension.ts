@@ -18,21 +18,15 @@ export function activate(context: vscode.ExtensionContext) {
     // 初始化配置管理器并添加到订阅列表
     context.subscriptions.push(ConfigurationManager.getInstance());
 
-    // 在扩展激活时验证配置
-    ConfigurationManager.getInstance()
-      .validateConfiguration()
-      .then((isValid) => {
-        if (!isValid) {
-          console.log("Configuration validation failed");
-        }
-      });
-
     // 注册所有命令
     registerCommands(context);
   } catch (e) {
     console.error("Error activating extension:", e);
     // 添加用户可见的错误提示
-    NotificationHandler.error("extension.activation.failed", e instanceof Error ? e.message : String(e));
+    NotificationHandler.error(
+      "extension.activation.failed",
+      e instanceof Error ? e.message : String(e)
+    );
     throw e;
   }
 }
