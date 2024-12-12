@@ -4,6 +4,7 @@ import {
   ConfigKey,
   ExtensionConfiguration,
   type ConfigurationValueType,
+  PROVIDER_REQUIRED_FIELDS,
 } from "./types";
 import { EXTENSION_NAME } from "../constants";
 import { generateCommitMessageSystemPrompt } from "../prompt/prompt";
@@ -17,6 +18,7 @@ import {
   generateConfiguration,
   isConfigValue,
 } from "./ConfigSchema";
+import { getSystemPrompt } from "../ai/utils/generateHelper";
 
 export class ConfigurationManager {
   private static instance: ConfigurationManager;
@@ -24,6 +26,7 @@ export class ConfigurationManager {
   private configCache: Map<string, any> = new Map();
   private readonly disposables: vscode.Disposable[] = [];
   private context?: vscode.ExtensionContext;
+  private configurationInProgress: boolean = false;
 
   private getUpdatedValue<T>(key: string): T | undefined {
     // 直接从workspace configuration获取最新值
@@ -110,50 +113,75 @@ export class ConfigurationManager {
   public getConfig<K extends ConfigKey>(
     key: K,
     useCache: boolean = true
-  ): ConfigurationValueType[K] {
+  ): K extends keyof ConfigurationValueType
+    ? ConfigurationValueType[K]
+    : string {
     console.log("获取配置项:", key, ConfigKeys);
     const configKey = ConfigKeys[key].replace("dish-ai-commit.", "");
 
     if (!useCache) {
-      // 直接从 configuration 获取最新值，确保返回正确的类型
-      const value =
-        this.configuration.get<ConfigurationValueType[K]>(configKey);
-      return value as ConfigurationValueType[K];
+      const value = this.configuration.get<string>(configKey);
+      return value as K extends keyof ConfigurationValueType
+        ? ConfigurationValueType[K]
+        : string;
     }
 
     if (!this.configCache.has(configKey)) {
-      const value =
-        this.configuration.get<ConfigurationValueType[K]>(configKey);
+      const value = this.configuration.get<string>(configKey);
       this.configCache.set(configKey, value);
     }
-    return this.configCache.get(configKey) as ConfigurationValueType[K];
+    return this.configCache.get(
+      configKey
+    ) as K extends keyof ConfigurationValueType
+      ? ConfigurationValueType[K]
+      : string;
   }
 
-  public getConfiguration(): ExtensionConfiguration {
-    // 使用generateConfiguration自动生成配置
-    const config = generateConfiguration(CONFIG_SCHEMA, (key: string) => {
-      return this.configuration.get<any>(`${key}`);
-    });
-
-    // 处理特殊情况：system prompt
-    const currentScm = SCMFactory.getCurrentSCMType() || "git";
-    if (!config.base.systemPrompt) {
-      config.base.systemPrompt = generateCommitMessageSystemPrompt(
-        config.base.language,
-        config.features.commitOptions.allowMergeCommits,
-        false,
-        currentScm,
-        config.features.commitOptions.useEmoji
-      );
+  public getConfiguration(
+    skipSystemPrompt: boolean = false
+  ): ExtensionConfiguration {
+    if (this.configurationInProgress) {
+      // 如果已经在获取配置过程中，返回基本配置而不包含 systemPrompt
+      const config = generateConfiguration(CONFIG_SCHEMA, (key: string) => {
+        return this.configuration.get<any>(`${key}`);
+      });
+      return config as ExtensionConfiguration;
     }
 
-    return config as ExtensionConfiguration;
+    try {
+      this.configurationInProgress = true;
+
+      // 使用generateConfiguration自动生成配置
+      const config = generateConfiguration(CONFIG_SCHEMA, (key: string) => {
+        return this.configuration.get<any>(`${key}`);
+      });
+
+      // 只在非跳过模式下且明确需要 systemPrompt 时才生成
+      if (!skipSystemPrompt && !config.base.systemPrompt) {
+        const currentScm = SCMFactory.getCurrentSCMType() || "git";
+        const promptConfig = {
+          ...config.base,
+          ...config.features.commitFormat,
+          ...config.features.codeAnalysis,
+          scm: currentScm,
+          diff: "",
+          additionalContext: "",
+          model: {},
+        };
+
+        config.base.systemPrompt = getSystemPrompt(promptConfig);
+      }
+
+      return config as ExtensionConfiguration;
+    } finally {
+      this.configurationInProgress = false;
+    }
   }
 
-  // 修改updateConfig方法签名
+  // 修改updateConfig方法签名，使用条件类型处理值的类型
   public async updateConfig<K extends ConfigKey>(
     key: K,
-    value: ConfigurationValueType[K]
+    value: string
   ): Promise<void> {
     await this.configuration.update(
       ConfigKeys[key].replace("dish-ai-commit.", ""),
@@ -243,24 +271,23 @@ export class ConfigurationManager {
    */
   public async validateConfiguration(): Promise<boolean> {
     const config = this.getConfiguration();
-    const provider = config.base.provider.toLowerCase();
+    const provider = (config.base.provider as string).toLowerCase();
 
-    switch (provider) {
-      case "openai":
-        return this.validateProviderConfig("openai", "apiKey");
-      case "ollama":
-        return this.validateProviderConfig("ollama", "baseUrl");
-      case "zhipuai":
-        return this.validateProviderConfig("zhipuai", "apiKey");
-      case "dashscope":
-        return this.validateProviderConfig("dashscope", "apiKey");
-      case "doubao":
-        return this.validateProviderConfig("doubao", "apiKey");
-      case "vs code provided":
-        return Promise.resolve(true);
-      default:
-        return Promise.resolve(false);
+    // VS Code 提供的AI不需要验证
+    if (provider === "vs code provided") {
+      return true;
     }
+
+    // 检查是否是支持的提供商
+    if (provider in PROVIDER_REQUIRED_FIELDS) {
+      const requiredField = PROVIDER_REQUIRED_FIELDS[provider];
+      return this.validateProviderConfig(
+        provider as keyof ExtensionConfiguration["providers"],
+        requiredField
+      );
+    }
+
+    return false;
   }
 
   /**
@@ -302,12 +329,12 @@ export class ConfigurationManager {
    * 更新 AI 提供商和模型配置
    */
   public async updateAIConfiguration(
-    provider: string,
-    model: string
+    provider: ExtensionConfiguration["base"]["provider"],
+    model: ExtensionConfiguration["base"]["model"]
   ): Promise<void> {
     await Promise.all([
-      this.updateConfig("BASE_PROVIDER", provider),
-      this.updateConfig("BASE_MODEL", model),
+      this.updateConfig("BASE_PROVIDER" as ConfigKey, provider),
+      this.updateConfig("BASE_MODEL" as ConfigKey, model),
     ]);
   }
 }

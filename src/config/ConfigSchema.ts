@@ -55,14 +55,22 @@ export const CONFIG_SCHEMA = {
     },
     provider: {
       type: "string",
-      default: "OpenAI", // 其他都是用OpenAI的SDK适配
-      enum: ["OpenAI", "Ollama", "VS Code Provided"],
+      default: "OpenAI",
+      enum: [
+        "OpenAI",
+        "Ollama",
+        "VS Code Provided",
+        "ZhipuAI",
+        "DashScope",
+        "Doubao",
+      ],
       description: "AI provider",
     },
     model: {
       type: "string",
       default: "gpt-3.5-turbo",
-      description: "AI Model",
+      description: "AI model",
+      scope: "machine",
     },
   },
   providers: {
@@ -109,9 +117,9 @@ export const CONFIG_SCHEMA = {
     },
   },
   features: {
-    // 功能配置
-    diffSimplification: {
-      enabled: {
+    // 代码分析功能
+    codeAnalysis: {
+      simplifyDiff: {
         type: "boolean",
         default: false,
         description:
@@ -128,13 +136,14 @@ export const CONFIG_SCHEMA = {
         description: "保留的上下文行数",
       },
     },
-    commitOptions: {
-      allowMergeCommits: {
+    // 提交相关功能
+    commitFormat: {
+      enableMergeCommit: {
         type: "boolean",
         default: false,
         description: "是否允许将多个文件的变更合并为一条提交信息",
       },
-      useEmoji: {
+      enableEmoji: {
         type: "boolean",
         default: true,
         description: "在提交信息中使用 emoji",
@@ -143,17 +152,45 @@ export const CONFIG_SCHEMA = {
   },
 } as const;
 
-// 更新 ConfigValue 接口定义为更具体的联合类型
-type ConfigValueType = {
-  type: "string" | "boolean" | "number";
-  default: any;
+// 修改类型定义，添加 isSpecial 可选属性
+export type ConfigValueTypeBase = {
   description: string;
-  enum?: readonly string[];
-  enumDescriptions?: readonly string[];
   isSpecial?: boolean;
 };
 
-export interface ConfigValue extends ConfigValueType {}
+export type ConfigValueTypeString = ConfigValueTypeBase & {
+  type: "string";
+  default: string;
+  enum?: readonly string[];
+  enumDescriptions?: readonly string[];
+  scope?:
+    | "machine"
+    | "window"
+    | "resource"
+    | "application"
+    | "language-overridable";
+};
+
+export type ConfigValueTypeBoolean = ConfigValueTypeBase & {
+  type: "boolean";
+  default: boolean;
+};
+
+export type ConfigValueTypeNumber = ConfigValueTypeBase & {
+  type: "number";
+  default: number;
+};
+
+export type ConfigValueType =
+  | ConfigValueTypeString
+  | ConfigValueTypeBoolean
+  | ConfigValueTypeNumber;
+
+// 或者直接使用联合类型
+export type ConfigValue =
+  | ConfigValueTypeString
+  | ConfigValueTypeBoolean
+  | ConfigValueTypeNumber;
 
 // 添加配置值的接口定义
 export interface ConfigObject {
@@ -170,51 +207,75 @@ export type SchemaType = {
 // 生成类型
 export type ConfigPath = string; // 例如: "providers.openai.apiKey"
 
-// 辅助函数：从模式生成配置键
+// 修改：辅助函数生成配置键的逻辑
 export function generateConfigKeys(
   schema: SchemaType,
   prefix: string = ""
 ): Record<string, string> {
   const keys: Record<string, string> = {};
 
-  function traverse(obj: any, path: string = "") {
+  function traverse(obj: ConfigObject, path: string = "") {
     for (const [key, value] of Object.entries(obj)) {
       const fullPath = path ? `${path}.${key}` : key;
-      if ((value as any).type) {
-        const configKey = `${prefix}${fullPath}`
-          .replace(/\./g, "_")
-          .toUpperCase();
+      if (isConfigValue(value)) {
+        // 对于配置值，生成完整的配置键
+        const configKey = fullPath.replace(/\./g, "_").toUpperCase();
         keys[configKey] = `dish-ai-commit.${fullPath}`;
       } else {
-        traverse(value, fullPath);
+        // 对于嵌套对象，生成中间键和继续遍历
+        const intermediateKey = fullPath.replace(/\./g, "_").toUpperCase();
+        keys[intermediateKey] = `dish-ai-commit.${fullPath}`;
+        traverse(value as ConfigObject, fullPath);
       }
     }
   }
 
-  traverse(schema);
+  traverse(schema as unknown as ConfigObject);
   return keys;
 }
 
-// 生成配置元数据
-export function generateConfigMetadata(schema: SchemaType) {
-  const metadata: any[] = [];
+// 添加元数据类型定义
+export interface ConfigMetadataItem {
+  key: string;
+  defaultValue: any;
+  nested: boolean;
+  parent: string;
+  description: string;
+  type: string;
+  enum?: readonly string[];
+  enumDescriptions?: readonly string[];
+  isSpecial?: boolean;
+}
+
+// 修改生成配置元数据函数的类型定义
+export function generateConfigMetadata(
+  schema: SchemaType
+): ConfigMetadataItem[] {
+  const metadata: ConfigMetadataItem[] = [];
 
   function traverse(obj: ConfigObject, path: string = "") {
     for (const [key, value] of Object.entries(obj)) {
       const fullPath = path ? `${path}.${key}` : key;
-      if ("type" in value) {
-        metadata.push({
+      if (isConfigValue(value)) {
+        const metadataItem: ConfigMetadataItem = {
           key: fullPath.replace(/\./g, "_").toUpperCase(),
           defaultValue: value.default,
           nested: fullPath.includes("."),
           parent: fullPath.split(".")[0],
           description: value.description,
           type: value.type,
-          enum: value.enum,
-          enumDescriptions: value.enumDescriptions,
           isSpecial: value.isSpecial,
-        });
-      } else {
+        };
+
+        // 只有当值是 ConfigValueTypeString 类型时才添加 enum 和 enumDescriptions
+        if (value.type === "string" && "enum" in value) {
+          metadataItem.enum = value.enum;
+          metadataItem.enumDescriptions = value.enumDescriptions;
+        }
+
+        metadata.push(metadataItem);
+      } else if (typeof value === "object") {
+        // 处理嵌套对象
         traverse(value as ConfigObject, fullPath);
       }
     }

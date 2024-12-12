@@ -3,199 +3,114 @@ import {
   generateConfigKeys,
   generateConfigMetadata,
   type ConfigObject,
+  type ConfigValueTypeString,
+  type ConfigValueTypeBoolean,
+  type ConfigValueTypeNumber,
 } from "./ConfigSchema";
 
-// 自动生成 ConfigKeys
-export const ConfigKeys = generateConfigKeys(CONFIG_SCHEMA);
+// 从 CONFIG_SCHEMA 自动生成提供商枚举
+function generateProviderEnum() {
+  const providers = CONFIG_SCHEMA.base.provider.enum;
+  if (!providers) {
+    return {};
+  }
 
-// 自动生成 CONFIG_METADATA
-export const CONFIG_METADATA = generateConfigMetadata(CONFIG_SCHEMA);
-
-export enum AIProvider {
-  OPENAI = "openai",
-  OLLAMA = "ollama",
-  VSCODE = "vs code provided",
-  ZHIPU = "zhipu",
-  DASHSCOPE = "dashscope",
-  DOUBAO = "doubao",
+  return providers.reduce((acc, provider) => {
+    acc[provider.toUpperCase().replace(/\s+/g, "_")] = provider.toLowerCase();
+    return acc;
+  }, {} as Record<string, string>);
 }
 
-// 重新设计类型生成逻辑
-type ExtractConfigValueType<T> = T extends { type: "string" }
+export const AIProvider = generateProviderEnum();
+
+// 基础类型提取 - 保持不变
+type ExtractConfigValueType<T> = T extends ConfigValueTypeString
   ? string
-  : T extends { type: "boolean" }
+  : T extends ConfigValueTypeBoolean
   ? boolean
-  : T extends { type: "number" }
+  : T extends ConfigValueTypeNumber
   ? number
   : never;
 
-// 处理第一层配置
-type FirstLevelConfig<T> = {
-  [P in keyof T]: T[P] extends { type: string }
-    ? ExtractConfigValueType<T[P]>
-    : T[P] extends ConfigObject
-    ? SecondLevelConfig<T[P], P>
-    : never;
-};
-
-// 处理第二层配置
-type SecondLevelConfig<T, P extends string | number | symbol> = {
+// 自动生成配置类型
+type GenerateConfigType<T> = {
   [K in keyof T]: T[K] extends { type: string }
     ? ExtractConfigValueType<T[K]>
     : T[K] extends ConfigObject
-    ? ThirdLevelConfig<T[K], P, K>
+    ? GenerateConfigType<T[K]>
     : never;
 };
 
-// 处理第三层配置
-type ThirdLevelConfig<
-  T,
-  P extends string | number | symbol,
-  K extends string | number | symbol
-> = {
-  [L in keyof T]: T[L] extends { type: string }
-    ? ExtractConfigValueType<T[L]>
-    : never;
-};
+// 自动生成扩展配置接口
+export type ExtensionConfiguration = GenerateConfigType<typeof CONFIG_SCHEMA>;
 
-// 生成所有配置路径的联合类型
-type ConfigPaths<T> = {
-  [P in keyof T]: T[P] extends { type: string }
-    ? P
-    : T[P] extends ConfigObject
-    ?
-        | P
-        | `${P & string}.${keyof T[P] & string}`
-        | `${P & string}.${keyof T[P] & string}.${keyof T[P][keyof T[P]] &
-            string}`
+// 配置路径生成
+type RecursiveConfigPath<T, P extends string = ""> = {
+  [K in keyof T]: T[K] extends { type: string }
+    ? P extends ""
+      ? `${K & string}`
+      : `${P}_${K & string}`
+    : T[K] extends ConfigObject
+    ? P extends ""
+      ? `${K & string}` | RecursiveConfigPath<T[K], `${K & string}`>
+      : `${P}_${K & string}` | RecursiveConfigPath<T[K], `${P}_${K & string}`>
     : never;
 }[keyof T];
 
-// 生成配置值类型映射
-type GenerateValueType<T> = {
-  [P in ConfigPaths<T>]: P extends keyof T
-    ? T[P] extends { type: string }
-      ? ExtractConfigValueType<T[P]>
-      : never
-    : P extends `${infer A}.${infer B}`
-    ? A extends keyof T
-      ? B extends keyof T[A]
-        ? T[A][B] extends { type: string }
-          ? ExtractConfigValueType<T[A][B]>
-          : B extends `${infer C}.${infer D}`
-          ? C extends keyof T[A]
-            ? D extends keyof T[A][C]
-              ? ExtractConfigValueType<T[A][C][D]>
-              : never
-            : never
-          : never
-        : never
-      : never
-    : never;
-};
+// 配置路径类型
+export type ConfigPath = RecursiveConfigPath<typeof CONFIG_SCHEMA>;
 
-// 创建配置键的大写映射
-type UppercaseConfigKey<T extends string> = T extends `${infer A}.${infer B}`
-  ? `${Uppercase<A>}_${UppercaseConfigKey<B>}`
-  : Uppercase<T>;
+// 配置键类型（大写）
+export type ConfigKey = Uppercase<ConfigPath>;
 
-// 修改：添加一个辅助类型来过滤掉元数据键
-type ExcludeMetadataKeys<T extends string> =
-  T extends `${infer Base}_${infer Metadata}`
-    ? Metadata extends
-        | "DEFAULT"
-        | "DESCRIPTION"
-        | "TYPE"
-        | "ENUM"
-        | "ENUM_DESCRIPTIONS"
-      ? never
-      : T
-    : T;
-
-// 最终的配置值类型映射，过滤掉元数据键
+// 自动生成配置值类型映射
 export type ConfigurationValueType = {
-  [K in ConfigPaths<typeof CONFIG_SCHEMA> as ExcludeMetadataKeys<
-    UppercaseConfigKey<K>
-  >]: GenerateValueType<typeof CONFIG_SCHEMA>[K];
+  [K in ConfigPath as Uppercase<K>]: ExtractConfigValueType<
+    GetSchemaType<typeof CONFIG_SCHEMA, K>
+  >;
 };
 
-// 修改ConfigKey类型为所有可能的配置键的联合类型
-export type ConfigKey = keyof ConfigurationValueType;
+// 辅助类型：根据路径获取 schema 类型
+type GetSchemaType<
+  T,
+  P extends string
+> = P extends `${infer Head}.${infer Rest}`
+  ? Head extends keyof T
+    ? GetSchemaType<T[Head], Rest>
+    : never
+  : P extends keyof T
+  ? T[P]
+  : never;
 
-// 添加类型辅助函数
-export type GetConfigValue<K extends ConfigKey> = ConfigurationValueType[K];
+// 自动生成必填字段映射
+function generateProviderRequiredFields() {
+  const providers = CONFIG_SCHEMA.providers;
+  const result: Record<string, "apiKey" | "baseUrl"> = {};
 
-// 添加嵌套配置的父级类型定义
-export type ConfigParent = keyof Omit<
-  ExtensionConfiguration,
-  | "language"
-  | "systemPrompt"
-  | "provider"
-  | "model"
-  | "enableDiffSimplification"
-  | "allowMergeCommits"
-  | "useEmoji"
->;
+  for (const [provider, config] of Object.entries(providers)) {
+    const fields = Object.keys(config);
+    if (fields.includes("apiKey")) {
+      result[provider] = "apiKey";
+    } else if (fields.includes("baseUrl")) {
+      result[provider] = "baseUrl";
+    }
+  }
 
-// 修改 ConfigMetadata 接口
+  return result;
+}
+
+export const PROVIDER_REQUIRED_FIELDS = generateProviderRequiredFields();
+
+// 导出配置键和元数据
+export const ConfigKeys = generateConfigKeys(CONFIG_SCHEMA);
+export const CONFIG_METADATA = generateConfigMetadata(CONFIG_SCHEMA);
+
+// 工具函数类型
+export type ConfigParent = Exclude<keyof typeof CONFIG_SCHEMA, "base">;
+
 export interface ConfigMetadata {
   key: ConfigKey;
   defaultValue?: any;
   nested?: boolean;
-  parent?: ConfigParent; // 使用更严格的类型
-}
-
-// 修改 ExtensionConfiguration 以使用 ConfigurationValueType
-export interface ExtensionConfiguration {
-  base: {
-    language: GetConfigValue<"BASE_LANGUAGE">;
-    systemPrompt: GetConfigValue<"BASE_SYSTEMPROMPT">;
-    provider: GetConfigValue<"BASE_PROVIDER">;
-    model: GetConfigValue<"BASE_MODEL">;
-  };
-  providers: {
-    openai: {
-      apiKey: string;
-      baseUrl: string;
-    };
-    zhipuai: {
-      apiKey: string;
-    };
-    dashscope: {
-      apiKey: string;
-    };
-    doubao: {
-      apiKey: string;
-    };
-    ollama: {
-      baseUrl: string;
-    };
-  };
-  features: {
-    diffSimplification: {
-      enabled: boolean;
-      maxLineLength: number;
-      contextLines: number;
-    };
-    commitOptions: {
-      allowMergeCommits: boolean;
-      useEmoji: boolean;
-    };
-  };
-}
-
-export function getProviderModelConfig(
-  config: ExtensionConfiguration,
-  provider: string
-): string {
-  const providerConfig =
-    config[provider.toLowerCase() as keyof ExtensionConfiguration];
-  if (
-    typeof providerConfig === "object" &&
-    providerConfig !== null &&
-    "model" in providerConfig
-  ) {
-    return (providerConfig as { model: string }).model;
-  }
-  return "";
+  parent?: ConfigParent;
 }

@@ -33,15 +33,6 @@ export class DefaultConfig {
     // 生成默认配置
     generateDefaults(CONFIG_SCHEMA, config);
 
-    // 特殊处理 systemPrompt
-    config.systemPrompt = generateCommitMessageSystemPrompt(
-      config.language,
-      config.commitOptions.allowMergeCommits,
-      false,
-      "git",
-      config.commitOptions.useEmoji
-    );
-
     return config as ExtensionConfiguration;
   }
 }
