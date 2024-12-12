@@ -1,10 +1,14 @@
 import * as vscode from "vscode";
 import { NotificationHandler } from "../utils/NotificationHandler";
 import { ConfigurationManager } from "../config/ConfigurationManager";
-import { LocalizationManager } from '../utils/LocalizationManager'
+import { LocalizationManager } from "../utils/LocalizationManager";
 
 export abstract class BaseCommand {
-  constructor(protected readonly context: vscode.ExtensionContext) {}
+  protected context: vscode.ExtensionContext;
+
+  constructor(context: vscode.ExtensionContext) {
+    this.context = context;
+  }
 
   protected async validateConfig(): Promise<boolean> {
     if (!(await ConfigurationManager.getInstance().validateConfiguration())) {
@@ -14,7 +18,10 @@ export abstract class BaseCommand {
     return true;
   }
 
-  protected async handleError(error: unknown, errorMessage: string): Promise<void> {
+  protected async handleError(
+    error: unknown,
+    errorMessage: string
+  ): Promise<void> {
     console.error(errorMessage, error);
     if (error instanceof Error) {
       await NotificationHandler.error(

@@ -5,9 +5,7 @@ import { NotificationHandler } from "../utils/NotificationHandler";
 import { ProgressHandler } from "../utils/ProgressHandler";
 import { AIProviderFactory } from "../ai/AIProviderFactory";
 import { SCMFactory } from "../scm/SCMProvider";
-import { getProviderModelConfig, type ConfigKey } from "../config/types";
-import { DISPLAY_NAME } from "../constants";
-import { getMaxCharacters } from "../ai/types";
+import { type ConfigKey } from "../config/types";
 import { LocalizationManager } from "../utils/LocalizationManager";
 import { ModelPickerService } from "../services/ModelPickerService";
 
@@ -35,8 +33,8 @@ export class GenerateCommitCommand extends BaseCommand {
     }
 
     const config = ConfigurationManager.getInstance();
-    await config.updateConfig("PROVIDERS_OPENAI_BASEURL" as ConfigKey, baseURL);
-    await config.updateConfig("PROVIDERS_OPENAI_APIKEY" as ConfigKey, apiKey);
+    await config.updateConfig("PROVIDERS_OPENAI_BASEURL", baseURL);
+    await config.updateConfig("PROVIDERS_OPENAI_APIKEY", apiKey);
     return true;
   }
 
@@ -219,7 +217,8 @@ export class GenerateCommitCommand extends BaseCommand {
 
           const result = await aiProvider.generateResponse({
             ...configuration.base, // 包含 systemPrompt, language 等基础配置
-            ...configuration.features.commitOptions, // 包含 allowMergeCommits, useEmoji 等选项
+            ...configuration.features.commitFormat,
+            ...configuration.features.codeAnalysis,
             additionalContext: currentInput,
             diff: diffContent,
             model: selectedModel,

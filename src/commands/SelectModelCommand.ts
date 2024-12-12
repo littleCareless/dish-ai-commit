@@ -2,22 +2,27 @@ import * as vscode from "vscode";
 import { BaseCommand } from "./BaseCommand";
 import { ConfigurationManager } from "../config/ConfigurationManager";
 import { NotificationHandler } from "../utils/NotificationHandler";
-import { AIProviderFactory } from "../ai/AIProviderFactory";
-import { getProviderModelConfig } from "../config/types";
-import { LocalizationManager } from "../utils/LocalizationManager";
 import { ModelPickerService } from "../services/ModelPickerService";
 
 export class SelectModelCommand extends BaseCommand {
+  constructor(context: vscode.ExtensionContext) {
+    super(context);
+  }
+
   async execute(): Promise<void> {
-    const config = ConfigurationManager.getInstance();
-    const configuration = config.getConfiguration();
+    const configManager = ConfigurationManager.getInstance();
+
+    // 只获取需要的配置项
+    const currentProvider = configManager.getConfig("BASE_PROVIDER");
+    const currentModel = configManager.getConfig("BASE_MODEL");
+
     const modelSelection = await this.showModelPicker(
-      configuration.base.provider,
-      getProviderModelConfig(configuration, configuration.base.provider)
+      currentProvider,
+      currentModel
     );
 
     if (modelSelection) {
-      await config.updateAIConfiguration(
+      await configManager.updateAIConfiguration(
         modelSelection.provider,
         modelSelection.model
       );
