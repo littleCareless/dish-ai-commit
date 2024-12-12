@@ -96,6 +96,40 @@ export class OllamaProvider implements AIProvider {
     );
   }
 
+  async generateWeeklyReport(commits: string[]): Promise<AIResponse> {
+    const model = this.configManager.getConfig("BASE_MODEL");
+
+    const response = await this.ollama.chat({
+      model: (model as any).id,
+      messages: [
+        {
+          role: "system",
+          content: "请根据以下commit生成一份周报：",
+        },
+        {
+          role: "user",
+          content: commits.join("\n"),
+        },
+      ],
+      stream: false,
+    });
+
+    let content = "";
+    try {
+      const jsonContent = JSON.parse(response.message.content);
+      content = jsonContent.response || response.message.content;
+    } catch {
+      content = response.message.content;
+    }
+
+    return {
+      content,
+      usage: {
+        totalTokens: response.total_duration,
+      },
+    };
+  }
+
   async isAvailable(): Promise<boolean> {
     try {
       await this.ollama.list();

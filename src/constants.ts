@@ -12,8 +12,8 @@ export const COMMANDS = {
     SHOW: packageJson.contributes.commands[1].command,
   },
   WEEKLY_REPORT: {
-    GENERATE: 'dish-ai-commit.generateWeeklyReport'
-  }
+    GENERATE: packageJson.contributes.commands[2].command,
+  },
 } as const;
 
 // 添加类型导出

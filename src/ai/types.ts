@@ -69,6 +69,7 @@ export interface AIModel<
 
 export interface AIProvider {
   generateResponse(params: AIRequestParams): Promise<AIResponse>;
+  generateWeeklyReport(commits: string[]): Promise<AIResponse>;
   isAvailable(): Promise<boolean>;
   refreshModels(): Promise<string[]>;
   getModels(): Promise<AIModel[]>; // 更新返回类型

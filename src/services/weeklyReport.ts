@@ -18,7 +18,7 @@ export class WeeklyReportService {
 
   constructor() {}
 
-  async generate(): Promise<WorkItem[]> {
+  async generate(commits: string[]): Promise<WorkItem[]> {
     const scmProvider = await SCMFactory.detectSCM();
     if (!scmProvider) {
       throw new Error("No SCM provider detected");
@@ -30,8 +30,7 @@ export class WeeklyReportService {
       throw new Error("Unable to detect author information");
     }
 
-    const repositories = await this.findRepositories();
-    await this.collectLogs(repositories, author);
+    this.allLogs = commits;
     return this.processLogs();
   }
 
@@ -93,7 +92,7 @@ export class WeeklyReportService {
   private getLastWeekDates(): { start: Date; end: Date } {
     const today = new Date();
     const currentDay = today.getDay();
-    
+
     // 计算上周一的日期
     const lastMonday = new Date(today);
     lastMonday.setDate(today.getDate() - currentDay - 7 + 1);
@@ -111,7 +110,7 @@ export class WeeklyReportService {
     const { start, end } = this.getLastWeekDates();
     const startDate = start.toISOString();
     const endDate = end.toISOString();
-    
+
     const command = `git log --after="${startDate}" --before="${endDate}" --author="${author}" --pretty=format:"%s"`;
     try {
       const { stdout } = await execAsync(command, { cwd: repoPath });

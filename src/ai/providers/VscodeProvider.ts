@@ -107,6 +107,42 @@ export class VSCodeProvider implements AIProvider {
     }
   }
 
+  async generateWeeklyReport(commits: string[]): Promise<AIResponse> {
+    try {
+      const models = await vscode.lm.selectChatModels();
+      if (!models || models.length === 0) {
+        throw new Error(
+          LocalizationManager.getInstance().getMessage(
+            "vscode.no.models.available"
+          )
+        );
+      }
+
+      const chatModel = models[0];
+      const messages = [
+        vscode.LanguageModelChatMessage.User(
+          `请根据以下commit生成一份周报：\n${commits.join("\n")}`
+        ),
+      ];
+
+      const response = await chatModel.sendRequest(messages);
+
+      let result = "";
+      for await (const fragment of response.text) {
+        result += fragment;
+      }
+
+      return { content: result.trim() };
+    } catch (error) {
+      throw new Error(
+        LocalizationManager.getInstance().format(
+          "weeklyReport.generation.failed",
+          error instanceof Error ? error.message : String(error)
+        )
+      );
+    }
+  }
+
   async refreshModels(): Promise<any> {
     // VSCode的模型是动态的，不需要刷新
     return Promise.resolve();

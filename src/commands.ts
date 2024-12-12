@@ -17,7 +17,6 @@ export class CommandManager implements vscode.Disposable {
       const generateCommand = new GenerateCommitCommand(this.context);
       const selectModelCommand = new SelectModelCommand(this.context);
       const weeklyReportCommand = new GenerateWeeklyReportCommand(this.context);
-      console.log("COMMANDS.MODEL.SHOW", COMMANDS.MODEL.SHOW);
 
       this.disposables.push(
         vscode.commands.registerCommand(
@@ -37,7 +36,6 @@ export class CommandManager implements vscode.Disposable {
           try {
             await selectModelCommand.execute();
           } catch (error) {
-            console.log("error", error);
             NotificationHandler.error(
               "command.select.model.failed",
               error instanceof Error ? error.message : String(error)

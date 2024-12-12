@@ -34,7 +34,7 @@ export class AIProviderFactory {
     let provider = this.providers.get(providerType);
     console.log("AIProvider", AIProvider);
     console.log("providerType", providerType.toLowerCase());
-    console.log("AIProvider.VSCODE", AIProvider.VSCODE);
+    console.log("AIProvider.VSCODE", AIProvider.ZHIPU);
     if (!provider) {
       switch (providerType.toLowerCase()) {
         case AIProvider.OPENAI:
@@ -46,7 +46,7 @@ export class AIProviderFactory {
         case AIProvider.VS_CODE_PROVIDED:
           provider = new VSCodeProvider();
           break;
-        case AIProvider.ZHIPU:
+        case AIProvider.ZHIPUAI:
           provider = new ZhipuAIProvider();
           break;
         case AIProvider.DASHSCOPE:

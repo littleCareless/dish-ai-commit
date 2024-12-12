@@ -2,6 +2,7 @@ import OpenAI from "openai";
 import { ChatCompletionMessageParam } from "openai/resources";
 import { AIProvider, AIRequestParams, AIResponse, AIModel } from "../types";
 import { generateWithRetry, getSystemPrompt } from "../utils/generateHelper";
+import { LocalizationManager } from "../../utils/LocalizationManager";
 
 export interface OpenAIProviderConfig {
   apiKey: string;
@@ -81,6 +82,42 @@ export abstract class BaseOpenAIProvider implements AIProvider {
         provider: this.getId(),
       }
     );
+  }
+
+  async generateWeeklyReport(commits: string[]): Promise<AIResponse> {
+    try {
+      const messages: ChatCompletionMessageParam[] = [
+        {
+          role: "system",
+          content: "请根据以下commit生成一份周报：",
+        },
+        {
+          role: "user",
+          content: commits.join("\n"),
+        },
+      ];
+
+      const completion = await this.openai.chat.completions.create({
+        model: this.config.defaultModel || "gpt-3.5-turbo",
+        messages,
+      });
+
+      return {
+        content: completion.choices[0]?.message?.content || "",
+        usage: {
+          promptTokens: completion.usage?.prompt_tokens,
+          completionTokens: completion.usage?.completion_tokens,
+          totalTokens: completion.usage?.total_tokens,
+        },
+      };
+    } catch (error) {
+      throw new Error(
+        LocalizationManager.getInstance().format(
+          "weeklyReport.generation.failed",
+          error instanceof Error ? error.message : String(error)
+        )
+      );
+    }
   }
 
   async getModels(): Promise<AIModel[]> {
