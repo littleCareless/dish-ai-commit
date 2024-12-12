@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { COMMANDS } from "./constants";
 import { GenerateCommitCommand } from "./commands/GenerateCommitCommand";
 import { SelectModelCommand } from "./commands/SelectModelCommand";
+import { GenerateWeeklyReportCommand } from "./commands/GenerateWeeklyReportCommand";
 import { NotificationHandler } from "./utils/NotificationHandler";
 
 export class CommandManager implements vscode.Disposable {
@@ -15,6 +16,7 @@ export class CommandManager implements vscode.Disposable {
     try {
       const generateCommand = new GenerateCommitCommand(this.context);
       const selectModelCommand = new SelectModelCommand(this.context);
+      const weeklyReportCommand = new GenerateWeeklyReportCommand(this.context);
       console.log("COMMANDS.MODEL.SHOW", COMMANDS.MODEL.SHOW);
 
       this.disposables.push(
@@ -41,7 +43,20 @@ export class CommandManager implements vscode.Disposable {
               error instanceof Error ? error.message : String(error)
             );
           }
-        })
+        }),
+        vscode.commands.registerCommand(
+          COMMANDS.WEEKLY_REPORT.GENERATE,
+          async () => {
+            try {
+              await weeklyReportCommand.execute();
+            } catch (error) {
+              NotificationHandler.error(
+                "command.weekly.report.failed",
+                error instanceof Error ? error.message : String(error)
+              );
+            }
+          }
+        )
       );
     } catch (error) {
       NotificationHandler.error(

@@ -5,6 +5,7 @@ import { ConfigurationManager } from "./config/ConfigurationManager";
 import { registerCommands } from "./commands";
 import { LocalizationManager } from "./utils/LocalizationManager";
 import { NotificationHandler } from "./utils/NotificationHandler";
+import { WeeklyReportPanel } from "./webview/WeeklyReportPanel";
 
 // This method is called when your extension is activated
 // Your extension is activated the very first time the command is executed

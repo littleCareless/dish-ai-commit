@@ -55,6 +55,13 @@
         "icon": "/images/icon.svg",
         "description": "选择用于生成提交信息的AI模型(OpenAI/Ollama/VS Code Provided)",
         "when": "(config.svn.enabled && svnOpenRepositoryCount > 0) || (config.git.enabled && gitOpenRepositoryCount > 0)"
+      },
+      {
+        "command": "dish-ai-commit.generateWeeklyReport",
+        "title": "Generate Weekly Report",
+        "category": "[Dish AI Commit]",
+        "icon": "/images/icon.svg",
+        "description": "使用 AI 生成周报"
       }
     ],
     "configuration": {
@@ -185,6 +192,36 @@
           "type": "boolean",
           "default": true,
           "description": "在提交信息中使用 emoji"
+        },
+        "dish-ai-commit.weeklyReport.template": {
+          "type": "string",
+          "default": "",
+          "description": "周报模板"
+        },
+        "dish-ai-commit.weeklyReport.autoSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "自动保存周报"
+        },
+        "dish-ai-commit.weeklyReport": {
+          "type": "object",
+          "properties": {
+            "totalHours": {
+              "type": "number",
+              "default": 40,
+              "description": "每周工作总时长"
+            },
+            "totalDays": {
+              "type": "number",
+              "default": 7,
+              "description": "统计天数"
+            },
+            "minUnit": {
+              "type": "number",
+              "default": 0.5,
+              "description": "最小工时单位"
+            }
+          }
         }
       }
     },
@@ -219,6 +256,10 @@
           "command": "dish-ai-commit.selectModel",
           "group": "navigation",
           "when": "(config.svn.enabled && svnOpenRepositoryCount > 0) || (config.git.enabled && gitOpenRepositoryCount > 0)"
+        },
+        {
+          "command": "dish-ai-commit.generateWeeklyReport",
+          "when": ""
         }
       ]
     }
