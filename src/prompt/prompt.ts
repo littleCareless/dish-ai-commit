@@ -1,22 +1,27 @@
+import { ExtensionConfiguration } from "../config/types";
+
+interface SystemPromptParams {
+  config: ExtensionConfiguration; // 配置项
+  vcsType: "git" | "svn"; // 运行时参数
+}
+
 function getMergeCommitsSection(
-  allowMergeCommits: boolean,
-  splitChangesInSingleFile: boolean,
-  useEmoji: boolean
+  enableMergeCommit: boolean,
+  enableEmoji: boolean
 ) {
-  const formatExample = useEmoji
+  const formatExample = enableEmoji
     ? "<emoji> <type>(<scope>): <subject>"
     : "<type>(<scope>): <subject>";
 
-  if (!allowMergeCommits) {
+  if (!enableMergeCommit) {
     return `### Separate Commits
 
 - If multiple file diffs are provided, generate separate commit messages for each file.
-- If only one file diff is provided, ${
-      splitChangesInSingleFile
-        ? "split different types of changes in the file into separate commit messages"
-        : "combine all changes in the file into a single commit message"
-    }.
+- If only one file diff is provided, generate a single commit message.
 \`\`\`
+${formatExample}
+<body for changes in file>
+
 ${formatExample}
 <body for changes in file>
 \`\`\`
@@ -35,48 +40,43 @@ ${formatExample}
 
 function getVCSExamples(
   vcsType: "svn" | "git",
-  allowMergeCommits: boolean,
-  splitChangesInSingleFile: boolean,
-  useEmoji: boolean
+  enableMergeCommit: boolean,
+  enableEmoji: boolean
 ) {
   const exampleContent =
     vcsType === "git"
-      ? getGitExamples(allowMergeCommits, splitChangesInSingleFile, useEmoji)
-      : getSVNExamples(allowMergeCommits, splitChangesInSingleFile, useEmoji);
+      ? getGitExamples(enableMergeCommit, enableEmoji)
+      : getSVNExamples(enableMergeCommit, enableEmoji);
 
   return `### Example (${vcsType.toUpperCase()})
 
 ${exampleContent}`;
 }
 
-function getGitExamples(
-  allowMergeCommits: boolean,
-  splitChangesInSingleFile: boolean,
-  useEmoji: boolean
-) {
-  return allowMergeCommits
-    ? getMergedGitExample(useEmoji)
-    : getSeparateGitExample(splitChangesInSingleFile, useEmoji);
+function getGitExamples(enableMergeCommit: boolean, enableEmoji: boolean) {
+  return enableMergeCommit
+    ? getMergedGitExample(enableEmoji)
+    : getSeparateGitExample(enableEmoji);
 }
 
-function getSVNExamples(
-  allowMergeCommits: boolean,
-  splitChangesInSingleFile: boolean,
-  useEmoji: boolean
-) {
-  return allowMergeCommits
-    ? getMergedSVNExample(useEmoji)
-    : getSeparateSVNExample(splitChangesInSingleFile, useEmoji);
+function getSVNExamples(enableMergeCommit: boolean, enableEmoji: boolean) {
+  return enableMergeCommit
+    ? getMergedSVNExample(enableEmoji)
+    : getSeparateSVNExample(enableEmoji);
 }
 
-export function generateCommitMessageSystemPrompt(
-  language: string,
-  allowMergeCommits: boolean,
-  splitChangesInSingleFile: boolean,
-  vcsType: "svn" | "git",
-  useEmoji: boolean = true
-) {
-  const VCSUpper = vcsType?.toUpperCase();
+export function generateCommitMessageSystemPrompt({
+  config,
+  vcsType,
+}: SystemPromptParams) {
+  const {
+    base: { language },
+    features: {
+      commitFormat: { enableMergeCommit, enableEmoji },
+    },
+  } = config;
+
+  const VCSUpper = vcsType.toUpperCase();
   return `# ${VCSUpper} Commit Message Guide
 
 ## Role and Purpose
@@ -85,7 +85,7 @@ All output MUST be in ${language} language. You are to act as a pure ${VCSUpper}
 
 ## Output Format
 
-${getMergeCommitsSection(allowMergeCommits, splitChangesInSingleFile, useEmoji)}
+${getMergeCommitsSection(enableMergeCommit, enableEmoji)}
 
 ## File Status Detection
 
@@ -119,7 +119,7 @@ By analyzing both the file status and the changes within the file (e.g., diff), 
 ## Type Reference
 
 ${
-  useEmoji
+  enableEmoji
     ? `| Type     | Emoji | Description          | Example Scopes      |
 | -------- | ----- | -------------------- | ------------------- |
 | feat     | ✨    | New feature          | user, payment       |
@@ -180,7 +180,7 @@ ${
 If provided, consider any additional context about the changes when generating the commit message. This context will be provided before the diff and should influence the final commit message while maintaining all other formatting rules.
 
 ${
-  allowMergeCommits
+  enableMergeCommit
     ? "## Merging Multiple File Diffs\n\nWhen multiple file diffs are provided, merge them into a single commit message following the formatting rules above."
     : "## Multiple File Diffs\n\nWhen multiple file diffs are provided, generate separate commit messages for each change, following the formatting rules above."
 }
@@ -191,12 +191,7 @@ Remember: All output MUST be in ${language} language. You are to act as a pure c
 
 ## ${VCSUpper} Examples
 
-${getVCSExamples(
-  vcsType,
-  allowMergeCommits,
-  splitChangesInSingleFile,
-  useEmoji
-)}`;
+${getVCSExamples(vcsType, enableMergeCommit, enableEmoji)}`;
 }
 
 // Helper functions for examples generation (implementations omitted for brevity)
@@ -230,34 +225,8 @@ function getMergedGitExample(useEmoji: boolean) {
   \`\`\``;
 }
 
-function getSeparateGitExample(
-  splitChangesInSingleFile: boolean,
-  useEmoji: boolean
-) {
+function getSeparateGitExample(useEmoji: boolean) {
   const featPrefix = useEmoji ? "✨ " : "";
-  const fixPrefix = useEmoji ? "🐛 " : "";
-
-  if (splitChangesInSingleFile) {
-    return `- **Input (Single File with Multiple Changes)**:
-  \`\`\`
-  diff --git a/file.js b/file.js
-  index e69de29..b6fc4c6 100644
-  --- a/file.js
-  +++ b/file.js
-  @@ -0,0 +1,2 @@
-  +console.log('Feature A');
-  +console.log('Bugfix for B');
-  \`\`\`
-
-- **Generated Commit Messages**:
-  \`\`\`
-  ${featPrefix}feat(file): 添加功能 A
-  - 在 file.js 中添加了 "Feature A"
-
-  ${fixPrefix}fix(file): 修复 B 的问题
-  - 在 file.js 中修复了与 B 相关的问题
-  \`\`\``;
-  }
 
   return `- **Input (Single File with Multiple Changes)**:
   \`\`\`
@@ -273,8 +242,8 @@ function getSeparateGitExample(
 - **Generated Commit Message**:
   \`\`\`
   ${featPrefix}feat(file): 添加功能 A 和修复问题 B
-  - 在 file.js 中添加了 "Feature A"
-  - 修复了与 B 相关的问题
+    - 在 file.js 中添加了 "Feature A"
+    - 修复了与 B 相关的问题
   \`\`\``;
 }
 
@@ -307,34 +276,8 @@ function getMergedSVNExample(useEmoji: boolean) {
   \`\`\``;
 }
 
-function getSeparateSVNExample(
-  splitChangesInSingleFile: boolean,
-  useEmoji: boolean
-) {
+function getSeparateSVNExample(useEmoji: boolean) {
   const featPrefix = useEmoji ? "✨ " : "";
-  const fixPrefix = useEmoji ? "🐛 " : "";
-
-  if (splitChangesInSingleFile) {
-    return `- **Input (Single File with Multiple Changes)**:
-  \`\`\`
-  Index: file.js
-  ===================================================================
-  --- file.js    (revision 123)
-  +++ file.js    (working copy)
-  @@ -0,0 +1,2 @@
-  +console.log('Feature A');
-  +console.log('Bugfix for B');
-  \`\`\`
-
-- **Generated Commit Messages**:
-  \`\`\`
-  ${featPrefix}feat(file): 添加功能 A
-  - 在 file.js 中添加了 "Feature A"
-
-  ${fixPrefix}fix(file): 修复 B 的问题
-  - 在 file.js 中修复了与 B 相关的问题
-  \`\`\``;
-  }
 
   return `- **Input (Single File with Multiple Changes)**:
   \`\`\`
@@ -350,8 +293,8 @@ function getSeparateSVNExample(
 - **Generated Commit Message**:
   \`\`\`
   ${featPrefix}feat(file): 添加功能 A 和修复问题 B
-  - 在 file.js 中添加了 "Feature A"
-  - 修复了与 B 相��的问题
+    - 在 file.js 中添加了 "Feature A"
+    - 修复了与 B 相关的问题
   \`\`\``;
 }
 

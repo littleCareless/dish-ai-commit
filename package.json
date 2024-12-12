@@ -119,13 +119,17 @@
           "enum": [
             "OpenAI",
             "Ollama",
-            "VS Code Provided"
+            "VS Code Provided",
+            "ZhipuAI",
+            "DashScope",
+            "Doubao"
           ]
         },
         "dish-ai-commit.base.model": {
           "type": "string",
           "default": "gpt-3.5-turbo",
-          "description": "AI Model"
+          "description": "AI model",
+          "scope": "machine"
         },
         "dish-ai-commit.providers.openai.apiKey": {
           "type": "string",
@@ -157,27 +161,27 @@
           "default": "http://localhost:11434",
           "description": "Ollama API 基础 URL"
         },
-        "dish-ai-commit.features.diffSimplification.enabled": {
+        "dish-ai-commit.features.codeAnalysis.simplifyDiff": {
           "type": "boolean",
           "default": false,
           "description": "启用 diff 内容简化功能（警告：启用此功能可能会导致生成的提交信息不够准确）"
         },
-        "dish-ai-commit.features.diffSimplification.maxLineLength": {
+        "dish-ai-commit.features.codeAnalysis.maxLineLength": {
           "type": "number",
           "default": 120,
           "description": "简化后每行的最大长度"
         },
-        "dish-ai-commit.features.diffSimplification.contextLines": {
+        "dish-ai-commit.features.codeAnalysis.contextLines": {
           "type": "number",
           "default": 3,
           "description": "保留的上下文行数"
         },
-        "dish-ai-commit.features.commitOptions.allowMergeCommits": {
+        "dish-ai-commit.features.commitFormat.enableMergeCommit": {
           "type": "boolean",
           "default": false,
           "description": "是否允许将多个文件的变更合并为一条提交信息"
         },
-        "dish-ai-commit.features.commitOptions.useEmoji": {
+        "dish-ai-commit.features.commitFormat.enableEmoji": {
           "type": "boolean",
           "default": true,
           "description": "在提交信息中使用 emoji"
@@ -230,7 +234,7 @@
     "commit": "git add . && git-cz",
     "release": "standard-version --preset gitmoji-config",
     "changelog": "conventional-changelog -i CHANGELOG.md -s -r 0",
-    "update-config": "ts-node scripts/updateConfig.ts"
+    "update-config": "ts-node ./src/scripts/updateConfig.ts"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.0",

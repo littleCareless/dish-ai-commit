@@ -59,7 +59,7 @@
   "openai.models.error": "获取OpenAI模型列表失败",
   "model.not.found": "未找到选定的模型",
   "no.commit.message.generated": "未生成提交信息",
-  "input.truncated": "输入内容超过最大字符数限制，已被截断",
+  "input.truncated": "输入内容超过最大字符数限制，已被截断，这可能会影响生成结果的质量",
   "extension.activation.failed": "激活扩展失败: {0}",
   "command.register.failed": "注册命令失败: {0}",
   "command.generate.failed": "生成提交信息失败: {0}",
