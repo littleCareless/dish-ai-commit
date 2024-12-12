@@ -123,7 +123,7 @@ export class DoubaoProvider extends BaseOpenAIProvider {
   constructor() {
     const configManager = ConfigurationManager.getInstance();
     super({
-      apiKey: configManager.getConfig<string>("PROVIDERS_DOUBAO_APIKEY", false),
+      apiKey: configManager.getConfig("PROVIDERS_DOUBAO_APIKEY", false),
       baseURL: "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
       providerId: "doubao",
       providerName: "豆包 AI",

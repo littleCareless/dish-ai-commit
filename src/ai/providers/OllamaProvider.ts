@@ -17,8 +17,10 @@ export class OllamaProvider implements AIProvider {
     id: "ollama" as AIProviders,
     name: "Ollama",
   } as const;
+  private configManager: ConfigurationManager;
 
   constructor() {
+    this.configManager = ConfigurationManager.getInstance();
     const baseUrl = this.getBaseUrl();
     this.ollama = new Ollama({
       host: baseUrl,
@@ -26,9 +28,8 @@ export class OllamaProvider implements AIProvider {
   }
 
   private getBaseUrl(): string {
-    const configManager = ConfigurationManager.getInstance();
     return (
-      configManager.getConfig<string>("PROVIDERS_OLLAMA_BASEURL") ||
+      this.configManager.getConfig("PROVIDERS_OLLAMA_BASEURL") ||
       "http://localhost:11434"
     );
   }
@@ -56,8 +57,7 @@ export class OllamaProvider implements AIProvider {
       params,
       async (truncatedDiff) => {
         const model =
-          params.model ||
-          ConfigurationManager.getInstance().getConfig<string>("MODEL");
+          params.model || this.configManager.getConfig("BASE_MODEL");
 
         const response = await this.ollama.chat({
           model: model.id,

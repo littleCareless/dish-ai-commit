@@ -61,9 +61,9 @@ export class OpenAIProvider extends BaseOpenAIProvider {
   constructor() {
     const configManager = ConfigurationManager.getInstance();
     super({
-      apiKey: configManager.getConfig<string>("PROVIDERS_OPENAI_APIKEY", false),
-      baseURL: configManager.getConfig<string>("PROVIDERS_OPENAI_BASEURL", false),
-      apiVersion: configManager.getConfig<string>("BASE_MODEL", false),
+      apiKey: configManager.getConfig("PROVIDERS_OPENAI_APIKEY", false),
+      baseURL: configManager.getConfig("PROVIDERS_OPENAI_BASEURL", false),
+      apiVersion: configManager.getConfig("BASE_MODEL", false),
       providerId: "openai",
       providerName: "OpenAI",
       models: models,
