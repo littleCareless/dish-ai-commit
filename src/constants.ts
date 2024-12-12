@@ -10,8 +10,7 @@ export const COMMANDS = {
   },
   MODEL: {
     SHOW: packageJson.contributes.commands[1].command,
-    REFRESH: `${EXTENSION_NAME}.refreshModels`,
-  }
+  },
 } as const;
 
 // 添加类型导出

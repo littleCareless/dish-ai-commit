@@ -17,7 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // 初始化配置管理器并添加到订阅列表
     context.subscriptions.push(ConfigurationManager.getInstance());
-
+    console.log("注册命令");
     // 注册所有命令
     registerCommands(context);
   } catch (e) {

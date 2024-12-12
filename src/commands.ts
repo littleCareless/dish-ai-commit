@@ -15,6 +15,7 @@ export class CommandManager implements vscode.Disposable {
     try {
       const generateCommand = new GenerateCommitCommand(this.context);
       const selectModelCommand = new SelectModelCommand(this.context);
+      console.log("COMMANDS.MODEL.SHOW", COMMANDS.MODEL.SHOW);
 
       this.disposables.push(
         vscode.commands.registerCommand(
@@ -23,23 +24,30 @@ export class CommandManager implements vscode.Disposable {
             try {
               await generateCommand.execute(resources);
             } catch (error) {
-              NotificationHandler.error("command.generate.failed", error instanceof Error ? error.message : String(error));
+              NotificationHandler.error(
+                "command.generate.failed",
+                error instanceof Error ? error.message : String(error)
+              );
             }
           }
         ),
-        vscode.commands.registerCommand(
-          COMMANDS.MODEL.SHOW,
-          async () => {
-            try {
-              await selectModelCommand.execute();
-            } catch (error) {
-              NotificationHandler.error("command.select.model.failed", error instanceof Error ? error.message : String(error));
-            }
+        vscode.commands.registerCommand(COMMANDS.MODEL.SHOW, async () => {
+          try {
+            await selectModelCommand.execute();
+          } catch (error) {
+            console.log("error", error);
+            NotificationHandler.error(
+              "command.select.model.failed",
+              error instanceof Error ? error.message : String(error)
+            );
           }
-        )
+        })
       );
     } catch (error) {
-      NotificationHandler.error("command.register.failed", error instanceof Error ? error.message : String(error));
+      NotificationHandler.error(
+        "command.register.failed",
+        error instanceof Error ? error.message : String(error)
+      );
     }
   }
 
