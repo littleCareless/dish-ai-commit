@@ -2,6 +2,7 @@ import { NotificationHandler } from "../../utils/NotificationHandler";
 import { LocalizationManager } from "../../utils/LocalizationManager";
 import { generateCommitMessageSystemPrompt } from "../../prompt/prompt";
 import { AIRequestParams } from "../types";
+import { ConfigurationManager } from "../../config/ConfigurationManager";
 
 // 添加错误类型枚举
 export enum AIGenerationErrorType {
@@ -45,9 +46,7 @@ export async function generateWithRetry<T>(
 
       if (params.diff.length > maxInputLength) {
         NotificationHandler.warn(
-          LocalizationManager.getInstance().getMessage(
-            `${provider}.input.truncated`
-          )
+          LocalizationManager.getInstance().getMessage(`input.truncated`)
         );
       }
 
@@ -75,14 +74,28 @@ export async function generateWithRetry<T>(
   }
 }
 
+let isGeneratingPrompt = false;
+
 export function getSystemPrompt(params: AIRequestParams): string {
-  return (
-    params.systemPrompt ||
-    generateCommitMessageSystemPrompt(
-      params.language ||  "",
-      params.allowMergeCommits || false,
-      params.splitChangesInSingleFile || false,
-      params.scm || "git"
-    )
-  );
+  if (isGeneratingPrompt) {
+    return ""; // 防止循环调用时返回空字符串
+  }
+
+  try {
+    isGeneratingPrompt = true;
+    if (params.systemPrompt) {
+      return params.systemPrompt;
+    }
+
+    // 从 ConfigurationManager 获取完整配置
+    const config = ConfigurationManager.getInstance().getConfiguration();
+
+    // 使用配置和运行时参数构建提示
+    return generateCommitMessageSystemPrompt({
+      config,
+      vcsType: params.scm || "git",
+    });
+  } finally {
+    isGeneratingPrompt = false;
+  }
 }

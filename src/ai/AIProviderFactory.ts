@@ -28,11 +28,13 @@ export class AIProviderFactory {
     this.cleanStaleProviders();
     const providerType =
       type ||
-      ConfigurationManager.getInstance().getConfig<string>("PROVIDER") ||
+      ConfigurationManager.getInstance().getConfig("PROVIDERS") ||
       AIProvider.OPENAI;
 
     let provider = this.providers.get(providerType);
-
+    console.log("AIProvider", AIProvider);
+    console.log("providerType", providerType.toLowerCase());
+    console.log("AIProvider.VSCODE", AIProvider.VSCODE);
     if (!provider) {
       switch (providerType.toLowerCase()) {
         case AIProvider.OPENAI:
@@ -41,7 +43,7 @@ export class AIProviderFactory {
         case AIProvider.OLLAMA:
           provider = new OllamaProvider();
           break;
-        case AIProvider.VSCODE:
+        case AIProvider.VS_CODE_PROVIDED:
           provider = new VSCodeProvider();
           break;
         case AIProvider.ZHIPU:

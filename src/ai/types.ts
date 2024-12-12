@@ -24,10 +24,16 @@ export interface AIRequestParams {
   model: AIModel;
   language?: string;
   scm?: "git" | "svn"; // 新增SCM类型
-  allowMergeCommits?: boolean;
-  splitChangesInSingleFile?: boolean;
   additionalContext: string;
-  useEmoji: boolean;
+
+  // 代码分析相关选项 - 从 features.codeAnalysis
+  simplifyDiff?: boolean;
+  maxLineLength?: number;
+  contextLines?: number;
+
+  // 提交格式相关选项 - 从 features.commitFormat
+  enableMergeCommit?: boolean;
+  enableEmoji?: boolean;
 }
 
 // 添加通用错误处理接口
