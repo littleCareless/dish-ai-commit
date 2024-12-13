@@ -3,6 +3,7 @@ import { ChatCompletionMessageParam } from "openai/resources";
 import { AIProvider, AIRequestParams, AIResponse, AIModel } from "../types";
 import { generateWithRetry, getSystemPrompt } from "../utils/generateHelper";
 import { LocalizationManager } from "../../utils/LocalizationManager";
+import { getWeeklyReportPrompt } from "../../prompt/weeklyReport";
 
 export interface OpenAIProviderConfig {
   apiKey: string;
@@ -84,30 +85,31 @@ export abstract class BaseOpenAIProvider implements AIProvider {
     );
   }
 
-  async generateWeeklyReport(commits: string[]): Promise<AIResponse> {
+  async generateWeeklyReport(
+    commits: string[],
+    model?: AIModel
+  ): Promise<AIResponse> {
     try {
-      const messages: ChatCompletionMessageParam[] = [
-        {
-          role: "system",
-          content: "请根据以下commit生成一份周报：",
-        },
-        {
-          role: "user",
-          content: commits.join("\n"),
-        },
-      ];
-
-      const completion = await this.openai.chat.completions.create({
-        model: this.config.defaultModel || "gpt-3.5-turbo",
-        messages,
+      const response = await this.openai.chat.completions.create({
+        model: model?.id || this.config.defaultModel || "gpt-3.5-turbo",
+        messages: [
+          {
+            role: "system",
+            content: getWeeklyReportPrompt(),
+          },
+          {
+            role: "user",
+            content: commits.join("\n"),
+          },
+        ],
       });
 
       return {
-        content: completion.choices[0]?.message?.content || "",
+        content: response.choices[0]?.message?.content || "",
         usage: {
-          promptTokens: completion.usage?.prompt_tokens,
-          completionTokens: completion.usage?.completion_tokens,
-          totalTokens: completion.usage?.total_tokens,
+          promptTokens: response.usage?.prompt_tokens,
+          completionTokens: response.usage?.completion_tokens,
+          totalTokens: response.usage?.total_tokens,
         },
       };
     } catch (error) {

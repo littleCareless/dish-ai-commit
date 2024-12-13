@@ -9,6 +9,7 @@ import {
 import { generateCommitMessageSystemPrompt } from "../../prompt/prompt";
 import { LocalizationManager } from "../../utils/LocalizationManager";
 import { getSystemPrompt } from "../utils/generateHelper";
+import { getWeeklyReportPrompt } from "../../prompt/weeklyReport";
 
 interface DiffBlock {
   header: string;
@@ -107,7 +108,10 @@ export class VSCodeProvider implements AIProvider {
     }
   }
 
-  async generateWeeklyReport(commits: string[]): Promise<AIResponse> {
+  async generateWeeklyReport(
+    commits: string[],
+    model?: AIModel
+  ): Promise<AIResponse> {
     try {
       const models = await vscode.lm.selectChatModels();
       if (!models || models.length === 0) {
@@ -118,11 +122,13 @@ export class VSCodeProvider implements AIProvider {
         );
       }
 
-      const chatModel = models[0];
+      const chatModel = model
+        ? models.find((m) => m.id === model.id) || models[0]
+        : models[0];
+
       const messages = [
-        vscode.LanguageModelChatMessage.User(
-          `请根据以下commit生成一份周报：\n${commits.join("\n")}`
-        ),
+        vscode.LanguageModelChatMessage.User(getWeeklyReportPrompt()),
+        vscode.LanguageModelChatMessage.User(commits.join("\n")),
       ];
 
       const response = await chatModel.sendRequest(messages);

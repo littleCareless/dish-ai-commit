@@ -10,6 +10,7 @@ import { ConfigurationManager } from "../../config/ConfigurationManager";
 import { NotificationHandler } from "../../utils/NotificationHandler";
 import { LocalizationManager } from "../../utils/LocalizationManager";
 import { generateWithRetry, getSystemPrompt } from "../utils/generateHelper";
+import { getWeeklyReportPrompt } from "../../prompt/weeklyReport";
 
 export class OllamaProvider implements AIProvider {
   private ollama: Ollama;
@@ -96,15 +97,19 @@ export class OllamaProvider implements AIProvider {
     );
   }
 
-  async generateWeeklyReport(commits: string[]): Promise<AIResponse> {
-    const model = this.configManager.getConfig("BASE_MODEL");
+  async generateWeeklyReport(
+    commits: string[],
+    model?: AIModel
+  ): Promise<AIResponse> {
+    const modelId =
+      model?.id || (this.configManager.getConfig("BASE_MODEL") as any).id;
 
     const response = await this.ollama.chat({
-      model: (model as any).id,
+      model: modelId,
       messages: [
         {
           role: "system",
-          content: "请根据以下commit生成一份周报：",
+          content: getWeeklyReportPrompt(),
         },
         {
           role: "user",

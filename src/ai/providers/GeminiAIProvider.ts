@@ -51,7 +51,7 @@ export class GeminiAIProvider extends BaseOpenAIProvider {
   constructor() {
     const configManager = ConfigurationManager.getInstance();
     super({
-      apiKey: configManager.getConfig("PROVIDERS_GEMINI_APIKEY", false),
+      apiKey: configManager.getConfig("PROVIDERS_GEMINI_APIKEY"),
       baseURL: "https://generativelanguage.googleapis.com/v1beta/openai/",
       providerId: "gemini",
       providerName: "Gemini AI",

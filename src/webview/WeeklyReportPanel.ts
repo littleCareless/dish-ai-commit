@@ -6,6 +6,8 @@ import { AIProviderFactory } from "../ai/AIProviderFactory";
 import { ProgressHandler } from "../utils/ProgressHandler";
 import { NotificationHandler } from "../utils/NotificationHandler";
 import { LocalizationManager } from "../utils/LocalizationManager";
+import { ConfigurationManager } from "../config/ConfigurationManager";
+import { ModelPickerService } from "../services/ModelPickerService";
 
 export class WeeklyReportPanel {
   public static currentPanel: WeeklyReportPanel | undefined;
@@ -27,7 +29,7 @@ export class WeeklyReportPanel {
     );
   }
 
-  public static createOrShow(extensionUri: vscode.Uri) {
+  public static async createOrShow(extensionUri: vscode.Uri) {
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
@@ -39,7 +41,7 @@ export class WeeklyReportPanel {
 
     const panel = vscode.window.createWebviewPanel(
       "weeklyReport",
-      "周报生成器",
+      await LocalizationManager.getInstance().getMessage("weeklyReport.title"),
       column || vscode.ViewColumn.One,
       {
         enableScripts: true,
@@ -51,12 +53,13 @@ export class WeeklyReportPanel {
   }
 
   private _getWebviewContent() {
+    const l10n = LocalizationManager.getInstance();
     return `
         <!DOCTYPE html>
         <html>
         <head>
             <meta charset="UTF-8">
-            <title>周报生成器</title>
+            <title>${l10n.getMessage("weeklyReport.title")}</title>
             <style>
                 body { padding: 15px; }
                 .form-group { margin-bottom: 15px; }
@@ -95,24 +98,44 @@ export class WeeklyReportPanel {
             </style>
         </head>
         <body>
-            <h1>周报生成器</h1>
+            <h1>${l10n.getMessage("weeklyReport.title")}</h1>
             <div id="app">
                 <div class="form-group">
                     <select id="period">
-                        <option value="1 week ago">本周</option>
-                        <option value="2 weeks ago">上一周</option>
-                        <option value="3 weeks ago">上两周</option>
+                        <option value="1 week ago">${l10n.getMessage(
+                          "weeklyReport.period.current"
+                        )}</option>
+                        <option value="2 weeks ago">${l10n.getMessage(
+                          "weeklyReport.period.lastWeek"
+                        )}</option>
+                        <option value="3 weeks ago">${l10n.getMessage(
+                          "weeklyReport.period.twoWeeksAgo"
+                        )}</option>
                     </select>
-                    <button onclick="generateReport()">生成周报</button>
+                    <button onclick="generateReport()">${l10n.getMessage(
+                      "weeklyReport.generate.button"
+                    )}</button>
                 </div>
                 <div class="editor-container">
                     <div class="toolbar">
-                        <button onclick="execCommand('bold')">粗体</button>
-                        <button onclick="execCommand('italic')">斜体</button>
-                        <button onclick="execCommand('underline')">下划线</button>
-                        <button onclick="execCommand('insertOrderedList')">有序列表</button>
-                        <button onclick="execCommand('insertUnorderedList')">无序列表</button>
-                        <button onclick="copyContent()">复制内容</button>
+                        <button onclick="execCommand('bold')">${l10n.getMessage(
+                          "editor.format.bold"
+                        )}</button>
+                        <button onclick="execCommand('italic')">${l10n.getMessage(
+                          "editor.format.italic"
+                        )}</button>
+                        <button onclick="execCommand('underline')">${l10n.getMessage(
+                          "editor.format.underline"
+                        )}</button>
+                        <button onclick="execCommand('insertOrderedList')">${l10n.getMessage(
+                          "editor.format.orderedList"
+                        )}</button>
+                        <button onclick="execCommand('insertUnorderedList')">${l10n.getMessage(
+                          "editor.format.unorderedList"
+                        )}</button>
+                        <button onclick="copyContent()">${l10n.getMessage(
+                          "editor.copy"
+                        )}</button>
                     </div>
                     <div id="editor" class="editor" contenteditable="true"></div>
                 </div>
@@ -183,9 +206,14 @@ export class WeeklyReportPanel {
               await service.initialize();
               const workItems = await service.generate(message.period);
 
-              const aiProvider = AIProviderFactory.getProvider("ZHIPUAI");
+              // 获取配置并确保选择了模型
+              const { aiProvider, selectedModel } =
+                await this.getModelAndUpdateConfiguration();
+
+              // 使用选定的模型生成周报
               const response = await aiProvider.generateWeeklyReport(
-                workItems.map((item) => item.content)
+                workItems.map((item) => item.content),
+                selectedModel // 传入选定的模型
               );
 
               if (response?.content) {
@@ -214,6 +242,79 @@ export class WeeklyReportPanel {
         }
         break;
     }
+  }
+
+  // 封装选择模型并更新配置的函数
+  private async selectAndUpdateModelConfiguration(
+    provider = "Ollama",
+    model = "Ollama"
+  ) {
+    const modelSelection = await ModelPickerService.showModelPicker(
+      provider,
+      model
+    );
+    if (!modelSelection) {
+      return;
+    }
+
+    const config = ConfigurationManager.getInstance();
+    await config.updateAIConfiguration(
+      modelSelection.provider,
+      modelSelection.model
+    );
+
+    return { provider: modelSelection.provider, model: modelSelection.model };
+  }
+
+  private async getModelAndUpdateConfiguration(
+    provider = "Ollama",
+    model = "Ollama"
+  ) {
+    const locManager = LocalizationManager.getInstance();
+    let aiProvider = AIProviderFactory.getProvider(provider);
+    let models = await aiProvider.getModels();
+
+    if (!models || models.length === 0) {
+      const result = await this.selectAndUpdateModelConfiguration(
+        provider,
+        model
+      );
+      if (!result) {
+        throw new Error(locManager.getMessage("model.selection.cancelled"));
+      }
+      provider = result.provider;
+      model = result.model;
+
+      aiProvider = AIProviderFactory.getProvider(provider);
+      models = await aiProvider.getModels();
+
+      if (!models || models.length === 0) {
+        throw new Error(locManager.getMessage("model.list.empty"));
+      }
+    }
+
+    let selectedModel = models.find((m) => m.name === model);
+    if (!selectedModel) {
+      const result = await this.selectAndUpdateModelConfiguration(
+        provider,
+        model
+      );
+      if (!result) {
+        throw new Error(locManager.getMessage("model.selection.cancelled"));
+      }
+      provider = result.provider;
+      model = result.model;
+
+      aiProvider = AIProviderFactory.getProvider(provider);
+      models = await aiProvider.getModels();
+      selectedModel = models.find((m) => m.name === model);
+
+      if (!selectedModel) {
+        throw new Error(locManager.getMessage("model.notFound"));
+      }
+    }
+
+    return { aiProvider, selectedModel };
   }
 
   public dispose() {

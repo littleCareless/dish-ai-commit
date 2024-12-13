@@ -1,3 +1,5 @@
+import type { ConfigurationChangeEvent } from "vscode";
+
 export const CONFIG_SCHEMA = {
   base: {
     // 基础配置
@@ -339,4 +341,32 @@ export function generateConfiguration(
 
   traverse(schema as unknown as ConfigObject);
   return result;
+}
+
+// 添加配置路径生成函数
+export function getAllConfigPaths(schema: typeof CONFIG_SCHEMA): string[] {
+  const paths: string[] = [];
+  
+  function traverse(obj: ConfigObject, currentPath: string = ""): void {
+    for (const [key, value] of Object.entries(obj)) {
+      const newPath = currentPath ? `${currentPath}.${key}` : key;
+      if (isConfigValue(value)) {
+        paths.push(newPath);
+      } else {
+        traverse(value as ConfigObject, newPath);
+      }
+    }
+  }
+
+  traverse(schema as unknown as ConfigObject);
+  return paths;
+}
+
+// 获取特定类别的配置路径
+export function getCategoryConfigPaths(
+  schema: typeof CONFIG_SCHEMA,
+  category: keyof typeof CONFIG_SCHEMA
+): string[] {
+  return getAllConfigPaths(schema)
+    .filter(path => path.startsWith(category));
 }

@@ -73,5 +73,16 @@
   "weeklyReport.copy.failed": "复制失败: {0}",
   "author.svn.not.found": "无法获取 SVN 作者信息",
   "author.manual.input.prompt": "无法自动获取用户名，请手动输入",
-  "author.manual.input.placeholder": "请输入用户名"
+  "author.manual.input.placeholder": "请输入用户名",
+  "weeklyReport.title": "周报生成器",
+  "weeklyReport.period.current": "本周",
+  "weeklyReport.period.lastWeek": "上一周",
+  "weeklyReport.period.twoWeeksAgo": "上两周",
+  "weeklyReport.generate.button": "生成周报",
+  "editor.format.bold": "粗体",
+  "editor.format.italic": "斜体",
+  "editor.format.underline": "下划线",
+  "editor.format.orderedList": "有序列表",
+  "editor.format.unorderedList": "无序列表",
+  "editor.copy": "复制内容"
 }

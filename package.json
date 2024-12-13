@@ -197,6 +197,11 @@
           "type": "boolean",
           "default": true,
           "description": "在提交信息中使用 emoji"
+        },
+        "dish-ai-commit.features.weeklyReport.systemPrompt": {
+          "type": "string",
+          "default": "",
+          "description": "自定义周报生成的系统提示词"
         }
       }
     },
