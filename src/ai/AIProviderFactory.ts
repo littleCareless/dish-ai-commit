@@ -56,7 +56,7 @@ export class AIProviderFactory {
         case AIProvider.DOUBAO:
           provider = new DoubaoProvider();
           break;
-        case AIProvider.Gemini:
+        case AIProvider.GEMINI:
           provider = new GeminiAIProvider();
           break;
         default:

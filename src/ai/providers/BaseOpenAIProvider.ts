@@ -122,8 +122,30 @@ export abstract class BaseOpenAIProvider implements AIProvider {
     }
   }
 
-  async getModels(): Promise<AIModel[]> {
-    return Promise.resolve(this.config.models);
+  async getModels(): Promise<AIModel[] | any[]> {
+    try {
+      const response = await this.openai.models.list();
+      return response.data.map((model: any) => {
+        console.log("model", model);
+        return {
+          id: model.id,
+          name: model.id,
+          maxTokens: {
+            input: model.context_window || 4096,
+            output: Math.floor((model.context_window || 4096) / 2),
+          },
+          provider: this.provider,
+        };
+      });
+    } catch (error) {
+      console.warn("Failed to fetch models:", error);
+      return this.config.models;
+    }
+  }
+
+  async refreshModels(): Promise<string[]> {
+    const models = await this.getModels();
+    return models.map((m) => m.id);
   }
 
   getName(): string {
@@ -135,5 +157,4 @@ export abstract class BaseOpenAIProvider implements AIProvider {
   }
 
   abstract isAvailable(): Promise<boolean>;
-  abstract refreshModels(): Promise<string[]>;
 }
