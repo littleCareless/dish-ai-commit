@@ -5,6 +5,22 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+## 0.4.1 (2024-12-13)
+
+
+### 🎫 Chores
+
+* **providers**: 优化 AI 服务商配置和错误处理 ([4dde116](https://github.com/littleCareless/dish-ai-commit/commit/4dde116))
+
+
+### 📝 Documentation
+
+* **changelog**: 发布 0.4.0 版本并更新配置文件 ([911ed64](https://github.com/littleCareless/dish-ai-commit/commit/911ed64))
+
+
+
+
+
 # 0.4.0 (2024-12-13)
 
 
