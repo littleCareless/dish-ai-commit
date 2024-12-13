@@ -26,5 +26,7 @@ export const CONFIG_KEYS = {
   "FEATURES_CODEANALYSIS_CONTEXTLINES": "dish-ai-commit.features.codeAnalysis.contextLines",
   "FEATURES_COMMITFORMAT": "dish-ai-commit.features.commitFormat",
   "FEATURES_COMMITFORMAT_ENABLEMERGECOMMIT": "dish-ai-commit.features.commitFormat.enableMergeCommit",
-  "FEATURES_COMMITFORMAT_ENABLEEMOJI": "dish-ai-commit.features.commitFormat.enableEmoji"
+  "FEATURES_COMMITFORMAT_ENABLEEMOJI": "dish-ai-commit.features.commitFormat.enableEmoji",
+  "FEATURES_WEEKLYREPORT": "dish-ai-commit.features.weeklyReport",
+  "FEATURES_WEEKLYREPORT_SYSTEMPROMPT": "dish-ai-commit.features.weeklyReport.systemPrompt"
 } as const;

@@ -2,7 +2,7 @@
   "name": "dish-ai-commit",
   "displayName": "Dish AI Commit Gen",
   "description": "Use AI to assist in generating standardized Git/SVN submission information VSCode extensions. Support OpenAI, Olama, and VSCode built-in AI services.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -129,7 +129,8 @@
             "VS Code Provided",
             "ZhipuAI",
             "DashScope",
-            "Doubao"
+            "Doubao",
+            "Gemini"
           ]
         },
         "dish-ai-commit.base.model": {
@@ -201,7 +202,7 @@
         "dish-ai-commit.features.weeklyReport.systemPrompt": {
           "type": "string",
           "default": "",
-          "description": "自定义周报生成的系统提示词"
+          "description": "Custom system prompt"
         }
       }
     },

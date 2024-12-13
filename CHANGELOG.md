@@ -1,10 +1,25 @@
-# Changelog
+# Changelog 
 
-[English](CHANGELOG.md) | [简体中文](CHANGELOG.zh-CN.md)
+[English](CHANGELOG.md) | [简体中文](CHANGELOG.zh-CN.md) 
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+# 0.4.0 (2024-12-13)
+
+
+### ✨ Features
+
+* **周报**: 添加周报生成功能配置和国际化支持 ([7471d2c](https://github.com/littleCareless/dish-ai-commit/commit/7471d2c))
+
+
+### 📝 Documentation
+
+* **changelog**: 发布 0.3.0 版本并更新文档 ([cd0f05e](https://github.com/littleCareless/dish-ai-commit/commit/cd0f05e))
+
+
+
+
 
 # 0.3.0 (2024-12-13)
 

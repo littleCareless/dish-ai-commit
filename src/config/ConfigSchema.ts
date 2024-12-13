@@ -159,6 +159,14 @@ export const CONFIG_SCHEMA = {
         description: "在提交信息中使用 emoji",
       },
     },
+    // 周报生成相关功能
+    weeklyReport: {
+      systemPrompt: {
+        type: "string",
+        description: "Custom system prompt",
+        default: "",
+      },
+    },
   },
 } as const;
 
@@ -346,7 +354,7 @@ export function generateConfiguration(
 // 添加配置路径生成函数
 export function getAllConfigPaths(schema: typeof CONFIG_SCHEMA): string[] {
   const paths: string[] = [];
-  
+
   function traverse(obj: ConfigObject, currentPath: string = ""): void {
     for (const [key, value] of Object.entries(obj)) {
       const newPath = currentPath ? `${currentPath}.${key}` : key;
@@ -367,6 +375,5 @@ export function getCategoryConfigPaths(
   schema: typeof CONFIG_SCHEMA,
   category: keyof typeof CONFIG_SCHEMA
 ): string[] {
-  return getAllConfigPaths(schema)
-    .filter(path => path.startsWith(category));
+  return getAllConfigPaths(schema).filter((path) => path.startsWith(category));
 }
