@@ -5,6 +5,18 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+## 0.4.2 (2024-12-13)
+
+
+### 📝 Documentation
+
+* **version**: 更新版本至 0.4.1 ([56c5c29](https://github.com/littleCareless/dish-ai-commit/commit/56c5c29))
+* 添加免费 AI 模型支持说明及新功能介绍 ([a7ff464](https://github.com/littleCareless/dish-ai-commit/commit/a7ff464))
+
+
+
+
+
 ## 0.4.1 (2024-12-13)
 
 
