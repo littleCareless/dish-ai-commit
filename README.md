@@ -23,7 +23,7 @@ A VSCode extension for generating standardized Git/SVN commit messages using AI
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-A VSCode extension for generating standardized Git/SVN commit messages using AI. Supports OpenAI, Ollama, VSCode built-in AI services, Zhipu AI, DashScope, and Doubao AI.
+A VSCode extension for generating standardized Git/SVN commit messages using AI. Supports OpenAI, Ollama, VSCode built-in AI services, Zhipu AI, DashScope, Gemini AI, and Doubao AI.
 
 ## Features
 
@@ -35,11 +35,19 @@ A VSCode extension for generating standardized Git/SVN commit messages using AI.
 - Zhipu AI support
 - DashScope support
 - Doubao AI support
+- Gemini AI support
 
 ### 📝 Version Control System Support
 
 - SVN
 - Git
+
+### 📊 Weekly Report Generation
+
+- AI-powered weekly report generation
+- Automatically summarize your work progress
+- Customizable report templates
+- Support multiple AI providers for report generation
 
 ### 🌍 Multi-language Commit Message Generation:
 
@@ -76,6 +84,7 @@ Supports 19 languages including:
 | dish-ai-commit.zhipuai.apiKey                   | string  | -                         | Zhipu AI API key                                    |
 | dish-ai-commit.dashscope.apiKey                 | string  | -                         | DashScope API key                                   |
 | dish-ai-commit.doubao.apiKey                    | string  | -                         | Doubao API key                                      |
+| dish-ai-commit.gemini.apiKey                    | string  | -                         | Gemini API key                                      |
 | dish-ai-commit.ollama.baseUrl                   | string  | http://localhost:11434    | Ollama API base URL                                 |
 | dish-ai-commit.enableDiffSimplification         | boolean | false                     | Enable diff content simplification                  |
 | dish-ai-commit.diffSimplification.maxLineLength | number  | 120                       | Maximum line length after simplification            |
@@ -86,6 +95,7 @@ Supports 19 languages including:
 
 - `Generate Commit Message`: Generate commit message based on current changes
 - `Select AI Model`: Choose the AI model to use
+- `Generate Weekly Report`: Generate a weekly summary report of your work
 
 ## Configuration Instructions
 

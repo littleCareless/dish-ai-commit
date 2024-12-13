@@ -6,6 +6,18 @@
 
 更新日志格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.3.0 (2024-12-13)
+
+### ✨ Features
+
+- **weekly**: 添加 AI 生成周报功能 ([b557c7a](https://github.com/littleCareless/dish-ai-commit/commit/b557c7a))
+- **weeklyReport**: 添加生成周报的功能 ([04e999e](https://github.com/littleCareless/dish-ai-commit/commit/04e999e))
+
+### 🎫 Chores
+
+- **config**: 重构周报功能并添加 Gemini AI 支持 ([02b00fc](https://github.com/littleCareless/dish-ai-commit/commit/02b00fc))
+- **release**: 发布 0.2.0 版本 ([29e89ce](https://github.com/littleCareless/dish-ai-commit/commit/29e89ce))
+
 # 0.2.0 (2024-12-12)
 
 ### ♻ Code Refactoring

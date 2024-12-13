@@ -2,7 +2,7 @@
   "name": "dish-ai-commit",
   "displayName": "Dish AI Commit Gen",
   "description": "Use AI to assist in generating standardized Git/SVN submission information VSCode extensions. Support OpenAI, Olama, and VSCode built-in AI services.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "engines": {
     "vscode": "^1.95.0"
   },

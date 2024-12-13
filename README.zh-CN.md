@@ -23,7 +23,7 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-用 AI 辅助生成规范的 Git/SVN 提交信息的 VSCode 扩展。支持 OpenAI、Ollama、VSCode 内置 AI 服务、智谱 AI、DashScope 和 豆包 AI。
+用 AI 辅助生成规范的 Git/SVN 提交信息的 VSCode 扩展。支持 OpenAI、Ollama、VSCode 内置 AI 服务、智谱 AI、DashScope、豆包 AI 和 Gemini AI。
 
 ## 功能特性
 
@@ -35,6 +35,7 @@
 - 智谱 AI 支持
 - DashScope 支持
 - 豆包 AI 支持
+- Gemini AI 支持
 
 ### 📝 版本控制系统支持
 
@@ -54,6 +55,12 @@
 
 ### 😄 自动添加 emoji 表情
 
+### 📅 工作周报生成
+
+- 支持自动生成工作周报
+- 基于提交历史智能总结
+- 可自定义周报模板和格式
+
 ### 配置项
 
 | 配置项                                          | 类型    | 默认值                    | 说明                                       |
@@ -68,6 +75,7 @@
 | dish-ai-commit.dashscope.apiKey                 | string  | -                         | DashScope API 密钥                         |
 | dish-ai-commit.doubao.apiKey                    | string  | -                         | 豆包 API 密钥                              |
 | dish-ai-commit.ollama.baseUrl                   | string  | http://localhost:11434    | Ollama API 基础 URL                        |
+| dish-ai-commit.gemini.apiKey                    | string  | -                         | Gemini AI API 密钥                         |
 | dish-ai-commit.enableDiffSimplification         | boolean | false                     | 启用 diff 内容简化功能                     |
 | dish-ai-commit.diffSimplification.maxLineLength | number  | 120                       | 简化后每行的最大长度                       |
 | dish-ai-commit.diffSimplification.contextLines  | number  | 3                         | 保留上下文行数                             |
@@ -104,6 +112,15 @@
 ```json
 {
   "dish-ai-commit.PROVIDER": "vscode"
+}
+```
+
+4. Gemini AI 配置
+
+```json
+{
+  "dish-ai-commit.PROVIDER": "gemini",
+  "dish-ai-commit.GEMINI_API_KEY": "your-api-key"
 }
 ```
 
