@@ -25,6 +25,17 @@ A VSCode extension for generating standardized Git/SVN commit messages using AI
 
 A VSCode extension for generating standardized Git/SVN commit messages using AI. Supports OpenAI, Ollama, VSCode built-in AI services, Zhipu AI, DashScope, Gemini AI, and Doubao AI.
 
+### 🆓 Free AI Model Support
+
+- Zhipu AI (GLM-4-Flash)
+
+  - Free Quota: Fixed monthly free quota per account ([Rate limiting guidelines](https://open.bigmodel.cn/dev/howuse/rate-limits))
+  - [Get Zhipu API Key here](https://open.bigmodel.cn/usercenter/apikeys)
+
+- Gemini AI (gemini-2.0-flash-exp)
+  - Free Quota: 10 RPM 1500 req/day
+  - [Get Gemini API Key here](https://makersuite.google.com/app/apikey)
+
 ## Features
 
 ### 🤖 Multi-Platform AI Support
@@ -63,6 +74,8 @@ Supports 19 languages including:
 ### 🎨 Conventional Commits Compliant
 
 ### 😄 Automatic Emoji Addition
+
+### 📊 Weekly Report Generation
 
 ## 📋 Requirements
 

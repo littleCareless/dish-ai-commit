@@ -25,6 +25,17 @@
 
 用 AI 辅助生成规范的 Git/SVN 提交信息的 VSCode 扩展。支持 OpenAI、Ollama、VSCode 内置 AI 服务、智谱 AI、DashScope、豆包 AI 和 Gemini AI。
 
+### 🆓 免费 AI 模型支持
+
+- 智谱 AI (GLM-4-Flash)
+
+  - 免费额度：每个账号每月有固定免费额度（[速率限制指南](https://open.bigmodel.cn/dev/howuse/rate-limits))
+  - [点此获取智谱 API Key](https://open.bigmodel.cn/usercenter/apikeys)
+
+- Gemini AI (gemini-2.0-flash-exp)
+  - 免费额度：每分钟 60 次请求
+  - [点此获取 Gemini API Key](https://makersuite.google.com/app/apikey)
+
 ## 功能特性
 
 ### 🤖 多平台 AI 支持
