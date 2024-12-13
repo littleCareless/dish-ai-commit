@@ -168,6 +168,11 @@
           "default": "http://localhost:11434",
           "description": "Ollama API 基础 URL"
         },
+        "dish-ai-commit.providers.gemini.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Gemini AI API 密钥"
+        },
         "dish-ai-commit.features.codeAnalysis.simplifyDiff": {
           "type": "boolean",
           "default": false,
@@ -192,36 +197,6 @@
           "type": "boolean",
           "default": true,
           "description": "在提交信息中使用 emoji"
-        },
-        "dish-ai-commit.weeklyReport.template": {
-          "type": "string",
-          "default": "",
-          "description": "周报模板"
-        },
-        "dish-ai-commit.weeklyReport.autoSave": {
-          "type": "boolean",
-          "default": true,
-          "description": "自动保存周报"
-        },
-        "dish-ai-commit.weeklyReport": {
-          "type": "object",
-          "properties": {
-            "totalHours": {
-              "type": "number",
-              "default": 40,
-              "description": "每周工作总时长"
-            },
-            "totalDays": {
-              "type": "number",
-              "default": 7,
-              "description": "统计天数"
-            },
-            "minUnit": {
-              "type": "number",
-              "default": 0.5,
-              "description": "最小工时单位"
-            }
-          }
         }
       }
     },

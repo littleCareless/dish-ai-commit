@@ -63,6 +63,7 @@ export const CONFIG_SCHEMA = {
         "ZhipuAI",
         "DashScope",
         "Doubao",
+        "Gemini",
       ],
       description: "AI provider",
     },
@@ -113,6 +114,13 @@ export const CONFIG_SCHEMA = {
         type: "string",
         default: "http://localhost:11434",
         description: "Ollama API 基础 URL",
+      },
+    },
+    gemini: {
+      apiKey: {
+        type: "string",
+        default: "",
+        description: "Gemini AI API 密钥",
       },
     },
   },

@@ -2,6 +2,10 @@ import * as vscode from "vscode";
 import { exec } from "child_process";
 import { WeeklyReportService } from "../services/weeklyReport";
 import { Config } from "../types/weeklyReport";
+import { AIProviderFactory } from "../ai/AIProviderFactory";
+import { ProgressHandler } from "../utils/ProgressHandler";
+import { NotificationHandler } from "../utils/NotificationHandler";
+import { LocalizationManager } from "../utils/LocalizationManager";
 
 export class WeeklyReportPanel {
   public static currentPanel: WeeklyReportPanel | undefined;
@@ -16,11 +20,7 @@ export class WeeklyReportPanel {
     // 添加消息处理
     this._panel.webview.onDidReceiveMessage(
       async (message) => {
-        switch (message.command) {
-          case "generate":
-            await this._generateReport();
-            break;
-        }
+        await this.handleMessages(message);
       },
       null,
       this._disposables
@@ -52,97 +52,167 @@ export class WeeklyReportPanel {
 
   private _getWebviewContent() {
     return `
-            <!DOCTYPE html>
-            <html>
-            <head>
-                <meta charset="UTF-8">
-                <title>周报生成器</title>
-                <style>
-                    body { padding: 15px; }
-                    .form-group { margin-bottom: 15px; }
-                    .table { width: 100%; border-collapse: collapse; }
-                    .table td, .table th { border: 1px solid #ddd; padding: 8px; }
-                </style>
-            </head>
-            <body>
-                <h1>周报生成器</h1>
-                <div id="app">
-                    <div class="form-group">
-                        <button onclick="generateReport()">生成周报</button>
-                    </div>
-                    <div id="report"></div>
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <meta charset="UTF-8">
+            <title>周报生成器</title>
+            <style>
+                body { padding: 15px; }
+                .form-group { margin-bottom: 15px; }
+                select, button { padding: 8px; margin: 5px; }
+                .editor-container { 
+                    margin-top: 20px;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                }
+                .editor {
+                    width: 100%;
+                    min-height: 400px;
+                    padding: 15px;
+                    outline: none;
+                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                    font-size: 14px;
+                    line-height: 1.6;
+                    white-space: pre-wrap;
+                }
+                .toolbar {
+                    padding: 8px;
+                    border-bottom: 1px solid #ddd;
+                    background: #f5f5f5;
+                }
+                .toolbar button {
+                    margin: 0 4px;
+                    padding: 4px 8px;
+                    background: #fff;
+                    border: 1px solid #ddd;
+                    border-radius: 4px;
+                    cursor: pointer;
+                }
+                .toolbar button:hover {
+                    background: #e9e9e9;
+                }
+            </style>
+        </head>
+        <body>
+            <h1>周报生成器</h1>
+            <div id="app">
+                <div class="form-group">
+                    <select id="period">
+                        <option value="1 week ago">本周</option>
+                        <option value="2 weeks ago">上一周</option>
+                        <option value="3 weeks ago">上两周</option>
+                    </select>
+                    <button onclick="generateReport()">生成周报</button>
                 </div>
-                <script>
-                    const vscode = acquireVsCodeApi();
-                    
-                    async function generateReport() {
-                        vscode.postMessage({ command: 'generate' });
-                    }
+                <div class="editor-container">
+                    <div class="toolbar">
+                        <button onclick="execCommand('bold')">粗体</button>
+                        <button onclick="execCommand('italic')">斜体</button>
+                        <button onclick="execCommand('underline')">下划线</button>
+                        <button onclick="execCommand('insertOrderedList')">有序列表</button>
+                        <button onclick="execCommand('insertUnorderedList')">无序列表</button>
+                        <button onclick="copyContent()">复制内容</button>
+                    </div>
+                    <div id="editor" class="editor" contenteditable="true"></div>
+                </div>
+            </div>
+            <script>
+                const vscode = acquireVsCodeApi();
+                
+                function execCommand(command) {
+                    document.execCommand(command, false, null);
+                }
 
-                    window.addEventListener('message', event => {
-                        const message = event.data;
-                        switch (message.command) {
-                            case 'report':
-                                displayReport(message.data);
-                                break;
-                        }
+                function copyContent() {
+                    const editor = document.getElementById('editor');
+                    navigator.clipboard.writeText(editor.textContent)
+                        .then(() => {
+                            vscode.postMessage({ 
+                                command: 'notification',
+                                text: 'weeklyReport.copy.success'
+                            });
+                        })
+                        .catch(err => {
+                            vscode.postMessage({ 
+                                command: 'notification',
+                                text: 'weeklyReport.copy.failed',
+                                args: [err?.message || err]
+                            });
+                        });
+                }
+                
+                async function generateReport() {
+                    const period = document.getElementById('period').value;
+                    vscode.postMessage({ 
+                        command: 'generate',
+                        period: period
                     });
+                }
 
-                    function displayReport(reportContent) {
-                        const reportDiv = document.getElementById('report');
-                        reportDiv.innerHTML = ''; // 清空现有内容
-
-                        const pre = document.createElement('pre');
-                        pre.textContent = reportContent;
-                        reportDiv.appendChild(pre);
+                window.addEventListener('message', event => {
+                    const message = event.data;
+                    switch (message.command) {
+                        case 'report':
+                            displayReport(message.data);
+                            break;
                     }
-                </script>
-            </body>
-            </html>
-        `;
+                });
+
+                function displayReport(reportContent) {
+                    const editor = document.getElementById('editor');
+                    editor.innerHTML = reportContent.replace(/\\n/g, '<br>');
+                    editor.focus();
+                }
+            </script>
+        </body>
+        </html>
+    `;
   }
 
-  private async _getCommitHistory(period: string): Promise<string[]> {
-    return new Promise((resolve, reject) => {
-      const workspaceFolders = vscode.workspace.workspaceFolders;
-      if (!workspaceFolders || workspaceFolders.length === 0) {
-        return reject("没有打开的工作区");
-      }
+  private async handleMessages(message: any) {
+    switch (message.command) {
+      case "generate":
+        try {
+          await ProgressHandler.withProgress(
+            await LocalizationManager.getInstance().getMessage(
+              "weeklyReport.generating"
+            ),
+            async () => {
+              const service = new WeeklyReportService();
+              await service.initialize();
+              const workItems = await service.generate(message.period);
 
-      const command = `git log --since="${period}" --pretty=format:"%h - %an, %ar : %s"`;
-      exec(
-        command,
-        { cwd: workspaceFolders[0].uri.fsPath },
-        (error, stdout, stderr) => {
-          if (error) {
-            reject(`获取commit历史记录失败: ${stderr}`);
-          } else {
-            resolve(stdout.split("\n"));
-          }
+              const aiProvider = AIProviderFactory.getProvider("ZHIPUAI");
+              const response = await aiProvider.generateWeeklyReport(
+                workItems.map((item) => item.content)
+              );
+
+              if (response?.content) {
+                this._panel.webview.postMessage({
+                  command: "report",
+                  data: response.content,
+                });
+                await NotificationHandler.info(
+                  "weeklyReport.generation.success"
+                );
+              } else {
+                await NotificationHandler.error("weeklyReport.empty.response");
+              }
+            }
+          );
+        } catch (error) {
+          await NotificationHandler.error(
+            "weeklyReport.generation.failed",
+            error
+          );
         }
-      );
-    });
-  }
-
-  private async _generateReport() {
-    try {
-      const period = "1 week ago"; // 可以根据需要修改为其他时间段
-      const commits = await this._getCommitHistory(period);
-
-      // 输出获取到的 commit 到右下角
-      vscode.window.showInformationMessage(
-        `获取到的commit: ${commits.join("\n")}`
-      );
-
-      const service = new WeeklyReportService();
-      const report = await service.generate(commits);
-
-      this._panel.webview.postMessage({
-        command: "report",
-        data: report,
-      });
-    } catch (error) {
-      vscode.window.showErrorMessage(`生成周报失败: ${error}`);
+        break;
+      case "notification":
+        if (message.text) {
+          await NotificationHandler.info(message.text, ...(message.args || []));
+        }
+        break;
     }
   }
 

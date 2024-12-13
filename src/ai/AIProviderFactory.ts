@@ -8,6 +8,7 @@ import { LocalizationManager } from "../utils/LocalizationManager";
 import { ZhipuAIProvider } from "./providers/ZhipuAIProvider";
 import { DashScopeProvider } from "./providers/DashScopeProvider";
 import { DoubaoProvider } from "./providers/DoubaoProvider";
+import { GeminiAIProvider } from "./providers/GeminiAIProvider";
 
 export class AIProviderFactory {
   private static providers: Map<string, AIProviderInterface> = new Map();
@@ -34,7 +35,7 @@ export class AIProviderFactory {
     let provider = this.providers.get(providerType);
     console.log("AIProvider", AIProvider);
     console.log("providerType", providerType.toLowerCase());
-    console.log("AIProvider.VSCODE", AIProvider.ZHIPU);
+    console.log("AIProvider.VSCODE", AIProvider.ZHIPUAI);
     if (!provider) {
       switch (providerType.toLowerCase()) {
         case AIProvider.OPENAI:
@@ -54,6 +55,9 @@ export class AIProviderFactory {
           break;
         case AIProvider.DOUBAO:
           provider = new DoubaoProvider();
+          break;
+        case AIProvider.Gemini:
+          provider = new GeminiAIProvider();
           break;
         default:
           throw new Error(
@@ -78,6 +82,7 @@ export class AIProviderFactory {
       new ZhipuAIProvider(),
       new DashScopeProvider(),
       new DoubaoProvider(),
+      new GeminiAIProvider(),
     ];
   }
 

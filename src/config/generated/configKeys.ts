@@ -17,6 +17,8 @@ export const CONFIG_KEYS = {
   "PROVIDERS_DOUBAO_APIKEY": "dish-ai-commit.providers.doubao.apiKey",
   "PROVIDERS_OLLAMA": "dish-ai-commit.providers.ollama",
   "PROVIDERS_OLLAMA_BASEURL": "dish-ai-commit.providers.ollama.baseUrl",
+  "PROVIDERS_GEMINI": "dish-ai-commit.providers.gemini",
+  "PROVIDERS_GEMINI_APIKEY": "dish-ai-commit.providers.gemini.apiKey",
   "FEATURES": "dish-ai-commit.features",
   "FEATURES_CODEANALYSIS": "dish-ai-commit.features.codeAnalysis",
   "FEATURES_CODEANALYSIS_SIMPLIFYDIFF": "dish-ai-commit.features.codeAnalysis.simplifyDiff",

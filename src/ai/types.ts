@@ -147,6 +147,12 @@ export type DoubaoModels =
   | "doubao-pro-256k"
   | "doubao-vision-pro-32k";
 
+export type GeminiAIModels =
+  | "gemini-1.5-flash"
+  | "gemini-1.5-flash-8b"
+  | "gemini-1.5-pro"
+  | "gemini-2.0-flash-exp";
+
 export type AIProviders =
   | "anthropic"
   | "github"
@@ -154,7 +160,8 @@ export type AIProviders =
   | "vscode"
   | "zhipu"
   | "dashscope"
-  | "doubao"; // 添加doubao
+  | "doubao"
+  | "gemini";
 
 export type AIModels<Provider extends AIProviders = AIProviders> =
   Provider extends "github"
@@ -169,6 +176,8 @@ export type AIModels<Provider extends AIProviders = AIProviders> =
     ? DashScopeModels
     : Provider extends "doubao"
     ? DoubaoModels
+    : Provider extends "gemini"
+    ? GeminiAIModels
     : OpenAIModels;
 
 export type SupportedAIModels =
