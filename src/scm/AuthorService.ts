@@ -1,8 +1,8 @@
-import * as vscode from 'vscode';
-import { promisify } from 'util';
-import { exec } from 'child_process';
-import { SvnUtils } from './SvnUtils';
-import { LocalizationManager } from '../utils/LocalizationManager';
+import * as vscode from "vscode";
+import { promisify } from "util";
+import { exec } from "child_process";
+import { SvnUtils } from "./SvnUtils";
+import { LocalizationManager } from "../utils/LocalizationManager";
 
 const execAsync = promisify(exec);
 
@@ -22,16 +22,21 @@ export class AuthorService {
   }
 
   private async getSvnAuthor(): Promise<string> {
-    const author = await SvnUtils.getSvnAuthorFromInfo(this.workspacePath)
-      || await SvnUtils.getSvnAuthorFromAuth(this.workspacePath)
-      || await this.promptForAuthor();
-    
+    // await SvnUtils.getSvnAuthorFromInfo(this.workspacePath)   ||
+    console.log(
+      "getSvnAuthorFromAuth",
+      await SvnUtils.getSvnAuthorFromAuth(this.workspacePath)
+    );
+    const author =
+      (await SvnUtils.getSvnAuthorFromAuth(this.workspacePath)) ||
+      (await this.promptForAuthor());
+
     if (!author) {
       throw new Error(
         LocalizationManager.getInstance().getMessage("author.svn.not.found")
       );
     }
-    
+
     return author;
   }
 
@@ -39,7 +44,7 @@ export class AuthorService {
     const locManager = LocalizationManager.getInstance();
     return vscode.window.showInputBox({
       prompt: locManager.getMessage("author.manual.input.prompt"),
-      placeHolder: locManager.getMessage("author.manual.input.placeholder")
+      placeHolder: locManager.getMessage("author.manual.input.placeholder"),
     });
   }
 }

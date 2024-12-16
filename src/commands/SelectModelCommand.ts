@@ -26,8 +26,9 @@ export class SelectModelCommand extends BaseCommand {
         modelSelection.provider,
         modelSelection.model
       );
-      await NotificationHandler.info(
+      NotificationHandler.info(
         "model.update.success",
+        3000,
         modelSelection.provider,
         modelSelection.model
       );

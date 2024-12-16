@@ -47,7 +47,7 @@ export class AIProviderFactory {
         case AIProvider.VS_CODE_PROVIDED:
           provider = new VSCodeProvider();
           break;
-        case AIProvider.ZHIPUAI:
+        case AIProvider.ZHIPU:
           provider = new ZhipuAIProvider();
           break;
         case AIProvider.DASHSCOPE:

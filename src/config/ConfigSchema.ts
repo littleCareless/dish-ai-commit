@@ -62,7 +62,7 @@ export const CONFIG_SCHEMA = {
         "OpenAI",
         "Ollama",
         "VS Code Provided",
-        "ZhipuAI",
+        "Zhipu",
         "DashScope",
         "Doubao",
         "Gemini",
@@ -90,7 +90,7 @@ export const CONFIG_SCHEMA = {
         description: "OpenAI API 基础 URL",
       },
     },
-    zhipuai: {
+    zhipu: {
       apiKey: {
         type: "string",
         default: "",

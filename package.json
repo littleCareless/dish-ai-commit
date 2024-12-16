@@ -127,7 +127,7 @@
             "OpenAI",
             "Ollama",
             "VS Code Provided",
-            "ZhipuAI",
+            "Zhipu",
             "DashScope",
             "Doubao",
             "Gemini"
@@ -149,7 +149,7 @@
           "default": "https://api.openai.com/v1",
           "description": "OpenAI API 基础 URL"
         },
-        "dish-ai-commit.providers.zhipuai.apiKey": {
+        "dish-ai-commit.providers.zhipu.apiKey": {
           "type": "string",
           "default": "",
           "description": "智谱 AI API 密钥"

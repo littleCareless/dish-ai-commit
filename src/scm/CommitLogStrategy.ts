@@ -19,6 +19,8 @@ export class GitCommitStrategy implements CommitLogStrategy {
     author: string
   ): Promise<string[]> {
     const command = `git log --since="${period}" --pretty=format:"%h - %an, %ar : %s" --author="${author}"`;
+
+    console.log("command", command);
     const { stdout } = await execAsync(command, { cwd: workspacePath });
     return stdout.split("\n").filter((line) => line.trim());
   }
@@ -32,6 +34,8 @@ export class SvnCommitStrategy implements CommitLogStrategy {
   ): Promise<string[]> {
     const { startDate, endDate } = DateUtils.getDateRangeFromPeriod(period);
     const command = `svn log -r "{${startDate.toISOString()}}:{${endDate.toISOString()}}" --search="${author}" --xml`;
+
+    console.log("command", command);
 
     const { stdout } = await execAsync(command, { cwd: workspacePath });
     return this.parseXmlLogs(stdout);

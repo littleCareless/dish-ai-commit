@@ -64,7 +64,7 @@ export class ZhipuAIProvider extends BaseOpenAIProvider {
   constructor() {
     const configManager = ConfigurationManager.getInstance();
     super({
-      apiKey: configManager.getConfig("PROVIDERS_ZHIPUAI_APIKEY"),
+      apiKey: configManager.getConfig("PROVIDERS_ZHIPU_APIKEY"),
       baseURL: "https://open.bigmodel.cn/api/paas/v4/",
       providerId: "zhipu",
       providerName: "zhipu",

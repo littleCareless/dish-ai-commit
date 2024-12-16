@@ -67,7 +67,7 @@
   "ai.model.loading": "正在加载 AI 模型列表...",
   "weeklyReport.generating": "正在生成周报...",
   "weeklyReport.empty.response": "AI 生成内容为空",
-  "weeklyReport.generation.success": "周报生成成功",
+  "weeklyReport.generation.success": "周报生成成功: {0} {1}",
   "weeklyReport.generation.failed": "生成周报失败: {0}",
   "weeklyReport.copy.success": "内容已复制到剪贴板",
   "weeklyReport.copy.failed": "复制失败: {0}",

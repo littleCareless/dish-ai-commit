@@ -157,7 +157,6 @@ export class VSCodeProvider implements AIProvider {
   async getModels(): Promise<AIModel[]> {
     try {
       const models = await vscode.lm.selectChatModels();
-      console.log("model", models);
       if (models.length > 0) {
         return Promise.resolve(
           models.map((model) => ({

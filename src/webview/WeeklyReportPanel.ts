@@ -193,52 +193,93 @@ export class WeeklyReportPanel {
     `;
   }
 
+  private formatPeriod(period: string): string {
+    const now = new Date();
+    const weeks = parseInt(period);
+    const pastDate = new Date(now.setDate(now.getDate() - weeks * 7));
+
+    const formatDate = (date: Date) => {
+      const yyyy = date.getFullYear();
+      const mm = String(date.getMonth() + 1).padStart(2, "0");
+      const dd = String(date.getDate()).padStart(2, "0");
+      return `${yyyy} ${mm} ${dd}`;
+    };
+
+    const endDate = formatDate(new Date());
+    const startDate = formatDate(pastDate);
+    return `${startDate} - ${endDate}`;
+  }
+
   private async handleMessages(message: any) {
     switch (message.command) {
       case "generate":
         try {
-          await ProgressHandler.withProgress(
-            await LocalizationManager.getInstance().getMessage(
-              "weeklyReport.generating"
-            ),
-            async () => {
-              const service = new WeeklyReportService();
-              await service.initialize();
-              const workItems = await service.generate(message.period);
+          // 使用 withProgress 方法，但通过 resolve 来提前结束进度提示
+          await new Promise<void>(async (resolve, reject) => {
+            await ProgressHandler.withProgress(
+              await LocalizationManager.getInstance().getMessage(
+                "weeklyReport.generating"
+              ),
+              async (progress) => {
+                try {
+                  const service = new WeeklyReportService();
+                  await service.initialize();
+                  console.log("service initialized", message);
+                  const workItems = await service.generate(message.period);
+                  const author = await service.getCurrentAuthor(); // 新增：获取当前提交人
 
-              // 获取配置并确保选择了模型
-              const { aiProvider, selectedModel } =
-                await this.getModelAndUpdateConfiguration();
+                  const { aiProvider, selectedModel } =
+                    await this.getModelAndUpdateConfiguration();
 
-              // 使用选定的模型生成周报
-              const response = await aiProvider.generateWeeklyReport(
-                workItems.map((item) => item.content),
-                selectedModel // 传入选定的模型
-              );
+                  const response = await aiProvider.generateWeeklyReport(
+                    workItems.map((item) => item.content),
+                    selectedModel
+                  );
 
-              if (response?.content) {
-                this._panel.webview.postMessage({
-                  command: "report",
-                  data: response.content,
-                });
-                await NotificationHandler.info(
-                  "weeklyReport.generation.success"
-                );
-              } else {
-                await NotificationHandler.error("weeklyReport.empty.response");
+                  if (response?.content) {
+                    // 更新 UI 并提前结束进度条
+                    this._panel.webview.postMessage({
+                      command: "report",
+                      data: response.content,
+                    });
+                    resolve(); // 提前结束进度提示
+                    const formattedPeriod = this.formatPeriod(
+                      message.period.split(" ")[0]
+                    );
+                    NotificationHandler.info(
+                      "weeklyReport.generation.success",
+                      undefined,
+                      formattedPeriod,
+                      author
+                    );
+                    progress.report({ message: "Done", increment: 100 });
+                  } else {
+                    reject(
+                      new Error(
+                        LocalizationManager.getInstance().getMessage(
+                          "weeklyReport.empty.response"
+                        )
+                      )
+                    );
+                  }
+                } catch (error) {
+                  reject(error);
+                }
               }
-            }
-          );
+            );
+          });
         } catch (error) {
-          await NotificationHandler.error(
+          NotificationHandler.error(
             "weeklyReport.generation.failed",
+            3000,
             error
           );
         }
         break;
+
       case "notification":
         if (message.text) {
-          await NotificationHandler.info(message.text, ...(message.args || []));
+          NotificationHandler.info(message.text, ...(message.args || []));
         }
         break;
     }
@@ -266,52 +307,48 @@ export class WeeklyReportPanel {
     return { provider: modelSelection.provider, model: modelSelection.model };
   }
 
-  private async getModelAndUpdateConfiguration(
-    provider = "Ollama",
-    model = "Ollama"
-  ) {
+  private async getModelAndUpdateConfiguration() {
     const locManager = LocalizationManager.getInstance();
+    const config = ConfigurationManager.getInstance();
+    const configuration = config.getConfiguration();
+
+    // 从用户配置中获取当前的 provider 和 model
+    let provider = configuration.base.provider;
+    let model = configuration.base.model;
+
     let aiProvider = AIProviderFactory.getProvider(provider);
     let models = await aiProvider.getModels();
 
-    if (!models || models.length === 0) {
-      const result = await this.selectAndUpdateModelConfiguration(
-        provider,
-        model
-      );
-      if (!result) {
-        throw new Error(locManager.getMessage("model.selection.cancelled"));
-      }
-      provider = result.provider;
-      model = result.model;
-
-      aiProvider = AIProviderFactory.getProvider(provider);
-      models = await aiProvider.getModels();
-
-      if (!models || models.length === 0) {
-        throw new Error(locManager.getMessage("model.list.empty"));
+    // 当前模型列表不为空，且配置的模型存在时，直接使用
+    if (models && models.length > 0) {
+      const selectedModel = models.find((m) => m.name === model);
+      if (selectedModel) {
+        return { aiProvider, selectedModel };
       }
     }
 
-    let selectedModel = models.find((m) => m.name === model);
+    // 只有当模型不可用时，才触发选择流程
+    const result = await this.selectAndUpdateModelConfiguration(
+      provider,
+      model
+    );
+    if (!result) {
+      throw new Error(locManager.getMessage("model.selection.cancelled"));
+    }
+
+    provider = result.provider;
+    model = result.model;
+
+    aiProvider = AIProviderFactory.getProvider(provider);
+    models = await aiProvider.getModels();
+
+    if (!models || models.length === 0) {
+      throw new Error(locManager.getMessage("model.list.empty"));
+    }
+
+    const selectedModel = models.find((m) => m.name === model);
     if (!selectedModel) {
-      const result = await this.selectAndUpdateModelConfiguration(
-        provider,
-        model
-      );
-      if (!result) {
-        throw new Error(locManager.getMessage("model.selection.cancelled"));
-      }
-      provider = result.provider;
-      model = result.model;
-
-      aiProvider = AIProviderFactory.getProvider(provider);
-      models = await aiProvider.getModels();
-      selectedModel = models.find((m) => m.name === model);
-
-      if (!selectedModel) {
-        throw new Error(locManager.getMessage("model.notFound"));
-      }
+      throw new Error(locManager.getMessage("model.notFound"));
     }
 
     return { aiProvider, selectedModel };

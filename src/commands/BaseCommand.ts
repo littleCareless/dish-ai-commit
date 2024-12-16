@@ -12,7 +12,7 @@ export abstract class BaseCommand {
 
   protected async validateConfig(): Promise<boolean> {
     // if (!(await ConfigurationManager.getInstance().validateConfiguration())) {
-    //   await NotificationHandler.error("command.execution.failed");
+    //   NotificationHandler.error("command.execution.failed");
     //   return false;
     // }
     return true;
@@ -24,7 +24,7 @@ export abstract class BaseCommand {
   ): Promise<void> {
     console.error(errorMessage, error);
     if (error instanceof Error) {
-      await NotificationHandler.error(
+      NotificationHandler.error(
         LocalizationManager.getInstance().format(errorMessage, error.message)
       );
     }

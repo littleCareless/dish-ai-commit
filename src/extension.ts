@@ -26,6 +26,7 @@ export function activate(context: vscode.ExtensionContext) {
     // 添加用户可见的错误提示
     NotificationHandler.error(
       "extension.activation.failed",
+      3000,
       e instanceof Error ? e.message : String(e)
     );
     throw e;

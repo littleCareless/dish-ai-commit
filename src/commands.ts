@@ -27,6 +27,7 @@ export class CommandManager implements vscode.Disposable {
             } catch (error) {
               NotificationHandler.error(
                 "command.generate.failed",
+                3000,
                 error instanceof Error ? error.message : String(error)
               );
             }
@@ -38,6 +39,7 @@ export class CommandManager implements vscode.Disposable {
           } catch (error) {
             NotificationHandler.error(
               "command.select.model.failed",
+              3000,
               error instanceof Error ? error.message : String(error)
             );
           }
@@ -50,6 +52,7 @@ export class CommandManager implements vscode.Disposable {
             } catch (error) {
               NotificationHandler.error(
                 "command.weekly.report.failed",
+                3000,
                 error instanceof Error ? error.message : String(error)
               );
             }
@@ -59,6 +62,7 @@ export class CommandManager implements vscode.Disposable {
     } catch (error) {
       NotificationHandler.error(
         "command.register.failed",
+        3000,
         error instanceof Error ? error.message : String(error)
       );
     }

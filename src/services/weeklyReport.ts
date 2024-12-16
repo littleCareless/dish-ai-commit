@@ -31,6 +31,7 @@ export class WeeklyReportService {
     }
 
     const author = await this.authorService!.getAuthor(this.scmProvider!.type);
+    console.log("author", author);
     const commits = await this.commitStrategy!.getCommits(
       this.getWorkspacePath(),
       period,
@@ -42,6 +43,13 @@ export class WeeklyReportService {
       time: "",
       description: commit,
     }));
+  }
+
+  async getCurrentAuthor(): Promise<string> {
+    if (!this.scmProvider || !this.authorService) {
+      await this.initialize();
+    }
+    return await this.authorService!.getAuthor(this.scmProvider!.type);
   }
 
   private getWorkspacePath(): string {

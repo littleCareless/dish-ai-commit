@@ -136,7 +136,6 @@ export class ConfigurationManager {
   ): K extends keyof ConfigurationValueType
     ? ConfigurationValueType[K]
     : string {
-    console.log("获取配置项:", key, ConfigKeys);
     const configKey = ConfigKeys[key].replace("dish-ai-commit.", "");
     const value = this.configuration.get<string>(configKey);
     return value as K extends keyof ConfigurationValueType

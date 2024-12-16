@@ -170,9 +170,7 @@ export class GenerateCommitCommand extends BaseCommand {
     try {
       const scmProvider = await SCMFactory.detectSCM();
       if (!scmProvider) {
-        await NotificationHandler.error(
-          locManager.getMessage("scm.not.detected")
-        );
+        NotificationHandler.error(locManager.getMessage("scm.not.detected"));
         return;
       }
 
@@ -205,7 +203,7 @@ export class GenerateCommitCommand extends BaseCommand {
 
           const diffContent = await scmProvider.getDiff(selectedFiles);
           if (!diffContent) {
-            await NotificationHandler.info(locManager.getMessage("no.changes"));
+            NotificationHandler.info(locManager.getMessage("no.changes"));
             throw new Error(locManager.getMessage("no.changes"));
           }
           const {
@@ -229,14 +227,14 @@ export class GenerateCommitCommand extends BaseCommand {
         }
       );
       if (!response) {
-        return await NotificationHandler.info(
+        return NotificationHandler.info(
           locManager.getMessage("no.commit.message.generated")
         );
       }
       if (response?.content) {
         try {
           await scmProvider.setCommitInput(response.content);
-          await NotificationHandler.info(
+          NotificationHandler.info(
             locManager.format(
               "commit.message.generated",
               scmProvider.type.toUpperCase(),
@@ -246,18 +244,18 @@ export class GenerateCommitCommand extends BaseCommand {
           );
         } catch (error) {
           if (error instanceof Error) {
-            await NotificationHandler.error(
+            NotificationHandler.error(
               locManager.format("commit.message.write.failed", error.message)
             );
             try {
               // 如果写入失败，尝试复制到剪贴板
               vscode.env.clipboard.writeText(response.content);
-              await NotificationHandler.info(
+              NotificationHandler.info(
                 locManager.getMessage("commit.message.copied")
               );
             } catch (error) {
               if (error instanceof Error) {
-                await NotificationHandler.error(
+                NotificationHandler.error(
                   locManager.format("commit.message.copy.failed", error.message)
                 );
                 // 如果复制失败，提示用户手动复制 并将信息显示在消息框
@@ -273,7 +271,7 @@ export class GenerateCommitCommand extends BaseCommand {
     } catch (error) {
       console.log("error", error);
       if (error instanceof Error) {
-        await NotificationHandler.error(
+        NotificationHandler.error(
           locManager.format("generate.commit.failed", error.message)
         );
       }

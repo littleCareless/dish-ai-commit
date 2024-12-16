@@ -67,7 +67,7 @@
   "ai.model.loading": "Loading AI model list...",
   "weeklyReport.generating": "Generating weekly report...",
   "weeklyReport.empty.response": "AI generated content is empty",
-  "weeklyReport.generation.success": "Weekly report generated successfully",
+  "weeklyReport.generation.success": "Weekly report generated successfully: : {0} {1}",
   "weeklyReport.generation.failed": "Failed to generate weekly report: {0}",
   "weeklyReport.copy.success": "Content copied to clipboard",
   "weeklyReport.copy.failed": "Copy failed: {0}",
