@@ -108,9 +108,10 @@ Supports 19 languages including:
 
 ### Commands
 
-- `Generate Commit Message`: Generate commit message based on current changes
-- `Select AI Model`: Choose the AI model to use
-- `Generate Weekly Report`: Generate a weekly summary report of your work
+| Command ID | Category | Title | Description |
+|------------|----------|--------|-------------|
+| dish-ai-commit.selectModel | [Dish AI Commit] | Select AI Model for Commit Generation | Choose the AI model for generating commit messages |
+| dish-ai-commit.generateWeeklyReport | [Dish AI Commit] | Generate Weekly Report | Generate AI-powered weekly work report |
 
 ## Configuration Instructions
 
@@ -249,3 +250,4 @@ This project is [MIT](./LICENSE) licensed.
 [total-installs-shield]: https://img.shields.io/vscode-marketplace/d/littleCareless.dish-ai-commit.svg?&color=greeen&labelColor=black&style=flat-square
 [avarage-rating-link]: https://marketplace.visualstudio.com/items?itemName=littleCareless.dish-ai-commit
 [avarage-rating-shield]: https://img.shields.io/vscode-marketplace/r/littleCareless.dish-ai-commit.svg?&color=green&labelColor=black&style=flat-square
+````

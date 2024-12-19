@@ -74,30 +74,32 @@
 
 ### 配置项
 
-| 配置项                                               | 类型     | 默认值                     | 说明                                                           |
-|---------------------------------------------------|----------|---------------------------|--------------------------------------------------------------|
-| dish-ai-commit.base.language                       | string   | Simplified Chinese        | 提交信息语言                                                   |
-| dish-ai-commit.base.systemPrompt                   | string   | ""                        | 自定义系统提示                                                 |
-| dish-ai-commit.base.provider                       | string   | OpenAI                    | AI 服务提供商                                                  |
-| dish-ai-commit.base.model                          | string   | gpt-3.5-turbo            | AI 模型选择                                                    |
-| dish-ai-commit.providers.openai.apiKey             | string   | ""                        | OpenAI API 密钥                                                |
-| dish-ai-commit.providers.openai.baseUrl            | string   | https://api.openai.com/v1 | OpenAI API 基础 URL                                            |
-| dish-ai-commit.providers.zhipu.apiKey              | string   | ""                        | 智谱 AI API 密钥                                               |
-| dish-ai-commit.providers.dashscope.apiKey          | string   | ""                        | DashScope API 密钥                                             |
-| dish-ai-commit.providers.doubao.apiKey             | string   | ""                        | 豆包 API 密钥                                                  |
-| dish-ai-commit.providers.ollama.baseUrl            | string   | http://localhost:11434    | Ollama API 基础 URL                                            |
-| dish-ai-commit.providers.gemini.apiKey             | string   | ""                        | Gemini AI API 密钥                                             |
-| dish-ai-commit.features.codeAnalysis.simplifyDiff  | boolean  | false                     | 启用 diff 内容简化功能                                         |
-| dish-ai-commit.features.codeAnalysis.maxLineLength | number   | 120                       | 简化后每行的最大长度                                           |
-| dish-ai-commit.features.codeAnalysis.contextLines  | number   | 3                         | 保留的上下文行数                                               |
-| dish-ai-commit.features.commitFormat.enableMergeCommit | boolean | false                  | 是否允许将多个文件的变更合并为一条提交信息                      |
-| dish-ai-commit.features.commitFormat.enableEmoji   | boolean  | true                      | 在提交信息中使用 emoji                                         |
-| dish-ai-commit.features.weeklyReport.systemPrompt  | string   | ""                        | 周报生成的自定义系统提示                                       |
+| 配置项                                                 | 类型    | 默认值                    | 说明                                       |
+| ------------------------------------------------------ | ------- | ------------------------- | ------------------------------------------ |
+| dish-ai-commit.base.language                           | string  | Simplified Chinese        | 提交信息语言                               |
+| dish-ai-commit.base.systemPrompt                       | string  | ""                        | 自定义系统提示                             |
+| dish-ai-commit.base.provider                           | string  | OpenAI                    | AI 服务提供商                              |
+| dish-ai-commit.base.model                              | string  | gpt-3.5-turbo             | AI 模型选择                                |
+| dish-ai-commit.providers.openai.apiKey                 | string  | ""                        | OpenAI API 密钥                            |
+| dish-ai-commit.providers.openai.baseUrl                | string  | https://api.openai.com/v1 | OpenAI API 基础 URL                        |
+| dish-ai-commit.providers.zhipu.apiKey                  | string  | ""                        | 智谱 AI API 密钥                           |
+| dish-ai-commit.providers.dashscope.apiKey              | string  | ""                        | DashScope API 密钥                         |
+| dish-ai-commit.providers.doubao.apiKey                 | string  | ""                        | 豆包 API 密钥                              |
+| dish-ai-commit.providers.ollama.baseUrl                | string  | http://localhost:11434    | Ollama API 基础 URL                        |
+| dish-ai-commit.providers.gemini.apiKey                 | string  | ""                        | Gemini AI API 密钥                         |
+| dish-ai-commit.features.codeAnalysis.simplifyDiff      | boolean | false                     | 启用 diff 内容简化功能                     |
+| dish-ai-commit.features.codeAnalysis.maxLineLength     | number  | 120                       | 简化后每行的最大长度                       |
+| dish-ai-commit.features.codeAnalysis.contextLines      | number  | 3                         | 保留的上下文行数                           |
+| dish-ai-commit.features.commitFormat.enableMergeCommit | boolean | false                     | 是否允许将多个文件的变更合并为一条提交信息 |
+| dish-ai-commit.features.commitFormat.enableEmoji       | boolean | true                      | 在提交信息中使用 emoji                     |
+| dish-ai-commit.features.weeklyReport.systemPrompt      | string  | ""                        | 周报生成的自定义系统提示                   |
 
 ### 命令
 
-- `Generate Commit Message`: 根据当前更改生成提交信息
-- `Select AI Model`: 选择要使用的 AI 模型
+| 命令 ID                            | 分类             | 标题                       | 描述                           |
+| ---------------------------------- | ---------------- | -------------------------- | ------------------------------ |
+| dish-ai-commit.selectModel         | [Dish AI Commit] | 选择用于提交生成的 AI 模型 | 选择用于生成提交消息的 AI 模型 |
+| dish-ai-commit.generateWeekly 报告 | [Dish AI Commit] | 生成每周报告               | 基于过去的Commit生成 AI 驱动的每周工作报告     |
 
 ## 配置说明
 
