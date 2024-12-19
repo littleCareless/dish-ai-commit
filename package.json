@@ -277,13 +277,13 @@
     "husky": "^8.0.0",
     "lint-staged": "^15.2.10",
     "standard-version": "^9.5.0",
-    "typescript": "^5.4.5"
+    "typescript": "^5.4.5",
+    "@vscode/vsce": "^3.2.1",
+    "ts-node": "^10.9.2"
   },
   "dependencies": {
-    "@vscode/vsce": "^3.2.1",
     "ollama": "^0.5.10",
-    "openai": "^4.73.1",
-    "ts-node": "^10.9.2"
+    "openai": "^4.73.1"
   },
   "resolutions": {
     "@types/node": "16.x"
