@@ -86,23 +86,25 @@ Supports 19 languages including:
 
 ### Configuration
 
-| Configuration                                   | Type    | Default                   | Description                                         |
-| ----------------------------------------------- | ------- | ------------------------- | --------------------------------------------------- |
-| dish-ai-commit.commitLanguage                   | string  | Simplified Chinese        | Commit message language                             |
-| dish-ai-commit.systemPrompt                     | string  | ""                        | Custom system prompt for generating commit messages |
-| dish-ai-commit.provider                         | string  | OpenAI                    | Default AI provider                                 |
-| dish-ai-commit.model                            | string  | gpt-3.5-turbo             | AI model selection                                  |
-| dish-ai-commit.openai.apiKey                    | string  | -                         | OpenAI API key                                      |
-| dish-ai-commit.openai.baseUrl                   | string  | https://api.openai.com/v1 | OpenAI API base URL                                 |
-| dish-ai-commit.zhipuai.apiKey                   | string  | -                         | Zhipu AI API key                                    |
-| dish-ai-commit.dashscope.apiKey                 | string  | -                         | DashScope API key                                   |
-| dish-ai-commit.doubao.apiKey                    | string  | -                         | Doubao API key                                      |
-| dish-ai-commit.gemini.apiKey                    | string  | -                         | Gemini API key                                      |
-| dish-ai-commit.ollama.baseUrl                   | string  | http://localhost:11434    | Ollama API base URL                                 |
-| dish-ai-commit.enableDiffSimplification         | boolean | false                     | Enable diff content simplification                  |
-| dish-ai-commit.diffSimplification.maxLineLength | number  | 120                       | Maximum line length after simplification            |
-| dish-ai-commit.diffSimplification.contextLines  | number  | 3                         | Number of context lines to preserve                 |
-| dish-ai-commit.allowMergeCommits                | boolean | false                     | Allow merging multiple file changes into one commit |
+| Configuration                                          | Type    | Default                   | Description                                         |
+| ------------------------------------------------------ | ------- | ------------------------- | --------------------------------------------------- |
+| dish-ai-commit.base.language                           | string  | Simplified Chinese        | Commit message language                             |
+| dish-ai-commit.base.systemPrompt                       | string  | ""                        | Custom system prompt                                |
+| dish-ai-commit.base.provider                           | string  | OpenAI                    | AI provider                                         |
+| dish-ai-commit.base.model                              | string  | gpt-3.5-turbo             | AI model                                            |
+| dish-ai-commit.providers.openai.apiKey                 | string  | ""                        | OpenAI API key                                      |
+| dish-ai-commit.providers.openai.baseUrl                | string  | https://api.openai.com/v1 | OpenAI API base URL                                 |
+| dish-ai-commit.providers.zhipu.apiKey                  | string  | ""                        | Zhipu AI API key                                    |
+| dish-ai-commit.providers.dashscope.apiKey              | string  | ""                        | DashScope API key                                   |
+| dish-ai-commit.providers.doubao.apiKey                 | string  | ""                        | Doubao API key                                      |
+| dish-ai-commit.providers.ollama.baseUrl                | string  | http://localhost:11434    | Ollama API base URL                                 |
+| dish-ai-commit.providers.gemini.apiKey                 | string  | ""                        | Gemini AI API key                                   |
+| dish-ai-commit.features.codeAnalysis.simplifyDiff      | boolean | false                     | Enable diff content simplification                  |
+| dish-ai-commit.features.codeAnalysis.maxLineLength     | number  | 120                       | Maximum line length after simplification            |
+| dish-ai-commit.features.codeAnalysis.contextLines      | number  | 3                         | Number of context lines to preserve                 |
+| dish-ai-commit.features.commitFormat.enableMergeCommit | boolean | false                     | Allow merging multiple file changes into one commit |
+| dish-ai-commit.features.commitFormat.enableEmoji       | boolean | true                      | Use emoji in commit messages                        |
+| dish-ai-commit.features.weeklyReport.systemPrompt      | string  | ""                        | Custom system prompt for weekly reports             |
 
 ### Commands
 
@@ -217,7 +219,7 @@ This project is inspired by and references these excellent open source projects:
 - [svn-scm](https://github.com/JohnstonCode/svn-scm) - SVN source control management for VSCode
 - [vscode](https://github.com/microsoft/vscode) - Visual Studio Code editor
 - [vscode-gitlens](https://github.com/gitkraken/vscode-gitlens) - Git supercharged for VSCode
-- [dish-ai-commit](https://github.com/Sitoi/dish-ai-commit) - AI assisted Git commit message generation
+- [ai-commit](https://github.com/Sitoi/ai-commit) - AI assisted Git commit message generation
 
 ## 📄 License
 
