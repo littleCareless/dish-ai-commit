@@ -84,5 +84,9 @@
   "editor.format.underline": "下划线",
   "editor.format.orderedList": "有序列表",
   "editor.format.unorderedList": "无序列表",
-  "editor.copy": "复制内容"
+  "editor.copy": "复制内容",
+  "zhipu.apiKey.missing": "智谱 AI API Key 未配置。是否现在配置？",
+  "gemini.apiKey.missing": "Gemini API Key 未配置。是否现在配置？",
+  "dashscope.apiKey.missing": "DashScope API Key 未配置。是否现在配置？",
+  "doubao.apiKey.missing": "豆包 API Key 未配置。是否现在配置？"
 }

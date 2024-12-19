@@ -311,7 +311,7 @@ export class ConfigurationManager {
       !(requiredField in providerConfig) ||
       !providerConfig[requiredField as keyof typeof providerConfig]
     ) {
-      const settingKey = `PROVIDERS_${provider.toUpperCase()}_${requiredField.toUpperCase()}`;
+      const settingKey = `providers.${provider.toLowerCase()}.${requiredField.toLowerCase()}`;
       const action = await vscode.window.showErrorMessage(
         locManager.getMessage(`${provider}.${requiredField}.missing`),
         locManager.getMessage("button.yes"),

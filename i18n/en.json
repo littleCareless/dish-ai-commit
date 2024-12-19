@@ -84,5 +84,9 @@
   "editor.format.underline": "Underline",
   "editor.format.orderedList": "Ordered List",
   "editor.format.unorderedList": "Unordered List",
-  "editor.copy": "Copy Content"
+  "editor.copy": "Copy Content",
+  "zhipu.apiKey.missing": "Zhipu AI API Key is not configured. Would you like to configure it now?",
+  "gemini.apiKey.missing": "Gemini API Key is not configured. Would you like to configure it now?",
+  "dashscope.apiKey.missing": "DashScope API Key is not configured. Would you like to configure it now?",
+  "doubao.apiKey.missing": "Doubao API Key is not configured. Would you like to configure it now?"
 }

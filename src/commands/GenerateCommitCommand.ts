@@ -10,53 +10,6 @@ import { LocalizationManager } from "../utils/LocalizationManager";
 import { ModelPickerService } from "../services/ModelPickerService";
 
 export class GenerateCommitCommand extends BaseCommand {
-  private async showConfigWizard(): Promise<boolean> {
-    const locManager = LocalizationManager.getInstance();
-    const baseURL = await vscode.window.showInputBox({
-      prompt: locManager.getMessage("openai.baseurl.prompt"),
-      placeHolder: locManager.getMessage("openai.baseurl.placeholder"),
-      ignoreFocusOut: true,
-    });
-
-    if (!baseURL) {
-      return false;
-    }
-
-    const apiKey = await vscode.window.showInputBox({
-      prompt: locManager.getMessage("openai.apikey.prompt"),
-      password: true,
-      ignoreFocusOut: true,
-    });
-
-    if (!apiKey) {
-      return false;
-    }
-
-    const config = ConfigurationManager.getInstance();
-    await config.updateConfig("PROVIDERS_OPENAI_BASEURL", baseURL);
-    await config.updateConfig("PROVIDERS_OPENAI_APIKEY", apiKey);
-    return true;
-  }
-
-  private async ensureConfiguration(): Promise<boolean> {
-    const locManager = LocalizationManager.getInstance();
-    const config = ConfigurationManager.getInstance();
-    const configuration = config.getConfiguration();
-    const baseURL = configuration.providers.openai.baseUrl;
-    const apiKey = configuration.providers.openai.apiKey;
-
-    if (!baseURL || !apiKey) {
-      const result = await vscode.window.showInformationMessage(
-        locManager.getMessage("openai.config.required"),
-        locManager.getMessage("button.yes"),
-        locManager.getMessage("button.no")
-      );
-      return result === locManager.getMessage("button.yes")
-        ? this.showConfigWizard()
-        : false;
-    }
-    return true;
-  }
   // 提取一个函数来处理获取和更新模型配置的逻辑
   private async getModelAndUpdateConfiguration(
     provider = "Ollama",
@@ -137,11 +90,13 @@ export class GenerateCommitCommand extends BaseCommand {
   private async handleConfiguration(): Promise<
     { provider: string; model: string } | undefined
   > {
-    if (!(await this.ensureConfiguration()) || !(await this.validateConfig())) {
+    const config = ConfigurationManager.getInstance();
+
+    // 使用 ConfigurationManager 的验证方法
+    if (!(await config.validateConfiguration())) {
       return;
     }
 
-    const config = ConfigurationManager.getInstance();
     const configuration = config.getConfiguration();
     let provider = configuration.base.provider;
     let model = configuration.base.model;
