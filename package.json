@@ -1,8 +1,8 @@
 {
   "name": "dish-ai-commit",
   "displayName": "Dish AI Commit Gen",
-  "description": "Use AI to assist in generating standardized Git/SVN submission information VSCode extensions. Support OpenAI, Olama, and VSCode built-in AI services.",
-  "version": "0.4.4",
+  "description": "🤖 AI-Powered VSCode extension for generating standardized Git/SVN commit messages. ✨ Supports multiple AI services: OpenAI, ChatGPT, Ollama, Zhipu, DashScope, Doubao, Gemini and VS Code built-in AI. 🌍 Multi-language support (EN/CN/JP/KR/Other). 📊 Auto-generate weekly reports.",
+  "version": "0.4.6",
   "engines": {
     "vscode": "^1.95.0"
   },
@@ -10,8 +10,11 @@
   "repository": "https://github.com/littleCareless/dish-ai-commit",
   "icon": "images/logo.png",
   "categories": [
-    "Other",
-    "SCM Providers"
+    "SCM Providers",
+    "Machine Learning",
+    "Snippets",
+    "Formatters",
+    "Other"
   ],
   "keywords": [
     "OpenAI",
@@ -30,7 +33,11 @@
     "Auto Commit",
     "SCM Providers",
     "SCM",
-    "Dish Ai Commit"
+    "Dish Ai Commit",
+    "Zhipu",
+    "DashScope",
+    "Doubao",
+    "Gemini"
   ],
   "extensionDependencies": [
     "johnstoncode.svn-scm",
