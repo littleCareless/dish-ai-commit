@@ -152,6 +152,7 @@ ${
 
 ### Subject Line
 
+- Use ! for Breaking Changes, e.g.: feat!: xxx
 - Scope must be in English
 - Imperative mood
 - No capitalization
@@ -161,11 +162,12 @@ ${
 
 ### Body
 
+- Breaking Changes must include detailed impact description
 - Bullet points with "-"
 - Max 72 chars per line
 - Explain what and why
 - Must be in ${language}
-- Use【】for different types
+- Use【】for categorizing different types of changes
 
 ## Critical Requirements
 
@@ -187,9 +189,23 @@ ${
 
 ## Tips
 
-Remember: All output MUST be in ${language} language. You are to act as a pure commit message generator. Your response should contain NOTHING but the commit message itself.
+Remember: 
+- All output MUST be in ${language} language, regardless of the language used in examples
+- Examples are for format reference only, DO NOT copy their language style
+- You are to act as a pure commit message generator
+- Your response should contain NOTHING but the commit message itself
+- Always generate commit messages in ${language}, even if the examples are in English
+
+Breaking Changes Guidelines:
+- Use ! to mark breaking changes
+- Must describe the impact in body section
+- Include migration guide and upgrade instructions
+- List all incompatible changes
 
 ## ${VCSUpper} Examples
+
+Note: The following examples are in English for demonstration purposes only. 
+Your actual output MUST be in ${language} as specified above.
 
 ${getVCSExamples(vcsType, enableMergeCommit, enableEmoji)}`;
 }
@@ -201,27 +217,17 @@ function getMergedGitExample(useEmoji: boolean) {
 
 - **Input (Multiple Diffs)**:
   \`\`\`
-  diff --git a/file1.js b/file1.js
-  new file mode 100644
-  index 0000000..e69de29
-  --- /dev/null
-  +++ b/file1.js
-  @@ -0,0 +1,2 @@
-  +console.log('File 1');
-
-  diff --git a/file2.js b/file2.js
-  index e69de29..b6fc4c6 100644
-  --- a/file2.js
-  +++ b/file2.js
-  @@ -0,0 +1,2 @@
-  +console.log('File 2');
+  diff --git a/auth/index.ts b/auth/index.ts
+  // ...diff content...
   \`\`\`
 
 - **Generated Commit Message**:
   \`\`\`
-  ${prefix}feat(app): 添加多个新文件
-  - 添加 file1.js 文件
-  - 添加 file2.js 文件，包含基础日志输出
+  ${prefix}feat!(auth): implement new authentication system
+  - replace legacy token auth with JWT
+  -【Breaking Change】old token format no longer supported
+  -【Migration】clients must update authentication logic
+  - implement token refresh mechanism
   \`\`\``;
 }
 
@@ -241,9 +247,9 @@ function getSeparateGitExample(useEmoji: boolean) {
 
 - **Generated Commit Message**:
   \`\`\`
-  ${featPrefix}feat(file): 添加功能 A 和修复问题 B
-    - 在 file.js 中添加了 "Feature A"
-    - 修复了与 B 相关的问题
+  ${featPrefix}feat(file): add feature A and fix issue B
+    - added "Feature A" in file.js
+    - fixed issue related to B
   \`\`\``;
 }
 
@@ -270,9 +276,9 @@ function getMergedSVNExample(useEmoji: boolean) {
 
 - **Generated Commit Message**:
   \`\`\`
-  ${prefix}feat(app): 添加多个新文件
-  - 添加 file1.js 文件
-  - 添加 file2.js 文件，包含基础日志输出
+  ${prefix}feat(app): add multiple new files
+  - added file1.js
+  - added file2.js with basic logging
   \`\`\``;
 }
 
@@ -292,9 +298,9 @@ function getSeparateSVNExample(useEmoji: boolean) {
 
 - **Generated Commit Message**:
   \`\`\`
-  ${featPrefix}feat(file): 添加功能 A 和修复问题 B
-    - 在 file.js 中添加了 "Feature A"
-    - 修复了与 B 相关的问题
+  ${featPrefix}feat(file): add feature A and fix issue B
+    - added "Feature A" in file.js
+    - fixed issue related to B
   \`\`\``;
 }
 

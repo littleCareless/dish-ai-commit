@@ -40,13 +40,40 @@ A VSCode extension for generating standardized Git/SVN commit messages using AI.
 
 ### 🤖 Multi-Platform AI Support
 
-- OpenAI API support (GPT-3.5/GPT-4/Other)
-- Ollama local model support
-- VSCode built-in AI support
-- Zhipu AI support
-- DashScope support
-- Doubao AI support
-- Gemini AI support
+- OpenAI API
+
+  - Suitable for scenarios requiring high-quality generation results
+  - Supports multiple models including GPT-3.5/GPT-4
+  - Requires API Key, charged based on usage
+
+- Ollama
+
+  - Local deployment, no internet required
+  - Supports multiple open-source models
+  - Ideal for scenarios with data privacy requirements
+
+- VSCode Built-in AI
+
+  - Uses VSCode's built-in GitHub Copilot
+  - Requires valid GitHub Copilot subscription
+  - Configuration: Set provider to "vscode"
+
+- Zhipu AI (GLM-4)
+
+  - Excellent Chinese language performance
+  - Fixed monthly free quota
+  - Suitable for users in China
+
+- DashScope
+
+  - AI service provided by Alibaba Cloud
+  - Supports Tongyi Qianwen series models
+  - Suitable for enterprise applications
+
+- Gemini AI
+  - AI service provided by Google
+  - Daily free quota: 1500 requests
+  - Suitable for individual developers
 
 ### 📝 Version Control System Support
 
@@ -60,22 +87,118 @@ A VSCode extension for generating standardized Git/SVN commit messages using AI.
 - Customizable report templates
 - Support multiple AI providers for report generation
 
-### 🌍 Multi-language Commit Message Generation:
+### 🌍 Multi-language Commit Message Generation
 
-Supports 19 languages including:
+Supports the following 19 languages:
 
-- Simplified Chinese
-- Traditional Chinese
+- Simplified Chinese (简体中文)
+- Traditional Chinese (繁體中文)
+- Japanese (日本語)
+- Korean (한국어)
+- Czech (Čeština)
+- German (Deutsch)
+- French (Français)
+- Italian (Italiano)
+- Dutch (Nederlands)
+- Portuguese (Português)
+- Vietnamese (Tiếng Việt)
 - English
-- Japanese
-- Korean
-  Others
+- Spanish (Español)
+- Swedish (Svenska)
+- Russian (Русский)
+- Bahasa Indonesia
+- Polish (Polski)
+- Turkish (Türkçe)
+- Thai (ไทย)
 
 ### 🎨 Conventional Commits Compliant
 
+Generates commit messages following the [Conventional Commits](https://www.conventionalcommits.org/) specification:
+
+- Commit Message Format:
+
+  ```
+  <type>[optional scope]: <description>
+
+  [optional body]
+
+  [optional footer(s)]
+  ```
+
+- Supported Commit Types:
+
+  - `feat`: New feature
+  - `fix`: Bug fix
+  - `docs`: Documentation changes
+  - `style`: Code style adjustments
+  - `refactor`: Code refactoring
+  - `perf`: Performance improvements
+  - `test`: Test-related changes
+  - `build`: Build-related changes
+  - `ci`: CI/CD-related changes
+  - `chore`: Other changes
+  - `revert`: Revert commits
+
+- Automatic Scope Detection:
+
+  - Automatically inferred from modified file paths
+  - Smart categorization for multi-file changes
+  - Customizable scope rules via configuration
+
+- Breaking Changes Support:
+
+  - Mark breaking changes with `!`
+  - Detailed impact description in body
+  - Example: `feat!: Restructure authentication system`
+
+- Intelligent Description Generation:
+  - Automatic code change analysis
+  - Key modification point extraction
+  - Clear and concise description generation
+
 ### 😄 Automatic Emoji Addition
 
-### 📊 Weekly Report Generation
+- Automatically adds emojis to commit messages
+- Can be enabled/disabled through configuration:
+
+```json
+{
+  "dish-ai-commit.features.commitFormat.enableEmoji": true // Enable emoji
+}
+```
+
+- Emojis automatically match commit types:
+  - ✨ feat: New features
+  - 🐛 fix: Bug fixes
+  - 📝 docs: Documentation
+  - 💄 style: Styling
+  - ♻️ refactor: Refactoring
+  - ⚡️ perf: Performance
+  - ✅ test: Testing
+  - 🔧 chore: Other changes
+
+### 📊 Code Analysis Features
+
+- Intelligent code difference analysis
+- Automatically simplify complex code changes
+- Preserve key context information
+- Customizable analysis behavior via maxLineLength and contextLines
+
+### 🔄 Merge Commit Support
+
+By enabling the enableMergeCommit option, you can:
+
+- Merge changes from multiple related files into a single commit message
+- Automatically analyze file associations
+- Generate more concise commit records
+
+### 📝 Weekly Report Templates
+
+Weekly report generation supports custom templates:
+
+- Customize prompts via systemPrompt configuration
+- Summarize by project/task
+- Customize report format and key content
 
 ## 📋 Requirements
 
@@ -108,10 +231,10 @@ Supports 19 languages including:
 
 ### Commands
 
-| Command ID | Category | Title | Description |
-|------------|----------|--------|-------------|
-| dish-ai-commit.selectModel | [Dish AI Commit] | Select AI Model for Commit Generation | Choose the AI model for generating commit messages |
-| dish-ai-commit.generateWeeklyReport | [Dish AI Commit] | Generate Weekly Report | Generate AI-powered weekly work report |
+| Command ID                          | Category         | Title                                 | Description                                        |
+| ----------------------------------- | ---------------- | ------------------------------------- | -------------------------------------------------- |
+| dish-ai-commit.selectModel          | [Dish AI Commit] | Select AI Model for Commit Generation | Choose the AI model for generating commit messages |
+| dish-ai-commit.generateWeeklyReport | [Dish AI Commit] | Generate Weekly Report                | Generate AI-powered weekly work report             |
 
 ## Configuration Instructions
 
@@ -119,26 +242,26 @@ Supports 19 languages including:
 
 ```json
 {
-  "dish-ai-commit.PROVIDER": "openai",
-  "dish-ai-commit.OPENAI_API_KEY": "your-api-key",
-  "dish-ai-commit.OPENAI_BASE_URL": "https://api.openai.com/v1"
+  "dish-ai-commit.base.provider": "openai",
+  "dish-ai-commit.providers.openai.apiKey": "your-api-key",
+  "dish-ai-commit.providers.openai.baseUrl": "https://api.openai.com/v1"
 }
 ```
 
-2. Ollama onfiguration
+2. Ollama Configuration
 
 ```json
 {
-  "dish-ai-commit.PROVIDER": "ollama",
-  "dish-ai-commit.OLLAMA_BASE_URL": "http://localhost:11434"
+  "dish-ai-commit.base.provider": "ollama",
+  "dish-ai-commit.providers.ollama.baseUrl": "http://localhost:11434"
 }
 ```
 
-3. VSCode onfiguration
+3. VSCode Configuration
 
 ```json
 {
-  "dish-ai-commit.PROVIDER": "vscode"
+  "dish-ai-commit.base.provider": "vscode"
 }
 ```
 
@@ -250,4 +373,3 @@ This project is [MIT](./LICENSE) licensed.
 [total-installs-shield]: https://img.shields.io/vscode-marketplace/d/littleCareless.dish-ai-commit.svg?&color=greeen&labelColor=black&style=flat-square
 [avarage-rating-link]: https://marketplace.visualstudio.com/items?itemName=littleCareless.dish-ai-commit
 [avarage-rating-shield]: https://img.shields.io/vscode-marketplace/r/littleCareless.dish-ai-commit.svg?&color=green&labelColor=black&style=flat-square
-````
