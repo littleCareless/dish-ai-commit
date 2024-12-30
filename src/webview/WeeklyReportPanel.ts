@@ -1,4 +1,6 @@
 import * as vscode from "vscode";
+import * as fs from "fs";
+import * as path from "path";
 import { exec } from "child_process";
 import { WeeklyReportService } from "../services/weeklyReport";
 import { Config } from "../types/weeklyReport";
@@ -14,7 +16,11 @@ export class WeeklyReportPanel {
   readonly _panel: vscode.WebviewPanel;
   private _disposables: vscode.Disposable[] = [];
 
-  private constructor(panel: vscode.WebviewPanel) {
+  private constructor(
+    panel: vscode.WebviewPanel,
+    private readonly _context: vscode.ExtensionContext,
+    private readonly _extensionPath: string
+  ) {
     this._panel = panel;
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
     this._panel.webview.html = this._getWebviewContent();
@@ -29,7 +35,10 @@ export class WeeklyReportPanel {
     );
   }
 
-  public static async createOrShow(extensionUri: vscode.Uri) {
+  public static async createOrShow(
+    extensionUri: vscode.Uri,
+    context: vscode.ExtensionContext
+  ) {
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
@@ -45,152 +54,71 @@ export class WeeklyReportPanel {
       column || vscode.ViewColumn.One,
       {
         enableScripts: true,
-        localResourceRoots: [extensionUri],
+        retainContextWhenHidden: true, // 保持 webview 内容
+        localResourceRoots: [
+          vscode.Uri.file(
+            path.join(extensionUri.fsPath, "src/webview-ui/dist")
+          ),
+        ],
+        // 添加额外的安全策略
+        enableForms: true,
+        enableCommandUris: true,
       }
     );
 
-    WeeklyReportPanel.currentPanel = new WeeklyReportPanel(panel);
+    WeeklyReportPanel.currentPanel = new WeeklyReportPanel(
+      panel,
+      context,
+      extensionUri.fsPath
+    );
   }
 
   private _getWebviewContent() {
-    const l10n = LocalizationManager.getInstance();
-    return `
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <meta charset="UTF-8">
-            <title>${l10n.getMessage("weeklyReport.title")}</title>
-            <style>
-                body { padding: 15px; }
-                .form-group { margin-bottom: 15px; }
-                select, button { padding: 8px; margin: 5px; }
-                .editor-container { 
-                    margin-top: 20px;
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
-                }
-                .editor {
-                    width: 100%;
-                    min-height: 400px;
-                    padding: 15px;
-                    outline: none;
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    font-size: 14px;
-                    line-height: 1.6;
-                    white-space: pre-wrap;
-                }
-                .toolbar {
-                    padding: 8px;
-                    border-bottom: 1px solid #ddd;
-                    background: #f5f5f5;
-                }
-                .toolbar button {
-                    margin: 0 4px;
-                    padding: 4px 8px;
-                    background: #fff;
-                    border: 1px solid #ddd;
-                    border-radius: 4px;
-                    cursor: pointer;
-                }
-                .toolbar button:hover {
-                    background: #e9e9e9;
-                }
-            </style>
-        </head>
-        <body>
-            <h1>${l10n.getMessage("weeklyReport.title")}</h1>
-            <div id="app">
-                <div class="form-group">
-                    <select id="period">
-                        <option value="1 week ago">${l10n.getMessage(
-                          "weeklyReport.period.current"
-                        )}</option>
-                        <option value="2 weeks ago">${l10n.getMessage(
-                          "weeklyReport.period.lastWeek"
-                        )}</option>
-                        <option value="3 weeks ago">${l10n.getMessage(
-                          "weeklyReport.period.twoWeeksAgo"
-                        )}</option>
-                    </select>
-                    <button onclick="generateReport()">${l10n.getMessage(
-                      "weeklyReport.generate.button"
-                    )}</button>
-                </div>
-                <div class="editor-container">
-                    <div class="toolbar">
-                        <button onclick="execCommand('bold')">${l10n.getMessage(
-                          "editor.format.bold"
-                        )}</button>
-                        <button onclick="execCommand('italic')">${l10n.getMessage(
-                          "editor.format.italic"
-                        )}</button>
-                        <button onclick="execCommand('underline')">${l10n.getMessage(
-                          "editor.format.underline"
-                        )}</button>
-                        <button onclick="execCommand('insertOrderedList')">${l10n.getMessage(
-                          "editor.format.orderedList"
-                        )}</button>
-                        <button onclick="execCommand('insertUnorderedList')">${l10n.getMessage(
-                          "editor.format.unorderedList"
-                        )}</button>
-                        <button onclick="copyContent()">${l10n.getMessage(
-                          "editor.copy"
-                        )}</button>
-                    </div>
-                    <div id="editor" class="editor" contenteditable="true"></div>
-                </div>
-            </div>
-            <script>
-                const vscode = acquireVsCodeApi();
-                
-                function execCommand(command) {
-                    document.execCommand(command, false, null);
-                }
+    const webviewDir = path.join(this._extensionPath, "src/webview-ui/dist");
+    let html = fs.readFileSync(path.join(webviewDir, "index.html"), "utf-8");
 
-                function copyContent() {
-                    const editor = document.getElementById('editor');
-                    navigator.clipboard.writeText(editor.textContent)
-                        .then(() => {
-                            vscode.postMessage({ 
-                                command: 'notification',
-                                text: 'weeklyReport.copy.success'
-                            });
-                        })
-                        .catch(err => {
-                            vscode.postMessage({ 
-                                command: 'notification',
-                                text: 'weeklyReport.copy.failed',
-                                args: [err?.message || err]
-                            });
-                        });
-                }
-                
-                async function generateReport() {
-                    const period = document.getElementById('period').value;
-                    vscode.postMessage({ 
-                        command: 'generate',
-                        period: period
-                    });
-                }
-
-                window.addEventListener('message', event => {
-                    const message = event.data;
-                    switch (message.command) {
-                        case 'report':
-                            displayReport(message.data);
-                            break;
-                    }
-                });
-
-                function displayReport(reportContent) {
-                    const editor = document.getElementById('editor');
-                    editor.innerHTML = reportContent.replace(/\\n/g, '<br>');
-                    editor.focus();
-                }
-            </script>
-        </body>
-        </html>
+    // 更新 CSP
+    const nonce = this.getNonce();
+    const csp = `
+      <meta http-equiv="Content-Security-Policy" 
+            content="default-src 'self' ${this._panel.webview.cspSource};
+                     img-src ${this._panel.webview.cspSource} https: data:;
+                     script-src ${this._panel.webview.cspSource} 'nonce-${nonce}' 'unsafe-inline' 'unsafe-eval';
+                     style-src ${this._panel.webview.cspSource} 'unsafe-inline';
+                     font-src ${this._panel.webview.cspSource} data:;
+                     frame-src ${this._panel.webview.cspSource};">
     `;
+
+    // 为所有脚本添加 nonce
+    html = html.replace(/<script/g, `<script nonce="${nonce}"`);
+
+    // 注入基础路径
+    const baseUri = this._panel.webview
+      .asWebviewUri(vscode.Uri.file(webviewDir))
+      .toString();
+    const baseTag = `<base href="${baseUri}/">`;
+    html = html.replace("</head>", `${baseTag}${csp}</head>`);
+
+    // 替换所有资源路径
+    html = html.replace(/(src|href)="(\.?\/[^"]*)"/g, (match, attr, value) => {
+      const uri = this._panel.webview.asWebviewUri(
+        vscode.Uri.file(path.join(webviewDir, value.replace(/^\.?\//, "")))
+      );
+      return `${attr}="${uri}"`;
+    });
+
+    return html;
+  }
+
+  // 生成随机 nonce
+  private getNonce() {
+    let text = "";
+    const possible =
+      "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+    for (let i = 0; i < 32; i++) {
+      text += possible.charAt(Math.floor(Math.random() * possible.length));
+    }
+    return text;
   }
 
   private formatPeriod(period: string): string {

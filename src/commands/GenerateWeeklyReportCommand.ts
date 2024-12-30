@@ -5,6 +5,6 @@ import { WeeklyReportPanel } from "../webview/WeeklyReportPanel";
 export class GenerateWeeklyReportCommand extends BaseCommand {
   async execute(): Promise<void> {
     // 只负责打开WebView面板
-    WeeklyReportPanel.createOrShow(this.context.extensionUri);
+    WeeklyReportPanel.createOrShow(this.context.extensionUri, this.context);
   }
 }
