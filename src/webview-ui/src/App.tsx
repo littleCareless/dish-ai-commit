@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react"; // 添加 useEffect
 import { DatePicker } from "@arco-design/web-react";
 const { RangePicker } = DatePicker;
 import "@arco-design/web-react/dist/css/arco.css";
@@ -7,17 +7,46 @@ import { Editor } from "@/components/Editor";
 import { Button } from "@/components/ui/button";
 import { Save, FileDown, Wand2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getMessageType } from "@/constants";
+// import { getMessageType } from "@/constants";
+// import "vscode-webview";
+import { vscode } from "@/lib/vscode.ts";
 
 function App() {
   const [content, setContent] = useState("");
+  const [dateRange, setDateRange] = useState<any[]>([]);
   const { toast } = useToast();
+
+  // 添加消息监听
+  useEffect(() => {
+    // 监听来自 VSCode 的消息
+    const messageHandler = (event: MessageEvent) => {
+      const message = event.data;
+      console.log("Received message from extension:", message);
+
+      switch (message.command) {
+        case "report":
+          // 更新编辑器内容
+          console.log("更新编辑器内容", message.data);
+          setContent(message.data);
+          break;
+        // 可以添加其他消息类型的处理
+      }
+    };
+
+    window.addEventListener("message", messageHandler);
+
+    // 清理函数
+    return () => {
+      window.removeEventListener("message", messageHandler);
+    };
+  }, []);
 
   const handleSave = () => {
     // Send save message to VSCode
-    if (window.vscode) {
-      window.vscode.postMessage({
-        type: getMessageType("save"),
+    console.log("vscode", vscode);
+    if (vscode) {
+      vscode.postMessage({
+        command: "save", // 使用 command 而不是 type
         data: { content },
       });
     }
@@ -29,9 +58,9 @@ function App() {
 
   const handleExport = () => {
     // Send export message to VSCode
-    if (window.vscode) {
-      window.vscode.postMessage({
-        type: getMessageType("export"),
+    if (vscode) {
+      vscode.postMessage({
+        command: "export", // 使用 command 而不是 type
         data: { content },
       });
     }
@@ -43,10 +72,27 @@ function App() {
 
   const handleGenerate = () => {
     // Send generate message to VSCode
-    if (window.vscode) {
-      window.vscode.postMessage({
-        type: getMessageType("generate"),
-        data: { content },
+    console.log("generate", vscode);
+    if (vscode) {
+      // 确保有选择日期范围
+      if (!dateRange || dateRange.length !== 2) {
+        toast({
+          title: "Error",
+          description: "Please select a date range first",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      vscode.postMessage({
+        command: "generate", // 使用 command 而不是 type
+        data: {
+          content,
+          period: {
+            startDate: dateRange[0],
+            endDate: dateRange[1],
+          },
+        },
       });
     }
     toast({
@@ -56,9 +102,10 @@ function App() {
   };
 
   const handleDateRangeChange = (dates: any[]) => {
-    if (window.vscode && dates) {
-      window.vscode.postMessage({
-        type: getMessageType("dateChange"),
+    setDateRange(dates); // 保存选中的日期范围
+    if (vscode && dates) {
+      vscode.postMessage({
+        command: "dateChange", // 使用 command 而不是 type
         data: {
           startDate: dates[0],
           endDate: dates[1],
@@ -82,26 +129,26 @@ function App() {
             shortcutsPlacementLeft
             shortcuts={[
               {
-                text: '本周',
+                text: "本周",
                 value: () => [
-                  dayjs().startOf('week').add(1, 'day'),  // 周一
-                  dayjs().endOf('week').add(1, 'day')     // 周日
+                  dayjs().startOf("week").add(1, "day"), // 周一
+                  dayjs().endOf("week").add(1, "day"), // 周日
                 ],
               },
               {
-                text: '上周',
+                text: "上周",
                 value: () => [
-                  dayjs().subtract(1, 'week').startOf('week').add(1, 'day'),
-                  dayjs().subtract(1, 'week').endOf('week').add(1, 'day')
+                  dayjs().subtract(1, "week").startOf("week").add(1, "day"),
+                  dayjs().subtract(1, "week").endOf("week").add(1, "day"),
                 ],
               },
               {
-                text: '上两周',
+                text: "上两周",
                 value: () => [
-                  dayjs().subtract(2, 'week').startOf('week').add(1, 'day'),
-                  dayjs().subtract(1, 'week').endOf('week').add(1, 'day')
+                  dayjs().subtract(2, "week").startOf("week").add(1, "day"),
+                  dayjs().subtract(1, "week").endOf("week").add(1, "day"),
                 ],
-              }
+              },
             ]}
           />
         </div>

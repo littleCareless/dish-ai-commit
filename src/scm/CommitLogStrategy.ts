@@ -4,10 +4,15 @@ import { DateUtils } from "../utils/DateUtils";
 
 const execAsync = promisify(exec);
 
+interface Period {
+  startDate: string;
+  endDate: string;
+}
+
 export interface CommitLogStrategy {
   getCommits(
     workspacePath: string,
-    period: string,
+    period: Period,
     author: string
   ): Promise<string[]>;
 }
@@ -15,10 +20,10 @@ export interface CommitLogStrategy {
 export class GitCommitStrategy implements CommitLogStrategy {
   async getCommits(
     workspacePath: string,
-    period: string,
+    period: Period,
     author: string
   ): Promise<string[]> {
-    const command = `git log --since="${period}" --pretty=format:"%h - %an, %ar : %s" --author="${author}"`;
+    const command = `git log --since="${period.startDate}" --until="${period.endDate}" --pretty=format:"%h - %an, %ar : %s" --author="${author}"`;
 
     console.log("command", command);
     const { stdout } = await execAsync(command, { cwd: workspacePath });
@@ -29,11 +34,12 @@ export class GitCommitStrategy implements CommitLogStrategy {
 export class SvnCommitStrategy implements CommitLogStrategy {
   async getCommits(
     workspacePath: string,
-    period: string,
+    period: Period,
     author: string
   ): Promise<string[]> {
-    const { startDate, endDate } = DateUtils.getDateRangeFromPeriod(period);
-    const command = `svn log -r "{${startDate.toISOString()}}:{${endDate.toISOString()}}" --search="${author}" --xml`;
+    // const { startDate, endDate } = DateUtils.getDateRangeFromPeriod(period);
+
+    const command = `svn log -r "{${period.startDate}}:{${period.endDate}}" --search="${author}" --xml`;
 
     console.log("command", command);
 

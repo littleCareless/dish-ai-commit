@@ -90,6 +90,7 @@ export abstract class BaseOpenAIProvider implements AIProvider {
     model?: AIModel
   ): Promise<AIResponse> {
     try {
+      console.log("commits", commits);
       const response = await this.openai.chat.completions.create({
         model: model?.id || this.config.defaultModel || "gpt-3.5-turbo",
         messages: [
@@ -103,7 +104,7 @@ export abstract class BaseOpenAIProvider implements AIProvider {
           },
         ],
       });
-
+      console.log("response", response);
       return {
         content: response.choices[0]?.message?.content || "",
         usage: {

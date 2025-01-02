@@ -8,5 +8,10 @@
   },
   // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
   "typescript.tsc.autoDetect": "off",
-  "i18n-ally.localesPaths": ["i18n", "out/i18n", "src/i18n"]
+  "i18n-ally.localesPaths": [
+    "i18n",
+    "out/i18n",
+    "src/i18n"
+  ],
+  "svn.ignoreMissingSvnWarning": true
 }

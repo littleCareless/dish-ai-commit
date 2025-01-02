@@ -7,7 +7,10 @@ import {
   GitCommitStrategy,
   SvnCommitStrategy,
 } from "../scm/CommitLogStrategy";
-
+interface Period {
+  startDate: string;
+  endDate: string;
+}
 export class WeeklyReportService {
   private scmProvider: ISCMProvider | undefined = undefined;
   private commitStrategy: CommitLogStrategy | undefined = undefined;
@@ -25,7 +28,7 @@ export class WeeklyReportService {
     this.commitStrategy = this.createCommitStrategy(this.scmProvider.type);
   }
 
-  async generate(period: string): Promise<WorkItem[]> {
+  async generate(period: Period): Promise<WorkItem[]> {
     if (!this.scmProvider || !this.commitStrategy || !this.authorService) {
       await this.initialize();
     }

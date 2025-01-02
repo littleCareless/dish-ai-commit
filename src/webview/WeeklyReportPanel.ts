@@ -1,9 +1,6 @@
 import * as vscode from "vscode";
-import * as fs from "fs";
 import * as path from "path";
-import { exec } from "child_process";
 import { WeeklyReportService } from "../services/weeklyReport";
-import { Config } from "../types/weeklyReport";
 import { AIProviderFactory } from "../ai/AIProviderFactory";
 import { ProgressHandler } from "../utils/ProgressHandler";
 import { NotificationHandler } from "../utils/NotificationHandler";
@@ -12,27 +9,42 @@ import { ConfigurationManager } from "../config/ConfigurationManager";
 import { ModelPickerService } from "../services/ModelPickerService";
 
 export class WeeklyReportPanel {
+  public static readonly viewType = "weeklyReport.view";
   public static currentPanel: WeeklyReportPanel | undefined;
-  readonly _panel: vscode.WebviewPanel;
+  private readonly _panel: vscode.WebviewPanel;
   private _disposables: vscode.Disposable[] = [];
 
-  private constructor(
-    panel: vscode.WebviewPanel,
-    private readonly _context: vscode.ExtensionContext,
-    private readonly _extensionPath: string
-  ) {
+  private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
     this._panel = panel;
-    this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
-    this._panel.webview.html = this._getWebviewContent();
 
-    // 添加消息处理
+    // 设置 WebView 内容
+    this._panel.webview.options = {
+      enableScripts: true,
+      localResourceRoots: [
+        vscode.Uri.joinPath(extensionUri, "src", "webview-ui", "dist"),
+      ],
+    };
+
+    // 设置 HTML 内容
+    this._panel.webview.html = this._getHtmlForWebview(
+      this._panel.webview,
+      extensionUri
+    );
+
+    // 处理消息
     this._panel.webview.onDidReceiveMessage(
       async (message) => {
+        console.log("Received message from webview:", message);
+        console.log("Message command:", message.command);
+        console.log("Message data:", message.data);
         await this.handleMessages(message);
       },
       null,
       this._disposables
     );
+
+    // 处理面板关闭
+    this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
   }
 
   public static async createOrShow(
@@ -49,68 +61,71 @@ export class WeeklyReportPanel {
     }
 
     const panel = vscode.window.createWebviewPanel(
-      "weeklyReport",
+      WeeklyReportPanel.viewType,
       await LocalizationManager.getInstance().getMessage("weeklyReport.title"),
       column || vscode.ViewColumn.One,
       {
         enableScripts: true,
-        retainContextWhenHidden: true, // 保持 webview 内容
+        retainContextWhenHidden: true,
         localResourceRoots: [
-          vscode.Uri.file(
-            path.join(extensionUri.fsPath, "src/webview-ui/dist")
-          ),
+          vscode.Uri.joinPath(extensionUri, "src", "webview-ui", "dist"),
         ],
-        // 添加额外的安全策略
-        enableForms: true,
-        enableCommandUris: true,
       }
     );
 
-    WeeklyReportPanel.currentPanel = new WeeklyReportPanel(
-      panel,
-      context,
-      extensionUri.fsPath
+    WeeklyReportPanel.currentPanel = new WeeklyReportPanel(panel, extensionUri);
+  }
+
+  private _getHtmlForWebview(
+    webview: vscode.Webview,
+    extensionUri: vscode.Uri
+  ) {
+    const scriptUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(extensionUri, "src", "webview-ui", "dist", "index.js")
     );
-  }
+    const styleUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(
+        extensionUri,
+        "src",
+        "webview-ui",
+        "dist",
+        "index.css"
+      )
+    );
 
-  private _getWebviewContent() {
-    const webviewDir = path.join(this._extensionPath, "src/webview-ui/dist");
-    let html = fs.readFileSync(path.join(webviewDir, "index.html"), "utf-8");
-
-    // 更新 CSP
     const nonce = this.getNonce();
-    const csp = `
-      <meta http-equiv="Content-Security-Policy" 
-            content="default-src 'self' ${this._panel.webview.cspSource};
-                     img-src ${this._panel.webview.cspSource} https: data:;
-                     script-src ${this._panel.webview.cspSource} 'nonce-${nonce}' 'unsafe-inline' 'unsafe-eval';
-                     style-src ${this._panel.webview.cspSource} 'unsafe-inline';
-                     font-src ${this._panel.webview.cspSource} data:;
-                     frame-src ${this._panel.webview.cspSource};">
+
+    return /*html*/ `
+      <!DOCTYPE html>
+      <html lang="en">
+        <head>
+          <meta charset="UTF-8" />
+          <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+          <meta http-equiv="Content-Security-Policy" content="default-src 'none'; 
+            img-src ${webview.cspSource} https: data:;
+            script-src ${webview.cspSource} 'nonce-${nonce}';
+            style-src ${webview.cspSource} 'unsafe-inline';
+            font-src ${webview.cspSource} data:;">
+          <link href="${styleUri}" rel="stylesheet">
+          <title>Weekly Report</title>
+        </head>
+        <body>
+          <div id="root"></div>
+          <script>
+                        const vscode = acquireVsCodeApi();
+                        console.log('vscode', vscode);
+                        window.onload = function() {
+                            vscode.postMessage({ command: 'get-data' });
+                            console.log('Ready to accept data.');
+                        };
+                    </script>
+          <script nonce="${nonce}" src="${scriptUri}"></script>
+                             
+        </body>
+      </html>
     `;
-
-    // 为所有脚本添加 nonce
-    html = html.replace(/<script/g, `<script nonce="${nonce}"`);
-
-    // 注入基础路径
-    const baseUri = this._panel.webview
-      .asWebviewUri(vscode.Uri.file(webviewDir))
-      .toString();
-    const baseTag = `<base href="${baseUri}/">`;
-    html = html.replace("</head>", `${baseTag}${csp}</head>`);
-
-    // 替换所有资源路径
-    html = html.replace(/(src|href)="(\.?\/[^"]*)"/g, (match, attr, value) => {
-      const uri = this._panel.webview.asWebviewUri(
-        vscode.Uri.file(path.join(webviewDir, value.replace(/^\.?\//, "")))
-      );
-      return `${attr}="${uri}"`;
-    });
-
-    return html;
   }
 
-  // 生成随机 nonce
   private getNonce() {
     let text = "";
     const possible =
@@ -153,17 +168,19 @@ export class WeeklyReportPanel {
                   const service = new WeeklyReportService();
                   await service.initialize();
                   console.log("service initialized", message);
-                  const workItems = await service.generate(message.period);
+                  const workItems = await service.generate(message.data.period);
                   const author = await service.getCurrentAuthor(); // 新增：获取当前提交人
 
                   const { aiProvider, selectedModel } =
                     await this.getModelAndUpdateConfiguration();
+                  console.log("aiProvider", aiProvider);
 
+                  console.log("selectedModel", selectedModel);
                   const response = await aiProvider.generateWeeklyReport(
                     workItems.map((item) => item.content),
                     selectedModel
                   );
-
+                  console.log("response", response.content);
                   if (response?.content) {
                     // 更新 UI 并提前结束进度条
                     this._panel.webview.postMessage({
@@ -285,6 +302,7 @@ export class WeeklyReportPanel {
   public dispose() {
     WeeklyReportPanel.currentPanel = undefined;
     this._panel.dispose();
+
     while (this._disposables.length) {
       const disposable = this._disposables.pop();
       if (disposable) {

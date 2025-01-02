@@ -26,11 +26,11 @@ export class SCMFactory {
         "johnstoncode.svn-scm"
       );
 
-      if (!gitExtension && !svnExtension) {
-        throw new Error(
-          LocalizationManager.getInstance().getMessage("scm.no.provider")
-        );
-      }
+      // if (!gitExtension && !svnExtension) {
+      //   throw new Error(
+      //     LocalizationManager.getInstance().getMessage("scm.no.provider")
+      //   );
+      // }
 
       const git = gitExtension?.exports
         ? new GitProvider(gitExtension.exports)

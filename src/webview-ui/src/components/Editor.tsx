@@ -20,9 +20,41 @@ interface EditorProps {
   onChange: (content: string) => void;
 }
 
+// 处理内容格式化
+const formatContent = (html: string) => {
+  return html.replace(/\n/g, "<br>");
+};
+
 export function Editor({ content, onChange }: EditorProps) {
   const editorRef = useRef<HTMLDivElement>(null);
   const isInternalUpdate = useRef(false);
+
+  // 添加对 content prop 的监听
+  useEffect(() => {
+    if (!editorRef.current || isInternalUpdate.current) return;
+
+    const selection = window.getSelection();
+    let savedRange = null;
+    // 只在有选区时保存
+    if (selection && selection.rangeCount > 0) {
+      savedRange = selection.getRangeAt(0);
+    }
+
+    // 标记为内部更新
+    isInternalUpdate.current = true;
+
+    // 更新内容
+    editorRef.current.innerHTML = formatContent(content);
+
+    // 恢复光标位置
+    // 只在之前有选区时恢复
+    if (savedRange && selection) {
+      selection.removeAllRanges();
+      selection.addRange(savedRange);
+    }
+
+    isInternalUpdate.current = false;
+  }, [content]);
 
   const execCommand = useCallback((command: string, value?: string) => {
     document.execCommand(command, false, value);
@@ -34,7 +66,7 @@ export function Editor({ content, onChange }: EditorProps) {
       if (!editorRef.current) return;
 
       switch (message.type) {
-        case getMessageType('updateContent'): {
+        case getMessageType("updateContent"): {
           // 标记这是一个内部更新
           isInternalUpdate.current = true;
           const selection = window.getSelection();
@@ -53,7 +85,7 @@ export function Editor({ content, onChange }: EditorProps) {
           isInternalUpdate.current = false;
           break;
         }
-        case getMessageType('loadContent'): {
+        case getMessageType("loadContent"): {
           editorRef.current.innerHTML = message.content;
           onChange(message.content);
           break;
@@ -70,14 +102,17 @@ export function Editor({ content, onChange }: EditorProps) {
     return () => window.removeEventListener("message", handleMessage);
   }, [onChange]); // 只在组件挂载时执行一次
 
-  const sendToVSCode = useCallback((type: string, data: { content: string }) => {
-    if (window.vscode) {
-      window.vscode.postMessage({ 
-        type: getMessageType(type), 
-        data 
-      });
-    }
-  }, []);
+  const sendToVSCode = useCallback(
+    (type: string, data: { content: string }) => {
+      if (window.vscode) {
+        window.vscode.postMessage({
+          type: getMessageType(type),
+          data,
+        });
+      }
+    },
+    []
+  );
 
   return (
     <div className="border rounded-lg">
