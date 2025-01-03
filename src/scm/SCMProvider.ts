@@ -23,7 +23,7 @@ export class SCMFactory {
 
       const gitExtension = vscode.extensions.getExtension("vscode.git");
       const svnExtension = vscode.extensions.getExtension(
-        "johnstoncode.svn-scm"
+        "littleCareless.svn-scm-ai"
       );
 
       // if (!gitExtension && !svnExtension) {

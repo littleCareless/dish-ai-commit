@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+npx lint-staged
 
 echo "\033[33m ------------------- 正在执行eslint校验 -------------------- \033[0m"
 npx --no-install lint-staged

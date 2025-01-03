@@ -1,5 +1,5 @@
 #!/usr/bin/env sh
-. "$(dirname -- "$0")/_/husky.sh"
+npx lint-staged
 
 echo "\033[33m ------------------- 正在校验提交信息格式 -------------------- \033[0m"
 npx --no-install commitlint --edit ${1}
