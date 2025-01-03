@@ -40,7 +40,6 @@
     "Gemini"
   ],
   "extensionDependencies": [
-    "johnstoncode.svn-scm",
     "vscode.git"
   ],
   "main": "./out/extension.js",

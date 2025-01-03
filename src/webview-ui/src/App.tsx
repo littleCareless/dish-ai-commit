@@ -9,7 +9,7 @@ import { Save, FileDown, Wand2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 // import { getMessageType } from "@/constants";
 // import "vscode-webview";
-import { vscode } from "@/lib/vscode.ts";
+import { vscode } from "@/lib/vscode";
 
 function App() {
   const [content, setContent] = useState("");
