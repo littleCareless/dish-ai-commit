@@ -6,6 +6,76 @@
 
 更新日志格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.5.0 (2025-01-03)
+
+### ✨ Features
+
+- **周报**: 周报页面更新 使用 vite react 渲染 ([15bee62](https://github.com/littleCareless/dish-ai-commit/commit/15bee62))
+
+### 🎫 Chores
+
+- **config**: 优化项目配置和依赖管理 ([01e53ed](https://github.com/littleCareless/dish-ai-commit/commit/01e53ed))
+- **package**: 更新依赖项 ([e005364](https://github.com/littleCareless/dish-ai-commit/commit/e005364))
+- **webview**: 重构 WebView 通信和界面逻辑 ([01f5f93](https://github.com/littleCareless/dish-ai-commit/commit/01f5f93))
+
+### 📝 Documentation
+
+- **config**: 更新配置项结构和描述 ([0eacdaf](https://github.com/littleCareless/dish-ai-commit/commit/0eacdaf))
+- **package**: 更新应用描述和分类信息 ([b5e6c27](https://github.com/littleCareless/dish-ai-commit/commit/b5e6c27))
+- **readme**: 优化 README 文件，添加命令列表和配置说明 ([b80993c](https://github.com/littleCareless/dish-ai-commit/commit/b80993c))
+- **version**: 更新项目版本至 0.4.3 ([9d8ed6d](https://github.com/littleCareless/dish-ai-commit/commit/9d8ed6d))
+- **version**: 更新项目版本至 0.4.4 ([9ebfc88](https://github.com/littleCareless/dish-ai-commit/commit/9ebfc88))
+- 更新文档内容和配置说明 ([618dd56](https://github.com/littleCareless/dish-ai-commit/commit/618dd56))
+
+## 0.4.4 (2024-12-19)
+
+### 🎫 Chores
+
+- **config**: 修改智谱 AI 相关配置命名 ([3773623](https://github.com/littleCareless/dish-ai-commit/commit/3773623))
+
+### 📝 Documentation
+
+- **config**: 更新配置项结构和描述 ([0eacdaf](https://github.com/littleCareless/dish-ai-commit/commit/0eacdaf))
+- **version**: 更新项目版本至 0.4.2 ([7967df6](https://github.com/littleCareless/dish-ai-commit/commit/7967df6))
+- **version**: 更新项目版本至 0.4.3 ([9d8ed6d](https://github.com/littleCareless/dish-ai-commit/commit/9d8ed6d))
+
+## 0.4.3 (2024-12-16)
+
+### 🎫 Chores
+
+- **config**: 修改智谱 AI 相关配置命名 ([3773623](https://github.com/littleCareless/dish-ai-commit/commit/3773623))
+
+### 📝 Documentation
+
+- **version**: 更新项目版本至 0.4.2 ([7967df6](https://github.com/littleCareless/dish-ai-commit/commit/7967df6))
+
+## 0.4.2 (2024-12-13)
+
+### 📝 Documentation
+
+- **version**: 更新版本至 0.4.1 ([56c5c29](https://github.com/littleCareless/dish-ai-commit/commit/56c5c29))
+- 添加免费 AI 模型支持说明及新功能介绍 ([a7ff464](https://github.com/littleCareless/dish-ai-commit/commit/a7ff464))
+
+## 0.4.1 (2024-12-13)
+
+### 🎫 Chores
+
+- **providers**: 优化 AI 服务商配置和错误处理 ([4dde116](https://github.com/littleCareless/dish-ai-commit/commit/4dde116))
+
+### 📝 Documentation
+
+- **changelog**: 发布 0.4.0 版本并更新配置文件 ([911ed64](https://github.com/littleCareless/dish-ai-commit/commit/911ed64))
+
+# 0.4.0 (2024-12-13)
+
+### ✨ Features
+
+- **周报**: 添加周报生成功能配置和国际化支持 ([7471d2c](https://github.com/littleCareless/dish-ai-commit/commit/7471d2c))
+
+### 📝 Documentation
+
+- **changelog**: 发布 0.3.0 版本并更新文档 ([cd0f05e](https://github.com/littleCareless/dish-ai-commit/commit/cd0f05e))
+
 # 0.3.0 (2024-12-13)
 
 ### ✨ Features
