@@ -21,7 +21,7 @@ export class WeeklyReportPanel {
     this._panel.webview.options = {
       enableScripts: true,
       localResourceRoots: [
-        vscode.Uri.joinPath(extensionUri, "src", "webview-ui", "dist"),
+        vscode.Uri.joinPath(extensionUri, "webview-ui-dist"),
       ],
     };
 
@@ -68,7 +68,7 @@ export class WeeklyReportPanel {
         enableScripts: true,
         retainContextWhenHidden: true,
         localResourceRoots: [
-          vscode.Uri.joinPath(extensionUri, "src", "webview-ui", "dist"),
+          vscode.Uri.joinPath(extensionUri, "webview-ui-dist"),
         ],
       }
     );
@@ -81,16 +81,10 @@ export class WeeklyReportPanel {
     extensionUri: vscode.Uri
   ) {
     const scriptUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(extensionUri, "src", "webview-ui", "dist", "index.js")
+      vscode.Uri.joinPath(extensionUri, "webview-ui-dist", "index.js")
     );
     const styleUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(
-        extensionUri,
-        "src",
-        "webview-ui",
-        "dist",
-        "index.css"
-      )
+      vscode.Uri.joinPath(extensionUri, "webview-ui-dist", "index.css")
     );
 
     const nonce = this.getNonce();
@@ -111,16 +105,7 @@ export class WeeklyReportPanel {
         </head>
         <body>
           <div id="root"></div>
-          <script>
-                        const vscode = acquireVsCodeApi();
-                        console.log('vscode', vscode);
-                        window.onload = function() {
-                            vscode.postMessage({ command: 'get-data' });
-                            console.log('Ready to accept data.');
-                        };
-                    </script>
           <script nonce="${nonce}" src="${scriptUri}"></script>
-                             
         </body>
       </html>
     `;
