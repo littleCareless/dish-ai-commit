@@ -1,16 +1,22 @@
-# Changelog 
+# Changelog
 
-[English](CHANGELOG.md) | [简体中文](CHANGELOG.zh-CN.md) 
+[English](CHANGELOG.md) | [简体中文](CHANGELOG.zh-CN.md)
 
-All notable changes to this project will be documented in this file. 
+All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+
+## 0.5.3 (2025-01-06)
+
+### 🎫 Chores
+
+- **build**: Optimize build configuration and dependency management ([9a7cc25](https://github.com/littleCareless/dish-ai-commit/commit/9a7cc25)
 
 ## 0.5.2 (2025-01-06)
 
 ### 🎫 Chores
 
-* **build**: Optimize webview build path and resource loading ([c7f3872](https://github.com/littleCareless/dish-ai-commit/commit/c7f3872))
+- **build**: Optimize webview build path and resource loading ([c7f3872](https://github.com/littleCareless/dish-ai-commit/commit/c7f3872))
 
 ## 0.5.1 (2025-01-03)
 

@@ -6,6 +6,12 @@
 
 更新日志格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.5.3 (2025-01-06)
+
+### 🎫 Chores
+
+- **build**: 优化构建配置和依赖管理 ([9a7cc25](https://github.com/littleCareless/dish-ai-commit/commit/9a7cc25))
+
 ## 0.5.2 (2025-01-06)
 
 ### 🎫 Chores
