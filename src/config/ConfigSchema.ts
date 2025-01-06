@@ -2,7 +2,7 @@ import type { ConfigurationChangeEvent } from "vscode";
 
 export const CONFIG_SCHEMA = {
   base: {
-    // 基础配置
+    // Basic configuration
     language: {
       type: "string",
       default: "Simplified Chinese",
@@ -77,89 +77,90 @@ export const CONFIG_SCHEMA = {
     },
   },
   providers: {
-    // 所有 Provider 的配置
+    // Configuration for all providers
     openai: {
       apiKey: {
         type: "string",
         default: "",
-        description: "OpenAI API 密钥",
+        description: "OpenAI API Key",
       },
       baseUrl: {
         type: "string",
         default: "https://api.openai.com/v1",
-        description: "OpenAI API 基础 URL",
+        description: "OpenAI API Base URL",
       },
     },
     zhipu: {
       apiKey: {
         type: "string",
         default: "",
-        description: "智谱 AI API 密钥",
+        description: "Zhipu AI API Key",
       },
     },
     dashscope: {
       apiKey: {
         type: "string",
         default: "",
-        description: "DashScope API 密钥",
+        description: "DashScope API Key",
       },
     },
     doubao: {
       apiKey: {
         type: "string",
         default: "",
-        description: "豆包 API 密钥",
+        description: "Doubao API Key",
       },
     },
     ollama: {
       baseUrl: {
         type: "string",
         default: "http://localhost:11434",
-        description: "Ollama API 基础 URL",
+        description: "Ollama API Base URL",
       },
     },
     gemini: {
       apiKey: {
         type: "string",
         default: "",
-        description: "Gemini AI API 密钥",
+        description: "Gemini AI API Key",
       },
     },
   },
   features: {
-    // 代码分析功能
+    // Code analysis features
     codeAnalysis: {
       simplifyDiff: {
         type: "boolean",
         default: false,
         description:
-          "启用 diff 内容简化功能（警告：启用此功能可能会导致生成的提交信息不够准确）",
+          "Enable diff content simplification (Warning: Enabling this feature may result in less accurate commit messages)",
       },
       maxLineLength: {
         type: "number",
         default: 120,
-        description: "简化后每行的最大长度",
+        description: "Maximum line length after simplification",
       },
       contextLines: {
         type: "number",
         default: 3,
-        description: "保留的上下文行数",
+        description: "Number of context lines to preserve",
       },
     },
-    // 提交相关功能
+    // Commit related features
     commitFormat: {
       enableMergeCommit: {
         type: "boolean",
         default: false,
-        description: "是否允许将多个文件的变更合并为一条提交信息",
+        description:
+          "Allow merging changes from multiple files into a single commit message",
       },
       enableEmoji: {
         type: "boolean",
         default: true,
-        description: "在提交信息中使用 emoji",
+        description: "Use emoji in commit messages",
       },
     },
-    // 周报生成相关功能
+    // Weekly report generation features
     weeklyReport: {
       systemPrompt: {
         type: "string",
@@ -170,7 +171,7 @@ export const CONFIG_SCHEMA = {
   },
 } as const;
 
-// 修改类型定义，添加 isSpecial 可选属性
+// Modify type definition, add optional isSpecial property
 export type ConfigValueTypeBase = {
   description: string;
   isSpecial?: boolean;
@@ -204,28 +205,28 @@ export type ConfigValueType =
   | ConfigValueTypeBoolean
   | ConfigValueTypeNumber;
 
-// 或者直接使用联合类型
+// Or directly use union type
 export type ConfigValue =
   | ConfigValueTypeString
   | ConfigValueTypeBoolean
   | ConfigValueTypeNumber;
 
-// 添加配置值的接口定义
+// Add interface definition for configuration values
 export interface ConfigObject {
   [key: string]: ConfigValue | ConfigObject;
 }
 
-// 修改 SchemaType 定义
+// Modify SchemaType definition
 export type SchemaType = {
   [K in keyof typeof CONFIG_SCHEMA]: {
     [P in keyof (typeof CONFIG_SCHEMA)[K]]: ConfigValue | ConfigObject;
   };
 };
 
-// 生成类型
-export type ConfigPath = string; // 例如: "providers.openai.apiKey"
+// Generate type
+export type ConfigPath = string; // e.g., "providers.openai.apiKey"
 
-// 修改：辅助函数生成配置键的逻辑
+// Modify: Helper function to generate configuration keys
 export function generateConfigKeys(
   schema: SchemaType,
   prefix: string = ""
@@ -236,11 +237,11 @@ export function generateConfigKeys(
     for (const [key, value] of Object.entries(obj)) {
       const fullPath = path ? `${path}.${key}` : key;
       if (isConfigValue(value)) {
-        // 对于配置值，生成完整的配置键
+        // For configuration values, generate full configuration key
         const configKey = fullPath.replace(/\./g, "_").toUpperCase();
         keys[configKey] = `dish-ai-commit.${fullPath}`;
       } else {
-        // 对于嵌套对象，生成中间键和继续遍历
+        // For nested objects, generate intermediate key and continue traversal
         const intermediateKey = fullPath.replace(/\./g, "_").toUpperCase();
         keys[intermediateKey] = `dish-ai-commit.${fullPath}`;
         traverse(value as ConfigObject, fullPath);
@@ -252,7 +253,7 @@ export function generateConfigKeys(
   return keys;
 }
 
-// 添加元数据类型定义
+// Add metadata type definition
 export interface ConfigMetadataItem {
   key: string;
   defaultValue: any;
@@ -265,7 +266,7 @@ export interface ConfigMetadataItem {
   isSpecial?: boolean;
 }
 
-// 修改生成配置元数据函数的类型定义
+// Modify type definition for generating configuration metadata function
 export function generateConfigMetadata(
   schema: SchemaType
 ): ConfigMetadataItem[] {
@@ -285,7 +286,7 @@ export function generateConfigMetadata(
           isSpecial: value.isSpecial,
         };
 
-        // 只有当值是 ConfigValueTypeString 类型时才添加 enum 和 enumDescriptions
+        // Only add enum and enumDescriptions if the value is of type ConfigValueTypeString
         if (value.type === "string" && "enum" in value) {
           metadataItem.enum = value.enum;
           metadataItem.enumDescriptions = value.enumDescriptions;
@@ -293,7 +294,7 @@ export function generateConfigMetadata(
 
         metadata.push(metadataItem);
       } else if (typeof value === "object") {
-        // 处理嵌套对象
+        // Handle nested objects
         traverse(value as ConfigObject, fullPath);
       }
     }
@@ -303,7 +304,7 @@ export function generateConfigMetadata(
   return metadata;
 }
 
-// 添加类型判断辅助函数
+// Add type checking helper function
 export function isConfigValue(value: unknown): value is ConfigValue {
   return (
     value !== null &&
@@ -313,7 +314,7 @@ export function isConfigValue(value: unknown): value is ConfigValue {
   );
 }
 
-// 添加新的辅助函数
+// Add new helper function
 export function generateConfiguration(
   schema: typeof CONFIG_SCHEMA,
   getConfig: (key: string) => any
@@ -325,10 +326,10 @@ export function generateConfiguration(
       const newPath = currentPath ? `${currentPath}.${key}` : key;
 
       if (isConfigValue(value)) {
-        // 是配置项
+        // Is a configuration item
         const configValue = getConfig(newPath) ?? value.default;
 
-        // 处理路径，将配置值放在正确的嵌套位置
+        // Handle path, place configuration value in the correct nested position
         const pathParts = newPath.split(".");
         let current = result;
 
@@ -341,7 +342,7 @@ export function generateConfiguration(
 
         current[pathParts[pathParts.length - 1]] = configValue;
       } else {
-        // 是分类
+        // Is a category
         traverse(value as ConfigObject, newPath);
       }
     }
@@ -351,7 +352,7 @@ export function generateConfiguration(
   return result;
 }
 
-// 添加配置路径生成函数
+// Add function to generate configuration paths
 export function getAllConfigPaths(schema: typeof CONFIG_SCHEMA): string[] {
   const paths: string[] = [];
 
@@ -370,7 +371,7 @@ export function getAllConfigPaths(schema: typeof CONFIG_SCHEMA): string[] {
   return paths;
 }
 
-// 获取特定类别的配置路径
+// Get configuration paths for a specific category
 export function getCategoryConfigPaths(
   schema: typeof CONFIG_SCHEMA,
   category: keyof typeof CONFIG_SCHEMA

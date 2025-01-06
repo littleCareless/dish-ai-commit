@@ -6,6 +6,22 @@
 
 更新日志格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.5.2 (2025-01-06)
+
+### 🎫 Chores
+
+- **build**: 优化 webview 构建路径和资源加载 ([c7f3872](https://github.com/littleCareless/dish-ai-commit/commit/c7f3872))
+
+## 0.5.1 (2025-01-03)
+
+### 🎫 Chores
+
+- **config**: 更新 eslint 配置并移除 package-lock.json ([d95e6b3](https://github.com/littleCareless/dish-ai-commit/commit/d95e6b3))
+
+### 📝 Documentation
+
+- 更新版本至 0.5.0 并同步更新文档 ([ed6b512](https://github.com/littleCareless/dish-ai-commit/commit/ed6b512))
+
 # 0.5.0 (2025-01-03)
 
 ### ✨ Features

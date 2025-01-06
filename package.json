@@ -2,9 +2,9 @@
   "name": "dish-ai-commit",
   "displayName": "Dish AI Commit Gen",
   "description": "🤖 AI-Powered VSCode extension for generating standardized Git/SVN commit messages. ✨ Supports multiple AI services: OpenAI, ChatGPT, Ollama, Zhipu, DashScope, Doubao, Gemini and VS Code built-in AI. 🌍 Multi-language support (EN/CN/JP/KR/Other). 📊 Auto-generate weekly reports.",
-  "version": "0.5.0",
+  "version": "0.5.2",
   "engines": {
-    "vscode": "^1.95.0"
+    "vscode": "^1.96.0"
   },
   "publisher": "littleCareless",
   "repository": "https://github.com/littleCareless/dish-ai-commit",
@@ -148,62 +148,62 @@
         "dish-ai-commit.providers.openai.apiKey": {
           "type": "string",
           "default": "",
-          "description": "OpenAI API 密钥"
+          "description": "OpenAI API Key"
         },
         "dish-ai-commit.providers.openai.baseUrl": {
           "type": "string",
           "default": "https://api.openai.com/v1",
-          "description": "OpenAI API 基础 URL"
+          "description": "OpenAI API Base URL"
         },
         "dish-ai-commit.providers.zhipu.apiKey": {
           "type": "string",
           "default": "",
-          "description": "智谱 AI API 密钥"
+          "description": "Zhipu AI API Key"
         },
         "dish-ai-commit.providers.dashscope.apiKey": {
           "type": "string",
           "default": "",
-          "description": "DashScope API 密钥"
+          "description": "DashScope API Key"
         },
         "dish-ai-commit.providers.doubao.apiKey": {
           "type": "string",
           "default": "",
-          "description": "豆包 API 密钥"
+          "description": "Doubao API Key"
         },
         "dish-ai-commit.providers.ollama.baseUrl": {
           "type": "string",
           "default": "http://localhost:11434",
-          "description": "Ollama API 基础 URL"
+          "description": "Ollama API Base URL"
         },
         "dish-ai-commit.providers.gemini.apiKey": {
           "type": "string",
           "default": "",
-          "description": "Gemini AI API 密钥"
+          "description": "Gemini AI API Key"
         },
         "dish-ai-commit.features.codeAnalysis.simplifyDiff": {
           "type": "boolean",
           "default": false,
-          "description": "启用 diff 内容简化功能（警告：启用此功能可能会导致生成的提交信息不够准确）"
+          "description": "Enable diff content simplification (Warning: Enabling this feature may result in less accurate commit messages)"
         },
         "dish-ai-commit.features.codeAnalysis.maxLineLength": {
           "type": "number",
           "default": 120,
-          "description": "简化后每行的最大长度"
+          "description": "Maximum line length after simplification"
         },
         "dish-ai-commit.features.codeAnalysis.contextLines": {
           "type": "number",
           "default": 3,
-          "description": "保留的上下文行数"
+          "description": "Number of context lines to preserve"
         },
         "dish-ai-commit.features.commitFormat.enableMergeCommit": {
           "type": "boolean",
           "default": false,
-          "description": "是否允许将多个文件的变更合并为一条提交信息"
+          "description": "Allow merging changes from multiple files into a single commit message"
         },
         "dish-ai-commit.features.commitFormat.enableEmoji": {
           "type": "boolean",
           "default": true,
-          "description": "在提交信息中使用 emoji"
+          "description": "Use emoji in commit messages"
         },
         "dish-ai-commit.features.weeklyReport.systemPrompt": {
           "type": "string",
@@ -253,12 +253,13 @@
   },
   "scripts": {
     "vscode:prepublish": "pnpm run compile",
-    "compile": "tsc -p ./",
+    "compile": "pnpm run compile:webview && tsc -p ./",
+    "compile:webview": "cd src/webview-ui && pnpm install && pnpm run build",
     "watch": "tsc -watch -p ./",
     "pretest": "pnpm run compile && pnpm run lint",
     "lint": "eslint src",
     "test": "vscode-test",
-    "prepare": "husky install",
+    "prepare": "husky",
     "commit": "git add . && git-cz",
     "release": "standard-version --preset gitmoji-config",
     "changelog": "conventional-changelog -i CHANGELOG.md -s -r 0",
@@ -268,14 +269,14 @@
     "@commitlint/cli": "^19.6.1",
     "@commitlint/config-conventional": "^19.6.0",
     "@stylistic/eslint-plugin-ts": "^2.12.1",
+    "@types/jest": "^29.5.14",
     "@types/mocha": "^10.0.10",
-    "@types/node": "22.x",
+    "@types/node": "~16.18.123",
     "@types/vscode": "^1.96.0",
     "@typescript-eslint/eslint-plugin": "^8.19.0",
     "@typescript-eslint/parser": "^8.19.0",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.4.1",
-    "@vscode/vsce": "^3.2.1",
     "commitizen": "^4.3.1",
     "commitlint-config-gitmoji": "^2.3.1",
     "conventional-changelog-gitmoji-config": "^1.5.2",
@@ -319,5 +320,6 @@
         "never"
       ]
     }
-  }
+  },
+  "packageManager": "pnpm@9.1.3+sha512.7c2ea089e1a6af306409c4fc8c4f0897bdac32b772016196c469d9428f1fe2d5a21daf8ad6512762654ac645b5d9136bb210ec9a00afa8dbc4677843ba362ecd"
 }
