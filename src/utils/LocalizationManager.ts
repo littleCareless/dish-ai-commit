@@ -51,16 +51,14 @@ export class LocalizationManager {
 
   /**
    * 获取本地化管理器实例
+   * @param context 可选的 VSCode 插件上下文,如果实例未初始化则用于初始化
    * @returns LocalizationManager 实例
-   * @throws 如果管理器未初始化则抛出错误
    */
-  public static getInstance(): LocalizationManager {
-    if (!LocalizationManager.instance) {
-      throw new Error(
-        LocalizationManager.getMessageSafe(
-          "localization.manager.not.initialized"
-        )
-      );
+  public static getInstance(
+    context?: vscode.ExtensionContext
+  ): LocalizationManager {
+    if (!LocalizationManager.instance && context) {
+      LocalizationManager.instance = new LocalizationManager(context);
     }
     return LocalizationManager.instance;
   }
@@ -70,7 +68,7 @@ export class LocalizationManager {
    * @param key 消息键
    * @returns 本地化消息,如果未找到则返回键名
    */
-  private static getMessageSafe(key: string): string {
+  public static getMessageSafe(key: string): string {
     return this.instance?.messages[key] || key;
   }
 
