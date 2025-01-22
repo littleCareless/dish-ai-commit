@@ -28,5 +28,8 @@ export const CONFIG_KEYS = {
   "FEATURES_COMMITFORMAT_ENABLEMERGECOMMIT": "dish-ai-commit.features.commitFormat.enableMergeCommit",
   "FEATURES_COMMITFORMAT_ENABLEEMOJI": "dish-ai-commit.features.commitFormat.enableEmoji",
   "FEATURES_WEEKLYREPORT": "dish-ai-commit.features.weeklyReport",
-  "FEATURES_WEEKLYREPORT_SYSTEMPROMPT": "dish-ai-commit.features.weeklyReport.systemPrompt"
+  "FEATURES_WEEKLYREPORT_SYSTEMPROMPT": "dish-ai-commit.features.weeklyReport.systemPrompt",
+  "FEATURES_CODEREVIEW": "dish-ai-commit.features.codeReview",
+  "FEATURES_CODEREVIEW_ENABLED": "dish-ai-commit.features.codeReview.enabled",
+  "FEATURES_CODEREVIEW_SYSTEMPROMPT": "dish-ai-commit.features.codeReview.systemPrompt"
 } as const;

@@ -7,31 +7,39 @@ import { LocalizationManager } from "./utils/LocalizationManager";
 import { NotificationHandler } from "./utils/NotificationHandler";
 import { WeeklyReportPanel } from "./webview/WeeklyReportPanel";
 
-// This method is called when your extension is activated
-// Your extension is activated the very first time the command is executed
+/**
+ * 在首次执行命令时激活扩展
+ * @param {vscode.ExtensionContext} context - VS Code扩展上下文对象
+ * @throws {Error} 如果扩展激活失败将抛出错误
+ */
 export function activate(context: vscode.ExtensionContext) {
   try {
+    // 日志输出表示扩展已激活
     console.log('Extension "dish-ai-commit-gen" is now active!');
 
-    // 初始化本地化管理器（移除重复的初始化）
+    // 初始化本地化管理器
     LocalizationManager.initialize(context);
 
-    // 初始化配置管理器并添加到订阅列表
+    // 初始化配置管理器并注册到生命周期
     context.subscriptions.push(ConfigurationManager.getInstance());
+    
     console.log("注册命令");
-    // 注册所有命令
+    // 注册所有命令到VS Code
     registerCommands(context);
   } catch (e) {
     console.error("Error activating extension:", e);
-    // 添加用户可见的错误提示
+    // 向用户显示本地化的错误提示
     NotificationHandler.error(
       "extension.activation.failed",
       3000,
       e instanceof Error ? e.message : String(e)
     );
-    throw e;
+    throw e; // 重新抛出以便VS Code处理
   }
 }
 
-// This method is called when your extension is deactivated
+/**
+ * VS Code停用扩展时调用此方法
+ * 目前无需清理操作
+ */
 export function deactivate() {}

@@ -8,12 +8,30 @@ import { LocalizationManager } from "../utils/LocalizationManager";
 import { ConfigurationManager } from "../config/ConfigurationManager";
 import { ModelPickerService } from "../services/ModelPickerService";
 
+/**
+ * @class WeeklyReportPanel
+ * @description Manages a WebView panel that displays and generates weekly reports.
+ * Handles the UI interaction and communication between the extension and WebView.
+ */
 export class WeeklyReportPanel {
+  /** @static {string} Unique identifier for the weekly report webview type */
   public static readonly viewType = "weeklyReport.view";
+
+  /** @static {WeeklyReportPanel | undefined} Reference to the current panel instance */
   public static currentPanel: WeeklyReportPanel | undefined;
+
+  /** @private {vscode.WebviewPanel} The VS Code webview panel instance */
   private readonly _panel: vscode.WebviewPanel;
+
+  /** @private {vscode.Disposable[]} Array of disposable resources */
   private _disposables: vscode.Disposable[] = [];
 
+  /**
+   * @private
+   * @constructor
+   * @param {vscode.WebviewPanel} panel - The webview panel instance
+   * @param {vscode.Uri} extensionUri - The URI of the extension
+   */
   private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
     this._panel = panel;
 
@@ -47,6 +65,13 @@ export class WeeklyReportPanel {
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
   }
 
+  /**
+   * @static
+   * @description Creates a new panel or reveals an existing one
+   * @param {vscode.Uri} extensionUri - The URI of the extension
+   * @param {vscode.ExtensionContext} context - The extension context
+   * @returns {Promise<void>}
+   */
   public static async createOrShow(
     extensionUri: vscode.Uri,
     context: vscode.ExtensionContext
@@ -76,6 +101,13 @@ export class WeeklyReportPanel {
     WeeklyReportPanel.currentPanel = new WeeklyReportPanel(panel, extensionUri);
   }
 
+  /**
+   * @private
+   * @description Generates the HTML content for the webview
+   * @param {vscode.Webview} webview - The webview instance
+   * @param {vscode.Uri} extensionUri - The URI of the extension
+   * @returns {string} The HTML content
+   */
   private _getHtmlForWebview(
     webview: vscode.Webview,
     extensionUri: vscode.Uri
@@ -111,6 +143,11 @@ export class WeeklyReportPanel {
     `;
   }
 
+  /**
+   * @private
+   * @description Generates a random nonce for Content Security Policy
+   * @returns {string} A random 32-character string
+   */
   private getNonce() {
     let text = "";
     const possible =
@@ -121,6 +158,12 @@ export class WeeklyReportPanel {
     return text;
   }
 
+  /**
+   * @private
+   * @description Formats a period string into a date range
+   * @param {string} period - Number of weeks to look back
+   * @returns {string} Formatted date range string
+   */
   private formatPeriod(period: string): string {
     const now = new Date();
     const weeks = parseInt(period);
@@ -138,41 +181,50 @@ export class WeeklyReportPanel {
     return `${startDate} - ${endDate}`;
   }
 
+  /**
+   * @private
+   * @description Handles messages received from the webview
+   * @param {any} message - The message received from the webview
+   * @returns {Promise<void>}
+   */
   private async handleMessages(message: any) {
     switch (message.command) {
       case "generate":
         try {
-          // 使用 withProgress 方法，但通过 resolve 来提前结束进度提示
+          // Create a promise to handle progress indication
           await new Promise<void>(async (resolve, reject) => {
+            // Show progress while generating report
             await ProgressHandler.withProgress(
               await LocalizationManager.getInstance().getMessage(
                 "weeklyReport.generating"
               ),
               async (progress) => {
                 try {
+                  // Initialize weekly report service and generate work items
                   const service = new WeeklyReportService();
                   await service.initialize();
-                  console.log("service initialized", message);
                   const workItems = await service.generate(message.data.period);
-                  const author = await service.getCurrentAuthor(); // 新增：获取当前提交人
+                  const author = await service.getCurrentAuthor();
 
+                  // Get AI provider and selected model
                   const { aiProvider, selectedModel } =
                     await this.getModelAndUpdateConfiguration();
-                  console.log("aiProvider", aiProvider);
 
-                  console.log("selectedModel", selectedModel);
+                  // Generate report using AI provider
                   const response = await aiProvider.generateWeeklyReport(
                     workItems.map((item) => item.content),
                     selectedModel
                   );
-                  console.log("response", response.content);
+
+                  // Handle successful response
                   if (response?.content) {
-                    // 更新 UI 并提前结束进度条
                     this._panel.webview.postMessage({
                       command: "report",
                       data: response.content,
                     });
-                    resolve(); // 提前结束进度提示
+                    resolve();
+
+                    // Format period and show success notification
                     const formattedPeriod = this.formatPeriod(
                       message.period.split(" ")[0]
                     );
@@ -215,7 +267,13 @@ export class WeeklyReportPanel {
     }
   }
 
-  // 封装选择模型并更新配置的函数
+  /**
+   * @private
+   * @description Selects an AI model and updates the configuration
+   * @param {string} [provider="Ollama"] - The AI provider name
+   * @param {string} [model="Ollama"] - The model name
+   * @returns {Promise<{provider: string, model: string} | undefined>}
+   */
   private async selectAndUpdateModelConfiguration(
     provider = "Ollama",
     model = "Ollama"
@@ -237,6 +295,12 @@ export class WeeklyReportPanel {
     return { provider: modelSelection.provider, model: modelSelection.model };
   }
 
+  /**
+   * @private
+   * @description Gets the AI provider and model based on configuration
+   * @returns {Promise<{aiProvider: any, selectedModel: any}>}
+   * @throws {Error} When model selection is cancelled or model is not found
+   */
   private async getModelAndUpdateConfiguration() {
     const locManager = LocalizationManager.getInstance();
     const config = ConfigurationManager.getInstance();
@@ -284,6 +348,10 @@ export class WeeklyReportPanel {
     return { aiProvider, selectedModel };
   }
 
+  /**
+   * @public
+   * @description Disposes of the panel and its resources
+   */
   public dispose() {
     WeeklyReportPanel.currentPanel = undefined;
     this._panel.dispose();
