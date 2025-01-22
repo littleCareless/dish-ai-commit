@@ -6,6 +6,33 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.6.0 (2025-01-22)
+
+### ♻ Code Refactoring
+
+- **commands**: Refactor the command class system and add code documentation ([bd1443f](https://github.com/littleCareless/dish-ai-commit/commit/bd1443f))
+
+### ✨ Features
+
+- **utils**: Add code review report generator and optimization tool class ([d9da1b3](https://github.com/littleCareless/dish-ai-commit/commit/d9da1b3))
+
+### 🎫 Chores
+
+- **config**: Enhance configuration management system documentation and type definition ([2e70f09](https://github.com/littleCareless/dish-ai-commit/commit/2e70f09))
+
+- **features**: Add code review feature ([af250fd](https://github.com/littleCareless/dish-ai-commit/commit/af250fd))
+- **i18n**: Update internationalized strings and optimize localization logic ([76f57d7](https://github.com/littleCareless/dish-ai-commit/commit/76f57d7))
+- **review**: Add internationalized text related to code review ([6c72cf8](https://github.com/littleCareless/dish-ai-commit/commit/6c72cf8))
+
+### 📝 Documentation
+
+- **ai**: Add complete comment documentation for AI service provider related classes ([2989f03](https://github.com/littleCareless/dish-ai-commit/commit/2989f03))
+- **changelog**: Updated version to 0.5.3 ([e09e3bc](https://github.com/littleCareless/dish-ai-commit/commit/e09e3bc))
+- **github**: Added GitHub Copilot assistant configuration instructions ([c9fe402](https://github.com/littleCareless/dish-ai-commit/commit/c9fe402))
+- **scm**: Added source code management module detailed comments and type definitions ([79801c4](https://github.com/littleCareless/dish-ai-commit/commit/79801c4))
+- **ts**: Optimized code documentation and comments ([cc32d54](https://github.com/littleCareless/dish-ai-commit/commit/cc32d54))
+- **typescript**: Optimized code comments and type declarations ([35cbe88](https://github.com/littleCareless/dish-ai-commit/commit/35cbe88))
+
 ## 0.5.3 (2025-01-06)
 
 ### 🎫 Chores

@@ -6,6 +6,32 @@
 
 更新日志格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.6.0 (2025-01-22)
+
+### ♻ Code Refactoring
+
+- **commands**: 重构命令类系统并增加代码文档 ([bd1443f](https://github.com/littleCareless/dish-ai-commit/commit/bd1443f))
+
+### ✨ Features
+
+- **utils**: 添加代码审查报告生成器和优化工具类 ([d9da1b3](https://github.com/littleCareless/dish-ai-commit/commit/d9da1b3))
+
+### 🎫 Chores
+
+- **config**: 增强配置管理系统文档和类型定义 ([2e70f09](https://github.com/littleCareless/dish-ai-commit/commit/2e70f09))
+- **features**: 添加代码评审功能 ([af250fd](https://github.com/littleCareless/dish-ai-commit/commit/af250fd))
+- **i18n**: 更新国际化字符串并优化本地化逻辑 ([76f57d7](https://github.com/littleCareless/dish-ai-commit/commit/76f57d7))
+- **review**: 添加代码评审相关的国际化文案 ([6c72cf8](https://github.com/littleCareless/dish-ai-commit/commit/6c72cf8))
+
+### 📝 Documentation
+
+- **ai**: 为 AI 服务提供者相关类添加完整注释文档 ([2989f03](https://github.com/littleCareless/dish-ai-commit/commit/2989f03))
+- **changelog**: 更新版本至 0.5.3 ([e09e3bc](https://github.com/littleCareless/dish-ai-commit/commit/e09e3bc))
+- **github**: 新增 GitHub Copilot 助手配置说明 ([c9fe402](https://github.com/littleCareless/dish-ai-commit/commit/c9fe402))
+- **scm**: 添加源代码管理模块详细注释和类型定义 ([79801c4](https://github.com/littleCareless/dish-ai-commit/commit/79801c4))
+- **ts**: 优化代码文档和注释 ([cc32d54](https://github.com/littleCareless/dish-ai-commit/commit/cc32d54))
+- **typescript**: 优化代码注释和类型声明 ([35cbe88](https://github.com/littleCareless/dish-ai-commit/commit/35cbe88))
+
 ## 0.5.3 (2025-01-06)
 
 ### 🎫 Chores
