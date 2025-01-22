@@ -1,12 +1,28 @@
 import * as vscode from "vscode";
 
+/**
+ * 用于简化和格式化差异文本的工具类
+ * 可配置上下文行数和最大行长度，支持差异文本的精简化处理
+ */
 export class DiffSimplifier {
+  /**
+   * 缓存的配置对象
+   * @private
+   * @property {boolean} enabled - 是否启用差异简化
+   * @property {number} contextLines - 保留的上下文行数
+   * @property {number} maxLineLength - 单行最大长度
+   */
   private static configCache: {
     enabled: boolean;
     contextLines: number;
     maxLineLength: number;
   } | null = null;
 
+  /**
+   * 从 VSCode 配置中获取差异简化的相关设置
+   * @private
+   * @returns {Object} 包含差异简化配置的对象
+   */
   private static getConfig() {
     if (this.configCache) {
       return this.configCache;
@@ -23,7 +39,9 @@ export class DiffSimplifier {
     return this.configCache;
   }
 
-  // 添加配置更新方法
+  /**
+   * 清除配置缓存，用于配置更新时刷新设置
+   */
   static clearConfigCache() {
     this.configCache = null;
   }
@@ -31,9 +49,15 @@ export class DiffSimplifier {
   private static readonly CONTEXT_LINES = 3;
   private static readonly MAX_LINE_LENGTH = 120;
 
+  /**
+   * 简化差异文本，根据配置处理上下文行数和行长度
+   * @param {string} diff - 原始差异文本
+   * @returns {string} 简化后的差异文本
+   */
   static simplify(diff: string): string {
     const config = this.getConfig();
 
+    // 如果未启用简化，直接返回原文
     if (!config.enabled) {
       return diff;
     }
@@ -45,7 +69,7 @@ export class DiffSimplifier {
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
 
-      // 保留diff头信息
+      // 保留 diff 头信息（Index、===、---、+++）
       if (
         line.startsWith("Index:") ||
         line.startsWith("===") ||
@@ -56,20 +80,19 @@ export class DiffSimplifier {
         continue;
       }
 
-      // 处理修改行
+      // 处理修改行（以 + 或 - 开头）
       if (line.startsWith("+") || line.startsWith("-")) {
-        // 截断过长的行
         simplified.push(this.truncateLine(line, config.maxLineLength));
         skipCount = 0;
         continue;
       }
 
-      // 处理上下文行
+      // 处理上下文行，保留配置的行数
       if (skipCount < config.contextLines) {
         simplified.push(this.truncateLine(line, config.maxLineLength));
         skipCount++;
       } else if (skipCount === config.contextLines) {
-        simplified.push("...");
+        simplified.push("..."); // 添加省略标记
         skipCount++;
       }
     }
@@ -77,7 +100,13 @@ export class DiffSimplifier {
     return simplified.join("\n");
   }
 
-  // 优化 truncateLine 方法
+  /**
+   * 截断过长的行，添加省略号
+   * @private
+   * @param {string} line - 需要处理的行
+   * @param {number} maxLength - 最大允许长度
+   * @returns {string} 处理后的行
+   */
   private static truncateLine(line: string, maxLength: number): string {
     if (!line || line.length <= maxLength) {
       return line;
