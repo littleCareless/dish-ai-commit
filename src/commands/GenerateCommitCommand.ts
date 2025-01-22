@@ -9,9 +9,18 @@ import { type ConfigKey } from "../config/types";
 import { LocalizationManager } from "../utils/LocalizationManager";
 import { ModelPickerService } from "../services/ModelPickerService";
 
+/**
+ * 提交信息生成命令类
+ */
 export class GenerateCommitCommand extends BaseCommand {
-  // 提取一个函数来处理获取和更新模型配置的逻辑
-  private async getModelAndUpdateConfiguration(
+  /**
+   * 获取模型并更新配置
+   * @param provider - 当前AI提供商
+   * @param model - 当前模型名称
+   * @returns 更新后的提供商、模型和AI实例信息
+   * @throws Error 当无法获取模型列表或找不到指定模型时
+   */
+  protected async getModelAndUpdateConfiguration(
     provider = "Ollama",
     model = "Ollama"
   ) {
@@ -63,8 +72,13 @@ export class GenerateCommitCommand extends BaseCommand {
     return { provider, model, selectedModel, aiProvider };
   }
 
-  // 封装选择模型并更新配置的函数，返回更新后的 provider 和 model
-  private async selectAndUpdateModelConfiguration(
+  /**
+   * 选择模型并更新配置
+   * @param provider - 当前AI提供商
+   * @param model - 当前模型名称 
+   * @returns 更新后的提供商和模型信息
+   */
+  protected async selectAndUpdateModelConfiguration(
     provider = "Ollama",
     model = "Ollama"
   ) {
@@ -87,7 +101,11 @@ export class GenerateCommitCommand extends BaseCommand {
     return { provider: modelSelection.provider, model: modelSelection.model };
   }
 
-  private async handleConfiguration(): Promise<
+  /**
+   * 处理AI配置
+   * @returns AI提供商和模型信息
+   */
+  protected async handleConfiguration(): Promise<
     { provider: string; model: string } | undefined
   > {
     const config = ConfigurationManager.getInstance();
@@ -115,7 +133,12 @@ export class GenerateCommitCommand extends BaseCommand {
     return { provider, model };
   }
 
+  /**
+   * 执行提交信息生成命令
+   * @param resources - 源代码管理资源状态列表
+   */
   async execute(resources: vscode.SourceControlResourceState[]): Promise<void> {
+    // 处理配置
     const configResult = await this.handleConfiguration();
     if (!configResult) {
       return;
@@ -123,44 +146,49 @@ export class GenerateCommitCommand extends BaseCommand {
 
     const locManager = LocalizationManager.getInstance();
     try {
+      // 检测SCM提供程序
       const scmProvider = await SCMFactory.detectSCM();
       if (!scmProvider) {
         NotificationHandler.error(locManager.getMessage("scm.not.detected"));
         return;
       }
 
-      // 获取当前提交消息输入框的内容
+      // 获取当前提交输入框内容
       const currentInput = await scmProvider.getCommitInput();
 
+      // 获取配置信息
       const config = ConfigurationManager.getInstance();
       const configuration = config.getConfiguration();
 
-      // 检查是否已配置 AI 提供商和模型
+      // 获取或更新AI提供商和模型配置
       let provider = configuration.base.provider;
       let model = configuration.base.model;
 
-      // 如果没有配置提供商或模型，提示用户选择
       if (!provider || !model) {
         const { provider: newProvider, model: newModel } =
           await this.selectAndUpdateModelConfiguration(provider, model);
-
         provider = newProvider;
         model = newModel;
       }
 
+      // 使用进度提示生成提交信息
       const response = await ProgressHandler.withProgress(
         locManager.format(
           "progress.generating.commit",
           scmProvider?.type.toLocaleUpperCase()
         ),
         async (progress) => {
+          // 获取选中文件的差异信息
           const selectedFiles = this.getSelectedFiles(resources);
-
           const diffContent = await scmProvider.getDiff(selectedFiles);
+
+          // 检查是否有变更
           if (!diffContent) {
             NotificationHandler.info(locManager.getMessage("no.changes"));
             throw new Error(locManager.getMessage("no.changes"));
           }
+
+          // 获取和更新AI模型配置
           const {
             provider: newProvider,
             model: newModel,
@@ -168,8 +196,9 @@ export class GenerateCommitCommand extends BaseCommand {
             selectedModel,
           } = await this.getModelAndUpdateConfiguration(provider, model);
 
+          // 生成提交信息
           const result = await aiProvider.generateResponse({
-            ...configuration.base, // 包含 systemPrompt, language 等基础配置
+            ...configuration.base,
             ...configuration.features.commitFormat,
             ...configuration.features.codeAnalysis,
             additionalContext: currentInput,
@@ -181,11 +210,15 @@ export class GenerateCommitCommand extends BaseCommand {
           return result;
         }
       );
+
+      // 处理生成结果
       if (!response) {
         return NotificationHandler.info(
           locManager.getMessage("no.commit.message.generated")
         );
       }
+
+      // 尝试设置提交信息
       if (response?.content) {
         try {
           await scmProvider.setCommitInput(response.content);
@@ -198,22 +231,25 @@ export class GenerateCommitCommand extends BaseCommand {
             )
           );
         } catch (error) {
+          // 处理写入失败的情况
           if (error instanceof Error) {
             NotificationHandler.error(
               locManager.format("commit.message.write.failed", error.message)
             );
+
+            // 尝试复制到剪贴板
             try {
-              // 如果写入失败，尝试复制到剪贴板
-              vscode.env.clipboard.writeText(response.content);
+              await vscode.env.clipboard.writeText(response.content);
               NotificationHandler.info(
                 locManager.getMessage("commit.message.copied")
               );
             } catch (error) {
+              // 处理复制失败的情况
               if (error instanceof Error) {
                 NotificationHandler.error(
                   locManager.format("commit.message.copy.failed", error.message)
                 );
-                // 如果复制失败，提示用户手动复制 并将信息显示在消息框
+                // 提示手动复制
                 vscode.window.showInformationMessage(
                   locManager.getMessage("commit.message.manual.copy"),
                   response.content
@@ -224,6 +260,7 @@ export class GenerateCommitCommand extends BaseCommand {
         }
       }
     } catch (error) {
+      // 处理整体执行错误
       console.log("error", error);
       if (error instanceof Error) {
         NotificationHandler.error(
@@ -233,7 +270,12 @@ export class GenerateCommitCommand extends BaseCommand {
     }
   }
 
-  private getSelectedFiles(
+  /**
+   * 获取选中的文件列表
+   * @param resourceStates - 源代码管理资源状态
+   * @returns 文件路径列表
+   */
+  protected getSelectedFiles(
     resourceStates?:
       | vscode.SourceControlResourceState
       | vscode.SourceControlResourceState[]
@@ -257,7 +299,16 @@ export class GenerateCommitCommand extends BaseCommand {
     ];
   }
 
-  private async showModelPicker(currentProvider: string, currentModel: string) {
+  /**
+   * 显示模型选择器
+   * @param currentProvider - 当前AI提供商
+   * @param currentModel - 当前模型名称
+   * @returns 用户选择的提供商和模型信息
+   */
+  protected async showModelPicker(
+    currentProvider: string,
+    currentModel: string
+  ) {
     return ModelPickerService.showModelPicker(currentProvider, currentModel);
   }
 }
