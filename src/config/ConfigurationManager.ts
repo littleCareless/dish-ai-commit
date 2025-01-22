@@ -22,28 +22,62 @@ import {
 } from "./ConfigSchema";
 import { getSystemPrompt } from "../ai/utils/generateHelper";
 
+/**
+ * Manages VSCode extension configuration with support for dynamic updates and change handlers
+ * @class ConfigurationManager
+ */
 export class ConfigurationManager {
+  /** Singleton instance of the configuration manager */
   private static instance: ConfigurationManager;
+
+  /** VSCode workspace configuration instance */
   private configuration: vscode.WorkspaceConfiguration;
+
+  /** Collection of disposable resources */
   private readonly disposables: vscode.Disposable[] = [];
+
+  /** Extension context */
   private context?: vscode.ExtensionContext;
+
+  /** Flag to prevent recursive configuration loading */
   private configurationInProgress: boolean = false;
+
+  /** Map of registered configuration change handlers */
   private configChangeHandlers: Map<string, (changedKeys: string[]) => void> =
     new Map();
 
-  // 添加常用配置路径获取方法
+  /**
+   * Gets configuration paths for provider settings
+   * @returns {string[]} Array of provider configuration paths
+   * @private
+   */
   private getProviderConfigPaths(): string[] {
     return getCategoryConfigPaths(CONFIG_SCHEMA, "providers");
   }
 
+  /**
+   * Gets configuration paths for base settings
+   * @returns {string[]} Array of base configuration paths
+   * @private
+   */
   private getBaseConfigPaths(): string[] {
     return getCategoryConfigPaths(CONFIG_SCHEMA, "base");
   }
 
+  /**
+   * Gets configuration paths for feature settings
+   * @returns {string[]} Array of feature configuration paths
+   * @private
+   */
   private getFeaturesConfigPaths(): string[] {
     return getCategoryConfigPaths(CONFIG_SCHEMA, "features");
   }
 
+  /**
+   * Private constructor to enforce singleton pattern
+   * Initializes configuration and sets up change handlers
+   * @private
+   */
   private constructor() {
     this.configuration = vscode.workspace.getConfiguration(EXTENSION_NAME);
 
@@ -92,7 +126,10 @@ export class ConfigurationManager {
   }
 
   /**
-   * 获取所有发生变化的配置项的键
+   * Gets changed configuration keys from a configuration change event
+   * @param {vscode.ConfigurationChangeEvent} event - The configuration change event
+   * @returns {string[]} Array of changed configuration keys
+   * @private
    */
   private getChangedConfigurationKeys(
     event: vscode.ConfigurationChangeEvent
@@ -119,6 +156,11 @@ export class ConfigurationManager {
     return changedKeys;
   }
 
+  /**
+   * Gets the singleton instance of the configuration manager
+   * @returns {ConfigurationManager} The configuration manager instance
+   * @static
+   */
   public static getInstance(): ConfigurationManager {
     if (!ConfigurationManager.instance) {
       ConfigurationManager.instance = new ConfigurationManager();
@@ -126,11 +168,20 @@ export class ConfigurationManager {
     return ConfigurationManager.instance;
   }
 
+  /**
+   * Sets the extension context
+   * @param {vscode.ExtensionContext} context - The extension context
+   */
   public setContext(context: vscode.ExtensionContext): void {
     this.context = context;
   }
 
-  // 简化 getConfig 方法
+  /**
+   * Gets a specific configuration value
+   * @template K - Configuration key type
+   * @param {K} key - Configuration key
+   * @returns {ConfigurationValueType[K] | string} Configuration value
+   */
   public getConfig<K extends ConfigKey>(
     key: K
   ): K extends keyof ConfigurationValueType
@@ -143,6 +194,11 @@ export class ConfigurationManager {
       : string;
   }
 
+  /**
+   * Gets complete extension configuration
+   * @param {boolean} [skipSystemPrompt=false] - Whether to skip generating system prompt
+   * @returns {ExtensionConfiguration} Complete extension configuration
+   */
   public getConfiguration(
     skipSystemPrompt: boolean = false
   ): ExtensionConfiguration {
@@ -184,7 +240,13 @@ export class ConfigurationManager {
     }
   }
 
-  // 修改updateConfig方法签名，使用条件类型处理值的类型
+  /**
+   * Updates a configuration value
+   * @template K - Configuration key type
+   * @param {K} key - Configuration key to update
+   * @param {string} value - New value
+   * @returns {Promise<void>}
+   */
   public async updateConfig<K extends ConfigKey>(
     key: K,
     value: string
@@ -197,7 +259,7 @@ export class ConfigurationManager {
   }
 
   /**
-   * Dispose the configuration manager by clearing resources
+   * Disposes of the configuration manager and its resources
    */
   public dispose(): void {
     console.log("dispose");
@@ -207,7 +269,9 @@ export class ConfigurationManager {
   }
 
   /**
-   * 处理配置变更事件
+   * Handles configuration change events
+   * @param {string[]} changedKeys - Array of changed configuration keys
+   * @private
    */
   private handleConfigurationChange(changedKeys: string[]): void {
     console.log("发生变化的配置项:", changedKeys);
@@ -235,6 +299,11 @@ export class ConfigurationManager {
     }
   }
 
+  /**
+   * Handles provider-specific configuration changes
+   * @param {string[]} changedKeys - Array of changed configuration keys
+   * @private
+   */
   private handleProviderConfigChanges(changedKeys: string[]): void {
     // OpenAI 配置变更
     if (changedKeys.some((key) => key.startsWith("providers.openai"))) {
@@ -271,7 +340,8 @@ export class ConfigurationManager {
   }
 
   /**
-   * 验证配置是否有效
+   * Validates the current configuration
+   * @returns {Promise<boolean>} Whether the configuration is valid
    */
   public async validateConfiguration(): Promise<boolean> {
     const config = this.getConfiguration();
@@ -295,7 +365,11 @@ export class ConfigurationManager {
   }
 
   /**
-   * 通用的提供商配置验证方法
+   * Validates provider-specific configuration
+   * @param {keyof ExtensionConfiguration["providers"]} provider - Provider identifier
+   * @param {"apiKey" | "baseUrl"} requiredField - Required configuration field
+   * @returns {Promise<boolean>} Whether the provider configuration is valid
+   * @private
    */
   private async validateProviderConfig(
     provider: keyof ExtensionConfiguration["providers"],
@@ -330,7 +404,10 @@ export class ConfigurationManager {
   }
 
   /**
-   * 更新 AI 提供商和模型配置
+   * Updates AI provider and model configuration
+   * @param {ExtensionConfiguration["base"]["provider"]} provider - AI provider
+   * @param {ExtensionConfiguration["base"]["model"]} model - AI model
+   * @returns {Promise<void>}
    */
   public async updateAIConfiguration(
     provider: ExtensionConfiguration["base"]["provider"],
@@ -342,7 +419,12 @@ export class ConfigurationManager {
     ]);
   }
 
-  // 添加配置变更处理器注册方法
+  /**
+   * Registers a configuration change handler
+   * @param {string} handlerId - Unique identifier for the handler
+   * @param {string[]} affectedKeys - Configuration keys to watch
+   * @param {(changedKeys: string[]) => void} callback - Handler callback
+   */
   public registerConfigurationChangeHandler(
     handlerId: string,
     affectedKeys: string[],
@@ -377,7 +459,10 @@ export class ConfigurationManager {
     });
   }
 
-  // 移除配置变更处理器
+  /**
+   * Unregisters a configuration change handler
+   * @param {string} handlerId - Handler identifier to remove
+   */
   public unregisterConfigurationChangeHandler(handlerId: string): void {
     this.configChangeHandlers.delete(handlerId);
   }
