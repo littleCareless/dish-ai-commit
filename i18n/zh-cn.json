@@ -88,5 +88,12 @@
   "zhipu.apiKey.missing": "智谱 AI API Key 未配置。是否现在配置？",
   "gemini.apiKey.missing": "Gemini API Key 未配置。是否现在配置？",
   "dashscope.apiKey.missing": "DashScope API Key 未配置。是否现在配置？",
-  "doubao.apiKey.missing": "豆包 API Key 未配置。是否现在配置？"
+  "doubao.apiKey.missing": "豆包 API Key 未配置。是否现在配置？",
+  "reviewing.code": "正在进行代码评审...",
+  "getting.file.changes": "正在获取文件变更...", 
+  "reviewing.file": "正在评审文件：{0}",
+  "preparing.results": "正在准备评审结果...",
+  "review.all.failed": "所有文件评审失败",
+  "review.complete.count": "已完成 {0} 个文件的代码评审",
+  "review.results.title": "代码评审结果"
 }

@@ -88,5 +88,12 @@
   "zhipu.apiKey.missing": "Zhipu AI API Key is not configured. Would you like to configure it now?",
   "gemini.apiKey.missing": "Gemini API Key is not configured. Would you like to configure it now?",
   "dashscope.apiKey.missing": "DashScope API Key is not configured. Would you like to configure it now?",
-  "doubao.apiKey.missing": "Doubao API Key is not configured. Would you like to configure it now?"
+  "doubao.apiKey.missing": "Doubao API Key is not configured. Would you like to configure it now?",
+  "reviewing.code": "Reviewing code...",
+  "getting.file.changes": "Getting file changes...",
+  "reviewing.file": "Reviewing file: {0}",
+  "preparing.results": "Preparing review results...",
+  "review.all.failed": "All files review failed",
+  "review.complete.count": "Completed code review for {0} files",
+  "review.results.title": "Code Review Results"
 }
