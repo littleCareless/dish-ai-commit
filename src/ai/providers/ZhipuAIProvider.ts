@@ -4,6 +4,10 @@ import { NotificationHandler } from "../../utils/NotificationHandler";
 import { LocalizationManager } from "../../utils/LocalizationManager";
 import { AIModel } from "../types";
 
+/**
+ * 智谱AI模型配置列表
+ * 定义了不同型号的GLM-4模型及其参数
+ */
 const zhipuModels: AIModel[] = [
   {
     id: "glm-4-plus",
@@ -60,7 +64,15 @@ const zhipuModels: AIModel[] = [
   },
 ];
 
+/**
+ * 智谱AI服务提供者实现类
+ * 继承自BaseOpenAIProvider基类，提供对智谱AI平台的访问能力
+ */
 export class ZhipuAIProvider extends BaseOpenAIProvider {
+  /**
+   * 创建智谱AI提供者实例
+   * 从配置管理器获取API密钥，初始化基类
+   */
   constructor() {
     const configManager = ConfigurationManager.getInstance();
     super({
@@ -73,6 +85,12 @@ export class ZhipuAIProvider extends BaseOpenAIProvider {
     });
   }
 
+  /**
+   * 检查提供者服务是否可用
+   * 主要验证API密钥是否已配置
+   *
+   * @returns Promise<boolean> 如果API密钥已配置则返回true，否则返回false
+   */
   async isAvailable(): Promise<boolean> {
     try {
       return !!this.config.apiKey;
@@ -81,6 +99,12 @@ export class ZhipuAIProvider extends BaseOpenAIProvider {
     }
   }
 
+  /**
+   * 刷新可用模型列表
+   * 由于智谱AI模型列表是静态的，直接返回预定义模型ID列表
+   *
+   * @returns Promise<string[]> 返回所有支持的模型ID数组
+   */
   async refreshModels(): Promise<string[]> {
     return Promise.resolve(zhipuModels.map((m) => m.id));
   }

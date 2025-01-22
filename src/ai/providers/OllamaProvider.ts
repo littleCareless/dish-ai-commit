@@ -12,14 +12,27 @@ import { LocalizationManager } from "../../utils/LocalizationManager";
 import { generateWithRetry, getSystemPrompt } from "../utils/generateHelper";
 import { getWeeklyReportPrompt } from "../../prompt/weeklyReport";
 
+/**
+ * Ollama AI服务提供者实现类
+ * 提供对本地部署的Ollama服务的访问能力
+ */
 export class OllamaProvider implements AIProvider {
+  /** Ollama客户端实例 */
   private ollama: Ollama;
+  
+  /** 提供者标识信息 */
   private readonly provider = {
     id: "ollama" as AIProviders,
     name: "Ollama",
   } as const;
+  
+  /** 配置管理器实例 */
   private configManager: ConfigurationManager;
 
+  /**
+   * 创建Ollama提供者实例
+   * 初始化Ollama客户端并配置基础URL
+   */
   constructor() {
     this.configManager = ConfigurationManager.getInstance();
     const baseUrl = this.getBaseUrl();
@@ -28,6 +41,11 @@ export class OllamaProvider implements AIProvider {
     });
   }
 
+  /**
+   * 获取Ollama服务的基础URL
+   * @returns 配置的URL或默认的localhost URL
+   * @private
+   */
   private getBaseUrl(): string {
     return (
       this.configManager.getConfig("PROVIDERS_OLLAMA_BASEURL") ||
@@ -35,6 +53,11 @@ export class OllamaProvider implements AIProvider {
     );
   }
 
+  /**
+   * 刷新可用的Ollama模型列表
+   * @returns 返回模型名称的数组
+   * @throws 如果获取失败则返回空数组并显示错误通知
+   */
   async refreshModels(): Promise<string[]> {
     try {
       const response = await this.ollama.list();
@@ -53,6 +76,12 @@ export class OllamaProvider implements AIProvider {
     }
   }
 
+  /**
+   * 生成AI响应
+   * @param params - AI请求参数
+   * @returns 包含生成内容和使用统计的响应
+   * @throws 如果生成失败会通过重试机制处理
+   */
   async generateResponse(params: AIRequestParams): Promise<AIResponse> {
     return generateWithRetry(
       params,
@@ -97,6 +126,12 @@ export class OllamaProvider implements AIProvider {
     );
   }
 
+  /**
+   * 生成周报内容
+   * @param commits - 提交记录数组
+   * @param model - 可选的指定模型
+   * @returns 生成的周报内容和统计信息
+   */
   async generateWeeklyReport(
     commits: string[],
     model?: AIModel
@@ -135,6 +170,10 @@ export class OllamaProvider implements AIProvider {
     };
   }
 
+  /**
+   * 检查Ollama服务是否可用
+   * @returns 如果能成功获取模型列表则返回true
+   */
   async isAvailable(): Promise<boolean> {
     try {
       await this.ollama.list();
@@ -144,6 +183,11 @@ export class OllamaProvider implements AIProvider {
     }
   }
 
+  /**
+   * 获取支持的AI模型列表
+   * @returns 返回支持的模型配置数组
+   * @throws 如果获取失败则显示错误通知
+   */
   async getModels(): Promise<AIModel[]> {
     try {
       const response = await this.ollama.list();
@@ -169,12 +213,22 @@ export class OllamaProvider implements AIProvider {
     }
   }
 
+  /**
+   * 获取提供者显示名称
+   */
   getName(): string {
     return this.provider.name;
   }
 
+  /**
+   * 获取提供者ID
+   */
   getId(): string {
     return this.provider.id;
   }
+
+  /**
+   * 资源释放
+   */
   dispose() {}
 }

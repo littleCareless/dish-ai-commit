@@ -4,7 +4,13 @@ import { NotificationHandler } from "../../utils/NotificationHandler";
 import { LocalizationManager } from "../../utils/LocalizationManager";
 import { BaseOpenAIProvider } from "./BaseOpenAIProvider";
 
+/** OpenAI服务提供者标识信息 */
 const provider = { id: "openai", name: "OpenAI" } as const;
+
+/**
+ * OpenAI支持的模型列表配置
+ * 包含不同版本的GPT模型及其参数设置
+ */
 const models: AIModel[] = [
   {
     id: "o1-preview",
@@ -57,7 +63,15 @@ const models: AIModel[] = [
   },
 ];
 
+/**
+ * OpenAI服务提供者实现类
+ * 继承自BaseOpenAIProvider，提供对OpenAI API的标准访问能力
+ */
 export class OpenAIProvider extends BaseOpenAIProvider {
+  /**
+   * 创建OpenAI提供者实例
+   * 从配置管理器获取必要的配置信息并初始化基类
+   */
   constructor() {
     const configManager = ConfigurationManager.getInstance();
     super({
@@ -71,6 +85,12 @@ export class OpenAIProvider extends BaseOpenAIProvider {
     });
   }
 
+  /**
+   * 检查OpenAI服务是否可用
+   * 验证API密钥是否已正确配置
+   * 
+   * @returns Promise<boolean> 如果API密钥已配置则返回true，否则返回false
+   */
   async isAvailable(): Promise<boolean> {
     try {
       return !!this.config.apiKey;
@@ -79,6 +99,13 @@ export class OpenAIProvider extends BaseOpenAIProvider {
     }
   }
 
+  /**
+   * 刷新可用的OpenAI模型列表
+   * 通过API获取最新的模型列表
+   * 
+   * @returns Promise<string[]> 返回可用模型ID的数组
+   * @throws 如果API调用失败会记录错误并返回空数组
+   */
   async refreshModels(): Promise<string[]> {
     try {
       const models = await this.openai.models.list();

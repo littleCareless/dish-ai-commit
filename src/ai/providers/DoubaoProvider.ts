@@ -2,6 +2,10 @@ import { BaseOpenAIProvider } from "./BaseOpenAIProvider";
 import { ConfigurationManager } from "../../config/ConfigurationManager";
 import { AIModel } from "../types";
 
+/**
+ * 豆包AI支持的模型配置列表
+ * 包含Lite和Pro系列的不同规格模型
+ */
 const doubaoModels: AIModel[] = [
   {
     id: "doubao-lite-4k",
@@ -119,7 +123,15 @@ const doubaoModels: AIModel[] = [
   },
 ];
 
+/**
+ * 豆包AI服务提供者实现类
+ * 继承自BaseOpenAIProvider，提供对豆包AI API的访问能力
+ */
 export class DoubaoProvider extends BaseOpenAIProvider {
+  /**
+   * 创建豆包AI提供者实例
+   * 从配置管理器获取API密钥，初始化基类配置
+   */
   constructor() {
     const configManager = ConfigurationManager.getInstance();
     super({
@@ -132,6 +144,10 @@ export class DoubaoProvider extends BaseOpenAIProvider {
     });
   }
 
+  /**
+   * 检查豆包AI服务是否可用
+   * @returns 如果API密钥已配置返回true
+   */
   async isAvailable(): Promise<boolean> {
     try {
       return !!this.config.apiKey;
@@ -140,6 +156,10 @@ export class DoubaoProvider extends BaseOpenAIProvider {
     }
   }
 
+  /**
+   * 刷新可用的模型列表
+   * @returns 返回预定义的模型ID列表
+   */
   async refreshModels(): Promise<string[]> {
     return Promise.resolve(doubaoModels.map((m) => m.id));
   }
