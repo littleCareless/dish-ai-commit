@@ -1,80 +1,169 @@
 import type { AIGenerationErrorType } from "./utils/generateHelper";
 
+/**
+ * AI请求选项接口，定义了向AI模型发送请求时的基本参数
+ */
 export interface AIRequestOptions {
+  /** 提示词/输入文本 */
   prompt: string;
+  /** 系统提示词，用于设置AI行为和角色 */
   systemPrompt?: string;
+  /** 使用的模型标识符 */
   model?: string;
+  /** 采样温度，控制输出的随机性，范围0-1 */
   temperature?: number;
+  /** 生成的最大token数量 */
   maxTokens?: number;
-  language?: string; // 新增语言选项
+  /** 输出的目标语言 */
+  language?: string;
 }
 
+/**
+ * AI响应结果接口，包含生成的内容和token使用统计
+ */
 export interface AIResponse {
+  /** 生成的文本内容 */
   content: string;
+  /** token使用统计信息 */
   usage?: {
+    /** 提示词消耗的token数 */
     promptTokens?: number;
+    /** 生成内容消耗的token数 */
     completionTokens?: number;
+    /** 总消耗token数 */
     totalTokens?: number;
   };
 }
 
+/**
+ * AI请求的详细参数接口，用于实际发送请求时的完整配置
+ */
 export interface AIRequestParams {
+  /** 代码差异内容 */
   diff: string;
+  /** 系统提示词 */
   systemPrompt?: string;
+  /** 使用的AI模型 */
   model: AIModel;
+  /** 目标语言 */
   language?: string;
-  scm?: "git" | "svn"; // 新增SCM类型
+  /** 源代码管理类型 */
+  scm?: "git" | "svn";
+  /** 额外上下文信息 */
   additionalContext: string;
 
-  // 代码分析相关选项 - 从 features.codeAnalysis
+  /** 代码分析相关选项 */
   simplifyDiff?: boolean;
   maxLineLength?: number;
   contextLines?: number;
 
-  // 提交格式相关选项 - 从 features.commitFormat
+  /** 提交格式相关选项 */
   enableMergeCommit?: boolean;
   enableEmoji?: boolean;
 }
 
-// 添加通用错误处理接口
+/**
+ * AI错误接口，定义了统一的错误处理结构
+ */
 export interface AIError extends Error {
+  /** 错误代码 */
   code: string;
+  /** 错误类型 */
   type: AIGenerationErrorType;
+  /** 是否可重试 */
   retryable: boolean;
 }
 
+/**
+ * AI模型接口，定义了模型的基本信息和能力
+ */
 export interface AIModel<
   Provider extends AIProviders = AIProviders,
   Model extends AIModels<Provider> = AIModels<Provider>
 > {
+  /** 模型唯一标识符 */
   readonly id: Model;
+  /** 模型名称 */
   readonly name: string;
+  /** token限制 */
   readonly maxTokens: { input: number; output: number };
+  /** 提供者信息 */
   readonly provider: {
     id: Provider;
     name: string;
   };
-
+  /** 是否为默认模型 */
   readonly default?: boolean;
+  /** 是否在界面上隐藏 */
   readonly hidden?: boolean;
+  /** 模型特殊能力 */
   readonly capabilities?: {
+    /** 是否支持流式输出 */
     streaming?: boolean;
+    /** 是否支持函数调用 */
     functionCalling?: boolean;
   };
+  /** 费用信息 */
   readonly cost?: {
+    /** 输入token单价 */
     input: number;
+    /** 输出token单价 */
     output: number;
   };
 }
 
+/**
+ * AI提供者接口，定义了AI服务提供者需要实现的方法
+ */
 export interface AIProvider {
+  /** 生成回复内容 */
   generateResponse(params: AIRequestParams): Promise<AIResponse>;
+  /** 生成代码评审内容 */
+  generateCodeReview?(params: AIRequestParams): Promise<AIResponse>;
+  /** 生成周报 */
   generateWeeklyReport(commits: string[], model?: AIModel): Promise<AIResponse>;
+  /** 检查服务可用性 */
   isAvailable(): Promise<boolean>;
+  /** 刷新可用模型列表 */
   refreshModels(): Promise<string[]>;
-  getModels(): Promise<AIModel[]>; // 更新返回类型
+  /** 获取支持的模型列表 */
+  getModels(): Promise<AIModel[]>;
+  /** 获取提供者名称 */
   getName(): string;
+  /** 获取提供者ID */
   getId(): string;
+}
+
+/**
+ * 代码评审问题接口，定义了代码评审时发现的具体问题
+ */
+export interface CodeReviewIssue {
+  /** 问题严重程度 */
+  severity: "NOTE" | "WARNING" | "ERROR";
+  /** 问题文件路径 */
+  filePath: string;
+  /** 问题起始行号 */
+  startLine: number;
+  /** 问题结束行号 */
+  endLine?: number;
+  /** 问题描述 */
+  description: string;
+  /** 修复建议 */
+  suggestion: string;
+  /** 相关文档链接 */
+  documentation?: string;
+  /** 问题代码片段 */
+  code?: string;
+}
+
+/**
+ * 代码评审结果接口
+ */
+export interface CodeReviewResult {
+  /** 发现的问题列表 */
+  issues: CodeReviewIssue[];
+  /** 总体评审摘要 */
+  summary: string;
 }
 
 export type GitHubModels =
@@ -194,10 +283,21 @@ export interface VSCodeModelInfo {
   maxTokens: number; // 新增maxTokens字段
 }
 
+/**
+ * 计算给定模型和输出长度下的最大输入字符数
+ * @param model - AI模型信息
+ * @param outputLength - 预期输出长度
+ * @returns 允许的最大输入字符数
+ */
 export function getMaxCharacters(model: AIModel, outputLength: number): number {
+  // 每个字符平均消耗的token数
   const tokensPerCharacter = 3.1;
+
+  // 计算可用的最大token数
   const max =
     model.maxTokens.input * tokensPerCharacter -
     outputLength / tokensPerCharacter;
+
+  // 保留10%的缓冲空间
   return Math.floor(max - max * 0.1);
 }

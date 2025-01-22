@@ -68,6 +68,13 @@
         "category": "[Dish AI Commit]",
         "icon": "/images/icon.svg",
         "description": "使用 AI 生成周报"
+      },
+      {
+        "command": "dish-ai-commit.reviewCode",
+        "title": "Review Code with AI",
+        "category": "[Dish AI Commit]",
+        "icon": "/images/icon.svg",
+        "description": "使用 AI 对代码进行评审"
       }
     ],
     "configuration": {
@@ -209,6 +216,11 @@
           "type": "string",
           "default": "",
           "description": "Custom system prompt"
+        },
+        "dish-ai-commit.features.codeReview.systemPrompt": {
+          "type": "string",
+          "default": "Custom system prompt",
+          "description": "Custom system prompt for code review"
         }
       }
     },
@@ -225,11 +237,21 @@
           "command": "extension.dish-ai-commit",
           "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
           "group": "1_modification"
+        },
+        {
+          "command": "dish-ai-commit.reviewCode",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "1_modification"
         }
       ],
       "scm/resourceFolder/context": [
         {
           "command": "extension.dish-ai-commit",
+          "when": "scmProvider =~ /(git|svn)/",
+          "group": "inline"
+        },
+        {
+          "command": "dish-ai-commit.reviewCode",
           "when": "scmProvider =~ /(git|svn)/",
           "group": "inline"
         }
@@ -247,6 +269,10 @@
         {
           "command": "dish-ai-commit.generateWeeklyReport",
           "when": "true"
+        },
+        {
+          "command": "dish-ai-commit.reviewCode",
+          "when": "((config.svn.enabled && svnOpenRepositoryCount > 0) || (config.git.enabled && gitOpenRepositoryCount > 0))"
         }
       ]
     }

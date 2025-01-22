@@ -5,11 +5,13 @@ import {
   type AIProvider,
   type AIRequestParams,
   type AIResponse,
+  type CodeReviewResult,
 } from "../types";
 import { generateCommitMessageSystemPrompt } from "../../prompt/prompt";
 import { LocalizationManager } from "../../utils/LocalizationManager";
-import { getSystemPrompt } from "../utils/generateHelper";
+import { getCodeReviewPrompt, getSystemPrompt } from "../utils/generateHelper";
 import { getWeeklyReportPrompt } from "../../prompt/weeklyReport";
+import { CodeReviewReportGenerator } from "../../utils/CodeReviewReportGenerator";
 
 interface DiffBlock {
   header: string;
@@ -54,7 +56,6 @@ export class VSCodeProvider implements AIProvider {
             params.diff.substring(0, maxCodeCharacters)
           ),
         ];
-        console.log("messages", messages);
 
         try {
           if (params.diff.length > maxCodeCharacters) {
@@ -102,6 +103,128 @@ export class VSCodeProvider implements AIProvider {
       throw new Error(
         LocalizationManager.getInstance().format(
           "vscode.generation.failed",
+          error instanceof Error ? error.message : String(error)
+        )
+      );
+    }
+  }
+
+  async generateCodeReview(params: AIRequestParams): Promise<AIResponse> {
+    try {
+      const models = await vscode.lm.selectChatModels();
+      if (!models || models.length === 0) {
+        throw new Error(
+          LocalizationManager.getInstance().getMessage(
+            "vscode.no.models.available"
+          )
+        );
+      }
+
+      const chatModel =
+        models.find((model) => model.id === params.model.id) || models[0];
+      let maxCodeCharacters = getMaxCharacters(params.model, 2600) - 1000;
+      let retries = 0;
+
+      while (true) {
+        // 更新JSON schema格式以匹配CodeReviewIssue接口
+        const systemMessage = `${getCodeReviewPrompt(params)}
+IMPORTANT: You must respond with a valid JSON object following this schema:
+{
+  "summary": string,  // Overall review summary
+  "issues": [        // Array of code review issues
+    {
+      "description": string,   // Issue description 
+      "suggestion": string,    // Suggested fix
+      "filePath": string,     // File path
+      "startLine": number,    // Issue start line
+      "endLine"?: number,     // Optional end line
+      "severity": "NOTE" | "WARNING" | "ERROR",
+      "documentation"?: string,   // Optional documentation link
+      "code"?: string            // Optional code snippet
+    }
+  ]
+}`;
+
+        const messages = [
+          vscode.LanguageModelChatMessage.User(systemMessage),
+          vscode.LanguageModelChatMessage.User(
+            params.diff.substring(0, maxCodeCharacters)
+          ),
+        ];
+
+        try {
+          if (params.diff.length > maxCodeCharacters) {
+            console.warn(
+              LocalizationManager.getInstance().getMessage("input.truncated")
+            );
+          }
+
+          const response = await chatModel.sendRequest(messages, {
+            // temperature: 0.3,
+          });
+
+          let result = "";
+          for await (const fragment of response.text) {
+            result += fragment;
+          }
+
+          let reviewResult: CodeReviewResult;
+          try {
+            const jsonMatch = result.match(/\{[\s\S]*\}/);
+            const jsonContent = jsonMatch ? jsonMatch[0] : result;
+
+            reviewResult = JSON.parse(jsonContent);
+          } catch (e) {
+            // 修改fallback对象结构以符合CodeReviewIssue接口
+            reviewResult = {
+              summary: "Code Review Summary",
+              issues: [
+                {
+                  description: result,
+                  suggestion: "Please review the generated content.",
+                  filePath: "unknown",
+                  startLine: 1,
+                  severity: "NOTE",
+                  code: result,
+                },
+              ],
+            };
+          }
+
+          return {
+            content:
+              CodeReviewReportGenerator.generateMarkdownReport(reviewResult),
+          };
+        } catch (ex: Error | any) {
+          let message = ex instanceof Error ? ex.message : String(ex);
+
+          if (
+            ex instanceof Error &&
+            "cause" in ex &&
+            ex.cause instanceof Error
+          ) {
+            message += `\n${ex.cause.message}`;
+
+            if (
+              retries++ < 2 &&
+              ex.cause.message.includes("exceeds token limit")
+            ) {
+              maxCodeCharacters -= 500 * retries;
+              continue;
+            }
+          }
+          throw new Error(
+            LocalizationManager.getInstance().format(
+              "codeReview.generation.failed",
+              message
+            )
+          );
+        }
+      }
+    } catch (error) {
+      throw new Error(
+        LocalizationManager.getInstance().format(
+          "codeReview.generation.failed",
           error instanceof Error ? error.message : String(error)
         )
       );

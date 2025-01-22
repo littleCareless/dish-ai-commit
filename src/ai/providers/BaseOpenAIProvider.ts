@@ -1,25 +1,57 @@
 import OpenAI from "openai";
 import { ChatCompletionMessageParam } from "openai/resources";
-import { AIProvider, AIRequestParams, AIResponse, AIModel } from "../types";
-import { generateWithRetry, getSystemPrompt } from "../utils/generateHelper";
+import {
+  AIProvider,
+  AIRequestParams,
+  AIResponse,
+  AIModel,
+  type CodeReviewResult,
+} from "../types";
+import {
+  generateWithRetry,
+  getCodeReviewPrompt,
+  getSystemPrompt,
+} from "../utils/generateHelper";
 import { LocalizationManager } from "../../utils/LocalizationManager";
 import { getWeeklyReportPrompt } from "../../prompt/weeklyReport";
+import { CodeReviewReportGenerator } from "../../utils/CodeReviewReportGenerator";
 
+/**
+ * OpenAI提供者配置项接口
+ */
 export interface OpenAIProviderConfig {
+  /** OpenAI API密钥 */
   apiKey: string;
+  /** API基础URL，对于非官方OpenAI端点可自定义 */
   baseURL?: string;
+  /** API版本号 */
   apiVersion?: string;
+  /** 提供者唯一标识符 */
   providerId: string;
+  /** 提供者显示名称 */
   providerName: string;
+  /** 默认使用的模型ID */
   defaultModel?: string;
+  /** 支持的模型列表 */
   models: AIModel[];
 }
 
+/**
+ * OpenAI API基础提供者抽象类
+ * 实现了OpenAI API的基本功能，可被具体提供者继承和扩展
+ */
 export abstract class BaseOpenAIProvider implements AIProvider {
+  /** OpenAI API客户端实例 */
   protected openai: OpenAI;
+  /** 提供者配置信息 */
   protected config: OpenAIProviderConfig;
+  /** 提供者标识信息 */
   protected provider: { id: string; name: string };
 
+  /**
+   * 创建基础OpenAI提供者实例
+   * @param config - 提供者配置对象
+   */
   constructor(config: OpenAIProviderConfig) {
     this.config = config;
     this.provider = {
@@ -29,6 +61,11 @@ export abstract class BaseOpenAIProvider implements AIProvider {
     this.openai = this.createClient();
   }
 
+  /**
+   * 创建OpenAI API客户端
+   * @returns OpenAI客户端实例
+   * @protected
+   */
   protected createClient(): OpenAI {
     const config: any = {
       apiKey: this.config.apiKey,
@@ -41,11 +78,17 @@ export abstract class BaseOpenAIProvider implements AIProvider {
         config.defaultHeaders = { "api-key": this.config.apiKey };
       }
     }
-    console.log("config", config);
 
     return new OpenAI(config);
   }
 
+  /**
+   * 生成AI回复内容
+   * 使用重试机制处理可能的失败情况
+   *
+   * @param params - AI请求参数
+   * @returns 包含生成内容和使用统计的Promise
+   */
   async generateResponse(params: AIRequestParams): Promise<AIResponse> {
     return generateWithRetry(
       params,
@@ -85,12 +128,92 @@ export abstract class BaseOpenAIProvider implements AIProvider {
     );
   }
 
+  /**
+   * 生成代码评审报告
+   * 将diff内容转换为结构化的评审结果
+   *
+   * @param params - 代码评审请求参数
+   * @returns 包含评审报告的Promise
+   * @throws 如果AI响应解析失败或生成过程出错
+   */
+  async generateCodeReview(params: AIRequestParams): Promise<AIResponse> {
+    return generateWithRetry(
+      params,
+      async (truncatedInput) => {
+        const messages: ChatCompletionMessageParam[] = [
+          {
+            role: "system",
+            content: getCodeReviewPrompt(params),
+          },
+          {
+            role: "user",
+            content: truncatedInput,
+          },
+        ];
+
+        try {
+          const completion = await this.openai.chat.completions.create({
+            model:
+              (params.model && params.model.id) ||
+              this.config.defaultModel ||
+              "gpt-3.5-turbo",
+            messages,
+            temperature: 0.3,
+          });
+
+          const responseContent = completion.choices[0]?.message?.content;
+          if (!responseContent) {
+            throw new Error("No response content from AI");
+          }
+
+          let reviewResult: CodeReviewResult;
+          try {
+            reviewResult = JSON.parse(responseContent);
+          } catch (e) {
+            throw new Error(
+              `Failed to parse AI response as JSON: ${
+                e instanceof Error ? e.message : String(e)
+              }`
+            );
+          }
+          return {
+            content:
+              CodeReviewReportGenerator.generateMarkdownReport(reviewResult),
+            usage: {
+              promptTokens: completion.usage?.prompt_tokens,
+              completionTokens: completion.usage?.completion_tokens,
+              totalTokens: completion.usage?.total_tokens,
+            },
+          };
+        } catch (error) {
+          const message = LocalizationManager.getInstance().format(
+            "codeReview.generation.failed",
+            error instanceof Error ? error.message : String(error)
+          );
+          throw new Error(message);
+        }
+      },
+      {
+        initialMaxLength: params.model?.maxTokens?.input || 16385,
+        provider: this.getId(),
+      }
+    );
+  }
+
+  /**
+   * 基于提交记录生成周报
+   * 总结一段时间内的代码提交活动
+   *
+   * @param commits - 提交记录数组
+   * @param model - 可选的指定模型
+   * @returns 包含周报内容的Promise
+   * @throws 如果生成失败会抛出本地化的错误信息
+   */
   async generateWeeklyReport(
     commits: string[],
     model?: AIModel
   ): Promise<AIResponse> {
     try {
-      console.log("commits", commits);
       const response = await this.openai.chat.completions.create({
         model: model?.id || this.config.defaultModel || "gpt-3.5-turbo",
         messages: [
@@ -104,7 +227,6 @@ export abstract class BaseOpenAIProvider implements AIProvider {
           },
         ],
       });
-      console.log("response", response);
       return {
         content: response.choices[0]?.message?.content || "",
         usage: {
@@ -123,11 +245,16 @@ export abstract class BaseOpenAIProvider implements AIProvider {
     }
   }
 
+  /**
+   * 获取当前支持的AI模型列表
+   * 优先从API获取，如果失败则返回配置的静态列表
+   *
+   * @returns Promise<AIModel[]> 支持的模型配置数组
+   */
   async getModels(): Promise<AIModel[] | any[]> {
     try {
       const response = await this.openai.models.list();
       return response.data.map((model: any) => {
-        console.log("model", model);
         return {
           id: model.id,
           name: model.id,
@@ -144,18 +271,32 @@ export abstract class BaseOpenAIProvider implements AIProvider {
     }
   }
 
+  /**
+   * 刷新并返回可用的模型ID列表
+   * @returns Promise<string[]> 模型ID数组
+   */
   async refreshModels(): Promise<string[]> {
     const models = await this.getModels();
     return models.map((m) => m.id);
   }
 
+  /**
+   * 获取提供者显示名称
+   */
   getName(): string {
     return this.provider.name;
   }
 
+  /**
+   * 获取提供者唯一标识符
+   */
   getId(): string {
     return this.provider.id;
   }
 
+  /**
+   * 检查服务是否可用的抽象方法
+   * 需要由具体提供者实现
+   */
   abstract isAvailable(): Promise<boolean>;
 }
