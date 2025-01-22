@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.6.1 (2025-01-22)
+
+### 🐛 Bug Fixes
+
+- **i18n**: Optimize the logic of obtaining localization manager instances ([7e52052](https://github.com/littleCareless/dish-ai-commit/commit/7e52052))
+
+### 📝 Documentation
+
+- **changelog**: Update version to 0.6.0 ([4810b27](https://github.com/littleCareless/dish-ai-commit/commit/4810b27))
+
 # 0.6.0 (2025-01-22)
 
 ### ♻ Code Refactoring

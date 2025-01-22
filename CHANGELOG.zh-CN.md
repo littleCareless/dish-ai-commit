@@ -6,6 +6,16 @@
 
 更新日志格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.6.1 (2025-01-22)
+
+### 🐛 Bug Fixes
+
+- **i18n**: 优化本地化管理器实例获取逻辑 ([7e52052](https://github.com/littleCareless/dish-ai-commit/commit/7e52052))
+
+### 📝 Documentation
+
+- **changelog**: 更新版本至 0.6.0 ([4810b27](https://github.com/littleCareless/dish-ai-commit/commit/4810b27))
+
 # 0.6.0 (2025-01-22)
 
 ### ♻ Code Refactoring
