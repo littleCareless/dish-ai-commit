@@ -2,6 +2,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import * as fs from "fs";
 import * as path from "path";
+import { LocalizationManager } from "../utils/LocalizationManager";
 
 const execAsync = promisify(exec);
 
@@ -20,8 +21,14 @@ export class SvnUtils {
   ): Promise<string | undefined> {
     try {
       const { stdout } = await execAsync("svn info", { cwd: workspacePath });
-      // 匹配"最后修改的作者:"后面的内容
-      const authorMatch = stdout.match(/最后修改的作者: (.+)/);
+      // 改用LocalizationManager
+      const authorMatch = stdout.match(
+        new RegExp(
+          `${LocalizationManager.getInstance().getMessage(
+            "svn.lastModifiedAuthor"
+          )} (.+)`
+        )
+      );
       return authorMatch?.[1]?.trim();
     } catch {
       return undefined;
@@ -122,16 +129,12 @@ export class SvnUtils {
     urlOutput: string
   ): string | undefined {
     const credentials = this.parseCredentials(authOutput);
-    console.log("credentials", credentials);
-    console.log("urlOutput", urlOutput);
     // 从svn info输出中提取URL
     const urlMatch = urlOutput.match(/URL: (.+)/);
-    console.log("urlMatch", urlMatch);
 
     if (urlMatch) {
       const repoUrl = urlMatch[1].trim();
       const matchingCred = this.findMatchingCredential(credentials, repoUrl);
-      console.log("matchingCred", matchingCred);
       if (matchingCred) {
         return matchingCred;
       }
@@ -147,15 +150,19 @@ export class SvnUtils {
    * @returns 包含用户名、认证领域和仓库ID的认证信息数组
    */
   private static parseCredentials(authOutput: string) {
-    // 按分隔线分割认证块
     return authOutput
       .split(/\n?-+\n/)
       .filter((block) => block.trim())
       .map((block) => {
-        // 匹配用户名
         const usernameMatch = block.match(/Username: (.+)/);
-        // 匹配认证领域和仓库ID
-        const realmMatch = block.match(/认证领域: <([^>]+)>\s*([^\n]*)/);
+        // 改用LocalizationManager
+        const realmMatch = block.match(
+          new RegExp(
+            `${LocalizationManager.getInstance().getMessage(
+              "svn.authRealm"
+            )} <([^>]+)>\\s*([^\\n]*)`
+          )
+        );
         return {
           username: usernameMatch?.[1]?.trim() || null,
           realm: realmMatch?.[1]?.trim() || null,

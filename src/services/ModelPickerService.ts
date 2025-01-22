@@ -95,7 +95,7 @@ export class ModelPickerService {
       }
       return undefined;
     } catch (error) {
-      console.error("获取模型列表失败:", error);
+      console.error(locManager.getMessage("model.list.failed"), error);
       NotificationHandler.error("model.list.failed");
       return undefined;
     }

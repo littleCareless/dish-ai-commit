@@ -1,9 +1,13 @@
 import { CodeReviewResult, CodeReviewIssue } from "../ai/types";
+import * as vscode from "vscode";  
+import { LocalizationManager } from "../utils/LocalizationManager";
 
 /**
  * 代码审查报告生成器，将代码审查结果转换为格式化的 Markdown 文档
  */
 export class CodeReviewReportGenerator {
+  private static readonly locManager = LocalizationManager.getInstance();
+  
   /**
    * 不同严重程度对应的 emoji 图标
    * @private
@@ -55,7 +59,9 @@ export class CodeReviewReportGenerator {
    * @returns {string} Markdown 格式的报告头部
    */
   private static generateHeader(summary: string): string {
-    return `# Code Review Report\n\n## Summary\n\n${summary}\n\n`;
+    const title = this.locManager.getMessage("codeReview.report.title");
+    const summaryLabel = this.locManager.getMessage("codeReview.report.summary");
+    return `# ${title}\n\n## ${summaryLabel}\n\n${summary}\n\n`;
   }
 
   /**
@@ -67,7 +73,8 @@ export class CodeReviewReportGenerator {
   private static generateDetailedFindings(
     sections: Record<string, CodeReviewIssue[]>
   ): string {
-    let markdown = `## Detailed Findings\n\n`;
+    const findings = this.locManager.getMessage("codeReview.report.findings");
+    let markdown = `## ${findings}\n\n`;
 
     // 遍历每个文件的问题
     for (const [filePath, issues] of Object.entries(sections)) {
@@ -94,8 +101,8 @@ export class CodeReviewReportGenerator {
     }: Line ${issue.startLine}${issue.endLine ? `-${issue.endLine}` : ""}\n\n`;
     
     // 添加问题描述和建议
-    section += `**Issue:** ${issue.description}\n\n`;
-    section += `**Suggestion:** ${issue.suggestion}\n\n`;
+    section += `**${this.locManager.getMessage("codeReview.issue.label")}** ${issue.description}\n\n`;
+    section += `**${this.locManager.getMessage("codeReview.suggestion.label")}** ${issue.suggestion}\n\n`;
 
     // 如果有代码示例，添加代码块
     if (issue.code) {
@@ -104,7 +111,8 @@ export class CodeReviewReportGenerator {
 
     // 如果有相关文档，添加链接
     if (issue.documentation) {
-      section += `📚 [Documentation](${issue.documentation})\n\n`;
+      const docLabel = this.locManager.getMessage("codeReview.documentation.label");
+      section += `📚 [${docLabel}](${issue.documentation})\n\n`;
     }
 
     section += `---\n\n`;
