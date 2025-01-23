@@ -91,6 +91,7 @@
   "doubao.apiKey.missing": "豆包 API Key 未配置。是否现在配置？",
   "reviewing.code": "正在进行代码评审...",
   "getting.file.changes": "正在获取文件变更...",
+  "no.valid.changes.selected": "未选择有效的待评审变更",
   "reviewing.file": "评审文件：{0}",
   "preparing.results": "正在准备评审结果...",
   "review.all.failed": "所有文件评审失败",

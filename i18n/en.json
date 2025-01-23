@@ -92,6 +92,7 @@
   "doubao.apiKey.missing": "Doubao API Key is not configured. Would you like to configure it now?",
   "reviewing.code": "Reviewing code...",
   "getting.file.changes": "Getting file changes...",
+  "no.valid.changes.selected": "No valid changes selected for review",
   "reviewing.file": "file: {0}",
   "preparing.results": "Preparing review results...",
   "review.all.failed": "All files review failed",
@@ -108,7 +109,7 @@
   "svn.authRealm": "Authentication Realm:",
   "codeReview.report.title": "Code Review Report",
   "codeReview.report.summary": "Summary",
-  "codeReview.report.findings": "Detailed Findings", 
+  "codeReview.report.findings": "Detailed Findings",
   "codeReview.issue.label": "Issue:",
   "codeReview.suggestion.label": "Suggestion:",
   "codeReview.documentation.label": "Documentation"

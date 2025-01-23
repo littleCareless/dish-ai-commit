@@ -50,13 +50,13 @@
     "commands": [
       {
         "command": "extension.dish-ai-commit",
-        "title": "Dish AI Commit",
-        "category": "SVN",
+        "title": "[Dish] AI Commit Generate",
+        "category": "[Dish AI Commit]",
         "icon": "/images/icon.svg"
       },
       {
         "command": "dish-ai-commit.selectModel",
-        "title": "Select AI Model for Commit Generation",
+        "title": "[Dish] Select AI Model",
         "category": "[Dish AI Commit]",
         "icon": "/images/icon.svg",
         "description": "选择用于生成提交信息的AI模型(OpenAI/Ollama/VS Code Provided)",
@@ -64,14 +64,14 @@
       },
       {
         "command": "dish-ai-commit.generateWeeklyReport",
-        "title": "Generate Weekly Report",
+        "title": "[Dish] Generate Weekly Report with AI",
         "category": "[Dish AI Commit]",
         "icon": "/images/icon.svg",
         "description": "使用 AI 生成周报"
       },
       {
         "command": "dish-ai-commit.reviewCode",
-        "title": "Review Code with AI",
+        "title": "[Dish] Review Code with AI",
         "category": "[Dish AI Commit]",
         "icon": "/images/icon.svg",
         "description": "使用 AI 对代码进行评审"
@@ -272,7 +272,7 @@
         },
         {
           "command": "dish-ai-commit.reviewCode",
-          "when": "((config.svn.enabled && svnOpenRepositoryCount > 0) || (config.git.enabled && gitOpenRepositoryCount > 0))"
+          "when": "((config.svn.enabled && svnOpenRepositoryCount > 0) || (config.git.enabled && svnOpenRepositoryCount > 0))"
         }
       ]
     }
@@ -316,6 +316,7 @@
     "typescript": "^5.7.2"
   },
   "dependencies": {
+    "inversify": "^6.2.1",
     "ollama": "^0.5.11",
     "openai": "^4.77.0"
   },
