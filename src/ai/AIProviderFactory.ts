@@ -73,13 +73,12 @@ export class AIProviderFactory {
     this.cleanStaleProviders();
     const providerType =
       type ||
-      ConfigurationManager.getInstance().getConfig("PROVIDERS") ||
+      ConfigurationManager.getInstance().getConfig("BASE_PROVIDER") ||
       AIProvider.OPENAI;
 
     let provider = this.providers.get(providerType);
     console.log("AIProvider", AIProvider);
     console.log("providerType", providerType.toLowerCase());
-    console.log("AIProvider.VSCODE", AIProvider.ZHIPUAI);
     if (!provider) {
       switch (providerType.toLowerCase()) {
         case AIProvider.OPENAI:

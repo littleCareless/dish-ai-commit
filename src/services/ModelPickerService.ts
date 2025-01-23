@@ -20,14 +20,12 @@ export class ModelPickerService {
   ): Promise<{ provider: string; model: string } | undefined> {
     const locManager = LocalizationManager.getInstance();
     try {
-      // Get all available AI providers
       const providers = AIProviderFactory.getAllProviders();
-      /** Map to store provider name to available models mapping */
       const modelsMap = new Map<string, string[]>();
+      let errors: string[] = [];
 
       console.log("providers", providers);
 
-      // Show progress notification while loading models
       const progressMsg = locManager.getMessage("ai.model.loading");
       await vscode.window.withProgress(
         {
@@ -36,20 +34,54 @@ export class ModelPickerService {
           cancellable: false,
         },
         async () => {
-          // Load models from each available provider
           await Promise.all(
             providers.map(async (provider) => {
-              if (await provider.isAvailable()) {
-                const models = await provider.getModels();
-                modelsMap.set(
-                  provider.getName(),
-                  models.map((model) => model.name)
+              try {
+                if (await provider.isAvailable()) {
+                  const models = await provider.getModels();
+                  if (models && models.length > 0) {
+                    modelsMap.set(
+                      provider.getName(),
+                      models.map((model) => model.name)
+                    );
+                  }
+                }
+              } catch (err) {
+                const providerName = provider.getName();
+                console.error(
+                  `Failed to fetch models from ${providerName}:`,
+                  err
                 );
+                errors.push(providerName);
               }
             })
           );
         }
       );
+
+      console.log("1111");
+
+      // 如果所有provider都失败了,显示错误
+      if (modelsMap.size === 0) {
+        if (errors.length > 0) {
+          NotificationHandler.warn(
+            "model.list.partial.failed",
+            5000,
+            errors.join(", ")
+          );
+        }
+        NotificationHandler.error("model.list.all.failed");
+        return undefined;
+      }
+
+      // 如果部分provider失败,显示警告
+      if (errors.length > 0) {
+        NotificationHandler.warn(
+          "model.list.partial.failed",
+          5000,
+          errors.join(", ")
+        );
+      }
 
       // Prepare items for quick pick dialog
       const items: vscode.QuickPickItem[] = [];

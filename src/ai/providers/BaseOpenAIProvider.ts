@@ -6,6 +6,7 @@ import {
   AIResponse,
   AIModel,
   type CodeReviewResult,
+  type AIProviders,
 } from "../types";
 import {
   generateWithRetry,
@@ -41,6 +42,11 @@ export interface OpenAIProviderConfig {
  * 实现了OpenAI API的基本功能，可被具体提供者继承和扩展
  */
 export abstract class BaseOpenAIProvider implements AIProvider {
+  /** 超时时间(ms) */
+  private readonly TIMEOUT = 10000; // 10秒
+  /** 重试次数 */
+  private readonly MAX_RETRIES = 3;
+
   /** OpenAI API客户端实例 */
   protected openai: OpenAI;
   /** 提供者配置信息 */
@@ -251,20 +257,26 @@ export abstract class BaseOpenAIProvider implements AIProvider {
    *
    * @returns Promise<AIModel[]> 支持的模型配置数组
    */
-  async getModels(): Promise<AIModel[] | any[]> {
+  async getModels(): Promise<AIModel[]> {
     try {
-      const response = await this.openai.models.list();
-      return response.data.map((model: any) => {
-        return {
-          id: model.id,
-          name: model.id,
-          maxTokens: {
-            input: model.context_window || 4096,
-            output: Math.floor((model.context_window || 4096) / 2),
-          },
-          provider: this.provider,
-        };
-      });
+      const response = await this.withTimeout(
+        this.withRetry(async () => {
+          return await this.openai.models.list();
+        })
+      );
+
+      return response.data.map((model: any) => ({
+        id: model.id,
+        name: model.id,
+        maxTokens: {
+          input: model.context_window || 4096,
+          output: Math.floor((model.context_window || 4096) / 2),
+        },
+        provider: {
+          id: this.provider.id as AIProviders,
+          name: this.provider.name,
+        },
+      }));
     } catch (error) {
       console.warn("Failed to fetch models:", error);
       return this.config.models;
@@ -292,6 +304,42 @@ export abstract class BaseOpenAIProvider implements AIProvider {
    */
   getId(): string {
     return this.provider.id;
+  }
+
+  /**
+   * 带超时的Promise包装
+   * @param promise 原始Promise
+   * @param timeout 超时时间(ms)
+   */
+  protected async withTimeout<T>(
+    promise: Promise<T>,
+    timeout = this.TIMEOUT
+  ): Promise<T> {
+    const timeoutPromise = new Promise<never>((_, reject) => {
+      setTimeout(() => reject(new Error("Request timeout")), timeout);
+    });
+    return Promise.race([promise, timeoutPromise]);
+  }
+
+  /**
+   * 带重试的Promise包装
+   * @param operation 异步操作函数
+   * @param retries 重试次数
+   */
+  protected async withRetry<T>(
+    operation: () => Promise<T>,
+    retries = this.MAX_RETRIES
+  ): Promise<T> {
+    try {
+      return await operation();
+    } catch (error) {
+      if (retries > 0) {
+        const delay = Math.min(1000 * (this.MAX_RETRIES - retries + 1), 3000);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+        return this.withRetry(operation, retries - 1);
+      }
+      throw error;
+    }
   }
 
   /**

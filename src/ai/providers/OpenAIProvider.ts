@@ -93,7 +93,33 @@ export class OpenAIProvider extends BaseOpenAIProvider {
    */
   async isAvailable(): Promise<boolean> {
     try {
+      // 快速返回,异步检查
+      if (!this.config.apiKey) {
+        return false;
+      }
+
+      const checkPromise = this.withTimeout(
+        this.withRetry(async () => {
+          try {
+            await this.openai.models.list();
+            return true;
+          } catch {
+            return false;
+          }
+        })
+      );
+
+      // 异步执行检查
+      setTimeout(async () => {
+        try {
+          await checkPromise;
+        } catch (error) {
+          console.error('Background availability check failed:', error);
+        }
+      });
+
       return !!this.config.apiKey;
+      
     } catch {
       return false;
     }

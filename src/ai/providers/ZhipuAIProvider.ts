@@ -93,7 +93,33 @@ export class ZhipuAIProvider extends BaseOpenAIProvider {
    */
   async isAvailable(): Promise<boolean> {
     try {
-      return !!this.config.apiKey;
+      if (!this.config.apiKey) {
+        return false; 
+      }
+
+      const checkPromise = this.withTimeout(
+        this.withRetry(async () => {
+          try {
+            // 执行一个轻量的API调用来验证可用性
+            await this.openai.models.list();
+            return true;
+          } catch {
+            return false;
+          }
+        })
+      );
+
+      // 异步执行检查
+      setTimeout(async () => {
+        try {
+          await checkPromise;
+        } catch (error) {
+          console.error('Background availability check failed:', error);
+        }
+      });
+
+      return true;
+    
     } catch {
       return false;
     }
