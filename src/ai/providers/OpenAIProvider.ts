@@ -1,7 +1,7 @@
 import { ConfigurationManager } from "../../config/ConfigurationManager";
-import { type AIModel } from "../types";
-import { NotificationHandler } from "../../utils/NotificationHandler";
 import { LocalizationManager } from "../../utils/LocalizationManager";
+import { NotificationHandler } from "../../utils/NotificationHandler";
+import { type AIModel } from "../types";
 import { BaseOpenAIProvider } from "./BaseOpenAIProvider";
 
 /** OpenAI服务提供者标识信息 */
@@ -88,7 +88,7 @@ export class OpenAIProvider extends BaseOpenAIProvider {
   /**
    * 检查OpenAI服务是否可用
    * 验证API密钥是否已正确配置
-   * 
+   *
    * @returns Promise<boolean> 如果API密钥已配置则返回true，否则返回false
    */
   async isAvailable(): Promise<boolean> {
@@ -114,12 +114,11 @@ export class OpenAIProvider extends BaseOpenAIProvider {
         try {
           await checkPromise;
         } catch (error) {
-          console.error('Background availability check failed:', error);
+          console.error("Background availability check failed:", error);
         }
       });
 
       return !!this.config.apiKey;
-      
     } catch {
       return false;
     }
@@ -128,7 +127,7 @@ export class OpenAIProvider extends BaseOpenAIProvider {
   /**
    * 刷新可用的OpenAI模型列表
    * 通过API获取最新的模型列表
-   * 
+   *
    * @returns Promise<string[]> 返回可用模型ID的数组
    * @throws 如果API调用失败会记录错误并返回空数组
    */

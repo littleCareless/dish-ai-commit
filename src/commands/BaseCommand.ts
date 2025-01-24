@@ -1,10 +1,10 @@
 import * as vscode from "vscode";
-import { NotificationHandler } from "../utils/NotificationHandler";
 import { ConfigurationManager } from "../config/ConfigurationManager";
-import { LocalizationManager } from "../utils/LocalizationManager";
 import { AIProviderFactory } from "../ai/AIProviderFactory";
 import { SCMFactory } from "../scm/SCMProvider";
 import { ModelPickerService } from "../services/ModelPickerService";
+import { NotificationHandler } from "../utils/NotificationHandler";
+import { LocalizationManager } from "../utils/LocalizationManager";
 
 /**
  * 基础命令类,提供通用的命令执行功能

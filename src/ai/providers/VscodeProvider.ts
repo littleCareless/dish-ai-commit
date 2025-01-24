@@ -8,9 +8,9 @@ import {
   type CodeReviewResult,
 } from "../types";
 import { generateCommitMessageSystemPrompt } from "../../prompt/prompt";
-import { LocalizationManager } from "../../utils/LocalizationManager";
 import { getCodeReviewPrompt, getSystemPrompt } from "../utils/generateHelper";
 import { getWeeklyReportPrompt } from "../../prompt/weeklyReport";
+import { LocalizationManager } from "../../utils/LocalizationManager";
 import { CodeReviewReportGenerator } from "../../utils/CodeReviewReportGenerator";
 
 interface DiffBlock {

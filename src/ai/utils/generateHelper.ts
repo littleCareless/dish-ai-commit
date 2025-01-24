@@ -1,9 +1,9 @@
-import { NotificationHandler } from "../../utils/NotificationHandler";
-import { LocalizationManager } from "../../utils/LocalizationManager";
 import { generateCommitMessageSystemPrompt } from "../../prompt/prompt";
 import { AIRequestParams } from "../types";
 import { ConfigurationManager } from "../../config/ConfigurationManager";
 import { CODE_REVIEW_PROMPT } from "../../prompt/codeReview";
+import { NotificationHandler } from "../../utils/NotificationHandler";
+import { LocalizationManager } from "../../utils/LocalizationManager";
 
 /**
  * AI 生成过程中可能遇到的错误类型枚举

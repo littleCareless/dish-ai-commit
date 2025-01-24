@@ -1,13 +1,13 @@
 import * as vscode from "vscode";
 import { BaseCommand } from "./BaseCommand";
 import { ConfigurationManager } from "../config/ConfigurationManager";
-import { NotificationHandler } from "../utils/NotificationHandler";
-import { ProgressHandler } from "../utils/ProgressHandler";
 import { AIProviderFactory } from "../ai/AIProviderFactory";
 import { SCMFactory } from "../scm/SCMProvider";
 import { type ConfigKey } from "../config/types";
-import { LocalizationManager } from "../utils/LocalizationManager";
 import { ModelPickerService } from "../services/ModelPickerService";
+import { NotificationHandler } from "../utils/NotificationHandler";
+import { LocalizationManager } from "../utils/LocalizationManager";
+import { ProgressHandler } from "../utils/ProgressHandler";
 
 /**
  * 提交信息生成命令类
@@ -75,7 +75,7 @@ export class GenerateCommitCommand extends BaseCommand {
   /**
    * 选择模型并更新配置
    * @param provider - 当前AI提供商
-   * @param model - 当前模型名称 
+   * @param model - 当前模型名称
    * @returns 更新后的提供商和模型信息
    */
   protected async selectAndUpdateModelConfiguration(

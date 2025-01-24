@@ -1,7 +1,5 @@
 import { BaseOpenAIProvider } from "./BaseOpenAIProvider";
 import { ConfigurationManager } from "../../config/ConfigurationManager";
-import { NotificationHandler } from "../../utils/NotificationHandler";
-import { LocalizationManager } from "../../utils/LocalizationManager";
 import { AIModel } from "../types";
 
 /**
@@ -94,7 +92,7 @@ export class ZhipuAIProvider extends BaseOpenAIProvider {
   async isAvailable(): Promise<boolean> {
     try {
       if (!this.config.apiKey) {
-        return false; 
+        return false;
       }
 
       const checkPromise = this.withTimeout(
@@ -114,12 +112,11 @@ export class ZhipuAIProvider extends BaseOpenAIProvider {
         try {
           await checkPromise;
         } catch (error) {
-          console.error('Background availability check failed:', error);
+          console.error("Background availability check failed:", error);
         }
       });
 
       return true;
-    
     } catch {
       return false;
     }

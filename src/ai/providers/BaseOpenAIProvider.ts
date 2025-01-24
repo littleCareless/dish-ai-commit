@@ -13,9 +13,10 @@ import {
   getCodeReviewPrompt,
   getSystemPrompt,
 } from "../utils/generateHelper";
-import { LocalizationManager } from "../../utils/LocalizationManager";
+
 import { getWeeklyReportPrompt } from "../../prompt/weeklyReport";
 import { CodeReviewReportGenerator } from "../../utils/CodeReviewReportGenerator";
+import { LocalizationManager } from "../../utils/LocalizationManager";
 
 /**
  * OpenAI提供者配置项接口

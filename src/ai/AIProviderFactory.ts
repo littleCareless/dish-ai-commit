@@ -4,11 +4,11 @@ import { OllamaProvider } from "./providers/OllamaProvider";
 import { AIProvider, ConfigKeys } from "../config/types";
 import { ConfigurationManager } from "../config/ConfigurationManager";
 import { VSCodeProvider } from "./providers/VscodeProvider";
-import { LocalizationManager } from "../utils/LocalizationManager";
 import { ZhipuAIProvider } from "./providers/ZhipuAIProvider";
 import { DashScopeProvider } from "./providers/DashScopeProvider";
 import { DoubaoProvider } from "./providers/DoubaoProvider";
 import { GeminiAIProvider } from "./providers/GeminiAIProvider";
+import { LocalizationManager } from "../utils/LocalizationManager";
 
 /**
  * AI提供者工厂类，负责创建和管理不同AI服务提供者的实例

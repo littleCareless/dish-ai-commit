@@ -5,7 +5,6 @@ import { ConfigurationManager } from "./config/ConfigurationManager";
 import { registerCommands } from "./commands";
 import { LocalizationManager } from "./utils/LocalizationManager";
 import { NotificationHandler } from "./utils/NotificationHandler";
-import { WeeklyReportPanel } from "./webview/WeeklyReportPanel";
 
 /**
  * 在首次执行命令时激活扩展
@@ -22,7 +21,7 @@ export function activate(context: vscode.ExtensionContext) {
 
     // 初始化配置管理器并注册到生命周期
     context.subscriptions.push(ConfigurationManager.getInstance());
-    
+
     console.log("注册命令");
     // 注册所有命令到VS Code
     registerCommands(context);

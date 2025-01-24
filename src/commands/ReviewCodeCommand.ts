@@ -1,12 +1,9 @@
 import * as vscode from "vscode";
 import { BaseCommand } from "./BaseCommand";
-import { ConfigurationManager } from "../config/ConfigurationManager";
+
 import { NotificationHandler } from "../utils/NotificationHandler";
 import { ProgressHandler } from "../utils/ProgressHandler";
-import { AIProviderFactory } from "../ai/AIProviderFactory";
-import { LocalizationManager } from "../utils/LocalizationManager";
-import { ModelPickerService } from "../services/ModelPickerService";
-import { SCMFactory } from "../scm/SCMProvider";
+
 import * as path from "path";
 
 /**

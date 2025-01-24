@@ -7,10 +7,10 @@ import {
   type AIProviders,
 } from "../types";
 import { ConfigurationManager } from "../../config/ConfigurationManager";
-import { NotificationHandler } from "../../utils/NotificationHandler";
-import { LocalizationManager } from "../../utils/LocalizationManager";
 import { generateWithRetry, getSystemPrompt } from "../utils/generateHelper";
 import { getWeeklyReportPrompt } from "../../prompt/weeklyReport";
+import { LocalizationManager } from "../../utils/LocalizationManager";
+import { NotificationHandler } from "../../utils/NotificationHandler";
 
 /**
  * Ollama AI服务提供者实现类
@@ -19,13 +19,13 @@ import { getWeeklyReportPrompt } from "../../prompt/weeklyReport";
 export class OllamaProvider implements AIProvider {
   /** Ollama客户端实例 */
   private ollama: Ollama;
-  
+
   /** 提供者标识信息 */
   private readonly provider = {
     id: "ollama" as AIProviders,
     name: "Ollama",
   } as const;
-  
+
   /** 配置管理器实例 */
   private configManager: ConfigurationManager;
 
@@ -120,7 +120,7 @@ export class OllamaProvider implements AIProvider {
         };
       },
       {
-        initialMaxLength: 4096,
+        initialMaxLength: 16385,
         provider: this.getId(),
       }
     );
