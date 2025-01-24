@@ -14,13 +14,13 @@ const exec = promisify(childProcess.exec);
 export class SvnProvider implements ISCMProvider {
   /** 源代码管理类型标识符 */
   type = "svn" as const;
-  
+
   /** SVN API实例 */
   private api: any;
-  
+
   /** 工作区根目录路径 */
   private workspaceRoot: string;
-  
+
   /** SVN仓库集合 */
   private repositories: any;
 
@@ -68,6 +68,38 @@ export class SvnProvider implements ISCMProvider {
   }
 
   /**
+   * 获取文件状态
+   * @param {string} file - 文件路径
+   * @returns {Promise<string>} 返回文件状态描述
+   * @private
+   */
+  private async getFileStatus(file: string): Promise<string> {
+    try {
+      const { stdout: status } = await exec(`svn status "${file}"`, {
+        cwd: this.workspaceRoot,
+      });
+
+      if (!status) {
+        return "Unknown";
+      }
+
+      if (status.startsWith("?")) {
+        return "New File";
+      }
+      if (status.startsWith("D")) {
+        return "Deleted File";
+      }
+      return "Modified File";
+    } catch (error) {
+      console.error(
+        "Failed to get file status:",
+        error instanceof Error ? error.message : error
+      );
+      return "Unknown";
+    }
+  }
+
+  /**
    * 获取文件差异信息
    * @param {string[]} [files] - 可选的文件路径数组,如果不提供则获取所有更改的差异
    * @returns {Promise<string | undefined>} 返回差异文本,如果没有差异则返回undefined
@@ -75,31 +107,38 @@ export class SvnProvider implements ISCMProvider {
    */
   async getDiff(files?: string[]): Promise<string | undefined> {
     try {
-      // 构建diff命令
-      let command: string;
+      let diffOutput = "";
+
       if (files && files.length > 0) {
-        // 对特定文件执行 diff
-        const filesPaths = files.map((file) => `"${file}"`).join(" ");
-        if (filesPaths.length === 0) {
-          command = "svn diff";
-        } else {
-          command = `svn diff ${filesPaths}`;
+        for (const file of files) {
+          console.log("file", file);
+          const fileStatus = await this.getFileStatus(file);
+          const escapedFile = file.replace(/"/g, '\\"');
+
+          // 对于删除的文件不获取diff内容
+          if (fileStatus === "Deleted File") {
+            diffOutput += `\n=== ${fileStatus}: ${file} ===\n`;
+            continue;
+          }
+
+          const { stdout } = await exec(`svn diff "${escapedFile}"`, {
+            cwd: this.workspaceRoot,
+            maxBuffer: 1024 * 1024 * 10,
+          });
+
+          if (stdout.trim()) {
+            diffOutput += `\n=== ${fileStatus}: ${file} ===\n${stdout}`;
+          }
         }
       } else {
-        // 对所有暂存文件执行 diff
-        command = "svn diff";
+        const { stdout } = await exec("svn diff", {
+          cwd: this.workspaceRoot,
+          maxBuffer: 1024 * 1024 * 10,
+        });
+        diffOutput = stdout;
       }
 
-      // 执行diff命令
-      const { stdout, stderr } = await exec(command, {
-        cwd: this.workspaceRoot,
-      });
-
-      if (stderr) {
-        throw new Error(stderr);
-      }
-
-      if (!stdout.trim()) {
+      if (!diffOutput.trim()) {
         throw new Error(
           LocalizationManager.getInstance().getMessage("diff.noChanges")
         );
@@ -118,11 +157,11 @@ export class SvnProvider implements ISCMProvider {
             "diff.simplification.warning"
           )
         );
-        return DiffSimplifier.simplify(stdout);
+        return DiffSimplifier.simplify(diffOutput);
       }
 
       // 如果未启用简化，直接返回原始diff
-      return stdout;
+      return diffOutput;
     } catch (error) {
       console.error(
         "SVN diff failed:",

@@ -13,7 +13,7 @@ const exec = promisify(childProcess.exec);
 interface GitAPI {
   /** Git仓库集合 */
   repositories: GitRepository[];
-  
+
   /**
    * 获取指定版本的Git API
    * @param version - API版本号
@@ -29,7 +29,7 @@ interface GitRepository {
   inputBox: {
     value: string;
   };
-  
+
   /**
    * 执行提交操作
    * @param message - 提交信息
@@ -48,10 +48,10 @@ interface GitRepository {
 export class GitProvider implements ISCMProvider {
   /** SCM类型标识符 */
   type = "git" as const;
-  
+
   /** 工作区根目录路径 */
   private workspaceRoot: string;
-  
+
   /** Git API实例 */
   private readonly api: GitAPI;
 
@@ -130,12 +130,18 @@ export class GitProvider implements ISCMProvider {
         // 处理指定文件的差异
         for (const file of files) {
           const fileStatus = await this.getFileStatus(file);
-          const escapedFile = file.replace(/"/g, '\\"'); // 转义文件路径中的双引号
+          const escapedFile = file.replace(/"/g, '\\"');
+
+          // 对于删除的文件不获取diff内容
+          if (fileStatus === "Deleted File") {
+            diffOutput += `\n=== ${fileStatus}: ${file} ===\n`;
+            continue;
+          }
 
           // 执行单个文件的diff命令
           const { stdout } = await exec(`git diff HEAD -- "${escapedFile}"`, {
             cwd: this.workspaceRoot,
-            maxBuffer: 1024 * 1024 * 10, // 设置更大的缓冲区以处理大型差异
+            maxBuffer: 1024 * 1024 * 10,
           });
 
           // 添加文件状态和差异信息
