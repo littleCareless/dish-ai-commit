@@ -100,6 +100,7 @@
   "codeReview.generation.failed": "代码评审生成失败: {0}",
   "model.list.empty": "模型列表为空",
   "no.changes.selected": "未选择任何待评审的文件",
+  "please.select.valid.files": "选择的文件中包含无效项，请重新选择要评审的文件",
   "no.changes.found": "未找到需要评审的变更",
   "review.file.failed": "评审文件失败: {0}",
   "code.review.failed": "代码评审失败: {0}",

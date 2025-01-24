@@ -196,6 +196,8 @@ IMPORTANT: You must respond with a valid JSON object following this schema:
               CodeReviewReportGenerator.generateMarkdownReport(reviewResult),
           };
         } catch (ex: Error | any) {
+          console.log("ex", ex);
+
           let message = ex instanceof Error ? ex.message : String(ex);
 
           if (

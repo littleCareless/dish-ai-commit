@@ -1,5 +1,5 @@
 import { CodeReviewResult, CodeReviewIssue } from "../ai/types";
-import * as vscode from "vscode";  
+import * as vscode from "vscode";
 import { LocalizationManager } from "../utils/LocalizationManager";
 
 /**
@@ -7,15 +7,15 @@ import { LocalizationManager } from "../utils/LocalizationManager";
  */
 export class CodeReviewReportGenerator {
   private static readonly locManager = LocalizationManager.getInstance();
-  
+
   /**
    * 不同严重程度对应的 emoji 图标
    * @private
    */
   private static readonly severityEmoji = {
-    NOTE: "💡",    // 提示
-    WARNING: "⚠️",  // 警告
-    ERROR: "🚨",    // 错误
+    NOTE: "💡", // 提示
+    WARNING: "⚠️", // 警告
+    ERROR: "🚨", // 错误
   };
 
   /**
@@ -59,8 +59,12 @@ export class CodeReviewReportGenerator {
    * @returns {string} Markdown 格式的报告头部
    */
   private static generateHeader(summary: string): string {
-    const title = this.locManager.getMessage("codeReview.report.title");
-    const summaryLabel = this.locManager.getMessage("codeReview.report.summary");
+    const title = LocalizationManager.getInstance().getMessage(
+      "codeReview.report.title"
+    );
+    const summaryLabel = LocalizationManager.getInstance().getMessage(
+      "codeReview.report.summary"
+    );
     return `# ${title}\n\n## ${summaryLabel}\n\n${summary}\n\n`;
   }
 
@@ -73,7 +77,9 @@ export class CodeReviewReportGenerator {
   private static generateDetailedFindings(
     sections: Record<string, CodeReviewIssue[]>
   ): string {
-    const findings = this.locManager.getMessage("codeReview.report.findings");
+    const findings = LocalizationManager.getInstance().getMessage(
+      "codeReview.report.findings"
+    );
     let markdown = `## ${findings}\n\n`;
 
     // 遍历每个文件的问题
@@ -99,10 +105,14 @@ export class CodeReviewReportGenerator {
     let section = `#### ${this.severityEmoji[issue.severity]} ${
       issue.severity
     }: Line ${issue.startLine}${issue.endLine ? `-${issue.endLine}` : ""}\n\n`;
-    
+
     // 添加问题描述和建议
-    section += `**${this.locManager.getMessage("codeReview.issue.label")}** ${issue.description}\n\n`;
-    section += `**${this.locManager.getMessage("codeReview.suggestion.label")}** ${issue.suggestion}\n\n`;
+    section += `**${LocalizationManager.getInstance().getMessage(
+      "codeReview.issue.label"
+    )}** ${issue.description}\n\n`;
+    section += `**${LocalizationManager.getInstance().getMessage(
+      "codeReview.suggestion.label"
+    )}** ${issue.suggestion}\n\n`;
 
     // 如果有代码示例，添加代码块
     if (issue.code) {
@@ -111,7 +121,9 @@ export class CodeReviewReportGenerator {
 
     // 如果有相关文档，添加链接
     if (issue.documentation) {
-      const docLabel = this.locManager.getMessage("codeReview.documentation.label");
+      const docLabel = LocalizationManager.getInstance().getMessage(
+        "codeReview.documentation.label"
+      );
       section += `📚 [${docLabel}](${issue.documentation})\n\n`;
     }
 

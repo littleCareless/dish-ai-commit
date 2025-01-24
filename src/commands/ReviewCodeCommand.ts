@@ -13,11 +13,41 @@ import * as path from "path";
  */
 export class ReviewCodeCommand extends BaseCommand {
   /**
+   * 获取选中的文件列表
+   * @param resourceStates - 源代码管理资源状态
+   * @returns 文件路径列表
+   */
+  protected getSelectedFiles(
+    resourceStates?:
+      | vscode.SourceControlResourceState
+      | vscode.SourceControlResourceState[]
+  ): string[] | undefined {
+    if (!resourceStates) {
+      return undefined;
+    }
+
+    const states = Array.isArray(resourceStates)
+      ? resourceStates
+      : [resourceStates];
+
+    return [
+      ...new Set(
+        states
+          .map(
+            (state) =>
+              (state as any)?._resourceUri?.fsPath || state?.resourceUri?.fsPath
+          )
+          .filter(Boolean)
+      ),
+    ];
+  }
+
+  /**
    * 执行代码审查命令
-   * @param {vscode.SourceControlResourceState[]} resources - 源代码管理资源状态列表,代表需要审查的文件
+   * @param {vscode.SourceControlResourceState[] | undefined} resources - 源代码管理资源状态列表,代表需要审查的文件
    * @returns {Promise<void>}
    */
-  async execute(resources: vscode.SourceControlResourceState[]) {
+  async execute(resources?: vscode.SourceControlResourceState[]) {
     // 处理配置
     const configResult = await this.handleConfiguration();
     if (!configResult) {
@@ -26,7 +56,8 @@ export class ReviewCodeCommand extends BaseCommand {
 
     try {
       // 检查是否有选中的文件
-      if (!resources || resources.length === 0) {
+      const selectedFiles = this.getSelectedFiles(resources);
+      if (!selectedFiles || selectedFiles.length === 0) {
         NotificationHandler.warn(
           this.locManager.getMessage("no.changes.selected")
         );
@@ -56,25 +87,20 @@ export class ReviewCodeCommand extends BaseCommand {
           // 获取所有选中文件的差异
           const fileReviews = new Map<string, string>();
           const diffs = new Map<string, string>();
-
           // 并行收集所有差异 - 10% 进度
-          const diffPromises = resources.map(async (resource) => {
-            const selectedFiles = this.getSelectedFiles(resource);
+          const diffPromises = selectedFiles.map(async (filePath) => {
             try {
-              const diff = await scmProvider.getDiff(selectedFiles);
+              const diff = await scmProvider.getDiff([filePath]);
               if (diff) {
-                diffs.set(resource.resourceUri.fsPath, diff);
+                diffs.set(filePath, diff);
               }
               progress.report({
-                increment: 10 / resources.length,
+                increment: 10 / selectedFiles.length,
                 message: this.locManager.getMessage("getting.file.changes"),
               });
               return { success: true };
             } catch (error) {
-              console.error(
-                `Failed to get diff for ${resource.resourceUri.fsPath}:`,
-                error
-              );
+              console.error(`Failed to get diff for ${filePath}:`, error);
               return { success: false };
             }
           });

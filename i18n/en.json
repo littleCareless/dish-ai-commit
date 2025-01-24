@@ -100,6 +100,7 @@
   "review.results.title": "Code Review Results",
   "codeReview.generation.failed": "Code review generation failed: {0}",
   "no.changes.selected": "No files selected for review",
+  "please.select.valid.files": "Some selected files are invalid, please reselect files for review",
   "no.changes.found": "No changes found for review",
   "review.file.failed": "Failed to review file: {0}",
   "code.review.failed": "Code review failed: {0}",
