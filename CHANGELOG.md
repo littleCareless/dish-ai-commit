@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.6.2 (2025-02-03)
+
+### 🐛 Bug Fixes
+
+- **core**: Fix file selection and internationalization issues ([4bd85f6](https://github.com/littleCareless/dish-ai-commit/commit/4bd85f6))
+
 ## 0.6.1 (2025-01-22)
 
 ### 🐛 Bug Fixes

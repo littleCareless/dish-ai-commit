@@ -6,6 +6,12 @@
 
 更新日志格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.6.2 (2025-02-03)
+
+### 🐛 Bug Fixes
+
+- **core**: 修复文件选择和国际化问题 ([4bd85f6](https://github.com/littleCareless/dish-ai-commit/commit/4bd85f6))
+
 ## 0.6.1 (2025-01-22)
 
 ### 🐛 Bug Fixes
