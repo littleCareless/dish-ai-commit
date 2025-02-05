@@ -1,6 +1,6 @@
-import { CodeReviewResult, CodeReviewIssue } from "../../ai/types";
+import { CodeReviewResult, CodeReviewIssue } from "../ai/types";
 import * as vscode from "vscode";
-import { getMessage } from "../i18n";
+import { getMessage } from "../utils/i18n";
 
 /**
  * 代码审查报告生成器，将代码审查结果转换为格式化的 Markdown 文档

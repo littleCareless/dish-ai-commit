@@ -1,1 +1,1 @@
-export * from './CodeReviewReportGenerator';
+export * from "../../services/CodeReviewReportGenerator";

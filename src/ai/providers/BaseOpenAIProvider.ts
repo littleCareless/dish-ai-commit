@@ -15,7 +15,7 @@ import {
 } from "../utils/generateHelper";
 
 import { getWeeklyReportPrompt } from "../../prompt/weeklyReport";
-import { CodeReviewReportGenerator } from "../../utils/review/CodeReviewReportGenerator";
+import { CodeReviewReportGenerator } from "../../services/CodeReviewReportGenerator";
 import { formatMessage } from "../../utils/i18n/LocalizationManager";
 
 /**
@@ -193,10 +193,9 @@ export abstract class BaseOpenAIProvider implements AIProvider {
             },
           };
         } catch (error) {
-          const message = formatMessage(
-            "codeReview.generation.failed",
-            [error instanceof Error ? error.message : String(error)]
-          );
+          const message = formatMessage("codeReview.generation.failed", [
+            error instanceof Error ? error.message : String(error),
+          ]);
           throw new Error(message);
         }
       },
@@ -244,10 +243,9 @@ export abstract class BaseOpenAIProvider implements AIProvider {
       };
     } catch (error) {
       throw new Error(
-        formatMessage(
-          "weeklyReport.generation.failed",
-          [error instanceof Error ? error.message : String(error)]
-        )
+        formatMessage("weeklyReport.generation.failed", [
+          error instanceof Error ? error.message : String(error),
+        ])
       );
     }
   }
