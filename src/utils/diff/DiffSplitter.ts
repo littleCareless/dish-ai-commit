@@ -1,13 +1,4 @@
-/**
- * 表示一个差异块的结构
- * @interface DiffChunk
- * @property {string} filename - 发生变更的文件名
- * @property {string} content - 包含变更内容的差异文本
- */
-export interface DiffChunk {
-  filename: string;
-  content: string;
-}
+import { DiffChunk } from './types';
 
 /**
  * 用于将 Git 和 SVN 的差异文本拆分为独立的文件差异块

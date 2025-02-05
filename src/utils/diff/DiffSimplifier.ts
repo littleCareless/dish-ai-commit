@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { DiffConfig } from './types';
 
 /**
  * 用于简化和格式化差异文本的工具类
@@ -12,18 +13,14 @@ export class DiffSimplifier {
    * @property {number} contextLines - 保留的上下文行数
    * @property {number} maxLineLength - 单行最大长度
    */
-  private static configCache: {
-    enabled: boolean;
-    contextLines: number;
-    maxLineLength: number;
-  } | null = null;
+  private static configCache: DiffConfig | null = null;
 
   /**
    * 从 VSCode 配置中获取差异简化的相关设置
    * @private
    * @returns {Object} 包含差异简化配置的对象
    */
-  private static getConfig() {
+  static getConfig(): DiffConfig {
     if (this.configCache) {
       return this.configCache;
     }
@@ -70,18 +67,13 @@ export class DiffSimplifier {
       const line = lines[i];
 
       // 保留 diff 头信息（Index、===、---、+++）
-      if (
-        line.startsWith("Index:") ||
-        line.startsWith("===") ||
-        line.startsWith("---") ||
-        line.startsWith("+++")
-      ) {
+      if (this.isHeaderLine(line)) {
         simplified.push(line);
         continue;
       }
 
       // 处理修改行（以 + 或 - 开头）
-      if (line.startsWith("+") || line.startsWith("-")) {
+      if (this.isChangeLine(line)) {
         simplified.push(this.truncateLine(line, config.maxLineLength));
         skipCount = 0;
         continue;
@@ -113,5 +105,16 @@ export class DiffSimplifier {
     }
     const ellipsis = "...";
     return `${line.substring(0, maxLength - ellipsis.length)}${ellipsis}`;
+  }
+
+  private static isHeaderLine(line: string): boolean {
+    return line.startsWith('Index:') || 
+           line.startsWith('===') || 
+           line.startsWith('---') || 
+           line.startsWith('+++');
+  }
+
+  private static isChangeLine(line: string): boolean {
+    return line.startsWith('+') || line.startsWith('-');
   }
 }

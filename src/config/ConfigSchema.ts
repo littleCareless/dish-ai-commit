@@ -71,6 +71,7 @@ export const CONFIG_SCHEMA = {
         "DashScope",
         "Doubao",
         "Gemini",
+        "Deepseek", // 添加Deepseek选项
       ],
       description: "AI provider",
     },
@@ -128,6 +129,13 @@ export const CONFIG_SCHEMA = {
         type: "string",
         default: "",
         description: "Gemini AI API Key",
+      },
+    },
+    deepseek: {
+      apiKey: {
+        type: "string",
+        default: "",
+        description: "Deepseek AI API Key",
       },
     },
   },

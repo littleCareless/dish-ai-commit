@@ -9,8 +9,8 @@ import {
 import { ConfigurationManager } from "../../config/ConfigurationManager";
 import { generateWithRetry, getSystemPrompt } from "../utils/generateHelper";
 import { getWeeklyReportPrompt } from "../../prompt/weeklyReport";
-import { LocalizationManager } from "../../utils/LocalizationManager";
-import { NotificationHandler } from "../../utils/NotificationHandler";
+import { getMessage } from "../../utils/i18n";
+import { notify } from "../../utils/notification/NotificationManager";
 
 /**
  * Ollama AI服务提供者实现类
@@ -61,17 +61,11 @@ export class OllamaProvider implements AIProvider {
   async refreshModels(): Promise<string[]> {
     try {
       const response = await this.ollama.list();
-      NotificationHandler.info(
-        LocalizationManager.getInstance().getMessage("ollama.models.updated")
-      );
+      notify.info("ollama.models.updated");
       return response.models.map((model) => model.name);
     } catch (error) {
       console.error("Failed to fetch Ollama models:", error);
-      NotificationHandler.error(
-        LocalizationManager.getInstance().getMessage(
-          "ollama.models.fetch.failed"
-        )
-      );
+      notify.error("ollama.models.fetch.failed");
       return [];
     }
   }
@@ -204,11 +198,7 @@ export class OllamaProvider implements AIProvider {
       );
     } catch (error) {
       console.error("Failed to fetch Ollama models:", error);
-      NotificationHandler.error(
-        LocalizationManager.getInstance().getMessage(
-          "ollama.models.fetch.failed"
-        )
-      );
+      notify.error("ollama.models.fetch.failed");
       return Promise.reject(error);
     }
   }

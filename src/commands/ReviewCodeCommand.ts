@@ -1,9 +1,10 @@
 import * as vscode from "vscode";
 import { BaseCommand } from "./BaseCommand";
-
-import { NotificationHandler } from "../utils/NotificationHandler";
-import { ProgressHandler } from "../utils/ProgressHandler";
-
+import { getMessage, formatMessage } from "../utils/i18n";
+import {
+  notify,
+  withProgress,
+} from "../utils/notification/NotificationManager";
 import * as path from "path";
 
 /**
@@ -58,9 +59,7 @@ export class ReviewCodeCommand extends BaseCommand {
       // 检查是否有选中的文件
       const selectedFiles = this.getSelectedFiles(resources);
       if (!selectedFiles || selectedFiles.length === 0) {
-        NotificationHandler.warn(
-          this.locManager.getMessage("no.changes.selected")
-        );
+        await notify.warn("no.changes.selected");
         return;
       }
 
@@ -81,106 +80,92 @@ export class ReviewCodeCommand extends BaseCommand {
         selectedModel,
       } = await this.getModelAndUpdateConfiguration(provider, model);
 
-      await ProgressHandler.withProgress(
-        this.locManager.getMessage("reviewing.code"),
-        async (progress) => {
-          // 获取所有选中文件的差异
-          const fileReviews = new Map<string, string>();
-          const diffs = new Map<string, string>();
-          // 并行收集所有差异 - 10% 进度
-          const diffPromises = selectedFiles.map(async (filePath) => {
-            try {
-              const diff = await scmProvider.getDiff([filePath]);
-              if (diff) {
-                diffs.set(filePath, diff);
-              }
-              progress.report({
-                increment: 10 / selectedFiles.length,
-                message: this.locManager.getMessage("getting.file.changes"),
-              });
-              return { success: true };
-            } catch (error) {
-              console.error(`Failed to get diff for ${filePath}:`, error);
-              return { success: false };
+      await withProgress(getMessage("reviewing.code"), async (progress) => {
+        // 获取所有选中文件的差异
+        const fileReviews = new Map<string, string>();
+        const diffs = new Map<string, string>();
+        // 并行收集所有差异 - 10% 进度
+        const diffPromises = selectedFiles.map(async (filePath) => {
+          try {
+            const diff = await scmProvider.getDiff([filePath]);
+            if (diff) {
+              diffs.set(filePath, diff);
             }
-          });
-
-          await Promise.all(diffPromises);
-          if (diffs.size === 0) {
-            NotificationHandler.warn(
-              this.locManager.getMessage("no.changes.found")
-            );
-            return;
+            progress.report({
+              increment: 10 / selectedFiles.length,
+              message: getMessage("getting.file.changes"),
+            });
+            return { success: true };
+          } catch (error) {
+            console.error(`Failed to get diff for ${filePath}:`, error);
+            return { success: false };
           }
+        });
 
-          // 并行审查每个文件 - 80% 进度平均分配
-          const progressPerFile = 80 / diffs.size;
-
-          const reviewPromises = Array.from(diffs.entries()).map(
-            async ([filePath, diff]) => {
-              try {
-                progress.report({
-                  message: this.locManager.format(
-                    "reviewing.file",
-                    path.basename(filePath)
-                  ),
-                });
-                const reviewResult = await aiProvider?.generateCodeReview?.({
-                  ...configuration.base,
-                  ...configuration.features.codeAnalysis,
-                  diff,
-                  model: selectedModel,
-                  scm: scmProvider.type ?? "git",
-                  additionalContext: "",
-                });
-
-                if (reviewResult?.content) {
-                  fileReviews.set(filePath, reviewResult.content);
-                }
-
-                progress.report({
-                  increment: progressPerFile,
-                });
-
-                return { success: true, filePath };
-              } catch (error) {
-                NotificationHandler.warn(
-                  this.locManager.format(
-                    "review.file.failed",
-                    path.basename(filePath)
-                  )
-                );
-                console.error(`Failed to review ${filePath}:`, error);
-                return { success: false, filePath };
-              }
-            }
-          );
-
-          await Promise.all(reviewPromises);
-
-          // 显示结果 - 10% 进度
-          progress.report({
-            increment: 10,
-            message: this.locManager.getMessage("preparing.results"),
-          });
-
-          if (fileReviews.size === 0) {
-            NotificationHandler.error(
-              this.locManager.getMessage("review.all.failed")
-            );
-            return;
-          }
-
-          await this.showReviewResults(fileReviews);
-
-          NotificationHandler.info(
-            this.locManager.format(
-              "review.complete.count",
-              fileReviews.size.toString()
-            )
-          );
+        await Promise.all(diffPromises);
+        if (diffs.size === 0) {
+          await notify.warn(getMessage("no.changes.found"));
+          return;
         }
-      );
+
+        // 并行审查每个文件 - 80% 进度平均分配
+        const progressPerFile = 80 / diffs.size;
+
+        const reviewPromises = Array.from(diffs.entries()).map(
+          async ([filePath, diff]) => {
+            try {
+              progress.report({
+                message: formatMessage("reviewing.file", [
+                  path.basename(filePath),
+                ]),
+              });
+              const reviewResult = await aiProvider?.generateCodeReview?.({
+                ...configuration.base,
+                ...configuration.features.codeAnalysis,
+                diff,
+                model: selectedModel,
+                scm: scmProvider.type ?? "git",
+                additionalContext: "",
+              });
+
+              if (reviewResult?.content) {
+                fileReviews.set(filePath, reviewResult.content);
+              }
+
+              progress.report({
+                increment: progressPerFile,
+              });
+
+              return { success: true, filePath };
+            } catch (error) {
+              await notify.warn(
+                formatMessage("review.file.failed", [path.basename(filePath)])
+              );
+              console.error(`Failed to review ${filePath}:`, error);
+              return { success: false, filePath };
+            }
+          }
+        );
+
+        await Promise.all(reviewPromises);
+
+        // 显示结果 - 10% 进度
+        progress.report({
+          increment: 10,
+          message: getMessage("preparing.results"),
+        });
+
+        if (fileReviews.size === 0) {
+          await notify.error(getMessage("review.all.failed"));
+          return;
+        }
+
+        await this.showReviewResults(fileReviews);
+
+        await notify.warn(
+          formatMessage("review.complete.count", [fileReviews.size.toString()])
+        );
+      });
     } catch (error) {
       console.log("ReviewCodeCommand error", error);
       await this.handleError(error, "code.review.failed");
@@ -196,7 +181,7 @@ export class ReviewCodeCommand extends BaseCommand {
     // 创建webview面板显示审查结果
     const panel = vscode.window.createWebviewPanel(
       "codeReview",
-      this.locManager.getMessage("review.results.title"),
+      getMessage("review.results.title"),
       vscode.ViewColumn.One,
       {
         enableScripts: true,
@@ -230,7 +215,7 @@ export class ReviewCodeCommand extends BaseCommand {
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>${this.locManager.getMessage("review.results.title")}</title>
+        <title>${getMessage("review.results.title")}</title>
         <style>
           body { padding: 20px; }
           .review-section { margin-bottom: 30px; }

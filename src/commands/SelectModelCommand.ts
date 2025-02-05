@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { BaseCommand } from "./BaseCommand";
 import { ConfigurationManager } from "../config/ConfigurationManager";
-import { NotificationHandler } from "../utils/NotificationHandler";
+import { notify } from "../utils/notification/NotificationManager";
 
 /**
  * 模型选择命令类
@@ -38,12 +38,10 @@ export class SelectModelCommand extends BaseCommand {
         modelSelection.provider,
         modelSelection.model
       );
-      NotificationHandler.info(
-        "model.update.success",
-        3000,
+      notify.info("model.update.success", [
         modelSelection.provider,
-        modelSelection.model
-      );
+        modelSelection.model,
+      ]);
     }
   }
 }

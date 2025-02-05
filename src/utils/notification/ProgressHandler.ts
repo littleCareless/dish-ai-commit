@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { DISPLAY_NAME } from "../constants";
+import { DISPLAY_NAME } from "../../constants";
 
 /**
  * 处理 VSCode 进度提示的工具类

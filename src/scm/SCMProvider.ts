@@ -1,7 +1,6 @@
 import * as vscode from "vscode";
 import { GitProvider } from "./GitProvider";
 import { SvnProvider } from "./SvnProvider";
-import { LocalizationManager } from "../utils/LocalizationManager";
 
 /**
  * 源代码管理提供者接口

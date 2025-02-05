@@ -8,7 +8,7 @@ import { ZhipuAIProvider } from "./providers/ZhipuAIProvider";
 import { DashScopeProvider } from "./providers/DashScopeProvider";
 import { DoubaoProvider } from "./providers/DoubaoProvider";
 import { GeminiAIProvider } from "./providers/GeminiAIProvider";
-import { LocalizationManager } from "../utils/LocalizationManager";
+import { formatMessage } from "../utils/i18n/LocalizationManager";
 
 /**
  * AI提供者工厂类，负责创建和管理不同AI服务提供者的实例
@@ -103,12 +103,7 @@ export class AIProviderFactory {
           provider = new GeminiAIProvider();
           break;
         default:
-          throw new Error(
-            LocalizationManager.getInstance().format(
-              "provider.type.unknown",
-              type
-            )
-          );
+          throw new Error(formatMessage("provider.type.unknown", [type]));
       }
       this.providers.set(providerType, provider);
       this.providerTimestamps.set(providerType, Date.now());

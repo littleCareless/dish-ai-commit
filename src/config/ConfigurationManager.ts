@@ -9,7 +9,7 @@ import {
 import { EXTENSION_NAME } from "../constants";
 import { generateCommitMessageSystemPrompt } from "../prompt/prompt";
 import { AIProviderFactory } from "../ai/AIProviderFactory";
-import { LocalizationManager } from "../utils/LocalizationManager";
+import { getMessage } from "../utils/i18n";
 import { SCMFactory } from "../scm/SCMProvider";
 import {
   CONFIG_SCHEMA,
@@ -376,10 +376,8 @@ export class ConfigurationManager {
     requiredField: "apiKey" | "baseUrl"
   ): Promise<boolean> {
     const config = this.getConfiguration();
-    const locManager = LocalizationManager.getInstance();
     const providerConfig = config.providers[provider];
 
-    // 类型守卫：检查必需字段是否存在于提供商配置中
     if (
       !providerConfig ||
       !(requiredField in providerConfig) ||
@@ -387,12 +385,12 @@ export class ConfigurationManager {
     ) {
       const settingKey = `providers.${provider.toLowerCase()}.${requiredField.toLowerCase()}`;
       const action = await vscode.window.showErrorMessage(
-        locManager.getMessage(`${provider}.${requiredField}.missing`),
-        locManager.getMessage("button.yes"),
-        locManager.getMessage("button.no")
+        getMessage(`${provider}.${requiredField}.missing`),
+        getMessage("button.yes"),
+        getMessage("button.no")
       );
 
-      if (action === locManager.getMessage("button.yes")) {
+      if (action === getMessage("button.yes")) {
         await vscode.commands.executeCommand(
           "workbench.action.openSettings",
           `dish-ai-commit.${settingKey}`

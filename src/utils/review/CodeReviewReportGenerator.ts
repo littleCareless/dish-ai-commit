@@ -1,13 +1,11 @@
-import { CodeReviewResult, CodeReviewIssue } from "../ai/types";
+import { CodeReviewResult, CodeReviewIssue } from "../../ai/types";
 import * as vscode from "vscode";
-import { LocalizationManager } from "../utils/LocalizationManager";
+import { getMessage } from "../i18n";
 
 /**
  * 代码审查报告生成器，将代码审查结果转换为格式化的 Markdown 文档
  */
 export class CodeReviewReportGenerator {
-  private static readonly locManager = LocalizationManager.getInstance();
-
   /**
    * 不同严重程度对应的 emoji 图标
    * @private
@@ -59,12 +57,8 @@ export class CodeReviewReportGenerator {
    * @returns {string} Markdown 格式的报告头部
    */
   private static generateHeader(summary: string): string {
-    const title = LocalizationManager.getInstance().getMessage(
-      "codeReview.report.title"
-    );
-    const summaryLabel = LocalizationManager.getInstance().getMessage(
-      "codeReview.report.summary"
-    );
+    const title = getMessage("codeReview.report.title");
+    const summaryLabel = getMessage("codeReview.report.summary");
     return `# ${title}\n\n## ${summaryLabel}\n\n${summary}\n\n`;
   }
 
@@ -77,9 +71,7 @@ export class CodeReviewReportGenerator {
   private static generateDetailedFindings(
     sections: Record<string, CodeReviewIssue[]>
   ): string {
-    const findings = LocalizationManager.getInstance().getMessage(
-      "codeReview.report.findings"
-    );
+    const findings = getMessage("codeReview.report.findings");
     let markdown = `## ${findings}\n\n`;
 
     // 遍历每个文件的问题
@@ -107,12 +99,12 @@ export class CodeReviewReportGenerator {
     }: Line ${issue.startLine}${issue.endLine ? `-${issue.endLine}` : ""}\n\n`;
 
     // 添加问题描述和建议
-    section += `**${LocalizationManager.getInstance().getMessage(
-      "codeReview.issue.label"
-    )}** ${issue.description}\n\n`;
-    section += `**${LocalizationManager.getInstance().getMessage(
-      "codeReview.suggestion.label"
-    )}** ${issue.suggestion}\n\n`;
+    section += `**${getMessage("codeReview.issue.label")}** ${
+      issue.description
+    }\n\n`;
+    section += `**${getMessage("codeReview.suggestion.label")}** ${
+      issue.suggestion
+    }\n\n`;
 
     // 如果有代码示例，添加代码块
     if (issue.code) {
@@ -121,9 +113,7 @@ export class CodeReviewReportGenerator {
 
     // 如果有相关文档，添加链接
     if (issue.documentation) {
-      const docLabel = LocalizationManager.getInstance().getMessage(
-        "codeReview.documentation.label"
-      );
+      const docLabel = getMessage("codeReview.documentation.label");
       section += `📚 [${docLabel}](${issue.documentation})\n\n`;
     }
 

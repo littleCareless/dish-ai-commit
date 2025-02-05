@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { AIProviderFactory } from "../ai/AIProviderFactory";
-import { NotificationHandler } from "../utils/NotificationHandler";
-import { LocalizationManager } from "../utils/LocalizationManager";
+import { notify } from "../utils/notification";
+import { getMessage } from "../utils/i18n";
 
 /**
  * Service class for handling AI model selection via VS Code's quick pick interface
@@ -18,7 +18,6 @@ export class ModelPickerService {
     currentProvider: string,
     currentModel: string
   ): Promise<{ provider: string; model: string } | undefined> {
-    const locManager = LocalizationManager.getInstance();
     try {
       const providers = AIProviderFactory.getAllProviders();
       const modelsMap = new Map<string, string[]>();
@@ -26,7 +25,7 @@ export class ModelPickerService {
 
       console.log("providers", providers);
 
-      const progressMsg = locManager.getMessage("ai.model.loading");
+      const progressMsg = getMessage("ai.model.loading");
       await vscode.window.withProgress(
         {
           location: vscode.ProgressLocation.Notification,
@@ -64,23 +63,19 @@ export class ModelPickerService {
       // 如果所有provider都失败了,显示错误
       if (modelsMap.size === 0) {
         if (errors.length > 0) {
-          NotificationHandler.warn(
-            "model.list.partial.failed",
-            5000,
-            errors.join(", ")
-          );
+          await notify.warn("model.list.partial.failed", [errors.join(", ")], {
+            modal: true,
+          });
         }
-        NotificationHandler.error("model.list.all.failed");
+        await notify.error("model.list.all.failed");
         return undefined;
       }
 
       // 如果部分provider失败,显示警告
       if (errors.length > 0) {
-        NotificationHandler.warn(
-          "model.list.partial.failed",
-          5000,
-          errors.join(", ")
-        );
+        await notify.warn("model.list.partial.failed", [errors.join(", ")], {
+          modal: true,
+        });
       }
 
       // Prepare items for quick pick dialog
@@ -104,10 +99,8 @@ export class ModelPickerService {
       // Create and configure quick pick dialog
       const quickPick = vscode.window.createQuickPick();
       quickPick.items = items;
-      quickPick.title = locManager.getMessage("ai.model.picker.title");
-      quickPick.placeholder = locManager.getMessage(
-        "ai.model.picker.placeholder"
-      );
+      quickPick.title = getMessage("ai.model.picker.title");
+      quickPick.placeholder = getMessage("ai.model.picker.placeholder");
       quickPick.ignoreFocusOut = true;
 
       // Wait for user selection
@@ -127,8 +120,8 @@ export class ModelPickerService {
       }
       return undefined;
     } catch (error) {
-      console.error(locManager.getMessage("model.list.failed"), error);
-      NotificationHandler.error("model.list.failed");
+      console.error(getMessage("model.list.failed"), error);
+      await notify.error("model.list.failed");
       return undefined;
     }
   }

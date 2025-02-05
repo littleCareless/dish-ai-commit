@@ -10,8 +10,8 @@ import {
 import { generateCommitMessageSystemPrompt } from "../../prompt/prompt";
 import { getCodeReviewPrompt, getSystemPrompt } from "../utils/generateHelper";
 import { getWeeklyReportPrompt } from "../../prompt/weeklyReport";
-import { LocalizationManager } from "../../utils/LocalizationManager";
-import { CodeReviewReportGenerator } from "../../utils/CodeReviewReportGenerator";
+import { getMessage, formatMessage } from "../../utils/i18n";
+import { CodeReviewReportGenerator } from "../../utils/review/CodeReviewReportGenerator";
 
 interface DiffBlock {
   header: string;
@@ -37,11 +37,7 @@ export class VSCodeProvider implements AIProvider {
     try {
       const models = await vscode.lm.selectChatModels();
       if (!models || models.length === 0) {
-        throw new Error(
-          LocalizationManager.getInstance().getMessage(
-            "vscode.no.models.available"
-          )
-        );
+        throw new Error(getMessage("vscode.no.models.available"));
       }
 
       const chatModel =
@@ -59,9 +55,7 @@ export class VSCodeProvider implements AIProvider {
 
         try {
           if (params.diff.length > maxCodeCharacters) {
-            console.warn(
-              LocalizationManager.getInstance().getMessage("input.truncated")
-            );
+            console.warn(getMessage("input.truncated"));
           }
 
           const response = await chatModel.sendRequest(messages);
@@ -91,20 +85,14 @@ export class VSCodeProvider implements AIProvider {
             }
           }
 
-          throw new Error(
-            LocalizationManager.getInstance().format(
-              "vscode.generation.failed",
-              message
-            )
-          );
+          throw new Error(formatMessage("vscode.generation.failed", [message]));
         }
       }
     } catch (error) {
       throw new Error(
-        LocalizationManager.getInstance().format(
-          "vscode.generation.failed",
-          error instanceof Error ? error.message : String(error)
-        )
+        formatMessage("vscode.generation.failed", [
+          error instanceof Error ? error.message : String(error),
+        ])
       );
     }
   }
@@ -113,11 +101,7 @@ export class VSCodeProvider implements AIProvider {
     try {
       const models = await vscode.lm.selectChatModels();
       if (!models || models.length === 0) {
-        throw new Error(
-          LocalizationManager.getInstance().getMessage(
-            "vscode.no.models.available"
-          )
-        );
+        throw new Error(getMessage("vscode.no.models.available"));
       }
 
       const chatModel =
@@ -154,9 +138,7 @@ IMPORTANT: You must respond with a valid JSON object following this schema:
 
         try {
           if (params.diff.length > maxCodeCharacters) {
-            console.warn(
-              LocalizationManager.getInstance().getMessage("input.truncated")
-            );
+            console.warn(getMessage("input.truncated"));
           }
 
           const response = await chatModel.sendRequest(messages, {
@@ -216,19 +198,15 @@ IMPORTANT: You must respond with a valid JSON object following this schema:
             }
           }
           throw new Error(
-            LocalizationManager.getInstance().format(
-              "codeReview.generation.failed",
-              message
-            )
+            formatMessage("codeReview.generation.failed", [message])
           );
         }
       }
     } catch (error) {
       throw new Error(
-        LocalizationManager.getInstance().format(
-          "codeReview.generation.failed",
-          error instanceof Error ? error.message : String(error)
-        )
+        formatMessage("codeReview.generation.failed", [
+          error instanceof Error ? error.message : String(error),
+        ])
       );
     }
   }
@@ -240,11 +218,7 @@ IMPORTANT: You must respond with a valid JSON object following this schema:
     try {
       const models = await vscode.lm.selectChatModels();
       if (!models || models.length === 0) {
-        throw new Error(
-          LocalizationManager.getInstance().getMessage(
-            "vscode.no.models.available"
-          )
-        );
+        throw new Error(getMessage("vscode.no.models.available"));
       }
 
       const chatModel = model
@@ -266,10 +240,9 @@ IMPORTANT: You must respond with a valid JSON object following this schema:
       return { content: result.trim() };
     } catch (error) {
       throw new Error(
-        LocalizationManager.getInstance().format(
-          "weeklyReport.generation.failed",
-          error instanceof Error ? error.message : String(error)
-        )
+        formatMessage("weeklyReport.generation.failed", [
+          error instanceof Error ? error.message : String(error),
+        ])
       );
     }
   }

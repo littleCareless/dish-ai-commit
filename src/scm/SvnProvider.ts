@@ -2,8 +2,8 @@ import * as vscode from "vscode";
 import { ISCMProvider } from "./SCMProvider";
 import { promisify } from "util";
 import * as childProcess from "child_process";
-import { DiffSimplifier } from "../utils/DiffSimplifier";
-import { LocalizationManager } from "../utils/LocalizationManager";
+import { DiffSimplifier } from "../utils/diff/DiffSimplifier";
+import { getMessage, formatMessage } from "../utils/i18n";
 
 const exec = promisify(childProcess.exec);
 
@@ -33,9 +33,7 @@ export class SvnProvider implements ISCMProvider {
     this.api = svnExtension;
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (!workspaceRoot) {
-      throw new Error(
-        LocalizationManager.getInstance().getMessage("workspace.not.found")
-      );
+      throw new Error(getMessage("workspace.not.found"));
     }
     this.workspaceRoot = workspaceRoot;
   }
@@ -139,9 +137,7 @@ export class SvnProvider implements ISCMProvider {
       }
 
       if (!diffOutput.trim()) {
-        throw new Error(
-          LocalizationManager.getInstance().getMessage("diff.noChanges")
-        );
+        throw new Error(getMessage("diff.noChanges"));
       }
 
       // 获取配置
@@ -153,9 +149,7 @@ export class SvnProvider implements ISCMProvider {
       // 根据配置决定是否显示警告和简化diff
       if (enableSimplification) {
         vscode.window.showWarningMessage(
-          LocalizationManager.getInstance().getMessage(
-            "diff.simplification.warning"
-          )
+          getMessage("diff.simplification.warning")
         );
         return DiffSimplifier.simplify(diffOutput);
       }
@@ -169,10 +163,7 @@ export class SvnProvider implements ISCMProvider {
       );
       if (error instanceof Error) {
         vscode.window.showErrorMessage(
-          LocalizationManager.getInstance().format(
-            "git.diff.failed",
-            error.message
-          )
+          formatMessage("git.diff.failed", [error.message])
         );
       }
       throw error;
@@ -188,16 +179,12 @@ export class SvnProvider implements ISCMProvider {
   async commit(message: string, files?: string[]): Promise<void> {
     const repository = this.api?.repositories?.[0];
     if (!repository) {
-      throw new Error(
-        LocalizationManager.getInstance().getMessage("git.repository.not.found")
-      );
+      throw new Error(getMessage("git.repository.not.found"));
     }
 
     try {
       if (!files?.length) {
-        throw new Error(
-          LocalizationManager.getInstance().getMessage("svn.no.files.selected")
-        );
+        throw new Error(getMessage("svn.no.files.selected"));
       }
       await repository.commitFiles(files, message);
     } catch (error) {
@@ -205,9 +192,7 @@ export class SvnProvider implements ISCMProvider {
         "SVN commit failed:",
         error instanceof Error ? error.message : error
       );
-      throw new Error(
-        LocalizationManager.getInstance().format("svn.commit.failed", error)
-      );
+      throw new Error(formatMessage("svn.commit.failed", [error]));
     }
   }
 
@@ -219,9 +204,7 @@ export class SvnProvider implements ISCMProvider {
   async setCommitInput(message: string): Promise<void> {
     const repository = this.api?.repositories?.[0];
     if (!repository) {
-      throw new Error(
-        LocalizationManager.getInstance().getMessage("git.repository.not.found")
-      );
+      throw new Error(getMessage("git.repository.not.found"));
     }
 
     repository.inputBox.value = message;
@@ -235,9 +218,7 @@ export class SvnProvider implements ISCMProvider {
   async getCommitInput(): Promise<string> {
     const repository = this.api?.repositories?.[0];
     if (!repository) {
-      throw new Error(
-        LocalizationManager.getInstance().getMessage("git.repository.not.found")
-      );
+      throw new Error(getMessage("git.repository.not.found"));
     }
 
     return repository.inputBox.value;
