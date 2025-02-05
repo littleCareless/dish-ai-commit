@@ -5,6 +5,7 @@ import { SCMFactory } from "../scm/SCMProvider";
 import { ModelPickerService } from "../services/ModelPickerService";
 import { notify } from "../utils/notification/NotificationManager";
 import { getMessage, formatMessage } from "../utils/i18n";
+import { validateAndGetModel } from "../utils/ai/modelValidation";
 
 /**
  * 基础命令类,提供通用的命令执行功能
@@ -65,81 +66,46 @@ export abstract class BaseCommand {
     let model = configuration.base.model;
 
     if (!provider || !model) {
-      return this.selectAndUpdateModelConfiguration(provider, model);
+      return this.selectAndUpdateModelConfiguration(provider, model, true);
     }
 
     return { provider, model };
   }
 
   /**
-   * 获取模型并更新配置
-   * @param provider - AI提供商名称
-   * @param model - 模型名称
-   * @returns 更新后的提供商、模型和AI实例信息
-   * @throws Error 当无法获取模型列表或找不到指定模型时
-   */
-  protected async getModelAndUpdateConfiguration(
-    provider = "Ollama",
-    model = "Ollama"
-  ) {
-    let aiProvider = AIProviderFactory.getProvider(provider);
-    let models = await aiProvider.getModels();
-
-    if (!models || models.length === 0) {
-      const { provider: newProvider, model: newModel } =
-        await this.selectAndUpdateModelConfiguration(provider, model);
-      provider = newProvider;
-      model = newModel;
-
-      aiProvider = AIProviderFactory.getProvider(provider);
-      models = await aiProvider.getModels();
-
-      if (!models || models.length === 0) {
-        throw new Error(getMessage("model.list.empty"));
-      }
-    }
-
-    let selectedModel = models.find((m) => m.name === model);
-
-    if (!selectedModel) {
-      const { provider: newProvider, model: newModel } =
-        await this.selectAndUpdateModelConfiguration(provider, model);
-      provider = newProvider;
-      model = newModel;
-
-      aiProvider = AIProviderFactory.getProvider(provider);
-      models = await aiProvider.getModels();
-      selectedModel = models.find((m) => m.name === model);
-
-      if (!selectedModel) {
-        throw new Error(getMessage("model.notFound"));
-      }
-    }
-
-    return { provider, model, selectedModel, aiProvider };
-  }
-
-  /**
    * 选择模型并更新配置
    * @param provider - 当前AI提供商
    * @param model - 当前模型名称
+   * @param throwError - 是否抛出错误,默认为false
    * @returns 更新后的提供商和模型信息
    */
   protected async selectAndUpdateModelConfiguration(
     provider = "Ollama",
-    model = "Ollama"
+    model = "Ollama",
+    throwError = false
   ) {
-    const modelSelection = await this.showModelPicker(provider, model);
-    if (!modelSelection) {
-      return { provider, model };
+    try {
+      const result = await validateAndGetModel(provider, model);
+      return {
+        provider: result.provider,
+        model: result.model,
+        selectedModel: result.selectedModel,
+        aiProvider: result.aiProvider,
+      };
+    } catch (error: any) {
+      if (throwError) {
+        await notify.error(error.message);
+        throw error;
+      }
+      // 如果不抛出错误,返回原始值
+      const aiProvider = AIProviderFactory.getProvider(provider);
+      return {
+        provider,
+        model,
+        selectedModel: undefined,
+        aiProvider,
+      };
     }
-
-    const config = ConfigurationManager.getInstance();
-    await config.updateAIConfiguration(
-      modelSelection.provider,
-      modelSelection.model
-    );
-    return { provider: modelSelection.provider, model: modelSelection.model };
   }
 
   /**

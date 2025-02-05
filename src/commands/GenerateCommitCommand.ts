@@ -8,98 +8,12 @@ import { ModelPickerService } from "../services/ModelPickerService";
 import { notify } from "../utils/notification";
 import { getMessage, formatMessage } from "../utils/i18n";
 import { ProgressHandler } from "../utils/notification/ProgressHandler";
+import { validateAndGetModel } from "../utils/ai/modelValidation";
 
 /**
  * 提交信息生成命令类
  */
 export class GenerateCommitCommand extends BaseCommand {
-  /**
-   * 获取模型并更新配置
-   * @param provider - 当前AI提供商
-   * @param model - 当前模型名称
-   * @returns 更新后的提供商、模型和AI实例信息
-   * @throws Error 当无法获取模型列表或找不到指定模型时
-   */
-  protected async getModelAndUpdateConfiguration(
-    provider = "Ollama",
-    model = "Ollama"
-  ) {
-    let aiProvider = AIProviderFactory.getProvider(provider);
-    // 获取模型列表
-    let models = await aiProvider.getModels();
-
-    // 如果模型为空或无法获取，直接让用户选择模型
-    if (!models || models.length === 0) {
-      const { provider: newProvider, model: newModel } =
-        await this.selectAndUpdateModelConfiguration(provider, model);
-      provider = newProvider;
-      model = newModel;
-
-      // 获取更新后的模型列表
-      aiProvider = AIProviderFactory.getProvider(provider);
-      models = await aiProvider.getModels();
-
-      // 如果新的模型列表仍然为空，则抛出错误
-      if (!models || models.length === 0) {
-        throw new Error(getMessage("model.list.empty"));
-      }
-    }
-
-    // 查找已选择的模型
-    let selectedModel = models.find((m) => m.name === model);
-
-    // 如果没有找到对应的模型，弹窗让用户重新选择
-    if (!selectedModel) {
-      const { provider: newProvider, model: newModel } =
-        await this.selectAndUpdateModelConfiguration(provider, model);
-      provider = newProvider;
-      model = newModel;
-
-      // 获取更新后的模型列表
-      aiProvider = AIProviderFactory.getProvider(provider);
-      models = await aiProvider.getModels();
-
-      // 选择有效的模型
-      selectedModel = models.find((m) => m.name === model);
-
-      // 如果依然没有找到对应的模型，抛出错误
-      if (!selectedModel) {
-        throw new Error(getMessage("model.notFound"));
-      }
-    }
-
-    return { provider, model, selectedModel, aiProvider };
-  }
-
-  /**
-   * 选择模型并更新配置
-   * @param provider - 当前AI提供商
-   * @param model - 当前模型名称
-   * @returns 更新后的提供商和模型信息
-   */
-  protected async selectAndUpdateModelConfiguration(
-    provider = "Ollama",
-    model = "Ollama"
-  ) {
-    // 获取模型选择
-    const modelSelection = await this.showModelPicker(provider, model);
-
-    // 如果没有选择模型，则直接返回当前的 provider 和 model
-    if (!modelSelection) {
-      return { provider, model };
-    }
-
-    const config = ConfigurationManager.getInstance();
-    // 使用新的封装方法更新配置
-    await config.updateAIConfiguration(
-      modelSelection.provider,
-      modelSelection.model
-    );
-
-    // 返回更新后的 provider 和 model
-    return { provider: modelSelection.provider, model: modelSelection.model };
-  }
-
   /**
    * 处理AI配置
    * @returns AI提供商和模型信息
@@ -142,6 +56,7 @@ export class GenerateCommitCommand extends BaseCommand {
     if (!configResult) {
       return;
     }
+    const { provider, model } = configResult;
 
     try {
       // 检测SCM提供程序
@@ -154,20 +69,9 @@ export class GenerateCommitCommand extends BaseCommand {
       // 获取当前提交输入框内容
       const currentInput = await scmProvider.getCommitInput();
 
-      // 获取配置信息
+      // 获取配置信息以用于后续操作
       const config = ConfigurationManager.getInstance();
       const configuration = config.getConfiguration();
-
-      // 获取或更新AI提供商和模型配置
-      let provider = configuration.base.provider;
-      let model = configuration.base.model;
-
-      if (!provider || !model) {
-        const { provider: newProvider, model: newModel } =
-          await this.selectAndUpdateModelConfiguration(provider, model);
-        provider = newProvider;
-        model = newModel;
-      }
 
       // 使用进度提示生成提交信息
       const response = await ProgressHandler.withProgress(
@@ -191,7 +95,7 @@ export class GenerateCommitCommand extends BaseCommand {
             model: newModel,
             aiProvider,
             selectedModel,
-          } = await this.getModelAndUpdateConfiguration(provider, model);
+          } = await this.selectAndUpdateModelConfiguration(provider, model);
 
           // 生成提交信息
           const result = await aiProvider.generateResponse({

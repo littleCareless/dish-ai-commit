@@ -6,6 +6,7 @@ import {
   withProgress,
 } from "../utils/notification/NotificationManager";
 import * as path from "path";
+import { validateAndGetModel } from "../utils/ai/modelValidation";
 
 /**
  * 代码审查命令类
@@ -73,12 +74,10 @@ export class ReviewCodeCommand extends BaseCommand {
       const { config, configuration } = this.getExtConfig();
       let { provider, model } = configResult;
 
-      const {
-        provider: newProvider,
-        model: newModel,
-        aiProvider,
-        selectedModel,
-      } = await this.getModelAndUpdateConfiguration(provider, model);
+      const { aiProvider, selectedModel } = await validateAndGetModel(
+        provider,
+        model
+      );
 
       await withProgress(getMessage("reviewing.code"), async (progress) => {
         // 获取所有选中文件的差异

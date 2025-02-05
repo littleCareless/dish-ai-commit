@@ -11,7 +11,7 @@ import { generateCommitMessageSystemPrompt } from "../../prompt/prompt";
 import { getCodeReviewPrompt, getSystemPrompt } from "../utils/generateHelper";
 import { getWeeklyReportPrompt } from "../../prompt/weeklyReport";
 import { getMessage, formatMessage } from "../../utils/i18n";
-import { CodeReviewReportGenerator } from "../../utils/review/CodeReviewReportGenerator";
+import { CodeReviewReportGenerator } from "../../services/CodeReviewReportGenerator";
 
 interface DiffBlock {
   header: string;
