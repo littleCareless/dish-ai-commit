@@ -6,11 +6,11 @@
   "scm.not.detected": "未检测到支持的版本控制系统",
   "no.changes": "没有可提交的更改",
   "diff.too.long": "变更内容过长，超出模型最大限制。请减少选中的文件数量或内容长度。\n当前长度: {0} 字符\n最大限制: {1} 字符",
-  "commit.message.generated": "已将提交信息填入 {0} 提交框 (生成自 {1} - {2})",
-  "commit.message.write.failed": "写入提交信息失败: {0}",
-  "commit.message.copied": "提交信息已复制到剪贴板",
+  "commit.message.generated": "提交信息生成成功 (生成自 {1} - {2})",
+  "commit.message.write.failed": "写入提交信息到版本控制输入框失败: {0}",
+  "commit.message.copied": "提交信息已复制到剪贴板，请粘贴到版本控制系统的提交输入框中",
   "commit.message.copy.failed": "复制提交信息失败: {0}",
-  "commit.message.manual.copy": "提交信息已生成，请手动复制到提交框",
+  "commit.message.manual.copy": "提交信息已生成，请手动复制到提交框: \n {0}",
   "generate.commit.failed": "生成提交信息失败: {0}",
   "get.models.failed": "获取模型列表失败",
   "openai.config.required": "需要配置 OpenAI API 信息才能使用该功能，是否现在配置？",
@@ -99,6 +99,7 @@
   "review.results.title": "代码评审结果",
   "codeReview.generation.failed": "代码评审生成失败: {0}",
   "model.list.empty": "模型列表为空",
+  "model.list.partial.failed": "部分 AI 提供商模型列表获取失败: {0}",
   "no.changes.selected": "未选择任何待评审的文件",
   "please.select.valid.files": "选择的文件中包含无效项，请重新选择要评审的文件",
   "no.changes.found": "未找到需要评审的变更",
@@ -113,5 +114,6 @@
   "codeReview.report.findings": "详细问题",
   "codeReview.issue.label": "问题：",
   "codeReview.suggestion.label": "建议：",
-  "codeReview.documentation.label": "相关文档"
+  "codeReview.documentation.label": "相关文档",
+  "cli.commit.input.not.supported": "无法获取提交信息输入框实例"
 }

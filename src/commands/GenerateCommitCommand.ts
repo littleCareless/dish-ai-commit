@@ -220,36 +220,33 @@ export class GenerateCommitCommand extends BaseCommand {
 
       // 尝试设置提交信息
       if (response?.content) {
+        NotificationHandler.info(
+          locManager.format(
+            "commit.message.generated",
+            scmProvider.type.toUpperCase(),
+            provider,
+            model
+          )
+        );
         try {
           await scmProvider.setCommitInput(response.content);
-          NotificationHandler.info(
-            locManager.format(
-              "commit.message.generated",
-              scmProvider.type.toUpperCase(),
-              provider,
-              model
-            )
-          );
         } catch (error) {
-          // 处理写入失败的情况
+          // 写入失败,尝试复制到剪贴板
           if (error instanceof Error) {
-            NotificationHandler.error(
-              locManager.format("commit.message.write.failed", error.message)
-            );
-
-            // 尝试复制到剪贴板
             try {
               await vscode.env.clipboard.writeText(response.content);
+              NotificationHandler.error(
+                locManager.format("commit.message.write.failed", error.message)
+              );
               NotificationHandler.info(
                 locManager.getMessage("commit.message.copied")
               );
             } catch (error) {
-              // 处理复制失败的情况
+              // 复制也失败了,显示消息内容
               if (error instanceof Error) {
                 NotificationHandler.error(
                   locManager.format("commit.message.copy.failed", error.message)
                 );
-                // 提示手动复制
                 vscode.window.showInformationMessage(
                   locManager.getMessage("commit.message.manual.copy"),
                   response.content
