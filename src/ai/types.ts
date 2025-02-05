@@ -242,6 +242,11 @@ export type GeminiAIModels =
   | "gemini-1.5-pro"
   | "gemini-2.0-flash-exp";
 
+export type DeepseekModels =
+  | "deepseek-chat"
+  | "deepseek-coder"
+  | "deepseek-chat-pro";
+
 export type AIProviders =
   | "anthropic"
   | "github"
@@ -250,6 +255,7 @@ export type AIProviders =
   | "zhipu"
   | "dashscope"
   | "doubao"
+  | "deepseek"
   | "gemini";
 
 export type AIModels<Provider extends AIProviders = AIProviders> =
@@ -265,6 +271,8 @@ export type AIModels<Provider extends AIProviders = AIProviders> =
     ? DashScopeModels
     : Provider extends "doubao"
     ? DoubaoModels
+    : Provider extends "deepseek"
+    ? DeepseekModels
     : Provider extends "gemini"
     ? GeminiAIModels
     : OpenAIModels;

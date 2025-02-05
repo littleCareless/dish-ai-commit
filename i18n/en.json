@@ -91,7 +91,7 @@
   "gemini.apiKey.missing": "Gemini API Key is not configured. Would you like to configure it now?",
   "dashscope.apiKey.missing": "DashScope API Key is not configured. Would you like to configure it now?",
   "doubao.apiKey.missing": "Doubao API Key is not configured. Would you like to configure it now?",
-  "reviewing.code": "Reviewing code...",
+  "reviewing.code": "Reviewing code",
   "getting.file.changes": "Getting file changes...",
   "no.valid.changes.selected": "No valid changes selected for review",
   "reviewing.file": "file: {0}",

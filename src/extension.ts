@@ -3,8 +3,8 @@
 import * as vscode from "vscode";
 import { ConfigurationManager } from "./config/ConfigurationManager";
 import { registerCommands } from "./commands";
-import { LocalizationManager } from "./utils/LocalizationManager";
-import { NotificationHandler } from "./utils/NotificationHandler";
+import { initializeLocalization } from "./utils/i18n";
+import { notify, withProgress } from "./utils/notification/NotificationManager";
 
 /**
  * 在首次执行命令时激活扩展
@@ -17,7 +17,7 @@ export function activate(context: vscode.ExtensionContext) {
     console.log('Extension "dish-ai-commit-gen" is now active!');
 
     // 初始化本地化管理器
-    LocalizationManager.initialize(context);
+    initializeLocalization(context);
 
     // 初始化配置管理器并注册到生命周期
     context.subscriptions.push(ConfigurationManager.getInstance());
@@ -28,11 +28,9 @@ export function activate(context: vscode.ExtensionContext) {
   } catch (e) {
     console.error("Error activating extension:", e);
     // 向用户显示本地化的错误提示
-    NotificationHandler.error(
-      "extension.activation.failed",
-      3000,
-      e instanceof Error ? e.message : String(e)
-    );
+    notify.error("extension.activation.failed", [
+      e instanceof Error ? e.message : String(e),
+    ]);
     throw e; // 重新抛出以便VS Code处理
   }
 }

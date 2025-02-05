@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { promisify } from "util";
 import { exec } from "child_process";
 import { SvnUtils } from "./SvnUtils";
-import { LocalizationManager } from "../utils/LocalizationManager";
+import { getMessage } from "../utils/i18n";
 
 const execAsync = promisify(exec);
 
@@ -55,9 +55,7 @@ export class AuthorService {
       (await this.promptForAuthor());
 
     if (!author) {
-      throw new Error(
-        LocalizationManager.getInstance().getMessage("author.svn.not.found")
-      );
+      throw new Error(getMessage("author.svn.not.found"));
     }
 
     return author;
@@ -68,10 +66,9 @@ export class AuthorService {
    * @returns 用户输入的作者名称,如果用户取消则返回undefined
    */
   private async promptForAuthor(): Promise<string | undefined> {
-    const locManager = LocalizationManager.getInstance();
     return vscode.window.showInputBox({
-      prompt: locManager.getMessage("author.manual.input.prompt"),
-      placeHolder: locManager.getMessage("author.manual.input.placeholder"),
+      prompt: getMessage("author.manual.input.prompt"),
+      placeHolder: getMessage("author.manual.input.placeholder"),
     });
   }
 }

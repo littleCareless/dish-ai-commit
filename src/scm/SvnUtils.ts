@@ -2,8 +2,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import * as fs from "fs";
 import * as path from "path";
-import { LocalizationManager } from "../utils/LocalizationManager";
-
+import { getMessage } from "../utils/i18n";
 const execAsync = promisify(exec);
 
 /**
@@ -21,13 +20,8 @@ export class SvnUtils {
   ): Promise<string | undefined> {
     try {
       const { stdout } = await execAsync("svn info", { cwd: workspacePath });
-      // 改用LocalizationManager
       const authorMatch = stdout.match(
-        new RegExp(
-          `${LocalizationManager.getInstance().getMessage(
-            "svn.lastModifiedAuthor"
-          )} (.+)`
-        )
+        new RegExp(`${getMessage("svn.lastModifiedAuthor")} (.+)`)
       );
       return authorMatch?.[1]?.trim();
     } catch {
@@ -155,13 +149,8 @@ export class SvnUtils {
       .filter((block) => block.trim())
       .map((block) => {
         const usernameMatch = block.match(/Username: (.+)/);
-        // 改用LocalizationManager
         const realmMatch = block.match(
-          new RegExp(
-            `${LocalizationManager.getInstance().getMessage(
-              "svn.authRealm"
-            )} <([^>]+)>\\s*([^\\n]*)`
-          )
+          new RegExp(`${getMessage("svn.authRealm")} <([^>]+)>\\s*([^\\n]*)`)
         );
         return {
           username: usernameMatch?.[1]?.trim() || null,

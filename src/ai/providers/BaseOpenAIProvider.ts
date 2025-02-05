@@ -15,8 +15,8 @@ import {
 } from "../utils/generateHelper";
 
 import { getWeeklyReportPrompt } from "../../prompt/weeklyReport";
-import { CodeReviewReportGenerator } from "../../utils/CodeReviewReportGenerator";
-import { LocalizationManager } from "../../utils/LocalizationManager";
+import { CodeReviewReportGenerator } from "../../utils/review/CodeReviewReportGenerator";
+import { formatMessage } from "../../utils/i18n/LocalizationManager";
 
 /**
  * OpenAI提供者配置项接口
@@ -193,9 +193,9 @@ export abstract class BaseOpenAIProvider implements AIProvider {
             },
           };
         } catch (error) {
-          const message = LocalizationManager.getInstance().format(
+          const message = formatMessage(
             "codeReview.generation.failed",
-            error instanceof Error ? error.message : String(error)
+            [error instanceof Error ? error.message : String(error)]
           );
           throw new Error(message);
         }
@@ -244,9 +244,9 @@ export abstract class BaseOpenAIProvider implements AIProvider {
       };
     } catch (error) {
       throw new Error(
-        LocalizationManager.getInstance().format(
+        formatMessage(
           "weeklyReport.generation.failed",
-          error instanceof Error ? error.message : String(error)
+          [error instanceof Error ? error.message : String(error)]
         )
       );
     }

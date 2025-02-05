@@ -5,9 +5,9 @@ import { AIProviderFactory } from "../ai/AIProviderFactory";
 import { SCMFactory } from "../scm/SCMProvider";
 import { type ConfigKey } from "../config/types";
 import { ModelPickerService } from "../services/ModelPickerService";
-import { NotificationHandler } from "../utils/NotificationHandler";
-import { LocalizationManager } from "../utils/LocalizationManager";
-import { ProgressHandler } from "../utils/ProgressHandler";
+import { notify } from "../utils/notification";
+import { getMessage, formatMessage } from "../utils/i18n";
+import { ProgressHandler } from "../utils/notification/ProgressHandler";
 
 /**
  * 提交信息生成命令类
@@ -24,7 +24,6 @@ export class GenerateCommitCommand extends BaseCommand {
     provider = "Ollama",
     model = "Ollama"
   ) {
-    const locManager = LocalizationManager.getInstance();
     let aiProvider = AIProviderFactory.getProvider(provider);
     // 获取模型列表
     let models = await aiProvider.getModels();
@@ -42,7 +41,7 @@ export class GenerateCommitCommand extends BaseCommand {
 
       // 如果新的模型列表仍然为空，则抛出错误
       if (!models || models.length === 0) {
-        throw new Error(locManager.getMessage("model.list.empty"));
+        throw new Error(getMessage("model.list.empty"));
       }
     }
 
@@ -65,7 +64,7 @@ export class GenerateCommitCommand extends BaseCommand {
 
       // 如果依然没有找到对应的模型，抛出错误
       if (!selectedModel) {
-        throw new Error(locManager.getMessage("model.notFound"));
+        throw new Error(getMessage("model.notFound"));
       }
     }
 
@@ -144,12 +143,11 @@ export class GenerateCommitCommand extends BaseCommand {
       return;
     }
 
-    const locManager = LocalizationManager.getInstance();
     try {
       // 检测SCM提供程序
       const scmProvider = await SCMFactory.detectSCM();
       if (!scmProvider) {
-        NotificationHandler.error(locManager.getMessage("scm.not.detected"));
+        notify.error("scm.not.detected");
         return;
       }
 
@@ -173,10 +171,9 @@ export class GenerateCommitCommand extends BaseCommand {
 
       // 使用进度提示生成提交信息
       const response = await ProgressHandler.withProgress(
-        locManager.format(
-          "progress.generating.commit",
-          scmProvider?.type.toLocaleUpperCase()
-        ),
+        formatMessage("progress.generating.commit", [
+          scmProvider?.type.toLocaleUpperCase(),
+        ]),
         async (progress) => {
           // 获取选中文件的差异信息
           const selectedFiles = this.getSelectedFiles(resources);
@@ -184,8 +181,8 @@ export class GenerateCommitCommand extends BaseCommand {
 
           // 检查是否有变更
           if (!diffContent) {
-            NotificationHandler.info(locManager.getMessage("no.changes"));
-            throw new Error(locManager.getMessage("no.changes"));
+            notify.info("no.changes");
+            throw new Error(getMessage("no.changes"));
           }
 
           // 获取和更新AI模型配置
@@ -213,44 +210,41 @@ export class GenerateCommitCommand extends BaseCommand {
 
       // 处理生成结果
       if (!response) {
-        return NotificationHandler.info(
-          locManager.getMessage("no.commit.message.generated")
-        );
+        return notify.info("no.commit.message.generated");
       }
 
       // 尝试设置提交信息
       if (response?.content) {
-        NotificationHandler.info(
-          locManager.format(
-            "commit.message.generated",
-            scmProvider.type.toUpperCase(),
-            provider,
-            model
-          )
-        );
+        notify.info("commit.message.generated", [
+          scmProvider.type.toUpperCase(),
+          provider,
+          model,
+        ]);
         try {
           await scmProvider.setCommitInput(response.content);
         } catch (error) {
+          console.log("error", error);
           // 写入失败,尝试复制到剪贴板
           if (error instanceof Error) {
             try {
               await vscode.env.clipboard.writeText(response.content);
-              NotificationHandler.error(
-                locManager.format("commit.message.write.failed", error.message)
-              );
-              NotificationHandler.info(
-                locManager.getMessage("commit.message.copied")
-              );
+              notify.error("commit.message.write.failed", [error.message]);
+              notify.info("commit.message.copied", [error.message]);
             } catch (error) {
-              // 复制也失败了,显示消息内容
-              if (error instanceof Error) {
-                NotificationHandler.error(
-                  locManager.format("commit.message.copy.failed", error.message)
-                );
-                vscode.window.showInformationMessage(
-                  locManager.getMessage("commit.message.manual.copy"),
-                  response.content
-                );
+              // 尝试复制到剪贴板
+              try {
+                await vscode.env.clipboard.writeText(response.content);
+                notify.info("commit.message.copied");
+              } catch (error) {
+                // 复制也失败了,显示消息内容
+                if (error instanceof Error) {
+                  notify.error("commit.message.copy.failed", [error.message]);
+                  // 提示手动复制
+                  vscode.window.showInformationMessage(
+                    getMessage("commit.message.manual.copy"),
+                    response.content
+                  );
+                }
               }
             }
           }
@@ -260,9 +254,7 @@ export class GenerateCommitCommand extends BaseCommand {
       // 处理整体执行错误
       console.log("error", error);
       if (error instanceof Error) {
-        NotificationHandler.error(
-          locManager.format("generate.commit.failed", error.message)
-        );
+        notify.error("generate.commit.failed", [error.message]);
       }
     }
   }

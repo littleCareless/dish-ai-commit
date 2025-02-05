@@ -2,8 +2,8 @@ import * as vscode from "vscode";
 import { ISCMProvider } from "./SCMProvider";
 import { promisify } from "util";
 import * as childProcess from "child_process";
-import { DiffSimplifier } from "../utils/DiffSimplifier";
-import { LocalizationManager } from "../utils/LocalizationManager";
+import { DiffSimplifier } from "../utils/diff/DiffSimplifier";
+import { getMessage, formatMessage } from "../utils/i18n";
 
 const exec = promisify(childProcess.exec);
 
@@ -64,9 +64,7 @@ export class GitProvider implements ISCMProvider {
     this.api = gitExtension.getAPI(1);
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (!workspaceRoot) {
-      throw new Error(
-        LocalizationManager.getInstance().getMessage("workspace.not.found")
-      );
+      throw new Error(getMessage("workspace.not.found"));
     }
     this.workspaceRoot = workspaceRoot;
   }
@@ -159,9 +157,7 @@ export class GitProvider implements ISCMProvider {
       }
 
       if (!diffOutput.trim()) {
-        throw new Error(
-          LocalizationManager.getInstance().getMessage("diff.noChanges")
-        );
+        throw new Error(getMessage("diff.noChanges"));
       }
 
       // 获取配置
@@ -173,15 +169,11 @@ export class GitProvider implements ISCMProvider {
       // 根据配置决定是否显示警告和简化diff
       if (enableSimplification) {
         const result = await vscode.window.showWarningMessage(
-          LocalizationManager.getInstance().getMessage(
-            "diff.simplification.warning"
-          ),
-          LocalizationManager.getInstance().getMessage("button.yes"),
-          LocalizationManager.getInstance().getMessage("button.no")
+          getMessage("diff.simplification.warning"),
+          getMessage("button.yes"),
+          getMessage("button.no")
         );
-        if (
-          result === LocalizationManager.getInstance().getMessage("button.yes")
-        ) {
+        if (result === getMessage("button.yes")) {
           return DiffSimplifier.simplify(diffOutput);
         }
       }
@@ -192,15 +184,10 @@ export class GitProvider implements ISCMProvider {
       if (error instanceof Error) {
         console.error("Git diff error:", error); // 添加调试日志
         vscode.window.showErrorMessage(
-          LocalizationManager.getInstance().format(
-            "git.diff.failed",
-            error.message
-          )
+          formatMessage("git.diff.failed", [error.message])
         );
       }
-      throw new Error(
-        LocalizationManager.getInstance().getMessage("git.diff.failed")
-      );
+      throw new Error(getMessage("git.diff.failed"));
     }
   }
 
@@ -215,9 +202,7 @@ export class GitProvider implements ISCMProvider {
     const repository = api.repositories[0];
 
     if (!repository) {
-      throw new Error(
-        LocalizationManager.getInstance().getMessage("git.repository.not.found")
-      );
+      throw new Error(getMessage("git.repository.not.found"));
     }
 
     await repository.commit(message, { all: files ? false : true, files });
@@ -233,9 +218,7 @@ export class GitProvider implements ISCMProvider {
     const repository = api.repositories[0];
 
     if (!repository) {
-      throw new Error(
-        LocalizationManager.getInstance().getMessage("git.repository.not.found")
-      );
+      throw new Error(getMessage("git.repository.not.found"));
     }
 
     repository.inputBox.value = message;
@@ -251,9 +234,7 @@ export class GitProvider implements ISCMProvider {
     const repository = api.repositories[0];
 
     if (!repository) {
-      throw new Error(
-        LocalizationManager.getInstance().getMessage("git.repository.not.found")
-      );
+      throw new Error(getMessage("git.repository.not.found"));
     }
 
     return repository.inputBox.value;

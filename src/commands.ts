@@ -4,7 +4,7 @@ import { GenerateCommitCommand } from "./commands/GenerateCommitCommand";
 import { SelectModelCommand } from "./commands/SelectModelCommand";
 import { GenerateWeeklyReportCommand } from "./commands/GenerateWeeklyReportCommand";
 import { ReviewCodeCommand } from "./commands/ReviewCodeCommand";
-import { NotificationHandler } from "./utils/NotificationHandler";
+import { notify } from "./utils/notification/NotificationManager";
 
 /**
  * 管理VS Code命令的注册和销毁
@@ -44,11 +44,9 @@ export class CommandManager implements vscode.Disposable {
               await generateCommand.execute(resources);
             } catch (error) {
               // 处理commit生成失败
-              NotificationHandler.error(
-                "command.generate.failed",
-                3000,
-                error instanceof Error ? error.message : String(error)
-              );
+              notify.error("command.generate.failed", [
+                error instanceof Error ? error.message : String(error),
+              ]);
             }
           }
         ),
@@ -58,11 +56,9 @@ export class CommandManager implements vscode.Disposable {
             await selectModelCommand.execute();
           } catch (error) {
             // 处理模型选择失败
-            NotificationHandler.error(
-              "command.select.model.failed",
-              3000,
-              error instanceof Error ? error.message : String(error)
-            );
+            notify.error("command.select.model.failed", [
+              error instanceof Error ? error.message : String(error),
+            ]);
           }
         }),
         // 注册周报生成命令
@@ -73,11 +69,9 @@ export class CommandManager implements vscode.Disposable {
               await weeklyReportCommand.execute();
             } catch (error) {
               // 处理周报生成失败
-              NotificationHandler.error(
-                "command.weekly.report.failed",
-                3000,
-                error instanceof Error ? error.message : String(error)
-              );
+              notify.error("command.weekly.report.failed", [
+                error instanceof Error ? error.message : String(error),
+              ]);
             }
           }
         ),
@@ -89,22 +83,18 @@ export class CommandManager implements vscode.Disposable {
               await reviewCodeCommand.execute(resources);
             } catch (error) {
               // 处理代码审查失败
-              NotificationHandler.error(
-                "command.review.code.failed",
-                3000,
-                error instanceof Error ? error.message : String(error)
-              );
+              notify.error("command.review.code.failed", [
+                error instanceof Error ? error.message : String(error),
+              ]);
             }
           }
         )
       );
     } catch (error) {
       // 处理命令注册过程的整体失败
-      NotificationHandler.error(
-        "command.register.failed",
-        3000,
-        error instanceof Error ? error.message : String(error)
-      );
+      notify.error("command.register.failed", [
+        error instanceof Error ? error.message : String(error),
+      ]);
     }
   }
 

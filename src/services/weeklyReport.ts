@@ -11,7 +11,7 @@ import {
 /**
  * Represents a time period with start and end dates
  */
-interface Period {
+export interface Period {
   /** Start date in string format */
   startDate: string;
   /** End date in string format */

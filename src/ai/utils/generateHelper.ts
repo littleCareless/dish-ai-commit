@@ -1,9 +1,9 @@
+import { notify } from "../../utils/notification/NotificationManager";
 import { generateCommitMessageSystemPrompt } from "../../prompt/prompt";
 import { AIRequestParams } from "../types";
 import { ConfigurationManager } from "../../config/ConfigurationManager";
 import { CODE_REVIEW_PROMPT } from "../../prompt/codeReview";
-import { NotificationHandler } from "../../utils/NotificationHandler";
-import { LocalizationManager } from "../../utils/LocalizationManager";
+import { getMessage, formatMessage } from "../../utils/i18n";
 
 /**
  * AI 生成过程中可能遇到的错误类型枚举
@@ -74,9 +74,7 @@ export async function generateWithRetry<T>(
 
       // 如果原始输入被截断,发出警告
       if (params.diff.length > maxInputLength) {
-        NotificationHandler.warn(
-          LocalizationManager.getInstance().getMessage(`input.truncated`)
-        );
+        notify.warn(getMessage(`input.truncated`));
       }
 
       return await generateFn(truncatedPrompt);
@@ -97,11 +95,11 @@ export async function generateWithRetry<T>(
       }
 
       // 达到最大重试次数或遇到不可重试的错误,抛出异常
-      const errorMessage = LocalizationManager.getInstance().format(
+      const errorMessage = formatMessage(
         `${provider}.generation.failed`,
         error.message || String(error)
       );
-      NotificationHandler.error(errorMessage);
+      notify.error(errorMessage);
       throw new Error(errorMessage);
     }
   }

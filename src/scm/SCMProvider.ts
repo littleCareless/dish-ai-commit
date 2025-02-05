@@ -4,7 +4,6 @@ import * as path from "path";
 import { exec } from "child_process";
 import { GitProvider } from "./GitProvider";
 import { SvnProvider } from "./SvnProvider";
-import { LocalizationManager } from "../utils/LocalizationManager";
 import { CliSvnProvider } from "./CliSvnProvider";
 
 /**
@@ -44,16 +43,18 @@ export class SCMFactory {
    * @param workspaceRoot 工作区根目录
    * @returns {"git" | "svn" | undefined} SCM类型
    */
-  private static detectSCMFromDir(workspaceRoot: string): "git" | "svn" | undefined {
+  private static detectSCMFromDir(
+    workspaceRoot: string
+  ): "git" | "svn" | undefined {
     try {
       const gitPath = path.join(workspaceRoot, ".git");
       const svnPath = path.join(workspaceRoot, ".svn");
-      
+
       if (fs.existsSync(gitPath)) {
         return "git";
       }
       if (fs.existsSync(svnPath)) {
-        return "svn"; 
+        return "svn";
       }
       return undefined;
     } catch (error) {
@@ -95,11 +96,13 @@ export class SCMFactory {
       const scmType = this.detectSCMFromDir(workspaceRoot);
 
       const gitExtension = vscode.extensions.getExtension("vscode.git");
-      const svnExtension = vscode.extensions.getExtension("littleCareless.svn-scm-ai");
+      const svnExtension = vscode.extensions.getExtension(
+        "littleCareless.svn-scm-ai"
+      );
 
       // 如果检测到Git
       if (scmType === "git") {
-        const git = gitExtension?.exports 
+        const git = gitExtension?.exports
           ? new GitProvider(gitExtension.exports)
           : undefined;
         if (git && (await git.isAvailable())) {

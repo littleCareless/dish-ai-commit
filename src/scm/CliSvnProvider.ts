@@ -1,7 +1,7 @@
 import { exec } from "child_process";
 import { promisify } from "util";
 import { ISCMProvider } from "./SCMProvider";
-import { LocalizationManager } from "../utils/LocalizationManager";
+import { getMessage } from "../utils";
 
 const execAsync = promisify(exec);
 
@@ -44,11 +44,7 @@ export class CliSvnProvider implements ISCMProvider {
 
   // 由于是命令行方式,这两个方法可能用不到,但需要实现接口
   async setCommitInput(message: string): Promise<void> {
-    throw new Error(
-      LocalizationManager.getInstance().getMessage(
-        "cli.commit.input.not.supported"
-      )
-    );
+    throw new Error(getMessage("cli.commit.input.not.supported"));
   }
 
   async getCommitInput(): Promise<string> {

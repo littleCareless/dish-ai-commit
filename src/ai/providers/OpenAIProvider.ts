@@ -1,6 +1,6 @@
 import { ConfigurationManager } from "../../config/ConfigurationManager";
-import { LocalizationManager } from "../../utils/LocalizationManager";
-import { NotificationHandler } from "../../utils/NotificationHandler";
+import { getMessage } from "../../utils/i18n";
+import { notify } from "../../utils/notification/NotificationManager";
 import { type AIModel } from "../types";
 import { BaseOpenAIProvider } from "./BaseOpenAIProvider";
 
@@ -134,19 +134,11 @@ export class OpenAIProvider extends BaseOpenAIProvider {
   async refreshModels(): Promise<string[]> {
     try {
       const models = await this.openai.models.list();
-      NotificationHandler.info(
-        LocalizationManager.getInstance().getMessage(
-          "openai.models.update.success"
-        )
-      );
+      notify.info("openai.models.update.success");
       return models.data.map((model) => model.id);
     } catch (error) {
       console.error("Failed to fetch OpenAI models:", error);
-      NotificationHandler.error(
-        LocalizationManager.getInstance().getMessage(
-          "openai.models.fetch.failed"
-        )
-      );
+      notify.error("openai.models.fetch.failed");
       return [];
     }
   }

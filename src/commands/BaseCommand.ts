@@ -3,8 +3,8 @@ import { ConfigurationManager } from "../config/ConfigurationManager";
 import { AIProviderFactory } from "../ai/AIProviderFactory";
 import { SCMFactory } from "../scm/SCMProvider";
 import { ModelPickerService } from "../services/ModelPickerService";
-import { NotificationHandler } from "../utils/NotificationHandler";
-import { LocalizationManager } from "../utils/LocalizationManager";
+import { notify } from "../utils/notification/NotificationManager";
+import { getMessage, formatMessage } from "../utils/i18n";
 
 /**
  * 基础命令类,提供通用的命令执行功能
@@ -15,7 +15,7 @@ export abstract class BaseCommand {
 
   /**
    * 创建命令实例
-   * @param context - VSCode扩展上下文
+   * @param context - VSCode扩展上下下文
    */
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
@@ -27,9 +27,7 @@ export abstract class BaseCommand {
    */
   protected async validateConfig(): Promise<boolean> {
     if (!(await ConfigurationManager.getInstance().validateConfiguration())) {
-      NotificationHandler.error(
-        LocalizationManager.getInstance().getMessage("command.execution.failed")
-      );
+      await notify.error(getMessage("command.execution.failed"));
       return false;
     }
     return true;
@@ -46,9 +44,7 @@ export abstract class BaseCommand {
   ): Promise<void> {
     console.error(errorMessage, error);
     if (error instanceof Error) {
-      NotificationHandler.error(
-        LocalizationManager.getInstance().format(errorMessage, error.message)
-      );
+      await notify.error(errorMessage, [error.message]);
     }
   }
 
@@ -86,7 +82,6 @@ export abstract class BaseCommand {
     provider = "Ollama",
     model = "Ollama"
   ) {
-    const locManager = LocalizationManager.getInstance();
     let aiProvider = AIProviderFactory.getProvider(provider);
     let models = await aiProvider.getModels();
 
@@ -100,7 +95,7 @@ export abstract class BaseCommand {
       models = await aiProvider.getModels();
 
       if (!models || models.length === 0) {
-        throw new Error(locManager.getMessage("model.list.empty"));
+        throw new Error(getMessage("model.list.empty"));
       }
     }
 
@@ -117,7 +112,7 @@ export abstract class BaseCommand {
       selectedModel = models.find((m) => m.name === model);
 
       if (!selectedModel) {
-        throw new Error(locManager.getMessage("model.notFound"));
+        throw new Error(getMessage("model.notFound"));
       }
     }
 
@@ -189,11 +184,6 @@ export abstract class BaseCommand {
     ];
   }
 
-  /** 获取本地化管理器实例 */
-  protected get locManager(): LocalizationManager {
-    return LocalizationManager.getInstance();
-  }
-
   /**
    * 检测并获取SCM提供程序
    * @returns SCM提供程序实例
@@ -201,7 +191,7 @@ export abstract class BaseCommand {
   protected async detectSCMProvider() {
     const scmProvider = await SCMFactory.detectSCM();
     if (!scmProvider) {
-      NotificationHandler.error(this.locManager.getMessage("scm.not.detected"));
+      await notify.error(getMessage("scm.not.detected"));
       return;
     }
     return scmProvider;
