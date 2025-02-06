@@ -4,7 +4,7 @@ import { GenerateCommitCommand } from "./commands/GenerateCommitCommand";
 import { SelectModelCommand } from "./commands/SelectModelCommand";
 import { GenerateWeeklyReportCommand } from "./commands/GenerateWeeklyReportCommand";
 import { ReviewCodeCommand } from "./commands/ReviewCodeCommand";
-import { notify } from "./utils/notification/NotificationManager";
+import { notify } from "./utils";
 
 /**
  * 管理VS Code命令的注册和销毁
