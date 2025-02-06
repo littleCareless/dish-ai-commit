@@ -35,7 +35,7 @@ export class WeeklyReportMessageHandler {
         command: "report",
         data: report,
       });
-
+      console.log("message.data.period", message.data.period);
       const formattedPeriod = this.formatPeriod(message.data.period);
       console.log("formattedPeriod", formattedPeriod);
       notify.info("weeklyReport.generation.success", [formattedPeriod, author]);
@@ -46,20 +46,17 @@ export class WeeklyReportMessageHandler {
     }
   }
 
-  private formatPeriod(period: string): string {
-    const now = new Date();
-    const weeks = parseInt(period);
-    const pastDate = new Date(now.setDate(now.getDate() - weeks * 7));
-
-    const formatDate = (date: Date) => {
+  private formatPeriod(period: { startDate: string; endDate: string }): string {
+    const formatDate = (dateStr: string) => {
+      const date = new Date(dateStr);
       const yyyy = date.getFullYear();
       const mm = String(date.getMonth() + 1).padStart(2, "0");
       const dd = String(date.getDate()).padStart(2, "0");
       return `${yyyy} ${mm} ${dd}`;
     };
 
-    const endDate = formatDate(new Date());
-    const startDate = formatDate(pastDate);
+    const startDate = formatDate(period.startDate);
+    const endDate = formatDate(period.endDate);
     return `${startDate} - ${endDate}`;
   }
 }
