@@ -242,10 +242,7 @@ export type GeminiAIModels =
   | "gemini-1.5-pro"
   | "gemini-2.0-flash-exp";
 
-export type DeepseekModels =
-  | "deepseek-chat"
-  | "deepseek-coder"
-  | "deepseek-chat-pro";
+export type DeepseekModels = "deepseek-chat" | "deepseek-reasoner";
 
 export type AIProviders =
   | "anthropic"

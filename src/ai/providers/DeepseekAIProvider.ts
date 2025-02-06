@@ -10,32 +10,30 @@ const deepseekModels: AIModel[] = [
   {
     id: "deepseek-chat",
     name: "Deepseek Chat - 通用大语言模型: 对话流畅自然,知识面广",
-    maxTokens: { input: 32768, output: 4096 },
+    maxTokens: { input: 65536, output: 8192 },
     provider: { id: "deepseek", name: "deepseek" },
     default: true,
     capabilities: {
       streaming: true,
       functionCalling: true,
     },
+    cost: {
+      input: 0.000001,
+      output: 0.000002,
+    },
   },
   {
-    id: "deepseek-coder",
-    name: "Deepseek Coder - 代码助手: 专注于代码生成与技术问答",
-    maxTokens: { input: 32768, output: 4096 },
+    id: "deepseek-reasoner",
+    name: "Deepseek Reasoner - 强化推理能力的大模型",
+    maxTokens: { input: 65536, output: 8192 },
     provider: { id: "deepseek", name: "deepseek" },
     capabilities: {
       streaming: true,
       functionCalling: true,
     },
-  },
-  {
-    id: "deepseek-chat-pro",
-    name: "Deepseek Chat Pro - 商业版: 性能全面提升的企业级模型",
-    maxTokens: { input: 32768, output: 4096 },
-    provider: { id: "deepseek", name: "deepseek" },
-    capabilities: {
-      streaming: true,
-      functionCalling: true,
+    cost: {
+      input: 0.000004,
+      output: 0.000016,
     },
   },
 ];
