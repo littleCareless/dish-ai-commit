@@ -6,7 +6,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.6.3 (2025-02-06)
+
+### 🎫 Chores
+
+- **scm**: Optimize version control system detection and commit message processing ([d92553e](https://github.com/littleCareless/dish-ai-commit/commit/d92553e))
+
 ## 0.6.2 (2025-02-03)
+
+### 🎫 Chores
+
+- **release**: Release v0.6.2 ([ed75871](https://github.com/littleCareless/dish-ai-commit/commit/ed75871))
 
 ### 🐛 Bug Fixes
 

@@ -6,7 +6,17 @@
 
 更新日志格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.6.3 (2025-02-06)
+
+### 🎫 Chores
+
+- **scm**: 优化版本控制系统检测和提交消息处理 ([d92553e](https://github.com/littleCareless/dish-ai-commit/commit/d92553e))
+
 ## 0.6.2 (2025-02-03)
+
+### 🎫 Chores
+
+- **release**: 发布 v0.6.2 版本 ([ed75871](https://github.com/littleCareless/dish-ai-commit/commit/ed75871))
 
 ### 🐛 Bug Fixes
 
