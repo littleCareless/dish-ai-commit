@@ -115,5 +115,12 @@
   "codeReview.issue.label": "Issue:",
   "codeReview.suggestion.label": "Suggestion:",
   "codeReview.documentation.label": "Documentation",
-  "cli.commit.input.not.supported": "Unable to access the commit message input box instance"
+  "cli.commit.input.not.supported": "Unable to access the commit message input box instance",
+  "svn.executable.not.found": "SVN executable not found",
+  "svn.path.detection.failed": "Failed to detect SVN path: {0}",
+  "svn.initialization.failed": "SVN initialization failed: {0}",
+  "svn.version.check.failed": "Failed to check SVN version: {0}", 
+  "svn.config.load.failed": "Failed to load SVN configuration: {0}",
+  "svn.invalid.env.config": "Invalid SVN environment configuration",
+  "svn.not.initialized": "SVN provider not initialized"
 }

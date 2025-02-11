@@ -115,5 +115,12 @@
   "codeReview.issue.label": "问题：",
   "codeReview.suggestion.label": "建议：",
   "codeReview.documentation.label": "相关文档",
-  "cli.commit.input.not.supported": "无法获取提交信息输入框实例"
+  "cli.commit.input.not.supported": "无法获取提交信息输入框实例",
+  "svn.executable.not.found": "无法找到SVN可执行文件",
+  "svn.path.detection.failed": "检测SVN路径失败: {0}",
+  "svn.initialization.failed": "SVN初始化失败: {0}", 
+  "svn.version.check.failed": "检查SVN版本失败: {0}",
+  "svn.config.load.failed": "加载SVN配置失败: {0}",
+  "svn.invalid.env.config": "无效的SVN环境配置",
+  "svn.not.initialized": "SVN提供程序未初始化"
 }
