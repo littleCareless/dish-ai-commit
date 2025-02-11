@@ -85,7 +85,7 @@ export class VSCodeProvider implements AIProvider {
             }
           }
 
-          throw new Error(formatMessage("vscode.generation.failed", [message]));
+          throw new Error(message);
         }
       }
     } catch (error) {
