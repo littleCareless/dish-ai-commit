@@ -58,8 +58,6 @@ export class ModelPickerService {
         }
       );
 
-      console.log("1111");
-
       // 如果所有provider都失败了,显示错误
       if (modelsMap.size === 0) {
         if (errors.length > 0) {
