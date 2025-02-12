@@ -5,39 +5,41 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
-# 0.7.0 (2025-02-11)
 
-
-### ♻ Code Refactoring
-
-* **ai**: 重构模型验证和选择逻辑 ([c660a2d](https://github.com/littleCareless/dish-ai-commit/commit/c660a2d))
-* **ai**: 重构模型验证和选择逻辑 ([4bd0e55](https://github.com/littleCareless/dish-ai-commit/commit/4bd0e55))
-* **deepseek**: 调整模型配置和类型定义 ([2b231df](https://github.com/littleCareless/dish-ai-commit/commit/2b231df))
-* **deepseek**: 调整模型配置和类型定义 ([1f08e97](https://github.com/littleCareless/dish-ai-commit/commit/1f08e97))
-* **utils**: 重构通知、本地化和工具类结构 ([b8550cd](https://github.com/littleCareless/dish-ai-commit/commit/b8550cd))
-* **utils**: 重构通知、本地化和工具类结构 ([9a2b4cf](https://github.com/littleCareless/dish-ai-commit/commit/9a2b4cf))
-
-
-### ✨ Features
-
-* **model**: 优化模型提供服务 ([ff9c098](https://github.com/littleCareless/dish-ai-commit/commit/ff9c098))
-* **svn**: 增强 SVN 插件的路径检测与日志管理 ([c90a69d](https://github.com/littleCareless/dish-ai-commit/commit/c90a69d))
-
+## 0.7.1 (2025-02-12)
 
 ### 🎫 Chores
 
-* **error**: 添加 SVN 相关错误提示文案 ([4972c4b](https://github.com/littleCareless/dish-ai-commit/commit/4972c4b))
-* **locale**: 优化周报生成完成的提示语 ([efebbe3](https://github.com/littleCareless/dish-ai-commit/commit/efebbe3))
-* **release**: 发布 v0.6.3 版本 ([db6ff67](https://github.com/littleCareless/dish-ai-commit/commit/db6ff67))
+* **build**: Add package release script and update configuration file ([10e2211](https://github.com/littleCareless/dish-ai-commit/commit/10e2211))
+* **release**: Release v0.7.0 ([fe25433](https://github.com/littleCareless/dish-ai-commit/commit/fe25433))
 
+# 0.7.0 (2025-02-11)
+
+### ♻ Code Refactoring
+
+* **ai**: Refactor model validation and selection logic ([c660a2d](https://github.com/littleCareless/dish-ai-commit/commit/c660a2d))
+* **ai**: Refactor model validation and selection logic ([4bd0e55](https://github.com/littleCareless/dish-ai-commit/commit/4bd0e55))
+* **deepseek**: Adjust model configuration and type definition ([2b231df](https://github.com/littleCareless/dish-ai-commit/commit/2b231df))
+* **deepseek**: Adjust model configuration and type definition ([1f08e97](https://github.com/littleCareless/dish-ai-commit/commit/1f08e97))
+* **utils**: Refactor notification, localization and tool class structure ([b8550cd](https://github.com/littleCareless/dish-ai-commit/commit/b8550cd))
+* **utils**: Refactor notification, localization and tool class structure ([9a2b4cf](https://github.com/littleCareless/dish-ai-commit/commit/9a2b4cf))
+
+### ✨ Features
+
+* **model**: Optimize model service provision ([ff9c098](https://github.com/littleCareless/dish-ai-commit/commit/ff9c098))
+* **svn**: Enhance the path detection and log management of the SVN plug-in ([c90a69d](https://github.com/littleCareless/dish-ai-commit/commit/c90a69d))
+
+### 🎫 Chores
+
+* **error**: Add SVN related error prompts ([4972c4b](https://github.com/littleCareless/dish-ai-commit/commit/4972c4b))
+
+* **locale**: Optimize the prompt for the completion of the weekly report generation ([efebbe3](https://github.com/littleCareless/dish-ai-commit/commit/efebbe3))
+
+* **release**: Release v0.6.3 ([db6ff67](https://github.com/littleCareless/dish-ai-commit/commit/db6ff67))
 
 ### 🐛 Bug Fixes
 
-* **provider**: 优化 VSCode 提供器错误信息处理 ([9ccb51a](https://github.com/littleCareless/dish-ai-commit/commit/9ccb51a))
-
-
-
-
+* **provider**: Optimize VSCode provider error message handling ([9ccb51a](https://github.com/littleCareless/dish-ai-commit/commit/9ccb51a))
 
 ## 0.6.3 (2025-02-06)
 
