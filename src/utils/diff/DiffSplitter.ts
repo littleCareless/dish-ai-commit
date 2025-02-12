@@ -1,9 +1,5 @@
-import { DiffChunk } from './types';
+import { DiffChunk } from "./types";
 
-/**
- * 用于将 Git 和 SVN 的差异文本拆分为独立的文件差异块
- * @class DiffSplitter
- */
 export class DiffSplitter {
   /**
    * 将 Git diff 输出拆分为独立的文件差异块

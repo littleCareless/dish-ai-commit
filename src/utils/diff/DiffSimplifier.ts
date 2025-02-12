@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
-import { DiffConfig } from './types';
+import { DiffConfig } from "./types";
+import { getDiffConfig } from "./types";
 
 /**
  * 用于简化和格式化差异文本的工具类
@@ -24,15 +25,7 @@ export class DiffSimplifier {
     if (this.configCache) {
       return this.configCache;
     }
-
-    const config = vscode.workspace.getConfiguration("dish-ai-commit");
-    this.configCache = {
-      enabled: config.get<boolean>("enableDiffSimplification") ?? false,
-      contextLines: config.get<number>("diffSimplification.contextLines") ?? 3,
-      maxLineLength:
-        config.get<number>("diffSimplification.maxLineLength") ?? 120,
-    };
-
+    this.configCache = getDiffConfig();
     return this.configCache;
   }
 
@@ -64,27 +57,27 @@ export class DiffSimplifier {
     let skipCount = 0;
 
     for (let i = 0; i < lines.length; i++) {
-      const line = lines[i];
+      let line = lines[i];
 
-      // 保留 diff 头信息（Index、===、---、+++）
+      // 当启用简化时,执行空格压缩
+      line = this.compressLine(line);
+
       if (this.isHeaderLine(line)) {
         simplified.push(line);
         continue;
       }
 
-      // 处理修改行（以 + 或 - 开头）
       if (this.isChangeLine(line)) {
         simplified.push(this.truncateLine(line, config.maxLineLength));
         skipCount = 0;
         continue;
       }
 
-      // 处理上下文行，保留配置的行数
       if (skipCount < config.contextLines) {
         simplified.push(this.truncateLine(line, config.maxLineLength));
         skipCount++;
       } else if (skipCount === config.contextLines) {
-        simplified.push("..."); // 添加省略标记
+        simplified.push("...");
         skipCount++;
       }
     }
@@ -107,14 +100,46 @@ export class DiffSimplifier {
     return `${line.substring(0, maxLength - ellipsis.length)}${ellipsis}`;
   }
 
+  /**
+   * 压缩行中的空格
+   * - 合并连续空格为单个空格
+   * - 去除行尾空格
+   * - 保留行首缩进(最多保留2个空格)
+   */
+  private static compressLine(line: string): string {
+    if (!line) return line;
+
+    // 保留差异标记(+/-等)
+    const prefix = line.match(/^[+ -]/)?.at(0) ?? "";
+    let content = prefix ? line.substring(1) : line;
+
+    // 处理行首缩进
+    const indent = content.match(/^\s*/)?.at(0) ?? "";
+    content = content.substring(indent.length);
+
+    // 压缩空格
+    content = content
+      .trim() // 去除首尾空格
+      .replace(/\s+/g, " "); // 合并连续空格
+
+    // 重建行,保留最多2个缩进空格
+    return (
+      prefix +
+      (indent.length > 0 ? " ".repeat(Math.min(2, indent.length)) : "") +
+      content
+    );
+  }
+
   private static isHeaderLine(line: string): boolean {
-    return line.startsWith('Index:') || 
-           line.startsWith('===') || 
-           line.startsWith('---') || 
-           line.startsWith('+++');
+    return (
+      line.startsWith("Index:") ||
+      line.startsWith("===") ||
+      line.startsWith("---") ||
+      line.startsWith("+++")
+    );
   }
 
   private static isChangeLine(line: string): boolean {
-    return line.startsWith('+') || line.startsWith('-');
+    return line.startsWith("+") || line.startsWith("-");
   }
 }
