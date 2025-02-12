@@ -322,6 +322,7 @@
     "ollama": "^0.5.11",
     "openai": "^4.77.0"
   },
+  "bundleDependencies": ["inversify", "ollama", "openai"],
   "resolutions": {
     "@types/node": "16.x"
   },
