@@ -289,7 +289,9 @@
     "commit": "git add . && git-cz",
     "release": "standard-version --preset gitmoji-config",
     "changelog": "conventional-changelog -i CHANGELOG.md -s -r 0",
-    "update-config": "ts-node ./src/scripts/updateConfig.ts"
+    "update-config": "ts-node ./src/scripts/updateConfig.ts",
+    "package": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce package",
+    "publish": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce publish"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.6.1",
