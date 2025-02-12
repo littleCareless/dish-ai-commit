@@ -19,6 +19,8 @@ export const CONFIG_KEYS = {
   "PROVIDERS_OLLAMA_BASEURL": "dish-ai-commit.providers.ollama.baseUrl",
   "PROVIDERS_GEMINI": "dish-ai-commit.providers.gemini",
   "PROVIDERS_GEMINI_APIKEY": "dish-ai-commit.providers.gemini.apiKey",
+  "PROVIDERS_DEEPSEEK": "dish-ai-commit.providers.deepseek",
+  "PROVIDERS_DEEPSEEK_APIKEY": "dish-ai-commit.providers.deepseek.apiKey",
   "FEATURES": "dish-ai-commit.features",
   "FEATURES_CODEANALYSIS": "dish-ai-commit.features.codeAnalysis",
   "FEATURES_CODEANALYSIS_SIMPLIFYDIFF": "dish-ai-commit.features.codeAnalysis.simplifyDiff",
@@ -30,6 +32,5 @@ export const CONFIG_KEYS = {
   "FEATURES_WEEKLYREPORT": "dish-ai-commit.features.weeklyReport",
   "FEATURES_WEEKLYREPORT_SYSTEMPROMPT": "dish-ai-commit.features.weeklyReport.systemPrompt",
   "FEATURES_CODEREVIEW": "dish-ai-commit.features.codeReview",
-  "FEATURES_CODEREVIEW_ENABLED": "dish-ai-commit.features.codeReview.enabled",
   "FEATURES_CODEREVIEW_SYSTEMPROMPT": "dish-ai-commit.features.codeReview.systemPrompt"
 } as const;

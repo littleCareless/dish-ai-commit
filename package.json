@@ -143,7 +143,8 @@
             "Zhipu",
             "DashScope",
             "Doubao",
-            "Gemini"
+            "Gemini",
+            "Deepseek"
           ]
         },
         "dish-ai-commit.base.model": {
@@ -186,6 +187,11 @@
           "type": "string",
           "default": "",
           "description": "Gemini AI API Key"
+        },
+        "dish-ai-commit.providers.deepseek.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Deepseek AI API Key"
         },
         "dish-ai-commit.features.codeAnalysis.simplifyDiff": {
           "type": "boolean",
@@ -322,7 +328,11 @@
     "ollama": "^0.5.11",
     "openai": "^4.77.0"
   },
-  "bundleDependencies": ["inversify", "ollama", "openai"],
+  "bundleDependencies": [
+    "inversify",
+    "ollama",
+    "openai"
+  ],
   "resolutions": {
     "@types/node": "16.x"
   },
