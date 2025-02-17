@@ -11,7 +11,7 @@ export const CONFIG_SCHEMA = {
     language: {
       type: "string",
       default: "Simplified Chinese",
-      description: "Commit message language",
+      description: "Commit message language / 提交信息语言",
       enum: [
         "Simplified Chinese",
         "Traditional Chinese",
@@ -57,7 +57,7 @@ export const CONFIG_SCHEMA = {
     },
     systemPrompt: {
       type: "string",
-      description: "Custom system prompt",
+      description: "Custom system prompt / 自定义系统提示语",
       default: "",
     },
     provider: {
@@ -73,12 +73,12 @@ export const CONFIG_SCHEMA = {
         "Gemini",
         "Deepseek", // 添加Deepseek选项
       ],
-      description: "AI provider",
+      description: "AI provider / AI 提供商",
     },
     model: {
       type: "string",
       default: "gpt-3.5-turbo",
-      description: "AI model",
+      description: "AI model / AI 模型",
       scope: "machine",
     },
   },
@@ -88,54 +88,54 @@ export const CONFIG_SCHEMA = {
       apiKey: {
         type: "string",
         default: "",
-        description: "OpenAI API Key",
+        description: "OpenAI API Key / OpenAI API 密钥",
       },
       baseUrl: {
         type: "string",
         default: "https://api.openai.com/v1",
-        description: "OpenAI API Base URL",
+        description: "OpenAI API Base URL / OpenAI API 基础地址",
       },
     },
     zhipu: {
       apiKey: {
         type: "string",
         default: "",
-        description: "Zhipu AI API Key",
+        description: "Zhipu AI API Key / 智谱 AI API 密钥",
       },
     },
     dashscope: {
       apiKey: {
         type: "string",
         default: "",
-        description: "DashScope API Key",
+        description: "DashScope API Key / 灵积 API 密钥",
       },
     },
     doubao: {
       apiKey: {
         type: "string",
         default: "",
-        description: "Doubao API Key",
+        description: "Doubao API Key / 豆包 API 密钥",
       },
     },
     ollama: {
       baseUrl: {
         type: "string",
         default: "http://localhost:11434",
-        description: "Ollama API Base URL",
+        description: "Ollama API Base URL / Ollama API 基础地址",
       },
     },
     gemini: {
       apiKey: {
         type: "string",
         default: "",
-        description: "Gemini AI API Key",
+        description: "Gemini AI API Key / Gemini AI API 密钥",
       },
     },
     deepseek: {
       apiKey: {
         type: "string",
         default: "",
-        description: "Deepseek AI API Key",
+        description: "Deepseek AI API Key / Deepseek AI API 密钥",
       },
     },
   },
@@ -146,17 +146,7 @@ export const CONFIG_SCHEMA = {
         type: "boolean",
         default: false,
         description:
-          "Enable diff content simplification (Warning: Enabling this feature may result in less accurate commit messages)",
-      },
-      maxLineLength: {
-        type: "number",
-        default: 120,
-        description: "Maximum line length after simplification",
-      },
-      contextLines: {
-        type: "number",
-        default: 3,
-        description: "Number of context lines to preserve",
+          "Enable diff content simplification (Warning: Enabling this feature may result in less accurate commit messages) / 启用差异内容简化 (警告：启用此功能可能导致提交信息不够准确)",
       },
     },
     // Commit related features
@@ -165,19 +155,20 @@ export const CONFIG_SCHEMA = {
         type: "boolean",
         default: false,
         description:
-          "Allow merging changes from multiple files into a single commit message",
+          "Allow merging changes from multiple files into a single commit message / 允许将多个文件的更改合并为单个提交信息",
       },
       enableEmoji: {
         type: "boolean",
         default: true,
-        description: "Use emoji in commit messages",
+        description: "Use emoji in commit messages / 在提交信息中使用表情符号",
       },
     },
     // Weekly report generation features
     weeklyReport: {
       systemPrompt: {
         type: "string",
-        description: "Custom system prompt",
+        description:
+          "Custom system prompt for weekly report generation / 生成周报的自定义系统提示语",
         default: "",
       },
     },
@@ -186,7 +177,8 @@ export const CONFIG_SCHEMA = {
       systemPrompt: {
         type: "string",
         default: `Custom system prompt`,
-        description: "Custom system prompt for code review",
+        description:
+          "Custom system prompt for code review / 代码审查的自定义系统提示语",
       },
     },
   },

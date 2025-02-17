@@ -22,8 +22,6 @@ interface DiffChunk {
 ```typescript
 interface DiffConfig {
   enabled: boolean; // 是否启用差异简化
-  contextLines: number; // 保留的上下文行数
-  maxLineLength: number; // 单行最大长度
 }
 ```
 
@@ -113,17 +111,15 @@ console.log(chunks);
 
 ## DiffSimplifier
 
-`DiffSimplifier` 类用于简化和格式化差异文本，可以配置上下文行数和最大行长度。
+`DiffSimplifier` 类用于简化差异文本，可以压缩空格。
 
 ### 配置
 
-可以通过 VSCode 的配置项 `dish-ai-commit` 进行配置：
+可以通过 VSCode 的配置项 `svnCommitGen.diff.simplifyDiff` 进行配置：
 
 ```json
 {
-  "dish-ai-commit.enableDiffSimplification": true,
-  "dish-ai-commit.diffSimplification.contextLines": 3,
-  "dish-ai-commit.diffSimplification.maxLineLength": 120
+  "svnCommitGen.diff.simplifyDiff": true
 }
 ```
 
@@ -141,7 +137,7 @@ DiffSimplifier.clearConfigCache();
 
 ### `simplify(diff: string): string`
 
-简化差异文本，根据配置处理上下文行数和行长度。
+简化差异文本，根据配置处理空格。
 
 **参数：**
 
@@ -167,7 +163,7 @@ const rawDiff = `--- a/src/test.ts
 
 const simplifiedDiff = DiffSimplifier.simplify(rawDiff);
 console.log(simplifiedDiff);
-// 输出 (假设启用了简化，contextLines=3, maxLineLength=120):
+// 输出 (假设启用了简化):
 // --- a/src/test.ts
 // +++ b/src/test.ts
 // @@ -1,5 +1,5 @@
@@ -198,7 +194,7 @@ index 1234567..890abcd 100644
 +++ b/src/utils.ts
 @@ -1,2 +1,2 @@
 -console.log("Hello, world!");
-+console.log("Hello, dish-ai-commit!");`;
++console.log("Hello, dish-ai-commit!");\`;
 
 // 1. 拆分 diff
 const fileChunks = DiffSplitter.splitGitDiff(rawGitDiff);

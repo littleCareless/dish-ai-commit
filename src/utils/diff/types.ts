@@ -7,8 +7,6 @@ export interface DiffChunk {
 
 export interface DiffConfig {
   enabled: boolean;
-  contextLines: number;
-  maxLineLength: number;
 }
 
 /**
@@ -17,9 +15,6 @@ export interface DiffConfig {
 export function getDiffConfig(): DiffConfig {
   const config = vscode.workspace.getConfiguration("dish-ai-commit");
   return {
-    enabled: config.get<boolean>("enableDiffSimplification") ?? false,
-    contextLines: config.get<number>("diffSimplification.contextLines") ?? 3,
-    maxLineLength:
-      config.get<number>("diffSimplification.maxLineLength") ?? 120,
+    enabled: config.get<boolean>("features.codeAnalysis.simplifyDiff") ?? false,
   };
 }

@@ -54,8 +54,6 @@ export interface AIRequestParams {
 
   /** 代码分析相关选项 */
   simplifyDiff?: boolean;
-  maxLineLength?: number;
-  contextLines?: number;
 
   /** 提交格式相关选项 */
   enableMergeCommit?: boolean;
