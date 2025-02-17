@@ -11,7 +11,7 @@ const exec = promisify(childProcess.exec);
 const enum LogLevel {
   Info,
   Warning,
-  Error
+  Error,
 }
 
 class Logger {
@@ -19,7 +19,7 @@ class Logger {
     switch (level) {
       case LogLevel.Info:
         // 可以根据环境配置是否输出info级别日志
-        if (process.env.NODE_ENV !== 'production') {
+        if (process.env.NODE_ENV !== "production") {
           console.log(message, ...args);
         }
         break;
@@ -38,52 +38,59 @@ interface SvnConfig {
   environmentConfig: {
     path: string[];
     locale: string;
-  }
+  };
 }
 
 // 默认配置
 const DEFAULT_CONFIG: SvnConfig = {
   environmentConfig: {
-    path: ['/usr/local/bin', '/opt/homebrew/bin'],
-    locale: 'en_US.UTF-8'
-  }
+    path: ["/usr/local/bin", "/opt/homebrew/bin"],
+    locale: "en_US.UTF-8",
+  },
 };
 
 // 添加 SVN 路径检测
 const getSvnPath = async (): Promise<string> => {
   try {
     // 1. 优先检查SVN插件配置
-    const svnConfig = vscode.workspace.getConfiguration('svn');
-    const svnPluginPath = svnConfig.get<string>('path');
+    const svnConfig = vscode.workspace.getConfiguration("svn");
+    const svnPluginPath = svnConfig.get<string>("path");
     if (svnPluginPath) {
-      Logger.log(LogLevel.Info, 'Using SVN path from SVN plugin config:', svnPluginPath);
+      Logger.log(
+        LogLevel.Info,
+        "Using SVN path from SVN plugin config:",
+        svnPluginPath
+      );
       return svnPluginPath;
     }
 
     // 2. 检查自定义配置
-    const customConfig = vscode.workspace.getConfiguration('svn-commit-gen');
-    const customPath = customConfig.get<string>('svnPath');
+    const customConfig = vscode.workspace.getConfiguration("svn-commit-gen");
+    const customPath = customConfig.get<string>("svnPath");
     if (customPath) {
-      Logger.log(LogLevel.Info, 'Using SVN path from custom config:', customPath);
+      Logger.log(
+        LogLevel.Info,
+        "Using SVN path from custom config:",
+        customPath
+      );
       return customPath;
     }
 
     // 3. 自动检测
-    const { stdout } = await exec('which svn');
+    const { stdout } = await exec("which svn");
     const detectedPath = stdout.trim();
     if (detectedPath) {
-      Logger.log(LogLevel.Info, 'Detected SVN path:', detectedPath);
+      Logger.log(LogLevel.Info, "Detected SVN path:", detectedPath);
       return detectedPath;
     }
 
     // 4. 使用默认路径
-    const defaultPath = '/opt/homebrew/bin/svn';
-    Logger.log(LogLevel.Warning, 'Using default SVN path:', defaultPath);
+    const defaultPath = "/opt/homebrew/bin/svn";
+    Logger.log(LogLevel.Warning, "Using default SVN path:", defaultPath);
     return defaultPath;
-
   } catch (error) {
-    Logger.log(LogLevel.Error, 'Failed to determine SVN path:', error);
-    throw new Error('Unable to locate SVN executable');
+    Logger.log(LogLevel.Error, "Failed to determine SVN path:", error);
+    throw new Error("Unable to locate SVN executable");
   }
 };
 
@@ -105,7 +112,7 @@ export class SvnProvider implements ISCMProvider {
   private repositories: any;
 
   /** 存储 SVN 路径 */
-  private svnPath: string = 'svn';
+  private svnPath: string = "svn";
 
   private config: SvnConfig;
   private initialized: boolean = false;
@@ -124,23 +131,27 @@ export class SvnProvider implements ISCMProvider {
     this.workspaceRoot = workspaceRoot;
 
     // 初始化时设置 SVN 路径
-    getSvnPath().then(path => {
+    getSvnPath().then((path) => {
       this.svnPath = path;
     });
 
     // 加载配置
     this.config = this.loadConfig();
-    
+
     // 同步初始化
     this.initialize();
   }
 
   private loadConfig(): SvnConfig {
     try {
-      const config = vscode.workspace.getConfiguration('svn-commit-gen');
+      const config = vscode.workspace.getConfiguration("svn-commit-gen");
       const envConfig = {
-        path: config.get<string[]>('environmentPath') || DEFAULT_CONFIG.environmentConfig.path,
-        locale: config.get<string>('locale') || DEFAULT_CONFIG.environmentConfig.locale
+        path:
+          config.get<string[]>("environmentPath") ||
+          DEFAULT_CONFIG.environmentConfig.path,
+        locale:
+          config.get<string>("locale") ||
+          DEFAULT_CONFIG.environmentConfig.locale,
       };
 
       if (!Array.isArray(envConfig.path) || !envConfig.locale) {
@@ -148,11 +159,11 @@ export class SvnProvider implements ISCMProvider {
       }
 
       return {
-        svnPath: config.get<string>('svnPath'),
-        environmentConfig: envConfig
+        svnPath: config.get<string>("svnPath"),
+        environmentConfig: envConfig,
       };
     } catch (error) {
-      Logger.log(LogLevel.Error, 'Failed to load SVN config:', error);
+      Logger.log(LogLevel.Error, "Failed to load SVN config:", error);
       throw new Error(formatMessage("svn.config.load.failed", [error]));
     }
   }
@@ -162,25 +173,28 @@ export class SvnProvider implements ISCMProvider {
       const svnPath = await getSvnPath();
       this.svnPath = svnPath;
       this.initialized = true;
-      
+
       // 验证SVN可执行
       const { stdout } = await exec(`"${this.svnPath}" --version`);
-      Logger.log(LogLevel.Info, 'SVN version:', stdout.split('\n')[0]);
+      Logger.log(LogLevel.Info, "SVN version:", stdout.split("\n")[0]);
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unknown error';
-      Logger.log(LogLevel.Error, 'Failed to initialize SVN:', message);
+      const message = error instanceof Error ? error.message : "Unknown error";
+      Logger.log(LogLevel.Error, "Failed to initialize SVN:", message);
       throw new Error(formatMessage("svn.initialization.failed", [message]));
     }
   }
 
   private async detectSvnPath(): Promise<string | null> {
     try {
-      const { stdout } = await exec('which svn');
+      const { stdout } = await exec("which svn");
       const path = stdout.trim();
-      Logger.log(LogLevel.Info, 'Detected SVN path:', path);
+      Logger.log(LogLevel.Info, "Detected SVN path:", path);
       return path;
     } catch (error) {
-      Logger.log(LogLevel.Warning, formatMessage("svn.path.detection.failed", [error]));
+      Logger.log(
+        LogLevel.Warning,
+        formatMessage("svn.path.detection.failed", [error])
+      );
       return null;
     }
   }
@@ -191,8 +205,10 @@ export class SvnProvider implements ISCMProvider {
     }
     return {
       ...process.env,
-      PATH: `${process.env.PATH}:${this.config.environmentConfig.path.join(':')}`,
-      LC_ALL: this.config.environmentConfig.locale
+      PATH: `${process.env.PATH}:${this.config.environmentConfig.path.join(
+        ":"
+      )}`,
+      LC_ALL: this.config.environmentConfig.locale,
     };
   }
 
@@ -235,10 +251,13 @@ export class SvnProvider implements ISCMProvider {
         throw new Error(getMessage("svn.not.initialized"));
       }
 
-      const { stdout: status } = await exec(`"${this.svnPath}" status "${file}"`, {
-        cwd: this.workspaceRoot,
-        env: this.getEnvironmentConfig()
-      });
+      const { stdout: status } = await exec(
+        `"${this.svnPath}" status "${file}"`,
+        {
+          cwd: this.workspaceRoot,
+          env: this.getEnvironmentConfig(),
+        }
+      );
 
       if (!status) {
         return "Unknown";
@@ -252,7 +271,7 @@ export class SvnProvider implements ISCMProvider {
       }
       return "Modified File";
     } catch (error) {
-      Logger.log(LogLevel.Error, 'Failed to get file status:', error);
+      Logger.log(LogLevel.Error, "Failed to get file status:", error);
       return "Unknown";
     }
   }
@@ -273,7 +292,7 @@ export class SvnProvider implements ISCMProvider {
 
       if (files && files.length > 0) {
         for (const file of files) {
-          Logger.log(LogLevel.Info, 'Processing file:', file);
+          Logger.log(LogLevel.Info, "Processing file:", file);
           const fileStatus = await this.getFileStatus(file);
           const escapedFile = file.replace(/"/g, '\\"');
 
@@ -283,11 +302,14 @@ export class SvnProvider implements ISCMProvider {
             continue;
           }
           console.log("escapedFile", escapedFile);
-          const { stdout } = await exec(`"${this.svnPath}" diff "${escapedFile}"`, {
-            cwd: this.workspaceRoot,
-            maxBuffer: 1024 * 1024 * 10,
-            env: this.getEnvironmentConfig()
-          });
+          const { stdout } = await exec(
+            `"${this.svnPath}" diff "${escapedFile}"`,
+            {
+              cwd: this.workspaceRoot,
+              maxBuffer: 1024 * 1024 * 10,
+              env: this.getEnvironmentConfig(),
+            }
+          );
 
           if (stdout.trim()) {
             diffOutput += `\n=== ${fileStatus}: ${file} ===\n${stdout}`;
@@ -297,7 +319,7 @@ export class SvnProvider implements ISCMProvider {
         const { stdout } = await exec(`"${this.svnPath}" diff`, {
           cwd: this.workspaceRoot,
           maxBuffer: 1024 * 1024 * 10,
-          env: this.getEnvironmentConfig()
+          env: this.getEnvironmentConfig(),
         });
         diffOutput = stdout;
       }
@@ -309,7 +331,7 @@ export class SvnProvider implements ISCMProvider {
       // 获取配置
       const config = vscode.workspace.getConfiguration("dish-ai-commit");
       const enableSimplification = config.get<boolean>(
-        "enableDiffSimplification"
+        "features.codeAnalysis.simplifyDiff"
       );
 
       // 根据配置决定是否显示警告和简化diff
@@ -323,7 +345,7 @@ export class SvnProvider implements ISCMProvider {
       // 如果未启用简化，直接返回原始diff
       return diffOutput;
     } catch (error) {
-      Logger.log(LogLevel.Error, 'SVN diff failed:', error);
+      Logger.log(LogLevel.Error, "SVN diff failed:", error);
       if (error instanceof Error) {
         vscode.window.showErrorMessage(
           formatMessage("git.diff.failed", [error.message])

@@ -45,20 +45,29 @@ export class AuthorService {
    * @throws 如果无法获取作者信息则抛出错误
    */
   private async getSvnAuthor(): Promise<string> {
-    console.log(
-      "getSvnAuthorFromAuth",
-      await SvnUtils.getSvnAuthorFromAuth(this.workspacePath)
+    // Try getting author from auth cache first
+    const authorFromAuth = await SvnUtils.getSvnAuthorFromAuth(
+      this.workspacePath
     );
-    // 尝试从SVN认证信息获取作者,如果失败则提示手动输入
-    const author =
-      (await SvnUtils.getSvnAuthorFromAuth(this.workspacePath)) ||
-      (await this.promptForAuthor());
+    if (authorFromAuth) {
+      return authorFromAuth;
+    }
 
-    if (!author) {
+    // If auth cache empty, try getting from svn info
+    const authorFromInfo = await SvnUtils.getSvnAuthorFromInfo(
+      this.workspacePath
+    );
+    if (authorFromInfo) {
+      return authorFromInfo;
+    }
+
+    // If both methods fail, prompt user for input
+    const manualAuthor = await this.promptForAuthor();
+    if (!manualAuthor) {
       throw new Error(getMessage("author.svn.not.found"));
     }
 
-    return author;
+    return manualAuthor;
   }
 
   /**

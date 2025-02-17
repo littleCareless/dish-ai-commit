@@ -163,7 +163,7 @@ export class GitProvider implements ISCMProvider {
       // 获取配置
       const config = vscode.workspace.getConfiguration("dish-ai-commit");
       const enableSimplification = config.get<boolean>(
-        "enableDiffSimplification"
+        "features.codeAnalysis.simplifyDiff"
       );
 
       // 根据配置决定是否显示警告和简化diff
