@@ -9,6 +9,9 @@ import { DashScopeProvider } from "./providers/DashScopeProvider";
 import { DoubaoProvider } from "./providers/DoubaoProvider";
 import { GeminiAIProvider } from "./providers/GeminiAIProvider";
 import { formatMessage } from "../utils/i18n/LocalizationManager";
+import { DeepseekAIProvider } from "./providers/DeepseekAIProvider";
+import { SiliconFlowProvider } from "./providers/SiliconFlowProvider";
+import { OpenRouterProvider } from "./providers/OpenRouterProvider";
 
 /**
  * AI提供者工厂类，负责创建和管理不同AI服务提供者的实例
@@ -21,6 +24,8 @@ import { formatMessage } from "../utils/i18n/LocalizationManager";
  * - DashScope: 阿里云通义平台
  * - Doubao: 豆包AI平台
  * - Gemini: Google Gemini模型
+ * - SiliconFlow: 硅基流动API服务
+ * - OpenRouter: OpenRouter聚合API服务
  */
 export class AIProviderFactory {
   /**
@@ -76,9 +81,9 @@ export class AIProviderFactory {
       ConfigurationManager.getInstance().getConfig("BASE_PROVIDER") ||
       AIProvider.OPENAI;
 
-    let provider = this.providers.get(providerType);
     console.log("AIProvider", AIProvider);
-    console.log("providerType", providerType.toLowerCase());
+    let provider = this.providers.get(providerType);
+
     if (!provider) {
       switch (providerType.toLowerCase()) {
         case AIProvider.OPENAI:
@@ -101,6 +106,15 @@ export class AIProviderFactory {
           break;
         case AIProvider.GEMINI:
           provider = new GeminiAIProvider();
+          break;
+        case AIProvider.DEEPSEEK:
+          provider = new DeepseekAIProvider();
+          break;
+        case AIProvider.SILICONFLOW:
+          provider = new SiliconFlowProvider();
+          break;
+        case AIProvider.OPENROUTER:
+          provider = new OpenRouterProvider();
           break;
         default:
           throw new Error(formatMessage("provider.type.unknown", [type]));
@@ -127,6 +141,9 @@ export class AIProviderFactory {
       new DashScopeProvider(),
       new DoubaoProvider(),
       new GeminiAIProvider(),
+      new DeepseekAIProvider(),
+      new SiliconFlowProvider(),
+      new OpenRouterProvider(),
     ];
   }
 

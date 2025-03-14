@@ -37,7 +37,9 @@
     "Zhipu",
     "DashScope",
     "Doubao",
-    "Gemini"
+    "Gemini",
+    "Deepseek",
+    "siliconflow"
   ],
   "extensionDependencies": [
     "vscode.git"
@@ -83,7 +85,7 @@
         "dish-ai-commit.base.language": {
           "type": "string",
           "default": "Simplified Chinese",
-          "description": "Commit message language",
+          "description": "Commit message language / 提交信息语言",
           "enum": [
             "Simplified Chinese",
             "Traditional Chinese",
@@ -130,12 +132,12 @@
         "dish-ai-commit.base.systemPrompt": {
           "type": "string",
           "default": "",
-          "description": "Custom system prompt"
+          "description": "Custom system prompt / 自定义系统提示语"
         },
         "dish-ai-commit.base.provider": {
           "type": "string",
           "default": "OpenAI",
-          "description": "AI provider",
+          "description": "AI provider / AI 提供商",
           "enum": [
             "OpenAI",
             "Ollama",
@@ -144,89 +146,91 @@
             "DashScope",
             "Doubao",
             "Gemini",
-            "Deepseek"
+            "Deepseek",
+            "Siliconflow",
+            "OpenRouter"
           ]
         },
         "dish-ai-commit.base.model": {
           "type": "string",
           "default": "gpt-3.5-turbo",
-          "description": "AI model",
+          "description": "AI model / AI 模型",
           "scope": "machine"
         },
         "dish-ai-commit.providers.openai.apiKey": {
           "type": "string",
           "default": "",
-          "description": "OpenAI API Key"
+          "description": "OpenAI API Key / OpenAI API 密钥"
         },
         "dish-ai-commit.providers.openai.baseUrl": {
           "type": "string",
           "default": "https://api.openai.com/v1",
-          "description": "OpenAI API Base URL"
+          "description": "OpenAI API Base URL / OpenAI API 基础地址"
         },
         "dish-ai-commit.providers.zhipu.apiKey": {
           "type": "string",
           "default": "",
-          "description": "Zhipu AI API Key"
+          "description": "Zhipu AI API Key / 智谱 AI API 密钥"
         },
         "dish-ai-commit.providers.dashscope.apiKey": {
           "type": "string",
           "default": "",
-          "description": "DashScope API Key"
+          "description": "DashScope API Key / 灵积 API 密钥"
         },
         "dish-ai-commit.providers.doubao.apiKey": {
           "type": "string",
           "default": "",
-          "description": "Doubao API Key"
+          "description": "Doubao API Key / 豆包 API 密钥"
         },
         "dish-ai-commit.providers.ollama.baseUrl": {
           "type": "string",
           "default": "http://localhost:11434",
-          "description": "Ollama API Base URL"
+          "description": "Ollama API Base URL / Ollama API 基础地址"
         },
         "dish-ai-commit.providers.gemini.apiKey": {
           "type": "string",
           "default": "",
-          "description": "Gemini AI API Key"
+          "description": "Gemini AI API Key / Gemini AI API 密钥"
         },
         "dish-ai-commit.providers.deepseek.apiKey": {
           "type": "string",
           "default": "",
-          "description": "Deepseek AI API Key"
+          "description": "Deepseek AI API Key / Deepseek AI API 密钥"
+        },
+        "dish-ai-commit.providers.siliconflow.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "SiliconFlow AI API Key / SiliconFlow AI API 密钥"
+        },
+        "dish-ai-commit.providers.openrouter.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "OpenRouter AI API Key / OpenRouter AI API 密钥"
         },
         "dish-ai-commit.features.codeAnalysis.simplifyDiff": {
           "type": "boolean",
           "default": false,
-          "description": "Enable diff content simplification (Warning: Enabling this feature may result in less accurate commit messages)"
-        },
-        "dish-ai-commit.features.codeAnalysis.maxLineLength": {
-          "type": "number",
-          "default": 120,
-          "description": "Maximum line length after simplification"
-        },
-        "dish-ai-commit.features.codeAnalysis.contextLines": {
-          "type": "number",
-          "default": 3,
-          "description": "Number of context lines to preserve"
+          "description": "Enable diff content simplification (Warning: Enabling this feature may result in less accurate commit messages) / 启用差异内容简化 (警告：启用此功能可能导致提交信息不够准确)"
         },
         "dish-ai-commit.features.commitFormat.enableMergeCommit": {
           "type": "boolean",
           "default": false,
-          "description": "Allow merging changes from multiple files into a single commit message"
+          "description": "Allow merging changes from multiple files into a single commit message / 允许将多个文件的更改合并为单个提交信息"
         },
         "dish-ai-commit.features.commitFormat.enableEmoji": {
           "type": "boolean",
           "default": true,
-          "description": "Use emoji in commit messages"
+          "description": "Use emoji in commit messages / 在提交信息中使用表情符号"
         },
         "dish-ai-commit.features.weeklyReport.systemPrompt": {
           "type": "string",
           "default": "",
-          "description": "Custom system prompt"
+          "description": "Custom system prompt for weekly report generation / 生成周报的自定义系统提示语"
         },
         "dish-ai-commit.features.codeReview.systemPrompt": {
           "type": "string",
           "default": "Custom system prompt",
-          "description": "Custom system prompt for code review"
+          "description": "Custom system prompt for code review / 代码审查的自定义系统提示语"
         }
       }
     },

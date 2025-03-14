@@ -182,7 +182,6 @@ Generates commit messages following the [Conventional Commits](https://www.conve
 - Intelligent code difference analysis
 - Automatically simplify complex code changes
 - Preserve key context information
-- Customizable analysis behavior via maxLineLength and contextLines
 
 ### 🔄 Merge Commit Support
 
@@ -225,8 +224,6 @@ Weekly report generation supports custom templates:
 | dish-ai-commit.providers.ollama.baseUrl                | string  | http://localhost:11434    | Ollama API base URL                                 |
 | dish-ai-commit.providers.gemini.apiKey                 | string  | ""                        | Gemini AI API key                                   |
 | dish-ai-commit.features.codeAnalysis.simplifyDiff      | boolean | false                     | Enable diff content simplification                  |
-| dish-ai-commit.features.codeAnalysis.maxLineLength     | number  | 120                       | Maximum line length after simplification            |
-| dish-ai-commit.features.codeAnalysis.contextLines      | number  | 3                         | Number of context lines to preserve                 |
 | dish-ai-commit.features.commitFormat.enableMergeCommit | boolean | false                     | Allow merging multiple file changes into one commit |
 | dish-ai-commit.features.commitFormat.enableEmoji       | boolean | true                      | Use emoji in commit messages                        |
 | dish-ai-commit.features.weeklyReport.systemPrompt      | string  | ""                        | Custom system prompt for weekly reports             |

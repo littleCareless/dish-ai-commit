@@ -242,6 +242,58 @@ export type GeminiAIModels =
 
 export type DeepseekModels = "deepseek-chat" | "deepseek-reasoner";
 
+export type SiliconFlowModels =
+  // Qwen系列
+  | "Qwen/QwQ-32B"
+  | "Qwen/QwQ-32B-Preview"
+  | "Qwen/Qwen2.5-72B-Instruct-128K"
+  | "Qwen/Qwen2.5-72B-Instruct"
+  | "Qwen/Qwen2.5-32B-Instruct"
+  | "Qwen/Qwen2.5-14B-Instruct"
+  | "Qwen/Qwen2.5-7B-Instruct"
+  | "Qwen/Qwen2.5-Coder-32B-Instruct"
+  | "Qwen/Qwen2.5-Coder-7B-Instruct"
+  | "Qwen/Qwen2-7B-Instruct"
+  | "Qwen/Qwen2-1.5B-Instruct"
+  | "Vendor-A/Qwen/Qwen2.5-72B-Instruct"
+  | "Pro/Qwen/Qwen2.5-7B-Instruct"
+  | "Pro/Qwen/Qwen2-7B-Instruct"
+  | "Pro/Qwen/Qwen2-1.5B-Instruct"
+  // DeepSeek系列
+  | "Pro/deepseek-ai/DeepSeek-R1"
+  | "Pro/deepseek-ai/DeepSeek-V3"
+  | "deepseek-ai/DeepSeek-R1"
+  | "deepseek-ai/DeepSeek-V3"
+  | "deepseek-ai/DeepSeek-R1-Distill-Qwen-32B"
+  | "deepseek-ai/DeepSeek-R1-Distill-Qwen-14B"
+  | "deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+  | "deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+  | "Pro/deepseek-ai/DeepSeek-R1-Distill-Qwen-7B"
+  | "Pro/deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B"
+  | "deepseek-ai/DeepSeek-V2.5"
+  // GLM系列
+  | "THUDM/glm-4-9b-chat"
+  | "Pro/THUDM/chatglm3-6b"
+  // InternLM系列
+  | "internlm/internlm2_5-7b-chat"
+  | "internlm/internlm2_5-20b-chat"
+  // 其他模型
+  | "TeleAI/TeleChat2";
+
+export type OpenRouterModels =
+  | "openai/gpt-4-turbo"
+  | "openai/gpt-4o"
+  | "anthropic/claude-3-opus"
+  | "anthropic/claude-3-sonnet"
+  | "anthropic/claude-3-haiku"
+  | "google/gemini-1.5-pro"
+  | "google/gemini-1.5-flash"
+  | "meta-llama/llama-3-70b-instruct"
+  | "meta-llama/llama-3-8b-instruct"
+  | "mistralai/mixtral-8x7b-instruct"
+  | "mistralai/mistral-medium"
+  | "mistralai/mistral-small";
+
 export type AIProviders =
   | "anthropic"
   | "github"
@@ -251,7 +303,9 @@ export type AIProviders =
   | "dashscope"
   | "doubao"
   | "deepseek"
-  | "gemini";
+  | "gemini"
+  | "siliconflow"
+  | "openrouter";
 
 export type AIModels<Provider extends AIProviders = AIProviders> =
   Provider extends "github"
@@ -270,6 +324,10 @@ export type AIModels<Provider extends AIProviders = AIProviders> =
     ? DeepseekModels
     : Provider extends "gemini"
     ? GeminiAIModels
+    : Provider extends "siliconflow"
+    ? SiliconFlowModels
+    : Provider extends "openrouter"
+    ? OpenRouterModels
     : OpenAIModels;
 
 export type SupportedAIModels =

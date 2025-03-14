@@ -71,7 +71,9 @@ export const CONFIG_SCHEMA = {
         "DashScope",
         "Doubao",
         "Gemini",
-        "Deepseek", // 添加Deepseek选项
+        "Deepseek",
+        "Siliconflow",
+        "OpenRouter",
       ],
       description: "AI provider / AI 提供商",
     },
@@ -136,6 +138,20 @@ export const CONFIG_SCHEMA = {
         type: "string",
         default: "",
         description: "Deepseek AI API Key / Deepseek AI API 密钥",
+      },
+    },
+    siliconflow: {
+      apiKey: {
+        type: "string",
+        default: "",
+        description: "SiliconFlow AI API Key / SiliconFlow AI API 密钥",
+      },
+    },
+    openrouter: {
+      apiKey: {
+        type: "string",
+        default: "",
+        description: "OpenRouter AI API Key / OpenRouter AI API 密钥",
       },
     },
   },

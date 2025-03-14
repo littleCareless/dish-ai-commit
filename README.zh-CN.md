@@ -182,7 +182,6 @@
 - 智能代码差异分析
 - 自动简化复杂代码更改
 - 保留关键上下文信息
-- 通过 maxLineLength 和 contextLines 自定义分析行为
 
 ### 🔄 合并提交支持
 
@@ -223,8 +222,6 @@
 | dish-ai-commit.providers.ollama.baseUrl                | string  | http://localhost:11434    | Ollama API 基础 URL              |
 | dish-ai-commit.providers.gemini.apiKey                 | string  | ""                        | Gemini AI API key                |
 | dish-ai-commit.features.codeAnalysis.simplifyDiff      | boolean | false                     | 启用差异内容简化                 |
-| dish-ai-commit.features.codeAnalysis.maxLineLength     | number  | 120                       | 简化后最大行长度                 |
-| dish-ai-commit.features.codeAnalysis.contextLines      | number  | 3                         | 保留的上下文行数                 |
 | dish-ai-commit.features.commitFormat.enableMergeCommit | boolean | false                     | 允许将多个文件更改合并为一个提交 |
 | dish-ai-commit.features.commitFormat.enableEmoji       | boolean | true                      | 在提交消息中使用表情符号         |
 | dish-ai-commit.features.weeklyReport.systemPrompt      | string  | ""                        | 周报的自定义系统提示             |

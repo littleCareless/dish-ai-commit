@@ -76,8 +76,6 @@ export class SvnCommitStrategy implements CommitLogStrategy {
     // 构建svn log命令,使用XML格式输出
     const command = `svn log -r "{${period.startDate}}:{${period.endDate}}" --search="${author}" --xml`;
 
-    console.log("command", command);
-
     const { stdout } = await execAsync(command, { cwd: workspacePath });
     return this.parseXmlLogs(stdout);
   }

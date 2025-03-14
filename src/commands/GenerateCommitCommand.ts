@@ -96,7 +96,6 @@ export class GenerateCommitCommand extends BaseCommand {
             aiProvider,
             selectedModel,
           } = await this.selectAndUpdateModelConfiguration(provider, model);
-
           // 生成提交信息
           const result = await aiProvider.generateResponse({
             ...configuration.base,
