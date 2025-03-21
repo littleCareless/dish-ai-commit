@@ -6,6 +6,24 @@
 
 更新日志格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.9.0 (2025-03-21)
+
+### ✨ Features
+
+- **git**: 优化 Git 差异比较功能 ([220f047](https://github.com/littleCareless/dish-ai-commit/commit/220f047))
+
+### 🎫 Chores
+
+- **release**: 发布 v0.8.0 版本 ([ab60b51](https://github.com/littleCareless/dish-ai-commit/commit/ab60b51))
+
+### 👷 Build System
+
+- **deps**: 更新前端依赖库版本 ([b884ae1](https://github.com/littleCareless/dish-ai-commit/commit/b884ae1))
+
+### 💄 Styles
+
+- 统一优化组件样式 ([0548121](https://github.com/littleCareless/dish-ai-commit/commit/0548121))
+
 # 0.8.0 (2025-03-14)
 
 ### ♻ Code Refactoring

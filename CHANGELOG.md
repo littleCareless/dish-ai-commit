@@ -6,6 +6,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.9.0 (2025-03-21)
+
+### ✨ Features
+
+- **git**: Optimize Git difference comparison function ([220f047](https://github.com/littleCareless/dish-ai-commit/commit/220f047))
+
+### 🎫 Chores
+
+- **release**: Release v0.8.0 ([ab60b51](https://github.com/littleCareless/dish-ai-commit/commit/ab60b51))
+
+### 👷 Build System
+
+- **deps**: Update the front-end dependency library version ([b884ae1](https://github.com/littleCareless/dish-ai-commit/commit/b884ae1))
+
+### 💄 Styles
+
+- Unify and optimize component styles ([0548121](https://github.com/littleCareless/dish-ai-commit/commit/0548121))
+
 # 0.8.0 (2025-03-14)
 
 ### ♻ Code Refactoring
