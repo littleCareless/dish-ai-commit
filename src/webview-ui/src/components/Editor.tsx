@@ -206,7 +206,7 @@ export function Editor({ content, onChange }: EditorProps) {
         ref={editorRef}
         id="editor"
         className={cn(
-          "min-h-[400px] p-4 focus:outline-none",
+          "min-h-[400px] p-4 focus:outline-hidden",
           "prose prose-sm max-w-none",
           "[&_table]:border-collapse [&_td]:border [&_td]:p-2",
           "[&_pre]:bg-muted [&_pre]:p-2 [&_pre]:rounded"
