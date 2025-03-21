@@ -101,6 +101,9 @@ export class GitProvider implements ISCMProvider {
       if (status.startsWith("??")) {
         return "New File";
       }
+      if (status.startsWith("A ")) {
+        return "Added File"; // 已暂存的新文件
+      }
       if (status.startsWith(" D") || status.startsWith("D ")) {
         return "Deleted File";
       }
@@ -136,11 +139,40 @@ export class GitProvider implements ISCMProvider {
             continue;
           }
 
-          // 执行单个文件的diff命令
-          const { stdout } = await exec(`git diff HEAD -- "${escapedFile}"`, {
-            cwd: this.workspaceRoot,
-            maxBuffer: 1024 * 1024 * 10,
-          });
+          // 根据文件状态选择合适的diff命令
+          let stdout = "";
+          if (fileStatus === "New File") {
+            // 处理未跟踪的新文件
+            try {
+              const result = await exec(
+                `git diff --no-index /dev/null "${escapedFile}"`,
+                {
+                  cwd: this.workspaceRoot,
+                  maxBuffer: 1024 * 1024 * 10,
+                }
+              );
+              stdout = result.stdout;
+            } catch (error) {
+              // git diff --no-index 在有差异时会返回非零状态码，需要捕获异常
+              if (error instanceof Error && "stdout" in error) {
+                stdout = (error as any).stdout;
+              }
+            }
+          } else if (fileStatus === "Added File") {
+            // 处理已暂存的新文件
+            const result = await exec(`git diff --cached -- "${escapedFile}"`, {
+              cwd: this.workspaceRoot,
+              maxBuffer: 1024 * 1024 * 10,
+            });
+            stdout = result.stdout;
+          } else {
+            // 处理已跟踪且修改的文件
+            const result = await exec(`git diff HEAD -- "${escapedFile}"`, {
+              cwd: this.workspaceRoot,
+              maxBuffer: 1024 * 1024 * 10,
+            });
+            stdout = result.stdout;
+          }
 
           // 添加文件状态和差异信息
           if (stdout.trim()) {
@@ -148,12 +180,61 @@ export class GitProvider implements ISCMProvider {
           }
         }
       } else {
-        // 获取所有更改的差异
-        const { stdout } = await exec("git diff HEAD", {
+        // 获取所有更改的差异 - 需要组合多个命令的输出
+        // 1. 获取已跟踪文件的更改
+        const { stdout: trackedChanges } = await exec("git diff HEAD", {
           cwd: this.workspaceRoot,
           maxBuffer: 1024 * 1024 * 10,
         });
-        diffOutput = stdout;
+
+        // 2. 获取已暂存的新文件更改
+        const { stdout: stagedChanges } = await exec("git diff --cached", {
+          cwd: this.workspaceRoot,
+          maxBuffer: 1024 * 1024 * 10,
+        });
+
+        // 3. 获取未跟踪的新文件列表
+        const { stdout: untrackedFiles } = await exec(
+          "git ls-files --others --exclude-standard",
+          {
+            cwd: this.workspaceRoot,
+          }
+        );
+
+        // 整合所有差异
+        diffOutput = trackedChanges;
+
+        if (stagedChanges.trim()) {
+          diffOutput += stagedChanges;
+        }
+
+        // 为每个未跟踪文件获取差异
+        if (untrackedFiles.trim()) {
+          const files = untrackedFiles
+            .split("\n")
+            .filter((file) => file.trim());
+          for (const file of files) {
+            const escapedFile = file.replace(/"/g, '\\"');
+            try {
+              // 使用git diff --no-index捕获新文件内容
+              const result = await exec(
+                `git diff --no-index /dev/null "${escapedFile}"`,
+                {
+                  cwd: this.workspaceRoot,
+                  maxBuffer: 1024 * 1024 * 10,
+                }
+              );
+              diffOutput += `\n=== New File: ${file} ===\n${result.stdout}`;
+            } catch (error) {
+              // git diff --no-index 在有差异时会返回非零状态码，需要捕获异常
+              if (error instanceof Error && "stdout" in error) {
+                diffOutput += `\n=== New File: ${file} ===\n${
+                  (error as any).stdout
+                }`;
+              }
+            }
+          }
+        }
       }
 
       if (!diffOutput.trim()) {
