@@ -1,2 +1,2 @@
-export * from "./NotificationManager";
-export * from "./ProgressHandler";
+export * from "./notification-manager";
+export * from "./progress-handler";

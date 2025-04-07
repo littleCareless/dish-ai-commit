@@ -6,6 +6,40 @@
 
 更新日志格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.10.0 (2025-04-07)
+
+### ♻ Code Refactoring
+
+- **scm**: 重构 SVN 相关服务的架构设计与错误处理 ([9bc67b7](https://github.com/littleCareless/dish-ai-commit/commit/9bc67b7))
+- 重构文件命名规范及项目结构 ([214fcfc](https://github.com/littleCareless/dish-ai-commit/commit/214fcfc))
+
+### ✨ Features
+
+- **git**: 优化 Git 差异比较功能 ([220f047](https://github.com/littleCareless/dish-ai-commit/commit/220f047))
+- **provider**: 添加 Deepseek AI 提供商支持 ([f8843be](https://github.com/littleCareless/dish-ai-commit/commit/f8843be))
+
+### 🎫 Chores
+
+- **config**: 优化配置和支持新的 AI 提供商 ([5dc41ad](https://github.com/littleCareless/dish-ai-commit/commit/5dc41ad))
+- **deps**: 全面升级依赖项版本 ([f592f44](https://github.com/littleCareless/dish-ai-commit/commit/f592f44))
+- **deps**: 添加打包依赖配置 ([e00ac04](https://github.com/littleCareless/dish-ai-commit/commit/e00ac04))
+- **diff**: 简化差异处理配置并移除过时工具 ([f82c7a2](https://github.com/littleCareless/dish-ai-commit/commit/f82c7a2))
+- **release**: 发布 v0.7.1 版本 ([da38bd0](https://github.com/littleCareless/dish-ai-commit/commit/da38bd0))
+- **release**: 发布 v0.8.0 版本 ([ab60b51](https://github.com/littleCareless/dish-ai-commit/commit/ab60b51))
+
+### 👷 Build System
+
+- **deps**: 更新前端依赖库版本 ([b884ae1](https://github.com/littleCareless/dish-ai-commit/commit/b884ae1))
+
+### 💄 Styles
+
+- **utils**: 统一文件命名规范为短横线风格 ([4b8d2de](https://github.com/littleCareless/dish-ai-commit/commit/4b8d2de))
+- 统一优化组件样式 ([0548121](https://github.com/littleCareless/dish-ai-commit/commit/0548121))
+
+### 📝 Documentation
+
+- **diff**: 重构差异处理模块文档和实现 ([def11fe](https://github.com/littleCareless/dish-ai-commit/commit/def11fe))
+
 # 0.9.0 (2025-03-21)
 
 ### ✨ Features
