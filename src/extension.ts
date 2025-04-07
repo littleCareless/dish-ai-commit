@@ -1,10 +1,10 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import { ConfigurationManager } from "./config/ConfigurationManager";
+import { ConfigurationManager } from "./config/configuration-manager";
 import { registerCommands } from "./commands";
 import { initializeLocalization } from "./utils/i18n";
-import { notify, withProgress } from "./utils/notification/NotificationManager";
+import { notify, withProgress } from "./utils/notification/notification-manager";
 
 /**
  * 在首次执行命令时激活扩展

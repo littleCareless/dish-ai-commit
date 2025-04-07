@@ -1,4 +1,4 @@
-import type { AIGenerationErrorType } from "./utils/generateHelper";
+import type { AIGenerationErrorType } from "./utils/generate-helper";
 
 /**
  * AI请求选项接口，定义了向AI模型发送请求时的基本参数

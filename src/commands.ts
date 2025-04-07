@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
 import { COMMANDS } from "./constants";
-import { GenerateCommitCommand } from "./commands/GenerateCommitCommand";
-import { SelectModelCommand } from "./commands/SelectModelCommand";
-import { GenerateWeeklyReportCommand } from "./commands/GenerateWeeklyReportCommand";
-import { ReviewCodeCommand } from "./commands/ReviewCodeCommand";
+import { GenerateCommitCommand } from "./commands/generate-commit-command";
+import { SelectModelCommand } from "./commands/select-model-command";
+import { GenerateWeeklyReportCommand } from "./commands/generate-weekly-report-command";
+import { ReviewCodeCommand } from "./commands/review-code-command";
 import { notify } from "./utils";
 
 /**

@@ -6,7 +6,7 @@ import {
   type ConfigValueTypeString,
   type ConfigValueTypeBoolean,
   type ConfigValueTypeNumber,
-} from "./ConfigSchema";
+} from "./config-schema";
 
 /**
  * 从 CONFIG_SCHEMA 生成 AI 提供商枚举对象
