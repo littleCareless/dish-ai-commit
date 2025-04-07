@@ -1,1 +1,1 @@
-export * from './LocalizationManager';
+export * from "./localization-manager";

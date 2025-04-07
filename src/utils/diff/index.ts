@@ -1,3 +1,3 @@
-export * from './types';
-export * from './DiffSplitter';
-export * from './DiffSimplifier';
+export * from "./types";
+export * from "./diff-splitter";
+export * from "./diff-simplifier";
