@@ -6,6 +6,42 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.10.0 (2025-04-07)
+
+### ♻ Code Refactoring
+
+- **scm**: Refactor the architecture design and error handling of SVN-related services ([9bc67b7](https://github.com/littleCareless/dish-ai-commit/commit/9bc67b7))
+
+- Refactor file naming conventions and project structure ([214fcfc](https://github.com/littleCareless/dish-ai-commit/commit/214fcfc))
+
+### ✨ Features
+
+- **git**: Optimize Git difference comparison function ([220f047](https://github.com/littleCareless/dish-ai-commit/commit/220f047))
+
+- **provider**: Add Deepseek AI provider support ([f8843be](https://github.com/littleCareless/dish-ai-commit/commit/f8843be))
+
+### 🎫 Chores
+
+- **config**: Optimize configuration and support new AI providers ([5dc41ad](https://github.com/littleCareless/dish-ai-commit/commit/5dc41ad))
+- **deps**: Fully upgrade dependency versions ([f592f44](https://github.com/littleCareless/dish-ai-commit/commit/f592f44))
+- **deps**: Add packaged dependency configuration ([e00ac04](https://github.com/littleCareless/dish-ai-commit/commit/e00ac04))
+- **diff**: Simplify difference handling configuration and remove outdated tools ([f82c7a2](https://github.com/littleCareless/dish-ai-commit/commit/f82c7a2))
+- **release**: Release v0.7.1 ([da38bd0](https://github.com/littleCareless/dish-ai-commit/commit/da38bd0))
+- **release**: Release v0.8.0 ([ab60b51](https://github.com/littleCareless/dish-ai-commit/commit/ab60b51))
+
+### 👷 Build System
+
+- **deps**: Update the front-end dependency library version ([b884ae1](https://github.com/littleCareless/dish-ai-commit/commit/b884ae1))
+
+### 💄 Styles
+
+- **utils**: Unify file naming conventions to dash style ([4b8d2de](https://github.com/littleCareless/dish-ai-commit/commit/4b8d2de))
+- Unify and optimize component styles ([0548121](https://github.com/littleCareless/dish-ai-commit/commit/0548121))
+
+### 📝 Documentation
+
+- **diff**: Refactor the documentation and implementation of the difference processing module ([def11fe](https://github.com/littleCareless/dish-ai-commit/commit/def11fe))
+
 # 0.9.0 (2025-03-21)
 
 ### ✨ Features
