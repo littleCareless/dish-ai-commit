@@ -6,6 +6,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.10.1 (2025-04-09)
+
+### ♻ Code Refactoring
+
+- **commands**: Refactor code selection file processing logic ([3545cea](https://github.com/littleCareless/dish-ai-commit/commit/3545cea))
+
+- **scm**: Rename SCM service provider file name ([e018086](https://github.com/littleCareless/dish-ai-commit/commit/e018086))
+
+### 🎫 Chores
+
+- **command**: Optimize plugin command configuration ([9e4356a](https://github.com/littleCareless/dish-ai-commit/commit/9e4356a))
+
+- **config**: Adjust the order of menu items and add weekly report generation function ([566384b](https://github.com/littleCareless/dish-ai-commit/commit/566384b))
+
+### 💄 Styles
+
+- **components**: Adjust component file naming conventions ([0a65ab7](https://github.com/littleCareless/dish-ai-commit/commit/0a65ab7))
+
+### 📝 Documentation
+
+- **changelog**: Release 0.10.0 version ([4eee872](https://github.com/littleCareless/dish-ai-commit/commit/4eee872))
+
 # 0.10.0 (2025-04-07)
 
 ### ♻ Code Refactoring
