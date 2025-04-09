@@ -351,28 +351,28 @@
     "@stylistic/eslint-plugin-ts": "^4.2.0",
     "@types/jest": "^29.5.14",
     "@types/mocha": "^10.0.10",
-    "@types/node": "~22.13.10",
-    "@types/vscode": "^1.98.0",
-    "@typescript-eslint/eslint-plugin": "^8.27.0",
-    "@typescript-eslint/parser": "^8.27.0",
+    "@types/node": "~22.14.0",
+    "@types/vscode": "^1.99.1",
+    "@typescript-eslint/eslint-plugin": "^8.29.1",
+    "@typescript-eslint/parser": "^8.29.1",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1",
+    "@vscode/test-electron": "^2.5.1",
     "commitizen": "^4.3.1",
     "commitlint-config-gitmoji": "^2.3.1",
     "conventional-changelog-gitmoji-config": "^1.5.2",
     "cz-conventional-changelog": "^3.3.0",
     "cz-customizable": "^7.4.0",
-    "eslint": "^9.22.0",
+    "eslint": "^9.24.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.0",
     "standard-version": "^9.5.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.3"
   },
   "dependencies": {
-    "inversify": "^7.1.0",
+    "inversify": "^7.5.0",
     "ollama": "^0.5.14",
-    "openai": "^4.89.0"
+    "openai": "^4.93.0"
   },
   "bundleDependencies": [
     "inversify",
@@ -407,5 +407,5 @@
       ]
     }
   },
-  "packageManager": "pnpm@10.6.5"
+  "packageManager": "pnpm@10.8.0"
 }
