@@ -1,6 +1,6 @@
 import { exec } from "child_process";
 import { promisify } from "util";
-import { ISCMProvider } from "./s-c-m-provider";
+import { ISCMProvider } from "./scm-provider";
 import { getMessage } from "../utils";
 
 const execAsync = promisify(exec);

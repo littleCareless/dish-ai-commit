@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
 import { WorkItem } from "../types/weekly-report";
-import { SCMFactory, type ISCMProvider } from "../scm/s-c-m-provider";
+import { SCMFactory, type ISCMProvider } from "../scm/scm-provider";
 import { AuthorService } from "../scm/author-service";
 import {
   CommitLogStrategy,
