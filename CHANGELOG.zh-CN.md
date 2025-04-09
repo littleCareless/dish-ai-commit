@@ -6,6 +6,16 @@
 
 更新日志格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.10.2 (2025-04-09)
+
+### 🎫 Chores
+
+- **ui**: 调整命令菜单的显示顺序与条件 ([10ba90d](https://github.com/littleCareless/dish-ai-commit/commit/10ba90d))
+
+### 📝 Documentation
+
+- **changelog**: 更新版本至 0.10.1 ([e49f6b2](https://github.com/littleCareless/dish-ai-commit/commit/e49f6b2))
+
 ## 0.10.1 (2025-04-09)
 
 ### ♻ Code Refactoring

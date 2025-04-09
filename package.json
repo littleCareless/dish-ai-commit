@@ -2,7 +2,7 @@
   "name": "dish-ai-commit",
   "displayName": "Dish AI Commit Gen",
   "description": "🤖 AI-Powered VSCode extension for generating standardized Git/SVN commit messages. ✨ Supports multiple AI services: OpenAI, ChatGPT, Ollama, Zhipu, DashScope, Doubao, Gemini and VS Code built-in AI. 🌍 Multi-language support (EN/CN/JP/KR/Other). 📊 Auto-generate weekly reports.",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "engines": {
     "vscode": "^1.98.0"
   },
@@ -338,11 +338,12 @@
     "test": "vscode-test",
     "prepare": "husky",
     "commit": "git add . && git-cz",
-    "release": "standard-version --preset gitmoji-config",
+    "release": "standard-version --preset gitmoji-config -i CHANGELOG.zh-CN.md -s",
     "changelog": "conventional-changelog -i CHANGELOG.md -s -r 0",
     "update-config": "ts-node ./src/scripts/updateConfig.ts",
     "package": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce package",
-    "publish": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce publish"
+    "publish": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce publish",
+    "publish:pre": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce publish --pre-release"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
