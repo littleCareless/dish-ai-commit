@@ -141,9 +141,9 @@ export abstract class BaseCommand {
 
     console.log(
       "Selected files:",
-      states.map((state) => state.resourceUri?.fsPath)
+      states.map((state) => state?.resourceUri?.fsPath)
     );
-    console.log("Number of selected files:", states.length);
+    console.log("Number of selected files:", states?.length);
 
     if (states.length === 0) {
       console.warn("No files selected.");
