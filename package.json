@@ -2,7 +2,7 @@
   "name": "dish-ai-commit",
   "displayName": "Dish AI Commit Gen",
   "description": "🤖 AI-Powered VSCode extension for generating standardized Git/SVN commit messages. ✨ Supports multiple AI services: OpenAI, ChatGPT, Ollama, Zhipu, DashScope, Doubao, Gemini and VS Code built-in AI. 🌍 Multi-language support (EN/CN/JP/KR/Other). 📊 Auto-generate weekly reports.",
-  "version": "0.10.1",
+  "version": "0.10.2",
   "engines": {
     "vscode": "^1.98.0"
   },
@@ -52,7 +52,7 @@
     "commands": [
       {
         "command": "dish-ai-commit.generateCommitMessage",
-        "title": "[Dish] Commit Generate with AI",
+        "title": "[Dish] Generate Commit with AI",
         "category": "[Dish AI Commit]",
         "icon": "/images/icon.svg",
         "description": "使用 AI 生成提交信息"
@@ -243,44 +243,44 @@
           "group": "navigation@-3"
         },
         {
-          "command": "dish-ai-commit.selectModel",
+          "command": "dish-ai-commit.generateCommitMessage",
           "when": "scmProvider =~ /(git|svn)/",
           "group": "2_z_dish@1"
         },
         {
-          "command": "dish-ai-commit.generateCommitMessage",
+          "command": "dish-ai-commit.generateWeeklyReport",
           "when": "scmProvider =~ /(git|svn)/",
           "group": "2_z_dish@2"
         },
         {
-          "command": "dish-ai-commit.generateWeeklyReport",
+          "command": "dish-ai-commit.reviewCode",
           "when": "scmProvider =~ /(git|svn)/",
           "group": "2_z_dish@3"
         },
         {
-          "command": "dish-ai-commit.reviewCode",
+          "command": "dish-ai-commit.selectModel",
           "when": "scmProvider =~ /(git|svn)/",
           "group": "2_z_dish@4"
         }
       ],
       "scm/resourceState/context": [
         {
-          "command": "dish-ai-commit.selectModel",
+          "command": "dish-ai-commit.generateCommitMessage",
           "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
           "group": "2_z_dish@1"
         },
         {
-          "command": "dish-ai-commit.generateCommitMessage",
+          "command": "dish-ai-commit.reviewCode",
           "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
           "group": "2_z_dish@2"
         },
         {
-          "command": "dish-ai-commit.reviewCode",
+          "command": "dish-ai-commit.generateWeeklyReport",
           "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
           "group": "2_z_dish@3"
         },
         {
-          "command": "dish-ai-commit.generateWeeklyReport",
+          "command": "dish-ai-commit.selectModel",
           "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
           "group": "2_z_dish@4"
         }
@@ -288,32 +288,42 @@
       "scm/resourceFolder/context": [
         {
           "command": "dish-ai-commit.generateCommitMessage",
-          "when": "scmProvider =~ /(git|svn)/",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
           "group": "inline"
         },
         {
           "command": "dish-ai-commit.reviewCode",
-          "when": "scmProvider =~ /(git|svn)/",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "inline"
+        },
+        {
+          "command": "dish-ai-commit.generateWeeklyReport",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "inline"
+        },
+        {
+          "command": "dish-ai-commit.selectModel",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
           "group": "inline"
         }
       ],
       "commandPalette": [
         {
-          "command": "dish-ai-commit.generateCommitMessage",
-          "when": "(config.svn.enabled && svnOpenRepositoryCount > 0) || (config.git.enabled && gitOpenRepositoryCount > 0)"
-        },
-        {
           "command": "dish-ai-commit.selectModel",
           "group": "navigation",
-          "when": "(config.svn.enabled && svnOpenRepositoryCount > 0) || (config.git.enabled && gitOpenRepositoryCount > 0)"
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges"
         },
         {
           "command": "dish-ai-commit.generateWeeklyReport",
-          "when": "true"
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges"
+        },
+        {
+          "command": "dish-ai-commit.generateCommitMessage",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges"
         },
         {
           "command": "dish-ai-commit.reviewCode",
-          "when": "((config.svn.enabled && svnOpenRepositoryCount > 0) || (config.git.enabled && svnOpenRepositoryCount > 0))"
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges"
         }
       ]
     }
@@ -328,11 +338,12 @@
     "test": "vscode-test",
     "prepare": "husky",
     "commit": "git add . && git-cz",
-    "release": "standard-version --preset gitmoji-config",
+    "release": "standard-version --preset gitmoji-config -i CHANGELOG.zh-CN.md -s",
     "changelog": "conventional-changelog -i CHANGELOG.md -s -r 0",
     "update-config": "ts-node ./src/scripts/updateConfig.ts",
     "package": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce package",
-    "publish": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce publish"
+    "publish": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce publish",
+    "publish:pre": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce publish --pre-release"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",

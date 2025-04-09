@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.10.2 (2025-04-09)
+
+### 🎫 Chores
+
+- **ui**: Adjust the display order and conditions of the command menu ([10ba90d](https://github.com/littleCareless/dish-ai-commit/commit/10ba90d))
+
+### 📝 Documentation
+
+- **changelog**: Update the version to 0.10.1 ([e49f6b2](https://github.com/littleCareless/dish-ai-commit/commit/e49f6b2))
+
 ## 0.10.1 (2025-04-09)
 
 ### ♻ Code Refactoring
