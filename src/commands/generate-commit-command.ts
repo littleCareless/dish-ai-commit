@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { BaseCommand } from "./base-command";
 import { ConfigurationManager } from "../config/configuration-manager";
 import { AIProviderFactory } from "../ai/ai-provider-factory";
-import { SCMFactory } from "../scm/s-c-m-provider";
+import { SCMFactory } from "../scm/scm-provider";
 import { type ConfigKey } from "../config/types";
 import { ModelPickerService } from "../services/model-picker-service";
 import { notify } from "../utils/notification";
@@ -14,38 +14,6 @@ import { validateAndGetModel } from "../utils/ai/model-validation";
  * 提交信息生成命令类
  */
 export class GenerateCommitCommand extends BaseCommand {
-  /**
-   * 处理AI配置
-   * @returns AI提供商和模型信息
-   */
-  protected async handleConfiguration(): Promise<
-    { provider: string; model: string } | undefined
-  > {
-    const config = ConfigurationManager.getInstance();
-
-    // 使用 ConfigurationManager 的验证方法
-    if (!(await config.validateConfiguration())) {
-      return;
-    }
-
-    const configuration = config.getConfiguration();
-    let provider = configuration.base.provider;
-    let model = configuration.base.model;
-
-    if (!provider || !model) {
-      const result = await this.selectAndUpdateModelConfiguration(
-        provider,
-        model
-      );
-      if (!result) {
-        return;
-      }
-      return result;
-    }
-
-    return { provider, model };
-  }
-
   /**
    * 执行提交信息生成命令
    * @param resources - 源代码管理资源状态列表
@@ -160,47 +128,5 @@ export class GenerateCommitCommand extends BaseCommand {
         notify.error("generate.commit.failed", [error.message]);
       }
     }
-  }
-
-  /**
-   * 获取选中的文件列表
-   * @param resourceStates - 源代码管理资源状态
-   * @returns 文件路径列表
-   */
-  protected getSelectedFiles(
-    resourceStates?:
-      | vscode.SourceControlResourceState
-      | vscode.SourceControlResourceState[]
-  ): string[] | undefined {
-    if (!resourceStates) {
-      return undefined;
-    }
-
-    const states = Array.isArray(resourceStates)
-      ? resourceStates
-      : [resourceStates];
-    return [
-      ...new Set(
-        states
-          .map(
-            (state) =>
-              (state as any)?._resourceUri?.fsPath || state?.resourceUri?.fsPath
-          )
-          .filter(Boolean)
-      ),
-    ];
-  }
-
-  /**
-   * 显示模型选择器
-   * @param currentProvider - 当前AI提供商
-   * @param currentModel - 当前模型名称
-   * @returns 用户选择的提供商和模型信息
-   */
-  protected async showModelPicker(
-    currentProvider: string,
-    currentModel: string
-  ) {
-    return ModelPickerService.showModelPicker(currentProvider, currentModel);
   }
 }
