@@ -1,10 +1,25 @@
-# 更新日志
+# Changelog
 
 [English](CHANGELOG.md) | [简体中文](CHANGELOG.zh-CN.md)
 
-本项目所有值得注意的更改都将记录在此文件中。
+All notable changes to this project will be documented in this file.
 
-更新日志格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+
+## 0.10.3 (2025-04-09)
+
+### ♻ Code Refactoring
+
+- **config**: 重构配置管理器，采用服务拆分模式 ([01750b8](https://github.com/littleCareless/dish-ai-commit/commit/01750b8))
+- **config**: 重构配置模块拆分工具函数 ([150e80a](https://github.com/littleCareless/dish-ai-commit/commit/150e80a))
+
+### 👷 Build System
+
+- **deps**: 升级依赖包版本 ([88a216e](https://github.com/littleCareless/dish-ai-commit/commit/88a216e))
+
+### 📝 Documentation
+
+- **misc**: 更新版本至 0.10.2 ([3362f3f](https://github.com/littleCareless/dish-ai-commit/commit/3362f3f))
 
 ## 0.10.2 (2025-04-09)
 

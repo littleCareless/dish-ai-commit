@@ -6,6 +6,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.10.3 (2025-04-09)
+
+### ♻ Code Refactoring
+
+- **config**: Refactor the configuration manager to adopt the service split mode ([01750b8](https://github.com/littleCareless/dish-ai-commit/commit/01750b8))
+
+- **config**: Refactor the configuration module split tool function ([150e80a](https://github.com/littleCareless/dish-ai-commit/commit/150e80a))
+
+### 👷 Build System
+
+- **deps**: Upgrade the dependency package version ([88a216e](https://github.com/littleCareless/dish-ai-commit/commit/88a216e))
+
+### 📝 Documentation
+
+- **misc**: Update the version to 0.10.2 ([3362f3f](https://github.com/littleCareless/dish-ai-commit/commit/3362f3f))
+
 ## 0.10.2 (2025-04-09)
 
 ### 🎫 Chores
