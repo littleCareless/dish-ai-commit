@@ -243,12 +243,12 @@
           "group": "navigation@-3"
         },
         {
-          "command": "dish-ai-commit.generateCommitMessage",
+          "command": "dish-ai-commit.selectModel",
           "when": "scmProvider =~ /(git|svn)/",
           "group": "2_z_dish@1"
         },
         {
-          "command": "dish-ai-commit.selectModel",
+          "command": "dish-ai-commit.generateCommitMessage",
           "when": "scmProvider =~ /(git|svn)/",
           "group": "2_z_dish@2"
         },
@@ -265,14 +265,24 @@
       ],
       "scm/resourceState/context": [
         {
-          "command": "dish-ai-commit.generateCommitMessage",
+          "command": "dish-ai-commit.selectModel",
           "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
           "group": "2_z_dish@1"
         },
         {
-          "command": "dish-ai-commit.reviewCode",
+          "command": "dish-ai-commit.generateCommitMessage",
           "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
           "group": "2_z_dish@2"
+        },
+        {
+          "command": "dish-ai-commit.reviewCode",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "2_z_dish@3"
+        },
+        {
+          "command": "dish-ai-commit.generateWeeklyReport",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "2_z_dish@4"
         }
       ],
       "scm/resourceFolder/context": [
