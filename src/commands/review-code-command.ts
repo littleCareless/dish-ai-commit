@@ -15,36 +15,6 @@ import { validateAndGetModel } from "../utils/ai/model-validation";
  */
 export class ReviewCodeCommand extends BaseCommand {
   /**
-   * 获取选中的文件列表
-   * @param resourceStates - 源代码管理资源状态
-   * @returns 文件路径列表
-   */
-  protected getSelectedFiles(
-    resourceStates?:
-      | vscode.SourceControlResourceState
-      | vscode.SourceControlResourceState[]
-  ): string[] | undefined {
-    if (!resourceStates) {
-      return undefined;
-    }
-
-    const states = Array.isArray(resourceStates)
-      ? resourceStates
-      : [resourceStates];
-
-    return [
-      ...new Set(
-        states
-          .map(
-            (state) =>
-              (state as any)?._resourceUri?.fsPath || state?.resourceUri?.fsPath
-          )
-          .filter(Boolean)
-      ),
-    ];
-  }
-
-  /**
    * 执行代码审查命令
    * @param {vscode.SourceControlResourceState[] | undefined} resources - 源代码管理资源状态列表,代表需要审查的文件
    * @returns {Promise<void>}

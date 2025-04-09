@@ -6,6 +6,26 @@
 
 更新日志格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.10.1 (2025-04-09)
+
+### ♻ Code Refactoring
+
+- **commands**: 重构代码选中文件处理逻辑 ([3545cea](https://github.com/littleCareless/dish-ai-commit/commit/3545cea))
+- **scm**: 重命名 SCM 服务提供者文件名 ([e018086](https://github.com/littleCareless/dish-ai-commit/commit/e018086))
+
+### 🎫 Chores
+
+- **command**: 优化插件命令配置 ([9e4356a](https://github.com/littleCareless/dish-ai-commit/commit/9e4356a))
+- **config**: 调整菜单项顺序并新增周报生成功能 ([566384b](https://github.com/littleCareless/dish-ai-commit/commit/566384b))
+
+### 💄 Styles
+
+- **components**: 调整组件文件命名规范 ([0a65ab7](https://github.com/littleCareless/dish-ai-commit/commit/0a65ab7))
+
+### 📝 Documentation
+
+- **changelog**: 发布 0.10.0 版本 ([4eee872](https://github.com/littleCareless/dish-ai-commit/commit/4eee872))
+
 # 0.10.0 (2025-04-07)
 
 ### ♻ Code Refactoring

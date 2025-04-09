@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { ISCMProvider } from "./s-c-m-provider";
+import { ISCMProvider } from "./scm-provider";
 import { promisify } from "util";
 import * as childProcess from "child_process";
 import { DiffSimplifier } from "../utils/diff/diff-simplifier";

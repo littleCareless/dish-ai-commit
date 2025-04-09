@@ -10,7 +10,7 @@ import { EXTENSION_NAME } from "../constants";
 import { generateCommitMessageSystemPrompt } from "../prompt/prompt";
 import { AIProviderFactory } from "../ai/ai-provider-factory";
 import { getMessage } from "../utils/i18n";
-import { SCMFactory } from "../scm/s-c-m-provider";
+import { SCMFactory } from "../scm/scm-provider";
 import {
   CONFIG_SCHEMA,
   ConfigValue,

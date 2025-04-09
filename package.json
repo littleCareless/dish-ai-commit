@@ -2,7 +2,7 @@
   "name": "dish-ai-commit",
   "displayName": "Dish AI Commit Gen",
   "description": "🤖 AI-Powered VSCode extension for generating standardized Git/SVN commit messages. ✨ Supports multiple AI services: OpenAI, ChatGPT, Ollama, Zhipu, DashScope, Doubao, Gemini and VS Code built-in AI. 🌍 Multi-language support (EN/CN/JP/KR/Other). 📊 Auto-generate weekly reports.",
-  "version": "0.10.0",
+  "version": "0.10.1",
   "engines": {
     "vscode": "^1.98.0"
   },
@@ -51,10 +51,11 @@
   "contributes": {
     "commands": [
       {
-        "command": "extension.dish-ai-commit",
-        "title": "[Dish] AI Commit Generate",
+        "command": "dish-ai-commit.generateCommitMessage",
+        "title": "[Dish] Commit Generate with AI",
         "category": "[Dish AI Commit]",
-        "icon": "/images/icon.svg"
+        "icon": "/images/icon.svg",
+        "description": "使用 AI 生成提交信息"
       },
       {
         "command": "dish-ai-commit.selectModel",
@@ -237,26 +238,56 @@
     "menus": {
       "scm/title": [
         {
-          "command": "extension.dish-ai-commit",
+          "command": "dish-ai-commit.generateCommitMessage",
           "when": "scmProvider =~ /(git|svn)/",
-          "group": "navigation"
+          "group": "navigation@-3"
+        },
+        {
+          "command": "dish-ai-commit.selectModel",
+          "when": "scmProvider =~ /(git|svn)/",
+          "group": "2_z_dish@1"
+        },
+        {
+          "command": "dish-ai-commit.generateCommitMessage",
+          "when": "scmProvider =~ /(git|svn)/",
+          "group": "2_z_dish@2"
+        },
+        {
+          "command": "dish-ai-commit.generateWeeklyReport",
+          "when": "scmProvider =~ /(git|svn)/",
+          "group": "2_z_dish@3"
+        },
+        {
+          "command": "dish-ai-commit.reviewCode",
+          "when": "scmProvider =~ /(git|svn)/",
+          "group": "2_z_dish@4"
         }
       ],
       "scm/resourceState/context": [
         {
-          "command": "extension.dish-ai-commit",
+          "command": "dish-ai-commit.selectModel",
           "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
-          "group": "1_modification"
+          "group": "2_z_dish@1"
+        },
+        {
+          "command": "dish-ai-commit.generateCommitMessage",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "2_z_dish@2"
         },
         {
           "command": "dish-ai-commit.reviewCode",
           "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
-          "group": "1_modification"
+          "group": "2_z_dish@3"
+        },
+        {
+          "command": "dish-ai-commit.generateWeeklyReport",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "2_z_dish@4"
         }
       ],
       "scm/resourceFolder/context": [
         {
-          "command": "extension.dish-ai-commit",
+          "command": "dish-ai-commit.generateCommitMessage",
           "when": "scmProvider =~ /(git|svn)/",
           "group": "inline"
         },
@@ -268,7 +299,7 @@
       ],
       "commandPalette": [
         {
-          "command": "extension.dish-ai-commit",
+          "command": "dish-ai-commit.generateCommitMessage",
           "when": "(config.svn.enabled && svnOpenRepositoryCount > 0) || (config.git.enabled && gitOpenRepositoryCount > 0)"
         },
         {

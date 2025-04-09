@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { ConfigurationManager } from "../config/configuration-manager";
 import { AIProviderFactory } from "../ai/ai-provider-factory";
-import { SCMFactory } from "../scm/s-c-m-provider";
+import { SCMFactory } from "../scm/scm-provider";
 import { ModelPickerService } from "../services/model-picker-service";
 import { notify } from "../utils/notification/notification-manager";
 import { getMessage, formatMessage } from "../utils/i18n";
@@ -138,6 +138,17 @@ export abstract class BaseCommand {
     const states = Array.isArray(resourceStates)
       ? resourceStates
       : [resourceStates];
+
+    console.log(
+      "Selected files:",
+      states.map((state) => state.resourceUri?.fsPath)
+    );
+    console.log("Number of selected files:", states.length);
+
+    if (states.length === 0) {
+      console.warn("No files selected.");
+    }
+
     return [
       ...new Set(
         states
