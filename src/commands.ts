@@ -4,6 +4,7 @@ import { GenerateCommitCommand } from "./commands/generate-commit-command";
 import { SelectModelCommand } from "./commands/select-model-command";
 import { GenerateWeeklyReportCommand } from "./commands/generate-weekly-report-command";
 import { ReviewCodeCommand } from "./commands/review-code-command";
+import { GenerateBranchNameCommand } from "./commands/generate-branch-name-command";
 import { notify } from "./utils";
 
 /**
@@ -34,6 +35,7 @@ export class CommandManager implements vscode.Disposable {
       const selectModelCommand = new SelectModelCommand(this.context);
       const weeklyReportCommand = new GenerateWeeklyReportCommand(this.context);
       const reviewCodeCommand = new ReviewCodeCommand(this.context);
+      const branchNameCommand = new GenerateBranchNameCommand(this.context);
 
       this.disposables.push(
         // 注册生成commit信息命令
@@ -84,6 +86,20 @@ export class CommandManager implements vscode.Disposable {
             } catch (error) {
               // 处理代码审查失败
               notify.error("command.review.code.failed", [
+                error instanceof Error ? error.message : String(error),
+              ]);
+            }
+          }
+        ),
+        // 注册分支名称生成命令
+        vscode.commands.registerCommand(
+          COMMANDS.BRANCH_NAME.GENERATE,
+          async (...resources: vscode.SourceControlResourceState[]) => {
+            try {
+              await branchNameCommand.execute(resources);
+            } catch (error) {
+              // 处理分支名称生成失败
+              notify.error("command.branch.name.failed", [
                 error instanceof Error ? error.message : String(error),
               ]);
             }

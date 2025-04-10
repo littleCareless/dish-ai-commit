@@ -1,5 +1,9 @@
 import { notify } from "../../utils/notification/notification-manager";
 import { generateCommitMessageSystemPrompt } from "../../prompt/prompt";
+import {
+  generateBranchNameSystemPrompt,
+  generateBranchNameUserPrompt,
+} from "../../prompt/branch-name";
 import { AIRequestParams } from "../types";
 import { ConfigurationManager } from "../../config/configuration-manager";
 import { CODE_REVIEW_PROMPT } from "../../prompt/code-review";
@@ -151,4 +155,30 @@ export function getCodeReviewPrompt(params: AIRequestParams): string {
     return configuredPrompt || CODE_REVIEW_PROMPT;
   } finally {
   }
+}
+
+/**
+ * 获取分支名称生成的系统提示文本
+ * @param {AIRequestParams} params - AI 请求参数
+ * @returns {string} 分支名称生成的系统提示文本
+ */
+export function getBranchNameSystemPrompt(params: AIRequestParams): string {
+  try {
+
+    // 获取完整配置并生成系统提示
+    const config = ConfigurationManager.getInstance().getConfiguration();
+    return generateBranchNameSystemPrompt({
+      config,
+    });
+  } finally {
+  }
+}
+
+/**
+ * 获取分支名称生成的用户提示文本
+ * @param {string} diffContent - 代码差异内容
+ * @returns {string} 分支名称生成的用户提示文本
+ */
+export function getBranchNameUserPrompt(diffContent: string): string {
+  return generateBranchNameUserPrompt(diffContent);
 }

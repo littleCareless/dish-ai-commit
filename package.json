@@ -80,6 +80,13 @@
         "category": "[Dish AI Commit]",
         "icon": "/images/icon.svg",
         "description": "使用 AI 对代码进行评审"
+      },
+      {
+        "command": "dish-ai-commit.generateBranchName",
+        "title": "[Dish] Generate Branch Name with AI",
+        "category": "[Dish AI Commit]",
+        "icon": "/images/icon.svg",
+        "description": "使用 AI 生成Git分支名称"
       }
     ],
     "configuration": {
@@ -263,6 +270,11 @@
           "command": "dish-ai-commit.selectModel",
           "when": "scmProvider =~ /(git|svn)/",
           "group": "2_z_dish@4"
+        },
+        {
+          "command": "dish-ai-commit.generateBranchName",
+          "when": "scmProvider == git",
+          "group": "2_z_dish@5"
         }
       ],
       "scm/resourceState/context": [
@@ -282,9 +294,14 @@
           "group": "2_z_dish@3"
         },
         {
+          "command": "dish-ai-commit.generateBranchName",
+          "when": "config.git.enabled && scmProvider == git && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "2_z_dish@4"
+        },
+        {
           "command": "dish-ai-commit.selectModel",
           "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
-          "group": "2_z_dish@4"
+          "group": "2_z_dish@5"
         }
       ],
       "scm/resourceFolder/context": [
@@ -301,6 +318,11 @@
         {
           "command": "dish-ai-commit.generateWeeklyReport",
           "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "inline"
+        },
+        {
+          "command": "dish-ai-commit.generateBranchName",
+          "when": "config.git.enabled && scmProvider == git && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
           "group": "inline"
         },
         {
@@ -326,6 +348,10 @@
         {
           "command": "dish-ai-commit.reviewCode",
           "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges"
+        },
+        {
+          "command": "dish-ai-commit.generateBranchName",
+          "when": "config.git.enabled && scmProvider == git && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges"
         }
       ]
     }

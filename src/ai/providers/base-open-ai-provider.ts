@@ -12,6 +12,8 @@ import {
   generateWithRetry,
   getCodeReviewPrompt,
   getSystemPrompt,
+  getBranchNameSystemPrompt,
+  getBranchNameUserPrompt,
 } from "../utils/generate-helper";
 
 import { getWeeklyReportPrompt } from "../../prompt/weekly-report";
@@ -248,6 +250,59 @@ export abstract class BaseOpenAIProvider implements AIProvider {
         ])
       );
     }
+  }
+
+  /**
+   * 根据代码差异生成分支名称
+   *
+   * @param params - AI请求参数
+   * @returns 分支名称生成结果
+   */
+  async generateBranchName(params: AIRequestParams): Promise<AIResponse> {
+    return generateWithRetry(
+      params,
+      async (truncatedDiff) => {
+        const messages: ChatCompletionMessageParam[] = [
+          {
+            role: "system",
+            content: getBranchNameSystemPrompt(params),
+          },
+          {
+            role: "user",
+            content: getBranchNameUserPrompt(truncatedDiff),
+          },
+        ];
+
+        try {
+          const completion = await this.openai.chat.completions.create({
+            model:
+              (params.model && params.model.id) ||
+              this.config.defaultModel ||
+              "gpt-3.5-turbo",
+            messages,
+            temperature: 0.3, // 较低的温度使输出更加确定性
+          });
+
+          return {
+            content: completion.choices[0]?.message?.content || "",
+            usage: {
+              promptTokens: completion.usage?.prompt_tokens,
+              completionTokens: completion.usage?.completion_tokens,
+              totalTokens: completion.usage?.total_tokens,
+            },
+          };
+        } catch (error) {
+          const message = formatMessage("branchName.generation.failed", [
+            error instanceof Error ? error.message : String(error),
+          ]);
+          throw new Error(message);
+        }
+      },
+      {
+        initialMaxLength: params.model?.maxTokens?.input || 16385,
+        provider: this.getId(),
+      }
+    );
   }
 
   /**

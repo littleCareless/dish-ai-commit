@@ -118,6 +118,8 @@ export interface AIProvider {
   generateResponse(params: AIRequestParams): Promise<AIResponse>;
   /** 生成代码评审内容 */
   generateCodeReview?(params: AIRequestParams): Promise<AIResponse>;
+  /** 生成分支名称 */
+  generateBranchName?(params: AIRequestParams): Promise<AIResponse>;
   /** 生成周报 */
   generateWeeklyReport(commits: string[], model?: AIModel): Promise<AIResponse>;
   /** 检查服务可用性 */
