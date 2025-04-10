@@ -6,6 +6,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.11.0 (2025-04-10)
+
+### ✨ Features
+
+- **branch**: Add branch name generation function ([ab9be01](https://github.com/littleCareless/dish-ai-commit/commit/ab9be01))
+
+### 🎫 Chores
+
+- **deps**: Update VSCode engine support version and build dependencies ([d6305d8](https://github.com/littleCareless/dish-ai-commit/commit/d6305d8))
+
+- **deps**: Update dependency configuration requirements ([fa808d9](https://github.com/littleCareless/dish-ai-commit/commit/fa808d9))
+
+### 📝 Documentation
+
+- **version**: Update version to 0.10.3 and synchronize change log ([b8525c1](https://github.com/littleCareless/dish-ai-commit/commit/b8525c1))
+
+### 🔧 Continuous Integration
+
+- **workflows**: Add VS Code plugin release process ([b005f76](https://github.com/littleCareless/dish-ai-commit/commit/b005f76))
+
 ## 0.10.3 (2025-04-09)
 
 ### ♻ Code Refactoring

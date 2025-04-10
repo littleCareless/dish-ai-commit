@@ -6,6 +6,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.11.0 (2025-04-10)
+
+### ✨ Features
+
+- **branch**: 添加分支名称生成功能 ([ab9be01](https://github.com/littleCareless/dish-ai-commit/commit/ab9be01))
+
+### 🎫 Chores
+
+- **deps**: 更新 VSCode 引擎支持版本和构建依赖 ([d6305d8](https://github.com/littleCareless/dish-ai-commit/commit/d6305d8))
+- **deps**: 更新依赖配置要求 ([fa808d9](https://github.com/littleCareless/dish-ai-commit/commit/fa808d9))
+
+### 📝 Documentation
+
+- **version**: 更新版本至 0.10.3 并同步更新日志 ([b8525c1](https://github.com/littleCareless/dish-ai-commit/commit/b8525c1))
+
+### 🔧 Continuous Integration
+
+- **workflows**: 添加 VS Code 插件发布流程 ([b005f76](https://github.com/littleCareless/dish-ai-commit/commit/b005f76))
+
 ## 0.10.3 (2025-04-09)
 
 ### ♻ Code Refactoring
