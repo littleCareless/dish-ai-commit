@@ -7,7 +7,12 @@ import {
   type AIProviders,
 } from "../types";
 import { ConfigurationManager } from "../../config/configuration-manager";
-import { generateWithRetry, getSystemPrompt } from "../utils/generate-helper";
+import {
+  generateWithRetry,
+  getSystemPrompt,
+  getBranchNameSystemPrompt,
+  getBranchNameUserPrompt,
+} from "../utils/generate-helper";
 import { getWeeklyReportPrompt } from "../../prompt/weekly-report";
 import { getMessage } from "../../utils/i18n";
 import { notify } from "../../utils/notification/notification-manager";
@@ -96,6 +101,57 @@ export class OllamaProvider implements AIProvider {
             },
           ],
           stream: false,
+        });
+
+        let content = "";
+        try {
+          const jsonContent = JSON.parse(response.message.content);
+          content = jsonContent.response || response.message.content;
+        } catch {
+          content = response.message.content;
+        }
+
+        return {
+          content,
+          usage: {
+            totalTokens: response.total_duration,
+          },
+        };
+      },
+      {
+        initialMaxLength: 16385,
+        provider: this.getId(),
+      }
+    );
+  }
+
+  /**
+   * 生成分支名称
+   * @param params - AI请求参数
+   * @returns 包含生成的分支名称和使用统计的响应
+   * @throws 如果生成失败会通过重试机制处理
+   */
+  async generateBranchName(params: AIRequestParams): Promise<AIResponse> {
+    return generateWithRetry(
+      params,
+      async (truncatedDiff) => {
+        const model =
+          params.model || this.configManager.getConfig("BASE_MODEL");
+
+        const response = await this.ollama.chat({
+          model: model.id,
+          messages: [
+            {
+              role: "system",
+              content: getBranchNameSystemPrompt(params),
+            },
+            {
+              role: "user",
+              content: getBranchNameUserPrompt(truncatedDiff),
+            },
+          ],
+          stream: false,
+          // temperature: 0.3, // 较低的温度使输出更加确定性
         });
 
         let content = "";

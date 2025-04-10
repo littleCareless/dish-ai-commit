@@ -197,6 +197,15 @@ export const CONFIG_SCHEMA = {
           "Custom system prompt for code review / 代码审查的自定义系统提示语",
       },
     },
+    // Branch name generation features
+    branchNameGeneration: {
+      systemPrompt: {
+        type: "string",
+        default: `Custom system prompt`,
+        description:
+          "Custom system prompt for branch name generation / 分支名称生成的自定义系统提示语",
+      },
+    },
   },
 } as const;
 

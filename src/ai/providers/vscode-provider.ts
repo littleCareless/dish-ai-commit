@@ -8,7 +8,12 @@ import {
   type CodeReviewResult,
 } from "../types";
 import { generateCommitMessageSystemPrompt } from "../../prompt/prompt";
-import { getCodeReviewPrompt, getSystemPrompt } from "../utils/generate-helper";
+import {
+  getCodeReviewPrompt,
+  getSystemPrompt,
+  getBranchNameSystemPrompt,
+  getBranchNameUserPrompt,
+} from "../utils/generate-helper";
 import { getWeeklyReportPrompt } from "../../prompt/weekly-report";
 import { getMessage, formatMessage } from "../../utils/i18n";
 import { CodeReviewReportGenerator } from "../../services/code-review-report-generator";
@@ -205,6 +210,76 @@ IMPORTANT: You must respond with a valid JSON object following this schema:
     } catch (error) {
       throw new Error(
         formatMessage("codeReview.generation.failed", [
+          error instanceof Error ? error.message : String(error),
+        ])
+      );
+    }
+  }
+
+  async generateBranchName(params: AIRequestParams): Promise<AIResponse> {
+    try {
+      const models = await vscode.lm.selectChatModels();
+      if (!models || models.length === 0) {
+        throw new Error(getMessage("vscode.no.models.available"));
+      }
+
+      const chatModel =
+        models.find((model) => model.id === params.model.id) || models[0];
+      let maxCodeCharacters = getMaxCharacters(params.model, 2600) - 1000;
+      let retries = 0;
+
+      while (true) {
+        const messages = [
+          vscode.LanguageModelChatMessage.User(
+            getBranchNameSystemPrompt(params)
+          ),
+          vscode.LanguageModelChatMessage.User(
+            getBranchNameUserPrompt(params.diff.substring(0, maxCodeCharacters))
+          ),
+        ];
+
+        try {
+          if (params.diff.length > maxCodeCharacters) {
+            console.warn(getMessage("input.truncated"));
+          }
+
+          const response = await chatModel.sendRequest(messages, {
+            // temperature: 0.3, // 较低的温度使输出更加确定性
+          });
+
+          let result = "";
+          for await (const fragment of response.text) {
+            result += fragment;
+          }
+
+          return { content: result.trim() };
+        } catch (ex: Error | any) {
+          let message = ex instanceof Error ? ex.message : String(ex);
+
+          if (
+            ex instanceof Error &&
+            "cause" in ex &&
+            ex.cause instanceof Error
+          ) {
+            message += `\n${ex.cause.message}`;
+
+            if (
+              retries++ < 2 &&
+              ex.cause.message.includes("exceeds token limit")
+            ) {
+              maxCodeCharacters -= 500 * retries;
+              continue;
+            }
+          }
+
+          throw new Error(
+            formatMessage("branchName.generation.failed", [message])
+          );
+        }
+      }
+    } catch (error) {
+      throw new Error(
+        formatMessage("branchName.generation.failed", [
           error instanceof Error ? error.message : String(error),
         ])
       );
