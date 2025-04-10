@@ -4,7 +4,9 @@
   "description": "🤖 AI-Powered VSCode extension for generating standardized Git/SVN commit messages. ✨ Supports multiple AI services: OpenAI, ChatGPT, Ollama, Zhipu, DashScope, Doubao, Gemini and VS Code built-in AI. 🌍 Multi-language support (EN/CN/JP/KR/Other). 📊 Auto-generate weekly reports.",
   "version": "0.10.3",
   "engines": {
-    "vscode": "^1.99.0"
+    "node": ">= 22.12.0",
+    "pnpm": ">= 10.0.0",
+    "vscode": "^1.92.0"
   },
   "publisher": "littleCareless",
   "repository": "https://github.com/littleCareless/dish-ai-commit",
@@ -352,7 +354,7 @@
     "@types/jest": "^29.5.14",
     "@types/mocha": "^10.0.10",
     "@types/node": "~22.14.0",
-    "@types/vscode": "^1.99.1",
+    "@types/vscode": "^1.92.0",
     "@typescript-eslint/eslint-plugin": "^8.29.1",
     "@typescript-eslint/parser": "^8.29.1",
     "@vscode/test-cli": "^0.0.10",
