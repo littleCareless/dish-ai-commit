@@ -1,5 +1,5 @@
 import { notify } from "../../utils/notification/notification-manager";
-import { generateCommitMessageSystemPrompt } from "../../prompt/prompt";
+import { generateCommitMessageSystemPrompt } from "../../prompt/generate-commit";
 import {
   generateBranchNameSystemPrompt,
   generateBranchNameUserPrompt,
