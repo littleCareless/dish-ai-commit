@@ -23,57 +23,28 @@ A VSCode extension for generating standardized Git/SVN commit messages using AI
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-A VSCode extension for generating standardized Git/SVN commit messages using AI. Supports OpenAI, Ollama, VSCode built-in AI services, Zhipu AI, DashScope, Gemini AI, and Doubao AI.
+A VSCode extension that uses AI to generate standardized Git/SVN commit messages. Supports OpenAI, Ollama, VSCode built-in AI service, Zhipu AI, DashScope, Gemini AI, Doubao AI, Deepseek AI, SiliconFlow and OpenRouter.
 
-### 🆓 Free AI Model Support
+### 🆓 Free AI model support
 
-- Zhipu AI (GLM-4-Flash)
-
-  - Free Quota: Fixed monthly free quota per account ([Rate limiting guidelines](https://open.bigmodel.cn/dev/howuse/rate-limits))
-  - [Get Zhipu API Key here](https://open.bigmodel.cn/usercenter/apikeys)
-
-- Gemini AI (gemini-2.0-flash-exp)
-  - Free Quota: 10 RPM 1500 req/day
-  - [Get Gemini API Key here](https://makersuite.google.com/app/apikey)
+- **Zhipu AI (GLM-4-Flash)** - Fixed monthly free quota ([Get API Key](https://open.bigmodel.cn/usercenter/apikeys))
+- **Gemini AI** - 1,500 free requests per day ([Get API Key](https://makersuite.google.com/app/apikey))
 
 ## Features
 
-### 🤖 Multi-Platform AI Support
+### 🤖 Multi-platform AI support
 
-- OpenAI API
-
-  - Suitable for scenarios requiring high-quality generation results
-  - Supports multiple models including GPT-3.5/GPT-4
-  - Requires API Key, charged based on usage
-
-- Ollama
-
-  - Local deployment, no internet required
-  - Supports multiple open-source models
-  - Ideal for scenarios with data privacy requirements
-
-- VSCode Built-in AI
-
-  - Uses VSCode's built-in GitHub Copilot
-  - Requires valid GitHub Copilot subscription
-  - Configuration: Set provider to "vscode"
-
-- Zhipu AI (GLM-4)
-
-  - Excellent Chinese language performance
-  - Fixed monthly free quota
-  - Suitable for users in China
-
-- DashScope
-
-  - AI service provided by Alibaba Cloud
-  - Supports Tongyi Qianwen series models
-  - Suitable for enterprise applications
-
-- Gemini AI
-  - AI service provided by Google
-  - Daily free quota: 1500 requests
-  - Suitable for individual developers
+| AI provider        | Features                                                                         | Applicable scenarios                                         |
+| ------------------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------ |
+| OpenAI API         | High-quality generated results, support GPT-3.5/GPT-4                            | Scenarios that require high-quality output, charged by usage |
+| Ollama             | Local deployment, support for multiple open source models                        | Scenarios with high data privacy requirements                |
+| VSCode built-in AI | Using GitHub Copilot                                                             | Users with GitHub Copilot subscription                       |
+| Zhipu AI (GLM-4)   | Excellent Chinese processing capabilities, fixed monthly free quota              | Chinese users, Chinese processing                            |
+| DashScope          | Provided by Alibaba Cloud, supports Tongyi Qianwen series models                 | Enterprise-level applications                                |
+| Gemini AI          | Daily free quota of 1,500 requests                                               | Individual developers                                        |
+| Deepseek AI        | High-quality open source large model, Chinese and English bilingual optimization | Multi-language support requirements                          |
+| SiliconFlow        | High-performance AI reasoning platform                                           | Scenarios that require multi-model support                   |
+| OpenRouter         | Open source AI routing service, multi-model support                              | Flexible model selection requirements                        |
 
 ### 📝 Version Control System Support
 
@@ -86,6 +57,14 @@ A VSCode extension for generating standardized Git/SVN commit messages using AI.
 - Automatically summarize your work progress
 - Customizable report templates
 - Support multiple AI providers for report generation
+
+### 🌿 Branch name generation
+
+- Automatically generate Git branch names that meet specifications
+- Intelligently create branch names based on requirements or function descriptions
+- Support multiple branch naming conventions and formats
+- Seamless integration with all AI providers
+- Improve team branch naming consistency
 
 ### 🌍 Multi-language Commit Message Generation
 
@@ -199,15 +178,6 @@ Weekly report generation supports custom templates:
 - Summarize by project/task
 - Customize report format and key content
 
-## 📋 Requirements
-
-- VS Code 1.80.0+
-- [SVN Command Line Tool](http://subversion.apache.org/packages.html)
-- SVN SCM (Optional) - Install [SVN SCM v2.18.1+](https://github.com/littleCareless/svn-scm/releases/tag/v2.18.1) if you need to enter commit messages in VSCode's SCM input box
-  - Download the latest version of the SVN SCM extension from the [release page](https://marketplace.visualstudio.com/items?itemName=littleCareless.svn-scm-ai)
-- Git SCM (Optional) - Install [Git SCM](https://marketplace.visualstudio.com/items?itemName=vscode.git) if you need to enter commit messages in VSCode's SCM input box
-- Valid AI service configuration (OpenAI API Key or Ollama service)
-
 ### Configuration
 
 | Configuration                                          | Type    | Default                   | Description                                         |
@@ -223,6 +193,9 @@ Weekly report generation supports custom templates:
 | dish-ai-commit.providers.doubao.apiKey                 | string  | ""                        | Doubao API key                                      |
 | dish-ai-commit.providers.ollama.baseUrl                | string  | http://localhost:11434    | Ollama API base URL                                 |
 | dish-ai-commit.providers.gemini.apiKey                 | string  | ""                        | Gemini AI API key                                   |
+| dish-ai-commit.providers.deepseek.apiKey               | string  | ""                        | Deepseek AI API key                                 |
+| dish-ai-commit.providers.siliconflow.apiKey            | string  | ""                        | SiliconFlow API key                                 |
+| dish-ai-commit.providers.openrouter.apiKey             | string  | ""                        | OpenRouter API key                                  |
 | dish-ai-commit.features.codeAnalysis.simplifyDiff      | boolean | false                     | Enable diff content simplification                  |
 | dish-ai-commit.features.commitFormat.enableMergeCommit | boolean | false                     | Allow merging multiple file changes into one commit |
 | dish-ai-commit.features.commitFormat.enableEmoji       | boolean | true                      | Use emoji in commit messages                        |
@@ -230,10 +203,13 @@ Weekly report generation supports custom templates:
 
 ### Commands
 
-| Command ID                          | Category         | Title                                 | Description                                        |
-| ----------------------------------- | ---------------- | ------------------------------------- | -------------------------------------------------- |
-| dish-ai-commit.selectModel          | [Dish AI Commit] | Select AI Model for Commit Generation | Choose the AI model for generating commit messages |
-| dish-ai-commit.generateWeeklyReport | [Dish AI Commit] | Generate Weekly Report                | Generate AI-powered weekly work report             |
+| Command ID                           | Category         | Title                                       | Description                                                        |
+| ------------------------------------ | ---------------- | ------------------------------------------- | ------------------------------------------------------------------ |
+| dish-ai-commit.selectModel           | [Dish AI Commit] | Select the AI ​​model for commit generation | Select the AI ​​model for generating commit messages               |
+| dish-ai-commit.generateWeeklyReport  | [Dish AI Commit] | Generate weekly report                      | Generate AI-driven weekly work report                              |
+| dish-ai-commit.generateBranchName    | [Dish AI Commit] | Generate branch name                        | Generate standardized branch name based on requirement description |
+| dish-ai-commit.generateCommitMessage | [Dish AI Commit] | Generate commit message                     | Generate a commit message that complies with the specification     |
+| dish-ai-commit.reviewCode            | [Dish AI Commit] | Code review                                 | AI-assisted code review                                            |
 
 ## Configuration Instructions
 
@@ -285,8 +261,10 @@ See [CHANGELOG.md](CHANGELOG.md) for a detailed version history.
 ## 📋 Dependency Requirements
 
 - VS Code 1.80.0+
-- [SVN command line tool](http://subversion.apache.org/packages.html)
-- SVN SCM (optional) - To enter commit information in the SCM input box of VSCode, please install [SVN SCM v2.18.1+](https://github.com/littleCareless/svn-scm/releases/tag/v2.18.1)
+- [SVN Command Line Tool](http://subversion.apache.org/packages.html)
+- SVN SCM (Optional) - Install [SVN SCM v2.18.1+](https://github.com/littleCareless/svn-scm/releases/tag/v2.18.1) if you need to enter commit messages in VSCode's SCM input box
+  - Download the latest version of the SVN SCM extension from the [release page](https://marketplace.visualstudio.com/items?itemName=littleCareless.svn-scm-ai)
+- Git SCM (Optional) - Install [Git SCM](https://marketplace.visualstudio.com/items?itemName=vscode.git) if you need to enter commit messages in VSCode's SCM input box
 - Valid AI service configuration (OpenAI API Key or Ollama service)
 
 ## 💡 Frequently asked questions
