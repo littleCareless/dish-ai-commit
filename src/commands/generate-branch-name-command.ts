@@ -79,7 +79,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
 
           const branchNameResult = await aiProvider?.generateBranchName?.({
             ...configuration.base,
-            ...configuration.features.branchNameGeneration,
+            ...configuration.features.branchName,
             diff: diffContent,
             model: selectedModel,
             scm: scmProvider.type ?? "git",

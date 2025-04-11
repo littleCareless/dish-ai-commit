@@ -1,20 +1,20 @@
 /**
  * 配置服务
- * 
+ *
  * 功能：
  * 1. 提供获取和更新VS Code扩展配置的接口
  * 2. 管理配置的刷新和缓存
  * 3. 根据配置模式自动生成完整配置
  * 4. 提供类型安全的配置访问方法
  * 5. 在需要时生成系统提示（system prompt）
- * 
+ *
  * 主要职责：
  * - 作为扩展配置的中央访问点
  * - 确保配置值的类型安全
  * - 处理配置的动态生成，特别是系统提示
  * - 防止配置生成的递归调用
  * - 提供统一的配置更新接口
- * 
+ *
  * 在扩展架构中，负责管理所有配置相关的操作，确保其他组件可以
  * 以一致且类型安全的方式访问配置。同时处理特殊配置（如系统提示）
  * 的生成逻辑，以避免重复计算和生成过程中的循环依赖。
@@ -78,7 +78,7 @@ export class ConfigurationService {
       });
 
       // 只在非跳过模式下且明确需要 systemPrompt 时才生成
-      if (!skipSystemPrompt && !config.base.systemPrompt) {
+      if (!skipSystemPrompt && !config.features.commitMessage.systemPrompt) {
         const currentScm = SCMFactory.getCurrentSCMType() || "git";
         const promptConfig = {
           ...config.base,
@@ -90,7 +90,8 @@ export class ConfigurationService {
           model: {},
         };
 
-        config.base.systemPrompt = getSystemPrompt(promptConfig);
+        config.features.commitMessage.systemPrompt =
+          getSystemPrompt(promptConfig);
       }
 
       return config as ExtensionConfiguration;
