@@ -58,6 +58,9 @@ export interface AIRequestParams {
   /** 提交格式相关选项 */
   enableMergeCommit?: boolean;
   enableEmoji?: boolean;
+
+  /** 分层提交信息生成相关选项 */
+  enableLayeredCommit?: boolean;
 }
 
 /**
@@ -111,11 +114,30 @@ export interface AIModel<
 }
 
 /**
+ * 分层提交信息结构接口
+ */
+export interface LayeredCommitMessage {
+  /** 全局摘要 - 基于整体diff的高层次概述 */
+  summary: string;
+  /** 文件描述 - 每个修改文件的变更说明 */
+  fileChanges: Array<{
+    /** 文件路径 */
+    filePath: string;
+    /** 变更描述 */
+    description: string;
+  }>;
+}
+
+/**
  * AI提供者接口，定义了AI服务提供者需要实现的方法
  */
 export interface AIProvider {
   /** 生成回复内容 */
   generateResponse(params: AIRequestParams): Promise<AIResponse>;
+  /** 生成分层提交信息 */
+  generateLayeredCommit?(
+    params: AIRequestParams
+  ): Promise<LayeredCommitMessage>;
   /** 生成代码评审内容 */
   generateCodeReview?(params: AIRequestParams): Promise<AIResponse>;
   /** 生成分支名称 */
@@ -295,6 +317,19 @@ export type OpenRouterModels =
   | "mistralai/mixtral-8x7b-instruct"
   | "mistralai/mistral-medium"
   | "mistralai/mistral-small";
+
+// 所有支持的模型名称类型
+export type ModelNames =
+  | OpenAIModels
+  | GitHubModels
+  | VSCodeAIModels
+  | ZhipuAIModels
+  | DashScopeModels
+  | DoubaoModels
+  | GeminiAIModels
+  | DeepseekModels
+  | SiliconFlowModels
+  | OpenRouterModels;
 
 export type AIProviders =
   | "anthropic"

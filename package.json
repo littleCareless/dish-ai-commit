@@ -232,6 +232,11 @@
           "default": true,
           "description": "Use emoji in commit messages / 在提交信息中使用表情符号"
         },
+        "dish-ai-commit.features.commitFormat.enableLayeredCommit": {
+          "type": "boolean",
+          "default": false,
+          "description": "Generate layered commit messages with global summary and per-file details / 生成分层提交信息，包含全局摘要和每个文件的详细描述"
+        },
         "dish-ai-commit.features.weeklyReport.systemPrompt": {
           "type": "string",
           "default": "",
@@ -241,6 +246,11 @@
           "type": "string",
           "default": "Custom system prompt",
           "description": "Custom system prompt for code review / 代码审查的自定义系统提示语"
+        },
+        "dish-ai-commit.features.branchNameGeneration.systemPrompt": {
+          "type": "string",
+          "default": "Custom system prompt",
+          "description": "Custom system prompt for branch name generation / 分支名称生成的自定义系统提示语"
         }
       }
     },
@@ -368,7 +378,7 @@
     "commit": "git add . && git-cz",
     "release": "standard-version --preset gitmoji-config -i CHANGELOG.zh-CN.md",
     "changelog": "conventional-changelog -i CHANGELOG.md -s -r 0",
-    "update-config": "ts-node ./src/scripts/updateConfig.ts",
+    "update-config": "ts-node ./src/scripts/update-config.ts",
     "package": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce package",
     "publish": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce publish",
     "publish:pre": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce publish --pre-release"

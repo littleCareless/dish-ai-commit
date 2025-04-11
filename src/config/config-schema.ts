@@ -178,6 +178,12 @@ export const CONFIG_SCHEMA = {
         default: true,
         description: "Use emoji in commit messages / 在提交信息中使用表情符号",
       },
+      enableLayeredCommit: {
+        type: "boolean",
+        default: false,
+        description:
+          "Generate layered commit messages with global summary and per-file details / 生成分层提交信息，包含全局摘要和每个文件的详细描述",
+      },
     },
     // Weekly report generation features
     weeklyReport: {
