@@ -131,10 +131,11 @@ export function getSystemPrompt(params: AIRequestParams): string {
 
     // 获取完整配置并生成系统提示
     const config = ConfigurationManager.getInstance().getConfiguration();
-    return generateCommitMessageSystemPrompt({
+    const prompt = generateCommitMessageSystemPrompt({
       config,
       vcsType: params.scm || "git",
     });
+    return prompt;
   } finally {
     isGeneratingPrompt = false;
   }
