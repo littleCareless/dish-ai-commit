@@ -1,7 +1,7 @@
 import { ConfigurationManager } from "../../config/configuration-manager";
 import { notify } from "../../utils/notification/notification-manager";
 import { type AIModel } from "../types";
-import { BaseOpenAIProvider } from "./base-open-ai-provider";
+import { BaseOpenAIProvider } from "./base-openai-provider";
 
 /** OpenRouter服务提供者标识信息 */
 const provider = { id: "openrouter", name: "OpenRouter" } as const;
