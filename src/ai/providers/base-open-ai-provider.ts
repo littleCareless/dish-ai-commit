@@ -8,17 +8,8 @@ import {
   type CodeReviewResult,
   type AIProviders,
 } from "../types";
-import {
-  generateWithRetry,
-  getCodeReviewPrompt,
-  getSystemPrompt,
-  getBranchNameSystemPrompt,
-  getBranchNameUserPrompt,
-} from "../utils/generate-helper";
-
-import { getWeeklyReportPrompt } from "../../prompt/weekly-report";
-import { CodeReviewReportGenerator } from "../../services/code-review-report-generator";
-import { formatMessage } from "../../utils/i18n/localization-manager";
+import { AbstractAIProvider } from "./abstract-ai-provider";
+import { generateWithRetry } from "../utils/generate-helper";
 
 /**
  * OpenAI提供者配置项接口
@@ -44,7 +35,7 @@ export interface OpenAIProviderConfig {
  * OpenAI API基础提供者抽象类
  * 实现了OpenAI API的基本功能，可被具体提供者继承和扩展
  */
-export abstract class BaseOpenAIProvider implements AIProvider {
+export abstract class BaseOpenAIProvider extends AbstractAIProvider {
   /** 超时时间(ms) */
   private readonly TIMEOUT = 10000; // 10秒
   /** 重试次数 */
@@ -62,6 +53,7 @@ export abstract class BaseOpenAIProvider implements AIProvider {
    * @param config - 提供者配置对象
    */
   constructor(config: OpenAIProviderConfig) {
+    super();
     this.config = config;
     this.provider = {
       id: config.providerId,
@@ -92,217 +84,67 @@ export abstract class BaseOpenAIProvider implements AIProvider {
   }
 
   /**
-   * 生成AI回复内容
-   * 使用重试机制处理可能的失败情况
-   *
-   * @param params - AI请求参数
-   * @returns 包含生成内容和使用统计的Promise
+   * 实现抽象方法：执行AI请求
+   * 调用OpenAI API执行请求并返回结果
    */
-  async generateResponse(params: AIRequestParams): Promise<AIResponse> {
-    return generateWithRetry(
-      params,
-      async (truncatedDiff) => {
-        const messages: ChatCompletionMessageParam[] = [
-          {
-            role: "system",
-            content: getSystemPrompt(params),
-          },
-          {
-            role: "user",
-            content: truncatedDiff,
-          },
-        ];
-
-        const completion = await this.openai.chat.completions.create({
-          model:
-            (params.model && params.model.id) ||
-            this.config.defaultModel ||
-            "gpt-3.5-turbo",
-          messages,
-        });
-
-        return {
-          content: completion.choices[0]?.message?.content || "",
-          usage: {
-            promptTokens: completion.usage?.prompt_tokens,
-            completionTokens: completion.usage?.completion_tokens,
-            totalTokens: completion.usage?.total_tokens,
-          },
-        };
-      },
-      {
-        initialMaxLength: params.model?.maxTokens?.input || 16385,
-        provider: this.getId(),
-      }
-    );
-  }
-
-  /**
-   * 生成代码评审报告
-   * 将diff内容转换为结构化的评审结果
-   *
-   * @param params - 代码评审请求参数
-   * @returns 包含评审报告的Promise
-   * @throws 如果AI响应解析失败或生成过程出错
-   */
-  async generateCodeReview(params: AIRequestParams): Promise<AIResponse> {
-    return generateWithRetry(
-      params,
-      async (truncatedInput) => {
-        const messages: ChatCompletionMessageParam[] = [
-          {
-            role: "system",
-            content: getCodeReviewPrompt(params),
-          },
-          {
-            role: "user",
-            content: truncatedInput,
-          },
-        ];
-
-        try {
-          const completion = await this.openai.chat.completions.create({
-            model:
-              (params.model && params.model.id) ||
-              this.config.defaultModel ||
-              "gpt-3.5-turbo",
-            messages,
-            temperature: 0.3,
-          });
-
-          const responseContent = completion.choices[0]?.message?.content;
-          if (!responseContent) {
-            throw new Error("No response content from AI");
-          }
-
-          let reviewResult: CodeReviewResult;
-          try {
-            reviewResult = JSON.parse(responseContent);
-          } catch (e) {
-            throw new Error(
-              `Failed to parse AI response as JSON: ${
-                e instanceof Error ? e.message : String(e)
-              }`
-            );
-          }
-          return {
-            content:
-              CodeReviewReportGenerator.generateMarkdownReport(reviewResult),
-            usage: {
-              promptTokens: completion.usage?.prompt_tokens,
-              completionTokens: completion.usage?.completion_tokens,
-              totalTokens: completion.usage?.total_tokens,
-            },
-          };
-        } catch (error) {
-          const message = formatMessage("codeReview.generation.failed", [
-            error instanceof Error ? error.message : String(error),
-          ]);
-          throw new Error(message);
-        }
-      },
-      {
-        initialMaxLength: params.model?.maxTokens?.input || 16385,
-        provider: this.getId(),
-      }
-    );
-  }
-
-  /**
-   * 基于提交记录生成周报
-   * 总结一段时间内的代码提交活动
-   *
-   * @param commits - 提交记录数组
-   * @param model - 可选的指定模型
-   * @returns 包含周报内容的Promise
-   * @throws 如果生成失败会抛出本地化的错误信息
-   */
-  async generateWeeklyReport(
-    commits: string[],
-    model?: AIModel
-  ): Promise<AIResponse> {
-    try {
-      const response = await this.openai.chat.completions.create({
-        model: model?.id || this.config.defaultModel || "gpt-3.5-turbo",
-        messages: [
-          {
-            role: "system",
-            content: getWeeklyReportPrompt(),
-          },
-          {
-            role: "user",
-            content: commits.join("\n"),
-          },
-        ],
-      });
-      return {
-        content: response.choices[0]?.message?.content || "",
-        usage: {
-          promptTokens: response.usage?.prompt_tokens,
-          completionTokens: response.usage?.completion_tokens,
-          totalTokens: response.usage?.total_tokens,
-        },
-      };
-    } catch (error) {
-      throw new Error(
-        formatMessage("weeklyReport.generation.failed", [
-          error instanceof Error ? error.message : String(error),
-        ])
-      );
+  protected async executeAIRequest(
+    systemPrompt: string,
+    userContent: string,
+    params: AIRequestParams,
+    options?: {
+      parseAsJSON?: boolean;
+      temperature?: number;
+      maxTokens?: number;
     }
+  ): Promise<{ content: string; usage?: any; jsonContent?: any }> {
+    const messages: ChatCompletionMessageParam[] = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userContent },
+    ];
+
+    const completion = await this.openai.chat.completions.create({
+      model:
+        (params.model && params.model.id) ||
+        this.config.defaultModel ||
+        "gpt-3.5-turbo",
+      messages,
+      temperature: options?.temperature,
+    });
+
+    const content = completion.choices[0]?.message?.content || "";
+    const usage = {
+      promptTokens: completion.usage?.prompt_tokens,
+      completionTokens: completion.usage?.completion_tokens,
+      totalTokens: completion.usage?.total_tokens,
+    };
+
+    let jsonContent;
+    if (options?.parseAsJSON) {
+      try {
+        jsonContent = JSON.parse(content);
+      } catch (e) {
+        console.warn("Failed to parse response as JSON", e);
+      }
+    }
+
+    return { content, usage, jsonContent };
   }
 
   /**
-   * 根据代码差异生成分支名称
-   *
-   * @param params - AI请求参数
-   * @returns 分支名称生成结果
+   * 获取默认模型
    */
-  async generateBranchName(params: AIRequestParams): Promise<AIResponse> {
-    return generateWithRetry(
-      params,
-      async (truncatedDiff) => {
-        const messages: ChatCompletionMessageParam[] = [
-          {
-            role: "system",
-            content: getBranchNameSystemPrompt(params),
-          },
-          {
-            role: "user",
-            content: getBranchNameUserPrompt(truncatedDiff),
-          },
-        ];
-
-        try {
-          const completion = await this.openai.chat.completions.create({
-            model:
-              (params.model && params.model.id) ||
-              this.config.defaultModel ||
-              "gpt-3.5-turbo",
-            messages,
-            temperature: 0.3, // 较低的温度使输出更加确定性
-          });
-
-          return {
-            content: completion.choices[0]?.message?.content || "",
-            usage: {
-              promptTokens: completion.usage?.prompt_tokens,
-              completionTokens: completion.usage?.completion_tokens,
-              totalTokens: completion.usage?.total_tokens,
-            },
-          };
-        } catch (error) {
-          const message = formatMessage("branchName.generation.failed", [
-            error instanceof Error ? error.message : String(error),
-          ]);
-          throw new Error(message);
-        }
+  protected getDefaultModel(): AIModel {
+    // 使用类型断言将模型ID转换为AIModel.id允许的类型
+    const modelId = this.config.defaultModel || "gpt-3.5-turbo";
+    return {
+      id: modelId as any, // 使用类型断言解决类型不兼容问题
+      name: modelId,
+      maxTokens: { input: 4096, output: 2048 },
+      provider: {
+        id: this.provider.id as AIProviders,
+        name: this.provider.name,
       },
-      {
-        initialMaxLength: params.model?.maxTokens?.input || 16385,
-        provider: this.getId(),
-      }
-    );
+    };
   }
 
   /**
@@ -320,7 +162,7 @@ export abstract class BaseOpenAIProvider implements AIProvider {
       );
 
       return response.data.map((model: any) => ({
-        id: model.id,
+        id: model.id as any, // 使用类型断言解决类型不兼容问题
         name: model.id,
         maxTokens: {
           input: model.context_window || 4096,

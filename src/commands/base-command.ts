@@ -6,6 +6,7 @@ import { ModelPickerService } from "../services/model-picker-service";
 import { notify } from "../utils/notification/notification-manager";
 import { getMessage, formatMessage } from "../utils/i18n";
 import { validateAndGetModel } from "../utils/ai/model-validation";
+import { AIProvider, AIModel, AIProviders, ModelNames } from "../ai/types"; // 正确导入ModelNames类型
 
 /**
  * 基础命令类,提供通用的命令执行功能
@@ -83,7 +84,12 @@ export abstract class BaseCommand {
     provider = "Ollama",
     model = "Ollama",
     throwError = false
-  ) {
+  ): Promise<{
+    provider: string;
+    model: string;
+    selectedModel: AIModel<AIProviders, ModelNames> | undefined; // 使用ModelNames类型替代string
+    aiProvider: AIProvider;
+  }> {
     try {
       const result = await validateAndGetModel(provider, model);
       return {

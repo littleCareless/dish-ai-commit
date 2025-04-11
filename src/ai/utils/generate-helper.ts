@@ -164,7 +164,6 @@ export function getCodeReviewPrompt(params: AIRequestParams): string {
  */
 export function getBranchNameSystemPrompt(params: AIRequestParams): string {
   try {
-
     // 获取完整配置并生成系统提示
     const config = ConfigurationManager.getInstance().getConfiguration();
     return generateBranchNameSystemPrompt({
@@ -181,4 +180,59 @@ export function getBranchNameSystemPrompt(params: AIRequestParams): string {
  */
 export function getBranchNameUserPrompt(diffContent: string): string {
   return generateBranchNameUserPrompt(diffContent);
+}
+
+/**
+ * 获取全局摘要生成的系统提示文本
+ * @param {AIRequestParams} params - AI 请求参数
+ * @returns {string} 全局摘要生成的系统提示文本
+ */
+export function getGlobalSummaryPrompt(params: AIRequestParams): string {
+  try {
+    // 提示AI生成全局摘要
+    return `请根据以下代码差异内容，生成一个简洁的全局摘要，概括所有变更的整体目的和意图。
+摘要应该是高层次的，不需要包含每个文件的细节，而是关注整体变更的目标。
+摘要内容应保持在1-3句话之内。
+
+${getSystemPrompt(params)}`;
+  } finally {
+  }
+}
+
+/**
+ * 获取文件级描述生成的系统提示文本
+ * @param {AIRequestParams} params - AI 请求参数
+ * @param {string} filePath - 文件路径
+ * @returns {string} 文件级描述生成的系统提示文本
+ */
+export function getFileDescriptionPrompt(
+  params: AIRequestParams,
+  filePath: string
+): string {
+  try {
+    // 提示AI生成文件级描述
+    return `请针对文件 "${filePath}" 的变更，生成一个简洁明了的描述。
+描述应该只关注这个特定文件的变化，说明做了什么修改以及为什么做这些修改。
+描述应该保持在1-2句话之内。
+
+${getSystemPrompt(params)}`;
+  } finally {
+  }
+}
+
+/**
+ * 从diff内容中提取修改的文件路径列表
+ * @param {string} diff - diff内容
+ * @returns {string[]} 修改的文件路径列表
+ */
+export function extractModifiedFilePaths(diff: string): string[] {
+  const filePaths: string[] = [];
+  const fileHeaderRegex = /^diff --git a\/(.*?) b\/(.*?)$/gm;
+
+  let match;
+  while ((match = fileHeaderRegex.exec(diff)) !== null) {
+    filePaths.push(match[2]); // 使用b/后的文件路径（新文件路径）
+  }
+
+  return [...new Set(filePaths)]; // 去重
 }
