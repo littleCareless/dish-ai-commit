@@ -14,6 +14,7 @@ import {
   getGlobalSummaryPrompt,
   getFileDescriptionPrompt,
   extractModifiedFilePaths,
+  generateWithRetry,
 } from "../utils/generate-helper";
 import { getWeeklyReportPrompt } from "../../prompt/weekly-report";
 import { CodeReviewReportGenerator } from "../../services/code-review-report-generator";
@@ -32,7 +33,7 @@ export abstract class AbstractAIProvider implements AIProvider {
   async generateResponse(params: AIRequestParams): Promise<AIResponse> {
     try {
       const systemPrompt = getSystemPrompt(params);
-      const result = await this.executeAIRequest(
+      const result = await this.executeWithRetry(
         systemPrompt,
         params.diff,
         params
@@ -55,7 +56,7 @@ export abstract class AbstractAIProvider implements AIProvider {
   async generateCodeReview(params: AIRequestParams): Promise<AIResponse> {
     try {
       const systemPrompt = getCodeReviewPrompt(params);
-      const result = await this.executeAIRequest(
+      const result = await this.executeWithRetry(
         systemPrompt,
         params.diff,
         params,
@@ -93,7 +94,7 @@ export abstract class AbstractAIProvider implements AIProvider {
     try {
       const systemPrompt = getBranchNameSystemPrompt(params);
       const userPrompt = getBranchNameUserPrompt(params.diff);
-      const result = await this.executeAIRequest(
+      const result = await this.executeWithRetry(
         systemPrompt,
         userPrompt,
         params,
@@ -129,7 +130,7 @@ export abstract class AbstractAIProvider implements AIProvider {
         model: model || this.getDefaultModel(),
         additionalContext: "", // 添加缺失的必需属性
       };
-      const result = await this.executeAIRequest(
+      const result = await this.executeWithRetry(
         systemPrompt,
         userContent,
         params
@@ -157,7 +158,7 @@ export abstract class AbstractAIProvider implements AIProvider {
 
       // 步骤1: 生成全局摘要
       const summarySystemPrompt = getGlobalSummaryPrompt(params);
-      const summaryResult = await this.executeAIRequest(
+      const summaryResult = await this.executeWithRetry(
         summarySystemPrompt,
         params.diff,
         params
@@ -179,7 +180,7 @@ export abstract class AbstractAIProvider implements AIProvider {
 
         if (fileDiff) {
           const fileSystemPrompt = getFileDescriptionPrompt(params, filePath);
-          const fileResult = await this.executeAIRequest(
+          const fileResult = await this.executeWithRetry(
             fileSystemPrompt,
             fileDiff,
             params
@@ -200,6 +201,42 @@ export abstract class AbstractAIProvider implements AIProvider {
         ])
       );
     }
+  }
+
+  /**
+   * 使用重试机制执行AI请求
+   *
+   * @param systemPrompt - 系统提示内容
+   * @param userContent - 用户内容
+   * @param params - 请求参数
+   * @param options - 额外选项
+   * @returns Promise<{content: string, usage?: any, jsonContent?: any}>
+   */
+  protected async executeWithRetry(
+    systemPrompt: string,
+    userContent: string,
+    params: AIRequestParams,
+    options?: {
+      parseAsJSON?: boolean;
+      temperature?: number;
+      maxTokens?: number;
+    }
+  ): Promise<{ content: string; usage?: any; jsonContent?: any }> {
+    return generateWithRetry(
+      params,
+      async (truncatedInput) => {
+        return this.executeAIRequest(
+          systemPrompt,
+          truncatedInput,
+          params,
+          options
+        );
+      },
+      {
+        initialMaxLength: params.model?.maxTokens?.input || 16385,
+        provider: this.getId(),
+      }
+    );
   }
 
   /**
