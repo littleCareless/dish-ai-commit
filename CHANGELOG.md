@@ -6,6 +6,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.11.2 (2025-04-11)
+
+### ♻ Code Refactoring
+
+- **config**: Optimize configuration structure ([eb1755f](https://github.com/littleCareless/dish-ai-commit/commit/eb1755f))
+
+- **prompt**: Improve prompt word generation logic ([2ff9e59](https://github.com/littleCareless/dish-ai-commit/commit/2ff9e59))
+
+### 📝 Documentation
+
+- **changelog**: Update v0.11.1 version change log ([ebb559c](https://github.com/littleCareless/dish-ai-commit/commit/ebb559c))
+
 ## 0.11.1 (2025-04-11)
 
 ### ♻ Code Refactoring
