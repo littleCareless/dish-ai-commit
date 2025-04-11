@@ -6,6 +6,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.11.1 (2025-04-11)
+
+### ♻ Code Refactoring
+
+- **prompt**: Refactor the prompt module directory structure ([5826aa2](https://github.com/littleCareless/dish-ai-commit/commit/5826aa2))
+
+- **provider**: Refactor the AI ​​provider execution logic to add a retry mechanism ([154cba2](https://github.com/littleCareless/dish-ai-commit/commit/154cba2))
+
+- **providers**: Unify the AI ​​provider file naming convention ([0aa9db5](https://github.com/littleCareless/dish-ai-commit/commit/0aa9db5))
+
+### 🎫 Chores
+
+- **config**: Add hierarchical commit message function and refactor AI provider ([0f53a45](https://github.com/littleCareless/dish-ai-commit/commit/0f53a45))
+
+### 📝 Documentation
+
+- **changelog**: Update v0.11.0 version change log ([dc2b855](https://github.com/littleCareless/dish-ai-commit/commit/dc2b855))
+- **readme**: Update document support for multi-platform AI services and new features ([f89b8e1](https://github.com/littleCareless/dish-ai-commit/commit/f89b8e1))
+
 # 0.11.0 (2025-04-10)
 
 ### ✨ Features

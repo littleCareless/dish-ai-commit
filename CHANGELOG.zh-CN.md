@@ -6,6 +6,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.11.1 (2025-04-11)
+
+### ♻ Code Refactoring
+
+- **prompt**: 重构提示词模块目录结构 ([5826aa2](https://github.com/littleCareless/dish-ai-commit/commit/5826aa2))
+- **provider**: 重构 AI 提供者执行逻辑添加重试机制 ([154cba2](https://github.com/littleCareless/dish-ai-commit/commit/154cba2))
+- **providers**: 统一 AI 提供者文件命名规范 ([0aa9db5](https://github.com/littleCareless/dish-ai-commit/commit/0aa9db5))
+
+### 🎫 Chores
+
+- **config**: 添加分层提交消息功能及重构 AI 提供者 ([0f53a45](https://github.com/littleCareless/dish-ai-commit/commit/0f53a45))
+
+### 📝 Documentation
+
+- **changelog**: 更新 v0.11.0 版本变更日志 ([dc2b855](https://github.com/littleCareless/dish-ai-commit/commit/dc2b855))
+- **readme**: 更新文档支持多平台 AI 服务和新功能说明 ([f89b8e1](https://github.com/littleCareless/dish-ai-commit/commit/f89b8e1))
+
 # 0.11.0 (2025-04-10)
 
 ### ✨ Features
