@@ -367,11 +367,11 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "pnpm run compile",
-    "compile": "pnpm run compile:webview && tsc -p ./",
+    "vscode:prepublish": "npm run compile",
+    "compile": "npm run compile:webview && tsc -p ./",
     "compile:webview": "cd src/webview-ui && pnpm install && pnpm run build",
     "watch": "tsc -watch -p ./",
-    "pretest": "pnpm run compile && pnpm run lint",
+    "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
     "test": "vscode-test",
     "prepare": "husky",
