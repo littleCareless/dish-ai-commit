@@ -6,6 +6,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.11.4 (2025-04-14)
+
+### ♻ Code Refactoring
+
+- **ai**: 重命名 generateResponse 方法为 generateCommit ([92383ab](https://github.com/littleCareless/dish-ai-commit/commit/92383ab))
+
+### 🎫 Chores
+
+- **types**: 修复日期选择器类型定义 ([20dce25](https://github.com/littleCareless/dish-ai-commit/commit/20dce25))
+
+### 📝 Documentation
+
+- **changelog**: 更新项目版本至 0.11.3 ([64ea845](https://github.com/littleCareless/dish-ai-commit/commit/64ea845))
+
+### 🔧 Continuous Integration
+
+- **workflow**: 添加 GitHub Actions 发布流程 ([8914a22](https://github.com/littleCareless/dish-ai-commit/commit/8914a22))
+
 ## 0.11.3 (2025-04-14)
 
 ### ♻ Code Refactoring
