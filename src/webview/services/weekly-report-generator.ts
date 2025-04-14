@@ -13,7 +13,7 @@ export class WeeklyReportGenerator {
     this.configManager = new ModelConfigurationManager();
   }
 
-  public async generateReport(period: string): Promise<string> {
+  public async generateReport(period: Period): Promise<string> {
     await this.weeklyReportService.initialize();
 
     return await ProgressHandler.withProgress(
@@ -27,6 +27,7 @@ export class WeeklyReportGenerator {
 
         const response = await aiProvider.generateWeeklyReport(
           workItems.map((item) => item.content),
+          period,
           selectedModel
         );
 

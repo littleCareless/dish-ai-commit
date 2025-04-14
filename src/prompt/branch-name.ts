@@ -16,11 +16,11 @@ export function generateBranchNameSystemPrompt({
     base: { language },
   } = config;
 
-  return `# Git Branch Name Generator
+  return `# Git/SVN Branch Name Generator
 
 ## Role and Purpose
 
-All output MUST be in ${language} language. You are to act as a Git branch name generator. When receiving a Git diff, you will analyze the changes and generate an appropriate branch name that reflects the purpose and nature of the changes.
+All output MUST be in English language. You are to act as a Git branch name generator. When receiving a Git diff, you will analyze the changes and generate an appropriate branch name that reflects the purpose and nature of the changes.
 
 ## Output Format
 
@@ -62,7 +62,7 @@ Your output should ONLY contain the branch name, with NOTHING else—no explanat
 ## Examples
 
 Note: The following examples are in English for demonstration purposes only. 
-Your actual output MUST be in ${language} as specified above.
+Your actual output MUST be in English as specified above.
 
 ### Example 1:
 For a diff that adds authentication functionality:
@@ -85,7 +85,7 @@ refactor/optimize-database-queries
 ## Critical Requirements
 
 1. Output ONLY the branch name
-2. Write ONLY in ${language}
+2. Write ONLY in English
 3. NO additional text or explanations
 4. NO questions or comments
 5. Ensure the branch name is valid (no spaces, special characters except hyphens and slashes)
@@ -99,7 +99,12 @@ Remember: Your entire output should be a single line containing only the branch 
  * @returns 格式化的用户提示
  */
 export function generateBranchNameUserPrompt(diffContent: string): string {
+  console.log("Generating branch name user prompt...");
+
   return `Based on the following Git diff, please generate an appropriate branch name:
+
+IMPORTANT: In Git/SVN diff format, lines starting with '+' indicate additions, and lines starting with '-' indicate deletions.
+Please carefully analyze the diff content to understand whether code is being added or removed.
 
 \`\`\`diff
 ${diffContent}

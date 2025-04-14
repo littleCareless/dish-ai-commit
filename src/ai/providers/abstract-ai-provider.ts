@@ -35,6 +35,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       const systemPrompt = getSystemPrompt(params);
       const result = await this.executeWithRetry(
         systemPrompt,
+        "",
         params.diff,
         params
       );
@@ -58,19 +59,21 @@ export abstract class AbstractAIProvider implements AIProvider {
       const systemPrompt = getCodeReviewPrompt(params);
       const result = await this.executeWithRetry(
         systemPrompt,
+        "",
         params.diff,
         params,
         {
-          parseAsJSON: true,
+          // parseAsJSON: true,
           temperature: 0.3,
         }
       );
 
-      if (result.jsonContent) {
+      if (result.content) {
         return {
-          content: CodeReviewReportGenerator.generateMarkdownReport(
-            result.jsonContent as CodeReviewResult
-          ),
+          // content: CodeReviewReportGenerator.generateMarkdownReport(
+          //   result.jsonContent as CodeReviewResult
+          // ),
+          content: result.content,
           usage: result.usage,
         };
       } else {
@@ -97,6 +100,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       const result = await this.executeWithRetry(
         systemPrompt,
         userPrompt,
+        params.diff,
         params,
         {
           temperature: 0.3,
@@ -120,10 +124,14 @@ export abstract class AbstractAIProvider implements AIProvider {
    */
   async generateWeeklyReport(
     commits: string[],
+    period: {
+      startDate: string;
+      endDate: string;
+    },
     model?: AIModel
   ): Promise<AIResponse> {
     try {
-      const systemPrompt = getWeeklyReportPrompt();
+      const systemPrompt = getWeeklyReportPrompt(period);
       const userContent = commits.join("\n");
       const params: AIRequestParams = {
         diff: userContent,
@@ -132,6 +140,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       };
       const result = await this.executeWithRetry(
         systemPrompt,
+        "",
         userContent,
         params
       );
@@ -160,6 +169,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       const summarySystemPrompt = getGlobalSummaryPrompt(params);
       const summaryResult = await this.executeWithRetry(
         summarySystemPrompt,
+        "",
         params.diff,
         params
       );
@@ -182,6 +192,7 @@ export abstract class AbstractAIProvider implements AIProvider {
           const fileSystemPrompt = getFileDescriptionPrompt(params, filePath);
           const fileResult = await this.executeWithRetry(
             fileSystemPrompt,
+            "",
             fileDiff,
             params
           );
@@ -214,6 +225,7 @@ export abstract class AbstractAIProvider implements AIProvider {
    */
   protected async executeWithRetry(
     systemPrompt: string,
+    userPrompt: string,
     userContent: string,
     params: AIRequestParams,
     options?: {
@@ -227,6 +239,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       async (truncatedInput) => {
         return this.executeAIRequest(
           systemPrompt,
+          userPrompt || "",
           truncatedInput,
           params,
           options
@@ -251,6 +264,7 @@ export abstract class AbstractAIProvider implements AIProvider {
    */
   protected abstract executeAIRequest(
     systemPrompt: string,
+    userPrompt: string,
     userContent: string,
     params: AIRequestParams,
     options?: {

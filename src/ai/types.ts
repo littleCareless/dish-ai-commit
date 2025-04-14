@@ -143,7 +143,14 @@ export interface AIProvider {
   /** 生成分支名称 */
   generateBranchName?(params: AIRequestParams): Promise<AIResponse>;
   /** 生成周报 */
-  generateWeeklyReport(commits: string[], model?: AIModel): Promise<AIResponse>;
+  generateWeeklyReport(
+    commits: string[],
+    period: {
+      startDate: string;
+      endDate: string;
+    },
+    model?: AIModel
+  ): Promise<AIResponse>;
   /** 检查服务可用性 */
   isAvailable(): Promise<boolean>;
   /** 刷新可用模型列表 */

@@ -24,6 +24,7 @@ export class VSCodeProvider extends AbstractAIProvider {
    */
   protected async executeAIRequest(
     systemPrompt: string,
+    userPrompt: string,
     userContent: string,
     params: AIRequestParams,
     options?: {
@@ -51,6 +52,7 @@ export class VSCodeProvider extends AbstractAIProvider {
         vscode.LanguageModelChatMessage.User(
           userContent.substring(0, maxCodeCharacters)
         ),
+        vscode.LanguageModelChatMessage.User(userPrompt ?? ""),
       ];
 
       try {

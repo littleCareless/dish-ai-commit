@@ -89,6 +89,7 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
    */
   protected async executeAIRequest(
     systemPrompt: string,
+    userPrompt: string,
     userContent: string,
     params: AIRequestParams,
     options?: {
@@ -100,6 +101,7 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
     const messages: ChatCompletionMessageParam[] = [
       { role: "system", content: systemPrompt },
       { role: "user", content: userContent },
+      { role: "user", content: userPrompt },
     ];
 
     const completion = await this.openai.chat.completions.create({

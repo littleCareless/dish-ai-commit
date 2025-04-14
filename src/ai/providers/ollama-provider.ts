@@ -76,6 +76,7 @@ export class OllamaProvider extends AbstractAIProvider {
    */
   protected async executeAIRequest(
     systemPrompt: string,
+    userPrompt: string,
     userContent: string,
     params: AIRequestParams,
     options?: {
@@ -91,6 +92,7 @@ export class OllamaProvider extends AbstractAIProvider {
       messages: [
         { role: "system", content: systemPrompt },
         { role: "user", content: userContent },
+        { role: "user", content: userPrompt },
       ],
       stream: false,
       // 如果Ollama支持temperature参数

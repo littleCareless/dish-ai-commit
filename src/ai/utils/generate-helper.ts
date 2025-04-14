@@ -6,7 +6,7 @@ import {
 } from "../../prompt/branch-name";
 import { AIRequestParams } from "../types";
 import { ConfigurationManager } from "../../config/configuration-manager";
-import { CODE_REVIEW_PROMPT } from "../../prompt/code-review";
+import { getCodeReviewPrompt as getCodeReviewPrompts } from "../../prompt/code-review";
 import { getMessage, formatMessage } from "../../utils/i18n";
 
 /**
@@ -153,7 +153,7 @@ export function getCodeReviewPrompt(params: AIRequestParams): string {
     const configuredPrompt = config.features?.codeReview?.systemPrompt;
 
     // 如果配置了自定义提示则使用配置的,否则使用默认提示
-    return configuredPrompt || CODE_REVIEW_PROMPT;
+    return configuredPrompt || getCodeReviewPrompts();
   } finally {
   }
 }
