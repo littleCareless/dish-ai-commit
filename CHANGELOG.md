@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.11.3 (2025-04-14)
+
+### ♻ Code Refactoring
+
+- **ai**: Refactor the weekly report generation and code review function prompt ([96a10fa](https://github.com/littleCareless/dish-ai-commit/commit/96a10fa))
+
+### 📝 Documentation
+
+- **changelog**: Update v0.11.2 version documentation ([c5177cc](https://github.com/littleCareless/dish-ai-commit/commit/c5177cc))
+
 ## 0.11.2 (2025-04-11)
 
 ### ♻ Code Refactoring

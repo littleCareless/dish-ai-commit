@@ -1,24 +1,31 @@
-# Changelog 
+# Changelog
 
-[English](CHANGELOG.md) | [简体中文](CHANGELOG.zh-CN.md) 
+[English](CHANGELOG.md) | [简体中文](CHANGELOG.zh-CN.md)
 
-All notable changes to this project will be documented in this file. 
+All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
-## 0.11.2 (2025-04-11)
-
+## 0.11.3 (2025-04-14)
 
 ### ♻ Code Refactoring
 
-* **config**: 优化配置结构 ([eb1755f](https://github.com/littleCareless/dish-ai-commit/commit/eb1755f))
-* **prompt**: 完善提示词生成逻辑 ([2ff9e59](https://github.com/littleCareless/dish-ai-commit/commit/2ff9e59))
-
+- **ai**: 重构生成周报和代码评审功能 Prompt ([96a10fa](https://github.com/littleCareless/dish-ai-commit/commit/96a10fa))
 
 ### 📝 Documentation
 
-* **changelog**: 更新 v0.11.1 版本变更记录 ([ebb559c](https://github.com/littleCareless/dish-ai-commit/commit/ebb559c))
+- **changelog**: 更新 v0.11.2 版本文档 ([c5177cc](https://github.com/littleCareless/dish-ai-commit/commit/c5177cc))
 
+## 0.11.2 (2025-04-11)
+
+### ♻ Code Refactoring
+
+- **config**: 优化配置结构 ([eb1755f](https://github.com/littleCareless/dish-ai-commit/commit/eb1755f))
+- **prompt**: 完善提示词生成逻辑 ([2ff9e59](https://github.com/littleCareless/dish-ai-commit/commit/2ff9e59))
+
+### 📝 Documentation
+
+- **changelog**: 更新 v0.11.1 版本变更记录 ([ebb559c](https://github.com/littleCareless/dish-ai-commit/commit/ebb559c))
 
 ## 0.11.1 (2025-04-11)
 
