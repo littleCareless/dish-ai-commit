@@ -112,8 +112,6 @@ export class GenerateCommitCommand extends BaseCommand {
           const enableLayeredCommit =
             configuration.features.commitFormat?.enableLayeredCommit || false;
 
-          console.log("enableLayeredCommit", enableLayeredCommit);
-
           if (enableLayeredCommit && aiProvider.generateLayeredCommit) {
             // 使用分层提交信息生成
             const layeredCommit = await aiProvider.generateLayeredCommit(
@@ -129,7 +127,7 @@ export class GenerateCommitCommand extends BaseCommand {
             };
           } else {
             // 使用传统方式生成提交信息
-            return await aiProvider.generateResponse(requestParams);
+            return await aiProvider.generateCommit(requestParams);
           }
         }
       );

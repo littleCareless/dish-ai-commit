@@ -26,11 +26,11 @@ import { formatMessage } from "../../utils/i18n/localization-manager";
  */
 export abstract class AbstractAIProvider implements AIProvider {
   /**
-   * 生成AI响应内容
+   * 生成提交信息
    * @param params - AI请求参数
-   * @returns 包含生成内容和使用统计的Promise
+   * @returns 提交信息生成结果
    */
-  async generateResponse(params: AIRequestParams): Promise<AIResponse> {
+  async generateCommit(params: AIRequestParams): Promise<AIResponse> {
     try {
       const systemPrompt = getSystemPrompt(params);
       const result = await this.executeWithRetry(
