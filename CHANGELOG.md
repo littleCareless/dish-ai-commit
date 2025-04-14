@@ -6,6 +6,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.12.0 (2025-04-14)
+
+### ✨ Features
+
+- **ai**: Enhance AI interface parameters and prompt word processing capabilities ([ee04aa8](https://github.com/littleCareless/dish-ai-commit/commit/ee04aa8))
+
+- **deps**: Add vsce as a development dependency ([5e782fe](https://github.com/littleCareless/dish-ai-commit/commit/5e782fe))
+
+### 👷 Build System
+
+- **version**: Update project version to 0.11.4 ([e80dab0](https://github.com/littleCareless/dish-ai-commit/commit/e80dab0))
+
 ## 0.11.4 (2025-04-14)
 
 ### ♻ Code Refactoring
