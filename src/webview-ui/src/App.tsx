@@ -13,7 +13,7 @@ import { vscode } from "@/lib/vscode";
 
 function App() {
   const [content, setContent] = useState("");
-  const [dateRange, setDateRange] = useState<any[]>([]);
+  const [dateRange, setDateRange] = useState<dayjs.Dayjs[]>([]);
   const { toast } = useToast();
 
   // 添加消息监听
@@ -101,7 +101,10 @@ function App() {
     });
   };
 
-  const handleDateRangeChange = (dates: any[]) => {
+  const handleDateRangeChange = (
+    _dateString: string[],
+    dates: dayjs.Dayjs[]
+  ) => {
     setDateRange(dates); // 保存选中的日期范围
     if (vscode && dates) {
       vscode.postMessage({
