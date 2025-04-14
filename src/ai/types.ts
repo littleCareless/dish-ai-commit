@@ -41,16 +41,24 @@ export interface AIResponse {
 export interface AIRequestParams {
   /** 代码差异内容 */
   diff: string;
-  /** 系统提示词 */
-  systemPrompt?: string;
   /** 使用的AI模型 */
-  model: AIModel;
-  /** 目标语言 */
-  language?: string;
-  /** 源代码管理类型 */
-  scm?: "git" | "svn";
+  model?: AIModel;
+  /** 提交信息系统提示 */
+  systemPrompt?: string;
+  /** 代码审查系统提示 */
+  codeReviewPrompt?: string;
+  /** 分支名称系统提示 */
+  branchNamePrompt?: string;
   /** 额外上下文信息 */
   additionalContext: string;
+  /** 源代码管理类型 */
+  scm?: string;
+  /** 修改的文件列表 */
+  changeFiles?: string[];
+  /** 目标语言 */
+  language?: string;
+  /** 目标语言列表 */
+  languages?: string;
 
   /** 代码分析相关选项 */
   simplifyDiff?: boolean;

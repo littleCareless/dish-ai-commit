@@ -42,7 +42,8 @@ export class VSCodeProvider extends AbstractAIProvider {
       models.find((model) => model.id === params.model?.id) || models[0];
 
     let maxCodeCharacters =
-      options?.maxTokens || getMaxCharacters(params.model, 2600) - 1000;
+      options?.maxTokens ||
+      getMaxCharacters(params.model ?? this.getDefaultModel(), 2600) - 1000;
 
     let retries = 0;
 
@@ -109,8 +110,8 @@ export class VSCodeProvider extends AbstractAIProvider {
   protected getDefaultModel(): AIModel {
     // 改为同步方法，直接返回默认模型配置
     return {
-      id: "default-vscode-model" as any,
-      name: "Default VS Code Model",
+      id: "gpt-4o" as any,
+      name: "gpt-4o",
       maxTokens: { input: 4096, output: 4096 },
       provider: this.provider,
     };

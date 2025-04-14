@@ -32,6 +32,7 @@ export abstract class AbstractAIProvider implements AIProvider {
    */
   async generateCommit(params: AIRequestParams): Promise<AIResponse> {
     try {
+      console.log("params", params);
       const systemPrompt = getSystemPrompt(params);
       const result = await this.executeWithRetry(
         systemPrompt,

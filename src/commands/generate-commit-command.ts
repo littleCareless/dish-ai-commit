@@ -98,7 +98,7 @@ export class GenerateCommitCommand extends BaseCommand {
 
           // 准备AI请求参数
           const requestParams = {
-            // ...configuration.base,, // 使用非空断言，确保selectedModel不为undefined
+            ...configuration.features.commitMessage, // 使用非空断言，确保selectedModel不为undefined
             ...configuration.features.commitFormat,
             ...configuration.features.codeAnalysis,
             additionalContext: currentInput,
@@ -106,6 +106,7 @@ export class GenerateCommitCommand extends BaseCommand {
             model: selectedModel,
             scm: scmProvider.type ?? "git",
             changeFiles: selectedFiles,
+            languages: configuration.base.language,
           };
 
           // 判断是否启用分层提交信息生成
