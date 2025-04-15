@@ -41,16 +41,24 @@ export interface AIResponse {
 export interface AIRequestParams {
   /** 代码差异内容 */
   diff: string;
-  /** 系统提示词 */
-  systemPrompt?: string;
   /** 使用的AI模型 */
-  model: AIModel;
-  /** 目标语言 */
-  language?: string;
-  /** 源代码管理类型 */
-  scm?: "git" | "svn";
+  model?: AIModel;
+  /** 提交信息系统提示 */
+  systemPrompt?: string;
+  /** 代码审查系统提示 */
+  codeReviewPrompt?: string;
+  /** 分支名称系统提示 */
+  branchNamePrompt?: string;
   /** 额外上下文信息 */
   additionalContext: string;
+  /** 源代码管理类型 */
+  scm?: string;
+  /** 修改的文件列表 */
+  changeFiles?: string[];
+  /** 目标语言 */
+  language?: string;
+  /** 目标语言列表 */
+  languages?: string;
 
   /** 代码分析相关选项 */
   simplifyDiff?: boolean;
@@ -58,6 +66,9 @@ export interface AIRequestParams {
   /** 提交格式相关选项 */
   enableMergeCommit?: boolean;
   enableEmoji?: boolean;
+
+  /** 分层提交信息生成相关选项 */
+  enableLayeredCommit?: boolean;
 }
 
 /**
@@ -111,15 +122,43 @@ export interface AIModel<
 }
 
 /**
+ * 分层提交信息结构接口
+ */
+export interface LayeredCommitMessage {
+  /** 全局摘要 - 基于整体diff的高层次概述 */
+  summary: string;
+  /** 文件描述 - 每个修改文件的变更说明 */
+  fileChanges: Array<{
+    /** 文件路径 */
+    filePath: string;
+    /** 变更描述 */
+    description: string;
+  }>;
+}
+
+/**
  * AI提供者接口，定义了AI服务提供者需要实现的方法
  */
 export interface AIProvider {
-  /** 生成回复内容 */
-  generateResponse(params: AIRequestParams): Promise<AIResponse>;
+  /** 生成提交内容 */
+  generateCommit(params: AIRequestParams): Promise<AIResponse>;
+  /** 生成分层提交信息 */
+  generateLayeredCommit?(
+    params: AIRequestParams
+  ): Promise<LayeredCommitMessage>;
   /** 生成代码评审内容 */
   generateCodeReview?(params: AIRequestParams): Promise<AIResponse>;
+  /** 生成分支名称 */
+  generateBranchName?(params: AIRequestParams): Promise<AIResponse>;
   /** 生成周报 */
-  generateWeeklyReport(commits: string[], model?: AIModel): Promise<AIResponse>;
+  generateWeeklyReport(
+    commits: string[],
+    period: {
+      startDate: string;
+      endDate: string;
+    },
+    model?: AIModel
+  ): Promise<AIResponse>;
   /** 检查服务可用性 */
   isAvailable(): Promise<boolean>;
   /** 刷新可用模型列表 */
@@ -293,6 +332,19 @@ export type OpenRouterModels =
   | "mistralai/mixtral-8x7b-instruct"
   | "mistralai/mistral-medium"
   | "mistralai/mistral-small";
+
+// 所有支持的模型名称类型
+export type ModelNames =
+  | OpenAIModels
+  | GitHubModels
+  | VSCodeAIModels
+  | ZhipuAIModels
+  | DashScopeModels
+  | DoubaoModels
+  | GeminiAIModels
+  | DeepseekModels
+  | SiliconFlowModels
+  | OpenRouterModels;
 
 export type AIProviders =
   | "anthropic"

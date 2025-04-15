@@ -1,4 +1,4 @@
-import { BaseOpenAIProvider } from "./base-open-ai-provider";
+import { BaseOpenAIProvider } from "./base-openai-provider";
 import { ConfigurationManager } from "../../config/configuration-manager";
 import { AIModel } from "../types";
 

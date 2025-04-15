@@ -2,9 +2,11 @@
   "name": "dish-ai-commit",
   "displayName": "Dish AI Commit Gen",
   "description": "🤖 AI-Powered VSCode extension for generating standardized Git/SVN commit messages. ✨ Supports multiple AI services: OpenAI, ChatGPT, Ollama, Zhipu, DashScope, Doubao, Gemini and VS Code built-in AI. 🌍 Multi-language support (EN/CN/JP/KR/Other). 📊 Auto-generate weekly reports.",
-  "version": "0.10.2",
+  "version": "0.12.0",
   "engines": {
-    "vscode": "^1.98.0"
+    "node": ">= 22.12.0",
+    "pnpm": ">= 10.0.0",
+    "vscode": "^1.92.0"
   },
   "publisher": "littleCareless",
   "repository": "https://github.com/littleCareless/dish-ai-commit",
@@ -78,6 +80,13 @@
         "category": "[Dish AI Commit]",
         "icon": "/images/icon.svg",
         "description": "使用 AI 对代码进行评审"
+      },
+      {
+        "command": "dish-ai-commit.generateBranchName",
+        "title": "[Dish] Generate Branch Name with AI",
+        "category": "[Dish AI Commit]",
+        "icon": "/images/icon.svg",
+        "description": "使用 AI 生成Git分支名称"
       }
     ],
     "configuration": {
@@ -129,11 +138,6 @@
             "Turkish",
             "ไทย"
           ]
-        },
-        "dish-ai-commit.base.systemPrompt": {
-          "type": "string",
-          "default": "",
-          "description": "Custom system prompt / 自定义系统提示语"
         },
         "dish-ai-commit.base.provider": {
           "type": "string",
@@ -213,15 +217,25 @@
           "default": false,
           "description": "Enable diff content simplification (Warning: Enabling this feature may result in less accurate commit messages) / 启用差异内容简化 (警告：启用此功能可能导致提交信息不够准确)"
         },
+        "dish-ai-commit.features.commitFormat.enableEmoji": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use emoji in commit messages / 在提交信息中使用表情符号"
+        },
         "dish-ai-commit.features.commitFormat.enableMergeCommit": {
           "type": "boolean",
           "default": false,
           "description": "Allow merging changes from multiple files into a single commit message / 允许将多个文件的更改合并为单个提交信息"
         },
-        "dish-ai-commit.features.commitFormat.enableEmoji": {
+        "dish-ai-commit.features.commitFormat.enableLayeredCommit": {
           "type": "boolean",
-          "default": true,
-          "description": "Use emoji in commit messages / 在提交信息中使用表情符号"
+          "default": false,
+          "description": "Generate layered commit messages with global summary and per-file details / 生成分层提交信息，包含全局摘要和每个文件的详细描述"
+        },
+        "dish-ai-commit.features.commitMessage.systemPrompt": {
+          "type": "string",
+          "default": "Custom system prompt",
+          "description": "Custom system prompt for commit message generation / 提交信息生成的自定义系统提示语"
         },
         "dish-ai-commit.features.weeklyReport.systemPrompt": {
           "type": "string",
@@ -232,6 +246,11 @@
           "type": "string",
           "default": "Custom system prompt",
           "description": "Custom system prompt for code review / 代码审查的自定义系统提示语"
+        },
+        "dish-ai-commit.features.branchName.systemPrompt": {
+          "type": "string",
+          "default": "Custom system prompt",
+          "description": "Custom system prompt for branch name generation / 分支名称生成的自定义系统提示语"
         }
       }
     },
@@ -261,6 +280,11 @@
           "command": "dish-ai-commit.selectModel",
           "when": "scmProvider =~ /(git|svn)/",
           "group": "2_z_dish@4"
+        },
+        {
+          "command": "dish-ai-commit.generateBranchName",
+          "when": "scmProvider == git",
+          "group": "2_z_dish@5"
         }
       ],
       "scm/resourceState/context": [
@@ -280,9 +304,14 @@
           "group": "2_z_dish@3"
         },
         {
+          "command": "dish-ai-commit.generateBranchName",
+          "when": "config.git.enabled && scmProvider == git && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "2_z_dish@4"
+        },
+        {
           "command": "dish-ai-commit.selectModel",
           "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
-          "group": "2_z_dish@4"
+          "group": "2_z_dish@5"
         }
       ],
       "scm/resourceFolder/context": [
@@ -299,6 +328,11 @@
         {
           "command": "dish-ai-commit.generateWeeklyReport",
           "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "inline"
+        },
+        {
+          "command": "dish-ai-commit.generateBranchName",
+          "when": "config.git.enabled && scmProvider == git && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
           "group": "inline"
         },
         {
@@ -322,6 +356,10 @@
           "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges"
         },
         {
+          "command": "dish-ai-commit.generateBranchName",
+          "when": "config.git.enabled && scmProvider == git && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges"
+        },
+        {
           "command": "dish-ai-commit.reviewCode",
           "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges"
         }
@@ -329,18 +367,18 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "pnpm run compile",
-    "compile": "pnpm run compile:webview && tsc -p ./",
+    "vscode:prepublish": "npm run compile",
+    "compile": "npm run compile:webview && tsc -p ./",
     "compile:webview": "cd src/webview-ui && pnpm install && pnpm run build",
     "watch": "tsc -watch -p ./",
-    "pretest": "pnpm run compile && pnpm run lint",
+    "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
     "test": "vscode-test",
     "prepare": "husky",
     "commit": "git add . && git-cz",
-    "release": "standard-version --preset gitmoji-config -i CHANGELOG.zh-CN.md -s",
+    "release": "standard-version --preset gitmoji-config -i CHANGELOG.zh-CN.md",
     "changelog": "conventional-changelog -i CHANGELOG.md -s -r 0",
-    "update-config": "ts-node ./src/scripts/updateConfig.ts",
+    "update-config": "ts-node ./src/scripts/update-config.ts",
     "package": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce package",
     "publish": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce publish",
     "publish:pre": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce publish --pre-release"
@@ -351,28 +389,29 @@
     "@stylistic/eslint-plugin-ts": "^4.2.0",
     "@types/jest": "^29.5.14",
     "@types/mocha": "^10.0.10",
-    "@types/node": "~22.13.10",
-    "@types/vscode": "^1.98.0",
-    "@typescript-eslint/eslint-plugin": "^8.27.0",
-    "@typescript-eslint/parser": "^8.27.0",
+    "@types/node": "~22.14.0",
+    "@types/vscode": "^1.92.0",
+    "@typescript-eslint/eslint-plugin": "^8.29.1",
+    "@typescript-eslint/parser": "^8.29.1",
     "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1",
+    "@vscode/test-electron": "^2.5.1",
     "commitizen": "^4.3.1",
     "commitlint-config-gitmoji": "^2.3.1",
     "conventional-changelog-gitmoji-config": "^1.5.2",
     "cz-conventional-changelog": "^3.3.0",
     "cz-customizable": "^7.4.0",
-    "eslint": "^9.22.0",
+    "eslint": "^9.24.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.0",
     "standard-version": "^9.5.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.3",
+    "@vscode/vsce": "^3.3.2"
   },
   "dependencies": {
-    "inversify": "^7.1.0",
+    "inversify": "^7.5.0",
     "ollama": "^0.5.14",
-    "openai": "^4.89.0"
+    "openai": "^4.93.0"
   },
   "bundleDependencies": [
     "inversify",
@@ -407,5 +446,5 @@
       ]
     }
   },
-  "packageManager": "pnpm@10.6.5"
+  "packageManager": "pnpm@10.8.0"
 }

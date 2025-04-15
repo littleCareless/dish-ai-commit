@@ -6,6 +6,113 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.12.0 (2025-04-14)
+
+### ✨ Features
+
+- **ai**: Enhance AI interface parameters and prompt word processing capabilities ([ee04aa8](https://github.com/littleCareless/dish-ai-commit/commit/ee04aa8))
+
+- **deps**: Add vsce as a development dependency ([5e782fe](https://github.com/littleCareless/dish-ai-commit/commit/5e782fe))
+
+### 👷 Build System
+
+- **version**: Update project version to 0.11.4 ([e80dab0](https://github.com/littleCareless/dish-ai-commit/commit/e80dab0))
+
+## 0.11.4 (2025-04-14)
+
+### ♻ Code Refactoring
+
+- **ai**: Rename generateResponse method to generateCommit ([92383ab](https://github.com/littleCareless/dish-ai-commit/commit/92383ab))
+
+### 🎫 Chores
+
+- **types**: Fix date picker type definition ([20dce25](https://github.com/littleCareless/dish-ai-commit/commit/20dce25))
+
+### 📝 Documentation
+
+- **changelog**: Update project version to 0.11.3 ([64ea845](https://github.com/littleCareless/dish-ai-commit/commit/64ea845))
+
+### 🔧 Continuous Integration
+
+- **workflow**: Add GitHub Actions release workflow ([8914a22](https://github.com/littleCareless/dish-ai-commit/commit/8914a22))
+
+## 0.11.3 (2025-04-14)
+
+### ♻ Code Refactoring
+
+- **ai**: Refactor the weekly report generation and code review function prompt ([96a10fa](https://github.com/littleCareless/dish-ai-commit/commit/96a10fa))
+
+### 📝 Documentation
+
+- **changelog**: Update v0.11.2 version documentation ([c5177cc](https://github.com/littleCareless/dish-ai-commit/commit/c5177cc))
+
+## 0.11.2 (2025-04-11)
+
+### ♻ Code Refactoring
+
+- **config**: Optimize configuration structure ([eb1755f](https://github.com/littleCareless/dish-ai-commit/commit/eb1755f))
+
+- **prompt**: Improve prompt word generation logic ([2ff9e59](https://github.com/littleCareless/dish-ai-commit/commit/2ff9e59))
+
+### 📝 Documentation
+
+- **changelog**: Update v0.11.1 version change log ([ebb559c](https://github.com/littleCareless/dish-ai-commit/commit/ebb559c))
+
+## 0.11.1 (2025-04-11)
+
+### ♻ Code Refactoring
+
+- **prompt**: Refactor the prompt module directory structure ([5826aa2](https://github.com/littleCareless/dish-ai-commit/commit/5826aa2))
+
+- **provider**: Refactor the AI ​​provider execution logic to add a retry mechanism ([154cba2](https://github.com/littleCareless/dish-ai-commit/commit/154cba2))
+
+- **providers**: Unify the AI ​​provider file naming convention ([0aa9db5](https://github.com/littleCareless/dish-ai-commit/commit/0aa9db5))
+
+### 🎫 Chores
+
+- **config**: Add hierarchical commit message function and refactor AI provider ([0f53a45](https://github.com/littleCareless/dish-ai-commit/commit/0f53a45))
+
+### 📝 Documentation
+
+- **changelog**: Update v0.11.0 version change log ([dc2b855](https://github.com/littleCareless/dish-ai-commit/commit/dc2b855))
+- **readme**: Update document support for multi-platform AI services and new features ([f89b8e1](https://github.com/littleCareless/dish-ai-commit/commit/f89b8e1))
+
+# 0.11.0 (2025-04-10)
+
+### ✨ Features
+
+- **branch**: Add branch name generation function ([ab9be01](https://github.com/littleCareless/dish-ai-commit/commit/ab9be01))
+
+### 🎫 Chores
+
+- **deps**: Update VSCode engine support version and build dependencies ([d6305d8](https://github.com/littleCareless/dish-ai-commit/commit/d6305d8))
+
+- **deps**: Update dependency configuration requirements ([fa808d9](https://github.com/littleCareless/dish-ai-commit/commit/fa808d9))
+
+### 📝 Documentation
+
+- **version**: Update version to 0.10.3 and synchronize change log ([b8525c1](https://github.com/littleCareless/dish-ai-commit/commit/b8525c1))
+
+### 🔧 Continuous Integration
+
+- **workflows**: Add VS Code plugin release process ([b005f76](https://github.com/littleCareless/dish-ai-commit/commit/b005f76))
+
+## 0.10.3 (2025-04-09)
+
+### ♻ Code Refactoring
+
+- **config**: Refactor the configuration manager to adopt the service split mode ([01750b8](https://github.com/littleCareless/dish-ai-commit/commit/01750b8))
+
+- **config**: Refactor the configuration module split tool function ([150e80a](https://github.com/littleCareless/dish-ai-commit/commit/150e80a))
+
+### 👷 Build System
+
+- **deps**: Upgrade the dependency package version ([88a216e](https://github.com/littleCareless/dish-ai-commit/commit/88a216e))
+
+### 📝 Documentation
+
+- **misc**: Update the version to 0.10.2 ([3362f3f](https://github.com/littleCareless/dish-ai-commit/commit/3362f3f))
+
 ## 0.10.2 (2025-04-09)
 
 ### 🎫 Chores

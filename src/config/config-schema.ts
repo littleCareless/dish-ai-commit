@@ -55,11 +55,6 @@ export const CONFIG_SCHEMA = {
         "ไทย",
       ],
     },
-    systemPrompt: {
-      type: "string",
-      description: "Custom system prompt / 自定义系统提示语",
-      default: "",
-    },
     provider: {
       type: "string",
       default: "OpenAI",
@@ -167,16 +162,31 @@ export const CONFIG_SCHEMA = {
     },
     // Commit related features
     commitFormat: {
+      enableEmoji: {
+        type: "boolean",
+        default: true,
+        description: "Use emoji in commit messages / 在提交信息中使用表情符号",
+      },
       enableMergeCommit: {
         type: "boolean",
         default: false,
         description:
           "Allow merging changes from multiple files into a single commit message / 允许将多个文件的更改合并为单个提交信息",
       },
-      enableEmoji: {
+      enableLayeredCommit: {
         type: "boolean",
-        default: true,
-        description: "Use emoji in commit messages / 在提交信息中使用表情符号",
+        default: false,
+        description:
+          "Generate layered commit messages with global summary and per-file details / 生成分层提交信息，包含全局摘要和每个文件的详细描述",
+      },
+    },
+    // Generate commit message features
+    commitMessage: {
+      systemPrompt: {
+        type: "string",
+        default: `Custom system prompt`,
+        description:
+          "Custom system prompt for commit message generation / 提交信息生成的自定义系统提示语",
       },
     },
     // Weekly report generation features
@@ -195,6 +205,15 @@ export const CONFIG_SCHEMA = {
         default: `Custom system prompt`,
         description:
           "Custom system prompt for code review / 代码审查的自定义系统提示语",
+      },
+    },
+    // Branch name generation features
+    branchName: {
+      systemPrompt: {
+        type: "string",
+        default: `Custom system prompt`,
+        description:
+          "Custom system prompt for branch name generation / 分支名称生成的自定义系统提示语",
       },
     },
   },

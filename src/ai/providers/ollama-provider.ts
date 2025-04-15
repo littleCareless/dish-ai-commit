@@ -5,18 +5,17 @@ import {
   AIResponse,
   type AIModel,
   type AIProviders,
+  type LayeredCommitMessage,
 } from "../types";
+import { AbstractAIProvider } from "./abstract-ai-provider";
 import { ConfigurationManager } from "../../config/configuration-manager";
-import { generateWithRetry, getSystemPrompt } from "../utils/generate-helper";
-import { getWeeklyReportPrompt } from "../../prompt/weekly-report";
-import { getMessage } from "../../utils/i18n";
 import { notify } from "../../utils/notification/notification-manager";
 
 /**
  * Ollama AI服务提供者实现类
  * 提供对本地部署的Ollama服务的访问能力
  */
-export class OllamaProvider implements AIProvider {
+export class OllamaProvider extends AbstractAIProvider {
   /** Ollama客户端实例 */
   private ollama: Ollama;
 
@@ -34,6 +33,7 @@ export class OllamaProvider implements AIProvider {
    * 初始化Ollama客户端并配置基础URL
    */
   constructor() {
+    super();
     this.configManager = ConfigurationManager.getInstance();
     const baseUrl = this.getBaseUrl();
     this.ollama = new Ollama({
@@ -71,81 +71,32 @@ export class OllamaProvider implements AIProvider {
   }
 
   /**
-   * 生成AI响应
-   * @param params - AI请求参数
-   * @returns 包含生成内容和使用统计的响应
-   * @throws 如果生成失败会通过重试机制处理
+   * 实现抽象方法：执行AI请求
+   * 调用Ollama API执行请求并返回结果
    */
-  async generateResponse(params: AIRequestParams): Promise<AIResponse> {
-    return generateWithRetry(
-      params,
-      async (truncatedDiff) => {
-        const model =
-          params.model || this.configManager.getConfig("BASE_MODEL");
-
-        const response = await this.ollama.chat({
-          model: model.id,
-          messages: [
-            {
-              role: "system",
-              content: getSystemPrompt(params),
-            },
-            {
-              role: "user",
-              content: truncatedDiff,
-            },
-          ],
-          stream: false,
-        });
-
-        let content = "";
-        try {
-          const jsonContent = JSON.parse(response.message.content);
-          content = jsonContent.response || response.message.content;
-        } catch {
-          content = response.message.content;
-        }
-
-        return {
-          content,
-          usage: {
-            totalTokens: response.total_duration,
-          },
-        };
-      },
-      {
-        initialMaxLength: 16385,
-        provider: this.getId(),
-      }
-    );
-  }
-
-  /**
-   * 生成周报内容
-   * @param commits - 提交记录数组
-   * @param model - 可选的指定模型
-   * @returns 生成的周报内容和统计信息
-   */
-  async generateWeeklyReport(
-    commits: string[],
-    model?: AIModel
-  ): Promise<AIResponse> {
-    const modelId =
-      model?.id || (this.configManager.getConfig("BASE_MODEL") as any).id;
+  protected async executeAIRequest(
+    systemPrompt: string,
+    userPrompt: string,
+    userContent: string,
+    params: AIRequestParams,
+    options?: {
+      parseAsJSON?: boolean;
+      temperature?: number;
+      maxTokens?: number;
+    }
+  ): Promise<{ content: string; usage?: any; jsonContent?: any }> {
+    const model = params.model || this.getDefaultModel();
 
     const response = await this.ollama.chat({
-      model: modelId,
+      model: model.id,
       messages: [
-        {
-          role: "system",
-          content: getWeeklyReportPrompt(),
-        },
-        {
-          role: "user",
-          content: commits.join("\n"),
-        },
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userContent },
+        { role: "user", content: userPrompt },
       ],
       stream: false,
+      // 如果Ollama支持temperature参数
+      // temperature: options?.temperature,
     });
 
     let content = "";
@@ -156,11 +107,42 @@ export class OllamaProvider implements AIProvider {
       content = response.message.content;
     }
 
+    let parsedJsonContent;
+    if (options?.parseAsJSON) {
+      try {
+        parsedJsonContent = JSON.parse(content);
+      } catch (e) {
+        // 尝试查找JSON部分
+        try {
+          const jsonMatch = content.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            parsedJsonContent = JSON.parse(jsonMatch[0]);
+          }
+        } catch (nestedError) {
+          console.warn("Failed to parse response as JSON", nestedError);
+        }
+      }
+    }
+
     return {
       content,
-      usage: {
-        totalTokens: response.total_duration,
-      },
+      usage: { totalTokens: response.total_duration },
+      jsonContent: parsedJsonContent,
+    };
+  }
+
+  /**
+   * 获取默认模型
+   */
+  protected getDefaultModel(): AIModel {
+    const defaultModelConfig = this.configManager.getConfig(
+      "BASE_MODEL"
+    ) as any;
+    return {
+      id: defaultModelConfig?.id || "llama2:latest",
+      name: defaultModelConfig?.name || "Default Ollama Model",
+      maxTokens: { input: 4096, output: 4096 },
+      provider: this.provider,
     };
   }
 

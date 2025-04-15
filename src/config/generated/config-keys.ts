@@ -2,7 +2,6 @@
 export const CONFIG_KEYS = {
   "BASE": "dish-ai-commit.base",
   "BASE_LANGUAGE": "dish-ai-commit.base.language",
-  "BASE_SYSTEMPROMPT": "dish-ai-commit.base.systemPrompt",
   "BASE_PROVIDER": "dish-ai-commit.base.provider",
   "BASE_MODEL": "dish-ai-commit.base.model",
   "PROVIDERS": "dish-ai-commit.providers",
@@ -29,10 +28,15 @@ export const CONFIG_KEYS = {
   "FEATURES_CODEANALYSIS": "dish-ai-commit.features.codeAnalysis",
   "FEATURES_CODEANALYSIS_SIMPLIFYDIFF": "dish-ai-commit.features.codeAnalysis.simplifyDiff",
   "FEATURES_COMMITFORMAT": "dish-ai-commit.features.commitFormat",
-  "FEATURES_COMMITFORMAT_ENABLEMERGECOMMIT": "dish-ai-commit.features.commitFormat.enableMergeCommit",
   "FEATURES_COMMITFORMAT_ENABLEEMOJI": "dish-ai-commit.features.commitFormat.enableEmoji",
+  "FEATURES_COMMITFORMAT_ENABLEMERGECOMMIT": "dish-ai-commit.features.commitFormat.enableMergeCommit",
+  "FEATURES_COMMITFORMAT_ENABLELAYEREDCOMMIT": "dish-ai-commit.features.commitFormat.enableLayeredCommit",
+  "FEATURES_COMMITMESSAGE": "dish-ai-commit.features.commitMessage",
+  "FEATURES_COMMITMESSAGE_SYSTEMPROMPT": "dish-ai-commit.features.commitMessage.systemPrompt",
   "FEATURES_WEEKLYREPORT": "dish-ai-commit.features.weeklyReport",
   "FEATURES_WEEKLYREPORT_SYSTEMPROMPT": "dish-ai-commit.features.weeklyReport.systemPrompt",
   "FEATURES_CODEREVIEW": "dish-ai-commit.features.codeReview",
-  "FEATURES_CODEREVIEW_SYSTEMPROMPT": "dish-ai-commit.features.codeReview.systemPrompt"
+  "FEATURES_CODEREVIEW_SYSTEMPROMPT": "dish-ai-commit.features.codeReview.systemPrompt",
+  "FEATURES_BRANCHNAME": "dish-ai-commit.features.branchName",
+  "FEATURES_BRANCHNAME_SYSTEMPROMPT": "dish-ai-commit.features.branchName.systemPrompt"
 } as const;

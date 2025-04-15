@@ -1,10 +1,111 @@
-# 更新日志
+# Changelog
 
 [English](CHANGELOG.md) | [简体中文](CHANGELOG.zh-CN.md)
 
-本项目所有值得注意的更改都将记录在此文件中。
+All notable changes to this project will be documented in this file.
 
-更新日志格式基于 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+
+# 0.12.0 (2025-04-14)
+
+### ✨ Features
+
+- **ai**: 增强 AI 接口参数和提示词处理能力 ([ee04aa8](https://github.com/littleCareless/dish-ai-commit/commit/ee04aa8))
+- **deps**: 添加 vsce 作为开发依赖 ([5e782fe](https://github.com/littleCareless/dish-ai-commit/commit/5e782fe))
+
+### 👷 Build System
+
+- **version**: 更新项目版本至 0.11.4 ([e80dab0](https://github.com/littleCareless/dish-ai-commit/commit/e80dab0))
+
+## 0.11.4 (2025-04-14)
+
+### ♻ Code Refactoring
+
+- **ai**: 重命名 generateResponse 方法为 generateCommit ([92383ab](https://github.com/littleCareless/dish-ai-commit/commit/92383ab))
+
+### 🎫 Chores
+
+- **types**: 修复日期选择器类型定义 ([20dce25](https://github.com/littleCareless/dish-ai-commit/commit/20dce25))
+
+### 📝 Documentation
+
+- **changelog**: 更新项目版本至 0.11.3 ([64ea845](https://github.com/littleCareless/dish-ai-commit/commit/64ea845))
+
+### 🔧 Continuous Integration
+
+- **workflow**: 添加 GitHub Actions 发布流程 ([8914a22](https://github.com/littleCareless/dish-ai-commit/commit/8914a22))
+
+## 0.11.3 (2025-04-14)
+
+### ♻ Code Refactoring
+
+- **ai**: 重构生成周报和代码评审功能 Prompt ([96a10fa](https://github.com/littleCareless/dish-ai-commit/commit/96a10fa))
+
+### 📝 Documentation
+
+- **changelog**: 更新 v0.11.2 版本文档 ([c5177cc](https://github.com/littleCareless/dish-ai-commit/commit/c5177cc))
+
+## 0.11.2 (2025-04-11)
+
+### ♻ Code Refactoring
+
+- **config**: 优化配置结构 ([eb1755f](https://github.com/littleCareless/dish-ai-commit/commit/eb1755f))
+- **prompt**: 完善提示词生成逻辑 ([2ff9e59](https://github.com/littleCareless/dish-ai-commit/commit/2ff9e59))
+
+### 📝 Documentation
+
+- **changelog**: 更新 v0.11.1 版本变更记录 ([ebb559c](https://github.com/littleCareless/dish-ai-commit/commit/ebb559c))
+
+## 0.11.1 (2025-04-11)
+
+### ♻ Code Refactoring
+
+- **prompt**: 重构提示词模块目录结构 ([5826aa2](https://github.com/littleCareless/dish-ai-commit/commit/5826aa2))
+- **provider**: 重构 AI 提供者执行逻辑添加重试机制 ([154cba2](https://github.com/littleCareless/dish-ai-commit/commit/154cba2))
+- **providers**: 统一 AI 提供者文件命名规范 ([0aa9db5](https://github.com/littleCareless/dish-ai-commit/commit/0aa9db5))
+
+### 🎫 Chores
+
+- **config**: 添加分层提交消息功能及重构 AI 提供者 ([0f53a45](https://github.com/littleCareless/dish-ai-commit/commit/0f53a45))
+
+### 📝 Documentation
+
+- **changelog**: 更新 v0.11.0 版本变更日志 ([dc2b855](https://github.com/littleCareless/dish-ai-commit/commit/dc2b855))
+- **readme**: 更新文档支持多平台 AI 服务和新功能说明 ([f89b8e1](https://github.com/littleCareless/dish-ai-commit/commit/f89b8e1))
+
+# 0.11.0 (2025-04-10)
+
+### ✨ Features
+
+- **branch**: 添加分支名称生成功能 ([ab9be01](https://github.com/littleCareless/dish-ai-commit/commit/ab9be01))
+
+### 🎫 Chores
+
+- **deps**: 更新 VSCode 引擎支持版本和构建依赖 ([d6305d8](https://github.com/littleCareless/dish-ai-commit/commit/d6305d8))
+- **deps**: 更新依赖配置要求 ([fa808d9](https://github.com/littleCareless/dish-ai-commit/commit/fa808d9))
+
+### 📝 Documentation
+
+- **version**: 更新版本至 0.10.3 并同步更新日志 ([b8525c1](https://github.com/littleCareless/dish-ai-commit/commit/b8525c1))
+
+### 🔧 Continuous Integration
+
+- **workflows**: 添加 VS Code 插件发布流程 ([b005f76](https://github.com/littleCareless/dish-ai-commit/commit/b005f76))
+
+## 0.10.3 (2025-04-09)
+
+### ♻ Code Refactoring
+
+- **config**: 重构配置管理器，采用服务拆分模式 ([01750b8](https://github.com/littleCareless/dish-ai-commit/commit/01750b8))
+- **config**: 重构配置模块拆分工具函数 ([150e80a](https://github.com/littleCareless/dish-ai-commit/commit/150e80a))
+
+### 👷 Build System
+
+- **deps**: 升级依赖包版本 ([88a216e](https://github.com/littleCareless/dish-ai-commit/commit/88a216e))
+
+### 📝 Documentation
+
+- **misc**: 更新版本至 0.10.2 ([3362f3f](https://github.com/littleCareless/dish-ai-commit/commit/3362f3f))
 
 ## 0.10.2 (2025-04-09)
 

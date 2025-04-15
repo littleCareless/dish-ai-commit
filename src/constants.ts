@@ -6,7 +6,7 @@ export const EXTENSION_NAME = packageJson.name;
 /** 扩展的显示名称 */
 export const DISPLAY_NAME = packageJson.displayName;
 
-/** 
+/**
  * 使用命名空间组织的命令常量
  * @namespace
  */
@@ -30,6 +30,11 @@ export const COMMANDS = {
   CODE_REVIEW: {
     /** 执行代码审查的命令 */
     REVIEW: packageJson.contributes.commands[3].command,
+  },
+  /** 分支名称相关命令 */
+  BRANCH_NAME: {
+    /** 生成分支名称的命令 */
+    GENERATE: "dish-ai-commit.generateBranchName",
   },
 } as const;
 

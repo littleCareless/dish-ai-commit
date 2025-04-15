@@ -1,17 +1,17 @@
 import { AIProvider as AIProviderInterface } from "./types";
-import { OpenAIProvider } from "./providers/open-ai-provider";
+import { OpenAIProvider } from "./providers/openai-provider";
 import { OllamaProvider } from "./providers/ollama-provider";
 import { AIProvider, ConfigKeys } from "../config/types";
 import { ConfigurationManager } from "../config/configuration-manager";
 import { VSCodeProvider } from "./providers/vscode-provider";
-import { ZhipuAIProvider } from "./providers/zhipu-ai-provider";
-import { DashScopeProvider } from "./providers/dash-scope-provider";
+import { ZhipuAIProvider } from "./providers/zhipu-provider";
+import { DashScopeProvider } from "./providers/dashscope-provider";
 import { DoubaoProvider } from "./providers/doubao-provider";
-import { GeminiAIProvider } from "./providers/gemini-ai-provider";
+import { GeminiAIProvider } from "./providers/gemini-provider";
 import { formatMessage } from "../utils/i18n/localization-manager";
-import { DeepseekAIProvider } from "./providers/deepseek-ai-provider";
-import { SiliconFlowProvider } from "./providers/silicon-flow-provider";
-import { OpenRouterProvider } from "./providers/open-router-provider";
+import { DeepseekAIProvider } from "./providers/deepseek-provider";
+import { SiliconFlowProvider } from "./providers/siliconflow-provider";
+import { OpenRouterProvider } from "./providers/openrouter-provider";
 
 /**
  * AI提供者工厂类，负责创建和管理不同AI服务提供者的实例

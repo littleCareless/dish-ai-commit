@@ -102,7 +102,7 @@ export const CONFIG_KEYS = ${JSON.stringify(keys, null, 2)} as const;
 `;
     const configKeysPath = path.join(
       process.cwd(),
-      "src/config/generated/configKeys.ts"
+      "src/config/generated/config-keys.ts"
     );
 
     // 确保目标目录存在

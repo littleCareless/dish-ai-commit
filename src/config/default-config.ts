@@ -1,6 +1,6 @@
 import { ExtensionConfiguration } from "./types";
 import { CONFIG_SCHEMA } from "./config-schema";
-import { generateCommitMessageSystemPrompt } from "../prompt/prompt";
+import { generateCommitMessageSystemPrompt } from "../prompt/generate-commit";
 
 /**
  * 默认配置生成类

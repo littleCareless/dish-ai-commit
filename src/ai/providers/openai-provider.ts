@@ -2,7 +2,7 @@ import { ConfigurationManager } from "../../config/configuration-manager";
 import { getMessage } from "../../utils/i18n";
 import { notify } from "../../utils/notification/notification-manager";
 import { type AIModel } from "../types";
-import { BaseOpenAIProvider } from "./base-open-ai-provider";
+import { BaseOpenAIProvider } from "./base-openai-provider";
 
 /** OpenAI服务提供者标识信息 */
 const provider = { id: "openai", name: "OpenAI" } as const;

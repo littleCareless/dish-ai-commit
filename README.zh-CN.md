@@ -23,57 +23,28 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
-一个使用 AI 生成标准化 Git/SVN 提交消息的 VSCode 扩展。支持 OpenAI、Ollama、VSCode 内置 AI 服务、智谱 AI、DashScope、Gemini AI 和豆包 AI。
+一个使用 AI 生成标准化 Git/SVN 提交消息的 VSCode 扩展。支持 OpenAI、Ollama、VSCode 内置 AI 服务、智谱 AI、DashScope、Gemini AI、豆包 AI、Deepseek AI、SiliconFlow 和 OpenRouter。
 
 ### 🆓 免费 AI 模型支持
 
-- 智谱 AI (GLM-4-Flash)
-
-  - 免费额度：每个账号固定月度免费额度（[速率限制指南](https://open.bigmodel.cn/dev/howuse/rate-limits)）
-  - [在此获取智谱 API Key](https://open.bigmodel.cn/usercenter/apikeys)
-
-- Gemini AI (gemini-2.0-flash-exp)
-  - 免费额度：10 RPM 每天 1500 次请求
-  - [在此获取 Gemini API Key](https://makersuite.google.com/app/apikey)
+- **智谱 AI (GLM-4-Flash)** - 固定月度免费额度 ([获取 API Key](https://open.bigmodel.cn/usercenter/apikeys))
+- **Gemini AI** - 每天 1500 次免费请求 ([获取 API Key](https://makersuite.google.com/app/apikey))
 
 ## 特性
 
 ### 🤖 多平台 AI 支持
 
-- OpenAI API
-
-  - 适用于需要高质量生成结果的场景
-  - 支持多个模型包括 GPT-3.5/GPT-4
-  - 需要 API Key，按使用量收费
-
-- Ollama
-
-  - 本地部署，无需联网
-  - 支持多个开源模型
-  - 适用于对数据隐私有要求的场景
-
-- VSCode 内置 AI
-
-  - 使用 VSCode 内置的 GitHub Copilot
-  - 需要有效的 GitHub Copilot 订阅
-  - 配置：将 provider 设置为 "vscode"
-
-- 智谱 AI (GLM-4)
-
-  - 优秀的中文处理能力
-  - 固定月度免费额度
-  - 适合中国用户使用
-
-- DashScope
-
-  - 阿里云提供的 AI 服务
-  - 支持通义千问系列模型
-  - 适合企业级应用
-
-- Gemini AI
-  - Google 提供的 AI 服务
-  - 每日免费额度：1500 次请求
-  - 适合个人开发者
+| AI 提供商       | 特点                                 | 适用场景                           |
+| --------------- | ------------------------------------ | ---------------------------------- |
+| OpenAI API      | 高质量生成结果，支持 GPT-3.5/GPT-4   | 需要高质量输出的场景，按使用量收费 |
+| Ollama          | 本地部署，支持多个开源模型           | 数据隐私要求高的场景               |
+| VSCode 内置 AI  | 使用 GitHub Copilot                  | 拥有 GitHub Copilot 订阅的用户     |
+| 智谱 AI (GLM-4) | 优秀的中文处理能力，固定月度免费额度 | 中国用户，中文处理                 |
+| DashScope       | 阿里云提供，支持通义千问系列模型     | 企业级应用                         |
+| Gemini AI       | 每日免费额度 1500 次请求             | 个人开发者                         |
+| Deepseek AI     | 高质量开源大模型，中英文双语优化     | 多语言支持需求                     |
+| SiliconFlow     | 高性能 AI 推理平台                   | 需要多模型支持的场景               |
+| OpenRouter      | 开源 AI 路由服务，多模型支持         | 灵活的模型选择需求                 |
 
 ### 📝 版本控制系统支持
 
@@ -86,6 +57,14 @@
 - 自动总结你的工作进展
 - 可自定义报告模板
 - 支持多个 AI 提供商进行报告生成
+
+### 🌿 分支名称生成
+
+- 自动生成符合规范的 Git 分支名称
+- 基于需求或功能描述智能创建分支名
+- 支持多种分支命名规范和格式化
+- 与所有 AI 提供商无缝集成
+- 提高团队分支命名一致性
 
 ### 🌍 多语言提交消息生成
 
@@ -199,13 +178,6 @@
 - 按项目/任务总结
 - 自定义报告格式和关键内容
 
-## 📋 要求
-
-- VS Code 1.80.0+
-- [SVN 命令行工具](http://subversion.apache.org/packages.html)
-- SVN SCM（可选） - 如果需要在 VSCode 的 SCM 输入框中输入提交消息，请安装 [SVN SCM v2.18.1+](https://github.com/littleCareless/svn-scm/releases/tag/v2.18.1)
-- 有效的 AI 服务配置（OpenAI API Key 或 Ollama 服务）
-
 ### 配置
 
 | 配置项                                                 | 类型    | 默认值                    | 描述                             |
@@ -221,6 +193,9 @@
 | dish-ai-commit.providers.doubao.apiKey                 | string  | ""                        | 豆包 AI API key                  |
 | dish-ai-commit.providers.ollama.baseUrl                | string  | http://localhost:11434    | Ollama API 基础 URL              |
 | dish-ai-commit.providers.gemini.apiKey                 | string  | ""                        | Gemini AI API key                |
+| dish-ai-commit.providers.deepseek.apiKey               | string  | ""                        | Deepseek AI API key              |
+| dish-ai-commit.providers.siliconflow.apiKey            | string  | ""                        | SiliconFlow API key              |
+| dish-ai-commit.providers.openrouter.apiKey             | string  | ""                        | OpenRouter API key               |
 | dish-ai-commit.features.codeAnalysis.simplifyDiff      | boolean | false                     | 启用差异内容简化                 |
 | dish-ai-commit.features.commitFormat.enableMergeCommit | boolean | false                     | 允许将多个文件更改合并为一个提交 |
 | dish-ai-commit.features.commitFormat.enableEmoji       | boolean | true                      | 在提交消息中使用表情符号         |
@@ -228,10 +203,13 @@
 
 ### 命令
 
-| 命令 ID                             | 类别             | 标题                   | 描述                           |
-| ----------------------------------- | ---------------- | ---------------------- | ------------------------------ |
-| dish-ai-commit.selectModel          | [Dish AI Commit] | 选择提交生成的 AI 模型 | 选择用于生成提交消息的 AI 模型 |
-| dish-ai-commit.generateWeeklyReport | [Dish AI Commit] | 生成周报               | 生成 AI 驱动的每周工作报告     |
+| 命令 ID                              | 类别             | 标题                   | 描述                           |
+| ------------------------------------ | ---------------- | ---------------------- | ------------------------------ |
+| dish-ai-commit.selectModel           | [Dish AI Commit] | 选择提交生成的 AI 模型 | 选择用于生成提交消息的 AI 模型 |
+| dish-ai-commit.generateWeeklyReport  | [Dish AI Commit] | 生成周报               | 生成 AI 驱动的每周工作报告     |
+| dish-ai-commit.generateBranchName    | [Dish AI Commit] | 生成分支名称           | 基于需求描述生成标准化分支名   |
+| dish-ai-commit.generateCommitMessage | [Dish AI Commit] | 生成提交信息           | 生成符合规范的提交消息         |
+| dish-ai-commit.reviewCode            | [Dish AI Commit] | 代码审查               | AI 辅助的代码审查              |
 
 ## 配置说明
 
@@ -262,6 +240,33 @@
 }
 ```
 
+4. Deepseek AI 配置
+
+```json
+{
+  "dish-ai-commit.base.provider": "deepseek",
+  "dish-ai-commit.providers.deepseek.apiKey": "your-api-key"
+}
+```
+
+5. SiliconFlow 配置
+
+```json
+{
+  "dish-ai-commit.base.provider": "siliconflow",
+  "dish-ai-commit.providers.siliconflow.apiKey": "your-api-key"
+}
+```
+
+6. OpenRouter 配置
+
+```json
+{
+  "dish-ai-commit.base.provider": "openrouter",
+  "dish-ai-commit.providers.openrouter.apiKey": "your-api-key"
+}
+```
+
 ## 📋 如何使用
 
 - 从源代码管理器中选择要提交的文件
@@ -278,14 +283,16 @@
 
 ## 📝 更新日志
 
-请参阅 [CHANGELOG.md](CHANGELOG.md) 了解详细的版本历史。
+请参阅 [CHANGELOG.zh-CN.md](CHANGELOG.zh-CN.md) 了解详细的版本历史。
 
 ## 📋 依赖要求
 
 - VS Code 1.80.0+
 - [SVN 命令行工具](http://subversion.apache.org/packages.html)
-- SVN SCM（可选） - 如果需要在 VSCode 的 SCM 输入框中输入提交信息，请安装 [SVN SCM v2.18.1+](https://github.com/littleCareless/svn-scm/releases/tag/v2.18.1)
-- 有效的 AI 服务配置（OpenAI API Key 或 Ollama 服务）
+- SVN SCM（可选）- 如果您需要在 VSCode 的 SCM 输入框中输入提交信息，请安装 [SVN SCM v2.18.1+](https://github.com/littleCareless/svn-scm/releases/tag/v2.18.1)
+- 从 [发布页面](https://marketplace.visualstudio.com/items?itemName=littleCareless.svn-scm-ai) 下载最新版本的 SVN SCM 扩展
+- Git SCM（可选）- 如果您需要在 VSCode 的 SCM 输入框中输入提交信息，请安装 [Git SCM](https://marketplace.visualstudio.com/items?itemName=vscode.git)
+- 有效的 AI 服务配置（OpenAI API 密钥或 Ollama 服务）
 
 ## 💡 常见问题
 
@@ -295,6 +302,15 @@
 - 确保网络可以访问所选的 AI 服务
 
 ## 🛠️ 开发指南
+
+### 🚀 CI/CD 自动化
+
+本项目配置了完整的 CI/CD 工作流，用于自动化发布流程：
+
+- **Develop 分支**：自动发布预发布版本
+- **Main 分支**：自动发布正式版本
+- 使用 GitHub Actions 完成自动构建、测试和发布
+- 自动处理版本管理和发布流程
 
 您可以使用 Github Codespaces 进行在线开发：
 

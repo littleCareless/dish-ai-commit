@@ -1,0 +1,37 @@
+name: Publish VSCode Extension Release
+
+on:
+  push:
+    tags:
+      - "v*" # 监听以 v 开头的 tag，例如 v1.0.0
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: "18"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v2
+        with:
+          version: "10.x"
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Package VSCode Extension
+        run: npm run package
+
+      - name: Create GitHub Release and Upload .vsix
+        uses: softprops/action-gh-release@v1
+        with:
+          files: "*.vsix"
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

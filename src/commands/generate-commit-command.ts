@@ -9,6 +9,32 @@ import { notify } from "../utils/notification";
 import { getMessage, formatMessage } from "../utils/i18n";
 import { ProgressHandler } from "../utils/notification/progress-handler";
 import { validateAndGetModel } from "../utils/ai/model-validation";
+import { LayeredCommitMessage } from "../ai/types";
+
+/**
+ * 将分层提交信息格式化为结构化的提交信息文本
+ * @param layeredCommit - 分层提交信息对象
+ * @returns 格式化后的提交信息文本
+ */
+function formatLayeredCommitMessage(
+  layeredCommit: LayeredCommitMessage
+): string {
+  // 构建提交信息文本
+  let commitMessage = layeredCommit.summary.trim();
+
+  // 如果有文件变更，添加详细信息部分
+  if (layeredCommit.fileChanges.length > 0) {
+    commitMessage += "\n\n### 变更详情\n";
+
+    for (const fileChange of layeredCommit.fileChanges) {
+      commitMessage += `\n* **${
+        fileChange.filePath
+      }**：${fileChange.description.trim()}`;
+    }
+  }
+
+  return commitMessage;
+}
 
 /**
  * 提交信息生成命令类
@@ -64,18 +90,46 @@ export class GenerateCommitCommand extends BaseCommand {
             aiProvider,
             selectedModel,
           } = await this.selectAndUpdateModelConfiguration(provider, model);
-          // 生成提交信息
-          const result = await aiProvider.generateResponse({
-            ...configuration.base,
+
+          // 确保selectedModel存在
+          if (!selectedModel) {
+            throw new Error(getMessage("no.model.selected"));
+          }
+
+          // 准备AI请求参数
+          const requestParams = {
+            ...configuration.features.commitMessage, // 使用非空断言，确保selectedModel不为undefined
             ...configuration.features.commitFormat,
             ...configuration.features.codeAnalysis,
             additionalContext: currentInput,
             diff: diffContent,
             model: selectedModel,
             scm: scmProvider.type ?? "git",
-          });
+            changeFiles: selectedFiles,
+            languages: configuration.base.language,
+          };
 
-          return result;
+          // 判断是否启用分层提交信息生成
+          const enableLayeredCommit =
+            configuration.features.commitFormat?.enableLayeredCommit || false;
+
+          if (enableLayeredCommit && aiProvider.generateLayeredCommit) {
+            // 使用分层提交信息生成
+            const layeredCommit = await aiProvider.generateLayeredCommit(
+              requestParams
+            );
+
+            // 将分层提交信息转换为结构化文本
+            const formattedMessage = formatLayeredCommitMessage(layeredCommit);
+
+            return {
+              content: formattedMessage,
+              // 由于分层生成没有使用传统的AI响应对象，这里不包含usage信息
+            };
+          } else {
+            // 使用传统方式生成提交信息
+            return await aiProvider.generateCommit(requestParams);
+          }
         }
       );
 

@@ -85,6 +85,8 @@ All output MUST be in ${language} language. You are to act as a pure ${VCSUpper}
 
 ## Output Format
 
+IMPORTANT: This format is NOT optional. You MUST follow EXACTLY this structure when generating commit messages. The format of your response MUST be identical to what is shown below, with the only difference being the content and language of the messages themselves.
+
 ${getMergeCommitsSection(enableMergeCommit, enableEmoji)}
 
 ## File Status Detection
@@ -176,6 +178,9 @@ ${
 3. NO additional text or explanations
 4. NO questions or comments
 5. NO formatting instructions or metadata
+6. STRICTLY FOLLOW the format shown in the Examples section
+7. When processing multiple files, output separate commit messages in EXACTLY the same format as shown in the Examples
+8. NEVER include triple backticks (\`\`\`) in your output
 
 ## Additional Context
 
@@ -207,7 +212,11 @@ Breaking Changes Guidelines:
 Note: The following examples are in English for demonstration purposes only. 
 Your actual output MUST be in ${language} as specified above.
 
-${getVCSExamples(vcsType, enableMergeCommit, enableEmoji)}`;
+IMPORTANT: This format is NOT optional. You MUST follow EXACTLY this structure when generating commit messages. The format of your response MUST be identical to what is shown below, with the only difference being the content and language of the messages themselves.
+
+
+${getVCSExamples(vcsType, enableMergeCommit, enableEmoji)}
+`;
 }
 
 // Helper functions for examples generation (implementations omitted for brevity)
@@ -233,23 +242,34 @@ function getMergedGitExample(useEmoji: boolean) {
 
 function getSeparateGitExample(useEmoji: boolean) {
   const featPrefix = useEmoji ? "✨ " : "";
+  const fixPrefix = useEmoji ? "🐛 " : "";
 
-  return `- **Input (Single File with Multiple Changes)**:
+  return `- **Input (Multiple File with Multiple Changes)**:
   \`\`\`
-  diff --git a/file.js b/file.js
+  diff --git a/feature.js b/feature.js
   index e69de29..b6fc4c6 100644
-  --- a/file.js
-  +++ b/file.js
-  @@ -0,0 +1,2 @@
-  +console.log('Feature A');
-  +console.log('Bugfix for B');
+  --- a/feature.js
+  +++ b/feature.js
+  @@ -0,0 +1 @@
+  +console.log('New Feature Implementation');
+
+  diff --git a/bugfix.js b/bugfix.js
+  index 1234567..7654321 100644
+  --- a/bugfix.js
+  +++ b/bugfix.js
+  @@ -1,3 +1,3 @@
+   const x = 1;
+  -const y = x + 1;
+  +const y = x + 2;
   \`\`\`
 
-- **Generated Commit Message**:
+- **Generated Commit Messages**:
   \`\`\`
-  ${featPrefix}feat(file): add feature A and fix issue B
-    - added "Feature A" in file.js
-    - fixed issue related to B
+  ${featPrefix}feat(feature): implement new functionality
+  - add feature implementation in feature.js
+  
+  ${fixPrefix}fix(bugfix): correct calculation logic
+  - fixed calculation of variable y in bugfix.js
   \`\`\``;
 }
 
@@ -284,23 +304,34 @@ function getMergedSVNExample(useEmoji: boolean) {
 
 function getSeparateSVNExample(useEmoji: boolean) {
   const featPrefix = useEmoji ? "✨ " : "";
+  const fixPrefix = useEmoji ? "🐛 " : "";
 
-  return `- **Input (Single File with Multiple Changes)**:
+  return `- **Input (Multiple File with Multiple Changes)**:
   \`\`\`
-  Index: file.js
+  Index: feature.js
   ===================================================================
-  --- file.js    (revision 123)
-  +++ file.js    (working copy)
-  @@ -0,0 +1,2 @@
-  +console.log('Feature A');
-  +console.log('Bugfix for B');
+  --- feature.js    (revision 0)
+  +++ feature.js    (working copy)
+  @@ -0,0 +1 @@
+  +console.log('New Feature Implementation');
+
+  Index: bugfix.js
+  ===================================================================
+  --- bugfix.js    (revision 123)
+  +++ bugfix.js    (working copy)
+  @@ -1,3 +1,3 @@
+   const x = 1;
+  -const y = x + 1;
+  +const y = x + 2;
   \`\`\`
 
-- **Generated Commit Message**:
+- **Generated Commit Messages**:
   \`\`\`
-  ${featPrefix}feat(file): add feature A and fix issue B
-    - added "Feature A" in file.js
-    - fixed issue related to B
+  ${featPrefix}feat(feature): implement new functionality
+  - 添加新功能实现到 feature.js
+
+  ${fixPrefix}fix(bugfix): correct calculation logic
+  - 修复 bugfix.js 中变量 y 的计算逻辑
   \`\`\``;
 }
 
