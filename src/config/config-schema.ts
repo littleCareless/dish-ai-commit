@@ -184,7 +184,7 @@ export const CONFIG_SCHEMA = {
     commitMessage: {
       systemPrompt: {
         type: "string",
-        default: `Custom system prompt`,
+        default: ``,
         description:
           "Custom system prompt for commit message generation / 提交信息生成的自定义系统提示语",
       },
@@ -193,9 +193,9 @@ export const CONFIG_SCHEMA = {
     weeklyReport: {
       systemPrompt: {
         type: "string",
+        default: ``,
         description:
           "Custom system prompt for weekly report generation / 生成周报的自定义系统提示语",
-        default: "",
       },
     },
     // Code review features
@@ -211,7 +211,7 @@ export const CONFIG_SCHEMA = {
     branchName: {
       systemPrompt: {
         type: "string",
-        default: `Custom system prompt`,
+        default: ``,
         description:
           "Custom system prompt for branch name generation / 分支名称生成的自定义系统提示语",
       },
