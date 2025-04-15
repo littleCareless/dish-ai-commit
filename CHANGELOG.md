@@ -6,6 +6,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.12.1 (2025-04-15)
+
+### ♻ Code Refactoring
+
+- **config**: Adjust the default values ​​and formats of configuration items ([82d6f70](https://github.com/littleCareless/dish-ai-commit/commit/82d6f70))
+
+### 🎫 Chores
+
+- **ci**: Add pnpm environment configuration ([aa361d8](https://github.com/littleCareless/dish-ai-commit/commit/aa361d8))
+
+- **deps**: Switch build scripts from pnpm to npm ([e06bda5](https://github.com/littleCareless/dish-ai-commit/commit/e06bda5))
+
+### 👷 Build System
+
+- **version**: Upgraded the project version to 0.12.0 ([4c86577](https://github.com/littleCareless/dish-ai-commit/commit/4c86577))
+
 # 0.12.0 (2025-04-14)
 
 ### ✨ Features
