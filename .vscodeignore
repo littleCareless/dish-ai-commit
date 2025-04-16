@@ -9,3 +9,21 @@ vsc-extension-quickstart.md
 **/*.map
 **/*.ts
 **/.vscode-test.*
+
+node_modules
+
+# 额外排除的文件和目录
+.github/**
+.husky/**
+commitlint.config.mjs
+eslint.config.mjs
+.versionrc
+pnpm-lock.yaml
+SECURITY.md
+CHANGELOG.zh-CN.md
+README.zh-CN.md
+README.cursor.md
+
+out/
+
+# 保留 changelog.md 和 readme.md 作为主要文档
