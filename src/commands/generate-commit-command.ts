@@ -53,10 +53,12 @@ export class GenerateCommitCommand extends BaseCommand {
     const { provider, model } = configResult;
 
     try {
-      // 检测SCM提供程序
-      const scmProvider = await SCMFactory.detectSCM();
+      // 获取选中的文件
+      const selectedFiles = this.getSelectedFiles(resources);
+
+      // 检测SCM提供程序（修改：使用this.detectSCMProvider并传入selectedFiles）
+      const scmProvider = await this.detectSCMProvider(selectedFiles);
       if (!scmProvider) {
-        notify.error("scm.not.detected");
         return;
       }
 
@@ -74,7 +76,6 @@ export class GenerateCommitCommand extends BaseCommand {
         ]),
         async (progress) => {
           // 获取选中文件的差异信息
-          const selectedFiles = this.getSelectedFiles(resources);
           const diffContent = await scmProvider.getDiff(selectedFiles);
 
           // 检查是否有变更

@@ -40,7 +40,8 @@ export class WeeklyReportService {
   async initialize(): Promise<void> {
     const workspacePath = this.getWorkspacePath();
 
-    this.scmProvider = await SCMFactory.detectSCM();
+    // 修改：传递工作区路径作为首选文件路径来检测SCM
+    this.scmProvider = await SCMFactory.detectSCM([workspacePath]);
     if (!this.scmProvider) {
       throw new Error("No SCM provider detected");
     }

@@ -58,14 +58,20 @@ export class GitProvider implements ISCMProvider {
   /**
    * 创建Git提供者实例
    * @param gitExtension - VS Code Git扩展实例
+   * @param workspaceRoot - 工作区根目录路径，可选
    * @throws {Error} 当未找到工作区时抛出错误
    */
-  constructor(private readonly gitExtension: any) {
+  constructor(private readonly gitExtension: any, workspaceRoot?: string) {
     this.api = gitExtension.getAPI(1);
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+
+    if (!workspaceRoot) {
+      workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    }
+
     if (!workspaceRoot) {
       throw new Error(getMessage("workspace.not.found"));
     }
+
     this.workspaceRoot = workspaceRoot;
   }
 
@@ -126,6 +132,16 @@ export class GitProvider implements ISCMProvider {
   async getDiff(files?: string[]): Promise<string | undefined> {
     try {
       let diffOutput = "";
+      console.log("this.workspaceRoot", this.workspaceRoot);
+
+      // 检查仓库是否有初始提交
+      let hasInitialCommit = true;
+      try {
+        await exec("git rev-parse HEAD", { cwd: this.workspaceRoot });
+      } catch (error) {
+        // 如果执行失败，说明没有初始提交
+        hasInitialCommit = false;
+      }
 
       if (files && files.length > 0) {
         // 处理指定文件的差异
@@ -167,11 +183,37 @@ export class GitProvider implements ISCMProvider {
             stdout = result.stdout;
           } else {
             // 处理已跟踪且修改的文件
-            const result = await exec(`git diff HEAD -- "${escapedFile}"`, {
-              cwd: this.workspaceRoot,
-              maxBuffer: 1024 * 1024 * 10,
-            });
-            stdout = result.stdout;
+            try {
+              // 尝试使用 HEAD 引用
+              if (hasInitialCommit) {
+                const result = await exec(`git diff HEAD -- "${escapedFile}"`, {
+                  cwd: this.workspaceRoot,
+                  maxBuffer: 1024 * 1024 * 10,
+                });
+                stdout = result.stdout;
+              } else {
+                // 如果没有初始提交，则使用不带HEAD的diff命令
+                const result = await exec(`git diff -- "${escapedFile}"`, {
+                  cwd: this.workspaceRoot,
+                  maxBuffer: 1024 * 1024 * 10,
+                });
+                stdout = result.stdout;
+              }
+            } catch (error) {
+              // 如果出现"bad revision 'HEAD'"错误，回退到不带HEAD的diff命令
+              if (
+                error instanceof Error &&
+                error.message.includes("bad revision 'HEAD'")
+              ) {
+                const result = await exec(`git diff -- "${escapedFile}"`, {
+                  cwd: this.workspaceRoot,
+                  maxBuffer: 1024 * 1024 * 10,
+                });
+                stdout = result.stdout;
+              } else {
+                throw error;
+              }
+            }
           }
 
           // 添加文件状态和差异信息
@@ -181,11 +223,40 @@ export class GitProvider implements ISCMProvider {
         }
       } else {
         // 获取所有更改的差异 - 需要组合多个命令的输出
+
         // 1. 获取已跟踪文件的更改
-        const { stdout: trackedChanges } = await exec("git diff HEAD", {
-          cwd: this.workspaceRoot,
-          maxBuffer: 1024 * 1024 * 10,
-        });
+        let trackedChanges = "";
+        try {
+          if (hasInitialCommit) {
+            // 如果有初始提交，使用HEAD引用
+            const result = await exec("git diff HEAD", {
+              cwd: this.workspaceRoot,
+              maxBuffer: 1024 * 1024 * 10,
+            });
+            trackedChanges = result.stdout;
+          } else {
+            // 如果没有初始提交，使用不带HEAD的diff命令
+            const result = await exec("git diff", {
+              cwd: this.workspaceRoot,
+              maxBuffer: 1024 * 1024 * 10,
+            });
+            trackedChanges = result.stdout;
+          }
+        } catch (error) {
+          // 如果出现"bad revision 'HEAD'"错误，回退到不带HEAD的diff命令
+          if (
+            error instanceof Error &&
+            error.message.includes("bad revision 'HEAD'")
+          ) {
+            const result = await exec("git diff", {
+              cwd: this.workspaceRoot,
+              maxBuffer: 1024 * 1024 * 10,
+            });
+            trackedChanges = result.stdout;
+          } else {
+            throw error;
+          }
+        }
 
         // 2. 获取已暂存的新文件更改
         const { stdout: stagedChanges } = await exec("git diff --cached", {
@@ -268,7 +339,7 @@ export class GitProvider implements ISCMProvider {
           formatMessage("git.diff.failed", [error.message])
         );
       }
-      throw new Error(getMessage("git.diff.failed"));
+      throw error;
     }
   }
 
