@@ -46,7 +46,7 @@
   "extensionDependencies": [
     "vscode.git"
   ],
-  "main": "./out/extension.js",
+  "main": "./dist/extension.js",
   "activationEvents": [
     "onCommand:dish-ai-commit"
   ],
@@ -367,7 +367,7 @@
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run vscode:prepublish:esbuild",
     "compile": "npm run compile:webview && tsc -p ./",
     "compile:webview": "cd src/webview-ui && pnpm install && pnpm run build",
     "watch": "tsc -watch -p ./",
@@ -381,7 +381,14 @@
     "update-config": "ts-node ./src/scripts/update-config.ts",
     "package": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce package",
     "publish": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce publish",
-    "publish:pre": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce publish --pre-release"
+    "publish:pre": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce publish --pre-release",
+    "compile:esbuild": "npm run check-types && ts-node esbuild.ts",
+    "check-types": "tsc --noEmit",
+    "watch:esbuild": "npm-run-all -p watch:esbuild-bundle watch:esbuild-tsc",
+    "watch:esbuild-bundle": "ts-node esbuild.ts --watch",
+    "watch:esbuild-tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "package:esbuild": "npm run check-types && ts-node esbuild.ts --production",
+    "vscode:prepublish:esbuild": "npm run compile:webview && npm run package:esbuild"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
@@ -393,6 +400,8 @@
     "@types/vscode": "^1.92.0",
     "@typescript-eslint/eslint-plugin": "^8.29.1",
     "@typescript-eslint/parser": "^8.29.1",
+    "esbuild": "^0.20.2",
+    "npm-run-all": "^4.1.5",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.5.1",
     "commitizen": "^4.3.1",
