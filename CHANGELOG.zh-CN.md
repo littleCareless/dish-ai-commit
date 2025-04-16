@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.12.2 (2025-04-16)
+
+### 🐛 Bug Fixes
+
+- **scm**: 优化子目录 Git 仓库检测逻辑 ([7a478af](https://github.com/littleCareless/dish-ai-commit/commit/7a478af))
+
+### 👷 Build System
+
+- **release**: 发布版本 v0.12.1 ([4567997](https://github.com/littleCareless/dish-ai-commit/commit/4567997))
+
 ## 0.12.1 (2025-04-15)
 
 ### ♻ Code Refactoring
