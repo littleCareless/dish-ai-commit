@@ -6,6 +6,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.12.4 (2025-04-17)
+
+### 📝 Documentation
+
+- **version**: Updated version number to 0.12.3 ([bba3f9d](https://github.com/littleCareless/dish-ai-commit/commit/bba3f9d))
+
 ## 0.12.3 (2025-04-16)
 
 ### 🎫 Chores
