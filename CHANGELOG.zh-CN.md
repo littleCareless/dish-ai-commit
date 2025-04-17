@@ -6,6 +6,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.12.3 (2025-04-16)
+
+### 🎫 Chores
+
+- **build**: 优化 VSCode 插件打包配置 ([bfe8766](https://github.com/littleCareless/dish-ai-commit/commit/bfe8766))
+- **vscode**: 更新 VSCode 配置文件 ([178e4d3](https://github.com/littleCareless/dish-ai-commit/commit/178e4d3))
+
+### 👷 Build System
+
+- **bundle**: 添加 esbuild 打包支持 ([bcc989f](https://github.com/littleCareless/dish-ai-commit/commit/bcc989f))
+
+### 📝 Documentation
+
+- **changelog**: 更新版本至 0.12.2 ([d7cf90d](https://github.com/littleCareless/dish-ai-commit/commit/d7cf90d))
+
 ## 0.12.2 (2025-04-16)
 
 ### 🐛 Bug Fixes
