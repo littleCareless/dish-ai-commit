@@ -37,6 +37,16 @@ function formatLayeredCommitMessage(
 }
 
 /**
+ * 过滤提交信息中的代码块标记
+ * @param commitMessage - 原始提交信息
+ * @returns 过滤后的提交信息
+ */
+function filterCodeBlockMarkers(commitMessage: string): string {
+  // 移除Markdown代码块标记（三个反引号）
+  return commitMessage.replace(/```/g, "");
+}
+
+/**
  * 提交信息生成命令类
  */
 export class GenerateCommitCommand extends BaseCommand {
@@ -141,25 +151,28 @@ export class GenerateCommitCommand extends BaseCommand {
 
       // 尝试设置提交信息
       if (response?.content) {
+        // 过滤掉代码块标记
+        const filteredContent = filterCodeBlockMarkers(response.content);
+
         notify.info("commit.message.generated", [
           scmProvider.type.toUpperCase(),
           provider,
           model,
         ]);
         try {
-          await scmProvider.setCommitInput(response.content);
+          await scmProvider.setCommitInput(filteredContent);
         } catch (error) {
           console.log("error", error);
           // 写入失败,尝试复制到剪贴板
           if (error instanceof Error) {
             try {
-              await vscode.env.clipboard.writeText(response.content);
+              await vscode.env.clipboard.writeText(filteredContent);
               notify.error("commit.message.write.failed", [error.message]);
               notify.info("commit.message.copied", [error.message]);
             } catch (error) {
               // 尝试复制到剪贴板
               try {
-                await vscode.env.clipboard.writeText(response.content);
+                await vscode.env.clipboard.writeText(filteredContent);
                 notify.info("commit.message.copied");
               } catch (error) {
                 // 复制也失败了,显示消息内容
@@ -168,7 +181,7 @@ export class GenerateCommitCommand extends BaseCommand {
                   // 提示手动复制
                   vscode.window.showInformationMessage(
                     getMessage("commit.message.manual.copy"),
-                    response.content
+                    filteredContent
                   );
                 }
               }
