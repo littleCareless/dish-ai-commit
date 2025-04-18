@@ -40,6 +40,7 @@
   "vscode.no.models.available": "未找到可用的VSCode语言模型",
   "vscode.generation.failed": "VSCode AI生成失败: {0}",
   "vscode.models.fetch.failed": "获取VSCode模型列表失败",
+  "generation.failed": "{0}",
   "button.yes": "是",
   "button.no": "否",
   "workspace.not.found": "未找到工作区文件夹",
@@ -140,5 +141,6 @@
   "svn.version.check.failed": "检查SVN版本失败: {0}",
   "svn.config.load.failed": "加载SVN配置失败: {0}",
   "svn.invalid.env.config": "无效的SVN环境配置",
-  "svn.not.initialized": "SVN提供程序未初始化"
+  "svn.not.initialized": "SVN提供程序未初始化",
+  "no.model.selected": "未选择模型"
 }

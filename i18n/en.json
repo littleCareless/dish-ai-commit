@@ -40,6 +40,7 @@
   "vscode.no.models.available": "No VSCode language models available",
   "vscode.generation.failed": "VSCode AI generation failed: {0}",
   "vscode.models.fetch.failed": "Failed to fetch VSCode model list",
+  "generation.failed": "{0}",
   "button.yes": "Yes",
   "button.no": "No",
   "workspace.not.found": "Workspace folder not found",
@@ -136,5 +137,6 @@
   "branch.name.copied": "Branch name copied to clipboard",
   "branch.name.copy.failed": "Failed to copy branch name",
   "branch.name.git.only": "Branch name generation is only available for Git repositories",
-  "command.branch.name.failed": "Branch name generation command failed: {0}"
+  "command.branch.name.failed": "Branch name generation command failed: {0}",
+  "no.model.selected": "No model selected"
 }
