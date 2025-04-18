@@ -6,6 +6,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.13.0 (2025-04-18)
+
+### ♻ Code Refactoring
+
+- **ai**: 优化 AI 服务提供商的温度配置参数 ([cf82e72](https://github.com/littleCareless/dish-ai-commit/commit/cf82e72))
+
+### ✨ Features
+
+- **gemini**: 全面更新 Gemini 系列模型并重构服务提供者 ([48d9ea4](https://github.com/littleCareless/dish-ai-commit/commit/48d9ea4))
+- **model**: 重构 AI 模型识别机制 ([65bfa2a](https://github.com/littleCareless/dish-ai-commit/commit/65bfa2a))
+
+### 🎫 Chores
+
+- **ai**: 调整 AI 提供者配置和错误处理 ([be7debd](https://github.com/littleCareless/dish-ai-commit/commit/be7debd))
+- **config**: 修复表情符号显示问题 ([eb9c48d](https://github.com/littleCareless/dish-ai-commit/commit/eb9c48d))
+- **locale**: 添加生成失败和模型选择相关的翻译 ([1cce980](https://github.com/littleCareless/dish-ai-commit/commit/1cce980))
+- **version**: 更新项目版本至 0.12.5 ([884e2ff](https://github.com/littleCareless/dish-ai-commit/commit/884e2ff))
+
+### 👷 Build System
+
+- **deps**: 添加 @google/genai 依赖包 ([cceb650](https://github.com/littleCareless/dish-ai-commit/commit/cceb650))
+
 ## 0.12.5 (2025-04-17)
 
 ### 🎫 Chores

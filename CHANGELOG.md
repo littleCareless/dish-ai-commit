@@ -6,6 +6,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.13.0 (2025-04-18)
+
+### ♻ Code Refactoring
+
+- **ai**: Optimize the temperature configuration parameters of AI service providers ([cf82e72](https://github.com/littleCareless/dish-ai-commit/commit/cf82e72))
+
+### ✨ Features
+
+- **gemini**: Fully update the Gemini series model and refactor the service provider ([48d9ea4](https://github.com/littleCareless/dish-ai-commit/commit/48d9ea4))
+
+- **model**: Refactor the AI ​​model recognition mechanism ([65bfa2a](https://github.com/littleCareless/dish-ai-commit/commit/65bfa2a))
+
+### 🎫 Chores
+
+- **ai**: Adjust AI provider configuration and error handling ([be7debd](https://github.com/littleCareless/dish-ai-commit/commit/be7debd))
+- **config**: Fix emoji display issues ([eb9c48d](https://github.com/littleCareless/dish-ai-commit/commit/eb9c48d))
+- **locale**: Add translations for build failure and model selection ([1cce980](https://github.com/littleCareless/dish-ai-commit/commit/1cce980))
+- **version**: Update project version to 0.12.5 ([884e2ff](https://github.com/littleCareless/dish-ai-commit/commit/884e2ff))
+
+### 👷 Build System
+
+- **deps**: Add @google/genai dependency package ([cceb650](https://github.com/littleCareless/dish-ai-commit/commit/cceb650))
+
 ## 0.12.5 (2025-04-17)
 
 ### 🎫 Chores
