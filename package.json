@@ -277,13 +277,13 @@
           "group": "2_z_dish@3"
         },
         {
-          "command": "dish-ai-commit.selectModel",
-          "when": "scmProvider =~ /(git|svn)/",
+          "command": "dish-ai-commit.generateBranchName",
+          "when": "scmProvider == git",
           "group": "2_z_dish@4"
         },
         {
-          "command": "dish-ai-commit.generateBranchName",
-          "when": "scmProvider == git",
+          "command": "dish-ai-commit.selectModel",
+          "when": "scmProvider =~ /(git|svn)/",
           "group": "2_z_dish@5"
         }
       ],

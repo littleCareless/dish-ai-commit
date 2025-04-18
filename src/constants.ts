@@ -34,7 +34,7 @@ export const COMMANDS = {
   /** 分支名称相关命令 */
   BRANCH_NAME: {
     /** 生成分支名称的命令 */
-    GENERATE: "dish-ai-commit.generateBranchName",
+    GENERATE: packageJson.contributes.commands[4].command,
   },
 } as const;
 
