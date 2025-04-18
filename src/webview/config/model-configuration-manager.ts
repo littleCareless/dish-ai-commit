@@ -16,7 +16,7 @@ export class ModelConfigurationManager {
     let models = await aiProvider.getModels();
 
     if (models && models.length > 0) {
-      const selectedModel = models.find((m) => m.name === model);
+      const selectedModel = models.find((m) => m.id === model);
       if (selectedModel) {
         return { aiProvider, selectedModel };
       }
@@ -40,7 +40,9 @@ export class ModelConfigurationManager {
       throw new Error(getMessage("model.list.empty"));
     }
 
-    const selectedModel = models.find((m) => m.name === model);
+    const selectedModel = models.find((m) => m.id === model);
+    console.log("selectedModel", selectedModel);
+
     if (!selectedModel) {
       throw new Error(getMessage("model.notFound"));
     }

@@ -45,7 +45,7 @@ async function revalidateModel(
     throw new Error(getMessage("model.list.empty"));
   }
 
-  const selectedModel = models.find((m) => m.name === result.model);
+  const selectedModel = models.find((m) => m.id === result.model);
   if (!selectedModel) {
     throw new Error(getMessage("model.notFound"));
   }
@@ -71,7 +71,7 @@ export async function validateAndGetModel(
     return revalidateModel(provider, model);
   }
 
-  const selectedModel = models.find((m) => m.name === model);
+  const selectedModel = models.find((m) => m.id === model);
   if (!selectedModel) {
     return revalidateModel(provider, model);
   }
