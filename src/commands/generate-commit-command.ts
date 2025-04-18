@@ -152,7 +152,9 @@ export class GenerateCommitCommand extends BaseCommand {
       // 尝试设置提交信息
       if (response?.content) {
         // 过滤掉代码块标记
-        const filteredContent = filterCodeBlockMarkers(response.content);
+        let filteredContent = filterCodeBlockMarkers(response.content);
+        // 过滤掉开头结尾的空格
+        filteredContent = filteredContent.trim();
 
         notify.info("commit.message.generated", [
           scmProvider.type.toUpperCase(),
