@@ -134,9 +134,9 @@ export class AIProviderFactory {
    */
   public static getAllProviders(): AIProviderInterface[] {
     return [
-      new OpenAIProvider(),
-      new OllamaProvider(),
       new VSCodeProvider(),
+      new OllamaProvider(),
+      new OpenAIProvider(),
       new ZhipuAIProvider(),
       new DashScopeProvider(),
       new DoubaoProvider(),
