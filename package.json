@@ -418,6 +418,7 @@
     "@vscode/vsce": "^3.3.2"
   },
   "dependencies": {
+    "@google/genai": "^0.8.0",
     "inversify": "^7.5.0",
     "ollama": "^0.5.14",
     "openai": "^4.93.0"
