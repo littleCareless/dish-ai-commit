@@ -6,6 +6,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.13.2 (2025-04-18)
+
+### 🐛 Bug Fixes
+
+- **package**: Fix menu command order error ([070fd6c](https://github.com/littleCareless/dish-ai-commit/commit/070fd6c))
+
+### 👷 Build System
+
+- **version**: Release v0.13.1 ([2e41c7f](https://github.com/littleCareless/dish-ai-commit/commit/2e41c7f))
+
+### 💄 Styles
+
+- Ignore .DS_Store files ([c8fa89a](https://github.com/littleCareless/dish-ai-commit/commit/c8fa89a))
+
 ## 0.13.1 (2025-04-18)
 
 ### 🎫 Chores
