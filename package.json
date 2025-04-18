@@ -48,6 +48,7 @@
   ],
   "main": "./dist/extension.js",
   "activationEvents": [
+    "onStartupFinished",
     "onCommand:dish-ai-commit"
   ],
   "contributes": {
@@ -387,7 +388,6 @@
     "watch:esbuild": "npm-run-all -p watch:esbuild-bundle watch:esbuild-tsc",
     "watch:esbuild-bundle": "ts-node esbuild.ts --watch",
     "watch:esbuild-tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "package:esbuild": "npm run check-types && ts-node esbuild.ts --production",
     "vscode:prepublish:esbuild": "npm run compile:webview && npm run package:esbuild"
   },
   "devDependencies": {
