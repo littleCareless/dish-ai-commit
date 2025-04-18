@@ -62,8 +62,10 @@ export class VSCodeProvider extends AbstractAIProvider {
         }
 
         const response = await chatModel.sendRequest(messages, {
-          // VSCode API中如果支持temperature参数
-          // temperature: options?.temperature,
+          modelOptions: {
+            // VSCode API中如果支持temperature参数
+            temperature: options?.temperature,
+          }
         });
 
         let result = "";

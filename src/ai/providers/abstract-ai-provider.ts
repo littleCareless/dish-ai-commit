@@ -38,7 +38,10 @@ export abstract class AbstractAIProvider implements AIProvider {
         systemPrompt,
         "",
         params.diff,
-        params
+        params,
+        {
+          temperature: 0.3, // 提交信息推荐温度值 0.3
+        }
       );
       return result;
     } catch (error) {
@@ -65,7 +68,7 @@ export abstract class AbstractAIProvider implements AIProvider {
         params,
         {
           // parseAsJSON: true,
-          temperature: 0.3,
+          temperature: 0.6, // 代码审查推荐温度值 0.6，范围 0.5-0.6
         }
       );
 
@@ -104,7 +107,7 @@ export abstract class AbstractAIProvider implements AIProvider {
         params.diff,
         params,
         {
-          temperature: 0.3,
+          temperature: 0.4, // 分支命名推荐温度值 0.4
         }
       );
       return result;
@@ -143,7 +146,10 @@ export abstract class AbstractAIProvider implements AIProvider {
         systemPrompt,
         "",
         userContent,
-        params
+        params,
+        {
+          temperature: 0.7, // 周报生成推荐温度值 0.7
+        }
       );
       return result;
     } catch (error) {
@@ -172,7 +178,10 @@ export abstract class AbstractAIProvider implements AIProvider {
         summarySystemPrompt,
         "",
         params.diff,
-        params
+        params,
+        {
+          temperature: 0.3, // 与提交信息一致使用 0.3
+        }
       );
       const summary = summaryResult.content;
 
@@ -195,7 +204,10 @@ export abstract class AbstractAIProvider implements AIProvider {
             fileSystemPrompt,
             "",
             fileDiff,
-            params
+            params,
+            {
+              temperature: 0.3, // 文件描述也使用提交信息的温度值 0.3
+            }
           );
 
           fileChanges.push({

@@ -134,12 +134,12 @@ export class GeminiAIProvider extends AbstractAIProvider {
     const modelId = (params.model?.id || this.defaultModelId) as string;
 
     // 创建生成配置
-    const generationConfig: GenerationConfig = {
-      temperature: options?.temperature || 0.7,
-      topK: 40,
-      topP: 0.95,
-      maxOutputTokens: options?.maxTokens || 8000,
-    };
+    // const generationConfig: GenerationConfig = {
+    //   temperature: options?.temperature || 0.7,
+    //   topK: 40,
+    //   topP: 0.95,
+    //   maxOutputTokens: options?.maxTokens || 8000,
+    // };
 
     // 创建模型实例
     // const model = this.genAI.getGenerativeModel({
@@ -159,6 +159,7 @@ export class GeminiAIProvider extends AbstractAIProvider {
         contents: [{ role: "user", parts: [{ text: combinedUserContent }] }],
         config: {
           systemInstruction: systemPrompt,
+          temperature: options?.temperature || 0.7,
         },
       });
 

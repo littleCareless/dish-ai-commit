@@ -96,6 +96,9 @@ export class OllamaProvider extends AbstractAIProvider {
       ],
       stream: false,
       // 如果Ollama支持temperature参数
+      options: {
+        temperature: options?.temperature,
+      },
       // temperature: options?.temperature,
     });
 
