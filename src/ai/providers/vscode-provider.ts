@@ -57,15 +57,15 @@ export class VSCodeProvider extends AbstractAIProvider {
       ];
 
       try {
-        if (userContent.length > maxCodeCharacters) {
-          console.warn(getMessage("input.truncated"));
-        }
+        // if (userContent.length > maxCodeCharacters) {
+        //   console.warn(getMessage("input.truncated"));
+        // }
 
         const response = await chatModel.sendRequest(messages, {
           modelOptions: {
             // VSCode API中如果支持temperature参数
             temperature: options?.temperature,
-          }
+          },
         });
 
         let result = "";

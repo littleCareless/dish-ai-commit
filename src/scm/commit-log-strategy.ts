@@ -8,9 +8,9 @@ const execAsync = promisify(exec);
  */
 interface Period {
   /** 开始日期 */
-  startDate: string;
+  startDate: string | Date;
   /** 结束日期 */
-  endDate: string;
+  endDate: string | Date;
 }
 
 /**
@@ -27,9 +27,108 @@ export interface CommitLogStrategy {
    */
   getCommits(
     workspacePath: string,
-    period: Period,
+    period: Period | null,
     author: string
   ): Promise<string[]>;
+}
+
+/**
+ * 获取上一周的日期范围(周一到周日)
+ * @returns 包含上一周日期范围的Period对象
+ */
+export function getLastWeekPeriod(): Period {
+  const now = new Date();
+  const lastWeek = new Date(now);
+  lastWeek.setDate(now.getDate() - 7);
+
+  // 计算上周一
+  const lastMonday = new Date(lastWeek);
+  const dayOfWeek = lastWeek.getDay() || 7; // 将周日(0)转换为7
+  lastMonday.setDate(lastWeek.getDate() - dayOfWeek + 1); // 调整到上周一
+
+  // 计算上周日
+  const lastSunday = new Date(lastMonday);
+  lastSunday.setDate(lastMonday.getDate() + 6);
+
+  return {
+    startDate: lastMonday,
+    endDate: lastSunday,
+  };
+}
+
+/**
+ * 格式化日期为YYYY-MM-DD格式的字符串
+ * @param date 日期对象、字符串或其他日期类型
+ * @returns 格式化后的日期字符串
+ */
+function formatDateToString(date: string | Date | any): string {
+  // 如果是字符串，直接返回
+  if (typeof date === "string") {
+    return date;
+  }
+
+  // 检测是否是dayjs对象（它们通常有$d、$y、$M、$D等属性）
+  if (date && typeof date === "object" && date.$d instanceof Date) {
+    // 从dayjs对象中提取原始Date对象
+    return formatDateToString(date.$d);
+  }
+
+  // 如果是标准Date对象
+  if (date instanceof Date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  }
+
+  // 尝试从ISO格式字符串或时间戳创建Date对象
+  try {
+    // 检查是否有$d属性（标准dayjs对象格式）
+    if (date && typeof date === "object" && date.$d) {
+      return formatDateToString(date.$d);
+    }
+
+    // 处理ISO格式字符串，确保考虑时区
+    if (
+      date &&
+      typeof date === "object" &&
+      date.$d &&
+      typeof date.$d === "string"
+    ) {
+      const dateObj = new Date(date.$d);
+      if (!isNaN(dateObj.getTime())) {
+        return formatDateToString(dateObj);
+      }
+    }
+
+    // 其他可能的日期格式
+    const dateObj = new Date(date);
+    if (!isNaN(dateObj.getTime())) {
+      return formatDateToString(dateObj);
+    }
+  } catch (error) {
+    console.error("日期格式化错误:", error);
+  }
+
+  // 无法转换时，返回当前日期
+  console.warn("无法识别的日期格式:", date, "使用当前日期代替");
+  return formatDateToString(new Date());
+}
+
+/**
+ * 格式化时间段对象为日期字符串
+ * @param period 时间段对象
+ * @returns 格式化后的时间段对象
+ */
+function formatPeriod(period: Period | null): Period {
+  if (!period) {
+    return getLastWeekPeriod();
+  }
+
+  return {
+    startDate: formatDateToString(period.startDate),
+    endDate: formatDateToString(period.endDate),
+  };
 }
 
 /**
@@ -45,11 +144,16 @@ export class GitCommitStrategy implements CommitLogStrategy {
    */
   async getCommits(
     workspacePath: string,
-    period: Period,
+    period: Period | null,
     author: string
   ): Promise<string[]> {
+    // 格式化时间段
+    const formattedPeriod = formatPeriod(period);
+    console.log("formatted period", formattedPeriod);
+
     // 构建git log命令,格式化输出提交信息
-    const command = `git log --since="${period.startDate}" --until="${period.endDate}" --pretty=format:"%h - %an, %ar : %s" --author="${author}"`;
+    // const command = `git log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --pretty=format:"%h - %an, %ar : %s" --author="${author}"`;
+    const command = `git log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n" --author="${author}"`;
 
     console.log("command", command);
     const { stdout } = await execAsync(command, { cwd: workspacePath });
@@ -70,11 +174,15 @@ export class SvnCommitStrategy implements CommitLogStrategy {
    */
   async getCommits(
     workspacePath: string,
-    period: Period,
+    period: Period | null,
     author: string
   ): Promise<string[]> {
+    // 格式化时间段
+    const formattedPeriod = formatPeriod(period);
+    console.log("formatted period", formattedPeriod);
+
     // 构建svn log命令,使用XML格式输出
-    const command = `svn log -r "{${period.startDate}}:{${period.endDate}}" --search="${author}" --xml`;
+    const command = `svn log -r "{${formattedPeriod.startDate}}:{${formattedPeriod.endDate}}" --search="${author}" --xml`;
 
     const { stdout } = await execAsync(command, { cwd: workspacePath });
     return this.parseXmlLogs(stdout);

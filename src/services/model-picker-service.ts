@@ -37,7 +37,6 @@ export class ModelPickerService {
               try {
                 if (await provider.isAvailable()) {
                   const models = await provider.getModels();
-                  console.log("models", models);
                   if (models && models.length > 0) {
                     tempModelsMap.set(provider.getName(), models);
                   }

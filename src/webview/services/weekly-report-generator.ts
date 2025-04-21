@@ -25,6 +25,7 @@ export class WeeklyReportGenerator {
         const { aiProvider, selectedModel } =
           await this.configManager.getModelAndProvider();
 
+
         const response = await aiProvider.generateWeeklyReport(
           workItems.map((item) => item.content),
           period,
