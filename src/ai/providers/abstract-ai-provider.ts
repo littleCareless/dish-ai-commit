@@ -148,7 +148,7 @@ export abstract class AbstractAIProvider implements AIProvider {
         userContent,
         params,
         {
-          temperature: 0.7, // 周报生成推荐温度值 0.7
+          temperature: 0.3, // 周报生成推荐温度值 0.3
         }
       );
       return result;
