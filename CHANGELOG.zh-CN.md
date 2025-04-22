@@ -6,6 +6,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.14.0 (2025-04-22)
+
+### ✨ Features
+
+- **log**: 增强版本控制日志提取功能 ([1b2dcf8](https://github.com/littleCareless/dish-ai-commit/commit/1b2dcf8))
+
+### 🎫 Chores
+
+- **config**: 调整系统配置及周报生成提示器 ([b63b18a](https://github.com/littleCareless/dish-ai-commit/commit/b63b18a))
+
+### 👷 Build System
+
+- **version**: 发布 v0.13.3 版本 ([6dc6bfc](https://github.com/littleCareless/dish-ai-commit/commit/6dc6bfc))
+
 ## 0.13.3 (2025-04-18)
 
 ### 🎫 Chores
