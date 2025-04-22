@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.13.3 (2025-04-18)
+
+### 🎫 Chores
+
+- **config**: 优化插件配置和构建脚本 ([f71ea75](https://github.com/littleCareless/dish-ai-commit/commit/f71ea75))
+
+### 👷 Build System
+
+- **version**: 发布 v0.13.2 版本 ([1d1f40b](https://github.com/littleCareless/dish-ai-commit/commit/1d1f40b))
+
 ## 0.13.2 (2025-04-18)
 
 ### 🐛 Bug Fixes
