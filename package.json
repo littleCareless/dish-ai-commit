@@ -16,6 +16,7 @@
     "Machine Learning",
     "Snippets",
     "Formatters",
+    "AI",
     "Other"
   ],
   "keywords": [
@@ -388,7 +389,7 @@
     "watch:esbuild": "npm-run-all -p watch:esbuild-bundle watch:esbuild-tsc",
     "watch:esbuild-bundle": "ts-node esbuild.ts --watch",
     "watch:esbuild-tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "vscode:prepublish:esbuild": "npm run compile:webview && npm run package:esbuild"
+    "vscode:prepublish:esbuild": "npm run compile:webview && npm run compile:esbuild"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
