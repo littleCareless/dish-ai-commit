@@ -7,12 +7,38 @@ interface SystemPromptParams {
 
 function getMergeCommitsSection(
   enableMergeCommit: boolean,
-  enableEmoji: boolean
+  enableEmoji: boolean,
+  enableBody: boolean
 ) {
   const formatExample = enableEmoji
     ? "<emoji> <type>(<scope>): <subject>"
     : "<type>(<scope>): <subject>";
+  
+  // 如果不需要显示body，只返回标题行格式
+  if (!enableBody) {
+    if (!enableMergeCommit) {
+      return `### Separate Commits
 
+- If multiple file diffs are provided, generate separate commit messages for each file.
+- If only one file diff is provided, generate a single commit message.
+\`\`\`
+${formatExample}
+
+${formatExample}
+\`\`\`
+`;
+    }
+    
+    return `### Merged Commit
+
+If multiple file diffs are provided, merge them into a single commit message:
+\`\`\`
+${formatExample}
+\`\`\`
+`;
+  }
+
+  // 原有逻辑 - 包含body
   if (!enableMergeCommit) {
     return `### Separate Commits
 
@@ -41,28 +67,37 @@ ${formatExample}
 function getVCSExamples(
   vcsType: "svn" | "git",
   enableMergeCommit: boolean,
-  enableEmoji: boolean
+  enableEmoji: boolean,
+  enableBody: boolean
 ) {
   const exampleContent =
     vcsType === "git"
-      ? getGitExamples(enableMergeCommit, enableEmoji)
-      : getSVNExamples(enableMergeCommit, enableEmoji);
+      ? getGitExamples(enableMergeCommit, enableEmoji, enableBody)
+      : getSVNExamples(enableMergeCommit, enableEmoji, enableBody);
 
   return `### Example (${vcsType.toUpperCase()})
 
 ${exampleContent}`;
 }
 
-function getGitExamples(enableMergeCommit: boolean, enableEmoji: boolean) {
+function getGitExamples(
+  enableMergeCommit: boolean, 
+  enableEmoji: boolean, 
+  enableBody: boolean
+) {
   return enableMergeCommit
-    ? getMergedGitExample(enableEmoji)
-    : getSeparateGitExample(enableEmoji);
+    ? getMergedGitExample(enableEmoji, enableBody)
+    : getSeparateGitExample(enableEmoji, enableBody);
 }
 
-function getSVNExamples(enableMergeCommit: boolean, enableEmoji: boolean) {
+function getSVNExamples(
+  enableMergeCommit: boolean, 
+  enableEmoji: boolean, 
+  enableBody: boolean
+) {
   return enableMergeCommit
-    ? getMergedSVNExample(enableEmoji)
-    : getSeparateSVNExample(enableEmoji);
+    ? getMergedSVNExample(enableEmoji, enableBody)
+    : getSeparateSVNExample(enableEmoji, enableBody);
 }
 
 export function generateCommitMessageSystemPrompt({
@@ -72,53 +107,67 @@ export function generateCommitMessageSystemPrompt({
   const {
     base: { language },
     features: {
-      commitFormat: { enableMergeCommit, enableEmoji },
+      commitFormat: { enableMergeCommit, enableEmoji, enableBody = true },
     },
   } = config;
 
   const VCSUpper = vcsType.toUpperCase();
   return `# ${VCSUpper} Commit Message Guide
 
-## Role and Purpose
+**CRITICAL INSTRUCTION: YOU MUST FOLLOW THESE EXACT REQUIREMENTS**
+1. OUTPUT ONLY THE COMMIT MESSAGE IN ${language}
+2. FOLLOW THE FORMAT EXACTLY AS SHOWN IN EXAMPLES
+3. INCLUDE NO EXPLANATIONS OR ADDITIONAL TEXT
+4. NEVER USE ENGLISH UNLESS SPECIFIED
 
-All output MUST be in ${language} language. You are to act as a pure ${VCSUpper} commit message generator. When receiving a ${VCSUpper} diff, you will ONLY output the commit message itself, with NOTHING else—no explanations, no questions, no additional comments.
+## REQUIRED ACTIONS (MUST DO)
 
-## Output Format
+1. USE THE CORRECT COMMIT TYPE based on file status and changes (feat, fix, etc.)
+2. WRITE ALL CONTENT IN ${language} (except for technical terms and scope)
+3. FOLLOW THE EXACT FORMAT TEMPLATE shown in examples
+4. USE ENGLISH ONLY FOR SCOPE and technical terms
+5. INCLUDE APPROPRIATE EMOJI when enabled (${enableEmoji ? "ENABLED" : "DISABLED"})
+6. ${enableMergeCommit ? "MERGE all changes into a SINGLE commit message" : "CREATE SEPARATE commit messages for each file"}
+7. ${enableBody ? "INCLUDE body content that explains the changes in detail" : "DO NOT include body content, ONLY generate the subject line"}
 
-IMPORTANT: This format is NOT optional. You MUST follow EXACTLY this structure when generating commit messages. The format of your response MUST be identical to what is shown below, with the only difference being the content and language of the messages themselves.
+## PROHIBITED ACTIONS (MUST NOT DO)
 
-${getMergeCommitsSection(enableMergeCommit, enableEmoji)}
+1. DO NOT include any explanations, greetings, or additional text
+2. DO NOT write in English (except for technical terms and scope)
+3. DO NOT add any formatting instructions or metadata
+4. DO NOT include triple backticks (\`\`\`) in your output
+5. DO NOT add any comments or questions
+6. DO NOT deviate from the required format
 
-## File Status Detection
+## FORMAT TEMPLATE
 
-When generating commit messages, always consider both the file status and the context of the file's changes:
+${getMergeCommitsSection(enableMergeCommit, enableEmoji, enableBody)}
 
-1. **New File**: When a new file is added, the commit type is determined by the nature of the file:
-   - **Feature Files**: If the file contains new functionality (e.g., \`*.ts\`, \`*.js\`, \`*.py\`), the commit type should be \`feat\`.
-   - **Configuration Files**: If the file is a configuration file (e.g., \`webpack.config.js\`, \`tsconfig.json\`, \`eslint.json\`), the commit type should be \`chore\`.
-   - **Internationalization Files**: If the file is an i18n file (e.g., \`en.json\`, \`zh-CN.json\`), the commit type should be \`i18n\`.
-   - **Style Files**: If the file is a stylesheet (e.g., \`style.css\`, \`main.less\`, \`style.scss\`), the commit type should be \`style\`.
-   - **Documentation Files**: If the file is related to documentation (e.g., \`README.md\`, \`CONTRIBUTING.md\`), the commit type should be \`docs\`.
-   - **Test Files**: If the file is a test file (e.g., \`*.test.js\`, \`*.spec.ts\`), the commit type should be \`test\`.
+## TYPE DETECTION GUIDE
 
-2. **Modified File**: When a file is modified, the commit type is determined by the changes made:
-   - **Bug Fix**: If the modification fixes a bug (e.g., prevents a crash or resolves unexpected behavior), the commit type should be \`fix\`.
-   - **Feature Enhancement**: If the modification adds new functionality or improves an existing feature, the commit type should be \`feat\`.
-   - **Performance Improvement**: If the modification improves the performance of the code (e.g., caching, optimizing loops, etc.), the commit type should be \`perf\`.
-   - **Code Refactoring**: If the modification does not affect the functionality but improves the structure, readability, or removes duplication (e.g., restructuring code or simplifying logic), the commit type should be \`refactor\`.
-   - **Code Style**: If the modification only involves changes to code formatting or style (e.g., renaming variables, fixing indentation, or formatting), the commit type should be \`style\`.
-   - **Test Modifications**: If the modification is related to test files (e.g., adding new tests or fixing existing ones), the commit type should be \`test\`.
+When generating commit messages, always consider both the file status and the content changes:
 
-3. **Deleted File**: When a file is deleted, the commit type is usually determined by the reason for deletion:
-   - **Removing Unused Files**: If the file is no longer needed or is a deprecated version, the commit type should be \`chore\`.
-   - **Deleting Deprecated or Obsolete Features**: If the deletion removes obsolete functionality or files that are no longer in use, the commit type could be \`chore\` or \`refactor\`, depending on the context.
+### File Status Classification
 
----
+1. **New File** → Determine type by file purpose:
+   - **Feature Files** (\`*.ts\`, \`*.js\`, \`*.py\`) → \`feat\`
+   - **Configuration Files** (\`webpack.config.js\`, \`tsconfig.json\`) → \`chore\`
+   - **Internationalization Files** (\`en.json\`, \`zh-CN.json\`) → \`i18n\`
+   - **Style Files** (\`*.css\`, \`*.less\`, \`*.scss\`) → \`style\`
+   - **Documentation Files** (\`README.md\`, \`CONTRIBUTING.md\`) → \`docs\`
+   - **Test Files** (\`*.test.js\`, \`*.spec.ts\`) → \`test\`
 
-By analyzing both the file status and the changes within the file (e.g., diff), you can generate more accurate and contextually appropriate commit messages. The goal is to detect the purpose of the change based on both the type of the file and its content, rather than simply relying on file status alone.
+2. **Modified File** → Determine type by change purpose:
+   - **Bug Fix** (preventing crashes, fixing unexpected behavior) → \`fix\`
+   - **Feature Enhancement** (adding functionality) → \`feat\`
+   - **Performance Improvement** (optimizations) → \`perf\`
+   - **Code Refactoring** (improving structure without changing functionality) → \`refactor\`
+   - **Code Style Changes** (formatting, renaming) → \`style\`
+   - **Test Modifications** → \`test\`
 
+3. **Deleted File** → Usually \`chore\` or \`refactor\` depending on context
 
-## Type Reference
+## TYPE REFERENCE
 
 ${
   enableEmoji
@@ -150,77 +199,71 @@ ${
 | i18n     | Internationalization | locale, translation |`
 }
 
-## Writing Rules
+## WRITING RULES
 
 ### Subject Line
-
-- Use ! for Breaking Changes, e.g.: feat!: xxx
+- Use ! for Breaking Changes: \`feat!(auth): ...\`
 - Scope must be in English
-- Imperative mood
+- Use imperative mood
 - No capitalization
 - No period at end
-- Max 50 characters
-- Must be in ${language}
+- Maximum 50 characters
+- Must be in ${language} (except scope)
 
-### Body
-
+${enableBody ? `### Body
 - Breaking Changes must include detailed impact description
-- Bullet points with "-"
-- Max 72 chars per line
+- Use bullet points with "-"
+- Maximum 72 characters per line
 - Explain what and why
 - Must be in ${language}
-- Use【】for categorizing different types of changes
+- Use【】for categorizing different types of changes` : ''}
 
-## Critical Requirements
+## SELF-VERIFICATION CHECKLIST
 
-1. Output ONLY the commit message
-2. Write ONLY in ${language}
-3. NO additional text or explanations
-4. NO questions or comments
-5. NO formatting instructions or metadata
-6. STRICTLY FOLLOW the format shown in the Examples section
-7. When processing multiple files, output separate commit messages in EXACTLY the same format as shown in the Examples
-8. NEVER include triple backticks (\`\`\`) in your output
+Before finalizing your output, verify:
+1. LANGUAGE CHECK: Is it 100% in ${language} (except for scope and technical terms)?
+2. FORMAT CHECK: Does it strictly follow the "<type>(<scope>): <subject>" format?
+3. CONTENT CHECK: Does it contain ONLY the commit message with no extra text?
+4. CONSISTENCY CHECK: For multiple files, is the format consistent?
+5. COMPLETENESS CHECK: Does it include all necessary information?
+${enableBody ? '6. BODY CHECK: Does the body explain what was changed and why?' : '6. SUBJECT-ONLY CHECK: Does the output contain ONLY the subject line with no body?'}
 
-## Additional Context
+## EXAMPLES OF CORRECT OUTPUT
 
-If provided, consider any additional context about the changes when generating the commit message. This context will be provided before the diff and should influence the final commit message while maintaining all other formatting rules.
+${getVCSExamples(vcsType, enableMergeCommit, enableEmoji, enableBody)}
 
-${
-  enableMergeCommit
-    ? "## Merging Multiple File Diffs\n\nWhen multiple file diffs are provided, merge them into a single commit message following the formatting rules above."
-    : "## Multiple File Diffs\n\nWhen multiple file diffs are provided, generate separate commit messages for each change, following the formatting rules above."
-}
+## COMMON ERRORS TO AVOID
 
-## Tips
+### ERROR 1: Mixed Language
+❌ feat(user): add new login feature
+✅ feat(user): ${language === 'zh-CN' ? '添加新的登录功能' : `${language} version of message`}
 
-Remember: 
-- All output MUST be in ${language} language, regardless of the language used in examples
-- Examples are for format reference only, DO NOT copy their language style
-- You are to act as a pure commit message generator
-- Your response should contain NOTHING but the commit message itself
-- Always generate commit messages in ${language}, even if the examples are in English
+### ERROR 2: Adding Explanations
+❌ This commit adds a new feature: feat(auth): ${language === 'zh-CN' ? '实现用户认证' : `${language} version of message`}
+✅ feat(auth): ${language === 'zh-CN' ? '实现用户认证' : `${language} version of message`}
 
-Breaking Changes Guidelines:
-- Use ! to mark breaking changes
-- Must describe the impact in body section
-- Include migration guide and upgrade instructions
-- List all incompatible changes
+### ERROR 3: Incorrect Format
+❌ ${language === 'zh-CN' ? '修复了用户登录问题' : '${language} version of incorrect message'}
+✅ fix(user): ${language === 'zh-CN' ? '修复登录验证失败问题' : `${language} version of message`}
 
-## ${VCSUpper} Examples
+${!enableBody ? `### ERROR 4: Including Body Content
+❌ feat(auth): ${language === 'zh-CN' ? '添加认证功能' : `${language} version of message`}
+   - ${language === 'zh-CN' ? '实现JWT令牌认证' : '${language} body content'}
+   - ${language === 'zh-CN' ? '添加刷新令牌功能' : '${language} more body content'}
+✅ feat(auth): ${language === 'zh-CN' ? '添加认证功能' : `${language} version of message`}` : ''}
 
-Note: The following examples are in English for demonstration purposes only. 
-Your actual output MUST be in ${language} as specified above.
+---
 
-IMPORTANT: This format is NOT optional. You MUST follow EXACTLY this structure when generating commit messages. The format of your response MUST be identical to what is shown below, with the only difference being the content and language of the messages themselves.
-
-
-${getVCSExamples(vcsType, enableMergeCommit, enableEmoji)}
+**FINAL REMINDER: YOUR OUTPUT MUST**
+1. CONTAIN ONLY THE COMMIT MESSAGE WITH NOTHING ELSE
+2. BE WRITTEN ENTIRELY IN ${language}
+3. FOLLOW THE EXACT FORMAT SHOWN IN EXAMPLES
+${!enableBody ? '4. INCLUDE ONLY THE SUBJECT LINE, NO BODY' : ''}
 `;
 }
 
 // Helper functions for examples generation (implementations omitted for brevity)
-function getMergedGitExample(useEmoji: boolean) {
+function getMergedGitExample(useEmoji: boolean, useBody: boolean) {
   const prefix = useEmoji ? "✨ " : "";
   return `#### Merged Commit (allowMergeCommits: true)
 
@@ -232,15 +275,15 @@ function getMergedGitExample(useEmoji: boolean) {
 
 - **Generated Commit Message**:
   \`\`\`
-  ${prefix}feat!(auth): implement new authentication system
+  ${prefix}feat!(auth): implement new authentication system${useBody ? `
   - replace legacy token auth with JWT
   -【Breaking Change】old token format no longer supported
   -【Migration】clients must update authentication logic
-  - implement token refresh mechanism
+  - implement token refresh mechanism` : ``}
   \`\`\``;
 }
 
-function getSeparateGitExample(useEmoji: boolean) {
+function getSeparateGitExample(useEmoji: boolean, useBody: boolean) {
   const featPrefix = useEmoji ? "✨ " : "";
   const fixPrefix = useEmoji ? "🐛 " : "";
 
@@ -265,15 +308,15 @@ function getSeparateGitExample(useEmoji: boolean) {
 
 - **Generated Commit Messages**:
   \`\`\`
-  ${featPrefix}feat(feature): implement new functionality
-  - add feature implementation in feature.js
+  ${featPrefix}feat(feature): implement new functionality${useBody ? `
+  - add feature implementation in feature.js` : ``}
   
-  ${fixPrefix}fix(bugfix): correct calculation logic
-  - fixed calculation of variable y in bugfix.js
+  ${fixPrefix}fix(bugfix): correct calculation logic${useBody ? `
+  - fixed calculation of variable y in bugfix.js` : ``}
   \`\`\``;
 }
 
-function getMergedSVNExample(useEmoji: boolean) {
+function getMergedSVNExample(useEmoji: boolean, useBody: boolean) {
   const prefix = useEmoji ? "✨ " : "";
   return `#### Merged Commit (allowMergeCommits: true)
 
@@ -296,13 +339,13 @@ function getMergedSVNExample(useEmoji: boolean) {
 
 - **Generated Commit Message**:
   \`\`\`
-  ${prefix}feat(app): add multiple new files
+  ${prefix}feat(app): add multiple new files${useBody ? `
   - added file1.js
-  - added file2.js with basic logging
+  - added file2.js with basic logging` : ``}
   \`\`\``;
 }
 
-function getSeparateSVNExample(useEmoji: boolean) {
+function getSeparateSVNExample(useEmoji: boolean, useBody: boolean) {
   const featPrefix = useEmoji ? "✨ " : "";
   const fixPrefix = useEmoji ? "🐛 " : "";
 
@@ -327,11 +370,13 @@ function getSeparateSVNExample(useEmoji: boolean) {
 
 - **Generated Commit Messages**:
   \`\`\`
-  ${featPrefix}feat(feature): implement new functionality
-  - 添加新功能实现到 feature.js
+  ${featPrefix}feat(feature): implement new functionality${useBody ? `
+  
+  - Add new feature implementation to feature.js` : ``}
 
-  ${fixPrefix}fix(bugfix): correct calculation logic
-  - 修复 bugfix.js 中变量 y 的计算逻辑
+  ${fixPrefix}fix(bugfix): correct calculation logic${useBody ? `
+
+  - Fix the calculation logic of variable y in bugfix.js` : ``}
   \`\`\``;
 }
 
