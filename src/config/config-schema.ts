@@ -173,6 +173,12 @@ export const CONFIG_SCHEMA = {
         description:
           "Allow merging changes from multiple files into a single commit message / 允许将多个文件的更改合并为单个提交信息",
       },
+      enableBody: {
+        type: "boolean",
+        default: true,
+        description:
+          "Include body content in commit messages (if disabled, only the subject line will be generated) / 在提交信息中包含主体内容（如果禁用，将仅生成标题行）",
+      },
       enableLayeredCommit: {
         type: "boolean",
         default: false,
