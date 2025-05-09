@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.14.2 (2025-05-07)
+
+### 🎫 Chores
+
+- **build**: Update build configuration and AI provider implementation ([f9e057b](https://github.com/littleCareless/dish-ai-commit/commit/f9e057b))
+
+### 👷 Build System
+
+- **version**: Release v0.14.0 ([813446d](https://github.com/littleCareless/dish-ai-commit/commit/813446d))
+
 # 0.14.0 (2025-04-22)
 
 ### ✨ Features
