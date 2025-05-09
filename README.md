@@ -170,6 +170,21 @@ By enabling the enableMergeCommit option, you can:
 - Automatically analyze file associations
 - Generate more concise commit records
 
+### 📋 Subject-Only Commit Messages
+
+By disabling the enableBody option, you can:
+
+- Generate commit messages with only the subject line (without body content)
+- Create more concise commit history
+- Focus on the essential information
+
+Enable/disable through configuration:
+```json
+{
+  "dish-ai-commit.features.commitFormat.enableBody": false // Disable commit message body
+}
+```
+
 ### 📝 Weekly Report Templates
 
 Weekly report generation supports custom templates:
@@ -199,6 +214,7 @@ Weekly report generation supports custom templates:
 | dish-ai-commit.features.codeAnalysis.simplifyDiff      | boolean | false                     | Enable diff content simplification                  |
 | dish-ai-commit.features.commitFormat.enableMergeCommit | boolean | false                     | Allow merging multiple file changes into one commit |
 | dish-ai-commit.features.commitFormat.enableEmoji       | boolean | true                      | Use emoji in commit messages                        |
+| dish-ai-commit.features.commitFormat.enableBody        | boolean | true                      | Include body content in commit messages             |
 | dish-ai-commit.features.weeklyReport.systemPrompt      | string  | ""                        | Custom system prompt for weekly reports             |
 
 ### Commands

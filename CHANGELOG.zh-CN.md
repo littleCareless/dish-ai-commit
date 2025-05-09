@@ -6,6 +6,17 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.15.0 (2025-05-09)
+
+### ✨ Features
+
+- **config**: 添加提交信息正文开关配置项 ([e2011f0](https://github.com/littleCareless/dish-ai-commit/commit/e2011f0))
+- **prompt**: 重构提交消息生成逻辑 ([0d5da20](https://github.com/littleCareless/dish-ai-commit/commit/0d5da20))
+
+### 👷 Build System
+
+- **version**: 发布 v0.14.2 版本 ([e3b8c78](https://github.com/littleCareless/dish-ai-commit/commit/e3b8c78))
+
 ## 0.14.2 (2025-05-07)
 
 ### 🎫 Chores

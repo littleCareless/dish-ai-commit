@@ -6,6 +6,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.15.0 (2025-05-09)
+
+### ✨ Features
+
+- **config**: Add commit message body switch configuration item ([e2011f0](https://github.com/littleCareless/dish-ai-commit/commit/e2011f0))
+
+- **prompt**: Refactor commit message generation logic ([0d5da20](https://github.com/littleCareless/dish-ai-commit/commit/0d5da20))
+
+### 👷 Build System
+
+- **version**: Release v0.14.2 version ([e3b8c78](https://github.com/littleCareless/dish-ai-commit/commit/e3b8c78))
+
 ## 0.14.2 (2025-05-07)
 
 ### 🎫 Chores
