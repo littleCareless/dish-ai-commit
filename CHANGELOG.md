@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.15.2 (2025-05-22)
+
+### 🐛 Bug Fixes
+
+- **package**: Optimize command display conditional logic ([3cf6755](https://github.com/littleCareless/dish-ai-commit/commit/3cf6755))
+
+### 👷 Build System
+
+- **version**: Release v0.15.0 ([64a92a3](https://github.com/littleCareless/dish-ai-commit/commit/64a92a3))
+
 # 0.15.0 (2025-05-09)
 
 ### ✨ Features
