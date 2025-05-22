@@ -2,7 +2,7 @@
   "name": "dish-ai-commit",
   "displayName": "Dish AI Commit Gen",
   "description": "🤖 AI-Powered VSCode extension for generating standardized Git/SVN commit messages. ✨ Supports multiple AI services: OpenAI, ChatGPT, Ollama, Zhipu, DashScope, Doubao, Gemini and VS Code built-in AI. 🌍 Multi-language support (EN/CN/JP/KR/Other). 📊 Auto-generate weekly reports.",
-  "version": "0.15.0",
+  "version": "0.15.1",
   "engines": {
     "node": ">= 22.12.0",
     "pnpm": ">= 10.0.0",
@@ -66,8 +66,7 @@
         "title": "[Dish] Select AI Model",
         "category": "[Dish AI Commit]",
         "icon": "/images/icon.svg",
-        "description": "选择用于生成提交信息的AI模型(OpenAI/Ollama/VS Code Provided)",
-        "when": "(config.svn.enabled && svnOpenRepositoryCount > 0) || (config.git.enabled && gitOpenRepositoryCount > 0)"
+        "description": "选择用于生成提交信息的AI模型(OpenAI/Ollama/VS Code Provided)"
       },
       {
         "command": "dish-ai-commit.generateWeeklyReport",
@@ -350,25 +349,23 @@
       ],
       "commandPalette": [
         {
-          "command": "dish-ai-commit.selectModel",
-          "group": "navigation",
-          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges"
+          "command": "dish-ai-commit.selectModel"
         },
         {
           "command": "dish-ai-commit.generateWeeklyReport",
-          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges"
+          "when": "((config.svn.enabled && scmProvider == svn && svnOpenRepositoryCount > 0) || (config.git.enabled && scmProvider == git && gitOpenRepositoryCount > 0))"
         },
         {
           "command": "dish-ai-commit.generateCommitMessage",
-          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges"
+          "when": "((config.svn.enabled && scmProvider == svn && svnOpenRepositoryCount > 0) || (config.git.enabled && scmProvider == git && gitOpenRepositoryCount > 0))"
         },
         {
           "command": "dish-ai-commit.generateBranchName",
-          "when": "config.git.enabled && scmProvider == git && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges"
+          "when": "((config.svn.enabled && scmProvider == svn && svnOpenRepositoryCount > 0) || (config.git.enabled && scmProvider == git && gitOpenRepositoryCount > 0))"
         },
         {
           "command": "dish-ai-commit.reviewCode",
-          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges"
+          "when": "((config.svn.enabled && scmProvider == svn && svnOpenRepositoryCount > 0) || (config.git.enabled && scmProvider == git && gitOpenRepositoryCount > 0))"
         }
       ]
     }
