@@ -9,7 +9,7 @@ import { GenerationConfig, GoogleGenAI } from "@google/genai";
  */
 const geminiModels: AIModel[] = [
   {
-    id: "gemini-2.5-flash-preview",
+    id: "gemini-2.5-flash-preview-05-20",
     name: "Gemini 2.5 Flash 预览版 - 自适应思维，成本效益高",
     maxTokens: { input: 1048576, output: 65536 },
     provider: { id: "gemini", name: "Gemini AI" },
@@ -20,7 +20,7 @@ const geminiModels: AIModel[] = [
     },
   },
   {
-    id: "gemini-2.5-pro-preview",
+    id: "gemini-2.5-pro-preview-05-06",
     name: "Gemini 2.5 Pro 预览版 - 增强型思考和推理能力、多模态理解、高级编码",
     maxTokens: { input: 1048576, output: 65536 },
     provider: { id: "gemini", name: "Gemini AI" },

@@ -280,7 +280,9 @@ export type GeminiAIModels =
   | "gemini-2.0-flash-lite"
   | "gemini-1.5-flash"
   | "gemini-1.5-flash-8b"
-  | "gemini-1.5-pro";
+  | "gemini-1.5-pro"
+  | "gemini-2.5-pro-preview-05-06"
+  | "gemini-2.5-flash-preview-05-20";
 
 export type DeepseekModels = "deepseek-chat" | "deepseek-reasoner";
 
