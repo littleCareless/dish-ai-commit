@@ -353,19 +353,19 @@
         },
         {
           "command": "dish-ai-commit.generateWeeklyReport",
-          "when": "((config.svn.enabled && scmProvider == svn && svnOpenRepositoryCount > 0) || (config.git.enabled && scmProvider == git && gitOpenRepositoryCount > 0))"
+          "when": "((config.svn.enabled && scmProvider == 'svn') || (config.git.enabled && scmProvider == 'git'))"
         },
         {
           "command": "dish-ai-commit.generateCommitMessage",
-          "when": "((config.svn.enabled && scmProvider == svn && svnOpenRepositoryCount > 0) || (config.git.enabled && scmProvider == git && gitOpenRepositoryCount > 0))"
+          "when": "((config.svn.enabled && scmProvider == 'svn') || (config.git.enabled && scmProvider == 'git'))"
         },
         {
           "command": "dish-ai-commit.generateBranchName",
-          "when": "((config.svn.enabled && scmProvider == svn && svnOpenRepositoryCount > 0) || (config.git.enabled && scmProvider == git && gitOpenRepositoryCount > 0))"
+          "when": "((config.svn.enabled && scmProvider == 'svn') || (config.git.enabled && scmProvider == 'git'))"
         },
         {
           "command": "dish-ai-commit.reviewCode",
-          "when": "((config.svn.enabled && scmProvider == svn && svnOpenRepositoryCount > 0) || (config.git.enabled && scmProvider == git && gitOpenRepositoryCount > 0))"
+          "when": "((config.svn.enabled && scmProvider == 'svn') || (config.git.enabled && scmProvider == 'git'))"
         }
       ]
     }
