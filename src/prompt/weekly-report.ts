@@ -179,9 +179,20 @@ Remember:
 4. Appropriately categorize and summarize based on actual content in commit records
 5. Automatically identify work focus and technical highlights from commit records
 
+## PROHIBITED ACTIONS (MUST NOT DO)
+
+1. DO NOT include any explanations, greetings, or additional text
+2. DO NOT write in English (except for technical terms and scope)
+3. DO NOT add any formatting instructions or metadata
+4. DO NOT include triple backticks (\`\`\`) in your output
+5. DO NOT add any comments or questions
+6. DO NOT deviate from the required format
+
 ## Important Notes
 
 Commit records may contain content from multiple time periods. Please filter relevant commits based on the provided start and end dates (if any). If no dates are provided, assume all commits belong to the current week's work. Commit records may come from different branches or projects; please make reasonable inductions and organization based on context.
+
+Please present the final output in HTML format, using appropriate tags such as <h1>, <h2>, <ul>, <li>, and <strong> for clear formatting and structure.
 `;
 
 /**
