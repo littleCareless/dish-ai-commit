@@ -6,6 +6,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.17.0 (2025-05-28)
+
+### ✨ Features
+
+- **editor**: Enhance the editor, synchronize format status and improve the style ([4c6499d](https://github.com/littleCareless/dish-ai-commit/commit/4c6499d))
+
+- **prompt**: Enhance the weekly report prompt, add prohibited operations and HTML output instructions ([d8ff7ad](https://github.com/littleCareless/dish-ai-commit/commit/d8ff7ad))
+
+### 👷 Build System
+
+- **deps**: Upgrade the version to 0.16.0 and introduce @typescript/native-preview ([9e92ca0](https://github.com/littleCareless/dish-ai-commit/commit/9e92ca0))
+
+# 0.16.0 (2025-05-23)
+
+### ✨ Features
+
+- **gemini**: Add new version Gemini 2.5 model support ([ac6bdca](https://github.com/littleCareless/dish-ai-commit/commit/ac6bdca))
+
+### 🐛 Bug Fixes
+
+- **package**: Fix VCS conditional expression format ([cd1cb34](https://github.com/littleCareless/dish-ai-commit/commit/cd1cb34))
+
+### 📝 Documentation
+
+- **changelog**: Update changelog and version number to 0.15.2 ([24f0d4a](https://github.com/littleCareless/dish-ai-commit/commit/24f0d4a))
+
 ## 0.15.2 (2025-05-22)
 
 ### 🐛 Bug Fixes

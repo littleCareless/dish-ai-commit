@@ -6,6 +6,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.17.0 (2025-05-28)
+
+### ✨ Features
+
+- **editor**: 增强编辑器，同步格式状态并改进样式 ([4c6499d](https://github.com/littleCareless/dish-ai-commit/commit/4c6499d))
+- **prompt**: 增强周报提示，增加禁止操作和 HTML 输出说明 ([d8ff7ad](https://github.com/littleCareless/dish-ai-commit/commit/d8ff7ad))
+
+### 👷 Build System
+
+- **deps**: 升级版本至 0.16.0 并引入 @typescript/native-preview ([9e92ca0](https://github.com/littleCareless/dish-ai-commit/commit/9e92ca0))
+
+# 0.16.0 (2025-05-23)
+
+### ✨ Features
+
+- **gemini**: 添加新版本 Gemini 2.5 模型支持 ([ac6bdca](https://github.com/littleCareless/dish-ai-commit/commit/ac6bdca))
+
+### 🐛 Bug Fixes
+
+- **package**: 修复版本控制系统条件表达式格式 ([cd1cb34](https://github.com/littleCareless/dish-ai-commit/commit/cd1cb34))
+
+### 📝 Documentation
+
+- **changelog**: 更新变更日志和版本号至 0.15.2 ([24f0d4a](https://github.com/littleCareless/dish-ai-commit/commit/24f0d4a))
+
 ## 0.15.2 (2025-05-22)
 
 ### 🐛 Bug Fixes
