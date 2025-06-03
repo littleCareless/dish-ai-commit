@@ -21,68 +21,95 @@ export class GenerateBranchNameCommand extends BaseCommand {
   async execute(
     resources?: vscode.SourceControlResourceState[]
   ): Promise<void> {
-    // 处理配置
     const configResult = await this.handleConfiguration();
     if (!configResult) {
       return;
     }
 
+    const { config, configuration } = this.getExtConfig();
+    let { provider, model } = configResult;
+
     try {
-      // 检查是否有选中的文件
-      const selectedFiles = this.getSelectedFiles(resources);
-      if (!selectedFiles || selectedFiles.length === 0) {
-        await notify.warn("no.changes.selected");
-        return;
-      }
-
-      // 检测SCM提供程序
-      const scmProvider = await this.detectSCMProvider(selectedFiles);
-      if (!scmProvider) {
-        return;
-      }
-
-      // 检查是否为Git提供程序
-      if (scmProvider.type !== "git") {
-        await notify.warn("branch.name.git.only");
-        return;
-      }
-
-      // 获取配置信息
-      const { config, configuration } = this.getExtConfig();
-      let { provider, model } = configResult;
-
       const { aiProvider, selectedModel } = await validateAndGetModel(
         provider,
         model
       );
 
+      let aiInputContent: string | undefined;
+      // Default SCM context for description mode, real provider for SCM mode
+      let scmProviderForContext: { type: string; [key: string]: any } = { type: "git" };
+      let progressMessageKeyGettingContent = "processing.description"; // i18n key
+      let progressMessageKeyAnalyzing = "analyzing.description"; // i18n key
+
+      if (resources && resources.length > 0) {
+        // SCM Mode
+        progressMessageKeyGettingContent = "getting.file.changes";
+        progressMessageKeyAnalyzing = "analyzing.code.changes";
+
+        const selectedFiles = this.getSelectedFiles(resources);
+        if (!selectedFiles || selectedFiles.length === 0) {
+          await notify.warn("no.changes.selected");
+          return;
+        }
+
+        const detectedScmProvider = await this.detectSCMProvider(selectedFiles);
+        if (!detectedScmProvider) {
+          // detectSCMProvider usually shows a notification if it fails
+          return;
+        }
+        if (detectedScmProvider.type !== "git") {
+          await notify.warn("branch.name.git.only");
+          return;
+        }
+        scmProviderForContext = detectedScmProvider; // Store the real SCM provider
+
+        aiInputContent = await detectedScmProvider.getDiff(selectedFiles);
+        if (!aiInputContent) {
+          await notify.warn(getMessage("no.changes.found"));
+          return;
+        }
+      } else {
+        // Description Mode (triggered from Command Palette)
+        const description = await vscode.window.showInputBox({
+          prompt: getMessage("enter.branch.description.prompt"), // New i18n key
+          placeHolder: getMessage("enter.branch.description.placeholder"), // New i18n key
+          ignoreFocusOut: true,
+        });
+
+        if (!description || description.trim() === "") {
+          notify.info(getMessage("branch.description.cancelled")); // New i18n key
+          return;
+        }
+        aiInputContent = description;
+        // scmProviderForContext remains { type: "git" } as set by default
+      }
+
+      if (!aiInputContent) {
+        // This case should ideally not be reached if logic above is correct
+        await notify.error(getMessage("internal.error.no.ai.input")); // New i18n key
+        return;
+      }
+
       await withProgress(
         getMessage("generating.branch.name"),
         async (progress) => {
-          // 获取所有选中文件的差异
           progress.report({
             increment: 10,
-            message: getMessage("getting.file.changes"),
+            message: getMessage(progressMessageKeyGettingContent),
           });
 
-          const diffContent = await scmProvider.getDiff(selectedFiles);
-          if (!diffContent) {
-            await notify.warn(getMessage("no.changes.found"));
-            return;
-          }
-
-          // 生成分支名称
+          // Generate branch name
           progress.report({
             increment: 40,
-            message: getMessage("analyzing.code.changes"),
+            message: getMessage(progressMessageKeyAnalyzing),
           });
 
           const branchNameResult = await aiProvider?.generateBranchName?.({
             ...configuration.base,
             ...configuration.features.branchName,
-            diff: diffContent,
+            diff: aiInputContent, // This is either actual diff or user description
             model: selectedModel,
-            scm: scmProvider.type ?? "git",
+            scm: scmProviderForContext.type, // Use type from the determined SCM context
           });
 
           if (!branchNameResult?.content) {
@@ -96,10 +123,13 @@ export class GenerateBranchNameCommand extends BaseCommand {
             message: getMessage("preparing.results"),
           });
 
-          // 显示分支名称建议并提供创建分支的选项
+          // Show branch name suggestion
+          // The second argument to showBranchNameSuggestion is 'any'.
+          // It's not strictly used for git commands as `vscode.commands.executeCommand("git.checkout", ...)` is used.
+          // Passing scmProviderForContext which has at least a 'type' property.
           await this.showBranchNameSuggestion(
             branchNameResult.content,
-            scmProvider
+            scmProviderForContext
           );
         }
       );

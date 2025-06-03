@@ -146,5 +146,11 @@
   "weeklyReport.generatingTeamReport": "正在生成团队周报...",
   "weeklyReport.teamGeneration.success": "团队成员 {1} 的 {0} 工作周报已生成完成",
   "weeklyReport.teamGeneration.failed": "生成团队周报失败: {0}",
-  "weeklyReport.getUsers.failed": "获取用户列表失败: {0}"
+  "weeklyReport.getUsers.failed": "获取用户列表失败: {0}",
+  "enter.branch.description.prompt": "请输入新分支的描述（例如，要实现的功能或要修复的问题）：",
+  "enter.branch.description.placeholder": "例如：添加用户认证功能",
+  "branch.description.cancelled": "已取消通过描述生成分支名称。",
+  "internal.error.no.ai.input": "内部错误：没有可用于AI处理的输入内容。",
+  "processing.description": "正在处理描述...",
+  "analyzing.description": "正在分析描述..."
 }

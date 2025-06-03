@@ -142,5 +142,11 @@
   "weeklyReport.generatingTeamReport": "Generating team weekly report...",
   "weeklyReport.teamGeneration.success": "Team weekly report for {1} ({0}) has been generated successfully",
   "weeklyReport.teamGeneration.failed": "Failed to generate team weekly report: {0}",
-  "weeklyReport.getUsers.failed": "Failed to get user list: {0}"
+  "weeklyReport.getUsers.failed": "Failed to get user list: {0}",
+  "enter.branch.description.prompt": "Please enter a description for the new branch (e.g., feature to implement or issue to fix):",
+  "enter.branch.description.placeholder": "e.g., Add user authentication feature",
+  "branch.description.cancelled": "Branch name generation from description cancelled.",
+  "internal.error.no.ai.input": "Internal error: No input content available for AI processing.",
+  "processing.description": "Processing description...",
+  "analyzing.description": "Analyzing description..."
 }
