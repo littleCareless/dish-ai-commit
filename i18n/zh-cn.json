@@ -142,5 +142,9 @@
   "svn.config.load.failed": "加载SVN配置失败: {0}",
   "svn.invalid.env.config": "无效的SVN环境配置",
   "svn.not.initialized": "SVN提供程序未初始化",
-  "no.model.selected": "未选择模型"
+  "no.model.selected": "未选择模型",
+  "weeklyReport.generatingTeamReport": "正在生成团队周报...",
+  "weeklyReport.teamGeneration.success": "团队成员 {1} 的 {0} 工作周报已生成完成",
+  "weeklyReport.teamGeneration.failed": "生成团队周报失败: {0}",
+  "weeklyReport.getUsers.failed": "获取用户列表失败: {0}"
 }
