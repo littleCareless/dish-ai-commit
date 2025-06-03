@@ -89,6 +89,59 @@ export class WeeklyReportService {
   }
 
   /**
+   * Retrieves all unique authors from the SCM system for the current workspace.
+   * @returns Promise resolving to an array of author names.
+   * @throws {Error} When service is not initialized.
+   */
+  async getAllAuthors(): Promise<string[]> {
+    if (!this.scmProvider || !this.authorService) {
+      await this.initialize();
+    }
+    // Assuming AuthorService will have a method to get all authors
+    // This might involve parsing commit logs or using SCM specific commands
+    // For now, let's assume it returns a list of unique authors from all commits.
+    // This is a placeholder and might need a more sophisticated implementation
+    // in AuthorService and potentially in GitCommitStrategy/SvnCommitStrategy
+    // to efficiently get all unique authors.
+    // A simple approach for now could be to get all commits and extract authors.
+    // However, this could be inefficient for large repositories.
+    // A better approach would be to have a dedicated method in AuthorService.
+    // For now, we'll delegate to a new method in AuthorService.
+    return await this.authorService!.getAllAuthors(this.scmProvider!.type);
+  }
+
+  /**
+   * Generates work items from commits by specified users within a given period.
+   * @param period - Time period to generate report for.
+   * @param users - Array of user names to filter commits by.
+   * @returns Promise resolving to array of work items.
+   * @throws {Error} When service is not initialized.
+   */
+  async generateForUsers(period: Period, users: string[]): Promise<WorkItem[]> {
+    if (!this.scmProvider || !this.commitStrategy || !this.authorService) {
+      await this.initialize();
+    }
+
+    if (users.length === 0) {
+      return []; // No users selected, return empty array
+    }
+
+    // Assuming CommitLogStrategy will have a method to get commits for multiple users
+    const commits = await this.commitStrategy!.getCommitsForUsers(
+      this.getWorkspacePath(),
+      period,
+      users
+    );
+
+    return commits.map((commit): WorkItem => ({ // Explicitly type WorkItem
+      content: commit,
+      time: "", // Placeholder, might need to extract from commit
+      description: commit, // Placeholder, might need to extract from commit
+    }));
+  }
+
+
+  /**
    * Gets the path of the current workspace
    * @returns Filesystem path of current workspace
    * @throws {Error} When no workspace is open

@@ -80,4 +80,73 @@ export class AuthorService {
       placeHolder: getMessage("author.manual.input.placeholder"),
     });
   }
+
+  /**
+   * 获取仓库所有作者信息
+   * @param type 仓库类型:'git'或'svn'
+   * @returns 作者名称数组
+   */
+  async getAllAuthors(type: "git" | "svn"): Promise<string[]> {
+    if (type === "git") {
+      return this.getAllGitAuthors();
+    }
+    return this.getAllSvnAuthors();
+  }
+
+  /**
+   * 获取Git仓库的所有作者信息
+   * @returns Git所有作者名称数组
+   */
+  private async getAllGitAuthors(): Promise<string[]> {
+    try {
+      // --no-merges 排除合并提交的作者，通常这些不是直接的贡献者
+      const { stdout } = await execAsync(
+        "git log --all --format='%aN' --no-merges",
+        {
+          cwd: this.workspacePath,
+        }
+      );
+      const authors = stdout
+        .split("\n")
+        .map((author) => author.trim())
+        .filter((author) => author); // 去除空行
+      return [...new Set(authors)]; // 去重
+    } catch (error) {
+      console.error("Error getting all Git authors:", error);
+      // 发生错误时可以返回空数组或抛出特定错误
+      return [];
+    }
+  }
+
+  /**
+   * 获取SVN仓库的所有作者信息
+   * @returns SVN所有作者名称数组
+   * @remarks SVN获取所有作者较为复杂，当前实现为占位符
+   */
+  private async getAllSvnAuthors(): Promise<string[]> {
+    // SVN 获取所有作者比较复杂，可能需要解析 `svn log --xml` 的完整输出
+    // 或者依赖特定的 SVN 服务器配置和工具
+    // 当前返回空数组作为占位符，提示用户这部分功能可能不完整
+    console.warn(
+      "Fetching all SVN authors is not fully implemented and may return an empty list."
+    );
+    // 尝试从 `svn log` 中提取，这可能非常耗时且不精确
+    try {
+      const { stdout } = await execAsync(`svn log --quiet`, {
+        cwd: this.workspacePath,
+        maxBuffer: 1024 * 1024 * 10, // 增加缓冲区以处理大型日志
+      });
+      // 这是一个非常基础的解析，可能不准确，依赖于svn log的默认格式
+      const authorRegex = /r\d+ \| ([^|]+) \|/g;
+      let match;
+      const authors = new Set<string>();
+      while ((match = authorRegex.exec(stdout)) !== null) {
+        authors.add(match[1].trim());
+      }
+      return Array.from(authors);
+    } catch (error) {
+      console.error("Error getting all SVN authors:", error);
+      return [];
+    }
+  }
 }

@@ -208,7 +208,7 @@ export const CONFIG_SCHEMA = {
     codeReview: {
       systemPrompt: {
         type: "string",
-        default: `Custom system prompt`,
+        default: ``,
         description:
           "Custom system prompt for code review / 代码审查的自定义系统提示语",
       },

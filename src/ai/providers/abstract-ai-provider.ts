@@ -132,19 +132,29 @@ export abstract class AbstractAIProvider implements AIProvider {
       startDate: string;
       endDate: string;
     },
-    model?: AIModel
+    model?: AIModel,
+    users?: string[] // 新增可选的 users 参数
   ): Promise<AIResponse> {
     try {
-      const systemPrompt = getWeeklyReportPrompt(period);
-      const userContent = commits.join("\n");
+      let systemPrompt = getWeeklyReportPrompt(period);
+      if (users && users.length > 0) {
+        // 如果有用户信息，可以附加到 systemPrompt 或 userContent
+        // 例如，附加到 systemPrompt
+        systemPrompt += `\nThis weekly report is for the team members: ${users.join(
+          ", "
+        )}. Please summarize their collective work.`;
+        // 或者，如果希望AI更关注每个人的贡献，可以在userContent中对commits按用户分组或标记
+      }
+
+      const userContent = commits.join("\n\n---\n\n"); // 使用更明显的分隔符
       const params: AIRequestParams = {
-        diff: userContent,
+        diff: userContent, // diff 字段现在承载的是 commit messages
         model: model || this.getDefaultModel(),
-        additionalContext: "", // 添加缺失的必需属性
+        additionalContext: users ? `Team members: ${users.join(", ")}` : "", // 可以用 additionalContext
       };
       const result = await this.executeWithRetry(
         systemPrompt,
-        "",
+        "", // userPrompt 通常用于更具体的指令，这里暂时为空
         userContent,
         params,
         {

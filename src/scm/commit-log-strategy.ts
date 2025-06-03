@@ -30,6 +30,19 @@ export interface CommitLogStrategy {
     period: Period | null,
     author: string
   ): Promise<string[]>;
+
+  /**
+   * 获取指定时间段内指定多个作者的提交记录
+   * @param workspacePath 工作区路径
+   * @param period 时间段
+   * @param users 作者名数组
+   * @returns 提交记录数组
+   */
+  getCommitsForUsers(
+    workspacePath: string,
+    period: Period | null,
+    users: string[]
+  ): Promise<string[]>;
 }
 
 /**
@@ -159,6 +172,67 @@ export class GitCommitStrategy implements CommitLogStrategy {
     const { stdout } = await execAsync(command, { cwd: workspacePath });
     return stdout.split("\n").filter((line) => line.trim());
   }
+
+  /**
+   * 获取Git仓库的多个作者的提交记录
+   * @param workspacePath Git仓库路径
+   * @param period 查询的时间段
+   * @param users 提交作者数组
+   * @returns 格式化后的提交记录数组
+   */
+  async getCommitsForUsers(
+    workspacePath: string,
+    period: Period | null,
+    users: string[]
+  ): Promise<string[]> {
+    if (users.length === 0) {
+      return [];
+    }
+    const formattedPeriod = formatPeriod(period);
+    // 使用 --author="user1" --author="user2" ... 或者 --author="\(user1\|user2\)"
+    // 后者在某些git版本和shell下可能需要不同的转义
+    // 为了简单和兼容性，可以为每个用户构建author查询部分，然后用OR逻辑（虽然git log本身是AND）
+    // 或者更简单地，为每个用户分别查询然后合并，但效率较低。
+    // 一个更优化的方式是使用 --author="user1\|user2\|user3" 这种格式，需要确保用户名的安全处理
+    const authorQuery = users
+      .map((user) => `--author="${user.replace(/"/g, '\\"')}"`) // 基本的引号转义
+      .join(" "); // git log 多个 --author 是 AND 关系
+
+    // 要实现 OR 关系，需要使用正则表达式
+    const authorRegex = users
+      .map((user) => user.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) // 转义正则特殊字符
+      .join("\\|"); // 构建 OR 正则表达式
+
+    // const command = `git log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n" ${authorQuery}`;
+    // 使用 --author=<regex>
+    const command = `git log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --author="${authorRegex}" --all-match --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n"`;
+
+    console.log("command for multiple users", command);
+    try {
+      const { stdout } = await execAsync(command, {
+        cwd: workspacePath,
+        maxBuffer: 1024 * 1024 * 10, // 增加缓冲区
+      });
+      return stdout.split("\n").filter((line) => line.trim());
+    } catch (error) {
+      // 如果正则查询失败（例如某些git版本不支持），可以回退到为每个用户查询然后合并
+      console.error("Error getting commits for multiple users with regex, falling back to individual queries:", error);
+      let allCommits: string[] = [];
+      for (const user of users) {
+        const singleUserCommand = `git log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n" --author="${user.replace(/"/g, '\\"')}"`;
+        try {
+          const { stdout } = await execAsync(singleUserCommand, { cwd: workspacePath });
+          allCommits = allCommits.concat(stdout.split("\n").filter((line) => line.trim()));
+        } catch (singleError) {
+          console.error(`Error getting commits for user ${user}:`, singleError);
+        }
+      }
+      // 去重并按某种方式排序（例如，git log默认输出就是按日期逆序）
+      // 简单的去重可以通过 Set 实现，但会打乱顺序。如果需要保持顺序或特定排序，需要更复杂逻辑。
+      // 暂时简单合并，后续可优化排序和去重。
+      return [...new Set(allCommits)]; // 简单去重，会打乱顺序
+    }
+  }
 }
 
 /**
@@ -186,6 +260,49 @@ export class SvnCommitStrategy implements CommitLogStrategy {
 
     const { stdout } = await execAsync(command, { cwd: workspacePath });
     return this.parseXmlLogs(stdout);
+  }
+
+  /**
+   * 获取SVN仓库的多个作者的提交记录
+   * @param workspacePath SVN仓库路径
+   * @param period 查询的时间段
+   * @param users 提交作者数组
+   * @returns 解析后的提交记录数组
+   */
+  async getCommitsForUsers(
+    workspacePath: string,
+    period: Period | null,
+    users: string[]
+  ): Promise<string[]> {
+    if (users.length === 0) {
+      return [];
+    }
+    const formattedPeriod = formatPeriod(period);
+    let allCommits: string[] = [];
+
+    // SVN 的 --search 似乎只支持单个用户或模式
+    // 我们需要为每个用户执行一次命令，然后合并结果
+    for (const user of users) {
+      // 对用户名进行适当的清理或转义，以防注入（尽管这里是search参数）
+      const safeUser = user.replace(/[^\w\s.-]/g, ""); // 简单清理
+      const command = `svn log -r "{${formattedPeriod.startDate}}:{${formattedPeriod.endDate}}" --search="${safeUser}" --xml`;
+      console.log(`SVN command for user ${user}: ${command}`);
+      try {
+        const { stdout } = await execAsync(command, {
+          cwd: workspacePath,
+          maxBuffer: 1024 * 1024 * 10, // 增加缓冲区
+        });
+        const userCommits = this.parseXmlLogs(stdout);
+        allCommits = allCommits.concat(userCommits);
+      } catch (error) {
+        console.error(`Error getting SVN commits for user ${user}:`, error);
+        // 可以选择忽略错误继续为其他用户获取，或者抛出错误
+      }
+    }
+    // 注意：合并后的提交可能需要按日期排序和去重
+    // parseXmlLogs 返回的是 msg 内容，如果多个用户修改了同一个 revision，可能会有重复内容（如果msg相同）
+    // 或者如果需要基于 revision 去重，则 parseXmlLogs 需要返回更结构化的数据
+    return [...new Set(allCommits)]; // 简单去重，会打乱顺序
   }
 
   /**
