@@ -50,4 +50,10 @@ export class CliSvnProvider implements ISCMProvider {
   async getCommitInput(): Promise<string> {
     return "";
   }
+
+  async startStreamingInput(message: string): Promise<void> {
+    // 对于命令行SVN，流式输入通常不直接支持，可以抛出错误或记录日志
+    // 这里我们选择抛出错误，与setCommitInput行为保持一致
+    throw new Error(getMessage("cli.commit.input.not.supported"));
+  }
 }

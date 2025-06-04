@@ -28,6 +28,9 @@ export interface ISCMProvider {
 
   /** 获取当前提交信息 */
   getCommitInput(): Promise<string>;
+
+  /** 开始流式输入提交信息 */
+  startStreamingInput(message: string): Promise<void>;
 }
 
 /**

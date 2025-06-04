@@ -391,4 +391,56 @@ export class GitProvider implements ISCMProvider {
 
     return repository.inputBox.value;
   }
+
+  /**
+   * 开始流式设置提交输入框的内容。
+   * 根据ISCMProvider接口，此方法接收完整消息并设置。
+   * @param {string} message - 要设置的提交信息
+   * @throws {Error} 当未找到仓库时抛出错误
+   */
+  async startStreamingInput(message: string): Promise<void> {
+    const api = this.gitExtension.getAPI(1);
+    const repository = api.repositories[0];
+
+    if (!repository) {
+      throw new Error(getMessage("git.repository.not.found"));
+    }
+
+    repository.inputBox.value = message;
+  }
+
+  // /**
+  //  * 向提交输入框追加内容 (流式) - 在当前单方法流式模型下未使用
+  //  * @param {string} chunk - 要追加的文本块
+  //  * @throws {Error} 当未找到仓库时抛出错误
+  //  */
+  // async appendStreamingInput(chunk: string): Promise<void> {
+  //   const api = this.gitExtension.getAPI(1);
+  //   const repository = api.repositories[0];
+
+  //   if (!repository) {
+  //     throw new Error(getMessage("git.repository.not.found"));
+  //   }
+  //   repository.inputBox.value += chunk;
+  // }
+  //
+  // /**
+  //  * 完成流式设置提交输入框的内容。 - 在当前单方法流式模型下未使用
+  //  * 对于Git，由于inputBox API的限制，此方法可能不执行显式操作（如重新启用输入框）。
+  //  * @throws {Error} 当未找到仓库时抛出错误
+  //  */
+  // async finishStreamingInput(): Promise<void> {
+  //   const api = this.gitExtension.getAPI(1);
+  //   const repository = api.repositories[0];
+  //
+  //   if (!repository) {
+  //     throw new Error(getMessage("git.repository.not.found"));
+  //   }
+  //   // Git的inputBox标准接口没有enabled属性。
+  //   // 如果未来API支持enabled，可以在这里添加:
+  //   // if (typeof repository.inputBox.enabled === 'boolean') {
+  //   //   repository.inputBox.enabled = true;
+  //   // }
+  //   // 目前此方法主要用于保持接口一致性。
+  // }
 }
