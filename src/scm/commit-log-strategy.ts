@@ -195,7 +195,12 @@ export class GitCommitStrategy implements CommitLogStrategy {
     // 或者更简单地，为每个用户分别查询然后合并，但效率较低。
     // 一个更优化的方式是使用 --author="user1\|user2\|user3" 这种格式，需要确保用户名的安全处理
     const authorQuery = users
-      .map((user) => `--author="${user.replace(/"/g, '\\"')}"`) // 基本的引号转义
+      .map((user) => {
+        const sanitizedUser = user
+          .replace(/\\/g, "\\\\") // 先转义反斜杠
+          .replace(/"/g, '\\"'); // 再转义双引号
+        return `--author="${sanitizedUser}"`;
+      })
       .join(" "); // git log 多个 --author 是 AND 关系
 
     // 要实现 OR 关系，需要使用正则表达式
@@ -216,13 +221,27 @@ export class GitCommitStrategy implements CommitLogStrategy {
       return stdout.split("\n").filter((line) => line.trim());
     } catch (error) {
       // 如果正则查询失败（例如某些git版本不支持），可以回退到为每个用户查询然后合并
-      console.error("Error getting commits for multiple users with regex, falling back to individual queries:", error);
+      console.error(
+        "Error getting commits for multiple users with regex, falling back to individual queries:",
+        error
+      );
       let allCommits: string[] = [];
       for (const user of users) {
-        const singleUserCommand = `git log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n" --author="${user.replace(/"/g, '\\"')}"`;
+        const singleUserCommand = `git log --since="${
+          formattedPeriod.startDate
+        }" --until="${
+          formattedPeriod.endDate
+        }" --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n" --author="${user.replace(
+          /"/g,
+          '\\"'
+        )}"`;
         try {
-          const { stdout } = await execAsync(singleUserCommand, { cwd: workspacePath });
-          allCommits = allCommits.concat(stdout.split("\n").filter((line) => line.trim()));
+          const { stdout } = await execAsync(singleUserCommand, {
+            cwd: workspacePath,
+          });
+          allCommits = allCommits.concat(
+            stdout.split("\n").filter((line) => line.trim())
+          );
         } catch (singleError) {
           console.error(`Error getting commits for user ${user}:`, singleError);
         }
