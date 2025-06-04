@@ -6,6 +6,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.18.0 (2025-06-03)
+
+### ✨ Features
+
+- **ai**: Add optional users parameter to support team member reporting ([91bb290](https://github.com/littleCareless/dish-ai-commit/commit/91bb290))
+
+- **generate-branch-name-command**: Optimize the generate branch name command ([edba80f](https://github.com/littleCareless/dish-ai-commit/commit/edba80f))
+
+### 🎫 Chores
+
+- **i18n**: Update internationalization files ([16fc868](https://github.com/littleCareless/dish-ai-commit/commit/16fc868))
+
+- **release**: Release 0.17.0 ([d3d2c51](https://github.com/littleCareless/dish-ai-commit/commit/d3d2c51))
+
 # 0.17.0 (2025-05-28)
 
 ### ✨ Features

@@ -6,6 +6,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.18.0 (2025-06-03)
+
+### ✨ Features
+
+- **ai**: 新增可选的 users 参数以支持团队成员报告 ([91bb290](https://github.com/littleCareless/dish-ai-commit/commit/91bb290))
+- **generate-branch-name-command**: 优化生成分支名称命令 ([edba80f](https://github.com/littleCareless/dish-ai-commit/commit/edba80f))
+
+### 🎫 Chores
+
+- **i18n**: 更新国际化文件 ([16fc868](https://github.com/littleCareless/dish-ai-commit/commit/16fc868))
+- **release**: 发布 0.17.0 版本 ([d3d2c51](https://github.com/littleCareless/dish-ai-commit/commit/d3d2c51))
+
 # 0.17.0 (2025-05-28)
 
 ### ✨ Features
