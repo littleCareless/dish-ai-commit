@@ -6,6 +6,230 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.19.0 (2025-06-04)
+
+### ♻ Code Refactoring
+
+- **generatecommitcommand**: Refactor the commit generation command and remove the old execution logic ([342d3a0](https://github.com/littleCareless/dish-ai-commit/commit/342d3a0))
+
+### ✨ Features
+
+- **ai-providers**: Implement AI provider streaming request and update Zhipu configuration ([31c5899](https://github.com/littleCareless/dish-ai-commit/commit/31c5899))
+
+- **ai**: Add streaming generation of commit information function ([663ac26](https://github.com/littleCareless/dish-ai-commit/commit/663ac26))
+- **generate-commit-command**: Implement streaming generation of commit information ([4ef52fa](https://github.com/littleCareless/dish-ai-commit/commit/4ef52fa))
+- **scm**: Add streaming input support for SCM providers ([de1f6b2](https://github.com/littleCareless/dish-ai-commit/commit/de1f6b2))
+
+### 🎫 Chores
+
+- **i18n**: Added internationalization text related to streaming generation ([49a2b90](https://github.com/littleCareless/dish-ai-commit/commit/49a2b90))
+- **version**: Upgraded version to 0.18.0 ([bf5dbf2](https://github.com/littleCareless/dish-ai-commit/commit/bf5dbf2))
+
+### 📝 Documentation
+
+- **changelog**: Updated changelog to version 0.18.0 ([6bb864d](https://github.com/littleCareless/dish-ai-commit/commit/6bb864d))
+
+# 0.18.0 (2025-06-03)
+
+### ✨ Features
+
+- **ai**: Add optional users parameter to support team member reporting ([91bb290](https://github.com/littleCareless/dish-ai-commit/commit/91bb290))
+
+- **generate-branch-name-command**: Optimize the generate branch name command ([edba80f](https://github.com/littleCareless/dish-ai-commit/commit/edba80f))
+
+### 🎫 Chores
+
+- **i18n**: Update internationalization files ([16fc868](https://github.com/littleCareless/dish-ai-commit/commit/16fc868))
+
+- **release**: Release 0.17.0 ([d3d2c51](https://github.com/littleCareless/dish-ai-commit/commit/d3d2c51))
+
+# 0.17.0 (2025-05-28)
+
+### ✨ Features
+
+- **editor**: Enhance the editor, synchronize format status and improve the style ([4c6499d](https://github.com/littleCareless/dish-ai-commit/commit/4c6499d))
+
+- **prompt**: Enhance the weekly report prompt, add prohibited operations and HTML output instructions ([d8ff7ad](https://github.com/littleCareless/dish-ai-commit/commit/d8ff7ad))
+
+### 👷 Build System
+
+- **deps**: Upgrade the version to 0.16.0 and introduce @typescript/native-preview ([9e92ca0](https://github.com/littleCareless/dish-ai-commit/commit/9e92ca0))
+
+# 0.16.0 (2025-05-23)
+
+### ✨ Features
+
+- **gemini**: Add new version Gemini 2.5 model support ([ac6bdca](https://github.com/littleCareless/dish-ai-commit/commit/ac6bdca))
+
+### 🐛 Bug Fixes
+
+- **package**: Fix VCS conditional expression format ([cd1cb34](https://github.com/littleCareless/dish-ai-commit/commit/cd1cb34))
+
+### 📝 Documentation
+
+- **changelog**: Update changelog and version number to 0.15.2 ([24f0d4a](https://github.com/littleCareless/dish-ai-commit/commit/24f0d4a))
+
+## 0.15.2 (2025-05-22)
+
+### 🐛 Bug Fixes
+
+- **package**: Optimize command display conditional logic ([3cf6755](https://github.com/littleCareless/dish-ai-commit/commit/3cf6755))
+
+### 👷 Build System
+
+- **version**: Release v0.15.0 ([64a92a3](https://github.com/littleCareless/dish-ai-commit/commit/64a92a3))
+
+# 0.15.0 (2025-05-09)
+
+### ✨ Features
+
+- **config**: Add commit message body switch configuration item ([e2011f0](https://github.com/littleCareless/dish-ai-commit/commit/e2011f0))
+
+- **prompt**: Refactor commit message generation logic ([0d5da20](https://github.com/littleCareless/dish-ai-commit/commit/0d5da20))
+
+### 👷 Build System
+
+- **version**: Release v0.14.2 version ([e3b8c78](https://github.com/littleCareless/dish-ai-commit/commit/e3b8c78))
+
+## 0.14.2 (2025-05-07)
+
+### 🎫 Chores
+
+- **build**: Update build configuration and AI provider implementation ([f9e057b](https://github.com/littleCareless/dish-ai-commit/commit/f9e057b))
+
+### 👷 Build System
+
+- **version**: Release v0.14.0 ([813446d](https://github.com/littleCareless/dish-ai-commit/commit/813446d))
+
+# 0.14.0 (2025-04-22)
+
+### ✨ Features
+
+- **log**: Enhanced version control log extraction function ([1b2dcf8](https://github.com/littleCareless/dish-ai-commit/commit/1b2dcf8))
+
+### 🎫 Chores
+
+- **config**: Adjust system configuration and weekly report generation prompter ([b63b18a](https://github.com/littleCareless/dish-ai-commit/commit/b63b18a))
+
+### 👷 Build System
+
+- **version**: Released v0.13.3 version ([6dc6bfc](https://github.com/littleCareless/dish-ai-commit/commit/6dc6bfc))
+
+## 0.13.3 (2025-04-18)
+
+### 🎫 Chores
+
+- **config**: Optimize plugin configuration and build scripts ([f71ea75](https://github.com/littleCareless/dish-ai-commit/commit/f71ea75))
+
+### 👷 Build System
+
+- **version**: Release v0.13.2 ([1d1f40b](https://github.com/littleCareless/dish-ai-commit/commit/1d1f40b))
+
+## 0.13.2 (2025-04-18)
+
+### 🐛 Bug Fixes
+
+- **package**: Fix menu command order error ([070fd6c](https://github.com/littleCareless/dish-ai-commit/commit/070fd6c))
+
+### 👷 Build System
+
+- **version**: Release v0.13.1 ([2e41c7f](https://github.com/littleCareless/dish-ai-commit/commit/2e41c7f))
+
+### 💄 Styles
+
+- Ignore .DS_Store files ([c8fa89a](https://github.com/littleCareless/dish-ai-commit/commit/c8fa89a))
+
+## 0.13.1 (2025-04-18)
+
+### 🎫 Chores
+
+- **release**: Release v0.13.0 ([0f45fcc](https://github.com/littleCareless/dish-ai-commit/commit/0f45fcc))
+
+### 🐛 Bug Fixes
+
+- **git**: Optimize the generated commit information content processing ([8e8a528](https://github.com/littleCareless/dish-ai-commit/commit/8e8a528))
+
+# 0.13.0 (2025-04-18)
+
+### ♻ Code Refactoring
+
+- **ai**: Optimize the temperature configuration parameters of AI service providers ([cf82e72](https://github.com/littleCareless/dish-ai-commit/commit/cf82e72))
+
+### ✨ Features
+
+- **gemini**: Fully update the Gemini series model and refactor the service provider ([48d9ea4](https://github.com/littleCareless/dish-ai-commit/commit/48d9ea4))
+
+- **model**: Refactor the AI ​​model recognition mechanism ([65bfa2a](https://github.com/littleCareless/dish-ai-commit/commit/65bfa2a))
+
+### 🎫 Chores
+
+- **ai**: Adjust AI provider configuration and error handling ([be7debd](https://github.com/littleCareless/dish-ai-commit/commit/be7debd))
+- **config**: Fix emoji display issues ([eb9c48d](https://github.com/littleCareless/dish-ai-commit/commit/eb9c48d))
+- **locale**: Add translations for build failure and model selection ([1cce980](https://github.com/littleCareless/dish-ai-commit/commit/1cce980))
+- **version**: Update project version to 0.12.5 ([884e2ff](https://github.com/littleCareless/dish-ai-commit/commit/884e2ff))
+
+### 👷 Build System
+
+- **deps**: Add @google/genai dependency package ([cceb650](https://github.com/littleCareless/dish-ai-commit/commit/cceb650))
+
+## 0.12.5 (2025-04-17)
+
+### 🎫 Chores
+
+- **version**: Update the project version to 0.12.4 ([28d5d8e](https://github.com/littleCareless/dish-ai-commit/commit/28d5d8e))
+
+### 🐛 Bug Fixes
+
+- **misc**: Optimize the commit information and branch name generation function ([78530f3](https://github.com/littleCareless/dish-ai-commit/commit/78530f3))
+
+## 0.12.4 (2025-04-17)
+
+### 📝 Documentation
+
+- **version**: Updated version number to 0.12.3 ([bba3f9d](https://github.com/littleCareless/dish-ai-commit/commit/bba3f9d))
+
+## 0.12.3 (2025-04-16)
+
+### 🎫 Chores
+
+- **build**: Optimize VSCode plugin packaging configuration ([bfe8766](https://github.com/littleCareless/dish-ai-commit/commit/bfe8766))
+
+- **vscode**: Update VSCode configuration file ([178e4d3](https://github.com/littleCareless/dish-ai-commit/commit/178e4d3))
+
+### 👷 Build System
+
+- **bundle**: Add esbuild packaging support ([bcc989f](https://github.com/littleCareless/dish-ai-commit/commit/bcc989f))
+
+### 📝 Documentation
+
+- **changelog**: Update version to 0.12.2 ([d7cf90d](https://github.com/littleCareless/dish-ai-commit/commit/d7cf90d))
+
+## 0.12.2 (2025-04-16)
+
+### 🐛 Bug Fixes
+
+- **scm**: Optimize sub-directory Git repository detection logic ([7a478af](https://github.com/littleCareless/dish-ai-commit/commit/7a478af))
+
+### 👷 Build System
+
+- **release**: Release version v0.12.1 ([4567997](https://github.com/littleCareless/dish-ai-commit/commit/4567997))
+
+## 0.12.1 (2025-04-15)
+
+### ♻ Code Refactoring
+
+- **config**: Adjust the default values ​​and formats of configuration items ([82d6f70](https://github.com/littleCareless/dish-ai-commit/commit/82d6f70))
+
+### 🎫 Chores
+
+- **ci**: Add pnpm environment configuration ([aa361d8](https://github.com/littleCareless/dish-ai-commit/commit/aa361d8))
+
+- **deps**: Switch build scripts from pnpm to npm ([e06bda5](https://github.com/littleCareless/dish-ai-commit/commit/e06bda5))
+
+### 👷 Build System
+
+- **version**: Upgraded the project version to 0.12.0 ([4c86577](https://github.com/littleCareless/dish-ai-commit/commit/4c86577))
+
 # 0.12.0 (2025-04-14)
 
 ### ✨ Features

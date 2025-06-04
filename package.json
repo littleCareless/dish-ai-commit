@@ -1,8 +1,8 @@
 {
   "name": "dish-ai-commit",
-  "displayName": "Dish AI Commit Gen",
-  "description": "🤖 AI-Powered VSCode extension for generating standardized Git/SVN commit messages. ✨ Supports multiple AI services: OpenAI, ChatGPT, Ollama, Zhipu, DashScope, Doubao, Gemini and VS Code built-in AI. 🌍 Multi-language support (EN/CN/JP/KR/Other). 📊 Auto-generate weekly reports.",
-  "version": "0.12.0",
+  "displayName": "Dish AI Commit Message Gen",
+  "description": "🤖 由 AI 提供支持的 VSCode 扩展，用于生成标准化的 Git/SVN 提交消息 - 🤖 AI-Powered VSCode extension for generating standardized Git/SVN commit messages. ✨ Supports multiple AI services: OpenAI, ChatGPT, Ollama, Zhipu, DashScope, Doubao, Gemini and VS Code built-in AI. 🌍 Multi-language support (EN/CN/JP/KR/Other). 📊 Auto-generate weekly reports.",
+  "version": "0.19.0",
   "engines": {
     "node": ">= 22.12.0",
     "pnpm": ">= 10.0.0",
@@ -16,6 +16,7 @@
     "Machine Learning",
     "Snippets",
     "Formatters",
+    "AI",
     "Other"
   ],
   "keywords": [
@@ -46,8 +47,9 @@
   "extensionDependencies": [
     "vscode.git"
   ],
-  "main": "./out/extension.js",
+  "main": "./dist/extension.js",
   "activationEvents": [
+    "onStartupFinished",
     "onCommand:dish-ai-commit"
   ],
   "contributes": {
@@ -64,8 +66,7 @@
         "title": "[Dish] Select AI Model",
         "category": "[Dish AI Commit]",
         "icon": "/images/icon.svg",
-        "description": "选择用于生成提交信息的AI模型(OpenAI/Ollama/VS Code Provided)",
-        "when": "(config.svn.enabled && svnOpenRepositoryCount > 0) || (config.git.enabled && gitOpenRepositoryCount > 0)"
+        "description": "选择用于生成提交信息的AI模型(OpenAI/Ollama/VS Code Provided)"
       },
       {
         "command": "dish-ai-commit.generateWeeklyReport",
@@ -227,6 +228,11 @@
           "default": false,
           "description": "Allow merging changes from multiple files into a single commit message / 允许将多个文件的更改合并为单个提交信息"
         },
+        "dish-ai-commit.features.commitFormat.enableBody": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include body content in commit messages (if disabled, only the subject line will be generated) / 在提交信息中包含主体内容（如果禁用，将仅生成标题行）"
+        },
         "dish-ai-commit.features.commitFormat.enableLayeredCommit": {
           "type": "boolean",
           "default": false,
@@ -234,7 +240,7 @@
         },
         "dish-ai-commit.features.commitMessage.systemPrompt": {
           "type": "string",
-          "default": "Custom system prompt",
+          "default": "",
           "description": "Custom system prompt for commit message generation / 提交信息生成的自定义系统提示语"
         },
         "dish-ai-commit.features.weeklyReport.systemPrompt": {
@@ -249,7 +255,7 @@
         },
         "dish-ai-commit.features.branchName.systemPrompt": {
           "type": "string",
-          "default": "Custom system prompt",
+          "default": "",
           "description": "Custom system prompt for branch name generation / 分支名称生成的自定义系统提示语"
         }
       }
@@ -277,13 +283,13 @@
           "group": "2_z_dish@3"
         },
         {
-          "command": "dish-ai-commit.selectModel",
-          "when": "scmProvider =~ /(git|svn)/",
+          "command": "dish-ai-commit.generateBranchName",
+          "when": "scmProvider == git",
           "group": "2_z_dish@4"
         },
         {
-          "command": "dish-ai-commit.generateBranchName",
-          "when": "scmProvider == git",
+          "command": "dish-ai-commit.selectModel",
+          "when": "scmProvider =~ /(git|svn)/",
           "group": "2_z_dish@5"
         }
       ],
@@ -343,31 +349,29 @@
       ],
       "commandPalette": [
         {
-          "command": "dish-ai-commit.selectModel",
-          "group": "navigation",
-          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges"
+          "command": "dish-ai-commit.selectModel"
         },
         {
           "command": "dish-ai-commit.generateWeeklyReport",
-          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges"
+          "when": "((config.svn.enabled && scmProvider == 'svn') || (config.git.enabled && scmProvider == 'git'))"
         },
         {
           "command": "dish-ai-commit.generateCommitMessage",
-          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges"
+          "when": "((config.svn.enabled && scmProvider == 'svn') || (config.git.enabled && scmProvider == 'git'))"
         },
         {
           "command": "dish-ai-commit.generateBranchName",
-          "when": "config.git.enabled && scmProvider == git && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges"
+          "when": "((config.svn.enabled && scmProvider == 'svn') || (config.git.enabled && scmProvider == 'git'))"
         },
         {
           "command": "dish-ai-commit.reviewCode",
-          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges"
+          "when": "((config.svn.enabled && scmProvider == 'svn') || (config.git.enabled && scmProvider == 'git'))"
         }
       ]
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run compile",
+    "vscode:prepublish": "npm run vscode:prepublish:esbuild",
     "compile": "npm run compile:webview && tsc -p ./",
     "compile:webview": "cd src/webview-ui && pnpm install && pnpm run build",
     "watch": "tsc -watch -p ./",
@@ -381,7 +385,13 @@
     "update-config": "ts-node ./src/scripts/update-config.ts",
     "package": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce package",
     "publish": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce publish",
-    "publish:pre": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce publish --pre-release"
+    "publish:pre": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce publish --pre-release",
+    "compile:esbuild": "npm run check-types && ts-node esbuild.ts",
+    "check-types": "tsc --noEmit",
+    "watch:esbuild": "npm-run-all -p watch:esbuild-bundle watch:esbuild-tsc",
+    "watch:esbuild-bundle": "ts-node esbuild.ts --watch",
+    "watch:esbuild-tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "vscode:prepublish:esbuild": "npm run compile:webview && npm run compile:esbuild"
   },
   "devDependencies": {
     "@commitlint/cli": "^19.8.0",
@@ -393,22 +403,26 @@
     "@types/vscode": "^1.92.0",
     "@typescript-eslint/eslint-plugin": "^8.29.1",
     "@typescript-eslint/parser": "^8.29.1",
+    "@typescript/native-preview": "7.0.0-dev.20250525.1",
     "@vscode/test-cli": "^0.0.10",
     "@vscode/test-electron": "^2.5.1",
+    "@vscode/vsce": "^3.3.2",
     "commitizen": "^4.3.1",
     "commitlint-config-gitmoji": "^2.3.1",
     "conventional-changelog-gitmoji-config": "^1.5.2",
     "cz-conventional-changelog": "^3.3.0",
     "cz-customizable": "^7.4.0",
+    "esbuild": "^0.20.2",
     "eslint": "^9.24.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.0",
+    "npm-run-all": "^4.1.5",
     "standard-version": "^9.5.0",
     "ts-node": "^10.9.2",
-    "typescript": "^5.8.3",
-    "@vscode/vsce": "^3.3.2"
+    "typescript": "^5.8.3"
   },
   "dependencies": {
+    "@google/genai": "^0.8.0",
     "inversify": "^7.5.0",
     "ollama": "^0.5.14",
     "openai": "^4.93.0"

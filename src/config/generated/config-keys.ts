@@ -30,6 +30,7 @@ export const CONFIG_KEYS = {
   "FEATURES_COMMITFORMAT": "dish-ai-commit.features.commitFormat",
   "FEATURES_COMMITFORMAT_ENABLEEMOJI": "dish-ai-commit.features.commitFormat.enableEmoji",
   "FEATURES_COMMITFORMAT_ENABLEMERGECOMMIT": "dish-ai-commit.features.commitFormat.enableMergeCommit",
+  "FEATURES_COMMITFORMAT_ENABLEBODY": "dish-ai-commit.features.commitFormat.enableBody",
   "FEATURES_COMMITFORMAT_ENABLELAYEREDCOMMIT": "dish-ai-commit.features.commitFormat.enableLayeredCommit",
   "FEATURES_COMMITMESSAGE": "dish-ai-commit.features.commitMessage",
   "FEATURES_COMMITMESSAGE_SYSTEMPROMPT": "dish-ai-commit.features.commitMessage.systemPrompt",

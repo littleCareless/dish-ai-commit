@@ -173,6 +173,12 @@ export const CONFIG_SCHEMA = {
         description:
           "Allow merging changes from multiple files into a single commit message / 允许将多个文件的更改合并为单个提交信息",
       },
+      enableBody: {
+        type: "boolean",
+        default: true,
+        description:
+          "Include body content in commit messages (if disabled, only the subject line will be generated) / 在提交信息中包含主体内容（如果禁用，将仅生成标题行）",
+      },
       enableLayeredCommit: {
         type: "boolean",
         default: false,
@@ -184,7 +190,7 @@ export const CONFIG_SCHEMA = {
     commitMessage: {
       systemPrompt: {
         type: "string",
-        default: `Custom system prompt`,
+        default: ``,
         description:
           "Custom system prompt for commit message generation / 提交信息生成的自定义系统提示语",
       },
@@ -193,16 +199,16 @@ export const CONFIG_SCHEMA = {
     weeklyReport: {
       systemPrompt: {
         type: "string",
+        default: ``,
         description:
           "Custom system prompt for weekly report generation / 生成周报的自定义系统提示语",
-        default: "",
       },
     },
     // Code review features
     codeReview: {
       systemPrompt: {
         type: "string",
-        default: `Custom system prompt`,
+        default: ``,
         description:
           "Custom system prompt for code review / 代码审查的自定义系统提示语",
       },
@@ -211,7 +217,7 @@ export const CONFIG_SCHEMA = {
     branchName: {
       systemPrompt: {
         type: "string",
-        default: `Custom system prompt`,
+        default: ``,
         description:
           "Custom system prompt for branch name generation / 分支名称生成的自定义系统提示语",
       },

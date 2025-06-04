@@ -408,4 +408,67 @@ export class SvnProvider implements ISCMProvider {
 
     return repository.inputBox.value;
   }
+
+  /**
+   * 开始流式设置提交输入框的内容。
+   * 根据ISCMProvider接口，此方法接收完整消息并设置。
+   * @param {string} message - 要设置的提交信息
+   * @throws {Error} 当未找到仓库或inputBox时抛出错误
+   */
+  async startStreamingInput(message: string): Promise<void> {
+    const repository = this.api?.repositories?.[0];
+    if (!repository) {
+      throw new Error(getMessage("git.repository.not.found")); // 保持与现有代码一致，理想情况下应为 SVN 特定消息
+    }
+    if (repository.inputBox) {
+      repository.inputBox.value = message;
+      // 如果需要，可以确保输入框是启用的，但SVN插件的inputBox.enabled行为可能不一致
+      // if (typeof repository.inputBox.enabled === 'boolean') {
+      //   repository.inputBox.enabled = true;
+      // }
+    } else {
+      Logger.log(LogLevel.Error, "SVN repository.inputBox is undefined. Cannot set streaming input.");
+      throw new Error("SVN inputBox is not available to set streaming input.");
+    }
+  }
+
+  // /**
+  //  * 向提交输入框追加内容 (流式) - 在当前单方法流式模型下未使用
+  //  * @param {string} chunk - 要追加的文本块
+  //  * @throws {Error} 当未找到仓库或inputBox时抛出错误
+  //  */
+  // async appendStreamingInput(chunk: string): Promise<void> {
+  //   const repository = this.api?.repositories?.[0];
+  //   if (!repository) {
+  //     throw new Error(getMessage("git.repository.not.found")); // 保持与现有代码一致
+  //   }
+  //   if (repository.inputBox) {
+  //     repository.inputBox.value += chunk;
+  //   } else {
+  //     Logger.log(LogLevel.Error, "SVN repository.inputBox is undefined. Cannot append streaming input.");
+  //     throw new Error("SVN inputBox is not available to append streaming input.");
+  //   }
+  // }
+  //
+  // /**
+  //  * 完成流式设置提交输入框的内容 - 在当前单方法流式模型下未使用
+  //  * 会启用输入框
+  //  * @throws {Error} 当未找到仓库或inputBox时抛出错误
+  //  */
+  // async finishStreamingInput(): Promise<void> {
+  //   const repository = this.api?.repositories?.[0];
+  //   if (!repository) {
+  //     throw new Error(getMessage("git.repository.not.found")); // 保持与现有代码一致
+  //   }
+  //   if (repository.inputBox && typeof repository.inputBox.enabled === 'boolean') {
+  //     repository.inputBox.enabled = true;
+  //   } else {
+  //     // 如果 inputBox 或 enabled 属性不存在，记录警告
+  //     Logger.log(LogLevel.Warning, "SVN repository.inputBox.enabled is not available or not a boolean. Cannot ensure input box is enabled.");
+  //     if (!repository.inputBox) {
+  //        Logger.log(LogLevel.Error, "SVN repository.inputBox is undefined. Cannot finish streaming input.");
+  //        throw new Error("SVN inputBox is not available to finish streaming input.");
+  //     }
+  //   }
+  // }
 }

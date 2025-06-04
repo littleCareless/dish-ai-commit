@@ -14,11 +14,17 @@ export const defaultWeeklyReportPrompt = `
 
 You are a professional technical weekly report generation assistant. When receiving Git/SVN commit records, you need to analyze these records and generate a structured, professional technical weekly report.
 
-IMPORTANT: All output MUST be in English language.
+IMPORTANT: ALL content including section titles, headers and subheaders (like "Weekly Work Summary", "Main Accomplishments", etc.) MUST be translated to $\{language\}.
+
 
 ## Output Format
 
-IMPORTANT: You must strictly follow the format requirements below. Your response must be identical in structure to what is shown below, with the only difference being the content itself.
+IMPORTANT: You must strictly follow the format requirements below. Your response must be identical in structure to what is shown below, with the only difference being the content itself And Language.
+
+Remember: 
+  - ALL content, including section titles, headers, and subheaders (such as “Weekly Work Summary”, “Main Accomplishments”, etc.), MUST be translated to $\{language\}, regardless of the original language.
+  - Examples are provided for formatting reference only. You MUST NOT copy, mimic, or reuse their language or phrasing.
+  - The commit message must be complete and properly formatted, and no part of the original language or English content may remain.
 
 \`\`\`
 # Weekly Work Summary (YYYY/MM/DD - YYYY/MM/DD)
@@ -124,6 +130,14 @@ When analyzing commit records, please categorize content according to the follow
 
 ### Output (Generated weekly report)
 
+IMPORTANT: You must strictly follow the format requirements below. Your response must be identical in structure to what is shown below, with the only difference being the content itself And Language.
+
+Remember: 
+  - ALL content, including section titles, headers, and subheaders (such as “Weekly Work Summary”, “Main Accomplishments”, etc.), MUST be translated to $\{language\}, regardless of the original language.
+  - Examples are provided for formatting reference only. You MUST NOT copy, mimic, or reuse their language or phrasing.
+  - The commit message must be complete and properly formatted, and no part of the original language or English content may remain.
+
+
 \`\`\`
 # Weekly Work Summary (2023/10/23 - 2023/10/29)
 
@@ -165,9 +179,20 @@ When analyzing commit records, please categorize content according to the follow
 4. Appropriately categorize and summarize based on actual content in commit records
 5. Automatically identify work focus and technical highlights from commit records
 
+## PROHIBITED ACTIONS (MUST NOT DO)
+
+1. DO NOT include any explanations, greetings, or additional text
+2. DO NOT write in English (except for technical terms and scope)
+3. DO NOT add any formatting instructions or metadata
+4. DO NOT include triple backticks (\`\`\`) in your output
+5. DO NOT add any comments or questions
+6. DO NOT deviate from the required format
+
 ## Important Notes
 
 Commit records may contain content from multiple time periods. Please filter relevant commits based on the provided start and end dates (if any). If no dates are provided, assume all commits belong to the current week's work. Commit records may come from different branches or projects; please make reasonable inductions and organization based on context.
+
+Please present the final output in HTML format, using appropriate tags such as <h1>, <h2>, <ul>, <li>, and <strong> for clear formatting and structure.
 `;
 
 /**
@@ -187,13 +212,8 @@ export function generateWeeklyReportPrompt({
   // Adjust based on language and date parameters
   let prompt = defaultWeeklyReportPrompt;
 
-  // Add language specification to the prompt
-  prompt = prompt.replace(
-    "# Technical Weekly Report Generation Guide",
-    `# Technical Weekly Report Generation Guide\n\nIMPORTANT: All output MUST be in ${language} language.`
-  );
-
-  console.log("Weekly report prompt:", prompt);
+  // Replace language marker
+  prompt = prompt.replaceAll(/\$\{language\}/g, language);
 
   console.log("Weekly report start date:", startDate);
   console.log("Weekly report end date:", endDate);
@@ -206,6 +226,7 @@ export function generateWeeklyReportPrompt({
   }
 
   // Translation logic could be added here if language is not English
+  console.log("Weekly report prompt:", prompt);
 
   return prompt;
 }

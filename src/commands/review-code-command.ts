@@ -35,7 +35,7 @@ export class ReviewCodeCommand extends BaseCommand {
       }
 
       // 检测SCM提供程序
-      const scmProvider = await this.detectSCMProvider();
+      const scmProvider = await this.detectSCMProvider(selectedFiles);
       if (!scmProvider) {
         return;
       }

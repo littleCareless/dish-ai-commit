@@ -146,6 +146,14 @@ export interface AIProvider {
   generateLayeredCommit?(
     params: AIRequestParams
   ): Promise<LayeredCommitMessage>;
+  /**
+   * 流式生成提交内容
+   * @param params - AI请求参数
+   * @returns 一个异步可迭代对象，用于逐块生成提交信息
+   */
+  generateCommitStream?(
+    params: AIRequestParams
+  ): Promise<AsyncIterable<string>>;
   /** 生成代码评审内容 */
   generateCodeReview?(params: AIRequestParams): Promise<AIResponse>;
   /** 生成分支名称 */
@@ -157,7 +165,8 @@ export interface AIProvider {
       startDate: string;
       endDate: string;
     },
-    model?: AIModel
+    model?: AIModel,
+    users?: string[] // 新增可选的 users 参数
   ): Promise<AIResponse>;
   /** 检查服务可用性 */
   isAvailable(): Promise<boolean>;
@@ -248,7 +257,8 @@ export type ZhipuAIModels =
   | "glm-4-airx" // 轻量增强版本
   | "glm-4-long" // 长文本版本
   | "glm-4-flashx" // 快速版本增强
-  | "glm-4-flash"; // 快速版本基础
+  | "glm-4-flash" // 快速版本基础
+  | "glm-4-flash-250414";
 
 export type DashScopeModels =
   | "qwen-max"
@@ -274,10 +284,15 @@ export type DoubaoModels =
   | "doubao-vision-pro-32k";
 
 export type GeminiAIModels =
+  | "gemini-2.5-flash-preview"
+  | "gemini-2.5-pro-preview"
+  | "gemini-2.0-flash"
+  | "gemini-2.0-flash-lite"
   | "gemini-1.5-flash"
   | "gemini-1.5-flash-8b"
   | "gemini-1.5-pro"
-  | "gemini-2.0-flash-exp";
+  | "gemini-2.5-pro-preview-05-06"
+  | "gemini-2.5-flash-preview-05-20";
 
 export type DeepseekModels = "deepseek-chat" | "deepseek-reasoner";
 

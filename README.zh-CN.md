@@ -170,6 +170,21 @@
 - 自动分析文件关联
 - 生成更简洁的提交记录
 
+### 📋 仅标题行提交消息
+
+通过禁用 enableBody 选项，您可以：
+
+- 生成仅包含标题行的提交消息（不含正文内容）
+- 创建更简洁的提交历史
+- 专注于最基本的信息
+
+通过配置启用/禁用：
+```json
+{
+  "dish-ai-commit.features.commitFormat.enableBody": false // 禁用提交消息正文
+}
+```
+
 ### 📝 周报模板
 
 周报生成支持自定义模板：
@@ -199,6 +214,7 @@
 | dish-ai-commit.features.codeAnalysis.simplifyDiff      | boolean | false                     | 启用差异内容简化                 |
 | dish-ai-commit.features.commitFormat.enableMergeCommit | boolean | false                     | 允许将多个文件更改合并为一个提交 |
 | dish-ai-commit.features.commitFormat.enableEmoji       | boolean | true                      | 在提交消息中使用表情符号         |
+| dish-ai-commit.features.commitFormat.enableBody        | boolean | true                      | 在提交消息中包含正文内容         |
 | dish-ai-commit.features.weeklyReport.systemPrompt      | string  | ""                        | 周报的自定义系统提示             |
 
 ### 命令

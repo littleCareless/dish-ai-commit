@@ -106,6 +106,14 @@ export function generateBranchNameUserPrompt(diffContent: string): string {
 IMPORTANT: In Git/SVN diff format, lines starting with '+' indicate additions, and lines starting with '-' indicate deletions.
 Please carefully analyze the diff content to understand whether code is being added or removed.
 
+## Critical Requirements
+
+1. Output ONLY the branch name
+2. Write ONLY in English
+3. NO additional text or explanations
+4. NO questions or comments
+5. Ensure the branch name is valid (no spaces, special characters except hyphens and slashes)
+
 \`\`\`diff
 ${diffContent}
 \`\`\``;

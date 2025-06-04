@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react"; // 添加 useEffect
-import { DatePicker } from "@arco-design/web-react";
+import { DatePicker, Select } from "@arco-design/web-react"; // 导入 Select
 const { RangePicker } = DatePicker;
 import "@arco-design/web-react/dist/css/arco.css";
 import dayjs from "dayjs";
@@ -14,10 +14,18 @@ import { vscode } from "@/lib/vscode";
 function App() {
   const [content, setContent] = useState("");
   const [dateRange, setDateRange] = useState<dayjs.Dayjs[]>([]);
+  const [allUsers, setAllUsers] = useState<string[]>([]);
+  const [selectedUsers, setSelectedUsers] = useState<string[]>([]);
+  // const [currentUser, setCurrentUser] = useState<string>(""); // 移除未使用的 currentUser state
   const { toast } = useToast();
 
   // 添加消息监听
   useEffect(() => {
+    // 请求用户列表
+    if (vscode) {
+      vscode.postMessage({ command: "getUsers" });
+    }
+
     // 监听来自 VSCode 的消息
     const messageHandler = (event: MessageEvent) => {
       const message = event.data;
@@ -29,6 +37,13 @@ function App() {
           console.log("更新编辑器内容", message.data);
           setContent(message.data);
           break;
+        case "usersList": // 新增处理用户列表的 case
+          console.log("Received users list:", message.data);
+          setAllUsers(message.data.users || []);
+          if (message.data.currentUser && !selectedUsers.includes(message.data.currentUser)) { // 确保只在初始时或 currentUser 变化时设置
+            setSelectedUsers([message.data.currentUser]); // 默认选中当前用户
+          }
+          break;
         // 可以添加其他消息类型的处理
       }
     };
@@ -39,7 +54,7 @@ function App() {
     return () => {
       window.removeEventListener("message", messageHandler);
     };
-  }, []);
+  }, []); // 空依赖数组，确保只在挂载和卸载时执行
 
   const handleSave = () => {
     // Send save message to VSCode
@@ -84,14 +99,33 @@ function App() {
         return;
       }
 
+      if (selectedUsers.length === 0) {
+        // 检查是否选择了用户
+        toast({
+          title: "Error",
+          description: "Please select at least one team member.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // 提醒用户使用特定 prompt
+      toast({
+        title: "Team Report Generation",
+        description:
+          "Please ensure you are using a prompt suitable for team reports.",
+        duration: 5000, // 持续时间长一点
+      });
+
       vscode.postMessage({
-        command: "generate", // 使用 command 而不是 type
+        command: "generateTeamReport", // 修改 command
         data: {
           content,
           period: {
-            startDate: dateRange[0],
-            endDate: dateRange[1],
+            startDate: dateRange[0].format("YYYY-MM-DD"),
+            endDate: dateRange[1].format("YYYY-MM-DD"),
           },
+          users: selectedUsers, // 添加选中用户
         },
       });
     }
@@ -154,6 +188,29 @@ function App() {
               },
             ]}
           />
+        </div>
+
+        <div className="p-6 border rounded-lg bg-card">
+          <h2 className="mb-4 text-xl font-semibold">Select Team Members</h2>
+          <Select
+            mode="multiple"
+            placeholder="Select team members"
+            style={{ width: "100%" }}
+            value={selectedUsers}
+            onChange={setSelectedUsers}
+            allowClear
+            tokenSeparators={[",", " ", "|"]}
+          >
+            {allUsers.map((user) => (
+              <Select.Option key={user} value={user}>
+                {user}
+              </Select.Option>
+            ))}
+          </Select>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Default selected user is the current local user. Please use a
+            team-specific prompt for best results.
+          </p>
         </div>
 
         <div className="p-6 border rounded-lg bg-card">

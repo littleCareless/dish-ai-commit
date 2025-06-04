@@ -38,12 +38,48 @@ export abstract class AbstractAIProvider implements AIProvider {
         systemPrompt,
         "",
         params.diff,
-        params
+        params,
+        {
+          temperature: 0.3, // 提交信息推荐温度值 0.3
+        }
       );
       return result;
     } catch (error) {
       throw new Error(
         formatMessage("generation.failed", [
+          error instanceof Error ? error.message : String(error),
+        ])
+      );
+    }
+  }
+/**
+   * 生成提交信息 (流式)
+   * @param params - AI请求参数
+   * @returns 一个Promise，解析为一个异步迭代器，用于逐块生成提交信息
+   * @remarks 此方法为新增，AIProvider接口也需要相应更新
+   */
+  async generateCommitStream(params: AIRequestParams): Promise<AsyncIterable<string>> {
+    try {
+      console.log("params for stream", params);
+      const systemPrompt = getSystemPrompt(params);
+      // 注意：流式请求的重试逻辑可能与非流式请求不同。
+      // 这里直接调用 executeAIStreamRequest，具体的重试和错误处理
+      // 应该在 executeAIStreamRequest 的实现中或专门的流式重试辅助函数中处理。
+      return this.executeAIStreamRequest(
+        systemPrompt,
+        "", // userPrompt
+        params.diff, // userContent
+        params,
+        {
+          temperature: 0.3, // 提交信息推荐温度值 0.3
+          // maxTokens 可以在这里设置，如果需要的话
+        }
+      );
+    } catch (error) {
+      // 流的错误可能在迭代过程中发生，这里的 catch 可能只捕获初始设置错误
+      // 需要在调用方迭代流时也处理错误
+      throw new Error(
+        formatMessage("generation.failed", [ // 或者一个新的i18n key如 "streamGeneration.failed"
           error instanceof Error ? error.message : String(error),
         ])
       );
@@ -65,7 +101,7 @@ export abstract class AbstractAIProvider implements AIProvider {
         params,
         {
           // parseAsJSON: true,
-          temperature: 0.3,
+          temperature: 0.6, // 代码审查推荐温度值 0.6，范围 0.5-0.6
         }
       );
 
@@ -104,7 +140,7 @@ export abstract class AbstractAIProvider implements AIProvider {
         params.diff,
         params,
         {
-          temperature: 0.3,
+          temperature: 0.4, // 分支命名推荐温度值 0.4
         }
       );
       return result;
@@ -129,21 +165,34 @@ export abstract class AbstractAIProvider implements AIProvider {
       startDate: string;
       endDate: string;
     },
-    model?: AIModel
+    model?: AIModel,
+    users?: string[] // 新增可选的 users 参数
   ): Promise<AIResponse> {
     try {
-      const systemPrompt = getWeeklyReportPrompt(period);
-      const userContent = commits.join("\n");
+      let systemPrompt = getWeeklyReportPrompt(period);
+      if (users && users.length > 0) {
+        // 如果有用户信息，可以附加到 systemPrompt 或 userContent
+        // 例如，附加到 systemPrompt
+        systemPrompt += `\nThis weekly report is for the team members: ${users.join(
+          ", "
+        )}. Please summarize their collective work.`;
+        // 或者，如果希望AI更关注每个人的贡献，可以在userContent中对commits按用户分组或标记
+      }
+
+      const userContent = commits.join("\n\n---\n\n"); // 使用更明显的分隔符
       const params: AIRequestParams = {
-        diff: userContent,
+        diff: userContent, // diff 字段现在承载的是 commit messages
         model: model || this.getDefaultModel(),
-        additionalContext: "", // 添加缺失的必需属性
+        additionalContext: users ? `Team members: ${users.join(", ")}` : "", // 可以用 additionalContext
       };
       const result = await this.executeWithRetry(
         systemPrompt,
-        "",
+        "", // userPrompt 通常用于更具体的指令，这里暂时为空
         userContent,
-        params
+        params,
+        {
+          temperature: 0.3, // 周报生成推荐温度值 0.3
+        }
       );
       return result;
     } catch (error) {
@@ -172,7 +221,10 @@ export abstract class AbstractAIProvider implements AIProvider {
         summarySystemPrompt,
         "",
         params.diff,
-        params
+        params,
+        {
+          temperature: 0.3, // 与提交信息一致使用 0.3
+        }
       );
       const summary = summaryResult.content;
 
@@ -195,7 +247,10 @@ export abstract class AbstractAIProvider implements AIProvider {
             fileSystemPrompt,
             "",
             fileDiff,
-            params
+            params,
+            {
+              temperature: 0.3, // 文件描述也使用提交信息的温度值 0.3
+            }
           );
 
           fileChanges.push({
@@ -274,6 +329,28 @@ export abstract class AbstractAIProvider implements AIProvider {
       maxTokens?: number;
     }
   ): Promise<{ content: string; usage?: any; jsonContent?: any }>;
+
+  /**
+   * 需要由具体提供者实现的核心流式方法
+   * 执行AI流式请求并返回一个异步迭代器
+   *
+   * @param systemPrompt - 系统提示内容
+   * @param userPrompt - 用户提示内容
+   * @param userContent - 用户内容
+   * @param params - 请求参数
+   * @param options - 额外选项
+   * @returns Promise<AsyncIterable<string>>
+   */
+  protected abstract executeAIStreamRequest(
+    systemPrompt: string,
+    userPrompt: string,
+    userContent: string,
+    params: AIRequestParams,
+    options?: {
+      temperature?: number;
+      maxTokens?: number;
+    }
+  ): Promise<AsyncIterable<string>>;
 
   /**
    * 获取默认模型

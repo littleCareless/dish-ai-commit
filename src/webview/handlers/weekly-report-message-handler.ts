@@ -14,10 +14,12 @@ export class WeeklyReportMessageHandler {
 
   public async handleMessage(message: any, webview: vscode.Webview) {
     switch (message.command) {
-      case "generate":
-        await this.handleGenerateCommand(message, webview);
+      case "generateTeamReport": // 修改 command
+        await this.handleGenerateTeamReportCommand(message, webview);
         break;
-
+      case "getUsers": // 新增 getUsers command
+        await this.handleGetUsersCommand(webview);
+        break;
       case "notification":
         if (message.text) {
           notify.info(message.text, message.args || []);
@@ -26,21 +28,45 @@ export class WeeklyReportMessageHandler {
     }
   }
 
-  private async handleGenerateCommand(message: any, webview: vscode.Webview) {
+  private async handleGetUsersCommand(webview: vscode.Webview) {
     try {
-      const report = await this.generator.generateReport(message.data.period);
-      const author = await this.generator.getCurrentAuthor();
+      const users = await this.generator.getAllAuthors(); // 假设 generator 中有此方法
+      const currentUser = await this.generator.getCurrentAuthor();
+      webview.postMessage({
+        command: "usersList",
+        data: { users, currentUser },
+      });
+    } catch (error: any) {
+      notify.error("weeklyReport.getUsers.failed", [error.message || error], {
+        timeout: 3000,
+      });
+      webview.postMessage({
+        command: "usersList", // 即使失败也发送消息，让UI可以处理空状态
+        data: { users: [], currentUser: "" },
+      });
+    }
+  }
+
+  private async handleGenerateTeamReportCommand(message: any, webview: vscode.Webview) { // 重命名方法
+    try {
+      const report = await this.generator.generateTeamReport( // 修改调用
+        message.data.period,
+        message.data.users // 传递 users
+      );
+      // const author = await this.generator.getCurrentAuthor(); // 对于团队报告，可能不需要单个 author
 
       webview.postMessage({
         command: "report",
         data: report,
       });
       console.log("message.data.period", message.data.period);
+      console.log("message.data.users", message.data.users);
       const formattedPeriod = this.formatPeriod(message.data.period);
       console.log("formattedPeriod", formattedPeriod);
-      notify.info("weeklyReport.generation.success", [formattedPeriod, author]);
+      // 可以考虑修改通知信息，比如指明是为哪些用户生成的报告
+      notify.info("weeklyReport.teamGeneration.success", [formattedPeriod, message.data.users.join(", ")]);
     } catch (error: any) {
-      notify.error("weeklyReport.generation.failed", [error], {
+      notify.error("weeklyReport.teamGeneration.failed", [error.message || error], {
         timeout: 3000,
       });
     }

@@ -99,12 +99,12 @@ export async function generateWithRetry<T>(
       }
 
       // 达到最大重试次数或遇到不可重试的错误,抛出异常
-      const errorMessage = formatMessage(
-        `${provider}.generation.failed`,
-        error.message || String(error)
-      );
-      notify.error(errorMessage);
-      throw new Error(errorMessage);
+      // const errorMessage = formatMessage(
+      //   `${provider}.generation.failed`,
+      //   error.message || String(error)
+      // );
+      // notify.error(errorMessage);
+      throw new Error(error.message || String(error));
     }
   }
 }

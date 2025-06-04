@@ -40,6 +40,7 @@
   "vscode.no.models.available": "未找到可用的VSCode语言模型",
   "vscode.generation.failed": "VSCode AI生成失败: {0}",
   "vscode.models.fetch.failed": "获取VSCode模型列表失败",
+  "generation.failed": "{0}",
   "button.yes": "是",
   "button.no": "否",
   "workspace.not.found": "未找到工作区文件夹",
@@ -140,5 +141,19 @@
   "svn.version.check.failed": "检查SVN版本失败: {0}",
   "svn.config.load.failed": "加载SVN配置失败: {0}",
   "svn.invalid.env.config": "无效的SVN环境配置",
-  "svn.not.initialized": "SVN提供程序未初始化"
+  "svn.not.initialized": "SVN提供程序未初始化",
+  "no.model.selected": "未选择模型",
+  "weeklyReport.generatingTeamReport": "正在生成团队周报...",
+  "weeklyReport.teamGeneration.success": "团队成员 {1} 的 {0} 工作周报已生成完成",
+  "weeklyReport.teamGeneration.failed": "生成团队周报失败: {0}",
+  "weeklyReport.getUsers.failed": "获取用户列表失败: {0}",
+  "enter.branch.description.prompt": "请输入新分支的描述（例如，要实现的功能或要修复的问题）：",
+  "enter.branch.description.placeholder": "例如：添加用户认证功能",
+  "branch.description.cancelled": "已取消通过描述生成分支名称。",
+  "internal.error.no.ai.input": "内部错误：没有可用于AI处理的输入内容。",
+  "processing.description": "正在处理描述...",
+  "analyzing.description": "正在分析描述...",
+  "commit.message.generated.stream": "提交信息已通过流式方式成功生成 (由 {1} - {2} 生成)",
+  "generate.commit.stream.failed": "通过流式方式生成提交信息失败: {0}",
+  "provider.does.not.support.streaming": "提供商 {0} 不支持流式生成。"
 }

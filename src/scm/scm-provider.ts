@@ -28,6 +28,9 @@ export interface ISCMProvider {
 
   /** 获取当前提交信息 */
   getCommitInput(): Promise<string>;
+
+  /** 开始流式输入提交信息 */
+  startStreamingInput(message: string): Promise<void>;
 }
 
 /**
@@ -39,14 +42,49 @@ export class SCMFactory {
   private static currentProvider: ISCMProvider | undefined;
 
   /**
+   * 根据选中的文件确定工作区根目录
+   * @param selectedFiles 选中的文件路径列表
+   * @returns 工作区根目录路径或undefined
+   */
+  private static findWorkspaceRoot(
+    selectedFiles?: string[]
+  ): string | undefined {
+    // 如果没有提供文件，则使用VS Code的第一个工作区
+    if (!selectedFiles || selectedFiles.length === 0) {
+      return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    }
+
+    // 检查每个文件的目录，寻找.git或.svn文件夹
+    for (const file of selectedFiles) {
+      let currentDir = path.dirname(file);
+      // 向上查找直到根目录
+      while (currentDir && currentDir !== path.parse(currentDir).root) {
+        if (
+          fs.existsSync(path.join(currentDir, ".git")) ||
+          fs.existsSync(path.join(currentDir, ".svn"))
+        ) {
+          return currentDir;
+        }
+        currentDir = path.dirname(currentDir);
+      }
+    }
+
+    // 如果没找到，回退到VS Code工作区
+    return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  }
+
+  /**
    * 通过项目目录检测SCM类型
    * @param workspaceRoot 工作区根目录
+   * @param filePaths 选定文件的路径列表（可选）
    * @returns {"git" | "svn" | undefined} SCM类型
    */
   private static detectSCMFromDir(
-    workspaceRoot: string
+    workspaceRoot: string,
+    filePaths?: string[]
   ): "git" | "svn" | undefined {
     try {
+      // 首先检查工作区根目录
       const gitPath = path.join(workspaceRoot, ".git");
       const svnPath = path.join(workspaceRoot, ".svn");
 
@@ -56,6 +94,37 @@ export class SCMFactory {
       if (fs.existsSync(svnPath)) {
         return "svn";
       }
+
+      // 如果提供了文件路径，检查这些文件所在的目录
+      if (filePaths && filePaths.length > 0) {
+        // 获取所有唯一的目录路径
+        const dirPaths = [
+          ...new Set(filePaths.map((file) => path.dirname(file))),
+        ];
+
+        for (const dir of dirPaths) {
+          // 从文件所在目录向上查找，直到工作区根目录
+          let currentDir = dir;
+          while (
+            currentDir.startsWith(workspaceRoot) &&
+            currentDir !== workspaceRoot
+          ) {
+            const gitSubPath = path.join(currentDir, ".git");
+            const svnSubPath = path.join(currentDir, ".svn");
+
+            if (fs.existsSync(gitSubPath)) {
+              return "git";
+            }
+            if (fs.existsSync(svnSubPath)) {
+              return "svn";
+            }
+
+            // 向上一级目录
+            currentDir = path.dirname(currentDir);
+          }
+        }
+      }
+
       return undefined;
     } catch (error) {
       console.error("Failed to detect SCM from directory:", error);
@@ -78,22 +147,25 @@ export class SCMFactory {
 
   /**
    * 检测并创建可用的SCM提供者
+   * @param {string[] | undefined} selectedFiles - 可选的选定文件路径列表
    * @returns {Promise<ISCMProvider | undefined>} 返回可用的SCM提供者实例,如果没有可用的提供者则返回undefined
    */
-  static async detectSCM(): Promise<ISCMProvider | undefined> {
+  static async detectSCM(
+    selectedFiles?: string[]
+  ): Promise<ISCMProvider | undefined> {
     try {
       if (this.currentProvider) {
         return this.currentProvider;
       }
 
-      // 获取工作区根目录
-      const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+      // 使用新方法获取工作区根目录
+      const workspaceRoot = this.findWorkspaceRoot(selectedFiles);
       if (!workspaceRoot) {
         return undefined;
       }
 
-      // 首先通过目录检测
-      const scmType = this.detectSCMFromDir(workspaceRoot);
+      // 通过目录检测，包括选定的文件路径
+      const scmType = this.detectSCMFromDir(workspaceRoot, selectedFiles);
 
       const gitExtension = vscode.extensions.getExtension("vscode.git");
       const svnExtension = vscode.extensions.getExtension(
@@ -103,7 +175,7 @@ export class SCMFactory {
       // 如果检测到Git
       if (scmType === "git") {
         const git = gitExtension?.exports
-          ? new GitProvider(gitExtension.exports)
+          ? new GitProvider(gitExtension.exports, workspaceRoot)
           : undefined;
         if (git && (await git.isAvailable())) {
           this.currentProvider = git;

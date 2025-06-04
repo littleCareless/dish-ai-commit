@@ -41,67 +41,104 @@ export class VSCodeProvider extends AbstractAIProvider {
     const chatModel =
       models.find((model) => model.id === params.model?.id) || models[0];
 
-    let maxCodeCharacters =
-      options?.maxTokens ||
-      getMaxCharacters(params.model ?? this.getDefaultModel(), 2600) - 1000;
+    // let maxCodeCharacters =
+    //   options?.maxTokens ||
+    //   getMaxCharacters(params.model ?? this.getDefaultModel(), 2600) - 1000;
 
-    let retries = 0;
+    // let retries = 0;
 
-    while (true) {
-      const messages = [
-        vscode.LanguageModelChatMessage.User(systemPrompt),
-        vscode.LanguageModelChatMessage.User(
-          userContent.substring(0, maxCodeCharacters)
-        ),
-        vscode.LanguageModelChatMessage.User(userPrompt ?? ""),
-      ];
+    // while (true) {
+    const messages = [
+      vscode.LanguageModelChatMessage.User(systemPrompt),
+      vscode.LanguageModelChatMessage.User(userContent),
+      vscode.LanguageModelChatMessage.User(userPrompt ?? ""),
+    ];
 
+    // try {
+    // if (userContent.length > maxCodeCharacters) {
+    //   console.warn(getMessage("input.truncated"));
+    // }
+
+    const response = await chatModel.sendRequest(messages, {
+      modelOptions: {
+        // VSCode API中如果支持temperature参数
+        temperature: options?.temperature,
+      },
+    });
+
+    let result = "";
+    for await (const fragment of response.text) {
+      result += fragment;
+    }
+
+    let jsonContent;
+    if (options?.parseAsJSON) {
       try {
-        if (userContent.length > maxCodeCharacters) {
-          console.warn(getMessage("input.truncated"));
-        }
-
-        const response = await chatModel.sendRequest(messages, {
-          // VSCode API中如果支持temperature参数
-          // temperature: options?.temperature,
-        });
-
-        let result = "";
-        for await (const fragment of response.text) {
-          result += fragment;
-        }
-
-        let jsonContent;
-        if (options?.parseAsJSON) {
-          try {
-            // 尝试解析为JSON
-            const jsonMatch = result.match(/\{[\s\S]*\}/);
-            jsonContent = jsonMatch
-              ? JSON.parse(jsonMatch[0])
-              : JSON.parse(result);
-          } catch (e) {
-            console.warn("Failed to parse response as JSON", e);
-          }
-        }
-
-        return { content: result.trim(), jsonContent };
-      } catch (ex: any) {
-        let message = ex instanceof Error ? ex.message : String(ex);
-
-        if (
-          ex instanceof Error &&
-          "cause" in ex &&
-          ex.cause instanceof Error &&
-          retries++ < 2 &&
-          ex.cause.message.includes("exceeds token limit")
-        ) {
-          maxCodeCharacters -= 500 * retries;
-          continue;
-        }
-
-        throw ex;
+        // 尝试解析为JSON
+        const jsonMatch = result.match(/\{[\s\S]*\}/);
+        jsonContent = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(result);
+      } catch (e) {
+        console.warn("Failed to parse response as JSON", e);
       }
     }
+
+    return { content: result.trim(), jsonContent };
+
+    // } catch (ex: any) {
+    //   let message = ex instanceof Error ? ex.message : String(ex);
+
+    //   if (
+    //     ex instanceof Error &&
+    //     "cause" in ex &&
+    //     ex.cause instanceof Error &&
+    //     retries++ < 2 &&
+    //     ex.cause.message.includes("exceeds token limit")
+    //   ) {
+    //     maxCodeCharacters -= 500 * retries;
+    //     continue;
+    //   }
+
+    //   throw ex;
+    // }
+    // }
+  }
+
+  /**
+   * 实现抽象方法：执行AI流式请求
+   * 使用VS Code Language Model API执行请求并流式返回结果
+   */
+  protected async executeAIStreamRequest(
+    systemPrompt: string,
+    userPrompt: string,
+    userContent: string,
+    params: AIRequestParams,
+    options?: {
+      temperature?: number;
+      maxTokens?: number;
+    }
+  ): Promise<AsyncIterable<string>> {
+    const models = await vscode.lm.selectChatModels();
+    if (!models || models.length === 0) {
+      throw new Error(getMessage("vscode.no.models.available"));
+    }
+
+    const chatModel =
+      models.find((model) => model.id === params.model?.id) || models[0];
+
+    const messages = [
+      vscode.LanguageModelChatMessage.User(systemPrompt),
+      vscode.LanguageModelChatMessage.User(userContent),
+      vscode.LanguageModelChatMessage.User(userPrompt ?? ""),
+    ];
+
+    const response = await chatModel.sendRequest(messages, {
+      modelOptions: {
+        temperature: options?.temperature,
+        // maxTokens: options?.maxTokens, // VSCode API 当前版本似乎不直接支持 maxTokens 在 modelOptions 中
+      },
+    });
+
+    return response.text;
   }
 
   /**
@@ -131,8 +168,8 @@ export class VSCodeProvider extends AbstractAIProvider {
             id: model.id as any,
             name: `${model.name}`,
             maxTokens: {
-              input: model.maxInputTokens || 4096,
-              output: model.maxInputTokens || 4096, // 修复使用不存在的 maxOutputTokens
+              input: model.maxInputTokens || 81638,
+              output: model.maxInputTokens || 81638,
             },
             provider: this.provider,
           }))

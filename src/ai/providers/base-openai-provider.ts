@@ -133,6 +133,72 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
   }
 
   /**
+   * 执行AI流式请求
+   * 调用OpenAI API执行流式请求并逐步返回结果
+   */
+  protected async executeAIStreamRequest(
+    systemPrompt: string,
+    userPrompt: string,
+    userContent: string,
+    params: AIRequestParams,
+    options?: {
+      temperature?: number;
+      maxTokens?: number;
+    }
+  ): Promise<AsyncIterable<string>> {
+    const messages: ChatCompletionMessageParam[] = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userContent },
+      { role: "user", content: userPrompt },
+    ];
+    const filteredMessages = messages.filter((msg) => {
+      if (typeof msg.content === "string") {
+        return msg.content.trim() !== "";
+      } else if (Array.isArray(msg.content)) {
+        // 过滤掉 content 为空数组或者数组里全是空字符串
+        const nonEmptyParts = msg.content.filter((part) => {
+          if (part.type === "text" && part.text.trim() !== "") {
+            return true;
+          }
+          // 这里如果有别的类型，也可以加判断
+          return false;
+        });
+        return nonEmptyParts.length > 0;
+      }
+      return false;
+    });
+
+    const processStream = async function* (
+      this: BaseOpenAIProvider
+    ): AsyncIterable<string> {
+      try {
+        const stream = await this.openai.chat.completions.create({
+          model:
+            (params.model && params.model.id) ||
+            this.config.defaultModel ||
+            "gpt-3.5-turbo",
+          messages: filteredMessages,
+          temperature: options?.temperature,
+          max_tokens: options?.maxTokens,
+          stream: true,
+        });
+        for await (const chunk of stream) {
+          if (chunk.choices[0]?.delta?.content) {
+            yield chunk.choices[0].delta.content;
+          }
+        }
+      } catch (error) {
+        console.error("Error during AI stream request:", error);
+        // 对于流式请求，错误处理可能需要根据具体需求调整
+        // 这里简单地抛出错误，或者可以yield一个特定的错误标记
+        throw error;
+      }
+    };
+
+    return Promise.resolve(processStream.call(this));
+  }
+
+  /**
    * 获取默认模型
    */
   protected getDefaultModel(): AIModel {

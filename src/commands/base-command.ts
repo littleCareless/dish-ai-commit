@@ -169,10 +169,11 @@ export abstract class BaseCommand {
 
   /**
    * 检测并获取SCM提供程序
+   * @param {string[] | undefined} selectedFiles - 可选的选定文件路径列表
    * @returns SCM提供程序实例
    */
-  protected async detectSCMProvider() {
-    const scmProvider = await SCMFactory.detectSCM();
+  protected async detectSCMProvider(selectedFiles?: string[]) {
+    const scmProvider = await SCMFactory.detectSCM(selectedFiles);
     if (!scmProvider) {
       await notify.error(getMessage("scm.not.detected"));
       return;

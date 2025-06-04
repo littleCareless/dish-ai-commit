@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { AIProviderFactory } from "../ai/ai-provider-factory";
 import { notify } from "../utils/notification";
 import { getMessage } from "../utils/i18n";
+import type { AIModel } from "../ai/types";
 
 /**
  * Service class for handling AI model selection via VS Code's quick pick interface
@@ -20,10 +21,8 @@ export class ModelPickerService {
   ): Promise<{ provider: string; model: string } | undefined> {
     try {
       const providers = AIProviderFactory.getAllProviders();
-      const modelsMap = new Map<string, string[]>();
+      const tempModelsMap = new Map<string, AIModel[]>();
       let errors: string[] = [];
-
-      console.log("providers", providers);
 
       const progressMsg = getMessage("ai.model.loading");
       await vscode.window.withProgress(
@@ -39,10 +38,7 @@ export class ModelPickerService {
                 if (await provider.isAvailable()) {
                   const models = await provider.getModels();
                   if (models && models.length > 0) {
-                    modelsMap.set(
-                      provider.getName(),
-                      models.map((model) => model.name)
-                    );
+                    tempModelsMap.set(provider.getName(), models);
                   }
                 }
               } catch (err) {
@@ -59,7 +55,7 @@ export class ModelPickerService {
       );
 
       // 如果所有provider都失败了,显示错误
-      if (modelsMap.size === 0) {
+      if (tempModelsMap.size === 0) {
         if (errors.length > 0) {
           await notify.warn("model.list.partial.failed", [errors.join(", ")], {
             modal: true,
@@ -76,6 +72,15 @@ export class ModelPickerService {
         });
       }
 
+      // 根据原始providers顺序重新创建有序Map
+      const modelsMap = new Map<string, AIModel[]>();
+      for (const provider of providers) {
+        const providerName = provider.getName();
+        if (tempModelsMap.has(providerName)) {
+          modelsMap.set(providerName, tempModelsMap.get(providerName)!);
+        }
+      }
+
       // Prepare items for quick pick dialog
       const items: vscode.QuickPickItem[] = [];
       for (const [provider, models] of modelsMap) {
@@ -87,9 +92,10 @@ export class ModelPickerService {
         // Add models under provider
         models.forEach((model) => {
           items.push({
-            label: model,
+            label: model.id,
             description: provider,
-            picked: provider === currentProvider && model === currentModel,
+            detail: model.name,
+            picked: provider === currentProvider && model.id === currentModel,
           });
         });
       }
