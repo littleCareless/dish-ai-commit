@@ -152,5 +152,8 @@
   "branch.description.cancelled": "已取消通过描述生成分支名称。",
   "internal.error.no.ai.input": "内部错误：没有可用于AI处理的输入内容。",
   "processing.description": "正在处理描述...",
-  "analyzing.description": "正在分析描述..."
+  "analyzing.description": "正在分析描述...",
+  "commit.message.generated.stream": "提交信息已通过流式方式成功生成 (由 {1} - {2} 生成)",
+  "generate.commit.stream.failed": "通过流式方式生成提交信息失败: {0}",
+  "provider.does.not.support.streaming": "提供商 {0} 不支持流式生成。"
 }

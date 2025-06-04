@@ -148,5 +148,8 @@
   "branch.description.cancelled": "Branch name generation from description cancelled.",
   "internal.error.no.ai.input": "Internal error: No input content available for AI processing.",
   "processing.description": "Processing description...",
-  "analyzing.description": "Analyzing description..."
+  "analyzing.description": "Analyzing description...",
+  "commit.message.generated.stream": "Commit message generated successfully (streamed by {1} - {2})",
+  "generate.commit.stream.failed": "Failed to generate commit message via stream: {0}",
+  "provider.does.not.support.streaming": "Provider {0} does not support streaming generation."
 }
