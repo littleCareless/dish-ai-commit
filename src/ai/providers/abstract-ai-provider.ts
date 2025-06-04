@@ -52,6 +52,39 @@ export abstract class AbstractAIProvider implements AIProvider {
       );
     }
   }
+/**
+   * 生成提交信息 (流式)
+   * @param params - AI请求参数
+   * @returns 一个Promise，解析为一个异步迭代器，用于逐块生成提交信息
+   * @remarks 此方法为新增，AIProvider接口也需要相应更新
+   */
+  async generateCommitStream(params: AIRequestParams): Promise<AsyncIterable<string>> {
+    try {
+      console.log("params for stream", params);
+      const systemPrompt = getSystemPrompt(params);
+      // 注意：流式请求的重试逻辑可能与非流式请求不同。
+      // 这里直接调用 executeAIStreamRequest，具体的重试和错误处理
+      // 应该在 executeAIStreamRequest 的实现中或专门的流式重试辅助函数中处理。
+      return this.executeAIStreamRequest(
+        systemPrompt,
+        "", // userPrompt
+        params.diff, // userContent
+        params,
+        {
+          temperature: 0.3, // 提交信息推荐温度值 0.3
+          // maxTokens 可以在这里设置，如果需要的话
+        }
+      );
+    } catch (error) {
+      // 流的错误可能在迭代过程中发生，这里的 catch 可能只捕获初始设置错误
+      // 需要在调用方迭代流时也处理错误
+      throw new Error(
+        formatMessage("generation.failed", [ // 或者一个新的i18n key如 "streamGeneration.failed"
+          error instanceof Error ? error.message : String(error),
+        ])
+      );
+    }
+  }
 
   /**
    * 生成代码评审报告
@@ -296,6 +329,28 @@ export abstract class AbstractAIProvider implements AIProvider {
       maxTokens?: number;
     }
   ): Promise<{ content: string; usage?: any; jsonContent?: any }>;
+
+  /**
+   * 需要由具体提供者实现的核心流式方法
+   * 执行AI流式请求并返回一个异步迭代器
+   *
+   * @param systemPrompt - 系统提示内容
+   * @param userPrompt - 用户提示内容
+   * @param userContent - 用户内容
+   * @param params - 请求参数
+   * @param options - 额外选项
+   * @returns Promise<AsyncIterable<string>>
+   */
+  protected abstract executeAIStreamRequest(
+    systemPrompt: string,
+    userPrompt: string,
+    userContent: string,
+    params: AIRequestParams,
+    options?: {
+      temperature?: number;
+      maxTokens?: number;
+    }
+  ): Promise<AsyncIterable<string>>;
 
   /**
    * 获取默认模型

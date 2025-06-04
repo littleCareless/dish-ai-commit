@@ -146,6 +146,14 @@ export interface AIProvider {
   generateLayeredCommit?(
     params: AIRequestParams
   ): Promise<LayeredCommitMessage>;
+  /**
+   * 流式生成提交内容
+   * @param params - AI请求参数
+   * @returns 一个异步可迭代对象，用于逐块生成提交信息
+   */
+  generateCommitStream?(
+    params: AIRequestParams
+  ): Promise<AsyncIterable<string>>;
   /** 生成代码评审内容 */
   generateCodeReview?(params: AIRequestParams): Promise<AIResponse>;
   /** 生成分支名称 */
@@ -249,7 +257,8 @@ export type ZhipuAIModels =
   | "glm-4-airx" // 轻量增强版本
   | "glm-4-long" // 长文本版本
   | "glm-4-flashx" // 快速版本增强
-  | "glm-4-flash"; // 快速版本基础
+  | "glm-4-flash" // 快速版本基础
+  | "glm-4-flash-250414";
 
 export type DashScopeModels =
   | "qwen-max"
