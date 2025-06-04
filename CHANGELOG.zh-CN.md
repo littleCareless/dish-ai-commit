@@ -6,6 +6,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.19.0 (2025-06-04)
+
+### ♻ Code Refactoring
+
+- **generatecommitcommand**: 重构提交生成命令，移除旧版执行逻辑 ([342d3a0](https://github.com/littleCareless/dish-ai-commit/commit/342d3a0))
+
+### ✨ Features
+
+- **ai-providers**: 实现 AI 提供程序流式请求并更新智谱配置 ([31c5899](https://github.com/littleCareless/dish-ai-commit/commit/31c5899))
+- **ai**: 增加流式生成提交信息功能 ([663ac26](https://github.com/littleCareless/dish-ai-commit/commit/663ac26))
+- **generate-commit-command**: 实现流式生成提交信息功能 ([4ef52fa](https://github.com/littleCareless/dish-ai-commit/commit/4ef52fa))
+- **scm**: 为 SCM 提供程序添加流式输入支持 ([de1f6b2](https://github.com/littleCareless/dish-ai-commit/commit/de1f6b2))
+
+### 🎫 Chores
+
+- **i18n**: 新增流式生成相关的国际化文案 ([49a2b90](https://github.com/littleCareless/dish-ai-commit/commit/49a2b90))
+- **version**: 升级版本至 0.18.0 ([bf5dbf2](https://github.com/littleCareless/dish-ai-commit/commit/bf5dbf2))
+
+### 📝 Documentation
+
+- **changelog**: 更新变更日志至 0.18.0 版本 ([6bb864d](https://github.com/littleCareless/dish-ai-commit/commit/6bb864d))
+
 # 0.18.0 (2025-06-03)
 
 ### ✨ Features

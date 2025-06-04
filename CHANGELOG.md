@@ -6,6 +6,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.19.0 (2025-06-04)
+
+### ♻ Code Refactoring
+
+- **generatecommitcommand**: Refactor the commit generation command and remove the old execution logic ([342d3a0](https://github.com/littleCareless/dish-ai-commit/commit/342d3a0))
+
+### ✨ Features
+
+- **ai-providers**: Implement AI provider streaming request and update Zhipu configuration ([31c5899](https://github.com/littleCareless/dish-ai-commit/commit/31c5899))
+
+- **ai**: Add streaming generation of commit information function ([663ac26](https://github.com/littleCareless/dish-ai-commit/commit/663ac26))
+- **generate-commit-command**: Implement streaming generation of commit information ([4ef52fa](https://github.com/littleCareless/dish-ai-commit/commit/4ef52fa))
+- **scm**: Add streaming input support for SCM providers ([de1f6b2](https://github.com/littleCareless/dish-ai-commit/commit/de1f6b2))
+
+### 🎫 Chores
+
+- **i18n**: Added internationalization text related to streaming generation ([49a2b90](https://github.com/littleCareless/dish-ai-commit/commit/49a2b90))
+- **version**: Upgraded version to 0.18.0 ([bf5dbf2](https://github.com/littleCareless/dish-ai-commit/commit/bf5dbf2))
+
+### 📝 Documentation
+
+- **changelog**: Updated changelog to version 0.18.0 ([6bb864d](https://github.com/littleCareless/dish-ai-commit/commit/6bb864d))
+
 # 0.18.0 (2025-06-03)
 
 ### ✨ Features
