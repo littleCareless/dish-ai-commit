@@ -135,6 +135,51 @@ export class OllamaProvider extends AbstractAIProvider {
   }
 
   /**
+   * 实现抽象方法：执行AI流式请求
+   * 调用Ollama API执行流式请求并返回一个异步迭代器
+   */
+  protected async executeAIStreamRequest(
+    systemPrompt: string,
+    userPrompt: string,
+    userContent: string,
+    params: AIRequestParams,
+    options?: {
+      temperature?: number;
+      maxTokens?: number; // 注意：Ollama 可能使用不同的参数名，如 num_predict
+    }
+  ): Promise<AsyncIterable<string>> {
+    const self = this; // 确保在异步生成器中正确使用 'this'
+    async function* streamLogic(): AsyncIterable<string> {
+      const model = params.model || self.getDefaultModel();
+
+      const stream = await self.ollama.chat({
+        model: model.id,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userContent },
+          { role: "user", content: userPrompt },
+        ],
+        stream: true,
+        options: {
+          temperature: options?.temperature,
+          // Ollama API 可能使用 num_predict 而不是 max_tokens
+          // num_predict: options?.maxTokens,
+        },
+      });
+
+      for await (const chunk of stream) {
+        if (chunk.message && typeof chunk.message.content === 'string') {
+          yield chunk.message.content;
+        }
+        // 如果需要处理流结束的特殊逻辑（例如，获取最终的使用情况统计），
+        // 可以在这里检查 chunk.done 或其他特定于Ollama的字段。
+        // 目前，我们只流式传输内容。
+      }
+    }
+    return Promise.resolve(streamLogic());
+  }
+
+  /**
    * 获取默认模型
    */
   protected getDefaultModel(): AIModel {

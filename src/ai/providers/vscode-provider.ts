@@ -104,6 +104,44 @@ export class VSCodeProvider extends AbstractAIProvider {
   }
 
   /**
+   * 实现抽象方法：执行AI流式请求
+   * 使用VS Code Language Model API执行请求并流式返回结果
+   */
+  protected async executeAIStreamRequest(
+    systemPrompt: string,
+    userPrompt: string,
+    userContent: string,
+    params: AIRequestParams,
+    options?: {
+      temperature?: number;
+      maxTokens?: number;
+    }
+  ): Promise<AsyncIterable<string>> {
+    const models = await vscode.lm.selectChatModels();
+    if (!models || models.length === 0) {
+      throw new Error(getMessage("vscode.no.models.available"));
+    }
+
+    const chatModel =
+      models.find((model) => model.id === params.model?.id) || models[0];
+
+    const messages = [
+      vscode.LanguageModelChatMessage.User(systemPrompt),
+      vscode.LanguageModelChatMessage.User(userContent),
+      vscode.LanguageModelChatMessage.User(userPrompt ?? ""),
+    ];
+
+    const response = await chatModel.sendRequest(messages, {
+      modelOptions: {
+        temperature: options?.temperature,
+        // maxTokens: options?.maxTokens, // VSCode API 当前版本似乎不直接支持 maxTokens 在 modelOptions 中
+      },
+    });
+
+    return response.text;
+  }
+
+  /**
    * 获取默认模型
    */
   protected getDefaultModel(): AIModel {

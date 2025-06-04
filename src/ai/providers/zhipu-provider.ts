@@ -1,6 +1,6 @@
 import { BaseOpenAIProvider } from "./base-openai-provider";
 import { ConfigurationManager } from "../../config/configuration-manager";
-import { AIModel } from "../types";
+import { AIModel, type AIProviders } from "../types";
 
 /**
  * 智谱AI模型配置列表
@@ -55,7 +55,7 @@ const zhipuModels: AIModel[] = [
     provider: { id: "zhipu", name: "zhipu" },
   },
   {
-    id: "glm-4-flash",
+    id: "glm-4-flash-250414",
     name: "GLM-4 Flash - 免费调用: 智谱AI首个免费API, 零成本调用大模型",
     maxTokens: { input: 32768, output: 4096 },
     provider: { id: "zhipu", name: "zhipu" },
@@ -67,6 +67,11 @@ const zhipuModels: AIModel[] = [
  * 继承自BaseOpenAIProvider基类，提供对智谱AI平台的访问能力
  */
 export class ZhipuAIProvider extends BaseOpenAIProvider {
+  /** 提供者标识信息 */
+  readonly provider = {
+    id: "zhipu" as AIProviders,
+    name: "Zhipu",
+  } as const;
   /**
    * 创建智谱AI提供者实例
    * 从配置管理器获取API密钥，初始化基类
