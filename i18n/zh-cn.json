@@ -155,5 +155,11 @@
   "analyzing.description": "正在分析描述...",
   "commit.message.generated.stream": "提交信息已通过流式方式成功生成 (由 {1} - {2} 生成)",
   "generate.commit.stream.failed": "通过流式方式生成提交信息失败: {0}",
-  "provider.does.not.support.streaming": "提供商 {0} 不支持流式生成。"
+  "provider.does.not.support.streaming": "提供商 {0} 不支持流式生成。",
+  "confirm.ai.provider.tos.accept": "接受",
+  "confirm.ai.provider.tos.acceptWorkspace": "仅针对此工作区接受",
+  "confirm.ai.provider.tos.cancel": "取消",
+  "confirm.ai.provider.tos.message": "Dish AI 功能可以将代码片段、差异和其他上下文发送到您选择的 AI 提供商进行分析。",
+  "user.cancelled.operation.log": "用户取消了操作",
+  "user.cancelled.operation.error": "操作已被用户取消"
 }

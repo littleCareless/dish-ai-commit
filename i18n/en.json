@@ -151,5 +151,11 @@
   "analyzing.description": "Analyzing description...",
   "commit.message.generated.stream": "Commit message generated successfully (streamed by {1} - {2})",
   "generate.commit.stream.failed": "Failed to generate commit message via stream: {0}",
-  "provider.does.not.support.streaming": "Provider {0} does not support streaming generation."
+  "provider.does.not.support.streaming": "Provider {0} does not support streaming generation.",
+  "confirm.ai.provider.tos.accept": "Accept",
+  "confirm.ai.provider.tos.acceptWorkspace": "Accept Only for this Workspace",
+  "confirm.ai.provider.tos.cancel": "Cancel",
+  "confirm.ai.provider.tos.message": "Dish AI features can send code snippets, diffs, and other context to your selected AI provider for analysis.",
+  "user.cancelled.operation.log": "User cancelled the operation",
+  "user.cancelled.operation.error": "Operation cancelled by user"
 }
