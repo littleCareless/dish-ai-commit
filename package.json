@@ -412,7 +412,7 @@
     "conventional-changelog-gitmoji-config": "^1.5.2",
     "cz-conventional-changelog": "^3.3.0",
     "cz-customizable": "^7.4.0",
-    "esbuild": "^0.20.2",
+    "esbuild": "^0.25.0",
     "eslint": "^9.24.0",
     "husky": "^9.1.7",
     "lint-staged": "^15.5.0",
