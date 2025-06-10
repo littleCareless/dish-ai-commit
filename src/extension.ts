@@ -4,8 +4,11 @@ import * as vscode from "vscode";
 import { ConfigurationManager } from "./config/configuration-manager";
 import { registerCommands } from "./commands";
 import { initializeLocalization } from "./utils/i18n";
-import { notify, withProgress } from "./utils/notification/notification-manager";
-
+import {
+  notify,
+  withProgress,
+} from "./utils/notification/notification-manager";
+import { stateManager } from "./utils/state/state-manager";
 /**
  * 在首次执行命令时激活扩展
  * @param {vscode.ExtensionContext} context - VS Code扩展上下文对象
@@ -18,6 +21,9 @@ export function activate(context: vscode.ExtensionContext) {
 
     // 初始化本地化管理器
     initializeLocalization(context);
+
+    // 初始化全局状态管理器
+    stateManager.initialize(context);
 
     // 初始化配置管理器并注册到生命周期
     context.subscriptions.push(ConfigurationManager.getInstance());
