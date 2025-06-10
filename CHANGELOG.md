@@ -6,6 +6,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.20.0 (2025-06-10)
+
+### ✨ Features
+
+- **command**: Integrate AI Terms of Service confirmation and support streaming task cancellation ([276f709](https://github.com/littleCareless/dish-ai-commit/commit/276f709))
+- **images**: Add demo GIF images ([33ab53c](https://github.com/littleCareless/dish-ai-commit/commit/33ab53c))
+- **state**: Introduce state management module ([48dd04f](https://github.com/littleCareless/dish-ai-commit/commit/48dd04f))
+
+### 🎫 Chores
+
+- **i18n**: Add localized entries related to AI Terms of Service and user cancellation operations ([ad38e39](https://github.com/littleCareless/dish-ai-commit/commit/ad38e39))
+- **release**: Upgrade version to 0.19.0 and update change log ([1711136](https://github.com/littleCareless/dish-ai-commit/commit/1711136))
+
+### 🐛 Bug Fixes
+
+- **scm**: Fix special character escape of author name in Git log query ([924a7b7](https://github.com/littleCareless/dish-ai-commit/commit/924a7b7))
+
 # 0.19.0 (2025-06-04)
 
 ### ♻ Code Refactoring
