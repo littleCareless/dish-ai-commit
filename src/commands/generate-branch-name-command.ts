@@ -21,6 +21,9 @@ export class GenerateBranchNameCommand extends BaseCommand {
   async execute(
     resources?: vscode.SourceControlResourceState[]
   ): Promise<void> {
+    if (!(await this.showConfirmAIProviderToS())) {
+      return;
+    }
     const configResult = await this.handleConfiguration();
     if (!configResult) {
       return;

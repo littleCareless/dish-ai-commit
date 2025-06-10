@@ -55,6 +55,9 @@ export class GenerateCommitCommand extends BaseCommand {
    * @param resources - 源代码管理资源状态列表
    */
   async execute(resources: vscode.SourceControlResourceState[]): Promise<void> {
+    if (!(await this.showConfirmAIProviderToS())) {
+      return;
+    }
     // 处理配置
     const configResult = await this.handleConfiguration();
     if (!configResult) {
@@ -129,10 +132,15 @@ export class GenerateCommitCommand extends BaseCommand {
           // 使用与非流式一致的标题
           scmProvider?.type.toLocaleUpperCase(),
         ]),
-        async (progress) => {
+        async (progress, token) => {
           // progress 参数可以用来更新进度条内部消息，但这里可能不需要
           let accumulatedMessage = "";
           try {
+            this.throwIfCancelled(token); // 在开始时检查取消
+            if (token.isCancellationRequested) {
+              console.log("用户取消了操作");
+              return; // 这里主动退出
+            }
             // 再次检查 aiProvider.generateCommitStream，尽管外部已经检查过
             // 这是为了确保在 ProgressHandler 的回调作用域内 TypeScript 也能正确推断类型
             if (!aiProvider.generateCommitStream) {
@@ -145,15 +153,11 @@ export class GenerateCommitCommand extends BaseCommand {
               notify.error(errorMessage); // 使用已存在的 i18n key
               throw new Error(errorMessage);
             }
+            this.throwIfCancelled(token); // 在调用 AI Provider 之前检查取消
             const stream = await aiProvider.generateCommitStream(requestParams);
-            // for await (const chunk of stream) {
-            //   console.log("chunk", chunk);
-            //   accumulatedMessage += chunk;
-            //   let filteredMessage = filterCodeBlockMarkers(accumulatedMessage);
-            //   filteredMessage = filteredMessage.trimStart(); // 实时去除开头的空格
-            //   await scmProvider.startStreamingInput(filteredMessage);
-            // }
+
             for await (const chunk of stream) {
+              this.throwIfCancelled(token); // 在每次迭代开始时检查取消
               for (const char of chunk) {
                 accumulatedMessage += char;
                 let filteredMessage =
@@ -168,6 +172,7 @@ export class GenerateCommitCommand extends BaseCommand {
               }
             }
             // 流结束后，最后trim一次，确保末尾没有多余空格
+            this.throwIfCancelled(token); // 在流结束后，最终处理之前检查取消
             const finalMessage = accumulatedMessage.trim();
             await scmProvider.startStreamingInput(finalMessage);
 
@@ -179,9 +184,9 @@ export class GenerateCommitCommand extends BaseCommand {
             ]);
           } catch (error) {
             console.error("Error during commit message streaming:", error);
-            if (error instanceof Error) {
-              notify.error("generate.commit.stream.failed", [error.message]);
-            }
+            // if (error instanceof Error) {
+            //   notify.error("generate.commit.stream.failed", [error.message]);
+            // }
             // 确保 ProgressHandler 知道任务失败
             throw error;
           }
@@ -193,6 +198,12 @@ export class GenerateCommitCommand extends BaseCommand {
       if (error instanceof Error) {
         notify.error("generate.commit.failed", [error.message]); // 可以用一个更特定的流式错误消息
       }
+    }
+  }
+  throwIfCancelled(token: vscode.CancellationToken) {
+    if (token.isCancellationRequested) {
+      console.log(getMessage("user.cancelled.operation.log"));
+      throw new Error(getMessage("user.cancelled.operation.error"));
     }
   }
 }

@@ -7,6 +7,7 @@ import { notify } from "../utils/notification/notification-manager";
 import { getMessage, formatMessage } from "../utils/i18n";
 import { validateAndGetModel } from "../utils/ai/model-validation";
 import { AIProvider, AIModel, AIProviders, ModelNames } from "../ai/types"; // 正确导入ModelNames类型
+import { stateManager } from "../utils/state/state-manager";
 
 /**
  * 基础命令类,提供通用的命令执行功能
@@ -202,6 +203,47 @@ export abstract class BaseCommand {
     };
   }
 
+  /**
+   * Shows a confirmation dialog to the user regarding AI provider terms of service.
+   * @returns A promise that resolves to true if the user accepts, false otherwise.
+   */
+  protected async showConfirmAIProviderToS(): Promise<boolean> {
+    const confirmed =
+      stateManager.getGlobal<boolean>(`confirm:dish:ai:tos`, false) ||
+      stateManager.getWorkspace<boolean>(`confirm:dish:ai:tos`, false);
+    if (confirmed) return true;
+
+    const acceptAlways: vscode.MessageItem = {
+      title: getMessage("confirm.ai.provider.tos.accept"),
+    };
+    const acceptWorkspace: vscode.MessageItem = {
+      title: getMessage("confirm.ai.provider.tos.acceptWorkspace"),
+    };
+    const cancel: vscode.MessageItem = {
+      title: getMessage("confirm.ai.provider.tos.cancel"),
+      isCloseAffordance: true,
+    };
+
+    const result = await vscode.window.showInformationMessage(
+      getMessage("confirm.ai.provider.tos.message"),
+      { modal: true },
+      acceptAlways,
+      acceptWorkspace,
+      cancel
+    );
+
+    if (result === acceptWorkspace) {
+      void stateManager.setWorkspace(`confirm:dish:ai:tos`, true).catch();
+      return true;
+    }
+
+    if (result === acceptAlways) {
+      void stateManager.setGlobal(`confirm:dish:ai:tos`, true).catch();
+      return true;
+    }
+
+    return false;
+  }
   /**
    * 执行命令
    * @param args - 命令参数

@@ -20,6 +20,9 @@ export class ReviewCodeCommand extends BaseCommand {
    * @returns {Promise<void>}
    */
   async execute(resources?: vscode.SourceControlResourceState[]) {
+    if (!(await this.showConfirmAIProviderToS())) {
+      return;
+    }
     // 处理配置
     const configResult = await this.handleConfiguration();
     if (!configResult) {
