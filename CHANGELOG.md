@@ -6,6 +6,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.20.1 (2025-06-11)
+
+### ♻ Code Refactoring
+
+- **gemini**: Refactor Gemini AI provider ([8469266](https://github.com/littleCareless/dish-ai-commit/commit/8469266))
+
+- **zhipu**: Remove obsolete models ([483bf38](https://github.com/littleCareless/dish-ai-commit/commit/483bf38))
+
+### 🎫 Chores
+
+- **deps**: Downgrade vscode engine and type definition version ([75bb17d](https://github.com/littleCareless/dish-ai-commit/commit/75bb17d))
+
+- **deps**: Update dependencies and remove package-lock.json ([7e5c9e8](https://github.com/littleCareless/dish-ai-commit/commit/7e5c9e8))
+- **model-picker**: Add annotations to model selection logic ([2ec10db](https://github.com/littleCareless/dish-ai-commit/commit/2ec10db))
+- **release**: Release 0.20.0 ([f276e47](https://github.com/littleCareless/dish-ai-commit/commit/f276e47))
+
+### 🐛 Bug Fixes
+
+- **openai**: Fix model acquisition failure log ([887bbeb](https://github.com/littleCareless/dish-ai-commit/commit/887bbeb))
+
 # 0.20.0 (2025-06-10)
 
 ### ✨ Features
