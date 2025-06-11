@@ -1,7 +1,8 @@
 import { ConfigurationManager } from "../../config/configuration-manager";
-import { AIModel, AIRequestParams } from "../types";
+import { AIModel, AIRequestParams, type AIProviders } from "../types";
 import { AbstractAIProvider } from "./abstract-ai-provider";
 import { GenerationConfig, GoogleGenAI, Part } from "@google/genai";
+import type { OpenAIProviderConfig } from "./base-openai-provider";
 
 /**
  * Gemini支持的AI模型配置列表
@@ -87,9 +88,13 @@ const geminiModels: AIModel[] = [
  */
 export class GeminiAIProvider extends AbstractAIProvider {
   private genAI: GoogleGenAI | undefined;
-  private apiKey: string;
-  private models: AIModel[];
-  private defaultModelId: string;
+  /** 提供者标识信息 */
+  readonly provider = {
+    id: "gemini" as AIProviders,
+    name: "Gemini",
+  } as const;
+  /** 提供者配置信息 */
+  protected config: OpenAIProviderConfig;
 
   /**
    * 创建Gemini AI提供者实例
@@ -98,13 +103,18 @@ export class GeminiAIProvider extends AbstractAIProvider {
   constructor() {
     super();
     const configManager = ConfigurationManager.getInstance();
-    this.apiKey = configManager.getConfig("PROVIDERS_GEMINI_APIKEY");
-    this.models = geminiModels;
-    this.defaultModelId = "gemini-1.5-flash";
+    this.config = {
+      apiKey: configManager.getConfig("PROVIDERS_GEMINI_APIKEY"),
+      baseURL: "https://api.gemini.com/",
+      providerId: "gemini",
+      providerName: "Gemini",
+      models: geminiModels,
+      defaultModel: "gemini-1.5-flash",
+    };
 
-    if (this.apiKey) {
+    if (this.config.apiKey) {
       this.genAI = new GoogleGenAI({
-        apiKey: this.apiKey,
+        apiKey: this.config.apiKey,
       });
     }
   }
@@ -131,21 +141,7 @@ export class GeminiAIProvider extends AbstractAIProvider {
     }
 
     // 获取模型ID
-    const modelId = (params.model?.id || this.defaultModelId) as string;
-
-    // 创建生成配置
-    // const generationConfig: GenerationConfig = {
-    //   temperature: options?.temperature || 0.7,
-    //   topK: 40,
-    //   topP: 0.95,
-    //   maxOutputTokens: options?.maxTokens || 8000,
-    // };
-
-    // 创建模型实例
-    // const model = this.genAI.getGenerativeModel({
-    //   model: modelId,
-    //   generationConfig,
-    // });
+    const modelId = (params.model?.id || this.config.defaultModel) as string;
 
     // 合并用户输入和提示
     const combinedUserContent = [userPrompt, userContent]
@@ -199,7 +195,7 @@ export class GeminiAIProvider extends AbstractAIProvider {
       );
     }
 
-    const modelId = (params.model?.id || this.defaultModelId) as string;
+    const modelId = (params.model?.id || this.config.defaultModel) as string;
     const combinedUserContent = [userPrompt, userContent]
       .filter(Boolean)
       .join("\n\n");
@@ -267,23 +263,68 @@ export class GeminiAIProvider extends AbstractAIProvider {
    * 获取默认模型
    */
   protected getDefaultModel(): AIModel {
-    const defaultModel = this.models.find((m) => m.default) || this.models[0];
+    const defaultModel =
+      this.config.models.find((m) => m.default) || this.config.models[0];
     return defaultModel;
   }
 
   /**
    * 获取当前支持的AI模型列表
    */
+  /**
+   * 获取当前支持的AI模型列表
+   * 优先从API获取，如果失败则返回配置的静态列表
+   *
+   * @returns Promise<AIModel[]> 支持的模型配置数组
+   */
   async getModels(): Promise<AIModel[]> {
-    return Promise.resolve(this.models);
-  }
+    if (!this.genAI) {
+      throw new Error(
+        "Gemini API client not initialized. Please check your API key."
+      );
+    }
 
+    try {
+      // 尝试通过 API 获取模型列表
+      const pager = await this.genAI.models.list({
+        config: { pageSize: 20 }, // 可根据需要设置 pageSize
+      });
+
+      const models: AIModel[] = [];
+
+      // 通过 Pager 迭代器遍历所有分页结果
+      for await (const model of pager) {
+        // 只取模型名（去掉 models/）
+        const modelId = model.name ? model.name.replace(/^models\//, "") : "";
+
+        // 解析并组装 AIModel
+        models.push({
+          id: modelId as any,
+          name: model.displayName || modelId,
+          maxTokens: {
+            input: model.inputTokenLimit || 4096,
+            output: Math.floor((model.outputTokenLimit || 4096) / 2),
+          },
+          provider: {
+            id: this.provider.id as AIProviders,
+            name: this.provider.name,
+          },
+        });
+      }
+
+      return models;
+    } catch (error) {
+      // 如果通过 API 获取失败，则返回配置的静态列表
+      console.warn("获取模型列表失败：", this.config.providerName, error);
+      return this.config.models;
+    }
+  }
   /**
    * 检查Gemini服务是否可用
    * @returns 如果API密钥已配置返回true
    */
   async isAvailable(): Promise<boolean> {
-    return !!this.apiKey;
+    return !!this.config.apiKey;
   }
 
   /**
@@ -291,7 +332,7 @@ export class GeminiAIProvider extends AbstractAIProvider {
    * @returns 返回预定义的模型ID列表
    */
   async refreshModels(): Promise<string[]> {
-    return Promise.resolve(this.models.map((m) => m.id));
+    return Promise.resolve(this.config.models.map((m) => m.id));
   }
 
   /**
