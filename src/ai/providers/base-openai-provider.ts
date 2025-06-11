@@ -242,7 +242,7 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
         },
       }));
     } catch (error) {
-      console.warn("Failed to fetch models:", error);
+      console.warn("Failed to fetch models: ", this.config.providerName, error);
       return this.config.models;
     }
   }
