@@ -432,6 +432,100 @@ export class SvnProvider implements ISCMProvider {
     }
   }
 
+  /**
+   * 获取提交日志 (占位符实现)
+   * @param baseBranch - 基础分支 (SVN中通常不直接使用此概念进行日志比较)
+   * @param headBranch - 当前分支 (SVN中通常不直接使用此概念进行日志比较)
+   * @returns 返回一个空数组，因为SVN的日志获取逻辑与Git不同，此处仅为满足接口要求
+   */
+  async getCommitLog(
+    baseRevisionInput?: string, // 对应 GitProvider 中的 baseBranch，代表较旧的修订
+    headRevisionInput: string = "HEAD" // 对应 GitProvider 中的 headBranch，代表较新的修订，默认为 HEAD
+  ): Promise<string[]> {
+    if (!this.initialized) {
+      throw new Error(getMessage("svn.not.initialized"));
+    }
+
+    try {
+      let commandArgs = "";
+      // TODO: 从配置中读取 commitLogLimit，如果用户未配置，则使用默认值
+      const limit = vscode.workspace.getConfiguration("svn-commit-gen").get<number>("commitLogLimit") || 20;
+
+      if (baseRevisionInput) {
+        // 指定了范围: baseRevisionInput (较旧) 到 headRevisionInput (较新)
+        // 我们希望结果是最新提交优先, 所以使用 -r NEWER_REV:OLDER_REV
+        commandArgs = `-r ${headRevisionInput}:${baseRevisionInput}`;
+      } else {
+        // 未指定 baseRevisionInput, 获取最近的日志
+        if (headRevisionInput === "HEAD") {
+          commandArgs = `-l ${limit}`; // 获取 HEAD 的最近 'limit' 条日志
+        } else {
+          // 获取以 headRevisionInput 为终点的最近 'limit' 条日志
+          // svn log -r REV:1 -l N 会给出从 REV 向旧追溯的 N 条日志
+          commandArgs = `-r ${headRevisionInput}:1 -l ${limit}`;
+        }
+      }
+
+      const command = `"${this.svnPath}" log ${commandArgs} "${this.workspaceRoot}"`;
+      Logger.log(LogLevel.Info, `Executing SVN log command: ${command}`);
+
+      const { stdout } = await exec(command, {
+        cwd: this.workspaceRoot,
+        maxBuffer: 1024 * 1024 * 10, // 10MB buffer
+        env: this.getEnvironmentConfig(),
+      });
+
+      if (!stdout.trim()) {
+        return [];
+      }
+
+      // 解析 SVN log 输出
+      const rawLog = stdout;
+      const commitMessages: string[] = [];
+      // SVN 日志条目由 "------------------------------------------------------------------------" 分隔
+      // 使用正则表达式确保正确分割，并处理多行情况
+      const entries = rawLog.split(/^------------------------------------------------------------------------$/m);
+
+      for (const rawEntry of entries) {
+        const entry = rawEntry.trim();
+        if (!entry) {
+          continue;
+        }
+
+        const lines = entry.split('\n');
+        // 第一行应该是修订版本头信息 (例如: r123 | author | date | N lines)
+        if (lines.length === 0 || !lines[0].match(/^r\d+\s+\|/)) {
+          continue; // 不是有效的日志条目头
+        }
+
+        // 确定实际提交信息的起始行
+        let messageStartIndex = 1; // 假设信息在头信息之后的第一行
+        if (lines.length > 1 && lines[messageStartIndex].trim() === "") {
+          messageStartIndex++; // 如果头信息后是空行，则跳过空行
+        }
+
+        if (messageStartIndex < lines.length) {
+          const message = lines.slice(messageStartIndex).join('\n').trim();
+          if (message) {
+            commitMessages.push(message);
+          }
+        }
+      }
+      // `svn log -r NEWER:OLDER` 或 `svn log -l LIMIT` 通常已经是最新优先，无需反转
+      return commitMessages;
+
+    } catch (error) {
+      Logger.log(LogLevel.Error, "SVN log failed:", error);
+      if (error instanceof Error) {
+        // 确保 i18n 文件中有 "svn.log.failed" 键
+        vscode.window.showErrorMessage(
+          formatMessage("svn.log.failed", [error.message])
+        );
+      }
+      return []; // 类似 git-provider，在错误时返回空数组
+    }
+  }
+
   // /**
   //  * 向提交输入框追加内容 (流式) - 在当前单方法流式模型下未使用
   //  * @param {string} chunk - 要追加的文本块

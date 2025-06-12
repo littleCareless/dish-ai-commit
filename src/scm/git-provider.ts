@@ -409,6 +409,117 @@ export class GitProvider implements ISCMProvider {
     repository.inputBox.value = message;
   }
 
+  /**
+   * 获取提交日志
+   * @param baseBranch - 基础分支，默认为 origin/main
+   * @param headBranch - 当前分支，默认为 HEAD
+   * @returns 返回提交信息列表
+   */
+  async getCommitLog(
+    baseBranch = "origin/main",
+    headBranch = "HEAD"
+  ): Promise<string[]> {
+    try {
+      // 确保基础分支存在
+      try {
+        await exec(`git show-ref --verify --quiet refs/remotes/${baseBranch}`, { cwd: this.workspaceRoot });
+      } catch (error) {
+        // 如果远程分支不存在，尝试本地分支
+        try {
+          await exec(`git show-ref --verify --quiet refs/heads/${baseBranch.replace('origin/', '')}`, { cwd: this.workspaceRoot });
+          baseBranch = baseBranch.replace('origin/', ''); // 更新为本地分支名
+        } catch (localError) {
+          console.warn(formatMessage("git.base.branch.not.found", [baseBranch]));
+          // 尝试使用默认的 main 或者 master
+          const commonBranches = ["main", "master"];
+          let foundCommonBranch = false;
+          for (const branch of commonBranches) {
+            try {
+              await exec(`git show-ref --verify --quiet refs/remotes/origin/${branch}`, { cwd: this.workspaceRoot });
+              baseBranch = `origin/${branch}`;
+              foundCommonBranch = true;
+              break;
+            } catch {
+              try {
+                await exec(`git show-ref --verify --quiet refs/heads/${branch}`, { cwd: this.workspaceRoot });
+                baseBranch = branch;
+                foundCommonBranch = true;
+                break;
+              } catch {
+                // 继续尝试下一个
+              }
+            }
+          }
+          if (!foundCommonBranch) {
+            vscode.window.showWarningMessage(formatMessage("git.base.branch.not.found.default", [baseBranch]));
+            // 如果都找不到，可能需要用户手动指定，或者抛出错误
+            // 这里我们暂时返回空数组，并在日志中记录
+            console.error(formatMessage("git.base.branch.not.found.error", [baseBranch]));
+            return [];
+          }
+        }
+      }
+
+      const command = `git log ${baseBranch}..${headBranch} --pretty=format:"%s" --no-merges`;
+      const { stdout } = await exec(command, {
+        cwd: this.workspaceRoot,
+        maxBuffer: 1024 * 1024 * 10, // 10MB buffer
+      });
+
+      if (!stdout.trim()) {
+        return [];
+      }
+
+      return stdout.split("\n").filter((line) => line.trim() !== "");
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error("Git log error:", error);
+        vscode.window.showErrorMessage(
+          formatMessage("git.log.failed", [error.message])
+        );
+      }
+      // 对于获取日志失败的情况，返回空数组而不是抛出错误，让调用者处理
+      return [];
+    }
+  }
+
+  /**
+   * 获取所有本地和远程分支的列表
+   * @returns 返回分支名称列表
+   */
+  async getBranches(): Promise<string[]> {
+    try {
+      const command = `git branch -a --format="%(refname:short)"`;
+      const { stdout } = await exec(command, {
+        cwd: this.workspaceRoot,
+        maxBuffer: 1024 * 1024 * 1, // 1MB buffer, should be enough for branch names
+      });
+
+      if (!stdout.trim()) {
+        return [];
+      }
+
+      // 清理分支名称，移除可能存在的 "remotes/" 前缀，并去重
+      const branches = stdout
+        .split("\n")
+        .map((branch) => branch.trim())
+        .filter((branch) => branch && !branch.includes("->")) // 过滤掉 HEAD 指向等特殊行
+        .map((branch) => branch.replace(/^remotes\//, '')) // 移除 remotes/ 前缀，方便用户选择
+        .filter((branch, index, self) => self.indexOf(branch) === index); // 去重
+
+      return branches.sort(); // 排序方便查找
+    } catch (error) {
+      if (error instanceof Error) {
+        console.error("Git branch list error:", error);
+        // 考虑添加一个新的 i18n key for this error
+        vscode.window.showErrorMessage(
+          formatMessage("git.branch.list.failed", [error.message]) // 假设有这个key
+        );
+      }
+      return [];
+    }
+  }
+
   // /**
   //  * 向提交输入框追加内容 (流式) - 在当前单方法流式模型下未使用
   //  * @param {string} chunk - 要追加的文本块
