@@ -222,6 +222,32 @@ export const CONFIG_SCHEMA = {
           "Custom system prompt for branch name generation / 分支名称生成的自定义系统提示语",
       },
     },
+    prSummary: {
+      baseBranch: {
+        type: "string",
+        default: "origin/main",
+        description:
+          "Base branch for comparing commits to generate PR summary / 用于比较提交以生成PR摘要的基础分支",
+      },
+      headBranch: {
+        type: "string",
+        default: "HEAD",
+        description:
+          "Head branch for comparing commits to generate PR summary / 用于比较提交以生成PR摘要的头部分支",
+      },
+      systemPrompt: {
+        type: "string",
+        default: "",
+        description:
+          "Custom system prompt for PR summary generation / PR摘要生成的自定义系统提示语",
+      },
+      commitLogLimit: {
+        type: "number",
+        default: 20,
+        description:
+          "The maximum number of commit logs to fetch for SVN when no specific range is provided. / 当未提供特定范围时，为 SVN 获取提交日志的最大数量。",
+      },
+    },
   },
 } as const;
 
