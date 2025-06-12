@@ -7,6 +7,7 @@ import {
 } from "../types";
 import { AbstractAIProvider } from "./abstract-ai-provider";
 import { getMessage } from "../../utils/i18n";
+import { getPRSummarySystemPrompt, getPRSummaryUserPrompt } from "../../prompt/pr-summary";
 
 export class VSCodeProvider extends AbstractAIProvider {
   private readonly provider = {
@@ -200,4 +201,33 @@ export class VSCodeProvider extends AbstractAIProvider {
   }
 
   dispose() {}
+
+  /**
+   * 生成PR摘要
+   * @param params AI请求参数
+   * @param commitMessages 提交信息列表
+   * @returns AI响应
+   */
+  async generatePRSummary(
+    params: AIRequestParams,
+    commitMessages: string[]
+  ): Promise<AIResponse> {
+    const systemPrompt =
+      params.systemPrompt ||
+      getPRSummarySystemPrompt(params.language);
+    const userPrompt = getPRSummaryUserPrompt(params.language);
+    const userContent = `- ${commitMessages.join("\n- ")}`;
+
+    const response = await this.executeAIRequest(
+      systemPrompt,
+      userPrompt,
+      userContent,
+      params
+    );
+
+    // The `usage` property from `executeAIRequest` in VSCodeProvider is currently undefined.
+    // If usage data becomes available from the VSCode LM API and is populated in `executeAIRequest`,
+    // it will be correctly passed through here.
+    return { content: response.content, usage: response.usage };
+  }
 }

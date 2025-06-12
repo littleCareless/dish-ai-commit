@@ -10,6 +10,7 @@ import {
 import { AbstractAIProvider } from "./abstract-ai-provider";
 import { ConfigurationManager } from "../../config/configuration-manager";
 import { notify } from "../../utils/notification/notification-manager";
+import { getPRSummarySystemPrompt, getPRSummaryUserPrompt } from "../../prompt/pr-summary";
 
 /**
  * Ollama AI服务提供者实现类
@@ -251,4 +252,30 @@ export class OllamaProvider extends AbstractAIProvider {
    * 资源释放
    */
   dispose() {}
+
+  /**
+   * 生成PR摘要
+   * @param params AI请求参数
+   * @param commitMessages 提交信息列表
+   * @returns AI响应
+   */
+  async generatePRSummary(
+    params: AIRequestParams,
+    commitMessages: string[]
+  ): Promise<AIResponse> {
+    const systemPrompt =
+      params.systemPrompt ||
+      getPRSummarySystemPrompt(params.language);
+    const userPrompt = getPRSummaryUserPrompt(params.language);
+    const userContent = `- ${commitMessages.join("\n- ")}`;
+
+    const response = await this.executeAIRequest(
+      systemPrompt,
+      userPrompt,
+      userContent,
+      params
+    );
+
+    return { content: response.content, usage: response.usage };
+  }
 }

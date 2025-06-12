@@ -3,6 +3,7 @@ import { AIModel, AIRequestParams, type AIProviders } from "../types";
 import { AbstractAIProvider } from "./abstract-ai-provider";
 import { GenerationConfig, GoogleGenAI, Part } from "@google/genai";
 import type { OpenAIProviderConfig } from "./base-openai-provider";
+import { getPRSummarySystemPrompt, getPRSummaryUserPrompt } from "../../prompt/pr-summary";
 
 /**
  * Gemini支持的AI模型配置列表
@@ -348,4 +349,36 @@ export class GeminiAIProvider extends AbstractAIProvider {
   getId(): string {
     return "gemini";
   }
+
+  /**
+   * 生成PR摘要 (占位符实现)
+   * @param params AI请求参数
+   * @param commitMessages 提交信息列表
+   * @returns AI响应
+   */
+  async generatePRSummary(
+    params: AIRequestParams,
+    commitMessages: string[]
+  ): Promise<import("../types").AIResponse> {
+    console.warn(
+      "generatePRSummary is not fully implemented for GeminiAIProvider and will return an empty response."
+    );
+    const systemPrompt =
+      params.systemPrompt ||
+      getPRSummarySystemPrompt(params.language);
+    const userPrompt = getPRSummaryUserPrompt(params.language);
+    const userContent = commitMessages.join("\n- ");
+
+    // Gemini的executeAIRequest会将userPrompt和userContent合并
+    // 所以这里我们将commit列表作为userContent，userPrompt作为引导
+    const response = await this.executeAIRequest(
+      systemPrompt,
+      userPrompt,
+      `- ${userContent}`, // 添加引导，与base-openai-provider保持一致
+      params
+    );
+
+    return { content: response.content, usage: response.usage };
+  }
+
 }

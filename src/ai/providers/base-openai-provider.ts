@@ -1,6 +1,10 @@
 import OpenAI from "openai";
 import { ChatCompletionMessageParam } from "openai/resources";
 import {
+  getPRSummarySystemPrompt,
+  getPRSummaryUserPrompt,
+} from "../../prompt/pr-summary";
+import {
   AIProvider,
   AIRequestParams,
   AIResponse,
@@ -311,4 +315,51 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
    * 需要由具体提供者实现
    */
   abstract isAvailable(): Promise<boolean>;
+
+  /**
+   * 生成PR摘要
+   * @param params AI请求参数
+   * @param commitMessages 提交信息列表
+   * @returns AI响应
+   */
+  async generatePRSummary(
+    params: AIRequestParams,
+    commitMessages: string[]
+  ): Promise<AIResponse> {
+    const systemPrompt =
+      params.systemPrompt || getPRSummarySystemPrompt(params.language); // 使用新的方法生成系统提示
+    const userPrompt = getPRSummaryUserPrompt(params.language);
+
+    // PR摘要通常不需要原始diff，而是commit列表
+    // userContent 可以是commit列表的字符串形式，或者根据需要调整
+    const userContent = commitMessages.join("\n- ");
+
+    // PR 摘要生成不直接依赖于单个 diff 字符串的截断，
+    // 但我们仍然可以使用 generateWithRetry 来处理 API 错误等。
+    // initialMaxLength 可以基于 commitMessages 的总长度。
+    const commitMessagesString = commitMessages.join("\n- ");
+    return generateWithRetry(
+      // AIRequestParams，其中 diff 字段可以为空或设为 commitMessagesString
+      {
+        ...params,
+        diff: commitMessagesString,
+        additionalContext: commitMessagesString,
+      },
+      async (_truncatedContent: string) => {
+        // generateFn 现在接收一个参数，但我们在这里不直接使用它
+        const response = await this.executeAIRequest(
+          systemPrompt,
+          userPrompt,
+          `- ${userContent}`, // 添加引导
+          params
+        );
+        return { content: response.content, usage: response.usage };
+      },
+      {
+        initialMaxLength: commitMessagesString.length, // 基于 commit 消息的总长度
+        provider: this.getId(), // 或者 params.model?.provider?.id
+        // reductionFactor 和 retryableErrors 可以使用默认值或根据需要调整
+      }
+    );
+  }
 }
