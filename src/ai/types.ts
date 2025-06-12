@@ -168,6 +168,11 @@ export interface AIProvider {
     model?: AIModel,
     users?: string[] // 新增可选的 users 参数
   ): Promise<AIResponse>;
+  /** 生成PR摘要 */
+  generatePRSummary?(
+    params: AIRequestParams,
+    commitMessages: string[]
+  ): Promise<AIResponse>;
   /** 检查服务可用性 */
   isAvailable(): Promise<boolean>;
   /** 刷新可用模型列表 */
