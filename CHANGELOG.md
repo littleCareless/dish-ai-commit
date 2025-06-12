@@ -6,6 +6,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.20.2 (2025-06-12)
+
+### 🎫 Chores
+
+- **vscode**: Add images/demo.gif to ignore list ([e0938ba](https://github.com/littleCareless/dish-ai-commit/commit/e0938ba))
+
+### 🐛 Bug Fixes
+
+- **build**: Fix dependency and Node engine compatibility issues ([d1f8daa](https://github.com/littleCareless/dish-ai-commit/commit/d1f8daa))
+
+- **core**: Improve command usability and update to 0.20.1 version ([de573b0](https://github.com/littleCareless/dish-ai-commit/commit/de573b0))
+
 ## 0.20.1 (2025-06-11)
 
 ### ♻ Code Refactoring
