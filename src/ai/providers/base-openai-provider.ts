@@ -13,7 +13,7 @@ import {
   type AIProviders,
 } from "../types";
 import { AbstractAIProvider } from "./abstract-ai-provider";
-import { generateWithRetry } from "../utils/generate-helper";
+import { generateWithRetry, getSystemPrompt } from "../utils/generate-helper"; // Import getSystemPrompt
 
 /**
  * OpenAI提供者配置项接口
@@ -141,20 +141,27 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
    * 调用OpenAI API执行流式请求并逐步返回结果
    */
   protected async executeAIStreamRequest(
-    systemPrompt: string,
-    userPrompt: string,
-    userContent: string,
     params: AIRequestParams,
     options?: {
       temperature?: number;
       maxTokens?: number;
     }
   ): Promise<AsyncIterable<string>> {
+    const systemPrompt = getSystemPrompt(params);
+    const userPrompt = params.additionalContext || "";
+    const userContent = params.diff;
+
+    // console.log("Derived prompts for stream:", { systemPrompt, userPrompt, userContent });
+
     const messages: ChatCompletionMessageParam[] = [
       { role: "system", content: systemPrompt },
       { role: "user", content: userContent },
-      { role: "user", content: userPrompt },
     ];
+    // Only add userPrompt if it's not empty
+    if (userPrompt) {
+      messages.push({ role: "user", content: userPrompt });
+    }
+
     const filteredMessages = messages.filter((msg) => {
       if (typeof msg.content === "string") {
         return msg.content.trim() !== "";

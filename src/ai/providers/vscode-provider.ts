@@ -7,7 +7,11 @@ import {
 } from "../types";
 import { AbstractAIProvider } from "./abstract-ai-provider";
 import { getMessage } from "../../utils/i18n";
-import { getPRSummarySystemPrompt, getPRSummaryUserPrompt } from "../../prompt/pr-summary";
+import {
+  getPRSummarySystemPrompt,
+  getPRSummaryUserPrompt,
+} from "../../prompt/pr-summary";
+import { getSystemPrompt } from "../utils/generate-helper"; // Import getSystemPrompt
 
 export class VSCodeProvider extends AbstractAIProvider {
   private readonly provider = {
@@ -109,15 +113,16 @@ export class VSCodeProvider extends AbstractAIProvider {
    * 使用VS Code Language Model API执行请求并流式返回结果
    */
   protected async executeAIStreamRequest(
-    systemPrompt: string,
-    userPrompt: string,
-    userContent: string,
     params: AIRequestParams,
     options?: {
       temperature?: number;
       maxTokens?: number;
     }
   ): Promise<AsyncIterable<string>> {
+    const systemPrompt = getSystemPrompt(params);
+    const userPrompt = params.additionalContext || "";
+    const userContent = params.diff;
+
     const models = await vscode.lm.selectChatModels();
     if (!models || models.length === 0) {
       throw new Error(getMessage("vscode.no.models.available"));
@@ -129,8 +134,10 @@ export class VSCodeProvider extends AbstractAIProvider {
     const messages = [
       vscode.LanguageModelChatMessage.User(systemPrompt),
       vscode.LanguageModelChatMessage.User(userContent),
-      vscode.LanguageModelChatMessage.User(userPrompt ?? ""),
     ];
+    if (userPrompt) {
+      messages.push(vscode.LanguageModelChatMessage.User(userPrompt));
+    }
 
     const response = await chatModel.sendRequest(messages, {
       modelOptions: {
@@ -213,8 +220,7 @@ export class VSCodeProvider extends AbstractAIProvider {
     commitMessages: string[]
   ): Promise<AIResponse> {
     const systemPrompt =
-      params.systemPrompt ||
-      getPRSummarySystemPrompt(params.language);
+      params.systemPrompt || getPRSummarySystemPrompt(params.language);
     const userPrompt = getPRSummaryUserPrompt(params.language);
     const userContent = `- ${commitMessages.join("\n- ")}`;
 

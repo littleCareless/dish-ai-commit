@@ -3,7 +3,11 @@ import { AIModel, AIRequestParams, type AIProviders } from "../types";
 import { AbstractAIProvider } from "./abstract-ai-provider";
 import { GenerationConfig, GoogleGenAI, Part } from "@google/genai";
 import type { OpenAIProviderConfig } from "./base-openai-provider";
-import { getPRSummarySystemPrompt, getPRSummaryUserPrompt } from "../../prompt/pr-summary";
+import {
+  getPRSummarySystemPrompt,
+  getPRSummaryUserPrompt,
+} from "../../prompt/pr-summary";
+import { getSystemPrompt } from "../utils/generate-helper"; // Import getSystemPrompt
 
 /**
  * Gemini支持的AI模型配置列表
@@ -181,9 +185,6 @@ export class GeminiAIProvider extends AbstractAIProvider {
    * 使用Google Generative AI库发送流式请求并逐步返回结果
    */
   protected async executeAIStreamRequest(
-    systemPrompt: string,
-    userPrompt: string,
-    userContent: string,
     params: AIRequestParams,
     options?: {
       temperature?: number;
@@ -196,10 +197,25 @@ export class GeminiAIProvider extends AbstractAIProvider {
       );
     }
 
+    const systemPrompt = getSystemPrompt(params);
+    const userPrompt = params.additionalContext || "";
+    const userContent = params.diff;
+
     const modelId = (params.model?.id || this.config.defaultModel) as string;
-    const combinedUserContent = [userPrompt, userContent]
-      .filter(Boolean)
-      .join("\n\n");
+
+    // 构建 Gemini 的 contents 数组
+    // Gemini 通常将 systemPrompt 作为 systemInstruction，用户输入作为 contents
+    const contents: Part[] = [];
+    if (userPrompt) {
+      contents.push({ text: userPrompt });
+    }
+    if (userContent) {
+      contents.push({ text: userContent });
+    }
+    // 如果 userPrompt 和 userContent 都为空，至少需要一个空的 text part
+    if (contents.length === 0) {
+      contents.push({ text: "" });
+    }
 
     const processStream = async function* (
       this: GeminiAIProvider
@@ -207,19 +223,12 @@ export class GeminiAIProvider extends AbstractAIProvider {
       try {
         const streamResult = await this.genAI!.models.generateContentStream({
           model: modelId,
-          contents: [
-            // 将 systemPrompt 作为对话历史的第一个用户部分
-            // 注意: Gemini API 对 system prompt 的处理可能需要特定的 'systemInstruction' 参数，
-            // 或者将其作为 'contents' 数组的第一个元素，角色可能需要调整。
-            // 当前实现将其作为第一个 'user' 消息。
-            { role: "user", parts: [{ text: systemPrompt }] },
-            { role: "user", parts: [{ text: combinedUserContent }] },
-          ],
+          // contents: [{ role: "user", parts: [{ text: combinedUserContent }] }], // 旧方式
+          contents: [{ role: "user", parts: contents }], // 新方式，使用构建好的 parts
           config: {
-            // 保持 'config' 对象
+            systemInstruction: systemPrompt, // 将 systemPrompt 作为 systemInstruction
             temperature: options?.temperature || 0.7,
             // maxOutputTokens: options?.maxTokens, // 如果SDK支持，可以取消注释
-            // systemInstruction: { parts: [{ text: systemPrompt }], role: "system" } // 另一种可能的系统提示方式, 需确认是否在 config 内
           },
         });
 
@@ -364,8 +373,7 @@ export class GeminiAIProvider extends AbstractAIProvider {
       "generatePRSummary is not fully implemented for GeminiAIProvider and will return an empty response."
     );
     const systemPrompt =
-      params.systemPrompt ||
-      getPRSummarySystemPrompt(params.language);
+      params.systemPrompt || getPRSummarySystemPrompt(params.language);
     const userPrompt = getPRSummaryUserPrompt(params.language);
     const userContent = commitMessages.join("\n- ");
 
@@ -380,5 +388,4 @@ export class GeminiAIProvider extends AbstractAIProvider {
 
     return { content: response.content, usage: response.usage };
   }
-
 }
