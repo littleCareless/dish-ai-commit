@@ -6,6 +6,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.21.0 (2025-06-13)
+
+### ✨ Features
+
+- **ai-provider**: 为 AI 提供程序实现 PR 摘要生成功能 ([c0c9d48](https://github.com/littleCareless/dish-ai-commit/commit/c0c9d48))
+- **config**: 添加 PR 摘要配置选项 ([d933c69](https://github.com/littleCareless/dish-ai-commit/commit/d933c69))
+- **extension**: 添加生成 PR 摘要功能 ([d9b1d21](https://github.com/littleCareless/dish-ai-commit/commit/d9b1d21))
+- **pr-summary**: 添加生成 PR 摘要功能 ([5867855](https://github.com/littleCareless/dish-ai-commit/commit/5867855))
+- **pr-summary**: 添加生成 PR 摘要功能 ([78c92c1](https://github.com/littleCareless/dish-ai-commit/commit/78c92c1))
+- **scm**: 新增获取提交日志与分支列表功能 ([be86233](https://github.com/littleCareless/dish-ai-commit/commit/be86233))
+
+### 🎫 Chores
+
+- **i18n**: 更新国际化文件，支持 PR 摘要等新功能 ([9a29abb](https://github.com/littleCareless/dish-ai-commit/commit/9a29abb))
+- **release**: 发布 0.20.2 版本 ([08a3d09](https://github.com/littleCareless/dish-ai-commit/commit/08a3d09))
+
 ## 0.20.2 (2025-06-12)
 
 ### 🎫 Chores
