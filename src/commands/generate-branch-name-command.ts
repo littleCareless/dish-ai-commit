@@ -21,6 +21,9 @@ export class GenerateBranchNameCommand extends BaseCommand {
   async execute(
     resources?: vscode.SourceControlResourceState[]
   ): Promise<void> {
+    if (!(await this.showConfirmAIProviderToS())) {
+      return;
+    }
     const configResult = await this.handleConfiguration();
     if (!configResult) {
       return;
@@ -30,73 +33,92 @@ export class GenerateBranchNameCommand extends BaseCommand {
     let { provider, model } = configResult;
 
     try {
-      const { aiProvider, selectedModel } = await validateAndGetModel(
-        provider,
-        model
-      );
-
-      let aiInputContent: string | undefined;
-      // Default SCM context for description mode, real provider for SCM mode
-      let scmProviderForContext: { type: string; [key: string]: any } = { type: "git" };
-      let progressMessageKeyGettingContent = "processing.description"; // i18n key
-      let progressMessageKeyAnalyzing = "analyzing.description"; // i18n key
-
-      if (resources && resources.length > 0) {
-        // SCM Mode
-        progressMessageKeyGettingContent = "getting.file.changes";
-        progressMessageKeyAnalyzing = "analyzing.code.changes";
-
-        const selectedFiles = this.getSelectedFiles(resources);
-        if (!selectedFiles || selectedFiles.length === 0) {
-          await notify.warn("no.changes.selected");
-          return;
-        }
-
-        const detectedScmProvider = await this.detectSCMProvider(selectedFiles);
-        if (!detectedScmProvider) {
-          // detectSCMProvider usually shows a notification if it fails
-          return;
-        }
-        if (detectedScmProvider.type !== "git") {
-          await notify.warn("branch.name.git.only");
-          return;
-        }
-        scmProviderForContext = detectedScmProvider; // Store the real SCM provider
-
-        aiInputContent = await detectedScmProvider.getDiff(selectedFiles);
-        if (!aiInputContent) {
-          await notify.warn(getMessage("no.changes.found"));
-          return;
-        }
-      } else {
-        // Description Mode (triggered from Command Palette)
-        const description = await vscode.window.showInputBox({
-          prompt: getMessage("enter.branch.description.prompt"), // New i18n key
-          placeHolder: getMessage("enter.branch.description.placeholder"), // New i18n key
-          ignoreFocusOut: true,
-        });
-
-        if (!description || description.trim() === "") {
-          notify.info(getMessage("branch.description.cancelled")); // New i18n key
-          return;
-        }
-        aiInputContent = description;
-        // scmProviderForContext remains { type: "git" } as set by default
-      }
-
-      if (!aiInputContent) {
-        // This case should ideally not be reached if logic above is correct
-        await notify.error(getMessage("internal.error.no.ai.input")); // New i18n key
-        return;
-      }
-
       await withProgress(
         getMessage("generating.branch.name"),
         async (progress) => {
           progress.report({
-            increment: 10,
-            message: getMessage(progressMessageKeyGettingContent),
+            increment: 5,
+            message: getMessage("validating.model"),
           });
+          const { aiProvider, selectedModel } = await validateAndGetModel(
+            provider,
+            model
+          );
+
+          let aiInputContent: string | undefined;
+          // Default SCM context for description mode, real provider for SCM mode
+          let scmProviderForContext: { type: string; [key: string]: any } = {
+            type: "git",
+          };
+          let progressMessageKeyGettingContent = "processing.description"; // i18n key
+          let progressMessageKeyAnalyzing = "analyzing.description"; // i18n key
+
+          if (resources && resources.length > 0) {
+            // SCM Mode
+            progressMessageKeyGettingContent = "getting.file.changes";
+            progressMessageKeyAnalyzing = "analyzing.code.changes";
+
+            progress.report({
+              increment: 5,
+              message: getMessage("checking.selected.files"),
+            });
+            const selectedFiles = this.getSelectedFiles(resources);
+            if (!selectedFiles || selectedFiles.length === 0) {
+              await notify.warn("no.changes.selected");
+              return;
+            }
+
+            progress.report({
+              increment: 5,
+              message: getMessage("detecting.scm.provider"),
+            });
+            const detectedScmProvider = await this.detectSCMProvider(
+              selectedFiles
+            );
+            if (!detectedScmProvider) {
+              // detectSCMProvider usually shows a notification if it fails
+              return;
+            }
+            if (detectedScmProvider.type !== "git") {
+              await notify.warn("branch.name.git.only");
+              return;
+            }
+            scmProviderForContext = detectedScmProvider; // Store the real SCM provider
+
+            progress.report({
+              increment: 10,
+              message: getMessage(progressMessageKeyGettingContent),
+            });
+            aiInputContent = await detectedScmProvider.getDiff(selectedFiles);
+            if (!aiInputContent) {
+              await notify.warn(getMessage("no.changes.found"));
+              return;
+            }
+          } else {
+            // Description Mode (triggered from Command Palette)
+            progress.report({
+              increment: 10,
+              message: getMessage(progressMessageKeyGettingContent),
+            });
+            const description = await vscode.window.showInputBox({
+              prompt: getMessage("enter.branch.description.prompt"), // New i18n key
+              placeHolder: getMessage("enter.branch.description.placeholder"), // New i18n key
+              ignoreFocusOut: true,
+            });
+
+            if (!description || description.trim() === "") {
+              notify.info(getMessage("branch.description.cancelled")); // New i18n key
+              return;
+            }
+            aiInputContent = description;
+            // scmProviderForContext remains { type: "git" } as set by default
+          }
+
+          if (!aiInputContent) {
+            // This case should ideally not be reached if logic above is correct
+            await notify.error(getMessage("internal.error.no.ai.input")); // New i18n key
+            return;
+          }
 
           // Generate branch name
           progress.report({
@@ -119,7 +141,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
           }
 
           progress.report({
-            increment: 40,
+            increment: 25, // Adjusted increment
             message: getMessage("preparing.results"),
           });
 

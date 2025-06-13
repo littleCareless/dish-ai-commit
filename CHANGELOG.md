@@ -6,6 +6,85 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.21.1 (2025-06-13)
+
+### ♻ Code Refactoring
+
+- **ai-provider**: Refactor AI provider streaming request parameter processing ([1544c46](https://github.com/littleCareless/dish-ai-commit/commit/1544c46))
+
+- **progress**: Optimize command progress display and user feedback ([1c098fa](https://github.com/littleCareless/dish-ai-commit/commit/1c098fa))
+
+### 🎫 Chores
+
+- **i18n**: Added internationalized text related to PR summary generation progress ([e437a0c](https://github.com/littleCareless/dish-ai-commit/commit/e437a0c))
+
+- **release**: Release 0.21.0 Version ([f79a70c](https://github.com/littleCareless/dish-ai-commit/commit/f79a70c))
+
+# 0.21.0 (2025-06-13)
+
+### ✨ Features
+
+- **ai-provider**: Implement PR summary generation for AI provider ([c0c9d48](https://github.com/littleCareless/dish-ai-commit/commit/c0c9d48))
+- **config**: Add PR summary config option ([d933c69](https://github.com/littleCareless/dish-ai-commit/commit/d933c69))
+- **extension**: Add PR summary generation ([d9b1d21](https://github.com/littleCareless/dish-ai-commit/commit/d9b1d21))
+- **pr-summary**: Add PR summary generation ([5867855](https://github.com/littleCareless/dish-ai-commit/commit/5867855))
+- **pr-summary**: Added the function of generating PR summary ([78c92c1](https://github.com/littleCareless/dish-ai-commit/commit/78c92c1))
+- **scm**: Added the function of obtaining commit log and branch list ([be86233](https://github.com/littleCareless/dish-ai-commit/commit/be86233))
+
+### 🎫 Chores
+
+- **i18n**: Updated internationalization files to support new features such as PR summary ([9a29abb](https://github.com/littleCareless/dish-ai-commit/commit/9a29abb))
+- **release**: Release 0.20.2 version ([08a3d09](https://github.com/littleCareless/dish-ai-commit/commit/08a3d09))
+
+## 0.20.2 (2025-06-12)
+
+### 🎫 Chores
+
+- **vscode**: Add images/demo.gif to ignore list ([e0938ba](https://github.com/littleCareless/dish-ai-commit/commit/e0938ba))
+
+### 🐛 Bug Fixes
+
+- **build**: Fix dependency and Node engine compatibility issues ([d1f8daa](https://github.com/littleCareless/dish-ai-commit/commit/d1f8daa))
+
+- **core**: Improve command usability and update to 0.20.1 version ([de573b0](https://github.com/littleCareless/dish-ai-commit/commit/de573b0))
+
+## 0.20.1 (2025-06-11)
+
+### ♻ Code Refactoring
+
+- **gemini**: Refactor Gemini AI provider ([8469266](https://github.com/littleCareless/dish-ai-commit/commit/8469266))
+
+- **zhipu**: Remove obsolete models ([483bf38](https://github.com/littleCareless/dish-ai-commit/commit/483bf38))
+
+### 🎫 Chores
+
+- **deps**: Downgrade vscode engine and type definition version ([75bb17d](https://github.com/littleCareless/dish-ai-commit/commit/75bb17d))
+
+- **deps**: Update dependencies and remove package-lock.json ([7e5c9e8](https://github.com/littleCareless/dish-ai-commit/commit/7e5c9e8))
+- **model-picker**: Add annotations to model selection logic ([2ec10db](https://github.com/littleCareless/dish-ai-commit/commit/2ec10db))
+- **release**: Release 0.20.0 ([f276e47](https://github.com/littleCareless/dish-ai-commit/commit/f276e47))
+
+### 🐛 Bug Fixes
+
+- **openai**: Fix model acquisition failure log ([887bbeb](https://github.com/littleCareless/dish-ai-commit/commit/887bbeb))
+
+# 0.20.0 (2025-06-10)
+
+### ✨ Features
+
+- **command**: Integrate AI Terms of Service confirmation and support streaming task cancellation ([276f709](https://github.com/littleCareless/dish-ai-commit/commit/276f709))
+- **images**: Add demo GIF images ([33ab53c](https://github.com/littleCareless/dish-ai-commit/commit/33ab53c))
+- **state**: Introduce state management module ([48dd04f](https://github.com/littleCareless/dish-ai-commit/commit/48dd04f))
+
+### 🎫 Chores
+
+- **i18n**: Add localized entries related to AI Terms of Service and user cancellation operations ([ad38e39](https://github.com/littleCareless/dish-ai-commit/commit/ad38e39))
+- **release**: Upgrade version to 0.19.0 and update change log ([1711136](https://github.com/littleCareless/dish-ai-commit/commit/1711136))
+
+### 🐛 Bug Fixes
+
+- **scm**: Fix special character escape of author name in Git log query ([924a7b7](https://github.com/littleCareless/dish-ai-commit/commit/924a7b7))
+
 # 0.19.0 (2025-06-04)
 
 ### ♻ Code Refactoring

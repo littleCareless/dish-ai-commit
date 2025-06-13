@@ -11,6 +11,9 @@ export class GenerateWeeklyReportCommand extends BaseCommand {
    * 打开周报生成WebView面板
    */
   async execute(): Promise<void> {
+    if (!(await this.showConfirmAIProviderToS())) {
+      return;
+    }
     WeeklyReportPanel.createOrShow(this.context.extensionUri, this.context);
   }
 }

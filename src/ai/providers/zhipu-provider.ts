@@ -19,18 +19,6 @@ const zhipuModels: AIModel[] = [
     },
   },
   {
-    id: "glm-4-0520",
-    name: "GLM-4 0520 - 高智能模型: 适用于处理高度复杂和多样化的任务",
-    maxTokens: { input: 128000, output: 8192 },
-    provider: { id: "zhipu", name: "zhipu" },
-  },
-  {
-    id: "glm-4",
-    name: "GLM-4 - 旧版旗舰: 发布于2024年1月16日, 目前已被GLM-4-0520取代",
-    maxTokens: { input: 128000, output: 8192 },
-    provider: { id: "zhipu", name: "zhipu" },
-  },
-  {
     id: "glm-4-air",
     name: "GLM-4 Air - 高性价比: 推理能力和价格之间最平衡的模型",
     maxTokens: { input: 32768, output: 4096 },
@@ -55,7 +43,7 @@ const zhipuModels: AIModel[] = [
     provider: { id: "zhipu", name: "zhipu" },
   },
   {
-    id: "glm-4-flash-250414",
+    id: "glm-4-flash",
     name: "GLM-4 Flash - 免费调用: 智谱AI首个免费API, 零成本调用大模型",
     maxTokens: { input: 32768, output: 4096 },
     provider: { id: "zhipu", name: "zhipu" },

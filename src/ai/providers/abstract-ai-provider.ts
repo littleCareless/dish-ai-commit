@@ -52,34 +52,31 @@ export abstract class AbstractAIProvider implements AIProvider {
       );
     }
   }
-/**
+  /**
    * 生成提交信息 (流式)
    * @param params - AI请求参数
    * @returns 一个Promise，解析为一个异步迭代器，用于逐块生成提交信息
    * @remarks 此方法为新增，AIProvider接口也需要相应更新
    */
-  async generateCommitStream(params: AIRequestParams): Promise<AsyncIterable<string>> {
+  async generateCommitStream(
+    params: AIRequestParams
+  ): Promise<AsyncIterable<string>> {
     try {
-      console.log("params for stream", params);
-      const systemPrompt = getSystemPrompt(params);
       // 注意：流式请求的重试逻辑可能与非流式请求不同。
       // 这里直接调用 executeAIStreamRequest，具体的重试和错误处理
       // 应该在 executeAIStreamRequest 的实现中或专门的流式重试辅助函数中处理。
-      return this.executeAIStreamRequest(
-        systemPrompt,
-        "", // userPrompt
-        params.diff, // userContent
-        params,
-        {
-          temperature: 0.3, // 提交信息推荐温度值 0.3
-          // maxTokens 可以在这里设置，如果需要的话
-        }
-      );
+      // systemPrompt, userPrompt, userContent 将由 executeAIStreamRequest 的实现
+      // 从 params 中获取或计算。
+      return this.executeAIStreamRequest(params, {
+        temperature: 0.3, // 提交信息推荐温度值 0.3
+        // maxTokens 可以在这里设置，如果需要的话
+      });
     } catch (error) {
       // 流的错误可能在迭代过程中发生，这里的 catch 可能只捕获初始设置错误
       // 需要在调用方迭代流时也处理错误
       throw new Error(
-        formatMessage("generation.failed", [ // 或者一个新的i18n key如 "streamGeneration.failed"
+        formatMessage("generation.failed", [
+          // 或者一个新的i18n key如 "streamGeneration.failed"
           error instanceof Error ? error.message : String(error),
         ])
       );
@@ -331,20 +328,18 @@ export abstract class AbstractAIProvider implements AIProvider {
   ): Promise<{ content: string; usage?: any; jsonContent?: any }>;
 
   /**
-   * 需要由具体提供者实现的核心流式方法
-   * 执行AI流式请求并返回一个异步迭代器
+   * 需要由具体提供者实现的核心流式方法。
+   * 执行AI流式请求并返回一个异步迭代器。
+   * 实现类应从此方法内部的 `params` 对象中获取或生成 `systemPrompt`, `userPrompt`, 和 `userContent`。
+   * - `systemPrompt` 通常通过调用 `getSystemPrompt(params)` 生成。
+   * - `userPrompt` 通常取自 `params.additionalContext` (如果存在)，否则为空字符串。
+   * - `userContent` 通常取自 `params.diff`。
    *
-   * @param systemPrompt - 系统提示内容
-   * @param userPrompt - 用户提示内容
-   * @param userContent - 用户内容
-   * @param params - 请求参数
-   * @param options - 额外选项
-   * @returns Promise<AsyncIterable<string>>
+   * @param params - AI请求参数，包含构建提示所需的所有信息及模型配置。
+   * @param options - 额外选项，如 `temperature` 和 `maxTokens`。
+   * @returns 一个Promise，解析为一个异步迭代器，用于逐块生成内容。
    */
   protected abstract executeAIStreamRequest(
-    systemPrompt: string,
-    userPrompt: string,
-    userContent: string,
     params: AIRequestParams,
     options?: {
       temperature?: number;

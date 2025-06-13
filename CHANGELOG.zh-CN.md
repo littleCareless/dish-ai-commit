@@ -6,6 +6,80 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.21.1 (2025-06-13)
+
+### ♻ Code Refactoring
+
+- **ai-provider**: 重构 AI 提供程序流式请求参数处理 ([1544c46](https://github.com/littleCareless/dish-ai-commit/commit/1544c46))
+- **progress**: 优化命令进度显示与用户反馈 ([1c098fa](https://github.com/littleCareless/dish-ai-commit/commit/1c098fa))
+
+### 🎫 Chores
+
+- **i18n**: 新增 PR 摘要生成进度相关的国际化文案 ([e437a0c](https://github.com/littleCareless/dish-ai-commit/commit/e437a0c))
+- **release**: 发布 0.21.0 版本 ([f79a70c](https://github.com/littleCareless/dish-ai-commit/commit/f79a70c))
+
+# 0.21.0 (2025-06-13)
+
+### ✨ Features
+
+- **ai-provider**: 为 AI 提供程序实现 PR 摘要生成功能 ([c0c9d48](https://github.com/littleCareless/dish-ai-commit/commit/c0c9d48))
+- **config**: 添加 PR 摘要配置选项 ([d933c69](https://github.com/littleCareless/dish-ai-commit/commit/d933c69))
+- **extension**: 添加生成 PR 摘要功能 ([d9b1d21](https://github.com/littleCareless/dish-ai-commit/commit/d9b1d21))
+- **pr-summary**: 添加生成 PR 摘要功能 ([5867855](https://github.com/littleCareless/dish-ai-commit/commit/5867855))
+- **pr-summary**: 添加生成 PR 摘要功能 ([78c92c1](https://github.com/littleCareless/dish-ai-commit/commit/78c92c1))
+- **scm**: 新增获取提交日志与分支列表功能 ([be86233](https://github.com/littleCareless/dish-ai-commit/commit/be86233))
+
+### 🎫 Chores
+
+- **i18n**: 更新国际化文件，支持 PR 摘要等新功能 ([9a29abb](https://github.com/littleCareless/dish-ai-commit/commit/9a29abb))
+- **release**: 发布 0.20.2 版本 ([08a3d09](https://github.com/littleCareless/dish-ai-commit/commit/08a3d09))
+
+## 0.20.2 (2025-06-12)
+
+### 🎫 Chores
+
+- **vscode**: 将 images/demo.gif 添加到忽略列表 ([e0938ba](https://github.com/littleCareless/dish-ai-commit/commit/e0938ba))
+
+### 🐛 Bug Fixes
+
+- **build**: 修复依赖和 Node 引擎兼容性问题 ([d1f8daa](https://github.com/littleCareless/dish-ai-commit/commit/d1f8daa))
+- **core**: 改进命令可用性并更新至 0.20.1 版本 ([de573b0](https://github.com/littleCareless/dish-ai-commit/commit/de573b0))
+
+## 0.20.1 (2025-06-11)
+
+### ♻ Code Refactoring
+
+- **gemini**: 重构 Gemini AI 提供者 ([8469266](https://github.com/littleCareless/dish-ai-commit/commit/8469266))
+- **zhipu**: 移除过时模型 ([483bf38](https://github.com/littleCareless/dish-ai-commit/commit/483bf38))
+
+### 🎫 Chores
+
+- **deps**: 降级 vscode 引擎及类型定义版本 ([75bb17d](https://github.com/littleCareless/dish-ai-commit/commit/75bb17d))
+- **deps**: 更新依赖项并删除 package-lock.json ([7e5c9e8](https://github.com/littleCareless/dish-ai-commit/commit/7e5c9e8))
+- **model-picker**: 为模型选择逻辑添加注释 ([2ec10db](https://github.com/littleCareless/dish-ai-commit/commit/2ec10db))
+- **release**: 发布 0.20.0 版本 ([f276e47](https://github.com/littleCareless/dish-ai-commit/commit/f276e47))
+
+### 🐛 Bug Fixes
+
+- **openai**: 修复模型获取失败的日志 ([887bbeb](https://github.com/littleCareless/dish-ai-commit/commit/887bbeb))
+
+# 0.20.0 (2025-06-10)
+
+### ✨ Features
+
+- **command**: 集成 AI 服务条款确认并支持流式任务取消 ([276f709](https://github.com/littleCareless/dish-ai-commit/commit/276f709))
+- **images**: 新增演示 GIF 图像 ([33ab53c](https://github.com/littleCareless/dish-ai-commit/commit/33ab53c))
+- **state**: 引入状态管理模块 ([48dd04f](https://github.com/littleCareless/dish-ai-commit/commit/48dd04f))
+
+### 🎫 Chores
+
+- **i18n**: 添加 AI 服务条款与用户取消操作相关的本地化条目 ([ad38e39](https://github.com/littleCareless/dish-ai-commit/commit/ad38e39))
+- **release**: 升级版本至 0.19.0 并更新变更日志 ([1711136](https://github.com/littleCareless/dish-ai-commit/commit/1711136))
+
+### 🐛 Bug Fixes
+
+- **scm**: 修复 Git 日志查询中作者名特殊字符转义 ([924a7b7](https://github.com/littleCareless/dish-ai-commit/commit/924a7b7))
+
 # 0.19.0 (2025-06-04)
 
 ### ♻ Code Refactoring

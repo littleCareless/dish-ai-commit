@@ -55,6 +55,9 @@ export class GenerateCommitCommand extends BaseCommand {
    * @param resources - 源代码管理资源状态列表
    */
   async execute(resources: vscode.SourceControlResourceState[]): Promise<void> {
+    if (!(await this.showConfirmAIProviderToS())) {
+      return;
+    }
     // 处理配置
     const configResult = await this.handleConfiguration();
     if (!configResult) {
@@ -72,67 +75,72 @@ export class GenerateCommitCommand extends BaseCommand {
         return;
       }
 
-      // 获取当前提交输入框内容
-      const currentInput = await scmProvider.getCommitInput();
-
-      // 获取配置信息以用于后续操作
-      const config = ConfigurationManager.getInstance();
-      const configuration = config.getConfiguration();
-
-      // 获取选中文件的差异信息
-      const diffContent = await scmProvider.getDiff(selectedFiles);
-
-      // 检查是否有变更
-      if (!diffContent) {
-        notify.info("no.changes");
-        throw new Error(getMessage("no.changes"));
-      }
-
-      // 获取和更新AI模型配置
-      const {
-        provider: newProvider, // provider 和 model 已在前面定义，这里用 newProvider, newModel
-        model: newModel,
-        aiProvider,
-        selectedModel,
-      } = await this.selectAndUpdateModelConfiguration(provider, model);
-
-      // 确保selectedModel存在
-      if (!selectedModel) {
-        throw new Error(getMessage("no.model.selected"));
-      }
-
-      // 确保 aiProvider 支持流式生成
-      if (!aiProvider.generateCommitStream) {
-        notify.error("provider.does.not.support.streaming", [newProvider]);
-        // 可以选择回退到非流式 execute 方法，或者直接返回
-        // 为了明确，这里我们直接返回并通知用户
-        // await this.execute(resources); // 示例：回退到非流式
-        return;
-      }
-
-      // 准备AI请求参数
-      const requestParams = {
-        ...configuration.features.commitMessage,
-        ...configuration.features.commitFormat,
-        ...configuration.features.codeAnalysis,
-        additionalContext: currentInput,
-        diff: diffContent,
-        model: selectedModel,
-        scm: scmProvider.type ?? "git",
-        changeFiles: selectedFiles,
-        languages: configuration.base.language,
-      };
-
       // 使用 ProgressHandler 包裹流式生成过程
       await ProgressHandler.withProgress(
         formatMessage("progress.generating.commit", [
           // 使用与非流式一致的标题
           scmProvider?.type.toLocaleUpperCase(),
         ]),
-        async (progress) => {
+        async (progress, token) => {
+          // 获取当前提交输入框内容
+          const currentInput = await scmProvider.getCommitInput();
+
+          // 获取配置信息以用于后续操作
+          const config = ConfigurationManager.getInstance();
+          const configuration = config.getConfiguration();
+
+          // 获取选中文件的差异信息
+          const diffContent = await scmProvider.getDiff(selectedFiles);
+
+          // 检查是否有变更
+          if (!diffContent) {
+            notify.info("no.changes");
+            throw new Error(getMessage("no.changes"));
+          }
+
+          // 获取和更新AI模型配置
+          const {
+            provider: newProvider, // provider 和 model 已在前面定义，这里用 newProvider, newModel
+            model: newModel,
+            aiProvider,
+            selectedModel,
+          } = await this.selectAndUpdateModelConfiguration(provider, model);
+
+          // 确保selectedModel存在
+          if (!selectedModel) {
+            throw new Error(getMessage("no.model.selected"));
+          }
+
+          // 确保 aiProvider 支持流式生成
+          if (!aiProvider.generateCommitStream) {
+            notify.error("provider.does.not.support.streaming", [newProvider]);
+            // 可以选择回退到非流式 execute 方法，或者直接返回
+            // 为了明确，这里我们直接返回并通知用户
+            // await this.execute(resources); // 示例：回退到非流式
+            return;
+          }
+
+          // 准备AI请求参数
+          const requestParams = {
+            ...configuration.features.commitMessage,
+            ...configuration.features.commitFormat,
+            ...configuration.features.codeAnalysis,
+            additionalContext: currentInput,
+            diff: diffContent,
+            model: selectedModel,
+            scm: scmProvider.type ?? "git",
+            changeFiles: selectedFiles,
+            languages: configuration.base.language,
+          };
+
           // progress 参数可以用来更新进度条内部消息，但这里可能不需要
           let accumulatedMessage = "";
           try {
+            this.throwIfCancelled(token); // 在开始时检查取消
+            if (token.isCancellationRequested) {
+              console.log("用户取消了操作");
+              return; // 这里主动退出
+            }
             // 再次检查 aiProvider.generateCommitStream，尽管外部已经检查过
             // 这是为了确保在 ProgressHandler 的回调作用域内 TypeScript 也能正确推断类型
             if (!aiProvider.generateCommitStream) {
@@ -145,15 +153,11 @@ export class GenerateCommitCommand extends BaseCommand {
               notify.error(errorMessage); // 使用已存在的 i18n key
               throw new Error(errorMessage);
             }
+            this.throwIfCancelled(token); // 在调用 AI Provider 之前检查取消
             const stream = await aiProvider.generateCommitStream(requestParams);
-            // for await (const chunk of stream) {
-            //   console.log("chunk", chunk);
-            //   accumulatedMessage += chunk;
-            //   let filteredMessage = filterCodeBlockMarkers(accumulatedMessage);
-            //   filteredMessage = filteredMessage.trimStart(); // 实时去除开头的空格
-            //   await scmProvider.startStreamingInput(filteredMessage);
-            // }
+
             for await (const chunk of stream) {
+              this.throwIfCancelled(token); // 在每次迭代开始时检查取消
               for (const char of chunk) {
                 accumulatedMessage += char;
                 let filteredMessage =
@@ -168,6 +172,7 @@ export class GenerateCommitCommand extends BaseCommand {
               }
             }
             // 流结束后，最后trim一次，确保末尾没有多余空格
+            this.throwIfCancelled(token); // 在流结束后，最终处理之前检查取消
             const finalMessage = accumulatedMessage.trim();
             await scmProvider.startStreamingInput(finalMessage);
 
@@ -179,9 +184,9 @@ export class GenerateCommitCommand extends BaseCommand {
             ]);
           } catch (error) {
             console.error("Error during commit message streaming:", error);
-            if (error instanceof Error) {
-              notify.error("generate.commit.stream.failed", [error.message]);
-            }
+            // if (error instanceof Error) {
+            //   notify.error("generate.commit.stream.failed", [error.message]);
+            // }
             // 确保 ProgressHandler 知道任务失败
             throw error;
           }
@@ -193,6 +198,12 @@ export class GenerateCommitCommand extends BaseCommand {
       if (error instanceof Error) {
         notify.error("generate.commit.failed", [error.message]); // 可以用一个更特定的流式错误消息
       }
+    }
+  }
+  throwIfCancelled(token: vscode.CancellationToken) {
+    if (token.isCancellationRequested) {
+      console.log(getMessage("user.cancelled.operation.log"));
+      throw new Error(getMessage("user.cancelled.operation.error"));
     }
   }
 }
