@@ -31,6 +31,12 @@ export interface ISCMProvider {
 
   /** 开始流式输入提交信息 */
   startStreamingInput(message: string): Promise<void>;
+
+  /** 获取提交日志 */
+  getCommitLog(baseBranch?: string, headBranch?: string): Promise<string[]>;
+
+  /** 获取所有分支的列表 (主要用于 Git) */
+  getBranches?: () => Promise<string[]>;
 }
 
 /**

@@ -36,6 +36,11 @@ export const COMMANDS = {
     /** 生成分支名称的命令 */
     GENERATE: packageJson.contributes.commands[4].command,
   },
+  /** PR Summary相关命令 */
+  PR_SUMMARY: {
+    /** 生成PR摘要的命令 */
+    GENERATE: packageJson.contributes.commands[5].command,
+  }
 } as const;
 
 /** COMMANDS常量的TypeScript类型 */

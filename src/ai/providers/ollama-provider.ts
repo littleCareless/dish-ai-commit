@@ -10,6 +10,11 @@ import {
 import { AbstractAIProvider } from "./abstract-ai-provider";
 import { ConfigurationManager } from "../../config/configuration-manager";
 import { notify } from "../../utils/notification/notification-manager";
+import {
+  getPRSummarySystemPrompt,
+  getPRSummaryUserPrompt,
+} from "../../prompt/pr-summary";
+import { getSystemPrompt } from "../utils/generate-helper"; // Import getSystemPrompt
 
 /**
  * Ollama AI服务提供者实现类
@@ -139,26 +144,31 @@ export class OllamaProvider extends AbstractAIProvider {
    * 调用Ollama API执行流式请求并返回一个异步迭代器
    */
   protected async executeAIStreamRequest(
-    systemPrompt: string,
-    userPrompt: string,
-    userContent: string,
     params: AIRequestParams,
     options?: {
       temperature?: number;
       maxTokens?: number; // 注意：Ollama 可能使用不同的参数名，如 num_predict
     }
   ): Promise<AsyncIterable<string>> {
+    const systemPrompt = getSystemPrompt(params);
+    const userPrompt = params.additionalContext || "";
+    const userContent = params.diff;
+
     const self = this; // 确保在异步生成器中正确使用 'this'
     async function* streamLogic(): AsyncIterable<string> {
       const model = params.model || self.getDefaultModel();
 
+      const messages = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userContent },
+      ];
+      if (userPrompt) {
+        messages.push({ role: "user", content: userPrompt });
+      }
+
       const stream = await self.ollama.chat({
         model: model.id,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userContent },
-          { role: "user", content: userPrompt },
-        ],
+        messages: messages,
         stream: true,
         options: {
           temperature: options?.temperature,
@@ -168,7 +178,7 @@ export class OllamaProvider extends AbstractAIProvider {
       });
 
       for await (const chunk of stream) {
-        if (chunk.message && typeof chunk.message.content === 'string') {
+        if (chunk.message && typeof chunk.message.content === "string") {
           yield chunk.message.content;
         }
         // 如果需要处理流结束的特殊逻辑（例如，获取最终的使用情况统计），
@@ -251,4 +261,29 @@ export class OllamaProvider extends AbstractAIProvider {
    * 资源释放
    */
   dispose() {}
+
+  /**
+   * 生成PR摘要
+   * @param params AI请求参数
+   * @param commitMessages 提交信息列表
+   * @returns AI响应
+   */
+  async generatePRSummary(
+    params: AIRequestParams,
+    commitMessages: string[]
+  ): Promise<AIResponse> {
+    const systemPrompt =
+      params.systemPrompt || getPRSummarySystemPrompt(params.language);
+    const userPrompt = getPRSummaryUserPrompt(params.language);
+    const userContent = `- ${commitMessages.join("\n- ")}`;
+
+    const response = await this.executeAIRequest(
+      systemPrompt,
+      userPrompt,
+      userContent,
+      params
+    );
+
+    return { content: response.content, usage: response.usage };
+  }
 }

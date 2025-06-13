@@ -56,4 +56,20 @@ export class CliSvnProvider implements ISCMProvider {
     // 这里我们选择抛出错误，与setCommitInput行为保持一致
     throw new Error(getMessage("cli.commit.input.not.supported"));
   }
+
+  /**
+   * 获取提交日志 (占位符实现)
+   * @param baseBranch - 基础分支
+   * @param headBranch - 当前分支
+   * @returns 返回一个空数组
+   */
+  async getCommitLog(
+    baseBranch?: string,
+    headBranch?: string
+  ): Promise<string[]> {
+    console.warn(
+      "getCommitLog is not implemented for CliSvnProvider and will return an empty array."
+    );
+    return [];
+  }
 }

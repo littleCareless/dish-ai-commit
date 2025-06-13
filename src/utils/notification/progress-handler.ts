@@ -22,7 +22,8 @@ export class ProgressHandler {
     return vscode.window.withProgress(
       {
         location: vscode.ProgressLocation.Notification, // 在通知区域显示进度
-        title: `[${DISPLAY_NAME}]: ${title}`, // 添加插件名称作为前缀
+        // ${DISPLAY_NAME}
+        title: `[Dish]: ${title}`, // 添加插件名称作为前缀
         cancellable: true, // 允许用户取消任务
       },
       async (progress, token) => {

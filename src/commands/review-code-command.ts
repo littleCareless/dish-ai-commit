@@ -30,43 +30,55 @@ export class ReviewCodeCommand extends BaseCommand {
     }
 
     try {
-      // 检查是否有选中的文件
-      const selectedFiles = this.getSelectedFiles(resources);
-      if (!selectedFiles || selectedFiles.length === 0) {
-        await notify.warn("no.changes.selected");
-        return;
-      }
-
-      // 检测SCM提供程序
-      const scmProvider = await this.detectSCMProvider(selectedFiles);
-      if (!scmProvider) {
-        return;
-      }
-
-      // 获取配置信息
-      const { config, configuration } = this.getExtConfig();
-      let { provider, model } = configResult;
-
-      const { aiProvider, selectedModel } = await validateAndGetModel(
-        provider,
-        model
-      );
-
       await withProgress(getMessage("reviewing.code"), async (progress) => {
+        progress.report({
+          increment: 5,
+          message: getMessage("checking.selected.files"),
+        });
+        // 检查是否有选中的文件
+        const selectedFiles = this.getSelectedFiles(resources);
+        if (!selectedFiles || selectedFiles.length === 0) {
+          await notify.warn("no.changes.selected");
+          return;
+        }
+
+        progress.report({
+          increment: 5,
+          message: getMessage("detecting.scm.provider"),
+        });
+        // 检测SCM提供程序
+        const scmProvider = await this.detectSCMProvider(selectedFiles);
+        if (!scmProvider) {
+          return;
+        }
+
+        // 获取配置信息
+        const { config, configuration } = this.getExtConfig();
+        let { provider, model } = configResult;
+
+        progress.report({
+          increment: 5,
+          message: getMessage("validating.model"),
+        });
+        const { aiProvider, selectedModel } = await validateAndGetModel(
+          provider,
+          model
+        );
+
         // 获取所有选中文件的差异
         const fileReviews = new Map<string, string>();
         const diffs = new Map<string, string>();
-        // 并行收集所有差异 - 10% 进度
+        // 并行收集所有差异 - 15% 进度 (5 initial + 15 = 20 total for setup)
+        progress.report({
+          message: getMessage("getting.file.changes"),
+        });
         const diffPromises = selectedFiles.map(async (filePath) => {
           try {
             const diff = await scmProvider.getDiff([filePath]);
             if (diff) {
               diffs.set(filePath, diff);
             }
-            progress.report({
-              increment: 10 / selectedFiles.length,
-              message: getMessage("getting.file.changes"),
-            });
+            // Individual progress for each file diff is small, overall progress updated after Promise.all
             return { success: true };
           } catch (error) {
             console.error(`Failed to get diff for ${filePath}:`, error);
@@ -75,18 +87,21 @@ export class ReviewCodeCommand extends BaseCommand {
         });
 
         await Promise.all(diffPromises);
+        progress.report({ increment: 15 }); // Report progress after all diffs are collected
+
         if (diffs.size === 0) {
           await notify.warn(getMessage("no.changes.found"));
           return;
         }
 
-        // 并行审查每个文件 - 80% 进度平均分配
-        const progressPerFile = 80 / diffs.size;
+        // 并行审查每个文件 - 70% 进度平均分配 (20 setup + 70 review = 90)
+        const progressPerFile = 70 / diffs.size;
 
         const reviewPromises = Array.from(diffs.entries()).map(
           async ([filePath, diff]) => {
             try {
               progress.report({
+                // Report message before starting review for this file
                 message: formatMessage("reviewing.file", [
                   path.basename(filePath),
                 ]),
@@ -105,6 +120,7 @@ export class ReviewCodeCommand extends BaseCommand {
               }
 
               progress.report({
+                // Report increment after this file's review is done
                 increment: progressPerFile,
               });
 
@@ -114,6 +130,10 @@ export class ReviewCodeCommand extends BaseCommand {
                 formatMessage("review.file.failed", [path.basename(filePath)])
               );
               console.error(`Failed to review ${filePath}:`, error);
+              progress.report({
+                // Still report increment even if failed to keep progress accurate
+                increment: progressPerFile,
+              });
               return { success: false, filePath };
             }
           }
@@ -121,7 +141,7 @@ export class ReviewCodeCommand extends BaseCommand {
 
         await Promise.all(reviewPromises);
 
-        // 显示结果 - 10% 进度
+        // 显示结果 - 10% 进度 (90 review + 10 results = 100)
         progress.report({
           increment: 10,
           message: getMessage("preparing.results"),
@@ -134,7 +154,8 @@ export class ReviewCodeCommand extends BaseCommand {
 
         await this.showReviewResults(fileReviews);
 
-        await notify.warn(
+        await notify.info(
+          // Changed to info as it's a success message
           formatMessage("review.complete.count", [fileReviews.size.toString()])
         );
       });
