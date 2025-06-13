@@ -6,6 +6,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.21.1 (2025-06-13)
+
+### ♻ Code Refactoring
+
+- **ai-provider**: Refactor AI provider streaming request parameter processing ([1544c46](https://github.com/littleCareless/dish-ai-commit/commit/1544c46))
+
+- **progress**: Optimize command progress display and user feedback ([1c098fa](https://github.com/littleCareless/dish-ai-commit/commit/1c098fa))
+
+### 🎫 Chores
+
+- **i18n**: Added internationalized text related to PR summary generation progress ([e437a0c](https://github.com/littleCareless/dish-ai-commit/commit/e437a0c))
+
+- **release**: Release 0.21.0 Version ([f79a70c](https://github.com/littleCareless/dish-ai-commit/commit/f79a70c))
+
 # 0.21.0 (2025-06-13)
 
 ### ✨ Features

@@ -6,6 +6,18 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.21.1 (2025-06-13)
+
+### ♻ Code Refactoring
+
+- **ai-provider**: 重构 AI 提供程序流式请求参数处理 ([1544c46](https://github.com/littleCareless/dish-ai-commit/commit/1544c46))
+- **progress**: 优化命令进度显示与用户反馈 ([1c098fa](https://github.com/littleCareless/dish-ai-commit/commit/1c098fa))
+
+### 🎫 Chores
+
+- **i18n**: 新增 PR 摘要生成进度相关的国际化文案 ([e437a0c](https://github.com/littleCareless/dish-ai-commit/commit/e437a0c))
+- **release**: 发布 0.21.0 版本 ([f79a70c](https://github.com/littleCareless/dish-ai-commit/commit/f79a70c))
+
 # 0.21.0 (2025-06-13)
 
 ### ✨ Features
