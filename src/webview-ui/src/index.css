@@ -182,12 +182,15 @@
       max-width: 100%;
       height: auto;
     }
+
+    svg {
+      display: inline-block;
+    }
 }
 
 @layer utilities {
   #root {
     margin: 0 auto;
-    padding: 2rem;
     width: 100%;
   }
 
