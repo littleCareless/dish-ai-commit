@@ -58,8 +58,8 @@
       "activitybar": [
         {
           "id": "dish-ai-commitActivityBar",
-          "title": "SVN Commit Gen",
-          "icon": "images/logo.png"
+          "title": "Dish Ai Commit Message",
+          "icon": "/images/icon.svg"
         }
       ]
     },
@@ -70,7 +70,7 @@
           "name": "插件设置",
           "type": "webview",
           "contextualTitle": "Dish ai Commit Message设置",
-          "icon": "images/logo.png"
+          "icon": "/images/icon.svg"
         }
       ]
     },
