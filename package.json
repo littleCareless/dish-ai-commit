@@ -443,6 +443,7 @@
     "@types/jest": "^29.5.14",
     "@types/mocha": "^10.0.10",
     "@types/node": "~24.0.0",
+    "@types/uuid": "^10.0.0",
     "@types/vscode": "^1.90.0",
     "@typescript-eslint/eslint-plugin": "^8.34.0",
     "@typescript-eslint/parser": "^8.34.0",
@@ -471,9 +472,17 @@
   },
   "dependencies": {
     "@google/genai": "^1.4.0",
+    "@qdrant/js-client-rest": "^1.14.1",
     "inversify": "^7.5.2",
     "ollama": "^0.5.16",
-    "openai": "^5.3.0"
+    "openai": "^5.3.0",
+    "tree-sitter": "^0.25.0",
+    "tree-sitter-c-sharp": "^0.23.1",
+    "tree-sitter-go": "^0.23.4",
+    "tree-sitter-java": "^0.23.5",
+    "tree-sitter-javascript": "^0.23.1",
+    "tree-sitter-python": "^0.23.6",
+    "tree-sitter-typescript": "^0.23.2"
   },
   "overrides": {
     "glob": "10.3.10",
