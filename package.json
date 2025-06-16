@@ -50,9 +50,30 @@
   "main": "./dist/extension.js",
   "activationEvents": [
     "onStartupFinished",
-    "onCommand:dish-ai-commit"
+    "onCommand:dish-ai-commit",
+    "onView:dish-ai-commit.settingsView"
   ],
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "dish-ai-commitActivityBar",
+          "title": "SVN Commit Gen",
+          "icon": "images/logo.png"
+        }
+      ]
+    },
+    "views": {
+      "dish-ai-commitActivityBar": [
+        {
+          "id": "dish-ai-commit.settingsView",
+          "name": "插件设置",
+          "type": "webview",
+          "contextualTitle": "Dish ai Commit Message设置",
+          "icon": "images/logo.png"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "dish-ai-commit.generateCommitMessage",
@@ -476,13 +497,8 @@
     "inversify": "^7.5.2",
     "ollama": "^0.5.16",
     "openai": "^5.3.0",
-    "tree-sitter": "^0.25.0",
-    "tree-sitter-c-sharp": "^0.23.1",
-    "tree-sitter-go": "^0.23.4",
-    "tree-sitter-java": "^0.23.5",
-    "tree-sitter-javascript": "^0.23.1",
-    "tree-sitter-python": "^0.23.6",
-    "tree-sitter-typescript": "^0.23.2"
+    "web-tree-sitter": "^0.22.6",
+    "tree-sitter-wasms": "^0.1.11"
   },
   "overrides": {
     "glob": "10.3.10",
