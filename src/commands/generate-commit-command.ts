@@ -10,6 +10,8 @@ import { getMessage, formatMessage } from "../utils/i18n";
 import { ProgressHandler } from "../utils/notification/progress-handler";
 import { validateAndGetModel } from "../utils/ai/model-validation";
 import { LayeredCommitMessage } from "../ai/types";
+import { getEmbeddingService } from "../extension"; // 导入 getEmbeddingService
+import * as path from "path"; // 导入 path 模块
 
 /**
  * 将分层提交信息格式化为结构化的提交信息文本
@@ -121,11 +123,54 @@ export class GenerateCommitCommand extends BaseCommand {
           }
 
           // 准备AI请求参数
+          let additionalContextForAI = currentInput; // Start with current SCM input
+          const embeddingService = getEmbeddingService();
+
+          if (embeddingService && selectedFiles && selectedFiles.length > 0) {
+            try {
+              // 为所有选定文件生成一个组合查询文本
+              // 或者为每个文件单独查询并合并结果，这里采用组合查询
+              let combinedQueryText =
+                "Generating commit message for changes in files: ";
+              selectedFiles.forEach((sf) => {
+                combinedQueryText += `${path.basename(sf)}, `;
+              });
+              combinedQueryText += `\nFirst 1000 chars of diff: ${diffContent.substring(
+                0,
+                1000
+              )}`;
+
+              const searchResults = await embeddingService.searchSimilarCode(
+                combinedQueryText,
+                3
+              );
+              if (searchResults && searchResults.length > 0) {
+                let snippetsContext =
+                  "\n\nRelevant code snippets from the project:\n";
+                searchResults.forEach((result) => {
+                  snippetsContext += `--- Relevant snippet from ${result.payload.file} (lines ${result.payload.startLine}-${result.payload.endLine}) ---\n`;
+                  snippetsContext += `${result.payload.code.substring(
+                    0,
+                    300
+                  )}...\n`;
+                });
+                snippetsContext += "--- End of relevant snippets ---\n";
+                additionalContextForAI += snippetsContext; // Append to existing context
+              }
+            } catch (searchError) {
+              console.warn(
+                `[GenerateCommitCommand] Error searching for similar code:`,
+                searchError
+              );
+              // 即使搜索失败，也继续执行
+            }
+          }
+
           const requestParams = {
             ...configuration.features.commitMessage,
             ...configuration.features.commitFormat,
             ...configuration.features.codeAnalysis,
-            additionalContext: currentInput,
+            additionalContext: additionalContextForAI, // 使用增强的上下文
             diff: diffContent,
             model: selectedModel,
             scm: scmProvider.type ?? "git",
