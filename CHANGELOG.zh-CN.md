@@ -6,6 +6,47 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.22.0 (2025-06-17)
+
+### ♻ Code Refactoring
+
+- **commands**: 调整命令中的嵌入上下文逻辑 ([f67fd95](https://github.com/littleCareless/dish-ai-commit/commit/f67fd95))
+- **utils**: 移除不再使用的配置模块 ([f67eb75](https://github.com/littleCareless/dish-ai-commit/commit/f67eb75))
+- **webview/settings**: 重构设置视图，分离关注点并改进配置管理 ([3edd1d2](https://github.com/littleCareless/dish-ai-commit/commit/3edd1d2))
+
+### ✨ Features
+
+- **ai**: 集成嵌入服务以提供相似代码上下文 ([a4a011e](https://github.com/littleCareless/dish-ai-commit/commit/a4a011e))
+- **branding**: 更新插件标题和图标 ([cbeaf6e](https://github.com/littleCareless/dish-ai-commit/commit/cbeaf6e))
+- **code-index**: 实现可配置的 embedding 服务并增强索引稳定性 ([7323665](https://github.com/littleCareless/dish-ai-commit/commit/7323665))
+- **config**: 引入 embedding 功能并更新相关配置 ([8e88ddb](https://github.com/littleCareless/dish-ai-commit/commit/8e88ddb))
+- **core, ai**: 集成嵌入服务并添加设置视图 ([c5b3bab](https://github.com/littleCareless/dish-ai-commit/commit/c5b3bab))
+- **core**: 新增多个核心工具函数 ([9dd8ad1](https://github.com/littleCareless/dish-ai-commit/commit/9dd8ad1))
+- **core**: 引入代码解析与向量存储依赖 ([8d5bcf7](https://github.com/littleCareless/dish-ai-commit/commit/8d5bcf7))
+- **glob**: 实现文件和目录忽略逻辑 ([72ac425](https://github.com/littleCareless/dish-ai-commit/commit/72ac425))
+- **indexing**: 集成 EmbeddingServiceManager 并添加 Qdrant 相关配置 ([0a91691](https://github.com/littleCareless/dish-ai-commit/commit/0a91691))
+- **indexing**: 集成 Ollama，改进代码解析与分块，增加索引进度 ([437c76b](https://github.com/littleCareless/dish-ai-commit/commit/437c76b))
+- **indexing**: 新增 EmbeddingService 管理器 ([3279a92](https://github.com/littleCareless/dish-ai-commit/commit/3279a92))
+- **indexing**: 引入代码语义索引和搜索功能 ([981841f](https://github.com/littleCareless/dish-ai-commit/commit/981841f))
+- **setting**: 新增设置页面 UI，支持代码索引配置 ([1ef3c28](https://github.com/littleCareless/dish-ai-commit/commit/1ef3c28))
+- **settings**: 添加服务连接测试并重构代码索引设置 UI ([b2706ee](https://github.com/littleCareless/dish-ai-commit/commit/b2706ee))
+- **tree-sitter**: 实现基于 WASM 的多语言解析和查询功能 ([8841069](https://github.com/littleCareless/dish-ai-commit/commit/8841069))
+- **ui, core**: 新增设置界面并升级代码解析库 ([5aaae4f](https://github.com/littleCareless/dish-ai-commit/commit/5aaae4f))
+- **webview-ui**: 引入多视图支持并添加设置页面 ([4e41e02](https://github.com/littleCareless/dish-ai-commit/commit/4e41e02))
+- **webview**: 实现插件设置视图提供程序 ([2727a5e](https://github.com/littleCareless/dish-ai-commit/commit/2727a5e))
+- **webview**: 新增设置与周报页面，并更新项目标识符 ([773e017](https://github.com/littleCareless/dish-ai-commit/commit/773e017))
+
+### 🎫 Chores
+
+- **config**: 添加工作区配置模式 ([dc6a621](https://github.com/littleCareless/dish-ai-commit/commit/dc6a621))
+- **constants**: 添加核心常量定义 ([5194e01](https://github.com/littleCareless/dish-ai-commit/commit/5194e01))
+- **deps**: 更新依赖项并调整 typescript 依赖类型 ([ce22e8b](https://github.com/littleCareless/dish-ai-commit/commit/ce22e8b))
+- **release**: 发布 0.21.1 版本 ([1f59412](https://github.com/littleCareless/dish-ai-commit/commit/1f59412))
+
+### 🐛 Bug Fixes
+
+- **build**: 修复构建脚本未复制 WASM 文件的问题 ([6aa39de](https://github.com/littleCareless/dish-ai-commit/commit/6aa39de))
+
 ## 0.21.1 (2025-06-13)
 
 ### ♻ Code Refactoring
