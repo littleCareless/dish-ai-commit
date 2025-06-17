@@ -8,6 +8,8 @@ import { v4 as uuidv4 } from "uuid";
 import OpenAI from "openai";
 import { ConfigurationManager } from "../../config/configuration-manager";
 import { ConfigKey } from "../../config/types"; // Assuming ConfigKey is exported from types
+import { stateManager } from "../../utils/state/state-manager";
+import { WorkspaceConfigPath } from "../../config/workspace-config-schema";
 
 // Actual embedding generation logic using OpenAI
 async function generateOpenAIEmbeddings(
@@ -104,7 +106,6 @@ export class EmbeddingService {
   private openaiApiKey: string;
   private openaiBaseUrl?: string;
   private ollamaBaseUrl?: string;
-  private embeddingModelName: string;
   private processedBlocks: number = 0;
 
   constructor(
@@ -130,12 +131,6 @@ export class EmbeddingService {
     this.ollamaBaseUrl =
       configManager.getConfig("PROVIDERS_OLLAMA_BASEURL" as ConfigKey) ||
       undefined;
-    // TODO: Make embedding model configurable, for now hardcoding to text-embedding-3-small
-    // this.embeddingModelName = "text-embedding-3-small";
-    this.embeddingModelName = "nomic-embed-text";
-    // Ensure VectorStore is initialized with the correct vector size for the chosen model
-    // This might require passing the vector size to VectorStore constructor or an init method
-    // For text-embedding-3-small, it's 1536.
   }
 
   public async scanProjectFiles(
@@ -297,24 +292,39 @@ export class EmbeddingService {
         }\n${block.code.substring(0, 500)}`; // Truncate code for embedding
       });
 
-      if (!this.openaiApiKey) {
-        console.error(
-          "[EmbeddingService] OpenAI API Key is not configured. Skipping embedding generation."
+      const embeddingProvider = stateManager.getWorkspace<"OpenAI" | "Ollama">(
+        "experimental.codeIndex.embeddingProvider" as WorkspaceConfigPath,
+        "OpenAI"
+      );
+      const embeddingModelName = stateManager.getWorkspace(
+        "experimental.codeIndex.embeddingModel" as WorkspaceConfigPath,
+        "text-embedding-3-small"
+      );
+
+      let embeddings: number[][];
+      if (embeddingProvider === "Ollama") {
+        embeddings = await generateOllamaEmbeddings(
+          textsToEmbed,
+          this.ollamaBaseUrl,
+          embeddingModelName
         );
-        throw new Error("OpenAI API Key not configured.");
+      } else {
+        if (!this.openaiApiKey) {
+          console.error(
+            "[EmbeddingService] OpenAI API Key is not configured. Skipping embedding generation."
+          );
+          throw new Error("OpenAI API Key not configured.");
+        }
+        embeddings = await generateOpenAIEmbeddings(
+          textsToEmbed,
+          this.openaiApiKey,
+          this.openaiBaseUrl,
+          embeddingModelName
+        );
       }
-      const embeddings = await generateOllamaEmbeddings(
-        textsToEmbed,
-        // this.openaiApiKey,
-        // this.openaiBaseUrl,
-        this.ollamaBaseUrl,
-        this.embeddingModelName
-      );
+
       console.log(
-        `[EmbeddingService] Generated ${embeddings.length} embeddings using ${this.embeddingModelName}.`
-      );
-      console.log(
-        `[EmbeddingService] Generated ${embeddings.length} embeddings using ${this.embeddingModelName}.`
+        `[EmbeddingService] Generated ${embeddings.length} embeddings using ${embeddingModelName}.`
       );
       // 3. Prepare points for VectorStore
       const points: QdrantPoint[] = semanticBlocks.map((block, index) => {
@@ -393,25 +403,52 @@ export class EmbeddingService {
     queryText: string,
     limit: number = 5
   ): Promise<any[]> {
+    const embeddingProvider = stateManager.getWorkspace<"OpenAI" | "Ollama">(
+      "experimental.codeIndex.embeddingProvider" as WorkspaceConfigPath,
+      "OpenAI"
+    );
+
+    if (embeddingProvider === "Ollama") {
+      if (!this.ollamaBaseUrl) {
+        console.log(
+          "[EmbeddingService] Ollama base URL is not configured. Skipping search."
+        );
+        return [];
+      }
+    } else {
+      // Assuming "OpenAI"
+      if (!this.openaiApiKey) {
+        console.log(
+          "[EmbeddingService] OpenAI API key is not configured. Skipping search."
+        );
+        return [];
+      }
+    }
+
     console.log(
       `[EmbeddingService] Searching for code similar to: "${queryText}"`
     );
 
-    if (!this.openaiApiKey) {
-      console.error(
-        "[EmbeddingService] OpenAI API Key is not configured. Cannot generate query embedding."
-      );
-      throw new Error("OpenAI API Key not configured for search.");
-    }
-
-    // 1. Generate embedding for the query text
-    const queryEmbeddings = await generateOllamaEmbeddings(
-      [queryText], // API expects an array of texts
-      // this.openaiApiKey,
-      // this.openaiBaseUrl,
-      this.ollamaBaseUrl,
-      this.embeddingModelName
+    const embeddingModelName = stateManager.getWorkspace(
+      "experimental.codeIndex.embeddingModel" as WorkspaceConfigPath,
+      "text-embedding-3-small"
     );
+
+    let queryEmbeddings: number[][];
+    if (embeddingProvider === "Ollama") {
+      queryEmbeddings = await generateOllamaEmbeddings(
+        [queryText],
+        this.ollamaBaseUrl,
+        embeddingModelName
+      );
+    } else {
+      queryEmbeddings = await generateOpenAIEmbeddings(
+        [queryText],
+        this.openaiApiKey,
+        this.openaiBaseUrl,
+        embeddingModelName
+      );
+    }
 
     if (!queryEmbeddings || queryEmbeddings.length === 0) {
       console.error("[EmbeddingService] Failed to generate query embedding.");
@@ -451,6 +488,15 @@ export class EmbeddingService {
     try {
       // 尝试从 VectorStore 中获取一些向量
       const results = await this.vectorStore.hasVectors(); // 使用一个虚拟向量进行搜索
+      if (typeof results !== "number" || results < 0) {
+        console.error(
+          "[EmbeddingService] Failed to check index status or invalid response:",
+          results
+        );
+        throw new Error(
+          "Failed to connect to vector store or invalid response."
+        );
+      }
       return results; // 如果找到任何向量，则表示已建立索引
     } catch (error) {
       console.error("[EmbeddingService] Error checking index status:", error);

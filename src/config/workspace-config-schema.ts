@@ -12,6 +12,12 @@ import type {
 export const WORKSPACE_CONFIG_SCHEMA = {
   experimental: {
     codeIndex: {
+      enabled: {
+        type: "boolean",
+        default: false,
+        description:
+          "Enable or disable codebase indexing feature / 启用或禁用代码库索引功能",
+      },
       embeddingProvider: {
         type: "enum",
         default: "OpenAI",

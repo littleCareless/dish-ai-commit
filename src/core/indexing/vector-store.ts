@@ -178,7 +178,17 @@ export class VectorStore {
 
   public async hasVectors(): Promise<number> {
     try {
-      const info = await this.client.getCollection(this.collectionName);
+      const infoPromise = this.client.getCollection(this.collectionName);
+
+      const timeoutPromise = new Promise<never>((_, reject) =>
+        setTimeout(
+          () => reject(new Error("hasVectors request timed out")),
+          3000
+        )
+      );
+
+      const info = await Promise.race([infoPromise, timeoutPromise]);
+
       const count = info.points_count ?? 0;
       console.log(`当前向量数量: ${count},${info},${this.collectionName}`);
       return count;
