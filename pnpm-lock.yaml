@@ -14,6 +14,9 @@ importers:
       '@google/genai':
         specifier: ^1.4.0
         version: 1.4.0(@modelcontextprotocol/sdk@1.12.1)
+      '@qdrant/js-client-rest':
+        specifier: ^1.14.1
+        version: 1.14.1(typescript@5.8.3)
       inversify:
         specifier: ^7.5.2
         version: 7.5.2(reflect-metadata@0.2.2)
@@ -23,6 +26,12 @@ importers:
       openai:
         specifier: ^5.3.0
         version: 5.3.0(ws@8.18.2)(zod@3.25.62)
+      tree-sitter-wasms:
+        specifier: ^0.1.11
+        version: 0.1.12
+      web-tree-sitter:
+        specifier: ^0.22.6
+        version: 0.22.6
     devDependencies:
       '@commitlint/cli':
         specifier: ^19.8.1
@@ -42,6 +51,9 @@ importers:
       '@types/node':
         specifier: 16.x
         version: 16.18.126
+      '@types/uuid':
+        specifier: ^10.0.0
+        version: 10.0.0
       '@types/vscode':
         specifier: ^1.90.0
         version: 1.100.0
@@ -786,6 +798,16 @@ packages:
     resolution: {integrity: sha512-+1VkjdD0QBLPodGrJUeqarH8VAIvQODIbwh9XpP5Syisf7YoQgsJKPNFoqqLQlu+VQ/tVSshMR6loPMn8U+dPg==}
     engines: {node: '>=14'}
 
+  '@qdrant/js-client-rest@1.14.1':
+    resolution: {integrity: sha512-CkCCTDc4gCXq+hhjB3yDw9Hs/PxCJ0bKqk/LjAAmuL9+nDm/RPue4C/tGOIMlzouTQ2l6J6t+JPeM//j38VFug==}
+    engines: {node: '>=18.17.0', pnpm: '>=8'}
+    peerDependencies:
+      typescript: '>=4.7'
+
+  '@qdrant/openapi-typescript-fetch@1.2.6':
+    resolution: {integrity: sha512-oQG/FejNpItrxRHoyctYvT3rwGZOnK4jr3JdppO/c78ktDvkWiPXPHNsrDf33K9sZdRb6PR7gi4noIapu5q4HA==}
+    engines: {node: '>=18.0.0', pnpm: '>=8'}
+
   '@rollup/rollup-android-arm-eabi@4.43.0':
     resolution: {integrity: sha512-Krjy9awJl6rKbruhQDgivNbD1WuLb8xAclM4IR4cN5pHGAs2oIMMQJEiC3IC/9TZJ+QZkmZhlMO/6MBGxPidpw==}
     cpu: [arm]
@@ -886,6 +908,9 @@ packages:
     cpu: [x64]
     os: [win32]
 
+  '@sevinf/maybe@0.5.0':
+    resolution: {integrity: sha512-ARhyoYDnY1LES3vYI0fiG6e9esWfTNcXcO6+MPJJXcnyMV3bim4lnFt45VXouV7y82F4x3YH8nOQ6VztuvUiWg==}
+
   '@sinclair/typebox@0.27.8':
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
 
@@ -975,6 +1000,9 @@ packages:
 
   '@types/stack-utils@2.0.3':
     resolution: {integrity: sha512-9aEbYZ3TbYMznPdcdr3SmIrLXwC/AKZXQeCf9Pgao5CKb8CyHuEX5jzWPTkvregvhRJHcpRO6BFoGW9ycaOkYw==}
+
+  '@types/uuid@10.0.0':
+    resolution: {integrity: sha512-7gqG38EyHgyP1S+7+xomFtL+ZNHcKv6DwNaCZmJmo1vgMugyF3TCnXVg4t1uk89mLNwnLtnY3TpOpCOyp1/xHQ==}
 
   '@types/vscode@1.100.0':
     resolution: {integrity: sha512-4uNyvzHoraXEeCamR3+fzcBlh7Afs4Ifjs4epINyUX/jvdk0uzLnwiDY35UKDKnkCHP5Nu3dljl2H8lR6s+rQw==}
@@ -4337,6 +4365,9 @@ packages:
   tr46@0.0.3:
     resolution: {integrity: sha512-N3WMsuqV66lT30CrXNbEjx4GEwlow3v6rr4mCcv6prnfwhS01rkgyFdjPNBYd9br7LpXV1+Emh01fHnq2Gdgrw==}
 
+  tree-sitter-wasms@0.1.12:
+    resolution: {integrity: sha512-N9Jp+dkB23Ul5Gw0utm+3pvG4km4Fxsi2jmtMFg7ivzwqWPlSyrYQIrOmcX+79taVfcHEA+NzP0hl7vXL8DNUQ==}
+
   trim-newlines@3.0.1:
     resolution: {integrity: sha512-c1PTsA3tYrIsLGkJkzHF+w9F2EyxfXGo4UyJc4pFL++FMjnq0HJS69T3M7d//gKrFKwy429bouPescbjecU+Zw==}
     engines: {node: '>=8'}
@@ -4482,6 +4513,10 @@ packages:
   underscore@1.13.7:
     resolution: {integrity: sha512-GMXzWtsc57XAtguZgaQViUOzs0KTkk8ojr3/xAxXLITqf/3EMwxC0inyETfDFjH/Krbhuep0HNbbjI9i/q3F3g==}
 
+  undici@6.21.3:
+    resolution: {integrity: sha512-gBLkYIlEnSp8pFbT64yFgGE6UIB9tAkhukC23PmMDCe5Nd+cRqKxSjw5y54MK2AZMgZfJWMaNE4nYUHgi1XEOw==}
+    engines: {node: '>=18.17'}
+
   undici@7.10.0:
     resolution: {integrity: sha512-u5otvFBOBZvmdjWLVW+5DAc9Nkq8f24g0O9oY7qw2JVIF1VocIFoyz9JFkuVOS2j41AufeO0xnlweJ2RLT8nGw==}
     engines: {node: '>=20.18.1'}
@@ -4625,6 +4660,9 @@ packages:
 
   wcwidth@1.0.1:
     resolution: {integrity: sha512-XHPEwS0q6TaxcvG85+8EYkbiCux2XtWG2mkc47Ng2A77BQu9+DqIOJldST4HgPkuea7dvKSj5VgX3P1d4rW8Tg==}
+
+  web-tree-sitter@0.22.6:
+    resolution: {integrity: sha512-hS87TH71Zd6mGAmYCvlgxeGDjqd9GTeqXNqTT+u0Gs51uIozNIaaq/kUAbV/Zf56jb2ZOyG8BxZs2GG9wbLi6Q==}
 
   webidl-conversions@3.0.1:
     resolution: {integrity: sha512-2JAn3z8AR6rjK8Sm8orRC0h/bcl/DqL7tRPdGZ4I1CjdF+EaMLmYxBHyXuKL849eucPFhvBoxMsflfOb8kxaeQ==}
@@ -5618,6 +5656,15 @@ snapshots:
   '@pkgjs/parseargs@0.11.0':
     optional: true
 
+  '@qdrant/js-client-rest@1.14.1(typescript@5.8.3)':
+    dependencies:
+      '@qdrant/openapi-typescript-fetch': 1.2.6
+      '@sevinf/maybe': 0.5.0
+      typescript: 5.8.3
+      undici: 6.21.3
+
+  '@qdrant/openapi-typescript-fetch@1.2.6': {}
+
   '@rollup/rollup-android-arm-eabi@4.43.0':
     optional: true
 
@@ -5677,6 +5724,8 @@ snapshots:
 
   '@rollup/rollup-win32-x64-msvc@4.43.0':
     optional: true
+
+  '@sevinf/maybe@0.5.0': {}
 
   '@sinclair/typebox@0.27.8': {}
 
@@ -5773,6 +5822,8 @@ snapshots:
   '@types/parse-json@4.0.2': {}
 
   '@types/stack-utils@2.0.3': {}
+
+  '@types/uuid@10.0.0': {}
 
   '@types/vscode@1.100.0': {}
 
@@ -9735,6 +9786,8 @@ snapshots:
 
   tr46@0.0.3: {}
 
+  tree-sitter-wasms@0.1.12: {}
+
   trim-newlines@3.0.1: {}
 
   ts-api-utils@2.1.0(typescript@5.8.3):
@@ -9873,6 +9926,8 @@ snapshots:
       which-boxed-primitive: 1.1.1
 
   underscore@1.13.7: {}
+
+  undici@6.21.3: {}
 
   undici@7.10.0: {}
 
@@ -10013,6 +10068,8 @@ snapshots:
   wcwidth@1.0.1:
     dependencies:
       defaults: 1.0.4
+
+  web-tree-sitter@0.22.6: {}
 
   webidl-conversions@3.0.1: {}
 

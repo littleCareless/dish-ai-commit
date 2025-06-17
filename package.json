@@ -50,9 +50,30 @@
   "main": "./dist/extension.js",
   "activationEvents": [
     "onStartupFinished",
-    "onCommand:dish-ai-commit"
+    "onCommand:dish-ai-commit",
+    "onView:dish-ai-commit.settingsView"
   ],
   "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "dish-ai-commitActivityBar",
+          "title": "Dish Ai Commit Message",
+          "icon": "/images/icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "dish-ai-commitActivityBar": [
+        {
+          "id": "dish-ai-commit.settingsView",
+          "name": "插件设置",
+          "type": "webview",
+          "contextualTitle": "Dish Ai Commit Message设置",
+          "icon": "/images/icon.svg"
+        }
+      ]
+    },
     "commands": [
       {
         "command": "dish-ai-commit.generateCommitMessage",
@@ -225,6 +246,11 @@
           "default": false,
           "description": "Enable diff content simplification (Warning: Enabling this feature may result in less accurate commit messages) / 启用差异内容简化 (警告：启用此功能可能导致提交信息不够准确)"
         },
+        "dish-ai-commit.features.codeAnalysis.useEmbedding": {
+          "type": "boolean",
+          "default": false,
+          "description": "Enable embeddings for generating commit messages, code reviews, and other features. / 启用 embedding 以生成提交信息、代码审查和其他功能。"
+        },
         "dish-ai-commit.features.commitFormat.enableEmoji": {
           "type": "boolean",
           "default": true,
@@ -257,7 +283,7 @@
         },
         "dish-ai-commit.features.codeReview.systemPrompt": {
           "type": "string",
-          "default": "Custom system prompt",
+          "default": "",
           "description": "Custom system prompt for code review / 代码审查的自定义系统提示语"
         },
         "dish-ai-commit.features.branchName.systemPrompt": {
@@ -280,7 +306,7 @@
           "default": "",
           "description": "Custom system prompt for PR summary generation / PR摘要生成的自定义系统提示语"
         },
-        "svn-commit-gen.commitLogLimit": {
+        "dish-ai-commit.features.prSummary.commitLogLimit": {
           "type": "number",
           "default": 20,
           "description": "The maximum number of commit logs to fetch for SVN when no specific range is provided. / 当未提供特定范围时，为 SVN 获取提交日志的最大数量。"
@@ -315,14 +341,14 @@
           "group": "2_z_dish@4"
         },
         {
-          "command": "dish-ai-commit.selectModel",
-          "when": "scmProvider =~ /(git|svn)/",
-          "group": "2_z_dish@5"
-        },
-        {
           "command": "dish-ai-commit.generatePRSummary",
           "when": "scmProvider == git",
           "group": "2_z_dish@6"
+        },
+        {
+          "command": "dish-ai-commit.selectModel",
+          "when": "scmProvider =~ /(git|svn)/",
+          "group": "2_z_dish@5"
         }
       ],
       "scm/resourceState/context": [
@@ -347,14 +373,14 @@
           "group": "2_z_dish@4"
         },
         {
-          "command": "dish-ai-commit.selectModel",
-          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
-          "group": "2_z_dish@5"
-        },
-        {
           "command": "dish-ai-commit.generatePRSummary",
           "when": "config.git.enabled && scmProvider == git && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
           "group": "2_z_dish@6"
+        },
+        {
+          "command": "dish-ai-commit.selectModel",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "2_z_dish@5"
         }
       ],
       "scm/resourceFolder/context": [
@@ -403,10 +429,10 @@
           "command": "dish-ai-commit.generateBranchName"
         },
         {
-          "command": "dish-ai-commit.reviewCode"
+          "command": "dish-ai-commit.generatePRSummary"
         },
         {
-          "command": "dish-ai-commit.generatePRSummary"
+          "command": "dish-ai-commit.reviewCode"
         }
       ]
     }
@@ -415,6 +441,7 @@
     "vscode:prepublish": "npm run vscode:prepublish:esbuild",
     "compile": "npm run compile:webview && tsc -p ./",
     "compile:webview": "cd src/webview-ui && pnpm install && pnpm run build",
+    "watch:webview": "cd src/webview-ui && pnpm run dev",
     "watch": "tsc -watch -p ./",
     "pretest": "npm run compile && npm run lint",
     "lint": "eslint src",
@@ -443,6 +470,7 @@
     "@types/jest": "^29.5.14",
     "@types/mocha": "^10.0.10",
     "@types/node": "~24.0.0",
+    "@types/uuid": "^10.0.0",
     "@types/vscode": "^1.90.0",
     "@typescript-eslint/eslint-plugin": "^8.34.0",
     "@typescript-eslint/parser": "^8.34.0",
@@ -471,9 +499,12 @@
   },
   "dependencies": {
     "@google/genai": "^1.4.0",
+    "@qdrant/js-client-rest": "^1.14.1",
     "inversify": "^7.5.2",
     "ollama": "^0.5.16",
-    "openai": "^5.3.0"
+    "openai": "^5.3.0",
+    "web-tree-sitter": "^0.22.6",
+    "tree-sitter-wasms": "^0.1.11"
   },
   "overrides": {
     "glob": "10.3.10",

@@ -16,6 +16,7 @@ import {
   extractModifiedFilePaths,
   generateWithRetry,
 } from "../utils/generate-helper";
+import { addSimilarCodeContext } from "../utils/embedding-helper";
 import { getWeeklyReportPrompt } from "../../prompt/weekly-report";
 import { CodeReviewReportGenerator } from "../../services/code-review-report-generator";
 import { formatMessage } from "../../utils/i18n/localization-manager";
@@ -32,7 +33,6 @@ export abstract class AbstractAIProvider implements AIProvider {
    */
   async generateCommit(params: AIRequestParams): Promise<AIResponse> {
     try {
-      console.log("params", params);
       const systemPrompt = getSystemPrompt(params);
       const result = await this.executeWithRetry(
         systemPrompt,
@@ -67,6 +67,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       // 应该在 executeAIStreamRequest 的实现中或专门的流式重试辅助函数中处理。
       // systemPrompt, userPrompt, userContent 将由 executeAIStreamRequest 的实现
       // 从 params 中获取或计算。
+      await addSimilarCodeContext(params);
       return this.executeAIStreamRequest(params, {
         temperature: 0.3, // 提交信息推荐温度值 0.3
         // maxTokens 可以在这里设置，如果需要的话

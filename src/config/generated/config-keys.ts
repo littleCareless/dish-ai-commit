@@ -27,6 +27,7 @@ export const CONFIG_KEYS = {
   "FEATURES": "dish-ai-commit.features",
   "FEATURES_CODEANALYSIS": "dish-ai-commit.features.codeAnalysis",
   "FEATURES_CODEANALYSIS_SIMPLIFYDIFF": "dish-ai-commit.features.codeAnalysis.simplifyDiff",
+  "FEATURES_CODEANALYSIS_USEEMBEDDING": "dish-ai-commit.features.codeAnalysis.useEmbedding",
   "FEATURES_COMMITFORMAT": "dish-ai-commit.features.commitFormat",
   "FEATURES_COMMITFORMAT_ENABLEEMOJI": "dish-ai-commit.features.commitFormat.enableEmoji",
   "FEATURES_COMMITFORMAT_ENABLEMERGECOMMIT": "dish-ai-commit.features.commitFormat.enableMergeCommit",
@@ -39,5 +40,10 @@ export const CONFIG_KEYS = {
   "FEATURES_CODEREVIEW": "dish-ai-commit.features.codeReview",
   "FEATURES_CODEREVIEW_SYSTEMPROMPT": "dish-ai-commit.features.codeReview.systemPrompt",
   "FEATURES_BRANCHNAME": "dish-ai-commit.features.branchName",
-  "FEATURES_BRANCHNAME_SYSTEMPROMPT": "dish-ai-commit.features.branchName.systemPrompt"
+  "FEATURES_BRANCHNAME_SYSTEMPROMPT": "dish-ai-commit.features.branchName.systemPrompt",
+  "FEATURES_PRSUMMARY": "dish-ai-commit.features.prSummary",
+  "FEATURES_PRSUMMARY_BASEBRANCH": "dish-ai-commit.features.prSummary.baseBranch",
+  "FEATURES_PRSUMMARY_HEADBRANCH": "dish-ai-commit.features.prSummary.headBranch",
+  "FEATURES_PRSUMMARY_SYSTEMPROMPT": "dish-ai-commit.features.prSummary.systemPrompt",
+  "FEATURES_PRSUMMARY_COMMITLOGLIMIT": "dish-ai-commit.features.prSummary.commitLogLimit"
 } as const;
