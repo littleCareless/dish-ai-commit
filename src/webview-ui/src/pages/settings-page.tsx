@@ -45,6 +45,7 @@ const SettingsPage: React.FC = () => {
   );
   const [selectedEmbeddingProvider, setSelectedEmbeddingProvider] =
     useState<string>("");
+  const [saveDisabled, setSaveDisabled] = useState(false);
 
   useEffect(() => {
     const providerSetting = settingsSchema.find(
@@ -154,7 +155,7 @@ const SettingsPage: React.FC = () => {
             <ArcoButton
               type="primary"
               onClick={handleSaveSettings}
-              disabled={!hasChanges}
+              disabled={!hasChanges || saveDisabled}
               icon={<Save size={16} />}
             >
               保存
@@ -178,6 +179,7 @@ const SettingsPage: React.FC = () => {
             handleStartIndexing={handleStartIndexing}
             onSettingChange={handleSettingChange}
             setHasChanges={setHasChanges}
+            setSaveDisabled={setSaveDisabled}
           />
         </div>
       </Layout.Content>

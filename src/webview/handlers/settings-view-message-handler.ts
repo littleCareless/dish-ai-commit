@@ -21,6 +21,11 @@ export class SettingsViewMessageHandler {
     webview: vscode.Webview
   ): Promise<void> {
     switch (message.command) {
+      case "testConnection": {
+        const { service, url, key } = message.data;
+        await this.handleTestConnection(service, url, key, webview);
+        break;
+      }
       case "startIndexing": {
         const startIndex = message?.data?.startIndex ?? 0;
         console.log(
@@ -116,11 +121,6 @@ export class SettingsViewMessageHandler {
         if (this._embeddingService) {
           isIndexed = await this._embeddingService.isIndexed();
         }
-
-        console.log("loadSettings", [
-          ...detailedSettings,
-          ...workspaceSettings,
-        ]);
 
         webview.postMessage({
           command: "loadSettings",
@@ -261,6 +261,51 @@ export class SettingsViewMessageHandler {
       }
     }
   }
+
+  private async handleTestConnection(
+    service: string,
+    url: string,
+    key: string,
+    webview: vscode.Webview
+  ): Promise<void> {
+    console.log("handleTestConnection", service);
+    try {
+      let testUrl = url;
+      if (service === "ollama") {
+        // For Ollama, we can check the version or a similar endpoint
+        testUrl = new URL("/api/version", url).toString();
+      } else if (service === "qdrant") {
+        // For Qdrant, we can check the root endpoint which usually returns version info
+        testUrl = new URL("/", url).toString();
+      }
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 5000);
+      const response = await fetch(testUrl, {
+        signal: controller.signal,
+      });
+      clearTimeout(timeout);
+
+      if (response.ok) {
+        webview.postMessage({
+          command: "testConnectionResult",
+          data: { success: true, service, key },
+        });
+      } else {
+        console.log("error", response);
+        throw new Error(`Server returned status ${response.status}`);
+      }
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+
+      console.log("error", error);
+      webview.postMessage({
+        command: "testConnectionResult",
+        data: { success: false, error: errorMessage, service, key },
+      });
+    }
+  }
+
   private async startIndexing(
     startIndex: number,
     webview: vscode.Webview
