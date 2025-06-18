@@ -29,6 +29,7 @@ export class VectorStore {
   private client: QdrantClient;
   private collectionName: string;
   private vectorSize: number; // This should match the output dimension of your embedding model
+  private initializationPromise: Promise<void> | null = null;
 
   constructor(
     qdrantUrl: string = "http://localhost:6333",
@@ -39,9 +40,22 @@ export class VectorStore {
     this.client = new QdrantClient({ url: qdrantUrl });
     this.collectionName = collectionName;
     this.vectorSize = vectorSize; // Example size, adjust based on embedding model
+    this.initializeStore().catch((err) => {
+      // The error is already logged in initializeStore.
+      // We catch it here to prevent unhandled promise rejection warnings.
+      console.error("Failed to initialize VectorStore in background", err);
+    });
   }
 
-  public async initializeStore(): Promise<void> {
+  public initializeStore(): Promise<void> {
+    if (this.initializationPromise) {
+      return this.initializationPromise;
+    }
+    this.initializationPromise = this._initializeStoreInternal();
+    return this.initializationPromise;
+  }
+
+  private async _initializeStoreInternal(): Promise<void> {
     try {
       const collections = await this.client.getCollections();
       const collectionExists = collections.collections.some(
@@ -50,8 +64,9 @@ export class VectorStore {
 
       if (!collectionExists) {
         console.log(
-          `Collection '${this.collectionName}' does not exist. Creating...`
+          `Collection '${this.collectionName}' Size '${this.vectorSize}' does not exist. Creating...`
         );
+
         await this.client.createCollection(this.collectionName, {
           vectors: {
             size: this.vectorSize,
@@ -61,16 +76,16 @@ export class VectorStore {
         console.log(
           `Collection '${this.collectionName}' created successfully.`
         );
-      } else {
-        console.log(`Collection '${this.collectionName}' already exists.`);
       }
     } catch (error) {
+      this.initializationPromise = null; // Allow retry on failure
       console.error("Error initializing Qdrant store:", error);
       throw error; // Re-throw to allow higher-level error handling
     }
   }
 
   public async upsertPoints(points: QdrantPoint[]): Promise<void> {
+    await this.initializeStore();
     if (points.length === 0) {
       return;
     }
@@ -81,6 +96,7 @@ export class VectorStore {
         vector: p.vector,
         payload: p.payload as Record<string, any>, // Explicitly cast payload
       }));
+      console.log("collectionName", this.collectionName, qdrantPoints);
       await this.client.upsert(this.collectionName, { points: qdrantPoints });
       console.log(
         `Successfully upserted ${points.length} points to '${this.collectionName}'.`
@@ -95,6 +111,7 @@ export class VectorStore {
     filePath: string,
     projectName: string
   ): Promise<void> {
+    await this.initializeStore();
     try {
       // This requires a more complex filter if we want to delete all points associated with a file.
       // Qdrant's deletePoints operation uses point IDs or filters on payload.
@@ -160,6 +177,7 @@ export class VectorStore {
     limit: number = 10,
     filter?: any
   ): Promise<any[]> {
+    await this.initializeStore();
     try {
       const searchResult = await this.client.search(this.collectionName, {
         vector: queryVector,
@@ -177,6 +195,7 @@ export class VectorStore {
   }
 
   public async hasVectors(): Promise<number> {
+    await this.initializeStore();
     try {
       const infoPromise = this.client.getCollection(this.collectionName);
 

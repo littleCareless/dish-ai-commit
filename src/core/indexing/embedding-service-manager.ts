@@ -3,7 +3,11 @@ import * as path from "path";
 import { EmbeddingService } from "./embedding-service";
 import { stateManager } from "../../utils/state/state-manager";
 import { VectorStore } from "./vector-store";
-import { QDRANT_URL_KEY, QDRANT_COLLECTION_NAME_KEY } from "./constants";
+import { QDRANT_URL_KEY } from "./constants";
+import { createHash } from "crypto";
+import { getWorkspacePath } from "../utils/path";
+import { WorkspaceConfigPath } from "../../config/workspace-config-schema";
+import { EMBEDDING_MODEL_PROFILES } from "./embedding-model-profiles";
 
 /**
  * 管理 EmbeddingService 的单例实例
@@ -44,24 +48,52 @@ export class EmbeddingServiceManager {
       const projectName = path.basename(projectRoot);
 
       // 从配置中获取 Qdrant URL 和集合名称
-      const qdrantUrl = stateManager.getWorkspace<string>(QDRANT_URL_KEY, "http://localhost:6333");
-      const qdrantCollectionName = stateManager.getWorkspace<string>(
-        QDRANT_COLLECTION_NAME_KEY,
-        `code_semantic_blocks_${projectName}`
+      const qdrantUrl = stateManager.getWorkspace<string>(
+        QDRANT_URL_KEY,
+        "http://localhost:6333"
       );
+
+      // Generate collection name from workspace path
+      const workspacePath = getWorkspacePath();
+      const hash = createHash("sha256").update(workspacePath).digest("hex");
+      const qdrantCollectionName = `dish-${hash.substring(0, 16)}`;
+
+      const embeddingProvider =
+        stateManager.getWorkspace<"OpenAI" | "Ollama" | "openai-compatible">(
+          "experimental.codeIndex.embeddingProvider" as WorkspaceConfigPath
+        ) || "OpenAI"; // Default to OpenAI
+      const embeddingModel =
+        stateManager.getWorkspace<string>(
+          "experimental.codeIndex.embeddingModel" as WorkspaceConfigPath
+        ) || "text-embedding-3-small"; // Default model
+
+      const modelProfile =
+        EMBEDDING_MODEL_PROFILES[embeddingProvider.toLowerCase()]?.[
+          embeddingModel
+        ];
+      const vectorSize = modelProfile?.dimension || 1536; // Default to 1536 if not found
+
+      if (!modelProfile) {
+        console.warn(
+          `[EmbeddingServiceManager] Could not find embedding model profile for provider: ${embeddingProvider}, model: ${embeddingModel}. Falling back to default vector size: 1536.`
+        );
+      }
 
       const vectorStore = new VectorStore(
         qdrantUrl,
-        qdrantCollectionName
+        qdrantCollectionName,
+        vectorSize
       );
-      
+
       this._embeddingService = new EmbeddingService(
         vectorStore,
         projectName,
         projectRoot
       );
 
-      console.log(`[EmbeddingServiceManager] Initialized EmbeddingService for project: ${projectName}`);
+      console.log(
+        `[EmbeddingServiceManager] Initialized EmbeddingService for project: ${projectName}`
+      );
     } else {
       console.warn(
         "[EmbeddingServiceManager] No workspace folder found. EmbeddingService will not be initialized."
@@ -75,7 +107,9 @@ export class EmbeddingServiceManager {
    */
   public getEmbeddingService(): EmbeddingService {
     if (!this._embeddingService) {
-      throw new Error("EmbeddingService not initialized. Call initialize() first.");
+      throw new Error(
+        "EmbeddingService not initialized. Call initialize() first."
+      );
     }
     return this._embeddingService;
   }
