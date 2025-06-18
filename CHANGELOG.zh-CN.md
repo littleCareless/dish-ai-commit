@@ -6,6 +6,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.23.0 (2025-06-18)
+
+### ✨ Features
+
+- **indexing**: 增强嵌入服务并改进错误处理 ([6652b5d](https://github.com/littleCareless/dish-ai-commit/commit/6652b5d))
+- **setting**: 改进索引错误处理与显示 ([7f4e558](https://github.com/littleCareless/dish-ai-commit/commit/7f4e558))
+- **settings**: 增强设置页面保存提示并更新菜单标签 ([a7a9002](https://github.com/littleCareless/dish-ai-commit/commit/a7a9002))
+
+### 🎫 Chores
+
+- **release**: 准备 0.22.0 版本发布 ([19df93a](https://github.com/littleCareless/dish-ai-commit/commit/19df93a))
+
+### 🐛 Bug Fixes
+
+- **indexing**: 增强索引错误处理与报告 ([8227100](https://github.com/littleCareless/dish-ai-commit/commit/8227100))
+
 # 0.22.0 (2025-06-17)
 
 ### ♻ Code Refactoring

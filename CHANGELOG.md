@@ -6,6 +6,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.23.0 (2025-06-18)
+
+### ✨ Features
+
+- **indexing**: Enhance embedding service and improve error handling ([6652b5d](https://github.com/littleCareless/dish-ai-commit/commit/6652b5d))
+
+- **setting**: Improve indexing error handling and display ([7f4e558](https://github.com/littleCareless/dish-ai-commit/commit/7f4e558))
+
+- **settings**: Enhance settings page save prompt and update menu label ([a7a9002](https://github.com/littleCareless/dish-ai-commit/commit/a7a9002))
+
+### 🎫 Chores
+
+- **release**: Prepare for 0.22.0 release ([19df93a](https://github.com/littleCareless/dish-ai-commit/commit/19df93a))
+
+### 🐛 Bug Fixes
+
+- **indexing**: Enhanced indexing error handling and reporting ([8227100](https://github.com/littleCareless/dish-ai-commit/commit/8227100))
+
 # 0.22.0 (2025-06-17)
 
 ### ♻ Code Refactoring
