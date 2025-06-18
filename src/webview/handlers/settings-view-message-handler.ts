@@ -1,5 +1,8 @@
 import * as vscode from "vscode";
-import { EmbeddingService } from "../../core/indexing/embedding-service";
+import {
+  EmbeddingService,
+  EmbeddingServiceError,
+} from "../../core/indexing/embedding-service";
 import { AIProvider } from "../../ai/types";
 import { AIProviderFactory } from "../../ai/ai-provider-factory";
 import { stateManager } from "../../utils/state/state-manager";
@@ -119,7 +122,20 @@ export class SettingsViewMessageHandler {
         // 获取索引状态
         let isIndexed = 0;
         if (this._embeddingService) {
-          isIndexed = await this._embeddingService.isIndexed();
+          try {
+            isIndexed = await this._embeddingService.isIndexed();
+          } catch (error) {
+            console.error(
+              "[SettingsViewMessageHandler] Error checking index status:",
+              error
+            );
+            // Optionally, inform the webview about the error
+            webview.postMessage({
+              command: "indexingStatusError",
+              error:
+                error instanceof Error ? error.message : "Could not get status",
+            });
+          }
         }
 
         webview.postMessage({
@@ -329,15 +345,35 @@ export class SettingsViewMessageHandler {
         data: { message: "索引完成!" },
       });
     } catch (error) {
-      const errorMessage =
-        error instanceof Error ? error.message : String(error);
       console.error(
-        `[SettingsViewMessageHandler] Error during indexing: ${errorMessage}`
+        `[SettingsViewMessageHandler] Error during indexing:`,
+        error
       );
-      webview.postMessage({
-        command: "indexingFailed",
-        data: { message: `索引失败: ${errorMessage}` },
-      });
+
+      if (error instanceof EmbeddingServiceError) {
+        // Forward the structured error to the webview
+        console.log("indexingFailed");
+        webview.postMessage({
+          command: "indexingFailed",
+          data: {
+            message: error.message,
+            source: error.context.source,
+            type: error.context.type,
+            context: error.context, // Send the whole context
+          },
+        });
+      } else {
+        // Handle generic errors
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        webview.postMessage({
+          command: "indexingFailed",
+          data: {
+            message: `索引失败: ${errorMessage}`,
+            source: "unknown",
+          },
+        });
+      }
     }
   }
 }
