@@ -21,6 +21,7 @@ interface SettingsContentProps {
   indexingProgress: string;
   indexedCount: number;
   totalCount: number;
+  indexingError: string;
   selectedEmbeddingProvider: string;
   setSelectedEmbeddingProvider: (value: string) => void;
   embeddingProviders: { key: string; label: string }[];
@@ -40,6 +41,7 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
   indexingProgress,
   indexedCount,
   totalCount,
+  indexingError,
   // selectedEmbeddingProvider,
   // setSelectedEmbeddingProvider,
   // embeddingProviders,
@@ -250,6 +252,14 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
           {isIndexing && (
             <div className="text-center text-muted-foreground mt-2">
               正在处理文件: {indexingProgress} ({indexedCount} / {totalCount})
+            </div>
+          )}
+          {indexingError && (
+            <div
+              className="text-center mt-2"
+              style={{ color: "var(--color-text-error)" }}
+            >
+              {indexingError}
             </div>
           )}
           {/* 显示索引状态 */}

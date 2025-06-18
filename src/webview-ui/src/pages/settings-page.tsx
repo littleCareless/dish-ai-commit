@@ -38,6 +38,7 @@ const SettingsPage: React.FC = () => {
     indexedCount,
     totalCount,
     isIndexed,
+    indexingError,
   } = useMessageHandler();
 
   const [selectedMenuItemKey, setSelectedMenuItemKey] = useState<string>(
@@ -171,6 +172,7 @@ const SettingsPage: React.FC = () => {
             indexingProgress={indexingProgress}
             indexedCount={indexedCount}
             totalCount={totalCount}
+            indexingError={indexingError}
             selectedEmbeddingProvider={selectedEmbeddingProvider}
             setSelectedEmbeddingProvider={setSelectedEmbeddingProvider}
             embeddingProviders={embeddingProviders}

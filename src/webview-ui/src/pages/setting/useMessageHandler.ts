@@ -13,6 +13,7 @@ export const useMessageHandler = () => {
   const [totalCount, setTotalCount] = useState<number>(0);
   const [isIndexed, setIsIndexed] = useState<number>(0);
   const [processedModels, setProcessedModels] = useState<string[]>([]);
+  const [indexingError, setIndexingError] = useState<string>("");
   const { toast } = useToast();
 
   useEffect(() => {
@@ -30,6 +31,7 @@ export const useMessageHandler = () => {
 
       switch (message.command) {
         case "indexingProgress": {
+          setIndexingError(""); // Clear previous errors on new progress
           setIndexingProgress(message.data.message);
           setIndexedCount(message.data.current);
           setTotalCount(message.data.total);
@@ -135,6 +137,13 @@ export const useMessageHandler = () => {
             variant: "destructive",
           });
           break;
+        case "indexingStatusError":
+          toast({
+            title: "无法获取索引状态",
+            description: message.error,
+            variant: "destructive",
+          });
+          break;
         case "settingsSaved":
           toast({
             title: "Settings Saved",
@@ -154,10 +163,29 @@ export const useMessageHandler = () => {
           break;
         case "indexingFinished":
           setIsIndexing(false);
+          setIndexingError(""); // Clear error on success
           break;
-        case "indexingFailed":
+        case "indexingFailed": {
           setIsIndexing(false);
+          setIndexingProgress(""); // Clear progress text
+          const {
+            message: errorMessage,
+            source,
+            type,
+          } = message.data || {
+            message: "An unknown error occurred.",
+            source: "unknown",
+          };
+
+          // Capitalize first letter of source for the title
+          const sourceTitle = source.charAt(0).toUpperCase() + source.slice(1);
+          setIndexingError(
+            `索引失败: ${sourceTitle} 错误. ${errorMessage} (类型: ${
+              type || "unknown"
+            })`
+          );
           break;
+        }
       }
     };
 
@@ -178,5 +206,6 @@ export const useMessageHandler = () => {
     totalCount,
     isIndexed,
     processedModels,
+    indexingError,
   };
 };
