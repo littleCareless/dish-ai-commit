@@ -25,7 +25,7 @@ export const menuItemsConfig = [
       { key: "features.weeklyReport", label: "周报生成" },
       { key: "features.codeReview", label: "代码审查" },
       { key: "features.branchName", label: "分支名称生成" },
-      { key: "features.prSummary", label: "PR摘要" },
+      { key: "features.prSummary", label: "PR摘要生成" },
     ],
   },
   {

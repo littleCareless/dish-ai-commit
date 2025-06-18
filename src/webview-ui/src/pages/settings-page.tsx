@@ -3,6 +3,7 @@ import {
   Layout,
   Button as ArcoButton,
   PageHeader,
+  Alert,
 } from "@arco-design/web-react";
 import "@arco-design/web-react/dist/css/arco.css";
 import { Save } from "lucide-react";
@@ -153,14 +154,23 @@ const SettingsPage: React.FC = () => {
             flexShrink: 0,
           }}
           extra={
-            <ArcoButton
-              type="primary"
-              onClick={handleSaveSettings}
-              disabled={!hasChanges || saveDisabled}
-              icon={<Save size={16} />}
-            >
-              保存
-            </ArcoButton>
+            <div style={{ display: "flex", alignItems: "center" }}>
+              {hasChanges && (
+                <Alert
+                  type="warning"
+                  content="有未保存的更改"
+                  style={{ marginRight: 8 }}
+                />
+              )}
+              <ArcoButton
+                type="primary"
+                onClick={handleSaveSettings}
+                disabled={!hasChanges || saveDisabled}
+                icon={<Save size={16} />}
+              >
+                保存
+              </ArcoButton>
+            </div>
           }
         />
         <div style={{ flexGrow: 1, overflowY: "auto", padding: "24px" }}>
