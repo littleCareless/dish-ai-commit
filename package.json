@@ -59,7 +59,7 @@
         {
           "id": "dish-ai-commitActivityBar",
           "title": "Dish Ai Commit Message",
-          "icon": "/images/icon.svg"
+          "icon": "/images/menu-icon.svg"
         }
       ]
     },
@@ -70,7 +70,7 @@
           "name": "插件设置",
           "type": "webview",
           "contextualTitle": "Dish Ai Commit Message设置",
-          "icon": "/images/icon.svg"
+          "icon": "/images/menu-icon.svg"
         }
       ]
     },
