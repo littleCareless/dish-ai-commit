@@ -176,5 +176,6 @@
   "pr.summary.select.base.branch.placeholder": "Select base branch to compare with (current: {0})",
   "pr.summary.select.base.branch.title": "Select Base Branch for PR Summary",
   "pr.summary.base.branch.selection.cancelled": "Base branch selection cancelled. PR summary generation aborted.",
-  "pr.summary.no.branches.found": "No branches found in the repository. Using default base branch."
+  "pr.summary.no.branches.found": "No branches found in the repository. Using default base branch.",
+  "progress.failed": "Task execution failed: {0}"
 }

@@ -16,7 +16,6 @@ A VSCode extension for generating standardized Git/SVN commit messages using AI
 [![][total-installs-shield]][total-installs-link]
 [![][avarage-rating-shield]][avarage-rating-link]
 [![][github-license-shield]][github-license-link]
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/littleCareless/dish-ai-commit)
 
 ![Demo](images/demo.gif)
 
@@ -180,6 +179,7 @@ By disabling the enableBody option, you can:
 - Focus on the essential information
 
 Enable/disable through configuration:
+
 ```json
 {
   "dish-ai-commit.features.commitFormat.enableBody": false // Disable commit message body
@@ -279,7 +279,7 @@ See [CHANGELOG.md](CHANGELOG.md) for a detailed version history.
 
 - VS Code 1.80.0+
 - [SVN Command Line Tool](http://subversion.apache.org/packages.html)
-- SVN SCM (Optional) - Install [SVN SCM v2.18.1+](https://github.com/littleCareless/svn-scm/releases/tag/v2.18.1) if you need to enter commit messages in VSCode's SCM input box
+- SVN SCM (Optional) - Install [SVN SCM v2.18.1+](https://marketplace.visualstudio.com/items?itemName=littleCareless.svn-scm-ai) if you need to enter commit messages in VSCode's SCM input box
   - Download the latest version of the SVN SCM extension from the [release page](https://marketplace.visualstudio.com/items?itemName=littleCareless.svn-scm-ai)
 - Git SCM (Optional) - Install [Git SCM](https://marketplace.visualstudio.com/items?itemName=vscode.git) if you need to enter commit messages in VSCode's SCM input box
 - Valid AI service configuration (OpenAI API Key or Ollama service)

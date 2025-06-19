@@ -178,5 +178,6 @@
   "pr.summary.select.base.branch.placeholder": "选择要对比的基础分支 (当前: {0})",
   "pr.summary.select.base.branch.title": "选择PR摘要的基础分支",
   "pr.summary.base.branch.selection.cancelled": "已取消选择基础分支。PR摘要生成已中止。",
-  "pr.summary.no.branches.found": "仓库中未找到分支。将使用默认基础分支。"
+  "pr.summary.no.branches.found": "仓库中未找到分支。将使用默认基础分支。",
+  "progress.failed": "任务执行失败：{0}"
 }
