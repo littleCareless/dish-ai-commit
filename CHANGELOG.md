@@ -6,6 +6,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.23.1 (2025-06-19)
+
+### ♻ Code Refactoring
+
+- **logging**: Optimize the format of model loading log warnings ([31091a6](https://github.com/littleCareless/dish-ai-commit/commit/31091a6))
+
+### 🎫 Chores
+
+- **release**: Prepare for 0.23.0 release ([3a0a01f](https://github.com/littleCareless/dish-ai-commit/commit/3a0a01f))
+
+### 💄 Styles
+
+- **icon**: Update menu and view icons ([1de232a](https://github.com/littleCareless/dish-ai-commit/commit/1de232a))
+
+### 📝 Documentation
+
+- **readme**: Update content and add internationalization support ([212f58a](https://github.com/littleCareless/dish-ai-commit/commit/212f58a))
+
 # 0.23.0 (2025-06-18)
 
 ### ✨ Features
