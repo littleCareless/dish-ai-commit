@@ -104,7 +104,8 @@ export const useMessageHandler = () => {
               );
             } else {
               console.warn(
-                `Received models for ${message.data.modelSettingKey} in an unexpected array item format:`,
+                "Received models for %s in an unexpected array item format:",
+                message.data.modelSettingKey,
                 rawModels
               );
               setProcessedModels([]);
@@ -122,7 +123,8 @@ export const useMessageHandler = () => {
               !Array.isArray(rawModels)
             ) {
               console.warn(
-                `Received models for ${message.data.modelSettingKey} in an unexpected format:`,
+                "Received models for %s in an unexpected format:",
+                message.data.modelSettingKey,
                 rawModels
               );
             }
