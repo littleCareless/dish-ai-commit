@@ -6,6 +6,67 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.23.0 (2025-06-18)
+
+### ✨ Features
+
+- **indexing**: Enhance embedding service and improve error handling ([6652b5d](https://github.com/littleCareless/dish-ai-commit/commit/6652b5d))
+
+- **setting**: Improve indexing error handling and display ([7f4e558](https://github.com/littleCareless/dish-ai-commit/commit/7f4e558))
+
+- **settings**: Enhance settings page save prompt and update menu label ([a7a9002](https://github.com/littleCareless/dish-ai-commit/commit/a7a9002))
+
+### 🎫 Chores
+
+- **release**: Prepare for 0.22.0 release ([19df93a](https://github.com/littleCareless/dish-ai-commit/commit/19df93a))
+
+### 🐛 Bug Fixes
+
+- **indexing**: Enhanced indexing error handling and reporting ([8227100](https://github.com/littleCareless/dish-ai-commit/commit/8227100))
+
+# 0.22.0 (2025-06-17)
+
+### ♻ Code Refactoring
+
+- **commands**: Adjust embed context logic in commands ([f67fd95](https://github.com/littleCareless/dish-ai-commit/commit/f67fd95))
+
+- **utils**: Remove unused config module ([f67eb75](https://github.com/littleCareless/dish-ai-commit/commit/f67eb75))
+
+- **webview/settings**: Refactor settings view to separate concerns and improve configuration management ([3edd1d2](https://github.com/littleCareless/dish-ai-commit/commit/3edd1d2))
+
+### ✨ Features
+
+- **ai**: Integrate embed services to provide similar code context ([a4a011e](https://github.com/littleCareless/dish-ai-commit/commit/a4a011e))
+- **branding**: Update plugin title and icon ([cbeaf6e](https://github.com/littleCareless/dish-ai-commit/commit/cbeaf6e))
+- **code-index**: Implement configurable embedding service and enhance index stability ([7323665](https://github.com/littleCareless/dish-ai-commit/commit/7323665))
+- **config**: Introduce embedding function and update related configuration ([8e88ddb](https://github.com/littleCareless/dish-ai-commit/commit/8e88ddb))
+- **core, ai**: Integrate embedding service and add setting view ([c5b3bab](https://github.com/littleCareless/dish-ai-commit/commit/c5b3bab))
+- **core**: Added multiple core tool functions ([9dd8ad1](https://github.com/littleCareless/dish-ai-commit/commit/9dd8ad1))
+- **core**: Introduced code parsing and vector storage dependencies ([8d5bcf7](https://github.com/littleCareless/dish-ai-commit/commit/8d5bcf7))
+- **glob**: Implemented file and directory ignoring logic ([72ac425](https://github.com/littleCareless/dish-ai-commit/commit/72ac425))
+- **indexing**: Integrate EmbeddingServiceManager and add Qdrant related configuration ([0a91691](https://github.com/littleCareless/dish-ai-commit/commit/0a91691))
+- **indexing**: Integrate Ollama, improve code parsing and segmentation, and increase indexing progress ([437c76b](https://github.com/littleCareless/dish-ai-commit/commit/437c76b))
+- **indexing**: Added EmbeddingService manager ([3279a92](https://github.com/littleCareless/dish-ai-commit/commit/3279a92))
+- **indexing**: Introduced code semantic indexing and search functions ([981841f](https://github.com/littleCareless/dish-ai-commit/commit/981841f))
+- **setting**: Added setting page UI to support code index configuration ([1ef3c28](https://github.com/littleCareless/dish-ai-commit/commit/1ef3c28))
+- **settings**: Add service connection test and refactor code index setting UI ([b2706ee](https://github.com/littleCareless/dish-ai-commit/commit/b2706ee))
+- **tree-sitter**: Implement multi-language parsing and query functions based on WASM ([8841069](https://github.com/littleCareless/dish-ai-commit/commit/8841069))
+- **ui, core**: Add settings interface and upgrade code parsing library ([5aaae4f](https://github.com/littleCareless/dish-ai-commit/commit/5aaae4f))
+- **webview-ui**: Introduce multi-view support and add settings page ([4e41e02](https://github.com/littleCareless/dish-ai-commit/commit/4e41e02))
+- **webview**: Implement plugin settings view provider ([2727a5e](https://github.com/littleCareless/dish-ai-commit/commit/2727a5e))
+- **webview**: Add settings and weekly report pages, and update project identifier ([773e017](https://github.com/littleCareless/dish-ai-commit/commit/773e017))
+
+### 🎫 Chores
+
+- **config**: Add workspace configuration mode ([dc6a621](https://github.com/littleCareless/dish-ai-commit/commit/dc6a621))
+- **constants**: Add core constant definitions ([5194e01](https://github.com/littleCareless/dish-ai-commit/commit/5194e01))
+- **deps**: Update dependencies and adjust typescript dependency types ([ce22e8b](https://github.com/littleCareless/dish-ai-commit/commit/ce22e8b))
+- **release**: Release 0.21.1 ([1f59412](https://github.com/littleCareless/dish-ai-commit/commit/1f59412))
+
+### 🐛 Bug Fixes
+
+- **build**: Fix the issue where the build script did not copy WASM files ([6aa39de](https://github.com/littleCareless/dish-ai-commit/commit/6aa39de))
+
 ## 0.21.1 (2025-06-13)
 
 ### ♻ Code Refactoring

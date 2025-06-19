@@ -115,11 +115,11 @@ console.log(chunks);
 
 ### 配置
 
-可以通过 VSCode 的配置项 `svnCommitGen.diff.simplifyDiff` 进行配置：
+可以通过 VSCode 的配置项 `dish-ai-commit.diff.simplifyDiff` 进行配置：
 
 ```json
 {
-  "svnCommitGen.diff.simplifyDiff": true
+  "dish-ai-commit.diff.simplifyDiff": true
 }
 ```
 

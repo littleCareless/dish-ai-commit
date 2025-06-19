@@ -180,6 +180,7 @@
 - 专注于最基本的信息
 
 通过配置启用/禁用：
+
 ```json
 {
   "dish-ai-commit.features.commitFormat.enableBody": false // 禁用提交消息正文
@@ -306,7 +307,7 @@
 
 - VS Code 1.80.0+
 - [SVN 命令行工具](http://subversion.apache.org/packages.html)
-- SVN SCM（可选）- 如果您需要在 VSCode 的 SCM 输入框中输入提交信息，请安装 [SVN SCM v2.18.1+](https://github.com/littleCareless/svn-scm/releases/tag/v2.18.1)
+- SVN SCM（可选）- 如果您需要在 VSCode 的 SCM 输入框中输入提交信息，请安装 [SVN SCM v2.18.1+](https://marketplace.visualstudio.com/items?itemName=littleCareless.svn-scm-ai)
 - 从 [发布页面](https://marketplace.visualstudio.com/items?itemName=littleCareless.svn-scm-ai) 下载最新版本的 SVN SCM 扩展
 - Git SCM（可选）- 如果您需要在 VSCode 的 SCM 输入框中输入提交信息，请安装 [Git SCM](https://marketplace.visualstudio.com/items?itemName=vscode.git)
 - 有效的 AI 服务配置（OpenAI API 密钥或 Ollama 服务）
