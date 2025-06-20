@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.25.0 (2025-06-20)
+
+### ✨ Features
+
+- **indexing**: Added the ability to clear indexes and re-index based on configuration changes ([d18b425](https://github.com/littleCareless/dish-ai-commit/commit/d18b425))
+
+### 🎫 Chores
+
+- **release**: Released version 0.24.0 ([997c323](https://github.com/littleCareless/dish-ai-commit/commit/997c323))
+
 # 0.24.0 (2025-06-20)
 
 ### ✨ Features
