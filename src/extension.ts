@@ -35,7 +35,7 @@ export async function activate(context: vscode.ExtensionContext) {
     context.subscriptions.push(ConfigurationManager.getInstance());
 
     // 初始化 EmbeddingServiceManager
-    EmbeddingServiceManager.getInstance().initialize();
+    const embeddingService = EmbeddingServiceManager.getInstance().initialize();
 
     console.log("注册命令");
     // 注册所有命令到VS Code
@@ -45,7 +45,8 @@ export async function activate(context: vscode.ExtensionContext) {
     const settingsProvider = new SettingsViewProvider(
       context.extensionUri,
       context.extension.id,
-      context
+      context,
+      embeddingService || null
     );
     context.subscriptions.push(
       vscode.window.registerWebviewViewProvider(

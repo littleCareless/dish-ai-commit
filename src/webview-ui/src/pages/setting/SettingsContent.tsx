@@ -262,10 +262,11 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
               {indexingError}
             </div>
           )}
-          {/* 显示索引状态 */}
-          <div className="text-center text-muted-foreground mt-2">
-            {isIndexed ? "代码库已建立索引" : "代码库尚未建立索引"}
-          </div>
+          {!indexingError && !isIndexing && (
+            <div className="text-center text-muted-foreground mt-2">
+              {isIndexed ? "代码库已建立索引" : "代码库尚未建立索引"}
+            </div>
+          )}
         </>
       )}
     </div>

@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { EmbeddingServiceManager } from "../core/indexing/embedding-service-manager";
+import { EmbeddingService } from "../core/indexing/embedding-service";
 import { SettingsViewHTMLProvider } from "./providers/settings-view-html-provider";
 import { SettingsViewMessageHandler } from "./handlers/settings-view-message-handler";
 
@@ -12,29 +12,21 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
   private readonly _messageHandler: SettingsViewMessageHandler;
   private _disposables: vscode.Disposable[] = [];
 
-  constructor(extensionUri: vscode.Uri, extensionId: string, private readonly _extensionContext: vscode.ExtensionContext) {
+  constructor(
+    extensionUri: vscode.Uri,
+    extensionId: string,
+    private readonly _extensionContext: vscode.ExtensionContext,
+    embeddingService: EmbeddingService | null
+  ) {
     this._extensionUri = extensionUri;
     this._htmlContentProvider = new SettingsViewHTMLProvider(
       this._extensionUri
     );
-
-    // 使用 EmbeddingServiceManager 获取 EmbeddingService 实例
-    try {
-      const embeddingServiceInstance =
-        EmbeddingServiceManager.getInstance().getEmbeddingService();
-      this._messageHandler = new SettingsViewMessageHandler(
-        extensionId,
-        embeddingServiceInstance,
-        this._extensionContext
-      );
-    } catch (error) {
-      console.error(
-        "[SettingsViewProvider] Error getting EmbeddingService instance:",
-        error
-      );
-      // 如果获取实例失败，创建一个空的消息处理器
-      this._messageHandler = new SettingsViewMessageHandler(extensionId, null, this._extensionContext);
-    }
+    this._messageHandler = new SettingsViewMessageHandler(
+      extensionId,
+      embeddingService,
+      this._extensionContext
+    );
   }
 
   public async resolveWebviewView(

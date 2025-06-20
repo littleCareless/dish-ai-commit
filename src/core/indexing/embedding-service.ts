@@ -647,10 +647,19 @@ export class EmbeddingService {
       return results; // 如果找到任何向量，则表示已建立索引
     } catch (error) {
       console.error("[EmbeddingService] Error checking index status:", error);
+      const isFetchError =
+        error instanceof TypeError && error.message === "fetch failed";
+
+      const qdUrl = this.vectorStore.getQdrantUrl();
+
+      console.log("qdUrl", qdUrl);
+
       throw new EmbeddingServiceError(
-        error instanceof Error
+        isFetchError
+          ? `连接 Qdrant 向量数据库失败。请确认 Qdrant 服务正在运行，并确保可以通过 ${qdUrl} 访问。\n原始错误：${error.message}`
+          : error instanceof Error
           ? error.message
-          : "Failed to check index status from vector store.",
+          : "无法检查向量索引状态（未知错误）",
         {
           source: "qdrant",
           type: "api_error",
