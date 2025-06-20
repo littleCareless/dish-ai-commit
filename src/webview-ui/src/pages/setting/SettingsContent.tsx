@@ -24,6 +24,7 @@ interface SettingsContentProps {
   indexingError: string;
   selectedEmbeddingProvider: string;
   setSelectedEmbeddingProvider: (value: string) => void;
+  embeddingSettingsChanged: boolean;
   embeddingProviders: { key: string; label: string }[];
   processedModels: string[];
   handleClearIndex: () => void;
@@ -46,6 +47,7 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
   // setSelectedEmbeddingProvider,
   // embeddingProviders,
   // processedModels,
+  embeddingSettingsChanged,
   handleClearIndex,
   handleStartIndexing,
   onSettingChange,
@@ -246,7 +248,13 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
               onClick={handleStartIndexing}
               disabled={isIndexing}
             >
-              {isIndexing ? "Indexing..." : isIndexed ? "重新索引" : "开始索引"}
+              {isIndexing
+                ? "Indexing..."
+                : isIndexed
+                ? embeddingSettingsChanged
+                  ? "重新索引 (配置已更改)"
+                  : "重新索引"
+                : "开始索引"}
             </ArcoButton>
           </div>
           {isIndexing && (

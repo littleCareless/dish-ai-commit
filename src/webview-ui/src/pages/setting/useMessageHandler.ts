@@ -169,6 +169,31 @@ export const useMessageHandler = () => {
         case "indexingFinished":
           setIsIndexing(false);
           setIndexingError(""); // Clear error on success
+          if (typeof message.data.isIndexed === "number") {
+            setIsIndexed(message.data.isIndexed);
+          }
+          toast({
+            title: "索引完成",
+            description: "代码库已成功建立索引。",
+          });
+          break;
+        case "indexCleared":
+          setIsIndexing(false);
+          if (
+            message.data &&
+            typeof message.data.isIndexed === "number"
+          ) {
+            setIsIndexed(message.data.isIndexed);
+          } else {
+            setIsIndexed(0); // Fallback for safety
+          }
+          toast({
+            title: "索引已清除",
+            description: "索引数据已成功清除。",
+          });
+          if (vscode) {
+            vscode.postMessage({ command: "getSettings" });
+          }
           break;
         case "indexingFailed": {
           setIsIndexing(false);

@@ -12,7 +12,7 @@ import SettingsMenu from "./setting/SettingsMenu";
 import SettingsContent from "./setting/SettingsContent";
 import { useMessageHandler } from "./setting/useMessageHandler";
 import { menuItemsConfig } from "./setting/menuConfig";
-import { ConfigValueType } from "./setting/types";
+import { ConfigValueType, SettingItem } from "./setting/types";
 
 const ollamaEmbeddingModels = [
   { key: "nomic-embed-text", label: "nomic-embed-text" },
@@ -48,8 +48,15 @@ const SettingsPage: React.FC = () => {
   const [selectedEmbeddingProvider, setSelectedEmbeddingProvider] =
     useState<string>("");
   const [saveDisabled, setSaveDisabled] = useState(false);
+  const [originalSettings, setOriginalSettings] = useState<SettingItem[]>([]);
 
   useEffect(() => {
+    if (settingsSchema.length > 0 && !hasChanges) {
+      setOriginalSettings(JSON.parse(JSON.stringify(settingsSchema)));
+    }
+  }, [settingsSchema, hasChanges]);
+ 
+   useEffect(() => {
     const providerSetting = settingsSchema.find(
       (s) => s.key === "codeIndexing.embeddingProvider"
     );
@@ -84,16 +91,49 @@ const SettingsPage: React.FC = () => {
     }
   };
 
+  const hasEmbeddingSettingsChanged = () => {
+    if (originalSettings.length === 0) return false;
+
+    const keysToCompare = [
+      "codeIndexing.embeddingProvider",
+      "codeIndexing.ollama.embeddingModel",
+      "codeIndexing.openai.embeddingModel",
+      "experimental.codeIndex.qdrantUrl",
+    ];
+
+    for (const key of keysToCompare) {
+      const originalSetting = originalSettings.find((s) => s.key === key);
+      const currentSetting = settingsSchema.find((s) => s.key === key);
+
+      if (
+        originalSetting &&
+        currentSetting &&
+        originalSetting.value !== currentSetting.value
+      ) {
+        return true;
+      }
+    }
+
+    return false;
+  };
+
   const handleClearIndex = () => {
     if (vscode) {
       vscode.postMessage({ command: "clearIndex" });
     }
   };
-
+ 
   const handleStartIndexing = () => {
     setIsIndexing(true);
     if (vscode) {
-      vscode.postMessage({ command: "startIndexing" });
+      const clearIndex = !!isIndexed && hasEmbeddingSettingsChanged();
+      vscode.postMessage({
+        command: "startIndexing",
+        data: {
+          reIndex: !!isIndexed,
+          clearIndex,
+        },
+      });
     }
   };
 
@@ -120,7 +160,9 @@ const SettingsPage: React.FC = () => {
     return [];
   }, [selectedEmbeddingProvider]);
 
-  if (isLoading) {
+  const embeddingSettingsChanged = hasEmbeddingSettingsChanged();
+ 
+   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <p className="text-lg">Loading settings...</p>
@@ -184,6 +226,7 @@ const SettingsPage: React.FC = () => {
             totalCount={totalCount}
             indexingError={indexingError}
             selectedEmbeddingProvider={selectedEmbeddingProvider}
+            embeddingSettingsChanged={embeddingSettingsChanged}
             setSelectedEmbeddingProvider={setSelectedEmbeddingProvider}
             embeddingProviders={embeddingProviders}
             processedModels={embeddingModels}

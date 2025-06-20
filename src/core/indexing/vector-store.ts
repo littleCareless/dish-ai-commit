@@ -177,6 +177,35 @@ export class VectorStore {
     }
   }
 
+  public async deleteAllPoints(): Promise<void> {
+    await this.initializeStore();
+    try {
+      // Delete the entire collection
+      await this.client.deleteCollection(this.collectionName);
+      console.log(`Collection '${this.collectionName}' deleted successfully.`);
+      // Re-create the collection
+      this.initializationPromise = null; // Reset initialization promise
+      await this.initializeStore();
+      console.log(
+        `Collection '${this.collectionName}' re-created successfully after deletion.`
+      );
+    } catch (error) {
+      console.error(
+        `Error deleting all points from ${this.collectionName}:`,
+        error
+      );
+      // If deletion fails, it's safer to try to re-initialize to ensure the store is in a usable state.
+      this.initializationPromise = null;
+      await this.initializeStore().catch((initErr) => {
+        console.error(
+          `Failed to re-initialize store after deletion error:`,
+          initErr
+        );
+      });
+      throw error;
+    }
+  }
+
   // Placeholder for semantic search
   public async search(
     queryVector: number[],

@@ -34,11 +34,15 @@ export class SettingsViewMessageHandler {
         break;
       }
       case "startIndexing": {
-        const startIndex = message?.data?.startIndex ?? 0;
+        const { clearIndex } = message.data || {};
         console.log(
-          `[SettingsViewProvider] Received startIndexing message with startIndex: ${startIndex}`
+          `[SettingsViewMessageHandler] Received startIndexing message with clearIndex: ${clearIndex}`
         );
-        this.startIndexing(startIndex, webview);
+        this.startIndexing(0, webview, !!clearIndex);
+        break;
+      }
+      case "clearIndex": {
+        await this.handleClearIndex(webview);
         break;
       }
       case "getSettings": {
@@ -276,6 +280,22 @@ export class SettingsViewMessageHandler {
     }
   }
 
+  private async handleClearIndex(webview: vscode.Webview): Promise<void> {
+    if (!this._embeddingService) {
+      const errorMessage = "EmbeddingService is not initialized.";
+      vscode.window.showErrorMessage(errorMessage);
+      return;
+    }
+    try {
+      await this._embeddingService.clearIndex();
+      vscode.window.showInformationMessage("Index cleared successfully.");
+      webview.postMessage({ command: "indexCleared", data: { isIndexed: 0 } });
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      vscode.window.showErrorMessage(`Failed to clear index: ${errorMessage}`);
+    }
+  }
+ 
   private async handleTestConnection(
     service: string,
     url: string,
@@ -322,7 +342,8 @@ export class SettingsViewMessageHandler {
 
   private async startIndexing(
     startIndex: number,
-    webview: vscode.Webview
+    webview: vscode.Webview,
+    clearIndex: boolean = false
   ): Promise<void> {
     // 检查 EmbeddingService 是否存在
     if (!this._embeddingService) {
@@ -335,19 +356,44 @@ export class SettingsViewMessageHandler {
       return;
     }
 
+    if (clearIndex) {
+      try {
+        console.log(
+          "[SettingsViewMessageHandler] Clearing index before starting new indexing."
+        );
+        await this._embeddingService.clearIndex(); // Assuming this method exists.
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        console.error(
+          `[SettingsViewMessageHandler] Error during clearing index:`,
+          error
+        );
+        webview.postMessage({
+          command: "indexingFailed",
+          data: {
+            message: `清除旧索引失败: ${errorMessage}`,
+            source: "clearIndex",
+          },
+        });
+        return;
+      }
+    }
+ 
     // 调用 EmbeddingService 的方法，并将 startIndex 传递给它
     try {
       await this._embeddingService.scanProjectFiles(startIndex, webview);
+      const isIndexed = await this._embeddingService.isIndexed();
       webview.postMessage({
         command: "indexingFinished",
-        data: { message: "索引完成!" },
+        data: { message: "索引完成!", isIndexed },
       });
     } catch (error) {
       console.error(
         `[SettingsViewMessageHandler] Error during indexing:`,
         error
       );
-
+ 
       if (error instanceof EmbeddingServiceError) {
         // Forward the structured error to the webview
         console.log("indexingFailed");

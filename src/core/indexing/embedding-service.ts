@@ -231,6 +231,11 @@ export class EmbeddingService {
     console.log(
       `[EmbeddingService] Starting file scan for project: ${this.projectName} at root: ${this.projectRoot} from startIndex: ${startIndex}`
     );
+
+    // Reset counters for a new scan
+    this.processedBlocks = 0;
+    this.totalSemanticBlocks = 0;
+
     try {
       const fileTree = await this.fileScanner.scanProject();
       if (fileTree) {
@@ -524,6 +529,34 @@ export class EmbeddingService {
         error instanceof Error
           ? error.message
           : "Failed to delete index from vector store.",
+        {
+          source: "qdrant",
+          type: "api_error",
+          originalError: error,
+        }
+      );
+    }
+  }
+
+  public async clearIndex(): Promise<void> {
+    console.log(
+      `[EmbeddingService] Clearing all index entries for project ${this.projectName}`
+    );
+    try {
+      await this.vectorStore.deleteAllPoints();
+      this.processedBlocks = 0; // Reset counter
+      console.log(
+        `[EmbeddingService] Successfully cleared all index entries for project ${this.projectName}`
+      );
+    } catch (error) {
+      console.error(
+        `[EmbeddingService] Error clearing index for project ${this.projectName}:`,
+        error
+      );
+      throw new EmbeddingServiceError(
+        error instanceof Error
+          ? error.message
+          : "Failed to clear index from vector store.",
         {
           source: "qdrant",
           type: "api_error",
