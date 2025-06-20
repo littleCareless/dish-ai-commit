@@ -41,7 +41,9 @@ export const useMessageHandler = () => {
           {
             const loadedSchema = message.data.schema || [];
             const isIndexed = message.data.isIndexed || 0;
+            const indexStatusError = message.data.indexStatusError || null;
             setIsIndexed(isIndexed);
+            setIndexingError(indexStatusError);
             setSettingsSchema(loadedSchema);
             setIsLoading(false);
             setHasChanges(false);
@@ -140,6 +142,7 @@ export const useMessageHandler = () => {
           });
           break;
         case "indexingStatusError":
+          setIndexingError(message.error);
           toast({
             title: "无法获取索引状态",
             description: message.error,

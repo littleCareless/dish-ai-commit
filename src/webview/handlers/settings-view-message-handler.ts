@@ -3,17 +3,21 @@ import {
   EmbeddingService,
   EmbeddingServiceError,
 } from "../../core/indexing/embedding-service";
+import { EmbeddingServiceManager } from "../../core/indexing/embedding-service-manager";
 import { AIProvider } from "../../ai/types";
 import { AIProviderFactory } from "../../ai/ai-provider-factory";
 import { stateManager } from "../../utils/state/state-manager";
-import { WORKSPACE_CONFIG_SCHEMA } from "../../config/workspace-config-schema";
+import {
+  WORKSPACE_CONFIG_SCHEMA,
+  WORKSPACE_CONFIG_PATHS,
+} from "../../config/workspace-config-schema";
 
 export class SettingsViewMessageHandler {
   private readonly _extensionId: string;
 
   constructor(
     extensionId: string,
-    private readonly _embeddingService: EmbeddingService | null,
+    private _embeddingService: EmbeddingService | null,
     private readonly _extensionContext: vscode.ExtensionContext // Receive // extensionContext here
   ) {
     this._extensionId = extensionId;
@@ -121,19 +125,24 @@ export class SettingsViewMessageHandler {
 
         // 获取索引状态
         let isIndexed = 0;
+        let indexStatusError: string | null = null;
         if (this._embeddingService) {
           try {
             isIndexed = await this._embeddingService.isIndexed();
           } catch (error) {
-            console.error(
-              "[SettingsViewMessageHandler] Error checking index status:",
-              error
-            );
-            // Optionally, inform the webview about the error
+            if (error instanceof EmbeddingServiceError) {
+              indexStatusError = `${error.message}\n来源：${
+                error.context?.source ?? "未知"
+              }，错误类型：${error.context?.type ?? "未知"}`;
+            } else if (error instanceof Error) {
+              indexStatusError = error.message;
+            } else {
+              indexStatusError = "无法获取索引状态（未知错误）";
+            }
+            // We can still send this for toast notifications, but the main logic will use the one in loadSettings
             webview.postMessage({
               command: "indexingStatusError",
-              error:
-                error instanceof Error ? error.message : "Could not get status",
+              error: indexStatusError,
             });
           }
         }
@@ -143,6 +152,7 @@ export class SettingsViewMessageHandler {
           data: {
             schema: [...detailedSettings, ...workspaceSettings], // Merge settings from both sources
             isIndexed: isIndexed, // 将索引状态添加到消息中
+            indexStatusError: indexStatusError,
           },
         });
         break;
@@ -153,29 +163,39 @@ export class SettingsViewMessageHandler {
         console.log("newSettings", newSettings);
         const config = vscode.workspace.getConfiguration("dish-ai-commit");
         try {
-          for (const setting of newSettings) {
+          const promises = newSettings.map(async (setting: any) => {
             if (setting.key && setting.value !== undefined) {
-              // Check if the setting is from package.json
+              const oldValue = stateManager.getWorkspace<any>(setting.key);
               const settingFromPackageJSON = newSettings.find(
                 (s: any) => s.key === setting.key
               )?.fromPackageJSON;
 
               if (settingFromPackageJSON) {
-                // Save to VS Code configuration
                 await config.update(
                   setting.key,
                   setting.value,
                   vscode.ConfigurationTarget.Global
                 );
               } else {
-                // Save to workspace state
                 await stateManager.setWorkspace(setting.key, setting.value);
               }
+
+              if (
+                setting.key ===
+                  WORKSPACE_CONFIG_PATHS.experimental.codeIndex.qdrantUrl &&
+                setting.value !== oldValue
+              ) {
+                console.log(
+                  `Qdrant URL changed from "${oldValue}" to "${setting.value}". Reinitializing EmbeddingService.`
+                );
+                this._embeddingService =
+                  EmbeddingServiceManager.getInstance().reinitialize() || null;
+              }
             }
-          }
-          vscode.window.showInformationMessage("设置已成功保存！");
-          // 可选：重新加载配置以显示更新后的值
+          });
+          await Promise.all(promises);
           webview.postMessage({ command: "settingsSaved" });
+          vscode.window.showInformationMessage("设置已成功保存！");
         } catch (error) {
           const errorMessage =
             error instanceof Error ? error.message : String(error);
@@ -210,14 +230,6 @@ export class SettingsViewMessageHandler {
           const config = vscode.workspace.getConfiguration("dish-ai-commit");
           const providerSettings = config.get(providerContextKey);
 
-          // console.log(`[SettingsViewProvider] Provider settings for ${providerContextKey}:`, providerSettings);
-
-          // 使用 AiProviderFactory 获取 provider 实例
-          // AiProviderFactory 可能需要调整以接受配置或自动读取
-          // 这里简化处理，假设 AiProviderFactory.createProvider 可以处理
-          // 如果 AiProviderFactory.createProvider 需要完整的配置对象，需要传递
-          // 或者 AiProviderFactory 有一个 getProvider(id, config) 的方法
-
           // 查找 provider 的定义，以确定是否需要传递特定配置给 factory
           const extensionPackageJSON = vscode.extensions.getExtension(
             this._extensionId
@@ -226,20 +238,6 @@ export class SettingsViewMessageHandler {
             extensionPackageJSON?.contributes?.configuration?.properties;
 
           let providerInstance: AIProvider | undefined;
-
-          // 尝试基于 providerId (通常是枚举值，如 'openai', 'ollama') 创建 provider
-          // AiProviderFactory 可能需要一个方法来创建基于 provider 类型字符串的实例
-          // 而不是基于配置中的 'provider' 字段的值（那可能是具体的模型名称或更详细的标识）
-          // 假设 providerId 就是我们需要的类型标识符
-
-          // 确保 providerId 是一个有效的类型，而不是一个具体的模型名称
-          // 通常 providerId 会是 'openai', 'ollama' 等
-          // 我们需要一个方法来获取这个 provider 的实例
-          // AiProviderFactory.createProvider 可能需要 provider 的类型和该 provider 的配置
-
-          // 简化：假设 AiProviderFactory 有一个方法可以根据 providerId (如 'openai') 获取实例
-          // 并且它能自行处理配置的获取，或者我们传递必要的配置
-          // 这里的 providerId 是从 webview 的 provider type setting 的 value 传过来的
 
           providerInstance = AIProviderFactory.getProvider(providerId); // 只传递 providerId
 

@@ -3,10 +3,12 @@ import * as path from "path";
 import { EmbeddingService } from "./embedding-service";
 import { stateManager } from "../../utils/state/state-manager";
 import { VectorStore } from "./vector-store";
-import { QDRANT_URL_KEY } from "./constants";
 import { createHash } from "crypto";
 import { getWorkspacePath } from "../utils/path";
-import { WorkspaceConfigPath } from "../../config/workspace-config-schema";
+import {
+  WorkspaceConfigPath,
+  WORKSPACE_CONFIG_PATHS,
+} from "../../config/workspace-config-schema";
 import { EMBEDDING_MODEL_PROFILES } from "./embedding-model-profiles";
 
 /**
@@ -36,10 +38,10 @@ export class EmbeddingServiceManager {
    * 初始化 EmbeddingService 实例
    * 应该在扩展激活时调用一次
    */
-  public initialize(): void {
+  public initialize(): EmbeddingService | undefined {
     if (this._embeddingService) {
       console.warn("EmbeddingServiceManager is already initialized.");
-      return;
+      return this._embeddingService;
     }
 
     const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -48,10 +50,11 @@ export class EmbeddingServiceManager {
       const projectName = path.basename(projectRoot);
 
       // 从配置中获取 Qdrant URL 和集合名称
-      const qdrantUrl = stateManager.getWorkspace<string>(
-        QDRANT_URL_KEY,
-        "http://localhost:6333"
-      );
+      const qdrantUrl =
+        stateManager.getWorkspace<string>(
+          WORKSPACE_CONFIG_PATHS.experimental.codeIndex
+            .qdrantUrl as WorkspaceConfigPath
+        ) || "http://localhost:6333";
 
       // Generate collection name from workspace path
       const workspacePath = getWorkspacePath();
@@ -60,11 +63,13 @@ export class EmbeddingServiceManager {
 
       const embeddingProvider =
         stateManager.getWorkspace<"OpenAI" | "Ollama" | "openai-compatible">(
-          "experimental.codeIndex.embeddingProvider" as WorkspaceConfigPath
+          WORKSPACE_CONFIG_PATHS.experimental.codeIndex
+            .embeddingProvider as WorkspaceConfigPath
         ) || "OpenAI"; // Default to OpenAI
       const embeddingModel =
         stateManager.getWorkspace<string>(
-          "experimental.codeIndex.embeddingModel" as WorkspaceConfigPath
+          WORKSPACE_CONFIG_PATHS.experimental.codeIndex
+            .embeddingModel as WorkspaceConfigPath
         ) || "text-embedding-3-small"; // Default model
 
       const modelProfile =
@@ -94,11 +99,23 @@ export class EmbeddingServiceManager {
       console.log(
         `[EmbeddingServiceManager] Initialized EmbeddingService for project: ${projectName}`
       );
+      return this._embeddingService;
     } else {
       console.warn(
         "[EmbeddingServiceManager] No workspace folder found. EmbeddingService will not be initialized."
       );
+      return undefined;
     }
+  }
+
+  /**
+   * 重新初始化 EmbeddingService 实例
+   * 当相关配置（如 Qdrant URL）发生变化时调用
+   */
+  public reinitialize(): EmbeddingService | undefined {
+    console.log("[EmbeddingServiceManager] Reinitializing EmbeddingService...");
+    this._embeddingService = undefined; // 清除旧实例
+    return this.initialize();
   }
 
   /**

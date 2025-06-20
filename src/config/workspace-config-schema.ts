@@ -67,3 +67,24 @@ export type WorkspaceSchemaType = {
       | ConfigObject;
   };
 };
+
+/**
+ * Recursively builds a nested object of key paths from a schema object.
+ * @param obj The schema object.
+ * @param path The current path prefix.
+ * @returns A nested object where leaf nodes are key path strings.
+ */
+function buildKeyPaths<T extends object>(obj: T, path: string[] = []): any {
+  return Object.fromEntries(
+    Object.entries(obj).map(([key, value]) => {
+      const newPath = [...path, key];
+      // Check if it's a nested object that is not a config value definition
+      if (typeof value === "object" && value !== null && !("type" in value)) {
+        return [key, buildKeyPaths(value as object, newPath)];
+      }
+      return [key, newPath.join(".")];
+    })
+  );
+}
+
+export const WORKSPACE_CONFIG_PATHS = buildKeyPaths(WORKSPACE_CONFIG_SCHEMA);
