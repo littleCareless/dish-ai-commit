@@ -21,9 +21,9 @@ class Logger {
     switch (level) {
       case LogLevel.Info:
         // 可以根据环境配置是否输出info级别日志
-        // if (process.env.NODE_ENV !== "production") {
-        console.log(message, ...args);
-        // }
+        if (process.env.NODE_ENV !== "production") {
+          console.log(message, ...args);
+        }
         break;
       case LogLevel.Warning:
         console.warn(message, ...args);
@@ -201,19 +201,9 @@ export class SvnProvider implements ISCMProvider {
     }
     this.workspaceRoot = workspaceRoot;
 
-    console.log("[SVN-PATH]");
-
-    // 初始化时设置 SVN 路径
-    getSvnPath("constructor").then((path) => {
-      Logger.log(LogLevel.Info, "[SVN-PATH] constructor promise resolved");
-      this.svnPath = path;
-    });
-
-    // 加载配置
     this.config = this.loadConfig();
 
-    // 同步初始化
-    this.initialize();
+    // 构造函数现在只进行同步设置
   }
 
   private loadConfig(): SvnConfig {
@@ -242,15 +232,20 @@ export class SvnProvider implements ISCMProvider {
     }
   }
 
-  private async initialize() {
+  public async init(): Promise<void> {
     try {
       const svnPath = await getSvnPath("initialize");
       this.svnPath = svnPath;
-      this.initialized = true;
 
       // 验证SVN可执行
       const { stdout } = await exec(`"${this.svnPath}" --version`);
-      Logger.log(LogLevel.Info, "SVN version:", stdout.split("\n")[0]);
+      const version = stdout.split("\n")[0].trim();
+      Logger.log(LogLevel.Info, "SVN version:", version);
+      vscode.window.showInformationMessage(
+        formatMessage("svn.version.detected", [version])
+      );
+
+      this.initialized = true;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
       Logger.log(LogLevel.Error, "Failed to initialize SVN:", message);
@@ -375,7 +370,6 @@ export class SvnProvider implements ISCMProvider {
             diffOutput += `\n=== ${fileStatus}: ${file} ===\n`;
             continue;
           }
-          console.log("escapedFile", escapedFile);
           const { stdout } = await exec(
             `"${this.svnPath}" diff "${escapedFile}"`,
             {

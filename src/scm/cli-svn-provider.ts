@@ -13,6 +13,11 @@ export class CliSvnProvider implements ISCMProvider {
     this.workspaceRoot = workspaceRoot;
   }
 
+  async init(): Promise<void> {
+    // No async initialization needed for this provider.
+    return Promise.resolve();
+  }
+
   async isAvailable(): Promise<boolean> {
     try {
       await execAsync("svn --version");

@@ -17,6 +17,9 @@ export interface ISCMProvider {
   /** 检查SCM系统是否可用 */
   isAvailable(): Promise<boolean>;
 
+  /** 初始化Provider */
+  init(): Promise<void>;
+
   /** 获取文件差异 */
   getDiff(files?: string[]): Promise<string | undefined>;
 
@@ -183,9 +186,12 @@ export class SCMFactory {
         const git = gitExtension?.exports
           ? new GitProvider(gitExtension.exports, workspaceRoot)
           : undefined;
-        if (git && (await git.isAvailable())) {
-          this.currentProvider = git;
-          return git;
+        if (git) {
+          await git.init();
+          if (await git.isAvailable()) {
+            this.currentProvider = git;
+            return git;
+          }
         }
       }
 
@@ -195,14 +201,18 @@ export class SCMFactory {
         const svn = svnExtension?.exports
           ? new SvnProvider(svnExtension.exports)
           : undefined;
-        if (svn && (await svn.isAvailable())) {
-          this.currentProvider = svn;
-          return svn;
+        if (svn) {
+          await svn.init();
+          if (await svn.isAvailable()) {
+            this.currentProvider = svn;
+            return svn;
+          }
         }
 
         // 如果没有插件但系统有SVN命令,使用命令行方式
         if (await this.checkSCMCommand("svn")) {
           const cliSvn = new CliSvnProvider(workspaceRoot);
+          await cliSvn.init();
           if (await cliSvn.isAvailable()) {
             this.currentProvider = cliSvn;
             return cliSvn;

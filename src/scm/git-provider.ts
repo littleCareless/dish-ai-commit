@@ -76,6 +76,23 @@ export class GitProvider implements ISCMProvider {
   }
 
   /**
+   * 初始化Provider
+   */
+  async init(): Promise<void> {
+    try {
+      const { stdout } = await exec("git --version");
+      const version = stdout.trim();
+      console.log("Git version:", version);
+      vscode.window.showInformationMessage(
+        formatMessage("git.version.detected", [version])
+      );
+    } catch (error) {
+      // 在初始化阶段，即使获取版本失败也不应阻塞，仅记录警告
+      console.warn("Failed to get git version:", error);
+    }
+  }
+
+  /**
    * 检查Git是否可用
    * @returns {Promise<boolean>} 如果Git可用返回true,否则返回false
    */
@@ -422,26 +439,42 @@ export class GitProvider implements ISCMProvider {
     try {
       // 确保基础分支存在
       try {
-        await exec(`git show-ref --verify --quiet refs/remotes/${baseBranch}`, { cwd: this.workspaceRoot });
+        await exec(`git show-ref --verify --quiet refs/remotes/${baseBranch}`, {
+          cwd: this.workspaceRoot,
+        });
       } catch (error) {
         // 如果远程分支不存在，尝试本地分支
         try {
-          await exec(`git show-ref --verify --quiet refs/heads/${baseBranch.replace('origin/', '')}`, { cwd: this.workspaceRoot });
-          baseBranch = baseBranch.replace('origin/', ''); // 更新为本地分支名
+          await exec(
+            `git show-ref --verify --quiet refs/heads/${baseBranch.replace(
+              "origin/",
+              ""
+            )}`,
+            { cwd: this.workspaceRoot }
+          );
+          baseBranch = baseBranch.replace("origin/", ""); // 更新为本地分支名
         } catch (localError) {
-          console.warn(formatMessage("git.base.branch.not.found", [baseBranch]));
+          console.warn(
+            formatMessage("git.base.branch.not.found", [baseBranch])
+          );
           // 尝试使用默认的 main 或者 master
           const commonBranches = ["main", "master"];
           let foundCommonBranch = false;
           for (const branch of commonBranches) {
             try {
-              await exec(`git show-ref --verify --quiet refs/remotes/origin/${branch}`, { cwd: this.workspaceRoot });
+              await exec(
+                `git show-ref --verify --quiet refs/remotes/origin/${branch}`,
+                { cwd: this.workspaceRoot }
+              );
               baseBranch = `origin/${branch}`;
               foundCommonBranch = true;
               break;
             } catch {
               try {
-                await exec(`git show-ref --verify --quiet refs/heads/${branch}`, { cwd: this.workspaceRoot });
+                await exec(
+                  `git show-ref --verify --quiet refs/heads/${branch}`,
+                  { cwd: this.workspaceRoot }
+                );
                 baseBranch = branch;
                 foundCommonBranch = true;
                 break;
@@ -451,10 +484,14 @@ export class GitProvider implements ISCMProvider {
             }
           }
           if (!foundCommonBranch) {
-            vscode.window.showWarningMessage(formatMessage("git.base.branch.not.found.default", [baseBranch]));
+            vscode.window.showWarningMessage(
+              formatMessage("git.base.branch.not.found.default", [baseBranch])
+            );
             // 如果都找不到，可能需要用户手动指定，或者抛出错误
             // 这里我们暂时返回空数组，并在日志中记录
-            console.error(formatMessage("git.base.branch.not.found.error", [baseBranch]));
+            console.error(
+              formatMessage("git.base.branch.not.found.error", [baseBranch])
+            );
             return [];
           }
         }
@@ -504,7 +541,7 @@ export class GitProvider implements ISCMProvider {
         .split("\n")
         .map((branch) => branch.trim())
         .filter((branch) => branch && !branch.includes("->")) // 过滤掉 HEAD 指向等特殊行
-        .map((branch) => branch.replace(/^remotes\//, '')) // 移除 remotes/ 前缀，方便用户选择
+        .map((branch) => branch.replace(/^remotes\//, "")) // 移除 remotes/ 前缀，方便用户选择
         .filter((branch, index, self) => self.indexOf(branch) === index); // 去重
 
       return branches.sort(); // 排序方便查找
