@@ -1,6 +1,7 @@
 import { AIRequestParams } from "../types";
 import { EmbeddingServiceManager } from "../../core/indexing/embedding-service-manager";
-import { ConfigurationManager } from "../../config/configuration-manager";
+import { stateManager } from "../../utils/state/state-manager";
+import { notify } from "../../utils";
 
 /**
  * 使用嵌入服务搜索相似代码，并将其添加到请求参数中。
@@ -9,13 +10,16 @@ import { ConfigurationManager } from "../../config/configuration-manager";
 export async function addSimilarCodeContext(
   params: AIRequestParams
 ): Promise<void> {
-  const useEmbedding = ConfigurationManager.getInstance().getConfig(
-    "FEATURES_CODEANALYSIS_USEEMBEDDING"
+  const useEmbedding = stateManager.getWorkspace<boolean>(
+    "experimental.codeIndex.enabled",
+    false
   );
 
   if (!useEmbedding) {
     return;
   }
+
+  notify.info("embedding.enabledMessage");
 
   const embeddingService =
     EmbeddingServiceManager.getInstance().getEmbeddingService();

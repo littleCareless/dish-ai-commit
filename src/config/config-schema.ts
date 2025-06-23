@@ -159,12 +159,12 @@ export const CONFIG_SCHEMA = {
         description:
           "Enable diff content simplification (Warning: Enabling this feature may result in less accurate commit messages) / 启用差异内容简化 (警告：启用此功能可能导致提交信息不够准确)",
       },
-      useEmbedding: {
-        type: "boolean",
-        default: false,
-        description:
-          "Enable embeddings for generating commit messages, code reviews, and other features. / 启用 embedding 以生成提交信息、代码审查和其他功能。",
-      },
+      // useEmbedding: {
+      //   type: "boolean",
+      //   default: false,
+      //   description:
+      //     "Enable embeddings for generating commit messages, code reviews, and other features. / 启用 embedding 以生成提交信息、代码审查和其他功能。",
+      // },
     },
     // Commit related features
     commitFormat: {

@@ -67,7 +67,6 @@ export abstract class AbstractAIProvider implements AIProvider {
       // 应该在 executeAIStreamRequest 的实现中或专门的流式重试辅助函数中处理。
       // systemPrompt, userPrompt, userContent 将由 executeAIStreamRequest 的实现
       // 从 params 中获取或计算。
-      await addSimilarCodeContext(params);
       return this.executeAIStreamRequest(params, {
         temperature: 0.3, // 提交信息推荐温度值 0.3
         // maxTokens 可以在这里设置，如果需要的话

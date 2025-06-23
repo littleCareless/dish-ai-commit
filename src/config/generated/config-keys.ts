@@ -27,7 +27,6 @@ export const CONFIG_KEYS = {
   "FEATURES": "dish-ai-commit.features",
   "FEATURES_CODEANALYSIS": "dish-ai-commit.features.codeAnalysis",
   "FEATURES_CODEANALYSIS_SIMPLIFYDIFF": "dish-ai-commit.features.codeAnalysis.simplifyDiff",
-  "FEATURES_CODEANALYSIS_USEEMBEDDING": "dish-ai-commit.features.codeAnalysis.useEmbedding",
   "FEATURES_COMMITFORMAT": "dish-ai-commit.features.commitFormat",
   "FEATURES_COMMITFORMAT_ENABLEEMOJI": "dish-ai-commit.features.commitFormat.enableEmoji",
   "FEATURES_COMMITFORMAT_ENABLEMERGECOMMIT": "dish-ai-commit.features.commitFormat.enableMergeCommit",
