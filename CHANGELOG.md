@@ -6,6 +6,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.26.0 (2025-06-23)
+
+### ♻ Code Refactoring
+
+- **embedding**: Adjust embedding function integration and remove old configuration ([5a9bec6](https://github.com/littleCareless/dish-ai-commit/commit/5a9bec6))
+
+### ✨ Features
+
+- **scm**: Introduce asynchronous initialization mechanism for SCM provider ([c9bcc09](https://github.com/littleCareless/dish-ai-commit/commit/c9bcc09))
+
+- **svn**: Enhance SVN path detection logic ([14320c3](https://github.com/littleCareless/dish-ai-commit/commit/14320c3))
+
+### 🎫 Chores
+
+- **i18n**: Added internationalized prompt information ([1956b36](https://github.com/littleCareless/dish-ai-commit/commit/1956b36))
+- **release**: Released version 0.25.0 ([f7b780c](https://github.com/littleCareless/dish-ai-commit/commit/f7b780c))
+
+### 🐛 Bug Fixes
+
+- **settings**: Fix index clearing logic and optimize configuration loading ([ecb710d](https://github.com/littleCareless/dish-ai-commit/commit/ecb710d))
+
+### 💄 Styles
+
+- **codebase**: Unify code style and refactor toast action types ([d8398be](https://github.com/littleCareless/dish-ai-commit/commit/d8398be))
+
 # 0.25.0 (2025-06-20)
 
 ### ✨ Features

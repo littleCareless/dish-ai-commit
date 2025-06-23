@@ -6,6 +6,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.26.0 (2025-06-23)
+
+### ♻ Code Refactoring
+
+- **embedding**: 调整 embedding 功能集成并移除旧配置 ([5a9bec6](https://github.com/littleCareless/dish-ai-commit/commit/5a9bec6))
+
+### ✨ Features
+
+- **scm**: 为 SCM 提供程序引入异步初始化机制 ([c9bcc09](https://github.com/littleCareless/dish-ai-commit/commit/c9bcc09))
+- **svn**: 增强 SVN 路径检测逻辑 ([14320c3](https://github.com/littleCareless/dish-ai-commit/commit/14320c3))
+
+### 🎫 Chores
+
+- **i18n**: 新增国际化提示信息 ([1956b36](https://github.com/littleCareless/dish-ai-commit/commit/1956b36))
+- **release**: 发布 0.25.0 版本 ([f7b780c](https://github.com/littleCareless/dish-ai-commit/commit/f7b780c))
+
+### 🐛 Bug Fixes
+
+- **settings**: 修复索引清除逻辑并优化配置加载 ([ecb710d](https://github.com/littleCareless/dish-ai-commit/commit/ecb710d))
+
+### 💄 Styles
+
+- **codebase**: 统一代码风格并重构 toast 操作类型 ([d8398be](https://github.com/littleCareless/dish-ai-commit/commit/d8398be))
+
 # 0.25.0 (2025-06-20)
 
 ### ✨ Features
