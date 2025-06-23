@@ -211,7 +211,9 @@ export abstract class BaseCommand {
     const confirmed =
       stateManager.getGlobal<boolean>(`confirm:dish:ai:tos`, false) ||
       stateManager.getWorkspace<boolean>(`confirm:dish:ai:tos`, false);
-    if (confirmed) return true;
+    if (confirmed) {
+      return true;
+    }
 
     const acceptAlways: vscode.MessageItem = {
       title: getMessage("confirm.ai.provider.tos.accept"),
