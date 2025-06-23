@@ -179,5 +179,12 @@
   "pr.summary.select.base.branch.title": "选择PR摘要的基础分支",
   "pr.summary.base.branch.selection.cancelled": "已取消选择基础分支。PR摘要生成已中止。",
   "pr.summary.no.branches.found": "仓库中未找到分支。将使用默认基础分支。",
-  "progress.failed": "任务执行失败：{0}"
+  "progress.failed": "任务执行失败：{0}",
+  "svn.version.detected": "检测到 SVN 版本: {0}",
+  "git.version.detected": "检测到 Git 版本: {0}",
+  "progress.getting.diff": "正在获取文件差异...",
+  "progress.updating.model.config": "正在更新模型配置...",
+  "progress.preparing.request": "正在准备AI请求...",
+  "progress.calling.ai.stream": "正在调用AI服务...",
+  "embedding.enabledMessage": "代码相似度搜索功能已启用。正在基于您的变更寻找相关代码片段..."
 }

@@ -177,5 +177,12 @@
   "pr.summary.select.base.branch.title": "Select Base Branch for PR Summary",
   "pr.summary.base.branch.selection.cancelled": "Base branch selection cancelled. PR summary generation aborted.",
   "pr.summary.no.branches.found": "No branches found in the repository. Using default base branch.",
-  "progress.failed": "Task execution failed: {0}"
+  "progress.failed": "Task execution failed: {0}",
+  "svn.version.detected": "Detected SVN version: {0}",
+  "git.version.detected": "Detected Git version: {0}",
+  "progress.getting.diff": "Getting file diff...",
+  "progress.updating.model.config": "Updating model configuration...",
+  "progress.preparing.request": "Preparing AI request...",
+  "progress.calling.ai.stream": "Calling AI service...",
+  "embedding.enabledMessage": "Code similarity search is enabled. Finding related code snippets based on your changes..."
 }
