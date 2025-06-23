@@ -55,8 +55,8 @@ const SettingsPage: React.FC = () => {
       setOriginalSettings(JSON.parse(JSON.stringify(settingsSchema)));
     }
   }, [settingsSchema, hasChanges]);
- 
-   useEffect(() => {
+
+  useEffect(() => {
     const providerSetting = settingsSchema.find(
       (s) => s.key === "codeIndexing.embeddingProvider"
     );
@@ -122,11 +122,12 @@ const SettingsPage: React.FC = () => {
       vscode.postMessage({ command: "clearIndex" });
     }
   };
- 
+
   const handleStartIndexing = () => {
     setIsIndexing(true);
     if (vscode) {
-      const clearIndex = !!isIndexed && hasEmbeddingSettingsChanged();
+      //  && hasEmbeddingSettingsChanged()
+      const clearIndex = !!isIndexed;
       vscode.postMessage({
         command: "startIndexing",
         data: {
@@ -161,8 +162,8 @@ const SettingsPage: React.FC = () => {
   }, [selectedEmbeddingProvider]);
 
   const embeddingSettingsChanged = hasEmbeddingSettingsChanged();
- 
-   if (isLoading) {
+
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center h-screen">
         <p className="text-lg">Loading settings...</p>

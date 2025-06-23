@@ -115,7 +115,7 @@ export class SettingsViewMessageHandler {
                   description: prop.description || "",
                   enum: prop.enum,
                   value: value,
-                  fromPackageJSON: false,
+                  fromPackageJSON: prop.fromPackageJSON ?? false,
                 });
               } else {
                 // If it's an object without a 'type', recurse into it
@@ -291,11 +291,12 @@ export class SettingsViewMessageHandler {
       vscode.window.showInformationMessage("Index cleared successfully.");
       webview.postMessage({ command: "indexCleared", data: { isIndexed: 0 } });
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : String(error);
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
       vscode.window.showErrorMessage(`Failed to clear index: ${errorMessage}`);
     }
   }
- 
+
   private async handleTestConnection(
     service: string,
     url: string,
@@ -379,7 +380,7 @@ export class SettingsViewMessageHandler {
         return;
       }
     }
- 
+
     // 调用 EmbeddingService 的方法，并将 startIndex 传递给它
     try {
       await this._embeddingService.scanProjectFiles(startIndex, webview);
@@ -393,7 +394,7 @@ export class SettingsViewMessageHandler {
         `[SettingsViewMessageHandler] Error during indexing:`,
         error
       );
- 
+
       if (error instanceof EmbeddingServiceError) {
         // Forward the structured error to the webview
         console.log("indexingFailed");
