@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.27.0 (2025-06-24)
+
+### ✨ Features
+
+- **embedding**: Improve embedding service and implement message internationalization ([bc90f70](https://github.com/littleCareless/dish-ai-commit/commit/bc90f70))
+
+### 🎫 Chores
+
+- **release**: Release 0.26.0 ([20764b6](https://github.com/littleCareless/dish-ai-commit/commit/20764b6))
+
 # 0.26.0 (2025-06-23)
 
 ### ♻ Code Refactoring
