@@ -2,6 +2,7 @@ import { AIRequestParams } from "../types";
 import { EmbeddingServiceManager } from "../../core/indexing/embedding-service-manager";
 import { stateManager } from "../../utils/state/state-manager";
 import { notify } from "../../utils";
+import { EmbeddingServiceError } from "../../core/indexing/embedding-service";
 
 /**
  * 使用嵌入服务搜索相似代码，并将其添加到请求参数中。
@@ -19,33 +20,40 @@ export async function addSimilarCodeContext(
     return;
   }
 
-  notify.info("embedding.enabledMessage");
-
   const embeddingService =
     EmbeddingServiceManager.getInstance().getEmbeddingService();
   if (embeddingService) {
     try {
-      const relatedCode = await embeddingService.searchSimilarCode(
-        params.diff,
-        5
-      );
-      if (relatedCode && relatedCode.length > 0) {
-        const relatedCodeContext = relatedCode
-          .map(
-            (item) =>
-              `File: ${item.payload.file}\n\`\`\`\n${item.payload.code}\n\`\`\``
-          )
-          .join("\n\n---\n\n");
-        params.additionalContext = `
+      const indexedCount = await embeddingService.isIndexed();
+      if (indexedCount > 0) {
+        notify.info("embedding.enabledMessage");
+        const relatedCode = await embeddingService.searchSimilarCode(
+          params.diff,
+          5
+        );
+        if (relatedCode && relatedCode.length > 0) {
+          const relatedCodeContext = relatedCode
+            .map(
+              (item) =>
+                `File: ${item.payload.file}\n\`\`\`\n${item.payload.code}\n\`\`\``
+            )
+            .join("\n\n---\n\n");
+          params.additionalContext = `
 Here are some code snippets that might be related to the current changes:
 ---
 ${relatedCodeContext}
 ---
 `;
+        }
+      } else {
       }
     } catch (error) {
       console.error("Error searching for similar code:", error);
+      if (error instanceof EmbeddingServiceError) {
+        notify.error(error.message);
+      }
       // 不阻塞主流程，仅记录错误
     }
+  } else {
   }
 }
