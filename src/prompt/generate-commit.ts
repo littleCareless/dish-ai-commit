@@ -13,7 +13,7 @@ function getMergeCommitsSection(
   const formatExample = enableEmoji
     ? "<emoji> <type>(<scope>): <subject>"
     : "<type>(<scope>): <subject>";
-  
+
   // 如果不需要显示body，只返回标题行格式
   if (!enableBody) {
     if (!enableMergeCommit) {
@@ -28,7 +28,7 @@ ${formatExample}
 \`\`\`
 `;
     }
-    
+
     return `### Merged Commit
 
 If multiple file diffs are provided, merge them into a single commit message:
@@ -81,8 +81,8 @@ ${exampleContent}`;
 }
 
 function getGitExamples(
-  enableMergeCommit: boolean, 
-  enableEmoji: boolean, 
+  enableMergeCommit: boolean,
+  enableEmoji: boolean,
   enableBody: boolean
 ) {
   return enableMergeCommit
@@ -91,8 +91,8 @@ function getGitExamples(
 }
 
 function getSVNExamples(
-  enableMergeCommit: boolean, 
-  enableEmoji: boolean, 
+  enableMergeCommit: boolean,
+  enableEmoji: boolean,
   enableBody: boolean
 ) {
   return enableMergeCommit
@@ -126,9 +126,19 @@ export function generateCommitMessageSystemPrompt({
 2. WRITE ALL CONTENT IN ${language} (except for technical terms and scope)
 3. FOLLOW THE EXACT FORMAT TEMPLATE shown in examples
 4. USE ENGLISH ONLY FOR SCOPE and technical terms
-5. INCLUDE APPROPRIATE EMOJI when enabled (${enableEmoji ? "ENABLED" : "DISABLED"})
-6. ${enableMergeCommit ? "MERGE all changes into a SINGLE commit message" : "CREATE SEPARATE commit messages for each file"}
-7. ${enableBody ? "INCLUDE body content that explains the changes in detail" : "DO NOT include body content, ONLY generate the subject line"}
+5. INCLUDE APPROPRIATE EMOJI when enabled (${
+    enableEmoji ? "ENABLED" : "DISABLED"
+  })
+6. ${
+    enableMergeCommit
+      ? "MERGE all changes into a SINGLE commit message"
+      : "CREATE SEPARATE commit messages for each file"
+  }
+7. ${
+    enableBody
+      ? "INCLUDE body content that explains the changes in detail"
+      : "DO NOT include body content, ONLY generate the subject line"
+  }
 
 ## PROHIBITED ACTIONS (MUST NOT DO)
 
@@ -210,13 +220,17 @@ ${
 - Maximum 50 characters
 - Must be in ${language} (except scope)
 
-${enableBody ? `### Body
+${
+  enableBody
+    ? `### Body
 - Breaking Changes must include detailed impact description
 - Use bullet points with "-"
 - Maximum 72 characters per line
 - Explain what and why
 - Must be in ${language}
-- Use【】for categorizing different types of changes` : ''}
+- Use【】for categorizing different types of changes`
+    : ""
+}
 
 ## SELF-VERIFICATION CHECKLIST
 
@@ -226,7 +240,11 @@ Before finalizing your output, verify:
 3. CONTENT CHECK: Does it contain ONLY the commit message with no extra text?
 4. CONSISTENCY CHECK: For multiple files, is the format consistent?
 5. COMPLETENESS CHECK: Does it include all necessary information?
-${enableBody ? '6. BODY CHECK: Does the body explain what was changed and why?' : '6. SUBJECT-ONLY CHECK: Does the output contain ONLY the subject line with no body?'}
+${
+  enableBody
+    ? "6. BODY CHECK: Does the body explain what was changed and why?"
+    : "6. SUBJECT-ONLY CHECK: Does the output contain ONLY the subject line with no body?"
+}
 
 ## EXAMPLES OF CORRECT OUTPUT
 
@@ -236,21 +254,45 @@ ${getVCSExamples(vcsType, enableMergeCommit, enableEmoji, enableBody)}
 
 ### ERROR 1: Mixed Language
 ❌ feat(user): add new login feature
-✅ feat(user): ${language === 'zh-CN' ? '添加新的登录功能' : `${language} version of message`}
+✅ feat(user): ${
+    language === "zh-CN" ? "添加新的登录功能" : `${language} version of message`
+  }
 
 ### ERROR 2: Adding Explanations
-❌ This commit adds a new feature: feat(auth): ${language === 'zh-CN' ? '实现用户认证' : `${language} version of message`}
-✅ feat(auth): ${language === 'zh-CN' ? '实现用户认证' : `${language} version of message`}
+❌ This commit adds a new feature: feat(auth): ${
+    language === "zh-CN" ? "实现用户认证" : `${language} version of message`
+  }
+✅ feat(auth): ${
+    language === "zh-CN" ? "实现用户认证" : `${language} version of message`
+  }
 
 ### ERROR 3: Incorrect Format
-❌ ${language === 'zh-CN' ? '修复了用户登录问题' : '${language} version of incorrect message'}
-✅ fix(user): ${language === 'zh-CN' ? '修复登录验证失败问题' : `${language} version of message`}
+❌ ${
+    language === "zh-CN"
+      ? "修复了用户登录问题"
+      : "${language} version of incorrect message"
+  }
+✅ fix(user): ${
+    language === "zh-CN"
+      ? "修复登录验证失败问题"
+      : `${language} version of message`
+  }
 
-${!enableBody ? `### ERROR 4: Including Body Content
-❌ feat(auth): ${language === 'zh-CN' ? '添加认证功能' : `${language} version of message`}
-   - ${language === 'zh-CN' ? '实现JWT令牌认证' : '${language} body content'}
-   - ${language === 'zh-CN' ? '添加刷新令牌功能' : '${language} more body content'}
-✅ feat(auth): ${language === 'zh-CN' ? '添加认证功能' : `${language} version of message`}` : ''}
+${
+  !enableBody
+    ? `### ERROR 4: Including Body Content
+❌ feat(auth): ${
+        language === "zh-CN" ? "添加认证功能" : `${language} version of message`
+      }
+   - ${language === "zh-CN" ? "实现JWT令牌认证" : "${language} body content"}
+   - ${
+     language === "zh-CN" ? "添加刷新令牌功能" : "${language} more body content"
+   }
+✅ feat(auth): ${
+        language === "zh-CN" ? "添加认证功能" : `${language} version of message`
+      }`
+    : ""
+}
 
 ---
 
@@ -258,7 +300,7 @@ ${!enableBody ? `### ERROR 4: Including Body Content
 1. CONTAIN ONLY THE COMMIT MESSAGE WITH NOTHING ELSE
 2. BE WRITTEN ENTIRELY IN ${language}
 3. FOLLOW THE EXACT FORMAT SHOWN IN EXAMPLES
-${!enableBody ? '4. INCLUDE ONLY THE SUBJECT LINE, NO BODY' : ''}
+${!enableBody ? "4. INCLUDE ONLY THE SUBJECT LINE, NO BODY" : ""}
 `;
 }
 
@@ -275,11 +317,15 @@ function getMergedGitExample(useEmoji: boolean, useBody: boolean) {
 
 - **Generated Commit Message**:
   \`\`\`
-  ${prefix}feat!(auth): implement new authentication system${useBody ? `
+  ${prefix}feat!(auth): implement new authentication system${
+    useBody
+      ? `
   - replace legacy token auth with JWT
   -【Breaking Change】old token format no longer supported
   -【Migration】clients must update authentication logic
-  - implement token refresh mechanism` : ``}
+  - implement token refresh mechanism`
+      : ``
+  }
   \`\`\``;
 }
 
@@ -308,11 +354,19 @@ function getSeparateGitExample(useEmoji: boolean, useBody: boolean) {
 
 - **Generated Commit Messages**:
   \`\`\`
-  ${featPrefix}feat(feature): implement new functionality${useBody ? `
-  - add feature implementation in feature.js` : ``}
+  ${featPrefix}feat(feature): implement new functionality${
+    useBody
+      ? `
+  - add feature implementation in feature.js`
+      : ``
+  }
   
-  ${fixPrefix}fix(bugfix): correct calculation logic${useBody ? `
-  - fixed calculation of variable y in bugfix.js` : ``}
+  ${fixPrefix}fix(bugfix): correct calculation logic${
+    useBody
+      ? `
+  - fixed calculation of variable y in bugfix.js`
+      : ``
+  }
   \`\`\``;
 }
 
@@ -339,9 +393,13 @@ function getMergedSVNExample(useEmoji: boolean, useBody: boolean) {
 
 - **Generated Commit Message**:
   \`\`\`
-  ${prefix}feat(app): add multiple new files${useBody ? `
+  ${prefix}feat(app): add multiple new files${
+    useBody
+      ? `
   - added file1.js
-  - added file2.js with basic logging` : ``}
+  - added file2.js with basic logging`
+      : ``
+  }
   \`\`\``;
 }
 
@@ -370,14 +428,97 @@ function getSeparateSVNExample(useEmoji: boolean, useBody: boolean) {
 
 - **Generated Commit Messages**:
   \`\`\`
-  ${featPrefix}feat(feature): implement new functionality${useBody ? `
+  ${featPrefix}feat(feature): implement new functionality${
+    useBody
+      ? `
   
-  - Add new feature implementation to feature.js` : ``}
+  - Add new feature implementation to feature.js`
+      : ``
+  }
 
-  ${fixPrefix}fix(bugfix): correct calculation logic${useBody ? `
+  ${fixPrefix}fix(bugfix): correct calculation logic${
+    useBody
+      ? `
 
-  - Fix the calculation logic of variable y in bugfix.js` : ``}
+  - Fix the calculation logic of variable y in bugfix.js`
+      : ``
+  }
   \`\`\``;
 }
 
 export function generateCommitMessageUserPrompt(language: string) {}
+
+export function getCommitMessageTools(config: ExtensionConfiguration) {
+  const {
+    base: { language },
+    features: {
+      commitFormat: { enableBody, enableEmoji },
+    },
+  } = config;
+
+  const properties: any = {
+    type: {
+      type: "string",
+      description:
+        "Commit type, must be one of: feat, fix, docs, style, refactor, perf, test, build, ci, chore, i18n. See TYPE REFERENCE for details.",
+      enum: [
+        "feat",
+        "fix",
+        "docs",
+        "style",
+        "refactor",
+        "perf",
+        "test",
+        "build",
+        "ci",
+        "chore",
+        "i18n",
+      ],
+    },
+    scope: {
+      type: "string",
+      description:
+        "Scope of the change (e.g., component or file name). Must be in English. Can be empty.",
+    },
+    subject: {
+      type: "string",
+      description: `A short summary of the change in ${language}. Rules: imperative mood, no capitalization, no period at the end, max 50 chars. Use '!' for breaking changes (e.g., 'feat(auth)!: ...').`,
+    },
+  };
+
+  const required = ["type", "subject"];
+
+  if (enableBody) {
+    properties.body = {
+      type: "string",
+      description: `Detailed explanation of the changes in ${language}. Rules: explain what and why, use bullet points with '-', max 72 chars per line. For breaking changes, describe impact. Use '【】' for categorization.`,
+    };
+    required.push("body");
+  }
+
+  if (enableEmoji) {
+    properties.emoji = {
+      type: "string",
+      description:
+        "Emoji corresponding to the commit type (e.g., '✨' for 'feat'). See TYPE REFERENCE for the mapping.",
+    };
+    required.push("emoji");
+  }
+
+  const functionDescription = `Generates a structured commit message in ${language} based on file diffs. It must follow the Conventional Commits specification and the user's configuration.`;
+
+  return [
+    {
+      type: "function",
+      function: {
+        name: "generate_commit_message",
+        description: functionDescription,
+        parameters: {
+          type: "object",
+          properties: properties,
+          required: required,
+        },
+      },
+    },
+  ];
+}

@@ -140,7 +140,7 @@ export interface LayeredCommitMessage {
  * AI提供者接口，定义了AI服务提供者需要实现的方法
  */
 export interface AIProvider {
-  /** 生成提交内容 */
+  /** 生成提交信息 */
   generateCommit(params: AIRequestParams): Promise<AIResponse>;
   /** 生成分层提交信息 */
   generateLayeredCommit?(
@@ -154,6 +154,10 @@ export interface AIProvider {
   generateCommitStream?(
     params: AIRequestParams
   ): Promise<AsyncIterable<string>>;
+  /** 使用函数调用提交信息 */
+  generateCommitWithFunctionCalling?(
+    params: AIRequestParams
+  ): Promise<AIResponse>;
   /** 生成代码评审内容 */
   generateCodeReview?(params: AIRequestParams): Promise<AIResponse>;
   /** 生成分支名称 */

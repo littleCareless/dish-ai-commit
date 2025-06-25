@@ -18,8 +18,10 @@ import {
 } from "../utils/generate-helper";
 import { addSimilarCodeContext } from "../utils/embedding-helper";
 import { getWeeklyReportPrompt } from "../../prompt/weekly-report";
+import { getCommitMessageTools } from "../../prompt/generate-commit";
 import { CodeReviewReportGenerator } from "../../services/code-review-report-generator";
 import { formatMessage } from "../../utils/i18n/localization-manager";
+import { ConfigurationManager } from "../../config/configuration-manager";
 
 /**
  * AI提供者的抽象基类
@@ -77,6 +79,56 @@ export abstract class AbstractAIProvider implements AIProvider {
       throw new Error(
         formatMessage("generation.failed", [
           // 或者一个新的i18n key如 "streamGeneration.failed"
+          error instanceof Error ? error.message : String(error),
+        ])
+      );
+    }
+  }
+
+  async generateCommitWithFunctionCalling(
+    params: AIRequestParams
+  ): Promise<AIResponse> {
+    try {
+      const systemPrompt = getSystemPrompt(params);
+      const config = ConfigurationManager.getInstance().getConfiguration();
+      const tools = getCommitMessageTools(config);
+
+      const result = await this.executeWithRetry(
+        systemPrompt,
+        "",
+        params.diff,
+        params,
+        {
+          temperature: 0.3,
+          tools: tools,
+        }
+      );
+
+      if (result.tool_calls && result.tool_calls.length > 0) {
+        const toolCall = result.tool_calls[0];
+        if (toolCall.function.name === "generate_commit_message") {
+          const args = JSON.parse(toolCall.function.arguments);
+          const { enableBody, enableEmoji } = config.features.commitFormat;
+          const scope = args.scope ? `(${args.scope})` : "";
+          const emoji = enableEmoji && args.emoji ? `${args.emoji} ` : "";
+          const body = enableBody && args.body ? `\n\n${args.body}` : "";
+          const commitMessage = `${emoji}${args.type}${scope}: ${args.subject}${body}`;
+          return {
+            content: commitMessage,
+            usage: result.usage,
+          };
+        }
+      }
+
+      // Fallback to content if no function call was made
+      if (result.content) {
+        return result;
+      }
+
+      throw new Error("Failed to generate commit message with function calling.");
+    } catch (error) {
+      throw new Error(
+        formatMessage("generation.failed", [
           error instanceof Error ? error.message : String(error),
         ])
       );
@@ -285,8 +337,14 @@ export abstract class AbstractAIProvider implements AIProvider {
       parseAsJSON?: boolean;
       temperature?: number;
       maxTokens?: number;
+      tools?: any[];
     }
-  ): Promise<{ content: string; usage?: any; jsonContent?: any }> {
+  ): Promise<{
+    content: string;
+    usage?: any;
+    jsonContent?: any;
+    tool_calls?: any[];
+  }> {
     return generateWithRetry(
       params,
       async (truncatedInput) => {
@@ -324,8 +382,14 @@ export abstract class AbstractAIProvider implements AIProvider {
       parseAsJSON?: boolean;
       temperature?: number;
       maxTokens?: number;
+      tools?: any[];
     }
-  ): Promise<{ content: string; usage?: any; jsonContent?: any }>;
+  ): Promise<{
+    content: string;
+    usage?: any;
+    jsonContent?: any;
+    tool_calls?: any[];
+  }>;
 
   /**
    * 需要由具体提供者实现的核心流式方法。

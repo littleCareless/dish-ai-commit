@@ -10,9 +10,10 @@ import { notify } from "../utils/notification";
 import { getMessage, formatMessage } from "../utils/i18n";
 import { ProgressHandler } from "../utils/notification/progress-handler";
 import { validateAndGetModel } from "../utils/ai/model-validation";
-import { LayeredCommitMessage } from "../ai/types";
+import { LayeredCommitMessage, AIProvider } from "../ai/types";
 import * as path from "path"; // 导入 path 模块
 import { addSimilarCodeContext } from "../ai/utils/embedding-helper";
+import { stateManager } from "../utils/state/state-manager";
 
 /**
  * 将分层提交信息格式化为结构化的提交信息文本
@@ -170,13 +171,34 @@ export class GenerateCommitCommand extends BaseCommand {
         throw new Error(errorMessage);
       }
 
-      await this.streamAndApplyMessage(
-        aiProvider as AbstractAIProvider,
-        requestParams,
-        scmProvider,
-        token,
-        progress
-      );
+      const useFunctionCalling =
+        stateManager.getWorkspace<boolean>(
+          "experimental.commitWithFunctionCalling.enabled"
+        ) ?? false;
+
+      if (useFunctionCalling) {
+        notify.info("info.using.function.calling");
+        if (!aiProvider.generateCommitWithFunctionCalling) {
+          throw new Error(
+            `Provider ${newProvider} does not support function calling.`
+          );
+        }
+        await this.performFunctionCallingGeneration(
+          aiProvider,
+          requestParams,
+          scmProvider,
+          token,
+          progress
+        );
+      } else {
+        await this.streamAndApplyMessage(
+          aiProvider as AbstractAIProvider,
+          requestParams,
+          scmProvider,
+          token,
+          progress
+        );
+      }
 
       notify.info("commit.message.generated.stream", [
         scmProvider.type.toUpperCase(),
@@ -217,6 +239,35 @@ export class GenerateCommitCommand extends BaseCommand {
     const finalMessage = accumulatedMessage.trim();
     await scmProvider.startStreamingInput(finalMessage);
   }
+
+  private async performFunctionCallingGeneration(
+    aiProvider: AIProvider,
+    requestParams: any,
+    scmProvider: ISCMProvider,
+    token: vscode.CancellationToken,
+    progress: vscode.Progress<{ message?: string; increment?: number }>
+  ) {
+    this.throwIfCancelled(token);
+    progress.report({
+      message: getMessage("progress.calling.ai.function"),
+    });
+
+    if (!aiProvider.generateCommitWithFunctionCalling) {
+      throw new Error(
+        `Provider ${aiProvider.getId()} does not support function calling.`
+      );
+    }
+
+    const aiResponse = await aiProvider.generateCommitWithFunctionCalling(
+      requestParams
+    );
+
+    this.throwIfCancelled(token);
+
+    const finalMessage = aiResponse.content;
+    await scmProvider.startStreamingInput(finalMessage);
+  }
+
   throwIfCancelled(token: vscode.CancellationToken) {
     if (token.isCancellationRequested) {
       console.log(getMessage("user.cancelled.operation.log"));
