@@ -11,6 +11,8 @@ import {
   WORKSPACE_CONFIG_SCHEMA,
   WORKSPACE_CONFIG_PATHS,
 } from "../../config/workspace-config-schema";
+import { CONFIG_SCHEMA } from "../../config/config-schema";
+import { isConfigValue } from "../../config/utils/config-validation";
 
 export class SettingsViewMessageHandler {
   private readonly _extensionId: string;
@@ -47,47 +49,42 @@ export class SettingsViewMessageHandler {
       }
       case "getSettings": {
         const config = vscode.workspace.getConfiguration("dish-ai-commit");
-        const extensionPackageJSON = vscode.extensions.getExtension(
-          this._extensionId
-        )!.packageJSON;
-
-        // 确保 contributes 和 configuration 存在
-        const configProperties =
-          extensionPackageJSON?.contributes?.configuration?.properties;
-        console.log("configProperties", configProperties);
-        if (!configProperties) {
-          webview.postMessage({
-            command: "loadSettingsError",
-            error: "无法加载配置定义。",
-          });
-          return;
-        }
-
         const detailedSettings: any[] = [];
-        for (const key in configProperties) {
-          // 确保 key 是 package.json 中定义的配置项，通常带有插件前缀
-          if (
-            Object.prototype.hasOwnProperty.call(configProperties, key) &&
-            key.startsWith("dish-ai-commit.")
-          ) {
-            const prop = configProperties[key];
-            const configKeyWithoutPrefix = key.substring(
-              "dish-ai-commit.".length
-            );
-            const value = config.get(configKeyWithoutPrefix);
+        console.log("getSettings");
+        const processConfig = (schema: any, path: string, settings: any[]) => {
+          for (const key in schema) {
+            if (Object.prototype.hasOwnProperty.call(schema, key)) {
+              const prop = schema[key];
+              const currentPath = path ? `${path}.${key}` : key;
 
-            detailedSettings.push({
-              key: configKeyWithoutPrefix,
-              type: prop.type,
-              default: prop.default,
-              description: prop.description || prop.markdownDescription || "",
-              enum: prop.enum,
-              value: value,
-              fromPackageJSON: true, // Add this flag to indicate settings from package.json
-            });
+              if (isConfigValue(prop)) {
+                const value = config.get(currentPath);
+
+                const setting: any = {
+                  key: currentPath,
+                  type: prop.type,
+                  default: prop.default,
+                  description: prop.description || "",
+                  value: value,
+                  fromPackageJSON: true, // This indicates it's a global setting
+                  // feature: prop.feature,
+                };
+
+                if ("enum" in prop) {
+                  setting.enum = prop.enum;
+                }
+
+                settings.push(setting);
+              } else if (typeof prop === "object" && prop !== null) {
+                // If it's an object and not a config value, recurse into it
+                processConfig(prop, currentPath, settings);
+              }
+            }
           }
-        }
-        console.log("test1", detailedSettings);
+        };
+
+        processConfig(CONFIG_SCHEMA, "", detailedSettings);
+        console.log("CONFIG_SCHEMA", detailedSettings);
 
         // Load settings from workspace state
         const workspaceSettings: any[] = [];
@@ -101,24 +98,29 @@ export class SettingsViewMessageHandler {
               const prop = schema[key];
               const currentPath = path ? `${path}.${key}` : key;
 
-              // Check if the property has a 'type' field, which indicates it's a setting
-              if (prop.hasOwnProperty("type")) {
+              if (isConfigValue(prop)) {
                 const value = stateManager.getWorkspace<any>(
                   currentPath,
                   prop.default
                 );
 
-                settings.push({
+                const setting: any = {
                   key: currentPath,
                   type: prop.type,
                   default: prop.default,
                   description: prop.description || "",
-                  enum: prop.enum,
                   value: value,
-                  fromPackageJSON: prop.fromPackageJSON ?? false,
-                });
-              } else {
-                // If it's an object without a 'type', recurse into it
+                  fromPackageJSON: false,
+                  // feature: prop.feature,
+                };
+
+                if ("enum" in prop) {
+                  setting.enum = prop.enum;
+                }
+
+                settings.push(setting);
+              } else if (typeof prop === "object" && prop !== null) {
+                // If it's an object and not a config value, recurse into it
                 processWorkspaceConfig(prop, currentPath, settings);
               }
             }
@@ -127,6 +129,7 @@ export class SettingsViewMessageHandler {
 
         processWorkspaceConfig(WORKSPACE_CONFIG_SCHEMA, "", workspaceSettings);
 
+        console.log("WORKSPACE_CONFIG_SCHEMA", workspaceSettings);
         // 获取索引状态
         let isIndexed = 0;
         let indexStatusError: string | null = null;
@@ -233,13 +236,6 @@ export class SettingsViewMessageHandler {
           // providerContextKey 应该是类似 "providers.openai" 这样的键
           const config = vscode.workspace.getConfiguration("dish-ai-commit");
           const providerSettings = config.get(providerContextKey);
-
-          // 查找 provider 的定义，以确定是否需要传递特定配置给 factory
-          const extensionPackageJSON = vscode.extensions.getExtension(
-            this._extensionId
-          )!.packageJSON;
-          const configProperties =
-            extensionPackageJSON?.contributes?.configuration?.properties;
 
           let providerInstance: AIProvider | undefined;
 

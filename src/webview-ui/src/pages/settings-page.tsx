@@ -11,7 +11,6 @@ import { vscode } from "@/lib/vscode";
 import SettingsMenu from "./setting/SettingsMenu";
 import SettingsContent from "./setting/SettingsContent";
 import { useMessageHandler } from "./setting/useMessageHandler";
-import { menuItemsConfig } from "./setting/menuConfig";
 import { ConfigValueType, SettingItem } from "./setting/types";
 
 const ollamaEmbeddingModels = [
@@ -42,9 +41,7 @@ const SettingsPage: React.FC = () => {
     indexingError,
   } = useMessageHandler();
 
-  const [selectedMenuItemKey, setSelectedMenuItemKey] = useState<string>(
-    menuItemsConfig[0].key
-  );
+  const [selectedMenuItemKey, setSelectedMenuItemKey] = useState<string>("base");
   const [selectedEmbeddingProvider, setSelectedEmbeddingProvider] =
     useState<string>("");
   const [saveDisabled, setSaveDisabled] = useState(false);
@@ -185,6 +182,7 @@ const SettingsPage: React.FC = () => {
         <SettingsMenu
           selectedMenuItemKey={selectedMenuItemKey}
           setSelectedMenuItemKey={setSelectedMenuItemKey}
+          settingsSchema={settingsSchema}
         />
       </Layout.Sider>
       <Layout.Content style={{ display: "flex", flexDirection: "column" }}>

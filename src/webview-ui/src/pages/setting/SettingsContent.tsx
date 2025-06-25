@@ -1,7 +1,6 @@
 import React from "react";
 import { vscode } from "@/lib/vscode";
 import { SettingItem, ConfigValueType } from "./types";
-import { menuItemsConfig } from "./menuConfig";
 import {
   Form,
   Input,
@@ -10,6 +9,9 @@ import {
   Typography,
   Button as ArcoButton,
   Message,
+  List,
+  Tag,
+  Collapse,
 } from "@arco-design/web-react";
 import { IconCheckCircle, IconCloseCircle } from "@arco-design/web-react/icon";
 
@@ -106,9 +108,19 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
   const displayedSettings = React.useMemo(() => {
     if (!settingsSchema) return [];
     return settingsSchema.filter((setting) =>
-      setting.key.startsWith(selectedMenuItemKey + ".")
+      setting.key.startsWith(selectedMenuItemKey)
     );
   }, [settingsSchema, selectedMenuItemKey]);
+
+  const pageFeatureData = React.useMemo(() => {
+    if (!displayedSettings) return null;
+    const settingWithFeature = displayedSettings.find((s) => s.feature);
+    if (!settingWithFeature?.feature) return null;
+
+    // Assuming 'zh-CN' for now. In a real app, this would come from i18n context.
+    const currentLang = "zh-CN";
+    return settingWithFeature.feature[currentLang];
+  }, [displayedSettings]);
 
   console.log(
     "displayedSettings",
@@ -128,24 +140,11 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
 
   if (
     displayedSettings.length === 0 &&
-    selectedMenuItemKey !== "providers" &&
-    selectedMenuItemKey !== "features" &&
     selectedMenuItemKey !== "experimental.codeIndex"
   ) {
     return (
       <div className="text-center text-muted-foreground mt-10">
-        <p>
-          No settings found for "
-          {menuItemsConfig
-            .find(
-              (i) =>
-                i.key === selectedMenuItemKey ||
-                i.children?.find((c) => c.key === selectedMenuItemKey)
-            )
-            ?.children?.find((c) => c.key === selectedMenuItemKey)?.label ||
-            menuItemsConfig.find((i) => i.key === selectedMenuItemKey)?.label}
-          ".
-        </p>
+        <p>No settings found for "{selectedMenuItemKey}".</p>
       </div>
     );
   }
@@ -233,6 +232,38 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
 
   return (
     <div className="container max-w-3xl mx-auto space-y-8 p-4">
+      {pageFeatureData && (
+        <Collapse
+          defaultActiveKey={[]}
+          style={{ marginBottom: "20px" }}
+        >
+          <Collapse.Item
+            header="功能说明"
+            name="1"
+          >
+            <Typography.Paragraph type="secondary">
+              {pageFeatureData.what}
+            </Typography.Paragraph>
+            <List
+              size="small"
+              header={<Tag color="green">优点</Tag>}
+              dataSource={pageFeatureData.benefits}
+              render={(item, index) => (
+                <List.Item key={index}>{item}</List.Item>
+              )}
+              style={{ marginBottom: "10px" }}
+            />
+            <List
+              size="small"
+              header={<Tag color="red">缺点</Tag>}
+              dataSource={pageFeatureData.drawbacks}
+              render={(item, index) => (
+                <List.Item key={index}>{item}</List.Item>
+              )}
+            />
+          </Collapse.Item>
+        </Collapse>
+      )}
       <Form layout="vertical">{displayedSettings.map(renderSetting)}</Form>
       {selectedMenuItemKey === "experimental.codeIndex" && (
         <>
