@@ -186,6 +186,7 @@
   "progress.updating.model.config": "正在更新模型配置...",
   "progress.preparing.request": "正在准备AI请求...",
   "progress.calling.ai.stream": "正在调用AI服务...",
+  "progress.calling.ai.function": "正在调用AI函数...",
   "embedding.enabledMessage": "代码相似度搜索功能已启用。正在基于您的变更寻找相关代码片段...",
   "embedding.openai.apiKey.missing": "OpenAI API 密钥未配置。",
   "embedding.openai.noEmbeddings": "OpenAI API 未返回任何嵌入。",
@@ -206,5 +207,6 @@
   "embedding.search.failed": "无法在向量存储中搜索。",
   "embedding.vectorStore.connectFailed": "无法连接到向量存储或响应无效。",
   "embedding.qdrant.connectFailed": "连接 Qdrant 向量数据库失败。请确认 Qdrant 服务正在运行，并确保可以通过 {0} 访问。\n原始错误：{1}",
-  "embedding.vectorStore.statusCheck.unknownError": "无法检查向量索引状态（未知错误）"
+  "embedding.vectorStore.statusCheck.unknownError": "无法检查向量索引状态（未知错误）",
+  "info.using.function.calling": "正在使用函数调用模式生成提交信息..."
 }

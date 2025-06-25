@@ -184,6 +184,7 @@
   "progress.updating.model.config": "Updating model configuration...",
   "progress.preparing.request": "Preparing AI request...",
   "progress.calling.ai.stream": "Calling AI service...",
+  "progress.calling.ai.function": "Calling AI function...",
   "embedding.enabledMessage": "Code similarity search is enabled. Finding related code snippets based on your changes...",
   "embedding.openai.apiKey.missing": "OpenAI API key is not configured.",
   "embedding.openai.noEmbeddings": "OpenAI API returned no embeddings.",
@@ -204,5 +205,6 @@
   "embedding.search.failed": "Failed to search in vector store.",
   "embedding.vectorStore.connectFailed": "Failed to connect to vector store or invalid response.",
   "embedding.qdrant.connectFailed": "Failed to connect to Qdrant vector database. Please confirm that the Qdrant service is running and accessible via {0}.\\nOriginal error: {1}",
-  "embedding.vectorStore.statusCheck.unknownError": "Unable to check vector index status (unknown error)"
+  "embedding.vectorStore.statusCheck.unknownError": "Unable to check vector index status (unknown error)",
+  "info.using.function.calling": "Generating commit message using function calling mode..."
 }
