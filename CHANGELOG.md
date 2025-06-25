@@ -6,6 +6,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.28.0 (2025-06-25)
+
+### ✨ Features
+
+- **ai**: Implemented generation of commit information through function calls ([768aa19](https://github.com/littleCareless/dish-ai-commit/commit/768aa19))
+- **config**: Enhanced configuration system to support workspace configuration and experimental features ([b616881](https://github.com/littleCareless/dish-ai-commit/commit/b616881))
+- **settings**: Refactored settings system to implement dynamic UI and function description ([65c4b4a](https://github.com/littleCareless/dish-ai-commit/commit/65c4b4a))
+
+### 🎫 Chores
+
+- **i18n**: Added internationalized text related to function calls ([31aec06](https://github.com/littleCareless/dish-ai-commit/commit/31aec06))
+- **release**: Released version 0.27.0 ([d18e397](https://github.com/littleCareless/dish-ai-commit/commit/d18e397))
+
 # 0.27.0 (2025-06-24)
 
 ### ✨ Features

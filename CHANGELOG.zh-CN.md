@@ -6,6 +6,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.28.0 (2025-06-25)
+
+### ✨ Features
+
+- **ai**: 实现通过函数调用生成提交信息 ([768aa19](https://github.com/littleCareless/dish-ai-commit/commit/768aa19))
+- **config**: 增强配置系统，支持工作区配置及实验特性 ([b616881](https://github.com/littleCareless/dish-ai-commit/commit/b616881))
+- **settings**: 重构设置系统，实现动态 UI 及功能说明 ([65c4b4a](https://github.com/littleCareless/dish-ai-commit/commit/65c4b4a))
+
+### 🎫 Chores
+
+- **i18n**: 添加函数调用相关的国际化文案 ([31aec06](https://github.com/littleCareless/dish-ai-commit/commit/31aec06))
+- **release**: 发布 0.27.0 版本 ([d18e397](https://github.com/littleCareless/dish-ai-commit/commit/d18e397))
+
 # 0.27.0 (2025-06-24)
 
 ### ✨ Features
