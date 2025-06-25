@@ -10,6 +10,7 @@ export function isConfigValue(value: unknown): value is ConfigValue {
     value !== null &&
     typeof value === "object" &&
     "type" in value &&
-    "description" in value
+    "description" in value &&
+    "default" in value
   );
 }

@@ -10,6 +10,7 @@ import { isConfigValue } from "./config-validation";
  */
 export function generateConfiguration(
   schema: typeof CONFIG_SCHEMA,
+  // schema: ConfigObject,
   getConfig: (key: string) => any
 ) {
   const result: any = {};

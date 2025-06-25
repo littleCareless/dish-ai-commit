@@ -45,13 +45,21 @@ type ExtractConfigValueType<T> = T extends ConfigValueTypeString
  * 递归生成配置对象的类型定义
  * @template T 配置模式对象
  */
-type GenerateConfigType<T> = {
-  [K in keyof T]: T[K] extends { type: string }
+/**
+ * Helper type to remove properties with 'never' type from an object.
+ * This is useful for cleaning up mapped types where some keys are mapped to 'never' to filter them out.
+ */
+type FilterNever<T> = {
+  [K in keyof T as T[K] extends never ? never : K]: T[K];
+};
+
+type GenerateConfigType<T> = FilterNever<{
+  [K in keyof T]: T[K] extends { type: string; default: any }
     ? ExtractConfigValueType<T[K]>
     : T[K] extends ConfigObject
     ? GenerateConfigType<T[K]>
     : never;
-};
+}>;
 
 /** 扩展配置接口类型 */
 export type ExtensionConfiguration = GenerateConfigType<typeof CONFIG_SCHEMA>;
@@ -112,11 +120,13 @@ function generateProviderRequiredFields() {
 
   // 遍历每个提供商配置，确定其必填字段
   for (const [provider, config] of Object.entries(providers)) {
-    const fields = Object.keys(config);
-    if (fields.includes("apiKey")) {
-      result[provider] = "apiKey";
-    } else if (fields.includes("baseUrl")) {
-      result[provider] = "baseUrl";
+    if (typeof config === "object" && config !== null) {
+      const fields = Object.keys(config);
+      if (fields.includes("apiKey")) {
+        result[provider] = "apiKey";
+      } else if (fields.includes("baseUrl")) {
+        result[provider] = "baseUrl";
+      }
     }
   }
 
