@@ -14,6 +14,7 @@ import { LayeredCommitMessage, AIProvider } from "../ai/types";
 import * as path from "path"; // 导入 path 模块
 import { addSimilarCodeContext } from "../ai/utils/embedding-helper";
 import { stateManager } from "../utils/state/state-manager";
+import { getSystemPrompt } from "../ai/utils/generate-helper";
 
 /**
  * 将分层提交信息格式化为结构化的提交信息文本
@@ -155,6 +156,21 @@ export class GenerateCommitCommand extends BaseCommand {
     };
 
     await addSimilarCodeContext(requestParams);
+
+    const systemPrompt = getSystemPrompt(requestParams);
+    const promptLength =
+      (systemPrompt?.length ?? 0) +
+      (requestParams.additionalContext?.length ?? 0) +
+      (requestParams.diff?.length ?? 0);
+
+    const maxTokens = selectedModel.maxTokens?.input ?? 0;
+
+    notify.info(
+      formatMessage("prompt.length.info", [
+        promptLength.toLocaleString(),
+        maxTokens.toLocaleString(),
+      ])
+    );
 
     try {
       this.throwIfCancelled(token);

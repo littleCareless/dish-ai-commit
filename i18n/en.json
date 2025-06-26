@@ -206,5 +206,6 @@
   "embedding.vectorStore.connectFailed": "Failed to connect to vector store or invalid response.",
   "embedding.qdrant.connectFailed": "Failed to connect to Qdrant vector database. Please confirm that the Qdrant service is running and accessible via {0}.\\nOriginal error: {1}",
   "embedding.vectorStore.statusCheck.unknownError": "Unable to check vector index status (unknown error)",
-  "info.using.function.calling": "Generating commit message using function calling mode..."
+  "info.using.function.calling": "Generating commit message using function calling mode...",
+  "prompt.length.info": "Prompt length: {0} characters. Model max limit: {1} characters."
 }

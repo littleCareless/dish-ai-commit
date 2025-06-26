@@ -208,5 +208,6 @@
   "embedding.vectorStore.connectFailed": "无法连接到向量存储或响应无效。",
   "embedding.qdrant.connectFailed": "连接 Qdrant 向量数据库失败。请确认 Qdrant 服务正在运行，并确保可以通过 {0} 访问。\n原始错误：{1}",
   "embedding.vectorStore.statusCheck.unknownError": "无法检查向量索引状态（未知错误）",
-  "info.using.function.calling": "正在使用函数调用模式生成提交信息..."
+  "info.using.function.calling": "正在使用函数调用模式生成提交信息...",
+  "prompt.length.info": "提示词长度: {0} 字符。模型最大限制: {1} 字符。"
 }
