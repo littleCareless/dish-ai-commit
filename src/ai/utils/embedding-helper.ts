@@ -38,12 +38,20 @@ export async function addSimilarCodeContext(
                 `File: ${item.payload.file}\n\`\`\`\n${item.payload.code}\n\`\`\``
             )
             .join("\n\n---\n\n");
-          params.additionalContext = `
+          const similarCodeContext = `
 Here are some code snippets that might be related to the current changes:
 ---
 ${relatedCodeContext}
 ---
 `;
+          if (
+            params.additionalContext &&
+            params.additionalContext.trim().length > 0
+          ) {
+            params.additionalContext += `\n\n${similarCodeContext}`;
+          } else {
+            params.additionalContext = similarCodeContext;
+          }
         }
       } else {
       }

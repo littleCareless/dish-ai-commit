@@ -212,13 +212,14 @@ ${
 ## WRITING RULES
 
 ### Subject Line
-- Use ! for Breaking Changes: \`feat!(auth): ...\`
+- Use ! for Breaking Changes: \`feat(auth)!: ...\`
 - Scope must be in English
 - Use imperative mood
 - No capitalization
 - No period at end
 - Maximum 50 characters
 - Must be in ${language} (except scope)
+- The body MUST begin one blank line after the description
 
 ${
   enableBody
@@ -250,49 +251,14 @@ ${
 
 ${getVCSExamples(vcsType, enableMergeCommit, enableEmoji, enableBody)}
 
-## COMMON ERRORS TO AVOID
+## COMMON MISTAKES TO AVOID
 
-### ERROR 1: Mixed Language
-❌ feat(user): add new login feature
-✅ feat(user): ${
-    language === "zh-CN" ? "添加新的登录功能" : `${language} version of message`
-  }
+Avoid these common mistakes:
 
-### ERROR 2: Adding Explanations
-❌ This commit adds a new feature: feat(auth): ${
-    language === "zh-CN" ? "实现用户认证" : `${language} version of message`
-  }
-✅ feat(auth): ${
-    language === "zh-CN" ? "实现用户认证" : `${language} version of message`
-  }
-
-### ERROR 3: Incorrect Format
-❌ ${
-    language === "zh-CN"
-      ? "修复了用户登录问题"
-      : "${language} version of incorrect message"
-  }
-✅ fix(user): ${
-    language === "zh-CN"
-      ? "修复登录验证失败问题"
-      : `${language} version of message`
-  }
-
-${
-  !enableBody
-    ? `### ERROR 4: Including Body Content
-❌ feat(auth): ${
-        language === "zh-CN" ? "添加认证功能" : `${language} version of message`
-      }
-   - ${language === "zh-CN" ? "实现JWT令牌认证" : "${language} body content"}
-   - ${
-     language === "zh-CN" ? "添加刷新令牌功能" : "${language} more body content"
-   }
-✅ feat(auth): ${
-        language === "zh-CN" ? "添加认证功能" : `${language} version of message`
-      }`
-    : ""
-}
+- Writing content in English (except for scope and technical terms); all other text must be in ${language}
+- Adding explanatory text like “This commit adds...”
+- Writing plain messages like “Fix login issue” without using the type(scope): format
+- Forgetting the blank line between subject and body when body is enabled
 
 ---
 
@@ -317,9 +283,11 @@ function getMergedGitExample(useEmoji: boolean, useBody: boolean) {
 
 - **Generated Commit Message**:
   \`\`\`
-  ${prefix}feat!(auth): implement new authentication system${
+  ${prefix}feat!(auth): implement new authentication system
+  ${
     useBody
       ? `
+
   - replace legacy token auth with JWT
   -【Breaking Change】old token format no longer supported
   -【Migration】clients must update authentication logic
@@ -354,16 +322,20 @@ function getSeparateGitExample(useEmoji: boolean, useBody: boolean) {
 
 - **Generated Commit Messages**:
   \`\`\`
-  ${featPrefix}feat(feature): implement new functionality${
+  ${featPrefix}feat(feature): implement new functionality
+  ${
     useBody
       ? `
+
   - add feature implementation in feature.js`
       : ``
   }
   
-  ${fixPrefix}fix(bugfix): correct calculation logic${
+  ${fixPrefix}fix(bugfix): correct calculation logic 
+  ${
     useBody
       ? `
+
   - fixed calculation of variable y in bugfix.js`
       : ``
   }
@@ -393,9 +365,11 @@ function getMergedSVNExample(useEmoji: boolean, useBody: boolean) {
 
 - **Generated Commit Message**:
   \`\`\`
-  ${prefix}feat(app): add multiple new files${
+  ${prefix}feat(app): add multiple new files
+  ${
     useBody
       ? `
+
   - added file1.js
   - added file2.js with basic logging`
       : ``
@@ -428,7 +402,8 @@ function getSeparateSVNExample(useEmoji: boolean, useBody: boolean) {
 
 - **Generated Commit Messages**:
   \`\`\`
-  ${featPrefix}feat(feature): implement new functionality${
+  ${featPrefix}feat(feature): implement new functionality
+  ${
     useBody
       ? `
   
@@ -436,7 +411,8 @@ function getSeparateSVNExample(useEmoji: boolean, useBody: boolean) {
       : ``
   }
 
-  ${fixPrefix}fix(bugfix): correct calculation logic${
+  ${fixPrefix}fix(bugfix): correct calculation logic
+  ${
     useBody
       ? `
 
@@ -482,7 +458,7 @@ export function getCommitMessageTools(config: ExtensionConfiguration) {
     },
     subject: {
       type: "string",
-      description: `A short summary of the change in ${language}. Rules: imperative mood, no capitalization, no period at the end, max 50 chars. Use '!' for breaking changes (e.g., 'feat(auth)!: ...').`,
+      description: `A short summary of the change in ${language}. Rules: imperative mood, no capitalization, no period at the end, max 50 chars. Use '!' for breaking changes (e.g., 'feat(auth)!: ...'). If body is present, leave one blank line after the subject.`,
     },
   };
 
