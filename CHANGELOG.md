@@ -6,6 +6,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.29.0 (2025-06-29)
+
+### ♻ Code Refactoring
+
+- **prompt**: Optimize AI prompt words and context processing logic ([816a9c0](https://github.com/littleCareless/dish-ai-commit/commit/816a9c0))
+
+### ✨ Features
+
+- **commit-generation**: Display prompt word length and model restrictions ([37108b9](https://github.com/littleCareless/dish-ai-commit/commit/37108b9))
+
+### 🎫 Chores
+
+- **release**: Release 0.28.0 version ([9747dbf](https://github.com/littleCareless/dish-ai-commit/commit/9747dbf))
+
+### 📝 Documentation
+
+- **readme**: Update documentation to reflect new features and configuration ([07b910a](https://github.com/littleCareless/dish-ai-commit/commit/07b910a))
+
 # 0.28.0 (2025-06-25)
 
 ### ✨ Features

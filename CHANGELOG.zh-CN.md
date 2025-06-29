@@ -6,6 +6,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.29.0 (2025-06-29)
+
+### ♻ Code Refactoring
+
+- **prompt**: 优化 AI 提示词和上下文处理逻辑 ([816a9c0](https://github.com/littleCareless/dish-ai-commit/commit/816a9c0))
+
+### ✨ Features
+
+- **commit-generation**: 显示提示词长度和模型限制 ([37108b9](https://github.com/littleCareless/dish-ai-commit/commit/37108b9))
+
+### 🎫 Chores
+
+- **release**: 发布 0.28.0 版本 ([9747dbf](https://github.com/littleCareless/dish-ai-commit/commit/9747dbf))
+
+### 📝 Documentation
+
+- **readme**: 更新文档以反映新功能和配置 ([07b910a](https://github.com/littleCareless/dish-ai-commit/commit/07b910a))
+
 # 0.28.0 (2025-06-25)
 
 ### ✨ Features
