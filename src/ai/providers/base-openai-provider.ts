@@ -155,12 +155,16 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
 
     const messages: ChatCompletionMessageParam[] = [
       { role: "system", content: systemPrompt },
-      { role: "user", content: userContent },
+      // { role: "user", content: userContent },
     ];
     // Only add userPrompt if it's not empty
     if (userPrompt) {
       messages.push({ role: "user", content: userPrompt });
     }
+    messages.push({
+      role: "user",
+      content: userContent,
+    });
 
     const filteredMessages = messages.filter((msg) => {
       if (typeof msg.content === "string") {

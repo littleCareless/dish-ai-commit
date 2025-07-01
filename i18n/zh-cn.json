@@ -187,6 +187,7 @@
   "progress.preparing.request": "正在准备AI请求...",
   "progress.calling.ai.stream": "正在调用AI服务...",
   "progress.calling.ai.function": "正在调用AI函数...",
+  "progress.getting.recent.commits": "正在获取最近的提交记录...",
   "embedding.enabledMessage": "代码相似度搜索功能已启用。正在基于您的变更寻找相关代码片段...",
   "embedding.openai.apiKey.missing": "OpenAI API 密钥未配置。",
   "embedding.openai.noEmbeddings": "OpenAI API 未返回任何嵌入。",

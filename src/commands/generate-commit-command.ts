@@ -103,6 +103,33 @@ export class GenerateCommitCommand extends BaseCommand {
     }
   }
 
+  private async _getRecentCommitsContext(
+    scmProvider: ISCMProvider
+  ): Promise<string> {
+    const recentMessages = await scmProvider.getRecentCommitMessages();
+    let recentCommitsContext = "";
+
+    if (recentMessages.user.length > 0) {
+      recentCommitsContext +=
+        "# RECENT USER COMMITS (For reference only, do not copy!):\n";
+      recentCommitsContext += recentMessages.user
+        .map((message) => `- ${message}`)
+        .join("\n");
+    }
+
+    if (recentMessages.repository.length > 0) {
+      if (recentCommitsContext.length > 0) {
+        recentCommitsContext += "\n\n";
+      }
+      recentCommitsContext +=
+        "# RECENT REPOSITORY COMMITS (For reference only, do not copy!):\n";
+      recentCommitsContext += recentMessages.repository
+        .map((message) => `- ${message}`)
+        .join("\n");
+    }
+    return recentCommitsContext;
+  }
+
   private async performStreamingGeneration(
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     token: vscode.CancellationToken,
@@ -111,7 +138,13 @@ export class GenerateCommitCommand extends BaseCommand {
     scmProvider: ISCMProvider,
     selectedFiles: string[]
   ) {
-    const currentInput = await scmProvider.getCommitInput();
+    let currentInput = await scmProvider.getCommitInput();
+    if (currentInput) {
+      currentInput = `When generating the commit message, please use the following custom instructions provided by the user.
+You can ignore an instruction if it contradicts a system message.
+
+${currentInput}`;
+    }
     const config = ConfigurationManager.getInstance();
     const configuration = config.getConfiguration();
 
@@ -122,6 +155,16 @@ export class GenerateCommitCommand extends BaseCommand {
       notify.info("no.changes");
       throw new Error(getMessage("no.changes"));
     }
+
+    progress.report({
+      message: getMessage("progress.getting.recent.commits"),
+    });
+    const recentCommitsContext = await this._getRecentCommitsContext(
+      scmProvider
+    );
+    const additionalContext = [currentInput, recentCommitsContext]
+      .filter(Boolean)
+      .join("\n\n");
 
     progress.report({
       message: getMessage("progress.updating.model.config"),
@@ -142,12 +185,19 @@ export class GenerateCommitCommand extends BaseCommand {
       return;
     }
 
+    //     Now generate a commit messages that describe the CODE CHANGES.
+    // DO NOT COPY commits from RECENT COMMITS, but it as reference for the commit style.
+    // ONLY return a single markdown code block, NO OTHER PROSE!
+
+    // ```text
+    // commit message goes here
+
     progress.report({ message: getMessage("progress.preparing.request") });
     const requestParams = {
       ...configuration.features.commitMessage,
       ...configuration.features.commitFormat,
       ...configuration.features.codeAnalysis,
-      additionalContext: currentInput, // Start with current SCM input
+      additionalContext,
       diff: diffContent,
       model: selectedModel,
       scm: scmProvider.type ?? "git",
@@ -191,7 +241,7 @@ export class GenerateCommitCommand extends BaseCommand {
         stateManager.getWorkspace<boolean>(
           "experimental.commitWithFunctionCalling.enabled"
         ) ?? false;
-
+      console.log("requestParams", requestParams);
       if (useFunctionCalling) {
         notify.info("info.using.function.calling");
         if (!aiProvider.generateCommitWithFunctionCalling) {
@@ -199,21 +249,21 @@ export class GenerateCommitCommand extends BaseCommand {
             `Provider ${newProvider} does not support function calling.`
           );
         }
-        await this.performFunctionCallingGeneration(
-          aiProvider,
-          requestParams,
-          scmProvider,
-          token,
-          progress
-        );
+        // await this.performFunctionCallingGeneration(
+        //   aiProvider,
+        //   requestParams,
+        //   scmProvider,
+        //   token,
+        //   progress
+        // );
       } else {
-        await this.streamAndApplyMessage(
-          aiProvider as AbstractAIProvider,
-          requestParams,
-          scmProvider,
-          token,
-          progress
-        );
+        // await this.streamAndApplyMessage(
+        //   aiProvider as AbstractAIProvider,
+        //   requestParams,
+        //   scmProvider,
+        //   token,
+        //   progress
+        // );
       }
 
       notify.info("commit.message.generated.stream", [
