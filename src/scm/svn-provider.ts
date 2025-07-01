@@ -4,8 +4,9 @@ import { promisify } from "util";
 import * as childProcess from "child_process";
 import * as fs from "fs";
 import * as path from "path";
-import { DiffSimplifier } from "../utils/diff/diff-simplifier";
 import { getMessage, formatMessage } from "../utils/i18n";
+import { DiffProcessor } from "../utils/diff/diff-processor";
+import { DiffSimplifier } from "../utils";
 
 const exec = promisify(childProcess.exec);
 
@@ -357,42 +358,16 @@ export class SvnProvider implements ISCMProvider {
         throw new Error(getMessage("svn.not.initialized"));
       }
 
-      let diffOutput = "";
+      const filePaths = files?.map((f) => `"${f}"`).join(" ") || "";
+      const command = `"${this.svnPath}" diff ${filePaths}`;
 
-      if (files && files.length > 0) {
-        for (const file of files) {
-          Logger.log(LogLevel.Info, "Processing file:", file);
-          const fileStatus = await this.getFileStatus(file);
-          const escapedFile = file.replace(/"/g, '\\"');
+      const { stdout: rawDiff } = await exec(command, {
+        cwd: this.workspaceRoot,
+        maxBuffer: 1024 * 1024 * 10,
+        env: this.getEnvironmentConfig(),
+      });
 
-          // 对于删除的文件不获取diff内容
-          if (fileStatus === "Deleted File") {
-            diffOutput += `\n=== ${fileStatus}: ${file} ===\n`;
-            continue;
-          }
-          const { stdout } = await exec(
-            `"${this.svnPath}" diff "${escapedFile}"`,
-            {
-              cwd: this.workspaceRoot,
-              maxBuffer: 1024 * 1024 * 10,
-              env: this.getEnvironmentConfig(),
-            }
-          );
-
-          if (stdout.trim()) {
-            diffOutput += `\n=== ${fileStatus}: ${file} ===\n${stdout}`;
-          }
-        }
-      } else {
-        const { stdout } = await exec(`"${this.svnPath}" diff`, {
-          cwd: this.workspaceRoot,
-          maxBuffer: 1024 * 1024 * 10,
-          env: this.getEnvironmentConfig(),
-        });
-        diffOutput = stdout;
-      }
-
-      if (!diffOutput.trim()) {
+      if (!rawDiff.trim()) {
         throw new Error(getMessage("diff.noChanges"));
       }
 
@@ -407,11 +382,11 @@ export class SvnProvider implements ISCMProvider {
         vscode.window.showWarningMessage(
           getMessage("diff.simplification.warning")
         );
-        return DiffSimplifier.simplify(diffOutput);
+        return DiffSimplifier.simplify(rawDiff);
       }
 
       // 如果未启用简化，直接返回原始diff
-      return diffOutput;
+      return DiffProcessor.process(rawDiff, "svn");
     } catch (error) {
       Logger.log(LogLevel.Error, "SVN diff failed:", error);
       if (error instanceof Error) {
@@ -599,6 +574,72 @@ export class SvnProvider implements ISCMProvider {
       }
       return []; // 类似 git-provider，在错误时返回空数组
     }
+  }
+
+  async getRecentCommitMessages() {
+    const repositoryCommitMessages: string[] = [];
+    const userCommitMessages: string[] = [];
+
+    try {
+      // Last 5 commit messages (repository)
+      const logCommand = `"${this.svnPath}" log -l 5 "${this.workspaceRoot}"`;
+      const { stdout: logOutput } = await exec(logCommand, {
+        cwd: this.workspaceRoot,
+        env: this.getEnvironmentConfig(),
+      });
+      repositoryCommitMessages.push(...this.parseSvnLog(logOutput));
+
+      // Last 5 commit messages (user)
+      const { stdout: user } = await exec(
+        `"${this.svnPath}" info --show-item last-changed-author "${this.workspaceRoot}"`
+      );
+      const author = user.trim();
+
+      if (author) {
+        const userLogCommand = `"${this.svnPath}" log -l 5 -r HEAD:1 --search "${author}" "${this.workspaceRoot}"`;
+        const { stdout: userLogOutput } = await exec(userLogCommand, {
+          cwd: this.workspaceRoot,
+          env: this.getEnvironmentConfig(),
+        });
+        userCommitMessages.push(...this.parseSvnLog(userLogOutput));
+      }
+    } catch (err) {
+      console.error("Failed to get recent SVN commit messages:", err);
+    }
+
+    return { repository: repositoryCommitMessages, user: userCommitMessages };
+  }
+
+  private parseSvnLog(log: string): string[] {
+    const messages: string[] = [];
+    const entries = log.split(
+      /^------------------------------------------------------------------------$/m
+    );
+
+    for (const rawEntry of entries) {
+      const entry = rawEntry.trim();
+      if (!entry) {
+        continue;
+      }
+
+      const lines = entry.split("\n");
+      if (lines.length === 0 || !lines[0].match(/^r\d+\s+\|/)) {
+        continue;
+      }
+
+      let messageStartIndex = 1;
+      if (lines.length > 1 && lines[messageStartIndex].trim() === "") {
+        messageStartIndex++;
+      }
+
+      if (messageStartIndex < lines.length) {
+        const message = lines.slice(messageStartIndex).join("\n").trim();
+        if (message) {
+          messages.push(message.split("\n")[0]);
+        }
+      }
+    }
+    return messages;
   }
 
   // /**

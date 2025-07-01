@@ -7,6 +7,16 @@ import { SvnProvider } from "./svn-provider";
 import { CliSvnProvider } from "./cli-svn-provider";
 
 /**
+ * 最近提交信息
+ */
+export interface RecentCommitMessages {
+  /** 仓库最近提交信息 */
+  repository: string[];
+  /** 用户最近提交信息 */
+  user: string[];
+}
+
+/**
  * 源代码管理提供者接口
  * 定义了通用的SCM操作方法
  */
@@ -40,6 +50,11 @@ export interface ISCMProvider {
 
   /** 获取所有分支的列表 (主要用于 Git) */
   getBranches?: () => Promise<string[]>;
+
+ /**
+  * 获取最近的提交信息
+  */
+  getRecentCommitMessages(): Promise<RecentCommitMessages>;
 }
 
 /**
