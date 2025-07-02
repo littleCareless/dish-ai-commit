@@ -102,7 +102,6 @@ export class VectorStore {
         vector: p.vector,
         payload: p.payload as Record<string, any>, // Explicitly cast payload
       }));
-      console.log("collectionName", this.collectionName, qdrantPoints);
       await this.client.upsert(this.collectionName, { points: qdrantPoints });
       console.log(
         `Successfully upserted ${points.length} points to '${this.collectionName}'.`

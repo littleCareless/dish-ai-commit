@@ -215,10 +215,7 @@ export class SvnUtils {
         cwd: workspacePath,
         env: this.getEnvironmentConfig(),
       });
-      console.log("authOutput", authOutput);
-      console.log("urlOutput", urlOutput);
       const parsedAuthor = this.parseAuthOutput(authOutput, urlOutput);
-      console.log("Parsed Author:", parsedAuthor);
 
       return parsedAuthor;
     } catch (error) {

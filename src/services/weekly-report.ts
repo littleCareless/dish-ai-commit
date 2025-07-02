@@ -62,7 +62,6 @@ export class WeeklyReportService {
     }
 
     const author = await this.authorService!.getAuthor(this.scmProvider!.type);
-    console.log("author", author);
     const commits = await this.commitStrategy!.getCommits(
       this.getWorkspacePath(),
       period,

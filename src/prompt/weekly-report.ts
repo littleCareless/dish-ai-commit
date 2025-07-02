@@ -215,8 +215,6 @@ export function generateWeeklyReportPrompt({
   // Replace language marker
   prompt = prompt.replaceAll(/\$\{language\}/g, language);
 
-  console.log("Weekly report start date:", startDate);
-  console.log("Weekly report end date:", endDate);
   // Replace date markers if specific dates are provided
   if (startDate && endDate) {
     prompt = prompt.replace(
@@ -226,8 +224,6 @@ export function generateWeeklyReportPrompt({
   }
 
   // Translation logic could be added here if language is not English
-  console.log("Weekly report prompt:", prompt);
-
   return prompt;
 }
 
@@ -254,7 +250,6 @@ export function getWeeklyReportPrompt(period: {
     // Add other configuration properties as needed
   } as ExtensionConfiguration;
 
-  console.log("period", period);
 
   return generateWeeklyReportPrompt({
     config: extensionConfig,

@@ -37,7 +37,6 @@ export async function activate(context: vscode.ExtensionContext) {
     // 初始化 EmbeddingServiceManager
     const embeddingService = EmbeddingServiceManager.getInstance().initialize();
 
-    console.log("注册命令");
     // 注册所有命令到VS Code
     registerCommands(context);
 

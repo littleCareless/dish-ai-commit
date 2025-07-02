@@ -139,7 +139,6 @@ export class ConfigurationManager {
    * 释放配置管理器及其资源
    */
   public dispose(): void {
-    console.log("dispose");
     this.monitor.dispose();
     ConfigurationManager.instance =
       undefined as unknown as ConfigurationManager;

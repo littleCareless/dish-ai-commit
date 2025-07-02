@@ -50,7 +50,6 @@ export class SettingsViewMessageHandler {
       case "getSettings": {
         const config = vscode.workspace.getConfiguration("dish-ai-commit");
         const detailedSettings: any[] = [];
-        console.log("getSettings");
         const processConfig = (schema: any, path: string, settings: any[]) => {
           for (const key in schema) {
             if (Object.prototype.hasOwnProperty.call(schema, key)) {
@@ -84,7 +83,6 @@ export class SettingsViewMessageHandler {
         };
 
         processConfig(CONFIG_SCHEMA, "", detailedSettings);
-        console.log("CONFIG_SCHEMA", detailedSettings);
 
         // Load settings from workspace state
         const workspaceSettings: any[] = [];
@@ -129,7 +127,6 @@ export class SettingsViewMessageHandler {
 
         processWorkspaceConfig(WORKSPACE_CONFIG_SCHEMA, "", workspaceSettings);
 
-        console.log("WORKSPACE_CONFIG_SCHEMA", workspaceSettings);
         // 获取索引状态
         let isIndexed = 0;
         let indexStatusError: string | null = null;
@@ -167,7 +164,6 @@ export class SettingsViewMessageHandler {
 
       case "saveSettings": {
         const newSettings = message.data;
-        console.log("newSettings", newSettings);
         const config = vscode.workspace.getConfiguration("dish-ai-commit");
         try {
           const promises = newSettings.map(async (setting: any) => {
@@ -299,7 +295,6 @@ export class SettingsViewMessageHandler {
     key: string,
     webview: vscode.Webview
   ): Promise<void> {
-    console.log("handleTestConnection", service);
     try {
       let testUrl = url;
       if (service === "ollama") {
@@ -393,7 +388,6 @@ export class SettingsViewMessageHandler {
 
       if (error instanceof EmbeddingServiceError) {
         // Forward the structured error to the webview
-        console.log("indexingFailed");
         webview.postMessage({
           command: "indexingFailed",
           data: {

@@ -90,7 +90,6 @@ export class GitProvider implements ISCMProvider {
     try {
       const { stdout } = await exec("git --version");
       const version = stdout.trim();
-      console.log("Git version:", version);
       vscode.window.showInformationMessage(
         formatMessage("git.version.detected", [version])
       );
@@ -157,7 +156,6 @@ export class GitProvider implements ISCMProvider {
   async getDiff(files?: string[]): Promise<string | undefined> {
     try {
       let rawDiff = "";
-      console.log("this.workspaceRoot", this.workspaceRoot);
 
       // 检查仓库是否有初始提交
       let hasInitialCommit = true;

@@ -146,10 +146,7 @@ export abstract class BaseCommand {
       ? resourceStates
       : [resourceStates];
 
-    console.log(
-      "Selected files:",
-      states.map((state) => state?.resourceUri?.fsPath)
-    );
+
     console.log("Number of selected files:", states?.length);
 
     if (states.length === 0) {

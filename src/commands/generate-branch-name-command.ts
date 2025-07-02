@@ -135,7 +135,6 @@ export class GenerateBranchNameCommand extends BaseCommand {
           });
 
           if (!branchNameResult?.content) {
-            console.log("Branch name generation failed", branchNameResult);
             await notify.error(getMessage("branch.name.generation.failed"));
             return;
           }
@@ -173,7 +172,6 @@ export class GenerateBranchNameCommand extends BaseCommand {
   ): Promise<void> {
     // 处理生成的分支名称：去除空格、特殊字符等
     const formattedBranchName = this.formatBranchName(branchName);
-    console.log("formattedBranchName", formattedBranchName);
 
     // 生成多个分支名称变体供用户选择
     const branchSuggestions = this.generateBranchVariants(formattedBranchName);

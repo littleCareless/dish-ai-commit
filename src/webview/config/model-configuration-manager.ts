@@ -41,7 +41,6 @@ export class ModelConfigurationManager {
     }
 
     const selectedModel = models.find((m) => m.id === model);
-    console.log("selectedModel", selectedModel);
 
     if (!selectedModel) {
       throw new Error(getMessage("model.notFound"));

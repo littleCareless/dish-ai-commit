@@ -30,16 +30,13 @@ function WeeklyReportPage() {
     // 监听来自 VSCode 的消息
     const messageHandler = (event: MessageEvent) => {
       const message = event.data;
-      console.log("Received message from extension:", message);
 
       switch (message.command) {
         case "report":
           // 更新编辑器内容
-          console.log("更新编辑器内容", message.data);
           setContent(message.data);
           break;
         case "usersList": // 新增处理用户列表的 case
-          console.log("Received users list:", message.data);
           setAllUsers(message.data.users || []);
           if (
             message.data.currentUser &&
@@ -63,7 +60,6 @@ function WeeklyReportPage() {
 
   const handleSave = () => {
     // Send save message to VSCode
-    console.log("vscode", vscode);
     if (vscode) {
       vscode.postMessage({
         command: "save", // 使用 command 而不是 type
@@ -92,7 +88,6 @@ function WeeklyReportPage() {
 
   const handleGenerate = () => {
     // Send generate message to VSCode
-    console.log("generate", vscode);
     if (vscode) {
       // 确保有选择日期范围
       if (!dateRange || dateRange.length !== 2) {

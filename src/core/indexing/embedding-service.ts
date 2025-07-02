@@ -699,8 +699,6 @@ export class EmbeddingService {
 
       const qdUrl = this.vectorStore.getQdrantUrl();
 
-      console.log("qdUrl", qdUrl);
-
       throw new EmbeddingServiceError(
         isFetchError
           ? formatMessage("embedding.qdrant.connectFailed", [

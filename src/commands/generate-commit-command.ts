@@ -225,7 +225,6 @@ REMINDER:
       .filter(Boolean)
       .join("\n\n");
 
-    console.log("userContent", userContent);
 
     // 准备用于生成系统提示和最终请求的参数
     const tempParams = {
@@ -267,7 +266,6 @@ REMINDER:
     try {
       this.throwIfCancelled(token);
       if (token.isCancellationRequested) {
-        console.log("用户取消了操作");
         return;
       }
       if (!aiProvider.generateCommitStream) {
@@ -283,7 +281,6 @@ REMINDER:
         stateManager.getWorkspace<boolean>(
           "experimental.commitWithFunctionCalling.enabled"
         ) ?? false;
-      console.log("requestParams", requestParams);
       if (useFunctionCalling) {
         notify.info("info.using.function.calling");
         if (!aiProvider.generateCommitWithFunctionCalling) {
