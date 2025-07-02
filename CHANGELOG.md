@@ -6,6 +6,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.30.0 (2025-07-02)
+
+### ♻ Code Refactoring
+
+- **ai/provider**: Refactor AI provider to use standardized message structure ([f648afe](https://github.com/littleCareless/dish-ai-commit/commit/f648afe))
+
+### ✨ Features
+
+- **config**: Add "Use recent commit as reference" config item ([4dee82c](https://github.com/littleCareless/dish-ai-commit/commit/4dee82c))
+- **context**: Introduce recent commit and advanced diff handling to optimize AI context ([013f923](https://github.com/littleCareless/dish-ai-commit/commit/013f923))
+- **prompt**: Refactor the prompt structure and introduce the recent commit reference function ([8da8117](https://github.com/littleCareless/dish-ai-commit/commit/8da8117))
+- **scm**: Add the function of getting the latest commit record and refactor the diff logic ([c212d72](https://github.com/littleCareless/dish-ai-commit/commit/c212d72))
+
+### 🎫 Chores
+
+- **release**: Release version 0.29.0 ([f0e1bc1](https://github.com/littleCareless/dish-ai-commit/commit/f0e1bc1))
+
 # 0.29.0 (2025-06-29)
 
 ### ♻ Code Refactoring

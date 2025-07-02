@@ -6,6 +6,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.30.0 (2025-07-02)
+
+### ♻ Code Refactoring
+
+- **ai/provider**: 重构 AI 提供程序以使用标准化的消息结构 ([f648afe](https://github.com/littleCareless/dish-ai-commit/commit/f648afe))
+
+### ✨ Features
+
+- **config**: 新增 “使用最近提交作为参考” 配置项 ([4dee82c](https://github.com/littleCareless/dish-ai-commit/commit/4dee82c))
+- **context**: 引入最近提交和高级差异处理以优化 AI 上下文 ([013f923](https://github.com/littleCareless/dish-ai-commit/commit/013f923))
+- **prompt**: 重构提示词结构并引入近期提交参考功能 ([8da8117](https://github.com/littleCareless/dish-ai-commit/commit/8da8117))
+- **scm**: 添加获取最近提交记录功能并重构 diff 逻辑 ([c212d72](https://github.com/littleCareless/dish-ai-commit/commit/c212d72))
+
+### 🎫 Chores
+
+- **release**: 发布 0.29.0 版本 ([f0e1bc1](https://github.com/littleCareless/dish-ai-commit/commit/f0e1bc1))
+
 # 0.29.0 (2025-06-29)
 
 ### ♻ Code Refactoring
