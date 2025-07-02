@@ -1,10 +1,5 @@
 import * as vscode from "vscode";
-import {
-  getMaxCharacters,
-  type AIModel,
-  type AIRequestParams,
-  type AIResponse,
-} from "../types";
+import { type AIModel, type AIRequestParams, type AIResponse } from "../types";
 import { AbstractAIProvider } from "./abstract-ai-provider";
 import { getMessage } from "../../utils/i18n";
 import {
@@ -28,9 +23,6 @@ export class VSCodeProvider extends AbstractAIProvider {
    * 使用VS Code Language Model API执行请求
    */
   protected async executeAIRequest(
-    systemPrompt: string,
-    userPrompt: string,
-    userContent: string,
     params: AIRequestParams,
     options?: {
       parseAsJSON?: boolean;
@@ -53,11 +45,11 @@ export class VSCodeProvider extends AbstractAIProvider {
     // let retries = 0;
 
     // while (true) {
-    const messages = [
-      vscode.LanguageModelChatMessage.User(systemPrompt),
-      vscode.LanguageModelChatMessage.User(userContent),
-      vscode.LanguageModelChatMessage.User(userPrompt ?? ""),
-    ];
+    const messages = this.buildProviderMessages(
+      params
+    ) as vscode.LanguageModelChatMessage[];
+
+    console.log("Final messages for AI:", JSON.stringify(messages, null, 2));
 
     // try {
     // if (userContent.length > maxCodeCharacters) {
@@ -119,10 +111,6 @@ export class VSCodeProvider extends AbstractAIProvider {
       maxTokens?: number;
     }
   ): Promise<AsyncIterable<string>> {
-    const systemPrompt = getSystemPrompt(params);
-    const userPrompt = params.additionalContext || "";
-    const userContent = params.diff;
-
     const models = await vscode.lm.selectChatModels();
     if (!models || models.length === 0) {
       throw new Error(getMessage("vscode.no.models.available"));
@@ -131,13 +119,11 @@ export class VSCodeProvider extends AbstractAIProvider {
     const chatModel =
       models.find((model) => model.id === params.model?.id) || models[0];
 
-    const messages = [
-      vscode.LanguageModelChatMessage.User(systemPrompt),
-      vscode.LanguageModelChatMessage.User(userContent),
-    ];
-    if (userPrompt) {
-      messages.push(vscode.LanguageModelChatMessage.User(userPrompt));
-    }
+    const messages = this.buildProviderMessages(
+      params
+    ) as vscode.LanguageModelChatMessage[];
+
+    console.log("Final messages for AI:", JSON.stringify(messages, null, 2));
 
     const response = await chatModel.sendRequest(messages, {
       modelOptions: {
@@ -225,15 +211,60 @@ export class VSCodeProvider extends AbstractAIProvider {
     const userContent = `- ${commitMessages.join("\n- ")}`;
 
     const response = await this.executeAIRequest(
-      systemPrompt,
-      userPrompt,
-      userContent,
-      params
+      {
+        ...params,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userContent },
+          { role: "user", content: userPrompt },
+        ],
+      },
+      {
+        temperature: 0.7,
+      }
     );
 
     // The `usage` property from `executeAIRequest` in VSCodeProvider is currently undefined.
     // If usage data becomes available from the VSCode LM API and is populated in `executeAIRequest`,
     // it will be correctly passed through here.
     return { content: response.content, usage: response.usage };
+  }
+  /**
+   * 构建VS Code特定的消息数组。
+   * @param params AI请求参数
+   * @returns 转换后的vscode.LanguageModelChatMessage数组
+   */
+  protected buildProviderMessages(params: AIRequestParams): any {
+    if (!params.messages || params.messages.length === 0) {
+      const systemPrompt = getSystemPrompt(params);
+      const userPrompt = params.additionalContext || "";
+      const userContent = params.diff;
+
+      params.messages = [{ role: "system", content: systemPrompt }];
+      if (userContent) {
+        params.messages.push({ role: "user", content: userContent });
+      }
+      if (userPrompt) {
+        params.messages.push({ role: "user", content: userPrompt });
+      }
+    }
+
+    return params.messages.map((message) => {
+      // VSCode LM API目前主要区分User和System/Assistant
+      // 我们将 system 和 assistant 都映射为 User，因为API当前只接受User和Assistant
+      // 且System角色的行为可能不符合预期。
+      // 实际使用中，system prompt的内容通常作为第一个User消息传递。
+      switch (message.role) {
+        case "system":
+          // return new vscode.LanguageModelChatMessage(message.content, "system");
+          // 当前版本的API似乎更倾向于将所有内容都作为User消息
+          return vscode.LanguageModelChatMessage.User(message.content);
+        case "assistant":
+          return vscode.LanguageModelChatMessage.Assistant(message.content);
+        case "user":
+        default:
+          return vscode.LanguageModelChatMessage.User(message.content);
+      }
+    });
   }
 }

@@ -1,7 +1,7 @@
 import { ConfigurationManager } from "../../config/configuration-manager";
 import { AIModel, AIRequestParams, type AIProviders } from "../types";
 import { AbstractAIProvider } from "./abstract-ai-provider";
-import { GenerationConfig, GoogleGenAI, Part } from "@google/genai";
+import { GoogleGenAI, Part, Content } from "@google/genai";
 import type { OpenAIProviderConfig } from "./base-openai-provider";
 import {
   getPRSummarySystemPrompt,
@@ -129,9 +129,6 @@ export class GeminiAIProvider extends AbstractAIProvider {
    * 使用Google Generative AI库发送请求并获取回复
    */
   protected async executeAIRequest(
-    systemPrompt: string,
-    userPrompt: string,
-    userContent: string,
     params: AIRequestParams,
     options?: {
       parseAsJSON?: boolean;
@@ -147,19 +144,25 @@ export class GeminiAIProvider extends AbstractAIProvider {
 
     // 获取模型ID
     const modelId = (params.model?.id || this.config.defaultModel) as string;
+    const { systemInstruction, contents } = this.buildProviderMessages(
+      params
+    ) as {
+      systemInstruction?: string;
+      contents: Content[];
+    };
 
-    // 合并用户输入和提示
-    const combinedUserContent = [userPrompt, userContent]
-      .filter(Boolean)
-      .join("\n\n");
+    console.log(
+      "Final messages for AI:",
+      JSON.stringify({ systemInstruction, contents }, null, 2)
+    );
 
     try {
       // 使用systemPrompt作为系统指令，使用combinedUserContent作为用户输入
       const result = await this.genAI.models.generateContent({
         model: modelId,
-        contents: [{ role: "user", parts: [{ text: combinedUserContent }] }],
+        contents: contents,
         config: {
-          systemInstruction: systemPrompt,
+          systemInstruction: systemInstruction,
           temperature: options?.temperature || 0.7,
         },
       });
@@ -197,36 +200,27 @@ export class GeminiAIProvider extends AbstractAIProvider {
       );
     }
 
-    const systemPrompt = getSystemPrompt(params);
-    const userPrompt = params.additionalContext || "";
-    const userContent = params.diff;
-
     const modelId = (params.model?.id || this.config.defaultModel) as string;
-
-    // 构建 Gemini 的 contents 数组
-    // Gemini 通常将 systemPrompt 作为 systemInstruction，用户输入作为 contents
-    const contents: Part[] = [];
-    if (userPrompt) {
-      contents.push({ text: userPrompt });
-    }
-    if (userContent) {
-      contents.push({ text: userContent });
-    }
-    // 如果 userPrompt 和 userContent 都为空，至少需要一个空的 text part
-    if (contents.length === 0) {
-      contents.push({ text: "" });
-    }
+    const { systemInstruction, contents } = this.buildProviderMessages(
+      params
+    ) as {
+      systemInstruction?: string;
+      contents: Content[];
+    };
 
     const processStream = async function* (
       this: GeminiAIProvider
     ): AsyncIterable<string> {
       try {
+        console.log(
+          "Final messages for AI:",
+          JSON.stringify({ systemInstruction, contents }, null, 2)
+        );
         const streamResult = await this.genAI!.models.generateContentStream({
           model: modelId,
-          // contents: [{ role: "user", parts: [{ text: combinedUserContent }] }], // 旧方式
-          contents: [{ role: "user", parts: contents }], // 新方式，使用构建好的 parts
+          contents: contents,
           config: {
-            systemInstruction: systemPrompt, // 将 systemPrompt 作为 systemInstruction
+            systemInstruction: systemInstruction,
             temperature: options?.temperature || 0.7,
             // maxOutputTokens: options?.maxTokens, // 如果SDK支持，可以取消注释
           },
@@ -380,12 +374,70 @@ export class GeminiAIProvider extends AbstractAIProvider {
     // Gemini的executeAIRequest会将userPrompt和userContent合并
     // 所以这里我们将commit列表作为userContent，userPrompt作为引导
     const response = await this.executeAIRequest(
-      systemPrompt,
-      userPrompt,
-      `- ${userContent}`, // 添加引导，与base-openai-provider保持一致
-      params
+      {
+        ...params,
+        messages: [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+          { role: "user", content: `- ${userContent}` },
+        ],
+      },
+      {
+        temperature: 0.7,
+      }
     );
 
     return { content: response.content, usage: response.usage };
+  }
+  /**
+   * 构建特定于提供商的消息数组。
+   * Gemini API 使用 systemInstruction 和 contents 数组。
+   * @param params - AI请求参数
+   * @returns 包含 systemInstruction 和 contents 的对象
+   */
+  protected buildProviderMessages(params: AIRequestParams): any {
+    if (!params.messages || params.messages.length === 0) {
+      const systemPrompt = getSystemPrompt(params);
+      const userPrompt = params.additionalContext || "";
+      const userContent = params.diff;
+
+      params.messages = [{ role: "system", content: systemPrompt }];
+      if (userContent) {
+        params.messages.push({ role: "user", content: userContent });
+      }
+      if (userPrompt) {
+        params.messages.push({ role: "user", content: userPrompt });
+      }
+    }
+
+    let systemInstruction: string | undefined;
+    const contents: Content[] = [];
+    let currentParts: Part[] = [];
+
+    for (const message of params.messages) {
+      if (message.role === "system") {
+        systemInstruction = message.content;
+      } else {
+        // Gemini API expects alternating user/model roles.
+        // We'll merge consecutive user messages.
+        if (message.role === "user") {
+          currentParts.push({ text: message.content });
+        } else if (message.role === "assistant") {
+          // If we have pending user parts, add them as a user message first.
+          if (currentParts.length > 0) {
+            contents.push({ role: "user", parts: currentParts });
+            currentParts = [];
+          }
+          contents.push({ role: "model", parts: [{ text: message.content }] });
+        }
+      }
+    }
+
+    // Add any remaining user parts
+    if (currentParts.length > 0) {
+      contents.push({ role: "user", parts: currentParts });
+    }
+
+    return { systemInstruction, contents };
   }
 }

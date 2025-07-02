@@ -1,11 +1,10 @@
 import { Ollama } from "ollama";
 import {
-  AIProvider,
   AIRequestParams,
   AIResponse,
   type AIModel,
   type AIProviders,
-  type LayeredCommitMessage,
+  AIMessage,
 } from "../types";
 import { AbstractAIProvider } from "./abstract-ai-provider";
 import { ConfigurationManager } from "../../config/configuration-manager";
@@ -80,9 +79,6 @@ export class OllamaProvider extends AbstractAIProvider {
    * 调用Ollama API执行请求并返回结果
    */
   protected async executeAIRequest(
-    systemPrompt: string,
-    userPrompt: string,
-    userContent: string,
     params: AIRequestParams,
     options?: {
       parseAsJSON?: boolean;
@@ -91,14 +87,13 @@ export class OllamaProvider extends AbstractAIProvider {
     }
   ): Promise<{ content: string; usage?: any; jsonContent?: any }> {
     const model = params.model || this.getDefaultModel();
+    const messages = this.buildProviderMessages(params);
+
+    console.log("Final messages for AI:", JSON.stringify(messages, null, 2));
 
     const response = await this.ollama.chat({
       model: model.id,
-      messages: [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userContent },
-        { role: "user", content: userPrompt },
-      ],
+      messages: messages,
       stream: false,
       // 如果Ollama支持temperature参数
       options: {
@@ -150,21 +145,25 @@ export class OllamaProvider extends AbstractAIProvider {
       maxTokens?: number; // 注意：Ollama 可能使用不同的参数名，如 num_predict
     }
   ): Promise<AsyncIterable<string>> {
-    const systemPrompt = getSystemPrompt(params);
-    const userPrompt = params.additionalContext || "";
-    const userContent = params.diff;
-
     const self = this; // 确保在异步生成器中正确使用 'this'
     async function* streamLogic(): AsyncIterable<string> {
-      const model = params.model || self.getDefaultModel();
-
-      const messages = [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: userContent },
-      ];
-      if (userPrompt) {
-        messages.push({ role: "user", content: userPrompt });
+      if (!params.messages) {
+        const systemPrompt = getSystemPrompt(params);
+        const userPrompt = params.additionalContext || "";
+        const userContent = params.diff;
+        params.messages = [{ role: "system", content: systemPrompt }];
+        if (userContent) {
+          params.messages.push({ role: "user", content: userContent });
+        }
+        if (userPrompt) {
+          params.messages.push({ role: "user", content: userPrompt });
+        }
       }
+
+      const model = params.model || self.getDefaultModel();
+      const messages = self.buildProviderMessages(params);
+
+      console.log("Final messages for AI:", JSON.stringify(messages, null, 2));
 
       const stream = await self.ollama.chat({
         model: model.id,
@@ -277,13 +276,40 @@ export class OllamaProvider extends AbstractAIProvider {
     const userPrompt = getPRSummaryUserPrompt(params.language);
     const userContent = `- ${commitMessages.join("\n- ")}`;
 
-    const response = await this.executeAIRequest(
-      systemPrompt,
-      userPrompt,
-      userContent,
-      params
-    );
+    const response = await this.executeAIRequest({
+      ...params,
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userContent },
+        { role: "user", content: userPrompt },
+      ],
+    });
 
     return { content: response.content, usage: response.usage };
+  }
+
+  /**
+   * 构建特定于提供商的消息数组。
+   * 对于Ollama，我们直接使用通用的AIMessage格式。
+   * @param params - AI请求参数
+   * @returns 适合Ollama API的消息数组
+   */
+  protected buildProviderMessages(params: AIRequestParams): AIMessage[] {
+    if (!params.messages || params.messages.length === 0) {
+      // 作为备用，如果 messages 未提供，则根据旧结构构建
+      const systemPrompt = getSystemPrompt(params);
+      const userContent = params.diff;
+      const userPrompt = params.additionalContext || "";
+
+      const messages: AIMessage[] = [{ role: "system", content: systemPrompt }];
+      if (userContent) {
+        messages.push({ role: "user", content: userContent });
+      }
+      if (userPrompt) {
+        messages.push({ role: "user", content: userPrompt });
+      }
+      return messages;
+    }
+    return params.messages;
   }
 }
