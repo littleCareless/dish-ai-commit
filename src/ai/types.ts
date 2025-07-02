@@ -36,9 +36,23 @@ export interface AIResponse {
 }
 
 /**
+ * 定义AI交互中单个消息的结构
+ */
+export interface AIMessage {
+  /** 消息发送者的角色 */
+  role: "system" | "user" | "assistant" | "tool";
+  /** 消息内容 */
+  content: string;
+  /** 工具调用ID，仅当角色为 'tool' 时需要 */
+  tool_call_id?: string;
+}
+
+/**
  * AI请求的详细参数接口，用于实际发送请求时的完整配置
  */
 export interface AIRequestParams {
+  /** 格式化的消息数组，用于替代独立的prompt字段 */
+  messages?: AIMessage[];
   /** 代码差异内容 */
   diff: string;
   /** 使用的AI模型 */

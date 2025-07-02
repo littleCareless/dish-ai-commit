@@ -108,6 +108,7 @@ export function generateCommitMessageSystemPrompt({
     base: { language },
     features: {
       commitFormat: { enableMergeCommit, enableEmoji, enableBody = true },
+      commitMessage: { useRecentCommitsAsReference },
     },
   } = config;
 
@@ -122,7 +123,7 @@ export function generateCommitMessageSystemPrompt({
 
 ## REQUIRED ACTIONS (MUST DO)
 
-1. USE THE CORRECT COMMIT TYPE based on file status and changes (feat, fix, etc.)
+1. Determine the true intention of this commit based on the actual changes (including path, file name, content, and diff code), and choose the commit type that best suits the purpose.
 2. WRITE ALL CONTENT IN ${language} (except for technical terms and scope)
 3. FOLLOW THE EXACT FORMAT TEMPLATE shown in examples
 4. USE ENGLISH ONLY FOR SCOPE and technical terms
@@ -159,23 +160,9 @@ When generating commit messages, always consider both the file status and the co
 
 ### File Status Classification
 
-1. **New File** → Determine type by file purpose:
-   - **Feature Files** (\`*.ts\`, \`*.js\`, \`*.py\`) → \`feat\`
-   - **Configuration Files** (\`webpack.config.js\`, \`tsconfig.json\`) → \`chore\`
-   - **Internationalization Files** (\`en.json\`, \`zh-CN.json\`) → \`i18n\`
-   - **Style Files** (\`*.css\`, \`*.less\`, \`*.scss\`) → \`style\`
-   - **Documentation Files** (\`README.md\`, \`CONTRIBUTING.md\`) → \`docs\`
-   - **Test Files** (\`*.test.js\`, \`*.spec.ts\`) → \`test\`
-
-2. **Modified File** → Determine type by change purpose:
-   - **Bug Fix** (preventing crashes, fixing unexpected behavior) → \`fix\`
-   - **Feature Enhancement** (adding functionality) → \`feat\`
-   - **Performance Improvement** (optimizations) → \`perf\`
-   - **Code Refactoring** (improving structure without changing functionality) → \`refactor\`
-   - **Code Style Changes** (formatting, renaming) → \`style\`
-   - **Test Modifications** → \`test\`
-
-3. **Deleted File** → Usually \`chore\` or \`refactor\` depending on context
+- Please analyze the file changes — including file paths, filenames, file contents, and diff code snippets — and determine the purpose of this commit.
+- Then, choose the most appropriate commit type (type) from the TYPE REFERENCE list based on the actual intent of the change, not just the file extension or filename.
+- The commit type must reflect the **real purpose** of the change.
 
 ## TYPE REFERENCE
 
@@ -220,6 +207,7 @@ ${
 - Maximum 50 characters
 - Must be in ${language} (except scope)
 - The body MUST begin one blank line after the description
+> If you cannot clearly classify a specific module or function, you can use \`core\` or \`misc\` as the default scope
 
 ${
   enableBody
@@ -267,6 +255,8 @@ Avoid these common mistakes:
 2. BE WRITTEN ENTIRELY IN ${language}
 3. FOLLOW THE EXACT FORMAT SHOWN IN EXAMPLES
 ${!enableBody ? "4. INCLUDE ONLY THE SUBJECT LINE, NO BODY" : ""}
+
+${generateThinkingProcessPrompt(useRecentCommitsAsReference)}
 `;
 }
 
@@ -287,7 +277,6 @@ function getMergedGitExample(useEmoji: boolean, useBody: boolean) {
   ${
     useBody
       ? `
-
   - replace legacy token auth with JWT
   -【Breaking Change】old token format no longer supported
   -【Migration】clients must update authentication logic
@@ -326,7 +315,6 @@ function getSeparateGitExample(useEmoji: boolean, useBody: boolean) {
   ${
     useBody
       ? `
-
   - add feature implementation in feature.js`
       : ``
   }
@@ -369,7 +357,6 @@ function getMergedSVNExample(useEmoji: boolean, useBody: boolean) {
   ${
     useBody
       ? `
-
   - added file1.js
   - added file2.js with basic logging`
       : ``
@@ -406,7 +393,6 @@ function getSeparateSVNExample(useEmoji: boolean, useBody: boolean) {
   ${
     useBody
       ? `
-  
   - Add new feature implementation to feature.js`
       : ``
   }
@@ -420,6 +406,47 @@ function getSeparateSVNExample(useEmoji: boolean, useBody: boolean) {
       : ``
   }
   \`\`\``;
+}
+
+/**
+ * Generates a prompt for an AI model to create a commit message.
+ * The prompt's content is conditionally adjusted based on the input parameter.
+ *
+ * @param {boolean} useRecentCommitsAsReference - If true, includes the step about
+ *   reviewing recent repository commits for style conventions. If false, this
+ *   step is omitted and subsequent steps are renumbered.
+ * @returns {string} The formatted prompt string.
+ */
+function generateThinkingProcessPrompt(useRecentCommitsAsReference = false) {
+  // Base steps that are always included
+  const baseSteps = [
+    "Analyze the CODE CHANGES thoroughly to understand what's been modified.",
+    "Use the ORIGINAL CODE to understand the context of the CODE CHANGES. Use the line numbers to map the CODE CHANGES to the ORIGINAL CODE.",
+    "Identify the purpose of the changes to answer the *why* for the commit message. To do this, synthesize information from all provided context: the RECENT USER COMMITS (if available) and the related code snippets found via embedding search.",
+    // Step 4 will be inserted here conditionally
+    "Generate a thoughtful and succinct commit message for the given CODE CHANGES. It MUST follow the established writing conventions.",
+    "Remove any meta information like issue references, tags, or author names from the commit message. The developer will add them.",
+    "Now only show your message, wrapped with a single markdown \\`text codeblock! Do not provide any explanations or details",
+  ];
+
+  // The conditional step
+  const conditionalStep =
+    "Review the provided RECENT REPOSITORY COMMITS to identify established commit message conventions. Focus on the format and style, ignoring commit-specific details like refs, tags, and authors.";
+
+  // Create the final list of steps
+  let finalSteps = [...baseSteps];
+  if (useRecentCommitsAsReference) {
+    // Insert the conditional step at the correct position (index 3 for step 4)
+    finalSteps.splice(3, 0, conditionalStep);
+  }
+
+  // Map over the final steps to add numbering
+  const numberedSteps = finalSteps.map((step, index) => {
+    return `${index + 1}. ${step}`;
+  });
+
+  // Construct the final prompt string
+  return `# First, think step-by-step:\n${numberedSteps.join("\n")}`;
 }
 
 export function generateCommitMessageUserPrompt(language: string) {}

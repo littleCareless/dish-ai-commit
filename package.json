@@ -271,6 +271,11 @@
           "default": "",
           "description": "Custom system prompt for commit message generation / 提交信息生成的自定义系统提示语"
         },
+        "dish-ai-commit.features.commitMessage.useRecentCommitsAsReference": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use recent commits as a reference for generating commit messages / 使用最近的提交作为生成提交信息的参考"
+        },
         "dish-ai-commit.features.weeklyReport.systemPrompt": {
           "type": "string",
           "default": "",

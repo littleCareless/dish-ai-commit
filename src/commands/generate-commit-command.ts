@@ -1,17 +1,12 @@
 import * as vscode from "vscode";
 import { BaseCommand } from "./base-command";
 import { ConfigurationManager } from "../config/configuration-manager";
-import { AIProviderFactory } from "../ai/ai-provider-factory";
 import { AbstractAIProvider } from "../ai/providers/abstract-ai-provider";
-import { ISCMProvider, SCMFactory } from "../scm/scm-provider";
-import { type ConfigKey } from "../config/types";
-import { ModelPickerService } from "../services/model-picker-service";
+import { ISCMProvider } from "../scm/scm-provider";
 import { notify } from "../utils/notification";
 import { getMessage, formatMessage } from "../utils/i18n";
 import { ProgressHandler } from "../utils/notification/progress-handler";
-import { validateAndGetModel } from "../utils/ai/model-validation";
-import { LayeredCommitMessage, AIProvider } from "../ai/types";
-import * as path from "path"; // 导入 path 模块
+import { LayeredCommitMessage, AIProvider, AIRequestParams } from "../ai/types";
 import { addSimilarCodeContext } from "../ai/utils/embedding-helper";
 import { stateManager } from "../utils/state/state-manager";
 import { getSystemPrompt } from "../ai/utils/generate-helper";
@@ -140,10 +135,16 @@ export class GenerateCommitCommand extends BaseCommand {
   ) {
     let currentInput = await scmProvider.getCommitInput();
     if (currentInput) {
-      currentInput = `When generating the commit message, please use the following custom instructions provided by the user.
+      currentInput = `<custom-instructions>
+
+When generating the commit message, please use the following custom instructions provided by the user.
 You can ignore an instruction if it contradicts a system message.
 
-${currentInput}`;
+<instructions>
+${currentInput}
+</instructions>
+
+</custom-instructions>`;
     }
     const config = ConfigurationManager.getInstance();
     const configuration = config.getConfiguration();
@@ -159,12 +160,10 @@ ${currentInput}`;
     progress.report({
       message: getMessage("progress.getting.recent.commits"),
     });
-    const recentCommitsContext = await this._getRecentCommitsContext(
-      scmProvider
-    );
-    const additionalContext = [currentInput, recentCommitsContext]
-      .filter(Boolean)
-      .join("\n\n");
+    let recentCommitsContext = "";
+    if (configuration.features.commitMessage.useRecentCommitsAsReference) {
+      recentCommitsContext = await this._getRecentCommitsContext(scmProvider);
+    }
 
     progress.report({
       message: getMessage("progress.updating.model.config"),
@@ -193,25 +192,68 @@ ${currentInput}`;
     // commit message goes here
 
     progress.report({ message: getMessage("progress.preparing.request") });
-    const requestParams = {
+    // 为嵌入搜索准备参数
+    const embeddingParams: AIRequestParams = {
+      diff: diffContent,
+      additionalContext: "",
+    };
+    await addSimilarCodeContext(embeddingParams);
+    const similarCodeContext = embeddingParams.additionalContext;
+
+    // 定义提醒信息
+    let reminder = `---
+REMINDER:
+- Now generate a commit messages that describe the CODE CHANGES.
+- ONLY return a single markdown code block, NO OTHER PROSE!`;
+
+    if (recentCommitsContext) {
+      reminder = `---
+REMINDER:
+- Now generate a commit messages that describe the CODE CHANGES.
+- DO NOT COPY commits from RECENT COMMITS, but use it as reference for the commit style.
+- ONLY return a single markdown code block, NO OTHER PROSE!`;
+    }
+
+    // 按照指定顺序拼接用户内容
+    const userContent = [
+      recentCommitsContext,
+      similarCodeContext,
+      diffContent,
+      reminder,
+      currentInput,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+
+    console.log("userContent", userContent);
+
+    // 准备用于生成系统提示和最终请求的参数
+    const tempParams = {
       ...configuration.features.commitMessage,
       ...configuration.features.commitFormat,
       ...configuration.features.codeAnalysis,
-      additionalContext,
-      diff: diffContent,
       model: selectedModel,
       scm: scmProvider.type ?? "git",
       changeFiles: selectedFiles,
       languages: configuration.base.language,
+      diff: diffContent,
+      additionalContext: "",
     };
 
-    await addSimilarCodeContext(requestParams);
+    const systemPrompt = getSystemPrompt(tempParams);
 
-    const systemPrompt = getSystemPrompt(requestParams);
+    const messages = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userContent },
+    ];
+
+    const requestParams = {
+      ...tempParams,
+      messages,
+    };
+
     const promptLength =
-      (systemPrompt?.length ?? 0) +
-      (requestParams.additionalContext?.length ?? 0) +
-      (requestParams.diff?.length ?? 0);
+      (systemPrompt?.length ?? 0) + (userContent?.length ?? 0);
 
     const maxTokens = selectedModel.maxTokens?.input ?? 0;
 
@@ -249,21 +291,21 @@ ${currentInput}`;
             `Provider ${newProvider} does not support function calling.`
           );
         }
-        // await this.performFunctionCallingGeneration(
-        //   aiProvider,
-        //   requestParams,
-        //   scmProvider,
-        //   token,
-        //   progress
-        // );
+        await this.performFunctionCallingGeneration(
+          aiProvider,
+          requestParams,
+          scmProvider,
+          token,
+          progress
+        );
       } else {
-        // await this.streamAndApplyMessage(
-        //   aiProvider as AbstractAIProvider,
-        //   requestParams,
-        //   scmProvider,
-        //   token,
-        //   progress
-        // );
+        await this.streamAndApplyMessage(
+          aiProvider as AbstractAIProvider,
+          requestParams,
+          scmProvider,
+          token,
+          progress
+        );
       }
 
       notify.info("commit.message.generated.stream", [
