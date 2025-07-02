@@ -1,5 +1,3 @@
-import type { ConfigurationChangeEvent } from "vscode";
-
 /**
  * Main configuration schema defining all available settings for the extension
  * Contains categories: base, providers, and features
@@ -199,6 +197,12 @@ export const CONFIG_SCHEMA = {
         default: ``,
         description:
           "Custom system prompt for commit message generation / 提交信息生成的自定义系统提示语",
+      },
+      useRecentCommitsAsReference: {
+        type: "boolean",
+        default: false,
+        description:
+          "Use recent commits as a reference for generating commit messages / 使用最近的提交作为生成提交信息的参考",
       },
     },
     // Weekly report generation features

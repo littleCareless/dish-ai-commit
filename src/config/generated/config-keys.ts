@@ -34,6 +34,7 @@ export const CONFIG_KEYS = {
   "FEATURES_COMMITFORMAT_ENABLELAYEREDCOMMIT": "dish-ai-commit.features.commitFormat.enableLayeredCommit",
   "FEATURES_COMMITMESSAGE": "dish-ai-commit.features.commitMessage",
   "FEATURES_COMMITMESSAGE_SYSTEMPROMPT": "dish-ai-commit.features.commitMessage.systemPrompt",
+  "FEATURES_COMMITMESSAGE_USERECENTCOMMITSASREFERENCE": "dish-ai-commit.features.commitMessage.useRecentCommitsAsReference",
   "FEATURES_WEEKLYREPORT": "dish-ai-commit.features.weeklyReport",
   "FEATURES_WEEKLYREPORT_SYSTEMPROMPT": "dish-ai-commit.features.weeklyReport.systemPrompt",
   "FEATURES_CODEREVIEW": "dish-ai-commit.features.codeReview",
