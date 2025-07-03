@@ -4,7 +4,6 @@ import {
   AIResponse,
   AIModel,
   LayeredCommitMessage,
-  CodeReviewResult,
 } from "../types";
 import {
   getSystemPrompt,
@@ -16,10 +15,10 @@ import {
   extractModifiedFilePaths,
   generateWithRetry,
 } from "../utils/generate-helper";
-import { addSimilarCodeContext } from "../utils/embedding-helper";
 import { getWeeklyReportPrompt } from "../../prompt/weekly-report";
-import { CodeReviewReportGenerator } from "../../services/code-review-report-generator";
+import { getCommitMessageTools } from "../../prompt/generate-commit";
 import { formatMessage } from "../../utils/i18n/localization-manager";
+import { ConfigurationManager } from "../../config/configuration-manager";
 
 /**
  * AI提供者的抽象基类
@@ -33,16 +32,17 @@ export abstract class AbstractAIProvider implements AIProvider {
    */
   async generateCommit(params: AIRequestParams): Promise<AIResponse> {
     try {
-      const systemPrompt = getSystemPrompt(params);
-      const result = await this.executeWithRetry(
-        systemPrompt,
-        "",
-        params.diff,
-        params,
-        {
-          temperature: 0.3, // 提交信息推荐温度值 0.3
-        }
-      );
+      if (!params.messages) {
+        const systemPrompt = getSystemPrompt(params);
+        params.messages = [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: params.diff },
+        ];
+      }
+
+      const result = await this.executeWithRetry(params, {
+        temperature: 0.3, // 提交信息推荐温度值 0.3
+      });
       return result;
     } catch (error) {
       throw new Error(
@@ -67,7 +67,6 @@ export abstract class AbstractAIProvider implements AIProvider {
       // 应该在 executeAIStreamRequest 的实现中或专门的流式重试辅助函数中处理。
       // systemPrompt, userPrompt, userContent 将由 executeAIStreamRequest 的实现
       // 从 params 中获取或计算。
-      await addSimilarCodeContext(params);
       return this.executeAIStreamRequest(params, {
         temperature: 0.3, // 提交信息推荐温度值 0.3
         // maxTokens 可以在这里设置，如果需要的话
@@ -84,6 +83,58 @@ export abstract class AbstractAIProvider implements AIProvider {
     }
   }
 
+  async generateCommitWithFunctionCalling(
+    params: AIRequestParams
+  ): Promise<AIResponse> {
+    try {
+      if (!params.messages) {
+        const systemPrompt = getSystemPrompt(params);
+        params.messages = [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: params.diff },
+        ];
+      }
+      const config = ConfigurationManager.getInstance().getConfiguration();
+      const tools = getCommitMessageTools(config);
+
+      const result = await this.executeWithRetry(params, {
+        temperature: 0.3,
+        tools: tools,
+      });
+
+      if (result.tool_calls && result.tool_calls.length > 0) {
+        const toolCall = result.tool_calls[0];
+        if (toolCall.function.name === "generate_commit_message") {
+          const args = JSON.parse(toolCall.function.arguments);
+          const { enableBody, enableEmoji } = config.features.commitFormat;
+          const scope = args.scope ? `(${args.scope})` : "";
+          const emoji = enableEmoji && args.emoji ? `${args.emoji} ` : "";
+          const body = enableBody && args.body ? `\n\n${args.body}` : "";
+          const commitMessage = `${emoji}${args.type}${scope}: ${args.subject}${body}`;
+          return {
+            content: commitMessage,
+            usage: result.usage,
+          };
+        }
+      }
+
+      // Fallback to content if no function call was made
+      if (result.content) {
+        return result;
+      }
+
+      throw new Error(
+        "Failed to generate commit message with function calling."
+      );
+    } catch (error) {
+      throw new Error(
+        formatMessage("generation.failed", [
+          error instanceof Error ? error.message : String(error),
+        ])
+      );
+    }
+  }
+
   /**
    * 生成代码评审报告
    * @param params - AI请求参数
@@ -91,17 +142,17 @@ export abstract class AbstractAIProvider implements AIProvider {
    */
   async generateCodeReview(params: AIRequestParams): Promise<AIResponse> {
     try {
-      const systemPrompt = getCodeReviewPrompt(params);
-      const result = await this.executeWithRetry(
-        systemPrompt,
-        "",
-        params.diff,
-        params,
-        {
-          // parseAsJSON: true,
-          temperature: 0.6, // 代码审查推荐温度值 0.6，范围 0.5-0.6
-        }
-      );
+      if (!params.messages) {
+        const systemPrompt = getCodeReviewPrompt(params);
+        params.messages = [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: params.diff },
+        ];
+      }
+      const result = await this.executeWithRetry(params, {
+        // parseAsJSON: true,
+        temperature: 0.6, // 代码审查推荐温度值 0.6，范围 0.5-0.6
+      });
 
       if (result.content) {
         return {
@@ -130,17 +181,18 @@ export abstract class AbstractAIProvider implements AIProvider {
    */
   async generateBranchName(params: AIRequestParams): Promise<AIResponse> {
     try {
-      const systemPrompt = getBranchNameSystemPrompt(params);
-      const userPrompt = getBranchNameUserPrompt(params.diff);
-      const result = await this.executeWithRetry(
-        systemPrompt,
-        userPrompt,
-        params.diff,
-        params,
-        {
-          temperature: 0.4, // 分支命名推荐温度值 0.4
-        }
-      );
+      if (!params.messages) {
+        const systemPrompt = getBranchNameSystemPrompt(params);
+        const userPrompt = getBranchNameUserPrompt(params.diff);
+        params.messages = [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: userPrompt },
+          { role: "user", content: params.diff },
+        ];
+      }
+      const result = await this.executeWithRetry(params, {
+        temperature: 0.4, // 分支命名推荐温度值 0.4
+      });
       return result;
     } catch (error) {
       throw new Error(
@@ -184,10 +236,13 @@ export abstract class AbstractAIProvider implements AIProvider {
         additionalContext: users ? `Team members: ${users.join(", ")}` : "", // 可以用 additionalContext
       };
       const result = await this.executeWithRetry(
-        systemPrompt,
-        "", // userPrompt 通常用于更具体的指令，这里暂时为空
-        userContent,
-        params,
+        {
+          ...params,
+          messages: [
+            { role: "system", content: systemPrompt },
+            { role: "user", content: userContent },
+          ],
+        },
         {
           temperature: 0.3, // 周报生成推荐温度值 0.3
         }
@@ -216,10 +271,13 @@ export abstract class AbstractAIProvider implements AIProvider {
       // 步骤1: 生成全局摘要
       const summarySystemPrompt = getGlobalSummaryPrompt(params);
       const summaryResult = await this.executeWithRetry(
-        summarySystemPrompt,
-        "",
-        params.diff,
-        params,
+        {
+          ...params,
+          messages: [
+            { role: "system", content: summarySystemPrompt },
+            { role: "user", content: params.diff },
+          ],
+        },
         {
           temperature: 0.3, // 与提交信息一致使用 0.3
         }
@@ -242,10 +300,13 @@ export abstract class AbstractAIProvider implements AIProvider {
         if (fileDiff) {
           const fileSystemPrompt = getFileDescriptionPrompt(params, filePath);
           const fileResult = await this.executeWithRetry(
-            fileSystemPrompt,
-            "",
-            fileDiff,
-            params,
+            {
+              ...params,
+              messages: [
+                { role: "system", content: fileSystemPrompt },
+                { role: "user", content: fileDiff },
+              ],
+            },
             {
               temperature: 0.3, // 文件描述也使用提交信息的温度值 0.3
             }
@@ -271,33 +332,39 @@ export abstract class AbstractAIProvider implements AIProvider {
   /**
    * 使用重试机制执行AI请求
    *
-   * @param systemPrompt - 系统提示内容
-   * @param userContent - 用户内容
    * @param params - 请求参数
    * @param options - 额外选项
    * @returns Promise<{content: string, usage?: any, jsonContent?: any}>
    */
   protected async executeWithRetry(
-    systemPrompt: string,
-    userPrompt: string,
-    userContent: string,
     params: AIRequestParams,
     options?: {
       parseAsJSON?: boolean;
       temperature?: number;
       maxTokens?: number;
+      tools?: any[];
     }
-  ): Promise<{ content: string; usage?: any; jsonContent?: any }> {
+  ): Promise<{
+    content: string;
+    usage?: any;
+    jsonContent?: any;
+    tool_calls?: any[];
+  }> {
     return generateWithRetry(
       params,
       async (truncatedInput) => {
-        return this.executeAIRequest(
-          systemPrompt,
-          userPrompt || "",
-          truncatedInput,
-          params,
-          options
-        );
+        // 当输入被截断时，更新 params 中的 messages
+        const updatedParams = { ...params };
+        if (updatedParams.messages && updatedParams.messages.length > 0) {
+          // 假设最后一个消息是用户的主要内容
+          const lastMessage =
+            updatedParams.messages[updatedParams.messages.length - 1];
+          lastMessage.content = truncatedInput;
+        } else {
+          // Fallback for older structures or if messages is empty
+          updatedParams.diff = truncatedInput;
+        }
+        return this.executeAIRequest(updatedParams, options);
       },
       {
         initialMaxLength: params.model?.maxTokens?.input || 16385,
@@ -310,23 +377,31 @@ export abstract class AbstractAIProvider implements AIProvider {
    * 需要由具体提供者实现的核心方法
    * 执行AI请求并返回结果
    *
-   * @param systemPrompt - 系统提示内容
-   * @param userContent - 用户内容
    * @param params - 请求参数
    * @param options - 额外选项
    * @returns Promise<{content: string, usage?: any, jsonContent?: any}>
    */
   protected abstract executeAIRequest(
-    systemPrompt: string,
-    userPrompt: string,
-    userContent: string,
     params: AIRequestParams,
     options?: {
       parseAsJSON?: boolean;
       temperature?: number;
       maxTokens?: number;
+      tools?: any[];
     }
-  ): Promise<{ content: string; usage?: any; jsonContent?: any }>;
+  ): Promise<{
+    content: string;
+    usage?: any;
+    jsonContent?: any;
+    tool_calls?: any[];
+  }>;
+
+  /**
+   * 构建特定于提供商的消息结构。
+   * @param params - AI请求参数
+   * @returns 适合提供商API的消息结构
+   */
+  protected abstract buildProviderMessages(params: AIRequestParams): any;
 
   /**
    * 需要由具体提供者实现的核心流式方法。

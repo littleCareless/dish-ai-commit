@@ -33,7 +33,6 @@ export class ConfigurationMonitor {
   ) {
     this.disposables.push(
       vscode.workspace.onDidChangeConfiguration((event) => {
-        console.log("Configuration changed event triggered");
 
         const changedKeys =
           this.changeHandler.getChangedConfigurationKeys(event);

@@ -146,10 +146,7 @@ export abstract class BaseCommand {
       ? resourceStates
       : [resourceStates];
 
-    console.log(
-      "Selected files:",
-      states.map((state) => state?.resourceUri?.fsPath)
-    );
+
     console.log("Number of selected files:", states?.length);
 
     if (states.length === 0) {
@@ -211,7 +208,9 @@ export abstract class BaseCommand {
     const confirmed =
       stateManager.getGlobal<boolean>(`confirm:dish:ai:tos`, false) ||
       stateManager.getWorkspace<boolean>(`confirm:dish:ai:tos`, false);
-    if (confirmed) return true;
+    if (confirmed) {
+      return true;
+    }
 
     const acceptAlways: vscode.MessageItem = {
       title: getMessage("confirm.ai.provider.tos.accept"),

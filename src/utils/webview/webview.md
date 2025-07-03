@@ -59,7 +59,6 @@ const htmlContent = `
       <!-- 页面内容 -->
       <script nonce="${nonce}">
         // 此处放置安全执行的 JS 代码
-        console.log("Hello, webview!");
       </script>
     </body>
   </html>
@@ -102,7 +101,6 @@ const htmlContent = `
       <h1>欢迎使用 Webview 示例</h1>
       <img src="${logoUri}" alt="Logo">
       <script nonce="${nonce}">
-        console.log("安全的 Webview 脚本执行");
       </script>
     </body>
   </html>

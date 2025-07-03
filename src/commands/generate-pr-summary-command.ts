@@ -105,7 +105,9 @@ export class GeneratePRSummaryCommand extends BaseCommand {
               // 即使没有获取到分支列表，也尝试使用默认配置的分支
             }
           }
-          if (token.isCancellationRequested) return;
+          if (token.isCancellationRequested) {
+            return;
+          }
 
           progress.report({
             increment: 15,
@@ -120,7 +122,9 @@ export class GeneratePRSummaryCommand extends BaseCommand {
             notify.info("pr.summary.no.commits");
             return;
           }
-          if (token.isCancellationRequested) return;
+          if (token.isCancellationRequested) {
+            return;
+          }
 
           progress.report({
             increment: 5,
@@ -148,7 +152,9 @@ export class GeneratePRSummaryCommand extends BaseCommand {
             );
             return;
           }
-          if (token.isCancellationRequested) return;
+          if (token.isCancellationRequested) {
+            return;
+          }
 
           progress.report({
             increment: 40,

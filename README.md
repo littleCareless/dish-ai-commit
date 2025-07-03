@@ -24,12 +24,30 @@ A VSCode extension for generating standardized Git/SVN commit messages using AI
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
+<!-- Keep these links. Translations will automatically update with the README. -->
+
+[Deutsch](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=de) |
+[Español](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=es) |
+[français](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=fr) |
+[日本語](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=ja) |
+[한국어](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=ko) |
+[Português](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=pt) |
+[Русский](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=ru) |
+[中文](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=zh)
+
 A VSCode extension that uses AI to generate standardized Git/SVN commit messages. Supports OpenAI, Ollama, VSCode built-in AI service, Zhipu AI, DashScope, Gemini AI, Doubao AI, Deepseek AI, SiliconFlow and OpenRouter.
 
 ### 🆓 Free AI model support
 
 - **Zhipu AI (GLM-4-Flash)** - Fixed monthly free quota ([Get API Key](https://open.bigmodel.cn/usercenter/apikeys))
 - **Gemini AI** - 1,500 free requests per day ([Get API Key](https://makersuite.google.com/app/apikey))
+
+## ✨ What's New
+
+- **PR Summary Generation**: Automatically generate PR titles and descriptions based on Git commit history.
+- **Code Semantic Indexing and Search**: Utilizes `tree-sitter` and a vector database (Qdrant) to index the codebase semantically, providing richer context for generating commit messages and code reviews.
+- **Function Calling Mode**: An experimental feature that generates structured commit messages through the AI's function-calling capabilities.
+- **Dynamic Settings UI**: The plugin's settings interface is now dynamically generated based on configuration definitions, offering more flexible and detailed options.
 
 ## Features
 
@@ -195,7 +213,29 @@ Weekly report generation supports custom templates:
 - Summarize by project/task
 - Customize report format and key content
 
-### Configuration
+### 🚀 PR Summary Generation
+
+- **Automatic PR Summary Generation**: Automatically generate PR titles and descriptions based on Git commit history.
+- **Multi-AI Provider Support**: Supports multiple AI providers for summary generation.
+- **Customizable**: Customizable summary templates.
+
+### 🧠 Code Semantic Indexing and Search
+
+- **Semantic Indexing**: Utilizes `tree-sitter` and a vector database (Qdrant) to index the codebase semantically.
+- **Context Enhancement**: Provides richer context for generating commit messages and code reviews.
+- **Multi-embedding Service Support**: Supports multiple embedding services like Ollama and Qdrant.
+
+### 📞 Function Calling Mode
+
+- **Structured Commits**: An experimental feature that generates structured commit messages through the AI's function-calling capabilities.
+- **Tool Integration**: Allows the AI model to return structured commit message data through specified tools.
+
+### ⚙️ Dynamic Settings UI
+
+- **Dynamic Generation**: The plugin's settings interface is now dynamically generated based on configuration definitions.
+- **Flexible Configuration**: Offers more flexible and detailed configuration options.
+
+## Configuration
 
 | Configuration                                          | Type    | Default                   | Description                                         |
 | ------------------------------------------------------ | ------- | ------------------------- | --------------------------------------------------- |
@@ -218,6 +258,11 @@ Weekly report generation supports custom templates:
 | dish-ai-commit.features.commitFormat.enableEmoji       | boolean | true                      | Use emoji in commit messages                        |
 | dish-ai-commit.features.commitFormat.enableBody        | boolean | true                      | Include body content in commit messages             |
 | dish-ai-commit.features.weeklyReport.systemPrompt      | string  | ""                        | Custom system prompt for weekly reports             |
+| dish-ai-commit.features.prSummary.systemPrompt         | string  | ""                        | Custom system prompt for PR summaries               |
+| dish-ai-commit.features.codeIndex.enabled              | boolean | false                     | Enable code semantic indexing                       |
+| dish-ai-commit.features.codeIndex.provider             | string  | "ollama"                  | Embedding provider for code indexing                |
+| dish-ai-commit.features.codeIndex.model                | string  | "nomic-embed-text"        | Embedding model for code indexing                   |
+| dish-ai-commit.features.codeIndex.qdrantUrl            | string  | "http://localhost:6333"   | Qdrant vector database URL                          |
 
 ### Commands
 
@@ -228,6 +273,7 @@ Weekly report generation supports custom templates:
 | dish-ai-commit.generateBranchName    | [Dish AI Commit] | Generate branch name                        | Generate standardized branch name based on requirement description |
 | dish-ai-commit.generateCommitMessage | [Dish AI Commit] | Generate commit message                     | Generate a commit message that complies with the specification     |
 | dish-ai-commit.reviewCode            | [Dish AI Commit] | Code review                                 | AI-assisted code review                                            |
+| dish-ai-commit.generatePRSummary     | [Dish AI Commit] | Generate PR Summary                         | Generate PR summary based on Git commit history                    |
 
 ## Configuration Instructions
 
@@ -255,6 +301,33 @@ Weekly report generation supports custom templates:
 ```json
 {
   "dish-ai-commit.base.provider": "vscode"
+}
+```
+
+4. Deepseek AI Configuration
+
+```json
+{
+  "dish-ai-commit.base.provider": "deepseek",
+  "dish-ai-commit.providers.deepseek.apiKey": "your-api-key"
+}
+```
+
+5. SiliconFlow Configuration
+
+```json
+{
+  "dish-ai-commit.base.provider": "siliconflow",
+  "dish-ai-commit.providers.siliconflow.apiKey": "your-api-key"
+}
+```
+
+6. OpenRouter Configuration
+
+```json
+{
+  "dish-ai-commit.base.provider": "openrouter",
+  "dish-ai-commit.providers.openrouter.apiKey": "your-api-key"
 }
 ```
 

@@ -10,6 +10,7 @@ import { ConfigurationManager } from "../../config/configuration-manager";
 import { ConfigKey } from "../../config/types"; // Assuming ConfigKey is exported from types
 import { stateManager } from "../../utils/state/state-manager";
 import { WorkspaceConfigPath } from "../../config/workspace-config-schema";
+import { formatMessage } from "../../utils/i18n/localization-manager";
 
 interface EmbeddingServiceErrorContext {
   source: "openai" | "ollama" | "qdrant" | "internal" | "openai-compatible";
@@ -43,10 +44,13 @@ async function generateOpenAIEmbeddings(
   model: string = "text-embedding-3-small"
 ): Promise<number[][]> {
   if (!apiKey) {
-    throw new EmbeddingServiceError("OpenAI API key is not configured.", {
-      source: "internal",
-      type: "unknown",
-    });
+    throw new EmbeddingServiceError(
+      formatMessage("embedding.openai.apiKey.missing"),
+      {
+        source: "internal",
+        type: "unknown",
+      },
+    );
   }
   const openai = new OpenAI({ apiKey, baseURL: baseUrl });
 
@@ -57,12 +61,15 @@ async function generateOpenAIEmbeddings(
     });
 
     if (!response.data || response.data.length === 0) {
-      throw new EmbeddingServiceError("OpenAI API returned no embeddings.", {
-        source: "openai",
-        type: "invalid_response",
-        model,
-        rawResult: response,
-      });
+      throw new EmbeddingServiceError(
+        formatMessage("embedding.openai.noEmbeddings"),
+        {
+          source: "openai",
+          type: "invalid_response",
+          model,
+          rawResult: response,
+        },
+      );
     }
 
     return response.data.map((embedding) => embedding.embedding);
@@ -86,7 +93,7 @@ async function generateOpenAIEmbeddings(
     throw new EmbeddingServiceError(
       error instanceof Error
         ? error.message
-        : "An unknown error occurred with OpenAI",
+        : formatMessage("embedding.openai.unknownError"),
       {
         source: "openai",
         type: "unknown",
@@ -103,10 +110,13 @@ async function generateOllamaEmbeddings(
   model: string = "nomic-embed-text"
 ): Promise<number[][]> {
   if (!baseUrl) {
-    throw new EmbeddingServiceError("Ollama API base URL is not configured.", {
-      source: "internal",
-      type: "unknown",
-    });
+    throw new EmbeddingServiceError(
+      formatMessage("embedding.ollama.baseUrl.missing"),
+      {
+        source: "internal",
+        type: "unknown",
+      },
+    );
   }
 
   const embeddings: number[][] = [];
@@ -130,7 +140,7 @@ async function generateOllamaEmbeddings(
           `[EmbeddingService] Ollama API request failed with status ${response.status}: ${errorBody}`
         );
         throw new EmbeddingServiceError(
-          `Ollama API request failed with status ${response.status}`,
+          formatMessage("embedding.ollama.requestFailed", [response.status]),
           {
             source: "ollama",
             type: "api_error",
@@ -151,7 +161,7 @@ async function generateOllamaEmbeddings(
           result
         );
         throw new EmbeddingServiceError(
-          "Invalid embedding format received from Ollama API.",
+          formatMessage("embedding.ollama.invalidFormat"),
           {
             source: "ollama",
             type: "invalid_response",
@@ -231,6 +241,11 @@ export class EmbeddingService {
     console.log(
       `[EmbeddingService] Starting file scan for project: ${this.projectName} at root: ${this.projectRoot} from startIndex: ${startIndex}`
     );
+
+    // Reset counters for a new scan
+    this.processedBlocks = 0;
+    this.totalSemanticBlocks = 0;
+
     try {
       const fileTree = await this.fileScanner.scanProject();
       if (fileTree) {
@@ -406,9 +421,13 @@ export class EmbeddingService {
         // Handles both "OpenAI" and "openai-compatible"
         if (!this.openaiApiKey) {
           console.error(
-            `[EmbeddingService] ${embeddingProvider} API Key is not configured. Skipping embedding generation.`
+            `[EmbeddingService] ${embeddingProvider} API Key is not configured. Skipping embedding generation.`,
           );
-          throw new Error(`${embeddingProvider} API Key not configured.`);
+          throw new Error(
+            formatMessage("embedding.provider.apiKey.notConfigured", [
+              embeddingProvider,
+            ]),
+          );
         }
         embeddings = await generateOpenAIEmbeddings(
           textsToEmbed,
@@ -464,7 +483,7 @@ export class EmbeddingService {
         throw new EmbeddingServiceError(
           dbError instanceof Error
             ? dbError.message
-            : "Failed to save embeddings to vector store.",
+            : formatMessage("embedding.save.failed"),
           {
             source: "qdrant",
             type: "api_error", // Assuming any error from the store is an API error
@@ -478,7 +497,7 @@ export class EmbeddingService {
       webview.postMessage({
         command: "indexingProgress",
         data: {
-          message: `文件 ${filePath} 索引完成!`,
+          message: formatMessage("embedding.file.indexingComplete", [filePath]),
           current: this.processedBlocks,
           total: this.totalSemanticBlocks,
         },
@@ -493,7 +512,7 @@ export class EmbeddingService {
         throw new EmbeddingServiceError(
           error instanceof Error
             ? error.message
-            : "An unknown error occurred during indexing.",
+            : formatMessage("embedding.indexing.unknownError"),
           {
             source: "internal",
             type: "unknown",
@@ -523,7 +542,35 @@ export class EmbeddingService {
       throw new EmbeddingServiceError(
         error instanceof Error
           ? error.message
-          : "Failed to delete index from vector store.",
+          : formatMessage("embedding.delete.failed"),
+        {
+          source: "qdrant",
+          type: "api_error",
+          originalError: error,
+        }
+      );
+    }
+  }
+
+  public async clearIndex(): Promise<void> {
+    console.log(
+      `[EmbeddingService] Clearing all index entries for project ${this.projectName}`
+    );
+    try {
+      await this.vectorStore.deleteAllPoints();
+      this.processedBlocks = 0; // Reset counter
+      console.log(
+        `[EmbeddingService] Successfully cleared all index entries for project ${this.projectName}`
+      );
+    } catch (error) {
+      console.error(
+        `[EmbeddingService] Error clearing index for project ${this.projectName}:`,
+        error
+      );
+      throw new EmbeddingServiceError(
+        error instanceof Error
+          ? error.message
+          : formatMessage("embedding.clear.failed"),
         {
           source: "qdrant",
           type: "api_error",
@@ -548,7 +595,7 @@ export class EmbeddingService {
     if (embeddingProvider === "Ollama") {
       if (!this.ollamaBaseUrl) {
         console.log(
-          "[EmbeddingService] Ollama base URL is not configured. Skipping search."
+          formatMessage("embedding.ollama.baseUrl.missing.forSearch"),
         );
         return [];
       }
@@ -556,7 +603,9 @@ export class EmbeddingService {
       // Handles both "OpenAI" and "openai-compatible"
       if (!this.openaiApiKey) {
         console.log(
-          `[EmbeddingService] ${embeddingProvider} API key is not configured. Skipping search.`
+          formatMessage("embedding.provider.apiKey.missing.forSearch", [
+            embeddingProvider,
+          ]),
         );
         return [];
       }
@@ -590,7 +639,7 @@ export class EmbeddingService {
 
     if (!queryEmbeddings || queryEmbeddings.length === 0) {
       console.error("[EmbeddingService] Failed to generate query embedding.");
-      throw new Error("Failed to generate query embedding.");
+      throw new Error(formatMessage("embedding.query.failed"));
     }
     const queryEmbedding = queryEmbeddings[0];
     console.log(
@@ -621,7 +670,7 @@ export class EmbeddingService {
       throw new EmbeddingServiceError(
         error instanceof Error
           ? error.message
-          : "Failed to search in vector store.",
+          : formatMessage("embedding.search.failed"),
         {
           source: "qdrant",
           type: "api_error",
@@ -640,17 +689,25 @@ export class EmbeddingService {
           "[EmbeddingService] Failed to check index status or invalid response:",
           results
         );
-        throw new Error(
-          "Failed to connect to vector store or invalid response."
-        );
+        throw new Error(formatMessage("embedding.vectorStore.connectFailed"));
       }
       return results; // 如果找到任何向量，则表示已建立索引
     } catch (error) {
       console.error("[EmbeddingService] Error checking index status:", error);
+      const isFetchError =
+        error instanceof TypeError && error.message === "fetch failed";
+
+      const qdUrl = this.vectorStore.getQdrantUrl();
+
       throw new EmbeddingServiceError(
-        error instanceof Error
+        isFetchError
+          ? formatMessage("embedding.qdrant.connectFailed", [
+              qdUrl,
+              error.message,
+            ])
+          : error instanceof Error
           ? error.message
-          : "Failed to check index status from vector store.",
+          : formatMessage("embedding.vectorStore.statusCheck.unknownError"),
         {
           source: "qdrant",
           type: "api_error",

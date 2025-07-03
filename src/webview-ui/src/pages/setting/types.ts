@@ -6,6 +6,12 @@ export type ConfigValueType =
   | null
   | object;
 
+export interface Feature {
+  what: string;
+  benefits: string[];
+  drawbacks: string[];
+}
+
 export interface SettingItem {
   key: string;
   type: string;
@@ -15,4 +21,8 @@ export interface SettingItem {
   value: ConfigValueType;
   markdownDescription?: string;
   fromPackageJSON?: boolean;
+  feature?: {
+    "zh-CN": Feature;
+    "en-US": Feature;
+  };
 }

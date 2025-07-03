@@ -2,8 +2,11 @@ import * as vscode from "vscode";
 import { ISCMProvider } from "./scm-provider";
 import { promisify } from "util";
 import * as childProcess from "child_process";
-import { DiffSimplifier } from "../utils/diff/diff-simplifier";
+import * as fs from "fs";
+import * as path from "path";
 import { getMessage, formatMessage } from "../utils/i18n";
+import { DiffProcessor } from "../utils/diff/diff-processor";
+import { DiffSimplifier } from "../utils";
 
 const exec = promisify(childProcess.exec);
 
@@ -50,48 +53,117 @@ const DEFAULT_CONFIG: SvnConfig = {
 };
 
 // 添加 SVN 路径检测
-const getSvnPath = async (): Promise<string> => {
-  try {
-    // 1. 优先检查SVN插件配置
-    const svnConfig = vscode.workspace.getConfiguration("svn");
-    const svnPluginPath = svnConfig.get<string>("path");
-    if (svnPluginPath) {
-      Logger.log(
-        LogLevel.Info,
-        "Using SVN path from SVN plugin config:",
-        svnPluginPath
-      );
-      return svnPluginPath;
-    }
-
-    // 2. 检查自定义配置
-    const customConfig = vscode.workspace.getConfiguration("svn-commit-gen");
-    const customPath = customConfig.get<string>("svnPath");
-    if (customPath) {
-      Logger.log(
-        LogLevel.Info,
-        "Using SVN path from custom config:",
-        customPath
-      );
-      return customPath;
-    }
-
-    // 3. 自动检测
-    const { stdout } = await exec("which svn");
-    const detectedPath = stdout.trim();
-    if (detectedPath) {
-      Logger.log(LogLevel.Info, "Detected SVN path:", detectedPath);
-      return detectedPath;
-    }
-
-    // 4. 使用默认路径
-    const defaultPath = "/opt/homebrew/bin/svn";
-    Logger.log(LogLevel.Warning, "Using default SVN path:", defaultPath);
-    return defaultPath;
-  } catch (error) {
-    Logger.log(LogLevel.Error, "Failed to determine SVN path:", error);
-    throw new Error("Unable to locate SVN executable");
+const isValidSvnPath = async (svnPath: string): Promise<boolean> => {
+  if (!fs.existsSync(svnPath)) {
+    return false;
   }
+  try {
+    // The --version command is a reliable way to check if it's a valid SVN executable
+    await exec(`"${svnPath}" --version`);
+    return true;
+  } catch (error) {
+    Logger.log(
+      LogLevel.Info,
+      `Path validation failed for ${svnPath}:`,
+      error instanceof Error ? error.message : error
+    );
+    return false;
+  }
+};
+
+const findSvnExecutable = async (): Promise<string | null> => {
+  // 1. Try system command first ('where' on Windows, 'which' on others)
+  const command = process.platform === "win32" ? "where svn" : "which svn";
+  try {
+    const { stdout } = await exec(command);
+    const lines = stdout.trim().split("\n");
+    for (const line of lines) {
+      const p = line.trim();
+      if (p && (await isValidSvnPath(p))) {
+        return p;
+      }
+    }
+  } catch (error) {
+    Logger.log(
+      LogLevel.Info,
+      `'${command}' command failed, checking common paths.`
+    );
+  }
+
+  // 2. Check common installation paths for different OS
+  const potentialPaths: string[] = [];
+  if (process.platform === "win32") {
+    const programFiles = process.env["ProgramFiles"] || "C:\\Program Files";
+    const programFilesX86 =
+      process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)";
+    potentialPaths.push(
+      path.join(programFiles, "TortoiseSVN", "bin", "svn.exe"),
+      path.join(programFilesX86, "TortoiseSVN", "bin", "svn.exe"),
+      path.join(programFiles, "SlikSvn", "bin", "svn.exe"),
+      path.join(programFiles, "VisualSVN Server", "bin", "svn.exe")
+    );
+  } else if (process.platform === "darwin") {
+    // macOS paths (Intel and Apple Silicon)
+    potentialPaths.push(
+      "/usr/bin/svn",
+      "/usr/local/bin/svn",
+      "/opt/homebrew/bin/svn", // Homebrew on Apple Silicon
+      "/opt/local/bin/svn" // MacPorts
+    );
+  } else {
+    // Linux paths
+    potentialPaths.push("/usr/bin/svn", "/usr/local/bin/svn");
+  }
+
+  for (const p of potentialPaths) {
+    if (await isValidSvnPath(p)) {
+      return p;
+    }
+  }
+
+  return null;
+};
+
+const getSvnPath = async (caller?: string): Promise<string> => {
+  Logger.log(
+    LogLevel.Info,
+    `[SVN-PATH] getSvnPath called ${caller ? `from ${caller}` : ""}`
+  );
+  // 1. 优先检查SVN插件配置
+  const svnConfig = vscode.workspace.getConfiguration("svn");
+  const svnPluginPath = svnConfig.get<string>("path");
+  if (svnPluginPath && (await isValidSvnPath(svnPluginPath))) {
+    Logger.log(
+      LogLevel.Info,
+      "Using SVN path from SVN plugin config:",
+      svnPluginPath
+    );
+    return svnPluginPath;
+  }
+
+  // 2. 检查自定义配置
+  const customConfig = vscode.workspace.getConfiguration("svn-commit-gen");
+  const customPath = customConfig.get<string>("svnPath");
+  if (customPath && (await isValidSvnPath(customPath))) {
+    Logger.log(LogLevel.Info, "Using SVN path from custom config:", customPath);
+    return customPath;
+  }
+
+  // 3. 自动检测
+  const detectedPath = await findSvnExecutable();
+  if (detectedPath) {
+    Logger.log(LogLevel.Info, "Auto-detected SVN path:", detectedPath);
+    return detectedPath;
+  }
+
+  // 4. 如果未找到，则抛出错误
+  Logger.log(
+    LogLevel.Error,
+    "SVN executable not found in system PATH or common locations."
+  );
+  throw new Error(
+    "Unable to locate SVN executable. Please ensure SVN is installed and in your system's PATH, or set the path in the extension settings."
+  );
 };
 
 /**
@@ -130,16 +202,9 @@ export class SvnProvider implements ISCMProvider {
     }
     this.workspaceRoot = workspaceRoot;
 
-    // 初始化时设置 SVN 路径
-    getSvnPath().then((path) => {
-      this.svnPath = path;
-    });
-
-    // 加载配置
     this.config = this.loadConfig();
 
-    // 同步初始化
-    this.initialize();
+    // 构造函数现在只进行同步设置
   }
 
   private loadConfig(): SvnConfig {
@@ -168,15 +233,20 @@ export class SvnProvider implements ISCMProvider {
     }
   }
 
-  private async initialize() {
+  public async init(): Promise<void> {
     try {
-      const svnPath = await getSvnPath();
+      const svnPath = await getSvnPath("initialize");
       this.svnPath = svnPath;
-      this.initialized = true;
 
       // 验证SVN可执行
       const { stdout } = await exec(`"${this.svnPath}" --version`);
-      Logger.log(LogLevel.Info, "SVN version:", stdout.split("\n")[0]);
+      const version = stdout.split("\n")[0].trim();
+      Logger.log(LogLevel.Info, "SVN version:", version);
+      vscode.window.showInformationMessage(
+        formatMessage("svn.version.detected", [version])
+      );
+
+      this.initialized = true;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
       Logger.log(LogLevel.Error, "Failed to initialize SVN:", message);
@@ -288,43 +358,16 @@ export class SvnProvider implements ISCMProvider {
         throw new Error(getMessage("svn.not.initialized"));
       }
 
-      let diffOutput = "";
+      const filePaths = files?.map((f) => `"${f}"`).join(" ") || "";
+      const command = `"${this.svnPath}" diff ${filePaths}`;
 
-      if (files && files.length > 0) {
-        for (const file of files) {
-          Logger.log(LogLevel.Info, "Processing file:", file);
-          const fileStatus = await this.getFileStatus(file);
-          const escapedFile = file.replace(/"/g, '\\"');
+      const { stdout: rawDiff } = await exec(command, {
+        cwd: this.workspaceRoot,
+        maxBuffer: 1024 * 1024 * 10,
+        env: this.getEnvironmentConfig(),
+      });
 
-          // 对于删除的文件不获取diff内容
-          if (fileStatus === "Deleted File") {
-            diffOutput += `\n=== ${fileStatus}: ${file} ===\n`;
-            continue;
-          }
-          console.log("escapedFile", escapedFile);
-          const { stdout } = await exec(
-            `"${this.svnPath}" diff "${escapedFile}"`,
-            {
-              cwd: this.workspaceRoot,
-              maxBuffer: 1024 * 1024 * 10,
-              env: this.getEnvironmentConfig(),
-            }
-          );
-
-          if (stdout.trim()) {
-            diffOutput += `\n=== ${fileStatus}: ${file} ===\n${stdout}`;
-          }
-        }
-      } else {
-        const { stdout } = await exec(`"${this.svnPath}" diff`, {
-          cwd: this.workspaceRoot,
-          maxBuffer: 1024 * 1024 * 10,
-          env: this.getEnvironmentConfig(),
-        });
-        diffOutput = stdout;
-      }
-
-      if (!diffOutput.trim()) {
+      if (!rawDiff.trim()) {
         throw new Error(getMessage("diff.noChanges"));
       }
 
@@ -339,11 +382,11 @@ export class SvnProvider implements ISCMProvider {
         vscode.window.showWarningMessage(
           getMessage("diff.simplification.warning")
         );
-        return DiffSimplifier.simplify(diffOutput);
+        return DiffSimplifier.simplify(rawDiff);
       }
 
       // 如果未启用简化，直接返回原始diff
-      return diffOutput;
+      return DiffProcessor.process(rawDiff, "svn");
     } catch (error) {
       Logger.log(LogLevel.Error, "SVN diff failed:", error);
       if (error instanceof Error) {
@@ -427,7 +470,10 @@ export class SvnProvider implements ISCMProvider {
       //   repository.inputBox.enabled = true;
       // }
     } else {
-      Logger.log(LogLevel.Error, "SVN repository.inputBox is undefined. Cannot set streaming input.");
+      Logger.log(
+        LogLevel.Error,
+        "SVN repository.inputBox is undefined. Cannot set streaming input."
+      );
       throw new Error("SVN inputBox is not available to set streaming input.");
     }
   }
@@ -449,7 +495,10 @@ export class SvnProvider implements ISCMProvider {
     try {
       let commandArgs = "";
       // TODO: 从配置中读取 commitLogLimit，如果用户未配置，则使用默认值
-      const limit = vscode.workspace.getConfiguration("svn-commit-gen").get<number>("commitLogLimit") || 20;
+      const limit =
+        vscode.workspace
+          .getConfiguration("svn-commit-gen")
+          .get<number>("commitLogLimit") || 20;
 
       if (baseRevisionInput) {
         // 指定了范围: baseRevisionInput (较旧) 到 headRevisionInput (较新)
@@ -484,7 +533,9 @@ export class SvnProvider implements ISCMProvider {
       const commitMessages: string[] = [];
       // SVN 日志条目由 "------------------------------------------------------------------------" 分隔
       // 使用正则表达式确保正确分割，并处理多行情况
-      const entries = rawLog.split(/^------------------------------------------------------------------------$/m);
+      const entries = rawLog.split(
+        /^------------------------------------------------------------------------$/m
+      );
 
       for (const rawEntry of entries) {
         const entry = rawEntry.trim();
@@ -492,7 +543,7 @@ export class SvnProvider implements ISCMProvider {
           continue;
         }
 
-        const lines = entry.split('\n');
+        const lines = entry.split("\n");
         // 第一行应该是修订版本头信息 (例如: r123 | author | date | N lines)
         if (lines.length === 0 || !lines[0].match(/^r\d+\s+\|/)) {
           continue; // 不是有效的日志条目头
@@ -505,7 +556,7 @@ export class SvnProvider implements ISCMProvider {
         }
 
         if (messageStartIndex < lines.length) {
-          const message = lines.slice(messageStartIndex).join('\n').trim();
+          const message = lines.slice(messageStartIndex).join("\n").trim();
           if (message) {
             commitMessages.push(message);
           }
@@ -513,7 +564,6 @@ export class SvnProvider implements ISCMProvider {
       }
       // `svn log -r NEWER:OLDER` 或 `svn log -l LIMIT` 通常已经是最新优先，无需反转
       return commitMessages;
-
     } catch (error) {
       Logger.log(LogLevel.Error, "SVN log failed:", error);
       if (error instanceof Error) {
@@ -524,6 +574,72 @@ export class SvnProvider implements ISCMProvider {
       }
       return []; // 类似 git-provider，在错误时返回空数组
     }
+  }
+
+  async getRecentCommitMessages() {
+    const repositoryCommitMessages: string[] = [];
+    const userCommitMessages: string[] = [];
+
+    try {
+      // Last 5 commit messages (repository)
+      const logCommand = `"${this.svnPath}" log -l 5 "${this.workspaceRoot}"`;
+      const { stdout: logOutput } = await exec(logCommand, {
+        cwd: this.workspaceRoot,
+        env: this.getEnvironmentConfig(),
+      });
+      repositoryCommitMessages.push(...this.parseSvnLog(logOutput));
+
+      // Last 5 commit messages (user)
+      const { stdout: user } = await exec(
+        `"${this.svnPath}" info --show-item last-changed-author "${this.workspaceRoot}"`
+      );
+      const author = user.trim();
+
+      if (author) {
+        const userLogCommand = `"${this.svnPath}" log -l 5 -r HEAD:1 --search "${author}" "${this.workspaceRoot}"`;
+        const { stdout: userLogOutput } = await exec(userLogCommand, {
+          cwd: this.workspaceRoot,
+          env: this.getEnvironmentConfig(),
+        });
+        userCommitMessages.push(...this.parseSvnLog(userLogOutput));
+      }
+    } catch (err) {
+      console.error("Failed to get recent SVN commit messages:", err);
+    }
+
+    return { repository: repositoryCommitMessages, user: userCommitMessages };
+  }
+
+  private parseSvnLog(log: string): string[] {
+    const messages: string[] = [];
+    const entries = log.split(
+      /^------------------------------------------------------------------------$/m
+    );
+
+    for (const rawEntry of entries) {
+      const entry = rawEntry.trim();
+      if (!entry) {
+        continue;
+      }
+
+      const lines = entry.split("\n");
+      if (lines.length === 0 || !lines[0].match(/^r\d+\s+\|/)) {
+        continue;
+      }
+
+      let messageStartIndex = 1;
+      if (lines.length > 1 && lines[messageStartIndex].trim() === "") {
+        messageStartIndex++;
+      }
+
+      if (messageStartIndex < lines.length) {
+        const message = lines.slice(messageStartIndex).join("\n").trim();
+        if (message) {
+          messages.push(message.split("\n")[0]);
+        }
+      }
+    }
+    return messages;
   }
 
   // /**

@@ -22,7 +22,6 @@ export class ModelPickerService {
     try {
       // 获取所有AI提供商
       const providers = AIProviderFactory.getAllProviders();
-      console.log("providers", providers);
       // 临时存储每个provider的模型列表
       const tempModelsMap = new Map<string, AIModel[]>();
       // 用于记录拉取模型失败的provider

@@ -24,12 +24,30 @@
 
 [English](README.md) | [简体中文](README.zh-CN.md)
 
+<!-- Keep these links. Translations will automatically update with the README. -->
+
+[Deutsch](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=de) |
+[Español](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=es) |
+[français](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=fr) |
+[日本語](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=ja) |
+[한국어](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=ko) |
+[Português](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=pt) |
+[Русский](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=ru) |
+[中文](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=zh)
+
 一个使用 AI 生成标准化 Git/SVN 提交消息的 VSCode 扩展。支持 OpenAI、Ollama、VSCode 内置 AI 服务、智谱 AI、DashScope、Gemini AI、豆包 AI、Deepseek AI、SiliconFlow 和 OpenRouter。
 
 ### 🆓 免费 AI 模型支持
 
 - **智谱 AI (GLM-4-Flash)** - 固定月度免费额度 ([获取 API Key](https://open.bigmodel.cn/usercenter/apikeys))
 - **Gemini AI** - 每天 1500 次免费请求 ([获取 API Key](https://makersuite.google.com/app/apikey))
+
+## ✨ 新功能
+
+- **PR 摘要生成**: 根据 Git 提交记录自动生成 PR 的标题和描述。
+- **代码语义索引与搜索**: 利用 `tree-sitter` 和向量数据库（Qdrant）对代码库进行语义索引，以在生成提交信息和代码审查时提供更丰富的上下文。
+- **函数调用模式**: 实验性功能，通过 AI 的函数调用能力生成结构化的提交信息。
+- **动态设置界面**: 插件的设置界面现在基于配置定义动态生成，提供更灵活和详细的配置选项。
 
 ## 特性
 
@@ -195,7 +213,29 @@
 - 按项目/任务总结
 - 自定义报告格式和关键内容
 
-### 配置
+### 🚀 PR 摘要生成
+
+- **自动生成 PR 摘要**: 根据 Git 提交记录自动生成 PR 的标题和描述。
+- **多 AI 提供商支持**: 支持多个 AI 提供商进行摘要生成。
+- **可自定义**: 可自定义摘要模板。
+
+### 🧠 代码语义索引与搜索
+
+- **语义索引**: 利用 `tree-sitter` 和向量数据库（Qdrant）对代码库进行语义索引。
+- **上下文增强**: 在生成提交信息和代码审查时提供更丰富的上下文。
+- **多 embedding 服务支持**: 支持 Ollama, Qdrant 等多种 embedding 服务。
+
+### 📞 函数调用模式
+
+- **结构化提交**: 实验性功能，通过 AI 的函数调用能力生成结构化的提交信息。
+- **工具集成**: 允许 AI 模型通过指定的工具 (tool) 返回结构化的提交信息数据。
+
+### ⚙️ 动态设置界面
+
+- **动态生成**: 插件的设置界面现在基于配置定义动态生成。
+- **灵活配置**: 提供更灵活和详细的配置选项。
+
+## 配置
 
 | 配置项                                                 | 类型    | 默认值                    | 描述                             |
 | ------------------------------------------------------ | ------- | ------------------------- | -------------------------------- |
@@ -218,6 +258,11 @@
 | dish-ai-commit.features.commitFormat.enableEmoji       | boolean | true                      | 在提交消息中使用表情符号         |
 | dish-ai-commit.features.commitFormat.enableBody        | boolean | true                      | 在提交消息中包含正文内容         |
 | dish-ai-commit.features.weeklyReport.systemPrompt      | string  | ""                        | 周报的自定义系统提示             |
+| dish-ai-commit.features.prSummary.systemPrompt         | string  | ""                        | PR 摘要的自定义系统提示          |
+| dish-ai-commit.features.codeIndex.enabled              | boolean | false                     | 启用代码语义索引                 |
+| dish-ai-commit.features.codeIndex.provider             | string  | "ollama"                  | 代码索引的 embedding 提供商      |
+| dish-ai-commit.features.codeIndex.model                | string  | "nomic-embed-text"        | 代码索引的 embedding 模型        |
+| dish-ai-commit.features.codeIndex.qdrantUrl            | string  | "http://localhost:6333"   | Qdrant 向量数据库 URL            |
 
 ### 命令
 
@@ -228,6 +273,7 @@
 | dish-ai-commit.generateBranchName    | [Dish AI Commit] | 生成分支名称           | 基于需求描述生成标准化分支名   |
 | dish-ai-commit.generateCommitMessage | [Dish AI Commit] | 生成提交信息           | 生成符合规范的提交消息         |
 | dish-ai-commit.reviewCode            | [Dish AI Commit] | 代码审查               | AI 辅助的代码审查              |
+| dish-ai-commit.generatePRSummary     | [Dish AI Commit] | 生成 PR 摘要           | 根据 Git 提交记录生成 PR 摘要  |
 
 ## 配置说明
 

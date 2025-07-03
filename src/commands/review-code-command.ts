@@ -7,6 +7,7 @@ import {
 } from "../utils/notification/notification-manager";
 import * as path from "path";
 import { validateAndGetModel } from "../utils/ai/model-validation";
+import { addSimilarCodeContext } from "../ai/utils/embedding-helper";
 
 /**
  * 代码审查命令类
@@ -51,6 +52,8 @@ export class ReviewCodeCommand extends BaseCommand {
         if (!scmProvider) {
           return;
         }
+
+        const currentInput = await scmProvider.getCommitInput();
 
         // 获取配置信息
         const { config, configuration } = this.getExtConfig();
@@ -107,46 +110,21 @@ export class ReviewCodeCommand extends BaseCommand {
                 ]),
               });
 
-              let additionalContext = "";
-              // const embeddingService = getEmbeddingService();
-              // if (embeddingService) {
-              //   try {
-              //     // 使用文件内容或diff内容进行语义搜索，这里简化为使用文件名作为查询
-              //     // 更复杂的场景可能需要从diff中提取关键代码片段或整个文件内容
-              //     const queryText = `Code review for file: ${path.basename(
-              //       filePath
-              //     )}\n${diff.substring(0, 1000)}`; // 使用部分diff内容
-              //     const searchResults =
-              //       await embeddingService.searchSimilarCode(queryText, 3); // 获取最多3个相关代码块
-              //     if (searchResults && searchResults.length > 0) {
-              //       additionalContext =
-              //         "\n\nRelevant code snippets from the project:\n";
-              //       searchResults.forEach((result) => {
-              //         additionalContext += `--- Relevant snippet from ${result.payload.file} (lines ${result.payload.startLine}-${result.payload.endLine}) ---\n`;
-              //         additionalContext += `${result.payload.code.substring(
-              //           0,
-              //           300
-              //         )}...\n`; // 截断以保持上下文简洁
-              //       });
-              //       additionalContext += "--- End of relevant snippets ---\n";
-              //     }
-              //   } catch (searchError) {
-              //     console.warn(
-              //       `[ReviewCodeCommand] Error searching for similar code for ${filePath}:`,
-              //       searchError
-              //     );
-              //     // 即使搜索失败，也继续执行审查
-              //   }
-              // }
-
-              const reviewResult = await aiProvider?.generateCodeReview?.({
+              const requestParams = {
                 ...configuration.base,
                 ...configuration.features.codeAnalysis,
                 diff,
                 model: selectedModel,
                 scm: scmProvider.type ?? "git",
-                additionalContext: additionalContext, // 使用获取到的上下文
-              });
+                changeFiles: [filePath],
+                additionalContext: currentInput, 
+              };
+
+              await addSimilarCodeContext(requestParams);
+
+              const reviewResult = await aiProvider?.generateCodeReview?.(
+                requestParams
+              );
 
               if (reviewResult?.content) {
                 fileReviews.set(filePath, reviewResult.content);

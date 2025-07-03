@@ -1,17 +1,15 @@
 import * as vscode from "vscode";
 import { BaseCommand } from "./base-command";
 import { ConfigurationManager } from "../config/configuration-manager";
-import { AIProviderFactory } from "../ai/ai-provider-factory";
-import { SCMFactory } from "../scm/scm-provider";
-import { type ConfigKey } from "../config/types";
-import { ModelPickerService } from "../services/model-picker-service";
+import { AbstractAIProvider } from "../ai/providers/abstract-ai-provider";
+import { ISCMProvider } from "../scm/scm-provider";
 import { notify } from "../utils/notification";
 import { getMessage, formatMessage } from "../utils/i18n";
 import { ProgressHandler } from "../utils/notification/progress-handler";
-import { validateAndGetModel } from "../utils/ai/model-validation";
-import { LayeredCommitMessage } from "../ai/types";
-import * as path from "path"; // 导入 path 模块
-import { EmbeddingService } from "../core/indexing/embedding-service";
+import { LayeredCommitMessage, AIProvider, AIRequestParams } from "../ai/types";
+import { addSimilarCodeContext } from "../ai/utils/embedding-helper";
+import { stateManager } from "../utils/state/state-manager";
+import { getSystemPrompt } from "../ai/utils/generate-helper";
 
 /**
  * 将分层提交信息格式化为结构化的提交信息文本
@@ -60,7 +58,6 @@ export class GenerateCommitCommand extends BaseCommand {
     if (!(await this.showConfirmAIProviderToS())) {
       return;
     }
-    // 处理配置
     const configResult = await this.handleConfiguration();
     if (!configResult) {
       return;
@@ -68,183 +65,314 @@ export class GenerateCommitCommand extends BaseCommand {
     const { provider, model } = configResult;
 
     try {
-      // 获取选中的文件
       const selectedFiles = this.getSelectedFiles(resources);
-
-      // 检测SCM提供程序
+      if (!selectedFiles) {
+        // 如果没有选择文件，可以通知用户或直接返回
+        notify.info("no.files.selected");
+        return;
+      }
       const scmProvider = await this.detectSCMProvider(selectedFiles);
       if (!scmProvider) {
         return;
       }
 
-      // 使用 ProgressHandler 包裹流式生成过程
       await ProgressHandler.withProgress(
         formatMessage("progress.generating.commit", [
-          // 使用与非流式一致的标题
-          scmProvider?.type.toLocaleUpperCase(),
+          scmProvider.type.toLocaleUpperCase(),
         ]),
-        async (progress, token) => {
-          // 获取当前提交输入框内容
-          const currentInput = await scmProvider.getCommitInput();
-
-          // 获取配置信息以用于后续操作
-          const config = ConfigurationManager.getInstance();
-          const configuration = config.getConfiguration();
-
-          // 获取选中文件的差异信息
-          const diffContent = await scmProvider.getDiff(selectedFiles);
-
-          // 检查是否有变更
-          if (!diffContent) {
-            notify.info("no.changes");
-            throw new Error(getMessage("no.changes"));
-          }
-
-          // 获取和更新AI模型配置
-          const {
-            provider: newProvider, // provider 和 model 已在前面定义，这里用 newProvider, newModel
-            model: newModel,
-            aiProvider,
-            selectedModel,
-          } = await this.selectAndUpdateModelConfiguration(provider, model);
-
-          // 确保selectedModel存在
-          if (!selectedModel) {
-            throw new Error(getMessage("no.model.selected"));
-          }
-
-          // 确保 aiProvider 支持流式生成
-          if (!aiProvider.generateCommitStream) {
-            notify.error("provider.does.not.support.streaming", [newProvider]);
-            // 可以选择回退到非流式 execute 方法，或者直接返回
-            // 为了明确，这里我们直接返回并通知用户
-            // await this.execute(resources); // 示例：回退到非流式
-            return;
-          }
-
-          // 准备AI请求参数
-          let additionalContextForAI = currentInput; // Start with current SCM input
-          // const embeddingService = EmbeddingService();
-
-          // if (embeddingService && selectedFiles && selectedFiles.length > 0) {
-          //   try {
-          //     // 为所有选定文件生成一个组合查询文本
-          //     // 或者为每个文件单独查询并合并结果，这里采用组合查询
-          //     let combinedQueryText =
-          //       "Generating commit message for changes in files: ";
-          //     selectedFiles.forEach((sf) => {
-          //       combinedQueryText += `${path.basename(sf)}, `;
-          //     });
-          //     combinedQueryText += `\nFirst 1000 chars of diff: ${diffContent.substring(
-          //       0,
-          //       1000
-          //     )}`;
-
-          //     const searchResults = await embeddingService.searchSimilarCode(
-          //       combinedQueryText,
-          //       3
-          //     );
-          //     if (searchResults && searchResults.length > 0) {
-          //       let snippetsContext =
-          //         "\n\nRelevant code snippets from the project:\n";
-          //       searchResults.forEach((result) => {
-          //         snippetsContext += `--- Relevant snippet from ${result.payload.file} (lines ${result.payload.startLine}-${result.payload.endLine}) ---\n`;
-          //         snippetsContext += `${result.payload.code.substring(
-          //           0,
-          //           300
-          //         )}...\n`;
-          //       });
-          //       snippetsContext += "--- End of relevant snippets ---\n";
-          //       additionalContextForAI += snippetsContext; // Append to existing context
-          //     }
-          //   } catch (searchError) {
-          //     console.warn(
-          //       `[GenerateCommitCommand] Error searching for similar code:`,
-          //       searchError
-          //     );
-          //     // 即使搜索失败，也继续执行
-          //   }
-          // }
-
-          const requestParams = {
-            ...configuration.features.commitMessage,
-            ...configuration.features.commitFormat,
-            ...configuration.features.codeAnalysis,
-            additionalContext: additionalContextForAI, // 使用增强的上下文
-            diff: diffContent,
-            model: selectedModel,
-            scm: scmProvider.type ?? "git",
-            changeFiles: selectedFiles,
-            languages: configuration.base.language,
-          };
-
-          // progress 参数可以用来更新进度条内部消息，但这里可能不需要
-          let accumulatedMessage = "";
-          try {
-            this.throwIfCancelled(token); // 在开始时检查取消
-            if (token.isCancellationRequested) {
-              console.log("用户取消了操作");
-              return; // 这里主动退出
-            }
-            // 再次检查 aiProvider.generateCommitStream，尽管外部已经检查过
-            // 这是为了确保在 ProgressHandler 的回调作用域内 TypeScript 也能正确推断类型
-            if (!aiProvider.generateCommitStream) {
-              // 这个情况理论上不应该发生，因为外部已经检查并返回了
-              // 但为了类型安全和消除TS错误，我们再次检查
-              const errorMessage = formatMessage(
-                "provider.does.not.support.streaming",
-                [newProvider]
-              ); // 使用 formatMessage
-              notify.error(errorMessage); // 使用已存在的 i18n key
-              throw new Error(errorMessage);
-            }
-            this.throwIfCancelled(token); // 在调用 AI Provider 之前检查取消
-            const stream = await aiProvider.generateCommitStream(requestParams);
-
-            for await (const chunk of stream) {
-              this.throwIfCancelled(token); // 在每次迭代开始时检查取消
-              for (const char of chunk) {
-                accumulatedMessage += char;
-                let filteredMessage =
-                  filterCodeBlockMarkers(accumulatedMessage);
-                filteredMessage = filteredMessage.trimStart(); // 实时去除开头的空格
-
-                // 这里的 startStreamingInput 就能逐字更新了
-                await scmProvider.startStreamingInput(filteredMessage);
-
-                // 如果需要控制打字机速度，这里可以加个延时
-                await new Promise((resolve) => setTimeout(resolve, 30)); // 20ms 可调节
-              }
-            }
-            // 流结束后，最后trim一次，确保末尾没有多余空格
-            this.throwIfCancelled(token); // 在流结束后，最终处理之前检查取消
-            const finalMessage = accumulatedMessage.trim();
-            await scmProvider.startStreamingInput(finalMessage);
-
-            // 流处理成功后的通知
-            notify.info("commit.message.generated.stream", [
-              scmProvider.type.toUpperCase(),
-              newProvider,
-              selectedModel?.id || "default",
-            ]);
-          } catch (error) {
-            console.error("Error during commit message streaming:", error);
-            // if (error instanceof Error) {
-            //   notify.error("generate.commit.stream.failed", [error.message]);
-            // }
-            // 确保 ProgressHandler 知道任务失败
-            throw error;
-          }
-        }
+        (progress, token) =>
+          this.performStreamingGeneration(
+            progress,
+            token,
+            provider,
+            model,
+            scmProvider,
+            selectedFiles
+          )
       );
     } catch (error) {
-      // 处理整体执行错误
       console.log("Error in executeStream:", error);
       if (error instanceof Error) {
-        notify.error("generate.commit.failed", [error.message]); // 可以用一个更特定的流式错误消息
+        notify.error("generate.commit.failed", [error.message]);
       }
     }
   }
+
+  private async _getRecentCommitsContext(
+    scmProvider: ISCMProvider
+  ): Promise<string> {
+    const recentMessages = await scmProvider.getRecentCommitMessages();
+    let recentCommitsContext = "";
+
+    if (recentMessages.user.length > 0) {
+      recentCommitsContext +=
+        "# RECENT USER COMMITS (For reference only, do not copy!):\n";
+      recentCommitsContext += recentMessages.user
+        .map((message) => `- ${message}`)
+        .join("\n");
+    }
+
+    if (recentMessages.repository.length > 0) {
+      if (recentCommitsContext.length > 0) {
+        recentCommitsContext += "\n\n";
+      }
+      recentCommitsContext +=
+        "# RECENT REPOSITORY COMMITS (For reference only, do not copy!):\n";
+      recentCommitsContext += recentMessages.repository
+        .map((message) => `- ${message}`)
+        .join("\n");
+    }
+    return recentCommitsContext;
+  }
+
+  private async performStreamingGeneration(
+    progress: vscode.Progress<{ message?: string; increment?: number }>,
+    token: vscode.CancellationToken,
+    provider: string,
+    model: string,
+    scmProvider: ISCMProvider,
+    selectedFiles: string[]
+  ) {
+    let currentInput = await scmProvider.getCommitInput();
+    if (currentInput) {
+      currentInput = `<custom-instructions>
+
+When generating the commit message, please use the following custom instructions provided by the user.
+You can ignore an instruction if it contradicts a system message.
+
+<instructions>
+${currentInput}
+</instructions>
+
+</custom-instructions>`;
+    }
+    const config = ConfigurationManager.getInstance();
+    const configuration = config.getConfiguration();
+
+    progress.report({ message: getMessage("progress.getting.diff") });
+    const diffContent = await scmProvider.getDiff(selectedFiles);
+
+    if (!diffContent) {
+      notify.info("no.changes");
+      throw new Error(getMessage("no.changes"));
+    }
+
+    progress.report({
+      message: getMessage("progress.getting.recent.commits"),
+    });
+    let recentCommitsContext = "";
+    if (configuration.features.commitMessage.useRecentCommitsAsReference) {
+      recentCommitsContext = await this._getRecentCommitsContext(scmProvider);
+    }
+
+    progress.report({
+      message: getMessage("progress.updating.model.config"),
+    });
+    const {
+      provider: newProvider,
+      model: newModel,
+      aiProvider,
+      selectedModel,
+    } = await this.selectAndUpdateModelConfiguration(provider, model);
+
+    if (!selectedModel) {
+      throw new Error(getMessage("no.model.selected"));
+    }
+
+    if (!aiProvider.generateCommitStream) {
+      notify.error("provider.does.not.support.streaming", [newProvider]);
+      return;
+    }
+
+    //     Now generate a commit messages that describe the CODE CHANGES.
+    // DO NOT COPY commits from RECENT COMMITS, but it as reference for the commit style.
+    // ONLY return a single markdown code block, NO OTHER PROSE!
+
+    // ```text
+    // commit message goes here
+
+    progress.report({ message: getMessage("progress.preparing.request") });
+    // 为嵌入搜索准备参数
+    const embeddingParams: AIRequestParams = {
+      diff: diffContent,
+      additionalContext: "",
+    };
+    await addSimilarCodeContext(embeddingParams);
+    const similarCodeContext = embeddingParams.additionalContext;
+
+    // 定义提醒信息
+    let reminder = `---
+REMINDER:
+- Now generate a commit messages that describe the CODE CHANGES.
+- ONLY return a single markdown code block, NO OTHER PROSE!`;
+
+    if (recentCommitsContext) {
+      reminder = `---
+REMINDER:
+- Now generate a commit messages that describe the CODE CHANGES.
+- DO NOT COPY commits from RECENT COMMITS, but use it as reference for the commit style.
+- ONLY return a single markdown code block, NO OTHER PROSE!`;
+    }
+
+    // 按照指定顺序拼接用户内容
+    const userContent = [
+      recentCommitsContext,
+      similarCodeContext,
+      diffContent,
+      reminder,
+      currentInput,
+    ]
+      .filter(Boolean)
+      .join("\n\n");
+
+
+    // 准备用于生成系统提示和最终请求的参数
+    const tempParams = {
+      ...configuration.features.commitMessage,
+      ...configuration.features.commitFormat,
+      ...configuration.features.codeAnalysis,
+      model: selectedModel,
+      scm: scmProvider.type ?? "git",
+      changeFiles: selectedFiles,
+      languages: configuration.base.language,
+      diff: diffContent,
+      additionalContext: "",
+    };
+
+    const systemPrompt = getSystemPrompt(tempParams);
+
+    const messages = [
+      { role: "system", content: systemPrompt },
+      { role: "user", content: userContent },
+    ];
+
+    const requestParams = {
+      ...tempParams,
+      messages,
+    };
+
+    const promptLength =
+      (systemPrompt?.length ?? 0) + (userContent?.length ?? 0);
+
+    const maxTokens = selectedModel.maxTokens?.input ?? 0;
+
+    notify.info(
+      formatMessage("prompt.length.info", [
+        promptLength.toLocaleString(),
+        maxTokens.toLocaleString(),
+      ])
+    );
+
+    try {
+      this.throwIfCancelled(token);
+      if (token.isCancellationRequested) {
+        return;
+      }
+      if (!aiProvider.generateCommitStream) {
+        const errorMessage = formatMessage(
+          "provider.does.not.support.streaming",
+          [newProvider]
+        );
+        notify.error(errorMessage);
+        throw new Error(errorMessage);
+      }
+
+      const useFunctionCalling =
+        stateManager.getWorkspace<boolean>(
+          "experimental.commitWithFunctionCalling.enabled"
+        ) ?? false;
+      if (useFunctionCalling) {
+        notify.info("info.using.function.calling");
+        if (!aiProvider.generateCommitWithFunctionCalling) {
+          throw new Error(
+            `Provider ${newProvider} does not support function calling.`
+          );
+        }
+        await this.performFunctionCallingGeneration(
+          aiProvider,
+          requestParams,
+          scmProvider,
+          token,
+          progress
+        );
+      } else {
+        await this.streamAndApplyMessage(
+          aiProvider as AbstractAIProvider,
+          requestParams,
+          scmProvider,
+          token,
+          progress
+        );
+      }
+
+      notify.info("commit.message.generated.stream", [
+        scmProvider.type.toUpperCase(),
+        newProvider,
+        selectedModel?.id || "default",
+      ]);
+    } catch (error) {
+      console.error("Error during commit message streaming:", error);
+      throw error;
+    }
+  }
+
+  private async streamAndApplyMessage(
+    aiProvider: AbstractAIProvider,
+    requestParams: any,
+    scmProvider: ISCMProvider,
+    token: vscode.CancellationToken,
+    progress: vscode.Progress<{ message?: string; increment?: number }>
+  ) {
+    this.throwIfCancelled(token);
+    progress.report({
+      message: getMessage("progress.calling.ai.stream"),
+    });
+    const stream = await aiProvider.generateCommitStream(requestParams);
+
+    let accumulatedMessage = "";
+    for await (const chunk of stream) {
+      this.throwIfCancelled(token);
+      for (const char of chunk) {
+        accumulatedMessage += char;
+        let filteredMessage = filterCodeBlockMarkers(accumulatedMessage);
+        filteredMessage = filteredMessage.trimStart();
+        await scmProvider.startStreamingInput(filteredMessage);
+        await new Promise((resolve) => setTimeout(resolve, 30));
+      }
+    }
+    this.throwIfCancelled(token);
+    const finalMessage = accumulatedMessage.trim();
+    await scmProvider.startStreamingInput(finalMessage);
+  }
+
+  private async performFunctionCallingGeneration(
+    aiProvider: AIProvider,
+    requestParams: any,
+    scmProvider: ISCMProvider,
+    token: vscode.CancellationToken,
+    progress: vscode.Progress<{ message?: string; increment?: number }>
+  ) {
+    this.throwIfCancelled(token);
+    progress.report({
+      message: getMessage("progress.calling.ai.function"),
+    });
+
+    if (!aiProvider.generateCommitWithFunctionCalling) {
+      throw new Error(
+        `Provider ${aiProvider.getId()} does not support function calling.`
+      );
+    }
+
+    const aiResponse = await aiProvider.generateCommitWithFunctionCalling(
+      requestParams
+    );
+
+    this.throwIfCancelled(token);
+
+    const finalMessage = aiResponse.content;
+    await scmProvider.startStreamingInput(finalMessage);
+  }
+
   throwIfCancelled(token: vscode.CancellationToken) {
     if (token.isCancellationRequested) {
       console.log(getMessage("user.cancelled.operation.log"));

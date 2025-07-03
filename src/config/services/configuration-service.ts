@@ -28,8 +28,10 @@ import {
 } from "../types";
 import { EXTENSION_NAME } from "../../constants";
 import { CONFIG_SCHEMA, generateConfiguration } from "../config-schema";
+import { WORKSPACE_CONFIG_SCHEMA } from "../workspace-config-schema";
 import { getSystemPrompt } from "../../ai/utils/generate-helper";
 import { SCMFactory } from "../../scm/scm-provider";
+import { stateManager } from "../../utils/state/state-manager";
 
 /**
  * 处理配置的获取和更新
@@ -39,11 +41,11 @@ export class ConfigurationService {
   private configurationInProgress: boolean = false;
 
   constructor() {
-    this.configuration = vscode.workspace.getConfiguration(EXTENSION_NAME);
+    this.configuration = stateManager.getWorkspaceConfiguration(EXTENSION_NAME);
   }
 
   public refreshConfiguration(): void {
-    this.configuration = vscode.workspace.getConfiguration(EXTENSION_NAME);
+    this.configuration = stateManager.getWorkspaceConfiguration(EXTENSION_NAME);
   }
 
   public getConfig<K extends ConfigKey>(
@@ -98,6 +100,15 @@ export class ConfigurationService {
     } finally {
       this.configurationInProgress = false;
     }
+  }
+
+  public getWorkspaceConfiguration(): any {
+    const workspaceConfig = generateConfiguration(
+      WORKSPACE_CONFIG_SCHEMA as any,
+      (key: string) =>
+        stateManager.getWorkspaceConfiguration(EXTENSION_NAME).get(key)
+    );
+    return workspaceConfig;
   }
 
   public async updateConfig<K extends ConfigKey>(

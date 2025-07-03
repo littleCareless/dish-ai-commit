@@ -1,0 +1,57 @@
+<svg width="100" height="100" viewBox="0 0 100 100" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <style>
+    .line {
+      stroke: currentColor;
+      stroke-width: 4;
+      /* 稍微减小一点主线条宽度，因为图标变大了 */
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .text-line {
+      /* Commit 消息内文本线条 */
+      stroke: currentColor;
+      stroke-width: 2.5;
+      /* 相应减小 */
+      stroke-linecap: round;
+      stroke-linejoin: round;
+    }
+
+    .commit-label-text {
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+      font-size: 24px;
+      /* 可以稍微调整字号 */
+      fill: currentColor;
+      text-anchor: middle;
+      /* 水平居中 */
+    }
+  </style>
+
+  <!-- 外层带圆角的正方形边框 -->
+  <rect x="5" y="5" width="90" height="90" rx="8" class="line" />
+
+  <!-- AI Symbol (Spark/Star) - 左侧 -->
+  <!-- 中心点 (32.5, 40), 尺寸约 30x30 -->
+  <g transform="translate(32.5, 40)">
+    <line x1="0" y1="-15" x2="0" y2="15" class="line" /> <!-- 主竖线 -->
+    <line x1="-15" y1="0" x2="15" y2="0" class="line" /> <!-- 主横线 -->
+    <line x1="-10.5" y1="-10.5" x2="10.5" y2="10.5" class="line" /> <!-- 对角线 -->
+    <line x1="-10.5" y1="10.5" x2="10.5" y2="-10.5" class="line" /> <!-- 对角线 -->
+  </g>
+
+  <!-- Commit Symbol (Message Box with text lines) - 右侧 -->
+  <!-- x=52.5, y=25, width=30, height=30 -->
+  <!-- 中心点 (52.5 + 15 = 67.5, 25 + 15 = 40) -->
+  <rect x="52.5" y="25" width="30" height="30" rx="4" class="line" />
+  <!-- 文本行 -->
+  <line x1="58.5" y1="35" x2="77.5" y2="35" class="text-line" /> <!-- (x = 52.5+6, y = 25+10, width = 19) -->
+  <line x1="58.5" y1="45" x2="72.5" y2="45" class="text-line" /> <!-- (x = 52.5+6, y = 25+20, width = 14) -->
+
+
+  <!-- "commit" Text Label - 位于下方居中 -->
+  <!-- 两个图标的 X 范围大约是 32.5-15=17.5 到 67.5+15=82.5，中心点是 (17.5+82.5)/2 = 50 -->
+  <text x="50" y="78" class="commit-label-text">
+    commit
+  </text>
+
+</svg>

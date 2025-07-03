@@ -1,5 +1,3 @@
-import type { ConfigurationChangeEvent } from "vscode";
-
 /**
  * Main configuration schema defining all available settings for the extension
  * Contains categories: base, providers, and features
@@ -159,12 +157,12 @@ export const CONFIG_SCHEMA = {
         description:
           "Enable diff content simplification (Warning: Enabling this feature may result in less accurate commit messages) / 启用差异内容简化 (警告：启用此功能可能导致提交信息不够准确)",
       },
-      useEmbedding: {
-        type: "boolean",
-        default: false,
-        description:
-          "Enable embeddings for generating commit messages, code reviews, and other features. / 启用 embedding 以生成提交信息、代码审查和其他功能。",
-      },
+      // useEmbedding: {
+      //   type: "boolean",
+      //   default: false,
+      //   description:
+      //     "Enable embeddings for generating commit messages, code reviews, and other features. / 启用 embedding 以生成提交信息、代码审查和其他功能。",
+      // },
     },
     // Commit related features
     commitFormat: {
@@ -199,6 +197,12 @@ export const CONFIG_SCHEMA = {
         default: ``,
         description:
           "Custom system prompt for commit message generation / 提交信息生成的自定义系统提示语",
+      },
+      useRecentCommitsAsReference: {
+        type: "boolean",
+        default: false,
+        description:
+          "Use recent commits as a reference for generating commit messages / 使用最近的提交作为生成提交信息的参考",
       },
     },
     // Weekly report generation features

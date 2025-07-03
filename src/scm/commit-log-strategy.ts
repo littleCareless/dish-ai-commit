@@ -162,13 +162,11 @@ export class GitCommitStrategy implements CommitLogStrategy {
   ): Promise<string[]> {
     // 格式化时间段
     const formattedPeriod = formatPeriod(period);
-    console.log("formatted period", formattedPeriod);
 
     // 构建git log命令,格式化输出提交信息
     // const command = `git log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --pretty=format:"%h - %an, %ar : %s" --author="${author}"`;
     const command = `git log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n" --author="${author}"`;
 
-    console.log("command", command);
     const { stdout } = await execAsync(command, { cwd: workspacePath });
     return stdout.split("\n").filter((line) => line.trim());
   }
@@ -212,7 +210,6 @@ export class GitCommitStrategy implements CommitLogStrategy {
     // 使用 --author=<regex>
     const command = `git log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --author="${authorRegex}" --all-match --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n"`;
 
-    console.log("command for multiple users", command);
     try {
       const { stdout } = await execAsync(command, {
         cwd: workspacePath,
@@ -272,7 +269,6 @@ export class SvnCommitStrategy implements CommitLogStrategy {
   ): Promise<string[]> {
     // 格式化时间段
     const formattedPeriod = formatPeriod(period);
-    console.log("formatted period", formattedPeriod);
 
     // 构建svn log命令,使用XML格式输出
     const command = `svn log -r "{${formattedPeriod.startDate}}:{${formattedPeriod.endDate}}" --search="${author}" --xml`;

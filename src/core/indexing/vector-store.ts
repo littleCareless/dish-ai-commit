@@ -31,20 +31,26 @@ export class VectorStore {
   private vectorSize: number; // This should match the output dimension of your embedding model
   private initializationPromise: Promise<void> | null = null;
 
+  public readonly qdrantUrl: string;
+
   constructor(
     qdrantUrl: string = "http://localhost:6333",
     collectionName: string = "code_semantic_blocks",
     vectorSize: number = 1536
   ) {
-    // Defaulting to 1536 for OpenAI text-embedding-3-small
+    this.qdrantUrl = qdrantUrl;
     this.client = new QdrantClient({ url: qdrantUrl });
     this.collectionName = collectionName;
-    this.vectorSize = vectorSize; // Example size, adjust based on embedding model
+    this.vectorSize = vectorSize;
     this.initializeStore().catch((err) => {
       // The error is already logged in initializeStore.
       // We catch it here to prevent unhandled promise rejection warnings.
       console.error("Failed to initialize VectorStore in background", err);
     });
+  }
+
+  public getQdrantUrl(): string {
+    return this.qdrantUrl;
   }
 
   public initializeStore(): Promise<void> {
@@ -96,7 +102,6 @@ export class VectorStore {
         vector: p.vector,
         payload: p.payload as Record<string, any>, // Explicitly cast payload
       }));
-      console.log("collectionName", this.collectionName, qdrantPoints);
       await this.client.upsert(this.collectionName, { points: qdrantPoints });
       console.log(
         `Successfully upserted ${points.length} points to '${this.collectionName}'.`
@@ -167,6 +172,35 @@ export class VectorStore {
         `Error deleting points for file ${filePath} in project ${projectName}:`,
         error
       );
+      throw error;
+    }
+  }
+
+  public async deleteAllPoints(): Promise<void> {
+    await this.initializeStore();
+    try {
+      // Delete the entire collection
+      await this.client.deleteCollection(this.collectionName);
+      console.log(`Collection '${this.collectionName}' deleted successfully.`);
+      // Re-create the collection
+      this.initializationPromise = null; // Reset initialization promise
+      await this.initializeStore();
+      console.log(
+        `Collection '${this.collectionName}' re-created successfully after deletion.`
+      );
+    } catch (error) {
+      console.error(
+        `Error deleting all points from ${this.collectionName}:`,
+        error
+      );
+      // If deletion fails, it's safer to try to re-initialize to ensure the store is in a usable state.
+      this.initializationPromise = null;
+      await this.initializeStore().catch((initErr) => {
+        console.error(
+          `Failed to re-initialize store after deletion error:`,
+          initErr
+        );
+      });
       throw error;
     }
   }

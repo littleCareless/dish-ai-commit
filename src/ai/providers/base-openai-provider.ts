@@ -5,11 +5,9 @@ import {
   getPRSummaryUserPrompt,
 } from "../../prompt/pr-summary";
 import {
-  AIProvider,
   AIRequestParams,
   AIResponse,
   AIModel,
-  type CodeReviewResult,
   type AIProviders,
 } from "../types";
 import { AbstractAIProvider } from "./abstract-ai-provider";
@@ -92,9 +90,6 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
    * 调用OpenAI API执行请求并返回结果
    */
   protected async executeAIRequest(
-    systemPrompt: string,
-    userPrompt: string,
-    userContent: string,
     params: AIRequestParams,
     options?: {
       parseAsJSON?: boolean;
@@ -102,11 +97,11 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       maxTokens?: number;
     }
   ): Promise<{ content: string; usage?: any; jsonContent?: any }> {
-    const messages: ChatCompletionMessageParam[] = [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userContent },
-      { role: "user", content: userPrompt },
-    ];
+    const messages = this.buildProviderMessages(
+      params
+    ) as ChatCompletionMessageParam[];
+
+    console.log("Final messages for AI:", JSON.stringify(messages, null, 2));
 
     const completion = await this.openai.chat.completions.create({
       model:
@@ -147,20 +142,9 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       maxTokens?: number;
     }
   ): Promise<AsyncIterable<string>> {
-    const systemPrompt = getSystemPrompt(params);
-    const userPrompt = params.additionalContext || "";
-    const userContent = params.diff;
-
-    // console.log("Derived prompts for stream:", { systemPrompt, userPrompt, userContent });
-
-    const messages: ChatCompletionMessageParam[] = [
-      { role: "system", content: systemPrompt },
-      { role: "user", content: userContent },
-    ];
-    // Only add userPrompt if it's not empty
-    if (userPrompt) {
-      messages.push({ role: "user", content: userPrompt });
-    }
+    const messages = this.buildProviderMessages(
+      params
+    ) as ChatCompletionMessageParam[];
 
     const filteredMessages = messages.filter((msg) => {
       if (typeof msg.content === "string") {
@@ -183,6 +167,10 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       this: BaseOpenAIProvider
     ): AsyncIterable<string> {
       try {
+        console.log(
+          "Final messages for AI:",
+          JSON.stringify(filteredMessages, null, 2)
+        );
         const stream = await this.openai.chat.completions.create({
           model:
             (params.model && params.model.id) ||
@@ -318,6 +306,29 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
   }
 
   /**
+   * 构建OpenAI特定的消息数组。
+   * @param params AI请求参数
+   * @returns 转换后的ChatCompletionMessageParam数组
+   */
+  protected buildProviderMessages(params: AIRequestParams): any {
+    if (!params.messages || params.messages.length === 0) {
+      const systemPrompt = getSystemPrompt(params);
+      const userPrompt = params.additionalContext || "";
+      const userContent = params.diff;
+
+      params.messages = [{ role: "system", content: systemPrompt }];
+      if (userContent) {
+        params.messages.push({ role: "user", content: userContent });
+      }
+      if (userPrompt) {
+        params.messages.push({ role: "user", content: userPrompt });
+      }
+    }
+
+    // 类型断言，因为OpenAI的类型与通用类型兼容
+    return params.messages as ChatCompletionMessageParam[];
+  }
+  /**
    * 检查服务是否可用的抽象方法
    * 需要由具体提供者实现
    */
@@ -355,10 +366,17 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       async (_truncatedContent: string) => {
         // generateFn 现在接收一个参数，但我们在这里不直接使用它
         const response = await this.executeAIRequest(
-          systemPrompt,
-          userPrompt,
-          `- ${userContent}`, // 添加引导
-          params
+          {
+            ...params,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+              { role: "user", content: `- ${userContent}` },
+            ],
+          },
+          {
+            temperature: 0.7,
+          }
         );
         return { content: response.content, usage: response.usage };
       },

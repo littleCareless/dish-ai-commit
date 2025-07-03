@@ -59,10 +59,7 @@ export class WeeklyReportMessageHandler {
         command: "report",
         data: report,
       });
-      console.log("message.data.period", message.data.period);
-      console.log("message.data.users", message.data.users);
       const formattedPeriod = this.formatPeriod(message.data.period);
-      console.log("formattedPeriod", formattedPeriod);
       // 可以考虑修改通知信息，比如指明是为哪些用户生成的报告
       notify.info("weeklyReport.teamGeneration.success", [formattedPeriod, message.data.users.join(", ")]);
     } catch (error: any) {

@@ -81,7 +81,6 @@ export class AIProviderFactory {
       ConfigurationManager.getInstance().getConfig("BASE_PROVIDER") ||
       AIProvider.OPENAI;
 
-    console.log("AIProvider", AIProvider);
     let provider = this.providers.get(providerType);
 
     if (!provider) {

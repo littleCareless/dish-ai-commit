@@ -68,7 +68,9 @@ export class DiffSimplifier {
    * - 保留行首缩进(最多保留2个空格)
    */
   private static compressLine(line: string): string {
-    if (!line) return line;
+    if (!line) {
+      return line;
+    }
 
     // 保留差异标记(+/-等)
     const prefix = line.match(/^[+ -]/)?.at(0) ?? "";

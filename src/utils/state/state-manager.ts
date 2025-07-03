@@ -192,6 +192,16 @@ class StateManager {
   public async deleteSecret(key: string): Promise<void> {
     return this.context.secrets.delete(key);
   }
+/**
+   * Retrieves the workspace configuration for a specific section.
+   * @param section - The configuration section to retrieve.
+   * @returns The workspace configuration.
+   */
+  public getWorkspaceConfiguration(
+    section?: string
+  ): vscode.WorkspaceConfiguration {
+    return vscode.workspace.getConfiguration(section);
+  }
 }
 
 // Export a singleton instance for easy use across the extension

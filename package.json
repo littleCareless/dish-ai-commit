@@ -2,7 +2,7 @@
   "name": "dish-ai-commit",
   "displayName": "Dish AI Commit Message Gen",
   "description": "🤖 由 AI 提供支持的 VSCode 扩展，用于生成标准化的 Git/SVN 提交消息 - 🤖 AI-Powered VSCode extension for generating standardized Git/SVN commit messages. ✨ Supports multiple AI services: OpenAI, ChatGPT, Ollama, Zhipu, DashScope, Doubao, Gemini and VS Code built-in AI. 🌍 Multi-language support (EN/CN/JP/KR/Other). 📊 Auto-generate weekly reports.",
-  "version": "0.23.0",
+  "version": "0.30.0",
   "engines": {
     "node": ">= 18.20.8",
     "pnpm": ">= 10.0.0",
@@ -59,7 +59,7 @@
         {
           "id": "dish-ai-commitActivityBar",
           "title": "Dish Ai Commit Message",
-          "icon": "/images/icon.svg"
+          "icon": "/images/menu-icon.svg"
         }
       ]
     },
@@ -70,7 +70,7 @@
           "name": "插件设置",
           "type": "webview",
           "contextualTitle": "Dish Ai Commit Message设置",
-          "icon": "/images/icon.svg"
+          "icon": "/images/menu-icon.svg"
         }
       ]
     },
@@ -246,11 +246,6 @@
           "default": false,
           "description": "Enable diff content simplification (Warning: Enabling this feature may result in less accurate commit messages) / 启用差异内容简化 (警告：启用此功能可能导致提交信息不够准确)"
         },
-        "dish-ai-commit.features.codeAnalysis.useEmbedding": {
-          "type": "boolean",
-          "default": false,
-          "description": "Enable embeddings for generating commit messages, code reviews, and other features. / 启用 embedding 以生成提交信息、代码审查和其他功能。"
-        },
         "dish-ai-commit.features.commitFormat.enableEmoji": {
           "type": "boolean",
           "default": true,
@@ -275,6 +270,11 @@
           "type": "string",
           "default": "",
           "description": "Custom system prompt for commit message generation / 提交信息生成的自定义系统提示语"
+        },
+        "dish-ai-commit.features.commitMessage.useRecentCommitsAsReference": {
+          "type": "boolean",
+          "default": false,
+          "description": "Use recent commits as a reference for generating commit messages / 使用最近的提交作为生成提交信息的参考"
         },
         "dish-ai-commit.features.weeklyReport.systemPrompt": {
           "type": "string",

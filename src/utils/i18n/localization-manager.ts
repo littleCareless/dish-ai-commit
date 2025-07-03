@@ -31,7 +31,6 @@ export function initializeLocalization(context: vscode.ExtensionContext): void {
 
     messages = loadedMessages;
 
-    console.log("message", messages);
   } catch (error) {
     console.error("Failed to load localization file:", error);
     throw new Error(`Localization initialization failed: ${error}`);

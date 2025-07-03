@@ -31,7 +31,6 @@ const App: React.FC = () => {
     }
   }, []);
 
-  console.log("viewType", viewType);
 
   if (viewType === null) {
     // Still determining view type, or initialData not yet available

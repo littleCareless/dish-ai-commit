@@ -2,6 +2,7 @@ import { exec } from "child_process";
 import { promisify } from "util";
 import { ISCMProvider } from "./scm-provider";
 import { getMessage } from "../utils";
+import { DiffProcessor } from "../utils/diff/diff-processor";
 
 const execAsync = promisify(exec);
 
@@ -11,6 +12,11 @@ export class CliSvnProvider implements ISCMProvider {
 
   constructor(workspaceRoot: string) {
     this.workspaceRoot = workspaceRoot;
+  }
+
+  async init(): Promise<void> {
+    // No async initialization needed for this provider.
+    return Promise.resolve();
   }
 
   async isAvailable(): Promise<boolean> {
@@ -25,10 +31,15 @@ export class CliSvnProvider implements ISCMProvider {
   async getDiff(files?: string[]): Promise<string | undefined> {
     try {
       const filePaths = files?.join(" ") || ".";
-      const { stdout } = await execAsync(`svn diff ${filePaths}`, {
+      const { stdout: rawDiff } = await execAsync(`svn diff ${filePaths}`, {
         cwd: this.workspaceRoot,
       });
-      return stdout;
+
+      if (!rawDiff.trim()) {
+        return undefined;
+      }
+
+      return DiffProcessor.process(rawDiff, "svn");
     } catch (error) {
       console.error("Failed to get SVN diff:", error);
       return undefined;
@@ -71,5 +82,70 @@ export class CliSvnProvider implements ISCMProvider {
       "getCommitLog is not implemented for CliSvnProvider and will return an empty array."
     );
     return [];
+  }
+
+  async getRecentCommitMessages() {
+    const repositoryCommitMessages: string[] = [];
+    const userCommitMessages: string[] = [];
+
+    try {
+      // Last 5 commit messages (repository)
+      const logCommand = `svn log -l 5`;
+      const { stdout: logOutput } = await execAsync(logCommand, {
+        cwd: this.workspaceRoot,
+      });
+      repositoryCommitMessages.push(...this.parseSvnLog(logOutput));
+
+      // Last 5 commit messages (user)
+      const { stdout: user } = await execAsync(
+        `svn info --show-item last-changed-author`,
+        { cwd: this.workspaceRoot }
+      );
+      const author = user.trim();
+
+      if (author) {
+        const userLogCommand = `svn log -l 5 --search "${author}"`;
+        const { stdout: userLogOutput } = await execAsync(userLogCommand, {
+          cwd: this.workspaceRoot,
+        });
+        userCommitMessages.push(...this.parseSvnLog(userLogOutput));
+      }
+    } catch (err) {
+      console.error("Failed to get recent SVN commit messages:", err);
+    }
+
+    return { repository: repositoryCommitMessages, user: userCommitMessages };
+  }
+
+  private parseSvnLog(log: string): string[] {
+    const messages: string[] = [];
+    const entries = log.split(
+      /^------------------------------------------------------------------------$/m
+    );
+
+    for (const rawEntry of entries) {
+      const entry = rawEntry.trim();
+      if (!entry) {
+        continue;
+      }
+
+      const lines = entry.split("\n");
+      if (lines.length === 0 || !lines[0].match(/^r\d+\s+\|/)) {
+        continue;
+      }
+
+      let messageStartIndex = 1;
+      if (lines.length > 1 && lines[messageStartIndex].trim() === "") {
+        messageStartIndex++;
+      }
+
+      if (messageStartIndex < lines.length) {
+        const message = lines.slice(messageStartIndex).join("\n").trim();
+        if (message) {
+          messages.push(message.split("\n")[0]);
+        }
+      }
+    }
+    return messages;
   }
 }

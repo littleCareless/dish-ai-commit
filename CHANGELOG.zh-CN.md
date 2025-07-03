@@ -6,6 +6,126 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.30.0 (2025-07-02)
+
+### ♻ Code Refactoring
+
+- **ai/provider**: 重构 AI 提供程序以使用标准化的消息结构 ([f648afe](https://github.com/littleCareless/dish-ai-commit/commit/f648afe))
+
+### ✨ Features
+
+- **config**: 新增 “使用最近提交作为参考” 配置项 ([4dee82c](https://github.com/littleCareless/dish-ai-commit/commit/4dee82c))
+- **context**: 引入最近提交和高级差异处理以优化 AI 上下文 ([013f923](https://github.com/littleCareless/dish-ai-commit/commit/013f923))
+- **prompt**: 重构提示词结构并引入近期提交参考功能 ([8da8117](https://github.com/littleCareless/dish-ai-commit/commit/8da8117))
+- **scm**: 添加获取最近提交记录功能并重构 diff 逻辑 ([c212d72](https://github.com/littleCareless/dish-ai-commit/commit/c212d72))
+
+### 🎫 Chores
+
+- **release**: 发布 0.29.0 版本 ([f0e1bc1](https://github.com/littleCareless/dish-ai-commit/commit/f0e1bc1))
+
+# 0.29.0 (2025-06-29)
+
+### ♻ Code Refactoring
+
+- **prompt**: 优化 AI 提示词和上下文处理逻辑 ([816a9c0](https://github.com/littleCareless/dish-ai-commit/commit/816a9c0))
+
+### ✨ Features
+
+- **commit-generation**: 显示提示词长度和模型限制 ([37108b9](https://github.com/littleCareless/dish-ai-commit/commit/37108b9))
+
+### 🎫 Chores
+
+- **release**: 发布 0.28.0 版本 ([9747dbf](https://github.com/littleCareless/dish-ai-commit/commit/9747dbf))
+
+### 📝 Documentation
+
+- **readme**: 更新文档以反映新功能和配置 ([07b910a](https://github.com/littleCareless/dish-ai-commit/commit/07b910a))
+
+# 0.28.0 (2025-06-25)
+
+### ✨ Features
+
+- **ai**: 实现通过函数调用生成提交信息 ([768aa19](https://github.com/littleCareless/dish-ai-commit/commit/768aa19))
+- **config**: 增强配置系统，支持工作区配置及实验特性 ([b616881](https://github.com/littleCareless/dish-ai-commit/commit/b616881))
+- **settings**: 重构设置系统，实现动态 UI 及功能说明 ([65c4b4a](https://github.com/littleCareless/dish-ai-commit/commit/65c4b4a))
+
+### 🎫 Chores
+
+- **i18n**: 添加函数调用相关的国际化文案 ([31aec06](https://github.com/littleCareless/dish-ai-commit/commit/31aec06))
+- **release**: 发布 0.27.0 版本 ([d18e397](https://github.com/littleCareless/dish-ai-commit/commit/d18e397))
+
+# 0.27.0 (2025-06-24)
+
+### ✨ Features
+
+- **embedding**: 改进嵌入服务并实现消息国际化 ([bc90f70](https://github.com/littleCareless/dish-ai-commit/commit/bc90f70))
+
+### 🎫 Chores
+
+- **release**: 发布 0.26.0 版本 ([20764b6](https://github.com/littleCareless/dish-ai-commit/commit/20764b6))
+
+# 0.26.0 (2025-06-23)
+
+### ♻ Code Refactoring
+
+- **embedding**: 调整 embedding 功能集成并移除旧配置 ([5a9bec6](https://github.com/littleCareless/dish-ai-commit/commit/5a9bec6))
+
+### ✨ Features
+
+- **scm**: 为 SCM 提供程序引入异步初始化机制 ([c9bcc09](https://github.com/littleCareless/dish-ai-commit/commit/c9bcc09))
+- **svn**: 增强 SVN 路径检测逻辑 ([14320c3](https://github.com/littleCareless/dish-ai-commit/commit/14320c3))
+
+### 🎫 Chores
+
+- **i18n**: 新增国际化提示信息 ([1956b36](https://github.com/littleCareless/dish-ai-commit/commit/1956b36))
+- **release**: 发布 0.25.0 版本 ([f7b780c](https://github.com/littleCareless/dish-ai-commit/commit/f7b780c))
+
+### 🐛 Bug Fixes
+
+- **settings**: 修复索引清除逻辑并优化配置加载 ([ecb710d](https://github.com/littleCareless/dish-ai-commit/commit/ecb710d))
+
+### 💄 Styles
+
+- **codebase**: 统一代码风格并重构 toast 操作类型 ([d8398be](https://github.com/littleCareless/dish-ai-commit/commit/d8398be))
+
+# 0.25.0 (2025-06-20)
+
+### ✨ Features
+
+- **indexing**: 新增清除索引及根据配置变更重新索引功能 ([d18b425](https://github.com/littleCareless/dish-ai-commit/commit/d18b425))
+
+### 🎫 Chores
+
+- **release**: 发布 0.24.0 版本 ([997c323](https://github.com/littleCareless/dish-ai-commit/commit/997c323))
+
+# 0.24.0 (2025-06-20)
+
+### ✨ Features
+
+- **indexing**: 改进索引服务初始化、错误处理及配置更新机制 ([da37075](https://github.com/littleCareless/dish-ai-commit/commit/da37075))
+
+### 🎫 Chores
+
+- **release**: 发布 0.23.1 版本 ([ee1eda6](https://github.com/littleCareless/dish-ai-commit/commit/ee1eda6))
+
+## 0.23.1 (2025-06-19)
+
+### ♻ Code Refactoring
+
+- **logging**: 优化模型加载日志警告的格式 ([31091a6](https://github.com/littleCareless/dish-ai-commit/commit/31091a6))
+
+### 🎫 Chores
+
+- **release**: 准备 0.23.0 版本发布 ([3a0a01f](https://github.com/littleCareless/dish-ai-commit/commit/3a0a01f))
+
+### 💄 Styles
+
+- **icon**: 更新菜单和视图图标 ([1de232a](https://github.com/littleCareless/dish-ai-commit/commit/1de232a))
+
+### 📝 Documentation
+
+- **readme**: 更新内容并添加国际化支持 ([212f58a](https://github.com/littleCareless/dish-ai-commit/commit/212f58a))
+
 # 0.23.0 (2025-06-18)
 
 ### ✨ Features

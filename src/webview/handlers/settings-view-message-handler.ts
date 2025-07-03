@@ -3,17 +3,23 @@ import {
   EmbeddingService,
   EmbeddingServiceError,
 } from "../../core/indexing/embedding-service";
+import { EmbeddingServiceManager } from "../../core/indexing/embedding-service-manager";
 import { AIProvider } from "../../ai/types";
 import { AIProviderFactory } from "../../ai/ai-provider-factory";
 import { stateManager } from "../../utils/state/state-manager";
-import { WORKSPACE_CONFIG_SCHEMA } from "../../config/workspace-config-schema";
+import {
+  WORKSPACE_CONFIG_SCHEMA,
+  WORKSPACE_CONFIG_PATHS,
+} from "../../config/workspace-config-schema";
+import { CONFIG_SCHEMA } from "../../config/config-schema";
+import { isConfigValue } from "../../config/utils/config-validation";
 
 export class SettingsViewMessageHandler {
   private readonly _extensionId: string;
 
   constructor(
     extensionId: string,
-    private readonly _embeddingService: EmbeddingService | null,
+    private _embeddingService: EmbeddingService | null,
     private readonly _extensionContext: vscode.ExtensionContext // Receive // extensionContext here
   ) {
     this._extensionId = extensionId;
@@ -30,56 +36,53 @@ export class SettingsViewMessageHandler {
         break;
       }
       case "startIndexing": {
-        const startIndex = message?.data?.startIndex ?? 0;
+        const { clearIndex } = message.data || {};
         console.log(
-          `[SettingsViewProvider] Received startIndexing message with startIndex: ${startIndex}`
+          `[SettingsViewMessageHandler] Received startIndexing message with clearIndex: ${clearIndex}`
         );
-        this.startIndexing(startIndex, webview);
+        this.startIndexing(0, webview, !!clearIndex);
+        break;
+      }
+      case "clearIndex": {
+        await this.handleClearIndex(webview);
         break;
       }
       case "getSettings": {
         const config = vscode.workspace.getConfiguration("dish-ai-commit");
-        const extensionPackageJSON = vscode.extensions.getExtension(
-          this._extensionId
-        )!.packageJSON;
-
-        // 确保 contributes 和 configuration 存在
-        const configProperties =
-          extensionPackageJSON?.contributes?.configuration?.properties;
-        console.log("configProperties", configProperties);
-        if (!configProperties) {
-          webview.postMessage({
-            command: "loadSettingsError",
-            error: "无法加载配置定义。",
-          });
-          return;
-        }
-
         const detailedSettings: any[] = [];
-        for (const key in configProperties) {
-          // 确保 key 是 package.json 中定义的配置项，通常带有插件前缀
-          if (
-            Object.prototype.hasOwnProperty.call(configProperties, key) &&
-            key.startsWith("dish-ai-commit.")
-          ) {
-            const prop = configProperties[key];
-            const configKeyWithoutPrefix = key.substring(
-              "dish-ai-commit.".length
-            );
-            const value = config.get(configKeyWithoutPrefix);
+        const processConfig = (schema: any, path: string, settings: any[]) => {
+          for (const key in schema) {
+            if (Object.prototype.hasOwnProperty.call(schema, key)) {
+              const prop = schema[key];
+              const currentPath = path ? `${path}.${key}` : key;
 
-            detailedSettings.push({
-              key: configKeyWithoutPrefix,
-              type: prop.type,
-              default: prop.default,
-              description: prop.description || prop.markdownDescription || "",
-              enum: prop.enum,
-              value: value,
-              fromPackageJSON: true, // Add this flag to indicate settings from package.json
-            });
+              if (isConfigValue(prop)) {
+                const value = config.get(currentPath);
+
+                const setting: any = {
+                  key: currentPath,
+                  type: prop.type,
+                  default: prop.default,
+                  description: prop.description || "",
+                  value: value,
+                  fromPackageJSON: true, // This indicates it's a global setting
+                  // feature: prop.feature,
+                };
+
+                if ("enum" in prop) {
+                  setting.enum = prop.enum;
+                }
+
+                settings.push(setting);
+              } else if (typeof prop === "object" && prop !== null) {
+                // If it's an object and not a config value, recurse into it
+                processConfig(prop, currentPath, settings);
+              }
+            }
           }
-        }
-        console.log("test1", detailedSettings);
+        };
+
+        processConfig(CONFIG_SCHEMA, "", detailedSettings);
 
         // Load settings from workspace state
         const workspaceSettings: any[] = [];
@@ -93,24 +96,29 @@ export class SettingsViewMessageHandler {
               const prop = schema[key];
               const currentPath = path ? `${path}.${key}` : key;
 
-              // Check if the property has a 'type' field, which indicates it's a setting
-              if (prop.hasOwnProperty("type")) {
+              if (isConfigValue(prop)) {
                 const value = stateManager.getWorkspace<any>(
                   currentPath,
                   prop.default
                 );
 
-                settings.push({
+                const setting: any = {
                   key: currentPath,
                   type: prop.type,
                   default: prop.default,
                   description: prop.description || "",
-                  enum: prop.enum,
                   value: value,
                   fromPackageJSON: false,
-                });
-              } else {
-                // If it's an object without a 'type', recurse into it
+                  // feature: prop.feature,
+                };
+
+                if ("enum" in prop) {
+                  setting.enum = prop.enum;
+                }
+
+                settings.push(setting);
+              } else if (typeof prop === "object" && prop !== null) {
+                // If it's an object and not a config value, recurse into it
                 processWorkspaceConfig(prop, currentPath, settings);
               }
             }
@@ -121,19 +129,24 @@ export class SettingsViewMessageHandler {
 
         // 获取索引状态
         let isIndexed = 0;
+        let indexStatusError: string | null = null;
         if (this._embeddingService) {
           try {
             isIndexed = await this._embeddingService.isIndexed();
           } catch (error) {
-            console.error(
-              "[SettingsViewMessageHandler] Error checking index status:",
-              error
-            );
-            // Optionally, inform the webview about the error
+            if (error instanceof EmbeddingServiceError) {
+              indexStatusError = `${error.message}\n来源：${
+                error.context?.source ?? "未知"
+              }，错误类型：${error.context?.type ?? "未知"}`;
+            } else if (error instanceof Error) {
+              indexStatusError = error.message;
+            } else {
+              indexStatusError = "无法获取索引状态（未知错误）";
+            }
+            // We can still send this for toast notifications, but the main logic will use the one in loadSettings
             webview.postMessage({
               command: "indexingStatusError",
-              error:
-                error instanceof Error ? error.message : "Could not get status",
+              error: indexStatusError,
             });
           }
         }
@@ -143,6 +156,7 @@ export class SettingsViewMessageHandler {
           data: {
             schema: [...detailedSettings, ...workspaceSettings], // Merge settings from both sources
             isIndexed: isIndexed, // 将索引状态添加到消息中
+            indexStatusError: indexStatusError,
           },
         });
         break;
@@ -150,32 +164,41 @@ export class SettingsViewMessageHandler {
 
       case "saveSettings": {
         const newSettings = message.data;
-        console.log("newSettings", newSettings);
         const config = vscode.workspace.getConfiguration("dish-ai-commit");
         try {
-          for (const setting of newSettings) {
+          const promises = newSettings.map(async (setting: any) => {
             if (setting.key && setting.value !== undefined) {
-              // Check if the setting is from package.json
+              const oldValue = stateManager.getWorkspace<any>(setting.key);
               const settingFromPackageJSON = newSettings.find(
                 (s: any) => s.key === setting.key
               )?.fromPackageJSON;
 
               if (settingFromPackageJSON) {
-                // Save to VS Code configuration
                 await config.update(
                   setting.key,
                   setting.value,
                   vscode.ConfigurationTarget.Global
                 );
               } else {
-                // Save to workspace state
                 await stateManager.setWorkspace(setting.key, setting.value);
               }
+
+              if (
+                setting.key ===
+                  WORKSPACE_CONFIG_PATHS.experimental.codeIndex.qdrantUrl &&
+                setting.value !== oldValue
+              ) {
+                console.log(
+                  `Qdrant URL changed from "${oldValue}" to "${setting.value}". Reinitializing EmbeddingService.`
+                );
+                this._embeddingService =
+                  EmbeddingServiceManager.getInstance().reinitialize() || null;
+              }
             }
-          }
-          vscode.window.showInformationMessage("设置已成功保存！");
-          // 可选：重新加载配置以显示更新后的值
+          });
+          await Promise.all(promises);
           webview.postMessage({ command: "settingsSaved" });
+          vscode.window.showInformationMessage("设置已成功保存！");
         } catch (error) {
           const errorMessage =
             error instanceof Error ? error.message : String(error);
@@ -210,36 +233,7 @@ export class SettingsViewMessageHandler {
           const config = vscode.workspace.getConfiguration("dish-ai-commit");
           const providerSettings = config.get(providerContextKey);
 
-          // console.log(`[SettingsViewProvider] Provider settings for ${providerContextKey}:`, providerSettings);
-
-          // 使用 AiProviderFactory 获取 provider 实例
-          // AiProviderFactory 可能需要调整以接受配置或自动读取
-          // 这里简化处理，假设 AiProviderFactory.createProvider 可以处理
-          // 如果 AiProviderFactory.createProvider 需要完整的配置对象，需要传递
-          // 或者 AiProviderFactory 有一个 getProvider(id, config) 的方法
-
-          // 查找 provider 的定义，以确定是否需要传递特定配置给 factory
-          const extensionPackageJSON = vscode.extensions.getExtension(
-            this._extensionId
-          )!.packageJSON;
-          const configProperties =
-            extensionPackageJSON?.contributes?.configuration?.properties;
-
           let providerInstance: AIProvider | undefined;
-
-          // 尝试基于 providerId (通常是枚举值，如 'openai', 'ollama') 创建 provider
-          // AiProviderFactory 可能需要一个方法来创建基于 provider 类型字符串的实例
-          // 而不是基于配置中的 'provider' 字段的值（那可能是具体的模型名称或更详细的标识）
-          // 假设 providerId 就是我们需要的类型标识符
-
-          // 确保 providerId 是一个有效的类型，而不是一个具体的模型名称
-          // 通常 providerId 会是 'openai', 'ollama' 等
-          // 我们需要一个方法来获取这个 provider 的实例
-          // AiProviderFactory.createProvider 可能需要 provider 的类型和该 provider 的配置
-
-          // 简化：假设 AiProviderFactory 有一个方法可以根据 providerId (如 'openai') 获取实例
-          // 并且它能自行处理配置的获取，或者我们传递必要的配置
-          // 这里的 providerId 是从 webview 的 provider type setting 的 value 传过来的
 
           providerInstance = AIProviderFactory.getProvider(providerId); // 只传递 providerId
 
@@ -278,13 +272,29 @@ export class SettingsViewMessageHandler {
     }
   }
 
+  private async handleClearIndex(webview: vscode.Webview): Promise<void> {
+    if (!this._embeddingService) {
+      const errorMessage = "EmbeddingService is not initialized.";
+      vscode.window.showErrorMessage(errorMessage);
+      return;
+    }
+    try {
+      await this._embeddingService.clearIndex();
+      vscode.window.showInformationMessage("Index cleared successfully.");
+      webview.postMessage({ command: "indexCleared", data: { isIndexed: 0 } });
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : String(error);
+      vscode.window.showErrorMessage(`Failed to clear index: ${errorMessage}`);
+    }
+  }
+
   private async handleTestConnection(
     service: string,
     url: string,
     key: string,
     webview: vscode.Webview
   ): Promise<void> {
-    console.log("handleTestConnection", service);
     try {
       let testUrl = url;
       if (service === "ollama") {
@@ -324,7 +334,8 @@ export class SettingsViewMessageHandler {
 
   private async startIndexing(
     startIndex: number,
-    webview: vscode.Webview
+    webview: vscode.Webview,
+    clearIndex: boolean = false
   ): Promise<void> {
     // 检查 EmbeddingService 是否存在
     if (!this._embeddingService) {
@@ -337,12 +348,37 @@ export class SettingsViewMessageHandler {
       return;
     }
 
+    if (clearIndex) {
+      try {
+        console.log(
+          "[SettingsViewMessageHandler] Clearing index before starting new indexing."
+        );
+        await this._embeddingService.clearIndex(); // Assuming this method exists.
+      } catch (error) {
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        console.error(
+          `[SettingsViewMessageHandler] Error during clearing index:`,
+          error
+        );
+        webview.postMessage({
+          command: "indexingFailed",
+          data: {
+            message: `清除旧索引失败: ${errorMessage}`,
+            source: "clearIndex",
+          },
+        });
+        return;
+      }
+    }
+
     // 调用 EmbeddingService 的方法，并将 startIndex 传递给它
     try {
       await this._embeddingService.scanProjectFiles(startIndex, webview);
+      const isIndexed = await this._embeddingService.isIndexed();
       webview.postMessage({
         command: "indexingFinished",
-        data: { message: "索引完成!" },
+        data: { message: "索引完成!", isIndexed },
       });
     } catch (error) {
       console.error(
@@ -352,7 +388,6 @@ export class SettingsViewMessageHandler {
 
       if (error instanceof EmbeddingServiceError) {
         // Forward the structured error to the webview
-        console.log("indexingFailed");
         webview.postMessage({
           command: "indexingFailed",
           data: {
