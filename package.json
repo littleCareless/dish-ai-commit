@@ -182,7 +182,16 @@
             "Gemini",
             "Deepseek",
             "Siliconflow",
-            "OpenRouter"
+            "OpenRouter",
+            "PremAI",
+            "Together",
+            "Anthropic",
+            "Mistral",
+            "Baidu Qianfan",
+            "Azure OpenAI",
+            "Cloudflare",
+            "GoogleAI",
+            "VertexAI"
           ]
         },
         "dish-ai-commit.base.model": {
@@ -226,6 +235,16 @@
           "default": "",
           "description": "Gemini AI API Key / Gemini AI API 密钥"
         },
+        "dish-ai-commit.providers.baiduQianfan.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Baidu Qianfan API Key / 百度千帆 API 密钥"
+        },
+        "dish-ai-commit.providers.baiduQianfan.secretKey": {
+          "type": "string",
+          "default": "",
+          "description": "Baidu Qianfan Secret Key / 百度千帆 Secret Key"
+        },
         "dish-ai-commit.providers.deepseek.apiKey": {
           "type": "string",
           "default": "",
@@ -240,6 +259,96 @@
           "type": "string",
           "default": "",
           "description": "OpenRouter AI API Key / OpenRouter AI API 密钥"
+        },
+        "dish-ai-commit.providers.perplexity.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Perplexity AI API Key / Perplexity AI API 密钥"
+        },
+        "dish-ai-commit.providers.premai.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "PremAI API Key / PremAI API 密钥"
+        },
+        "dish-ai-commit.providers.premai.baseUrl": {
+          "type": "string",
+          "default": "https://api.premai.com/",
+          "description": "PremAI API Base URL / PremAI API 基础地址"
+        },
+        "dish-ai-commit.providers.together.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Together AI API Key / Together AI API 密钥"
+        },
+        "dish-ai-commit.providers.together.baseUrl": {
+          "type": "string",
+          "default": "https://api.together.xyz/",
+          "description": "Together AI API Base URL / Together AI API 基础地址"
+        },
+        "dish-ai-commit.providers.xai.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "xAI API Key / xAI API 密钥"
+        },
+        "dish-ai-commit.providers.anthropic.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Anthropic API Key / Anthropic API 密钥"
+        },
+        "dish-ai-commit.providers.mistral.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Mistral AI API Key / Mistral AI API 密钥"
+        },
+        "dish-ai-commit.providers.azureOpenai.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Azure OpenAI API Key / Azure OpenAI API 密钥"
+        },
+        "dish-ai-commit.providers.azureOpenai.endpoint": {
+          "type": "string",
+          "default": "",
+          "description": "Azure OpenAI Endpoint / Azure OpenAI 终结点"
+        },
+        "dish-ai-commit.providers.azureOpenai.apiVersion": {
+          "type": "string",
+          "default": "",
+          "description": "Azure OpenAI API Version / Azure OpenAI API 版本"
+        },
+        "dish-ai-commit.providers.azureOpenai.orgId": {
+          "type": "string",
+          "default": "",
+          "description": "Azure OpenAI Organization ID / Azure OpenAI 组织 ID"
+        },
+        "dish-ai-commit.providers.cloudflare.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Cloudflare API Key / Cloudflare API 密钥"
+        },
+        "dish-ai-commit.providers.cloudflare.accountId": {
+          "type": "string",
+          "default": "",
+          "description": "Cloudflare Account ID / Cloudflare 账户 ID"
+        },
+        "dish-ai-commit.providers.vertexai.projectId": {
+          "type": "string",
+          "default": "",
+          "description": "Vertex AI Project ID / Vertex AI 项目 ID"
+        },
+        "dish-ai-commit.providers.vertexai.location": {
+          "type": "string",
+          "default": "",
+          "description": "Vertex AI Location / Vertex AI 位置"
+        },
+        "dish-ai-commit.providers.vertexai.apiEndpoint": {
+          "type": "string",
+          "default": "",
+          "description": "Optional. The base Vertex AI endpoint to use for the request. / 可选。用于请求的 Vertex AI 端点。"
+        },
+        "dish-ai-commit.providers.vertexai.googleAuthOptions": {
+          "type": "string",
+          "default": "",
+          "description": "Optional. JSON string of GoogleAuthOptions for authentication. / 可选。用于身份验证的 GoogleAuthOptions 的 JSON 字符串。"
         },
         "dish-ai-commit.features.codeAnalysis.simplifyDiff": {
           "type": "boolean",
@@ -498,13 +607,19 @@
     "vitest": "^3.2.3"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.56.0",
+    "@baiducloud/qianfan": "^0.2.3",
+    "@google-cloud/aiplatform": "^4.2.0",
+    "@google-cloud/vertexai": "^1.10.0",
     "@google/genai": "^1.4.0",
+    "@mistralai/mistralai": "^1.7.3",
     "@qdrant/js-client-rest": "^1.14.1",
+    "groq-sdk": "^0.26.0",
     "inversify": "^7.5.2",
     "ollama": "^0.5.16",
     "openai": "^5.3.0",
-    "web-tree-sitter": "^0.22.6",
-    "tree-sitter-wasms": "^0.1.11"
+    "tree-sitter-wasms": "^0.1.11",
+    "web-tree-sitter": "^0.22.6"
   },
   "overrides": {
     "glob": "10.3.10",
