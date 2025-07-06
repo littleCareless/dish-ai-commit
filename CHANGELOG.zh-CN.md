@@ -6,6 +6,26 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.31.0 (2025-07-06)
+
+### ♻ Code Refactoring
+
+- **core**: 移除调试日志并添加 AI 规则文件 ([3066909](https://github.com/littleCareless/dish-ai-commit/commit/3066909))
+
+### ✨ Features
+
+- **prompt**: 实现动态提交信息提示词生成器 ([40974a0](https://github.com/littleCareless/dish-ai-commit/commit/40974a0))
+- **provider**: 新增支持多种 AI 服务提供商 ([6477aa9](https://github.com/littleCareless/dish-ai-commit/commit/6477aa9))
+- **providers**: 新增对多个主流 AI 服务提供商的支持 ([d335d11](https://github.com/littleCareless/dish-ai-commit/commit/d335d11))
+
+### 🎫 Chores
+
+- **release**: 发布 0.30.0 版本 ([724a3a4](https://github.com/littleCareless/dish-ai-commit/commit/724a3a4))
+
+### 🐛 Bug Fixes
+
+- **menu**: 调整 SCM 资源文件夹上下文菜单的顺序 ([3b3d281](https://github.com/littleCareless/dish-ai-commit/commit/3b3d281))
+
 # 0.30.0 (2025-07-02)
 
 ### ♻ Code Refactoring

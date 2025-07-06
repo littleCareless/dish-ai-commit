@@ -6,6 +6,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.31.0 (2025-07-06)
+
+### ♻ Code Refactoring
+
+- **core**: Remove debug log and add AI rule file ([3066909](https://github.com/littleCareless/dish-ai-commit/commit/3066909))
+
+### ✨ Features
+
+- **prompt**: Implement dynamic commit message prompt generator ([40974a0](https://github.com/littleCareless/dish-ai-commit/commit/40974a0))
+
+- **provider**: Add support for multiple AI service providers ([6477aa9](https://github.com/littleCareless/dish-ai-commit/commit/6477aa9))
+
+- **providers**: Add support for multiple mainstream AI service providers ([d335d11](https://github.com/littleCareless/dish-ai-commit/commit/d335d11))
+
+### 🎫 Chores
+
+- **release**: Release 0.30.0 ([724a3a4](https://github.com/littleCareless/dish-ai-commit/commit/724a3a4))
+
+### 🐛 Bug Fixes
+
+- **menu**: Adjust the order of the context menu of SCM resource folders ([3b3d281](https://github.com/littleCareless/dish-ai-commit/commit/3b3d281))
+
 # 0.30.0 (2025-07-02)
 
 ### ♻ Code Refactoring
