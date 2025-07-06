@@ -23,6 +23,8 @@ export interface OpenAIProviderConfig {
   baseURL?: string;
   /** API版本号 */
   apiVersion?: string;
+  /** 组织ID */
+  organization?: string;
   /** 提供者唯一标识符 */
   providerId: string;
   /** 提供者显示名称 */

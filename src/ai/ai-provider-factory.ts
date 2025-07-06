@@ -1,5 +1,6 @@
 import { AIProvider as AIProviderInterface } from "./types";
 import { OpenAIProvider } from "./providers/openai-provider";
+import { AnthropicAIProvider } from "./providers/anthropic-provider";
 import { OllamaProvider } from "./providers/ollama-provider";
 import { AIProvider, ConfigKeys } from "../config/types";
 import { ConfigurationManager } from "../config/configuration-manager";
@@ -12,6 +13,15 @@ import { formatMessage } from "../utils/i18n/localization-manager";
 import { DeepseekAIProvider } from "./providers/deepseek-provider";
 import { SiliconFlowProvider } from "./providers/siliconflow-provider";
 import { OpenRouterProvider } from "./providers/openrouter-provider";
+import { PremAIProvider } from "./providers/premai-provider";
+import { TogetherAIProvider } from "./providers/together-provider"; // Import TogetherAIProvider
+import { XAIProvider } from "./providers/xai-provider";
+import { MistralAIProvider } from "./providers/mistral-provider";
+import { AzureOpenAIProvider } from "./providers/azure-openai-provider";
+import { CloudflareWorkersAIProvider } from "./providers/cloudflare-workersai-provider";
+import { VertexAIProvider } from "./providers/vertexai-provider";
+import { GroqAIProvider } from "./providers/groq-provider";
+import { BaiduQianfanProvider } from "./providers/baidu-qianfan-provider";
 
 /**
  * AI提供者工厂类，负责创建和管理不同AI服务提供者的实例
@@ -85,6 +95,9 @@ export class AIProviderFactory {
 
     if (!provider) {
       switch (providerType.toLowerCase()) {
+        case AIProvider.ANTHROPIC:
+          provider = new AnthropicAIProvider();
+          break;
         case AIProvider.OPENAI:
           provider = new OpenAIProvider();
           break;
@@ -115,11 +128,40 @@ export class AIProviderFactory {
         case AIProvider.OPENROUTER:
           provider = new OpenRouterProvider();
           break;
-        default:
-          throw new Error(formatMessage("provider.type.unknown", [type]));
+        case AIProvider.PREMAI:
+          provider = new PremAIProvider();
+          break;
+        case AIProvider.TOGETHER:
+          provider = new TogetherAIProvider();
+          break;
+        case AIProvider.XAI:
+          provider = new XAIProvider();
+          break;
+        case AIProvider.AZURE_OPENAI:
+          provider = new AzureOpenAIProvider();
+          break;
+        case AIProvider.CLOUDFLARE:
+          provider = new CloudflareWorkersAIProvider();
+          break;
+        case AIProvider.VERTEXAI:
+          provider = new VertexAIProvider();
+          break;
+        case AIProvider.GROQ:
+          provider = new GroqAIProvider();
+          break;
+        case AIProvider.MISTRAL:
+          provider = new MistralAIProvider();
+         break;
+        case AIProvider.BAIDU_QIANFAN:
+          provider = new BaiduQianfanProvider();
+          break;
+       default:
+         throw new Error(formatMessage("provider.type.unknown", [type]));
+     }
+      if (provider) {
+        this.providers.set(providerType, provider);
+        this.providerTimestamps.set(providerType, Date.now());
       }
-      this.providers.set(providerType, provider);
-      this.providerTimestamps.set(providerType, Date.now());
     }
 
     return provider;
@@ -143,6 +185,16 @@ export class AIProviderFactory {
       new DeepseekAIProvider(),
       new SiliconFlowProvider(),
       new OpenRouterProvider(),
+      new PremAIProvider(),
+      new TogetherAIProvider(),
+      new XAIProvider(),
+      new AnthropicAIProvider(),
+      new AzureOpenAIProvider(),
+      new CloudflareWorkersAIProvider(),
+      new VertexAIProvider(),
+      new MistralAIProvider(),
+      new GroqAIProvider(),
+      new BaiduQianfanProvider(),
     ];
   }
 

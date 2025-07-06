@@ -67,6 +67,15 @@ export const CONFIG_SCHEMA = {
         "Deepseek",
         "Siliconflow",
         "OpenRouter",
+        "PremAI",
+        "Together",
+        "Anthropic",
+        "Mistral",
+        "Baidu Qianfan",
+        "Azure OpenAI",
+        "Cloudflare",
+        "GoogleAI",
+        "VertexAI",
       ],
       description: "AI provider / AI 提供商",
     },
@@ -126,6 +135,18 @@ export const CONFIG_SCHEMA = {
         description: "Gemini AI API Key / Gemini AI API 密钥",
       },
     },
+    baiduQianfan: {
+      apiKey: {
+        type: "string",
+        default: "",
+        description: "Baidu Qianfan API Key / 百度千帆 API 密钥",
+      },
+      secretKey: {
+        type: "string",
+        default: "",
+        description: "Baidu Qianfan Secret Key / 百度千帆 Secret Key",
+      },
+    },
     deepseek: {
       apiKey: {
         type: "string",
@@ -145,6 +166,123 @@ export const CONFIG_SCHEMA = {
         type: "string",
         default: "",
         description: "OpenRouter AI API Key / OpenRouter AI API 密钥",
+      },
+    },
+    perplexity: {
+      apiKey: {
+        type: "string",
+        default: "",
+        description: "Perplexity AI API Key / Perplexity AI API 密钥",
+      },
+    },
+    premai: {
+      apiKey: {
+        type: "string",
+        default: "",
+        description: "PremAI API Key / PremAI API 密钥",
+      },
+      baseUrl: {
+        type: "string",
+        default: "https://api.premai.com/",
+        description: "PremAI API Base URL / PremAI API 基础地址",
+      },
+    },
+    together: {
+      apiKey: {
+        type: "string",
+        default: "",
+        description: "Together AI API Key / Together AI API 密钥",
+      },
+      baseUrl: {
+        type: "string",
+        default: "https://api.together.xyz/",
+        description: "Together AI API Base URL / Together AI API 基础地址",
+      },
+    },
+    xai: {
+      apiKey: {
+        type: "string",
+        default: "",
+        description: "xAI API Key / xAI API 密钥",
+      },
+    },
+    anthropic: {
+      apiKey: {
+        type: "string",
+        default: "",
+        description: "Anthropic API Key / Anthropic API 密钥",
+      },
+    },
+    mistral: {
+      apiKey: {
+        type: "string",
+        default: "",
+        description: "Mistral AI API Key / Mistral AI API 密钥",
+      },
+    },
+    azureOpenai: {
+      apiKey: {
+        type: "string",
+        default: "",
+        description: "Azure OpenAI API Key / Azure OpenAI API 密钥",
+      },
+      endpoint: {
+        type: "string",
+        default: "",
+        description: "Azure OpenAI Endpoint / Azure OpenAI 终结点",
+      },
+      apiVersion: {
+        type: "string",
+        default: "",
+        description: "Azure OpenAI API Version / Azure OpenAI API 版本",
+      },
+      orgId: {
+        type: "string",
+        default: "",
+        description: "Azure OpenAI Organization ID / Azure OpenAI 组织 ID",
+      },
+    },
+    cloudflare: {
+      apiKey: {
+        type: "string",
+        default: "",
+        description: "Cloudflare API Key / Cloudflare API 密钥",
+      },
+      accountId: {
+        type: "string",
+        default: "",
+        description: "Cloudflare Account ID / Cloudflare 账户 ID",
+      },
+    },
+    vertexai: {
+      projectId: {
+        type: "string",
+        default: "",
+        description: "Vertex AI Project ID / Vertex AI 项目 ID",
+      },
+      location: {
+        type: "string",
+        default: "",
+        description: "Vertex AI Location / Vertex AI 位置",
+      },
+      apiEndpoint: {
+        type: "string",
+        default: "",
+        description:
+          "Optional. The base Vertex AI endpoint to use for the request. / 可选。用于请求的 Vertex AI 端点。",
+      },
+      googleAuthOptions: {
+        type: "string",
+        default: "",
+        description:
+          "Optional. JSON string of GoogleAuthOptions for authentication. / 可选。用于身份验证的 GoogleAuthOptions 的 JSON 字符串。",
+      },
+    },
+    groq: {
+      apiKey: {
+        type: "string",
+        default: "",
+        description: "Groq API Key / Groq API 密钥",
       },
     },
   },
@@ -332,9 +470,86 @@ export type SchemaType = {
     [P in keyof (typeof CONFIG_SCHEMA)[K]]: ConfigValue | ConfigObject;
   };
 };
-
 // Generate type
+export type ConfigKey =
+  | "BASE"
+  | "PROVIDERS"
+  | "FEATURES"
+  | "BASE_LANGUAGE"
+  | "BASE_PROVIDER"
+  | "BASE_MODEL"
+  | "PROVIDERS_ANTHROPIC"
+  | "PROVIDERS_ANTHROPIC_APIKEY"
+  | "PROVIDERS_OPENAI"
+  | "PROVIDERS_OPENAI_APIKEY"
+  | "PROVIDERS_ZHIPU"
+  | "PROVIDERS_ZHIPU_APIKEY"
+  | "PROVIDERS_DASHSCOPE"
+  | "PROVIDERS_DASHSCOPE_APIKEY"
+  | "PROVIDERS_DOUBAO"
+  | "PROVIDERS_DOUBAO_APIKEY"
+  | "PROVIDERS_GEMINI"
+  | "PROVIDERS_GEMINI_APIKEY"
+  | "PROVIDERS_BAIDU_QIANFAN"
+  | "PROVIDERS_BAIDU_QIANFAN_APIKEY"
+  | "PROVIDERS_BAIDU_QIANFAN_SECRETKEY"
+  | "PROVIDERS_DEEPSEEK"
+  | "PROVIDERS_DEEPSEEK_APIKEY"
+  | "PROVIDERS_SILICONFLOW"
+  | "PROVIDERS_SILICONFLOW_APIKEY"
+  | "PROVIDERS_OPENROUTER"
+  | "PROVIDERS_OPENROUTER_APIKEY"
+  | "PROVIDERS_PERPLEXITY"
+  | "PROVIDERS_PERPLEXITY_APIKEY"
+  | "PROVIDERS_PREMAI"
+  | "PROVIDERS_PREMAI_APIKEY"
+  | "PROVIDERS_PREMAI_BASEURL"
+  | "PROVIDERS_TOGETHER"
+  | "PROVIDERS_TOGETHER_APIKEY"
+  | "PROVIDERS_TOGETHER_BASEURL"
+  | "PROVIDERS_XAI"
+  | "PROVIDERS_XAI_APIKEY"
+  | "PROVIDERS_MISTRAL"
+  | "PROVIDERS_MISTRAL_APIKEY"
+  | "PROVIDERS_AZURE_OPENAI"
+  | "PROVIDERS_AZURE_OPENAI_APIKEY"
+  | "PROVIDERS_AZURE_OPENAI_ENDPOINT"
+  | "PROVIDERS_AZURE_OPENAI_APIVERSION"
+  | "PROVIDERS_AZURE_OPENAI_ORGID"
+  | "PROVIDERS_CLOUDFLARE"
+  | "PROVIDERS_CLOUDFLARE_APIKEY"
+  | "PROVIDERS_CLOUDFLARE_ACCOUNTID"
+  | "PROVIDERS_VERTEXAI"
+  | "PROVIDERS_VERTEXAI_PROJECTID"
+  | "PROVIDERS_VERTEXAI_LOCATION"
+  | "PROVIDERS_VERTEXAI_APIENDPOINT"
+  | "PROVIDERS_VERTEXAI_GOOGLEAUTHOPTIONS"
+  | "FEATURES_CODEANALYSIS"
+  | "FEATURES_CODEANALYSIS_SIMPLIFYDIFF"
+  | "FEATURES_COMMITFORMAT"
+  | "FEATURES_COMMITFORMAT_ENABLEEMOJI"
+  | "FEATURES_COMMITFORMAT_ENABLEMERGECOMMIT"
+  | "FEATURES_COMMITFORMAT_ENABLEBODY"
+  | "FEATURES_COMMITFORMAT_ENABLELAYEREDCOMMIT"
+  | "FEATURES_COMMITMESSAGE"
+  | "FEATURES_COMMITMESSAGE_SYSTEMPROMPT"
+  | "FEATURES_COMMITMESSAGE_USERECENTCOMMITSASREFERENCE"
+  | "FEATURES_WEEKLYREPORT"
+  | "FEATURES_WEEKLYREPORT_SYSTEMPROMPT"
+  | "FEATURES_CODEREVIEW"
+  | "FEATURES_CODEREVIEW_SYSTEMPROMPT"
+  | "FEATURES_BRANCHNAME"
+  | "FEATURES_BRANCHNAME_SYSTEMPROMPT"
+  | "FEATURES_PRSUMMARY"
+  | "FEATURES_PRSUMMARY_BASEBRANCH"
+  | "FEATURES_PRSUMMARY_HEADBRANCH"
+  | "FEATURES_PRSUMMARY_SYSTEMPROMPT"
+  | "FEATURES_PRSUMMARY_COMMITLOGLIMIT"
+  | "PROVIDERS_GROQ"
+  | "PROVIDERS_GROQ_APIKEY";
+
 export type ConfigPath = string; // e.g., "providers.openai.apiKey"
+
 
 // Re-export utility functions from new modules
 export { generateConfigKeys } from "./utils/config-keys-generator";
