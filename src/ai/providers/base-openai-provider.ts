@@ -206,14 +206,14 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
     // 使用类型断言将模型ID转换为AIModel.id允许的类型
     const modelId = this.config.defaultModel || "gpt-3.5-turbo";
     return {
-      id: modelId as any, // 使用类型断言解决类型不兼容问题
+      id: modelId,
       name: modelId,
       maxTokens: { input: 4096, output: 2048 },
       provider: {
-        id: this.provider.id as AIProviders,
+        id: this.provider.id,
         name: this.provider.name,
       },
-    };
+    } as AIModel;
   }
 
   /**
@@ -230,21 +230,24 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
         })
       );
 
-      return response.data.map((model: any) => ({
-        id: model.id as any, // 使用类型断言解决类型不兼容问题
-        name: model.id,
-        maxTokens: {
-          input: model.context_window || 4096,
-          output: Math.floor((model.context_window || 4096) / 2),
-        },
-        provider: {
-          id: this.provider.id as AIProviders,
-          name: this.provider.name,
-        },
-      }));
+      return response.data.map(
+        (model: any) =>
+          ({
+            id: model.id,
+            name: model.id,
+            maxTokens: {
+              input: model.context_window || 4096,
+              output: Math.floor((model.context_window || 4096) / 2),
+            },
+            provider: {
+              id: this.provider.id,
+              name: this.provider.name,
+            },
+          } as AIModel)
+      );
     } catch (error) {
       console.warn("Failed to fetch models: ", this.config.providerName, error);
-      return this.config.models;
+      return this.config.models as AIModel[];
     }
   }
 
@@ -390,3 +393,4 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
     );
   }
 }
+

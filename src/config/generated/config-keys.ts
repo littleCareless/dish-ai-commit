@@ -54,6 +54,8 @@ export const CONFIG_KEYS = {
   "PROVIDERS_VERTEXAI_LOCATION": "dish-ai-commit.providers.vertexai.location",
   "PROVIDERS_VERTEXAI_APIENDPOINT": "dish-ai-commit.providers.vertexai.apiEndpoint",
   "PROVIDERS_VERTEXAI_GOOGLEAUTHOPTIONS": "dish-ai-commit.providers.vertexai.googleAuthOptions",
+  "PROVIDERS_GROQ": "dish-ai-commit.providers.groq",
+  "PROVIDERS_GROQ_APIKEY": "dish-ai-commit.providers.groq.apiKey",
   "FEATURES": "dish-ai-commit.features",
   "FEATURES_CODEANALYSIS": "dish-ai-commit.features.codeAnalysis",
   "FEATURES_CODEANALYSIS_SIMPLIFYDIFF": "dish-ai-commit.features.codeAnalysis.simplifyDiff",

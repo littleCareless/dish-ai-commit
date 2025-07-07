@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { type AIModel, type AIRequestParams, type AIResponse } from "../types";
+import { type AIModel, type AIProviders, type AIRequestParams, type AIResponse, type ModelNames } from "../types";
 import { AbstractAIProvider } from "./abstract-ai-provider";
 import { getMessage } from "../../utils/i18n";
 import {
@@ -153,7 +153,7 @@ export class VSCodeProvider extends AbstractAIProvider {
     return Promise.resolve([]);
   }
 
-  async getModels(): Promise<AIModel[]> {
+  async getModels(): Promise<AIModel<AIProviders, ModelNames>[]> {
     try {
       const models = await vscode.lm.selectChatModels();
       if (models.length > 0) {

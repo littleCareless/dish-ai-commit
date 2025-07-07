@@ -6,7 +6,7 @@ import { ModelPickerService } from "../services/model-picker-service";
 import { notify } from "../utils/notification/notification-manager";
 import { getMessage, formatMessage } from "../utils/i18n";
 import { validateAndGetModel } from "../utils/ai/model-validation";
-import { AIProvider, AIModel, AIProviders, ModelNames } from "../ai/types"; // 正确导入ModelNames类型
+import { AIProvider, AIModel, AIProviders } from "../ai/types";
 import { stateManager } from "../utils/state/state-manager";
 
 /**
@@ -88,7 +88,7 @@ export abstract class BaseCommand {
   ): Promise<{
     provider: string;
     model: string;
-    selectedModel: AIModel<AIProviders, ModelNames> | undefined; // 使用ModelNames类型替代string
+    selectedModel: AIModel | undefined;
     aiProvider: AIProvider;
   }> {
     try {

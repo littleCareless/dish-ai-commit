@@ -350,6 +350,11 @@
           "default": "",
           "description": "Optional. JSON string of GoogleAuthOptions for authentication. / 可选。用于身份验证的 GoogleAuthOptions 的 JSON 字符串。"
         },
+        "dish-ai-commit.providers.groq.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "Groq API Key / Groq API 密钥"
+        },
         "dish-ai-commit.features.codeAnalysis.simplifyDiff": {
           "type": "boolean",
           "default": false,

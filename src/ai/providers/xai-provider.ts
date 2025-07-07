@@ -59,14 +59,6 @@ export class XAIProvider extends BaseOpenAIProvider {
   }
 
   /**
-   * 获取当前支持的AI模型列表
-   * xAI的OpenAI兼容层可能不支持/models接口，因此直接返回静态列表
-   */
-  async getModels(): Promise<AIModel[]> {
-    return Promise.resolve(this.config.models);
-  }
-
-  /**
    * 检查xAI服务是否可用
    */
   async isAvailable(): Promise<boolean> {

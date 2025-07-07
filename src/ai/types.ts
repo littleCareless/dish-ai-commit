@@ -457,7 +457,8 @@ export type AIProviders =
   | "azure-openai"
   | "cloudflare"
   | "vertexai"
-  | "groq";
+  | "groq"
+  | "siliconflow";
 export type AnthropicAIModels =
   | "claude-3-opus-20240229"
   | "claude-3-sonnet-20240229"
