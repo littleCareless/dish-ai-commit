@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>dish-ai-commit - AI驱动的Git提交信息生成器</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.2/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        body {
+            background-color: #ffffff;
+            color: #000000;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, "Noto Sans", sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";
+        }
+        .highlight {
+            color: #4D6BFE;
+        }
+        .bg-highlight {
+            background-color: #4D6BFE;
+        }
+        .bento-grid {
+            display: grid;
+            grid-template-columns: repeat(12, 1fr);
+            gap: 1.5rem;
+            width: 100%;
+            max-width: 1920px;
+            margin: 0 auto;
+        }
+        .bento-item {
+            border-radius: 1.5rem;
+            border: 1px solid #E5E7EB;
+            padding: 2rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+        .bento-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+        }
+        .col-span-1 { grid-column: span 1 / span 1; }
+        .col-span-2 { grid-column: span 2 / span 2; }
+        .col-span-3 { grid-column: span 3 / span 3; }
+        .col-span-4 { grid-column: span 4 / span 4; }
+        .col-span-5 { grid-column: span 5 / span 5; }
+        .col-span-6 { grid-column: span 6 / span 6; }
+        .col-span-7 { grid-column: span 7 / span 7; }
+        .col-span-8 { grid-column: span 8 / span 8; }
+        .col-span-9 { grid-column: span 9 / span 9; }
+        .col-span-12 { grid-column: span 12 / span 12; }
+
+        .gradient-bg {
+            background-image: linear-gradient(135deg, rgba(77, 107, 254, 0.1) 0%, rgba(77, 107, 254, 0) 50%);
+        }
+        .gradient-bg-alt {
+            background-image: linear-gradient(135deg, rgba(77, 107, 254, 0.15) 0%, rgba(77, 107, 254, 0.05) 100%);
+        }
+        .huge-text {
+            font-size: 10rem;
+            line-height: 1;
+            font-weight: 800;
+            letter-spacing: -0.05em;
+        }
+        .line-art {
+            stroke: #000;
+            stroke-width: 1.5;
+            fill: none;
+        }
+        .line-art-highlight {
+            stroke: #4D6BFE;
+            stroke-width: 2;
+            fill: none;
+        }
+        .fade-in {
+            opacity: 0;
+            transform: translateY(20px);
+            transition: opacity 0.6s ease-out, transform 0.6s ease-out;
+        }
+        .fade-in.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="p-8 md:p-12">
+
+    <div class="bento-grid">
+        <!-- Title -->
+        <header class="bento-item col-span-12 lg:col-span-8 flex flex-col justify-center items-start text-left">
+            <h1 class="text-5xl md:text-7xl font-extrabold tracking-tighter">dish-ai-commit</h1>
+            <p class="text-2xl md:text-3xl font-bold mt-2">AI 驱动的 Git 提交规范化利器</p>
+            <p class="text-lg mt-4 text-gray-600 max-w-3xl">一个为开发团队打造的 VSCode 扩展，利用多样化 AI 模型，自动生成符合规范的 Git/SVN 提交消息、分支名称和周报，旨在提升版本管理效率和代码质量。</p>
+            <a href="https://opendeep.wiki/littleCareless/dish-ai-commit" target="_blank" class="mt-8 inline-block bg-black text-white font-bold py-3 px-6 rounded-full hover:bg-gray-800 transition-colors">
+                了解更多 <i class="fa-solid fa-arrow-right ml-2"></i>
+            </a>
+        </header>
+
+        <!-- Multi-language Support -->
+        <div class="bento-item col-span-12 lg:col-span-4 gradient-bg-alt flex flex-col justify-center items-center text-center">
+            <p class="text-xl font-bold">多语言支持</p>
+            <p class="huge-text highlight">19</p>
+            <p class="text-xl font-semibold -mt-4">LANGUAGES SUPPORTED</p>
+            <p class="text-gray-600 mt-2">满足国际化团队跨文化协同需求</p>
+        </div>
+
+        <!-- Problem & Solution -->
+        <div class="bento-item col-span-12 lg:col-span-6">
+            <h2 class="text-3xl font-bold mb-4">问题域与解决方案</h2>
+            <p class="text-lg font-bold mb-2">痛点：<span class="text-gray-600 font-medium">提交信息不规范，代码回溯困难，影响团队协作。</span></p>
+            <div class="w-full border-t border-dashed my-4"></div>
+            <p class="text-lg font-bold">方案：<span class="font-medium">通过 AI 自动分析代码差异，智能生成符合 <span class="highlight font-semibold">Conventional Commits</span> 规范的结构化信息，减少人为错误，统一流程。</span></p>
+            <div class="mt-auto pt-4">
+                <svg viewBox="0 0 100 30" class="w-full h-auto">
+                    <path d="M 5 25 C 20 25, 20 5, 35 5" class="line-art"></path>
+                    <path d="M 35 5 C 50 5, 50 25, 65 25" class="line-art"></path>
+                    <path d="M 65 25 C 80 25, 80 5, 95 5" class="line-art-highlight"></path>
+                    <circle cx="5" cy="25" r="2" fill="#000"></circle>
+                    <circle cx="35" cy="5" r="2" fill="#000"></circle>
+                    <circle cx="65" cy="25" r="2" fill="#000"></circle>
+                    <circle cx="95" cy="5" r="2" class="bg-highlight" fill="#4D6BFE"></circle>
+                </svg>
+                <p class="text-center text-sm text-gray-500 mt-2">AI 辅助，加强团队协作规范和项目透明度</p>
+            </div>
+        </div>
+
+        <!-- AI Models -->
+        <div class="bento-item col-span-12 lg:col-span-6 gradient-bg">
+            <h2 class="text-3xl font-bold mb-4">多平台 AI 模型支持</h2>
+            <p class="text-gray-600 mb-6">支持主流及本地 AI，降低单点依赖风险，提供灵活选择。</p>
+            <div class="grid grid-cols-2 md:grid-cols-3 gap-4 text-center text-lg font-semibold">
+                <div class="p-4 border rounded-lg">OpenAI</div>
+                <div class="p-4 border rounded-lg">Ollama</div>
+                <div class="p-4 border rounded-lg">Zhipu</div>
+                <div class="p-4 border rounded-lg">DashScope</div>
+                <div class="p-4 border rounded-lg">VSCode</div>
+                <div class="p-4 border rounded-lg highlight">更多...</div>
+            </div>
+        </div>
+
+        <!-- Key Features -->
+        <div class="bento-item col-span-12 lg:col-span-4">
+            <i class="fa-solid fa-wand-magic-sparkles text-4xl highlight mb-4"></i>
+            <h3 class="text-2xl font-bold">分支名称智能生成</h3>
+            <p class="text-gray-600 mt-2">根据用户需求智能生成合规分支名称，保证版本结构清晰。</p>
+        </div>
+        <div class="bento-item col-span-12 lg:col-span-4">
+            <i class="fa-solid fa-calendar-week text-4xl highlight mb-4"></i>
+            <h3 class="text-2xl font-bold">周报自动生成</h3>
+            <p class="text-gray-600 mt-2">自动汇集和总结开发进展，实现管理自动化。</p>
+        </div>
+        <div class="bento-item col-span-12 lg:col-span-4">
+            <i class="fa-solid fa-magnifying-glass-chart text-4xl highlight mb-4"></i>
+            <h3 class="text-2xl font-bold">代码智能审查</h3>
+            <p class="text-gray-600 mt-2">利用 AI 辅助审查代码，自动发现潜在问题和改进建议。</p>
+        </div>
+
+        <!-- Architecture -->
+        <div class="bento-item col-span-12 lg:col-span-7">
+            <h2 class="text-3xl font-bold mb-4">高级架构</h2>
+            <p class="text-gray-600 mb-6">基于 VSCode 扩展框架深度集成，分层设计确保高效与可扩展。</p>
+            <div class="space-y-4">
+                <div class="flex items-center gap-4 p-4 border rounded-lg">
+                    <div class="w-12 h-12 bg-highlight/10 flex items-center justify-center rounded-lg"><i class="fa-solid fa-desktop text-2xl highlight"></i></div>
+                    <div>
+                        <h4 class="font-bold text-lg">UI 层 (前端)</h4>
+                        <p class="text-sm text-gray-600">React + TypeScript, 集成于 VSCode 侧边栏</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 p-4 border rounded-lg">
+                    <div class="w-12 h-12 bg-highlight/10 flex items-center justify-center rounded-lg"><i class="fa-solid fa-cogs text-2xl highlight"></i></div>
+                    <div>
+                        <h4 class="font-bold text-lg">业务逻辑层</h4>
+                        <p class="text-sm text-gray-600">命令模块、配置管理、状态管理</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-4 p-4 border rounded-lg">
+                    <div class="w-12 h-12 bg-highlight/10 flex items-center justify-center rounded-lg"><i class="fa-solid fa-brain text-2xl highlight"></i></div>
+                    <div>
+                        <h4 class="font-bold text-lg">AI 服务层</h4>
+                        <p class="text-sm text-gray-600">对接不同 AI 服务 API，负责文本生成与分析</p>
+                    </div>
+                </div>
+                 <div class="flex items-center gap-4 p-4 border rounded-lg">
+                    <div class="w-12 h-12 bg-highlight/10 flex items-center justify-center rounded-lg"><i class="fa-solid fa-code-branch text-2xl highlight"></i></div>
+                    <div>
+                        <h4 class="font-bold text-lg">版本控制层</h4>
+                        <p class="text-sm text-gray-600">支持 Git 和 SVN，读取文件变更</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tech Stack Chart -->
+        <div class="bento-item col-span-12 lg:col-span-5 flex flex-col">
+            <h2 class="text-3xl font-bold mb-4">技术栈</h2>
+            <div class="flex-grow flex items-center justify-center">
+                <canvas id="techStackChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Target Users -->
+        <div class="bento-item col-span-12">
+            <h2 class="text-3xl font-bold mb-4">目标用户与利益相关者</h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 text-center">
+                <div class="p-4">
+                    <i class="fa-solid fa-user-code text-4xl mb-3"></i>
+                    <h4 class="font-bold">软件开发者</h4>
+                </div>
+                <div class="p-4">
+                    <i class="fa-solid fa-user-tie text-4xl mb-3"></i>
+                    <h4 class="font-bold">项目经理</h4>
+                </div>
+                <div class="p-4">
+                    <i class="fa-solid fa-user-shield text-4xl mb-3"></i>
+                    <h4 class="font-bold">版本控制管理员</h4>
+                </div>
+                <div class="p-4">
+                    <i class="fa-solid fa-users-gear text-4xl mb-3"></i>
+                    <h4 class="font-bold">DevOps & QA</h4>
+                </div>
+                <div class="p-4">
+                    <i class="fa-solid fa-globe text-4xl mb-3"></i>
+                    <h4 class="font-bold">全球化团队</h4>
+                </div>
+            </div>
+        </div>
+
+        <!-- Installation -->
+        <div class="bento-item col-span-12 lg:col-span-6 gradient-bg-alt">
+            <h2 class="text-3xl font-bold mb-4">安装与配置</h2>
+            <p class="text-gray-600 mb-6">简单几步，即可开始您的智能提交之旅。</p>
+            <ol class="list-decimal list-inside space-y-3 text-lg">
+                <li>在 VSCode 扩展市场搜索 <span class="font-bold highlight">"Dish AI Commit"</span> 并安装。</li>
+                <li>重启 VSCode。</li>
+                <li>在扩展设置中配置您的 AI 服务 API Key 或本地服务地址。</li>
+                <li>开始使用！</li>
+            </ol>
+        </div>
+
+        <!-- Config Example -->
+        <div class="bento-item col-span-12 lg:col-span-6 bg-gray-900 text-white font-mono">
+             <h3 class="text-xl font-sans font-bold mb-4 text-gray-400">配置示例: Ollama 本地服务</h3>
+            <pre class="bg-black p-4 rounded-lg text-sm overflow-x-auto"><code>{
+  <span class="text-cyan-400">"dish-ai-commit.base.provider"</span>: <span class="text-lime-400">"ollama"</span>,
+  <span class="text-cyan-400">"dish-ai-commit.providers.ollama.baseUrl"</span>: <span class="text-lime-400">"http://localhost:11434"</span>
+}</code></pre>
+        </div>
+        
+        <!-- Footer -->
+        <footer class="bento-item col-span-12 text-center">
+            <p class="font-bold">Dish AI Commit Gen</p>
+            <p class="text-sm text-gray-500 mt-2">本项目采用 MIT 开源协议。数据处理均在本地或第三方安全环境中完成，不存储用户敏感代码信息。</p>
+            <div class="mt-4">
+                <a href="https://github.com/littleCareless/dish-ai-commit" target="_blank" class="text-gray-500 hover:text-black mx-2"><i class="fab fa-github text-2xl"></i></a>
+            </div>
+        </footer>
+
+    </div>
+
+    <script>
+        // Chart.js for Tech Stack
+        const ctx = document.getElementById('techStackChart');
+        new Chart(ctx, {
+            type: 'doughnut',
+            data: {
+                labels: ['React/Vite', 'TypeScript', 'Node.js', 'VSCode API', 'AI Providers'],
+                datasets: [{
+                    label: '技术栈分布',
+                    data: [30, 25, 20, 15, 10],
+                    backgroundColor: [
+                        'rgba(77, 107, 254, 0.8)',
+                        'rgba(77, 107, 254, 0.6)',
+                        'rgba(77, 107, 254, 0.4)',
+                        'rgba(0, 0, 0, 0.7)',
+                        'rgba(0, 0, 0, 0.5)',
+                    ],
+                    borderColor: '#ffffff',
+                    borderWidth: 4
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            font: {
+                                size: 14,
+                                weight: 'bold'
+                            }
+                        }
+                    }
+                }
+            }
+        });
+
+        // Fade-in animation on scroll
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                }
+            });
+        }, {
+            threshold: 0.1
+        });
+
+        document.querySelectorAll('.bento-item').forEach(item => {
+            item.classList.add('fade-in');
+            observer.observe(item);
+        });
+    </script>
+
+</body>
+</html>

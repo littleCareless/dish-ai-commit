@@ -1,0 +1,40 @@
+---
+description: '此规则要求正确处理 VS Code 扩展中的可释放 (Disposable) 对象。在注册命令、事件监听器或其他实现 `Disposable` 接口的对象时，必须将其添加到 `context.subscriptions` 中以确保资源被正确清理。'
+globs: "**/extension.ts"
+alwaysApply: false
+---
+
+# 规则：处理可释放对象 (Disposables)
+
+## 关键规则
+
+- 任何实现了 `Disposable` 接口的对象（例如，通过 `vscode.commands.registerCommand` 或 `vscode.window.createStatusBarItem` 创建的对象）都必须被添加到一个 `Disposable` 数组中，通常是 `context.subscriptions`。
+- 这确保了当扩展停用时，所有相关的资源（如事件监听器、命令）都会被正确地释放，防止内存泄漏。
+
+## 示例
+
+<example>
+// 正确处理可释放对象
+import * as vscode from 'vscode';
+
+export function activate(context: vscode.ExtensionContext) {
+  let disposableCommand = vscode.commands.registerCommand('myExtension.myCommand', () => {
+    // ...
+  });
+
+  context.subscriptions.push(disposableCommand);
+}
+</example>
+
+<example type="invalid">
+// 错误的做法：未将被释放对象添加到 subscriptions
+import * as vscode from 'vscode';
+
+export function activate(context: vscode.ExtensionContext) {
+  // 这个命令注册后没有被添加到 context.subscriptions，
+  // 当扩展停用时，它可能不会被正确清理。
+  vscode.commands.registerCommand('myExtension.myCommand', () => {
+    // ...
+  });
+}
+</example>

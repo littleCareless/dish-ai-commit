@@ -1,0 +1,43 @@
+---
+description: '此规则定义了在 VS Code 扩展中向用户显示错误的正确方法。当捕获到需要用户感知的错误时，应使用 `vscode.window.showErrorMessage` 并提供清晰、可操作的消息。'
+globs: 
+alwaysApply: false
+---
+
+# 规则：处理面向用户的错误
+
+## 关键规则
+
+- 使用 `vscode.window.showErrorMessage` 向用户显示错误信息。
+- 错误消息应清晰、简洁，并尽可能提供可操作的建议。
+- 必须将完整的错误对象记录到控制台 (`console.error`) 以便于调试。
+
+## 示例
+
+<example>
+// 正确处理面向用户的错误
+try {
+  await someFailingOperation();
+} catch (error) {
+  console.error('Operation failed:', error);
+  vscode.window.showErrorMessage('操作失败：无法连接到服务器。请检查您的网络连接。');
+}
+</example>
+
+<example type="invalid">
+// 错误的做法：仅记录到控制台或显示不清晰的消息
+try {
+  await someFailingOperation();
+} catch (error) {
+  // 用户不会看到任何错误提示
+  console.error(error); 
+}
+
+// 另一个错误示例
+try {
+  await someFailingOperation();
+} catch (error) {
+  // 消息不清晰
+  vscode.window.showErrorMessage('出错了');
+}
+</example>

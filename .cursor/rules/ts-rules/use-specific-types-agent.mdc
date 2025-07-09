@@ -1,0 +1,36 @@
+---
+description: '此规则强制使用更具体的 TypeScript 类型以增强代码的健壮性和清晰度。在定义数组、函数参数和常量集时，应应用此规则。'
+globs: 
+alwaysApply: false
+---
+
+# 规则：使用具体类型
+
+## 关键规则
+
+- 优先使用 `string[]` 而不是 `Array<string>`。
+- 对不应在函数内部修改的参数使用 `readonly` 修饰符。
+- 对固定的常量集合使用 `enum`。
+
+## 示例
+
+<example>
+// 正确使用具体类型
+enum Status {
+  Pending,
+  Completed,
+  Failed,
+}
+
+function processItems(items: readonly string[], status: Status) {
+  // items 在此函数中是只读的
+}
+</example>
+
+<example type="invalid">
+// 错误使用通用或不安全的类型
+function processItems(items: Array<any>, status: string) {
+  // items 可以被修改，且 status 类型过于宽泛
+  items.push('new item'); 
+}
+</example>

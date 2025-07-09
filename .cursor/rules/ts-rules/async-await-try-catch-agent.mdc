@@ -1,0 +1,46 @@
+---
+description: '此规则强制使用 `async/await` 语法处理所有异步操作，并要求将 `await` 调用包装在 `try...catch` 块中以进行健壮的错误处理。'
+globs: 
+alwaysApply: false
+---
+
+# 规则：使用 async/await 和 try...catch
+
+## 关键规则
+
+- 所有异步函数都必须使用 `async/await` 语法。
+- 每个 `await` 调用都应包含在 `try...catch` 块中，以优雅地处理潜在的错误。
+- 避免使用 `.then()` 和 `.catch()` 的链式调用，除非在特定情况下（如 `Promise.all`）是必需的。
+
+## 示例
+
+<example>
+// 正确使用 async/await 和 try...catch
+async function fetchData() {
+  try {
+    const response = await fetch('/api/data');
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error('Failed to fetch data:', error);
+    throw error; // 重新抛出或处理错误
+  }
+}
+</example>
+
+<example type="invalid">
+// 错误的做法：使用 .then/.catch 或缺少错误处理
+async function fetchData() {
+  // 缺少 try...catch 块
+  const response = await fetch('/api/data');
+  const data = await response.json();
+  return data;
+}
+
+// 另一个错误示例
+function fetchDataWithThen() {
+  fetch('/api/data')
+    .then(res => res.json())
+    .catch(err => console.log(err)); // 不鼓励使用 .then/.catch
+}
+</example>

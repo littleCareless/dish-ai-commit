@@ -1,0 +1,48 @@
+---
+description: '此规则强制执行 TypeScript 的模块化最佳实践。在创建新文件或重构现有代码时应用此规则，以确保文件小巧、职责单一，并正确使用 ES 模块。'
+globs: 
+alwaysApply: false
+---
+
+# 规则：TypeScript 模块化
+
+## 关键规则
+
+- 保持文件小巧，专注于单一职责。
+- 对所有新代码使用 ES 模块 (`import`/`export`)。
+- 避免使用默认导出 (`export default`)，以提高导入的一致性。
+
+## 示例
+
+<example>
+// 正确的模块化实践
+
+// a-file.ts
+export class MyClass {
+  // ...
+}
+
+export function myHelperFunction() {
+  // ...
+}
+
+// another-file.ts
+import { MyClass, myHelperFunction } from './a-file';
+</example>
+
+<example type="invalid">
+// 错误的模块化实践
+
+// a-file.ts
+// 避免在一个文件中定义多个不相关的类或使用默认导出
+class MyClass {
+  // ...
+}
+
+export default class AnotherClass {
+  // ...
+}
+
+// another-file.ts
+import AnotherClass from './a-file'; // 应该使用命名导入
+</example>
