@@ -57,7 +57,7 @@ export const WORKSPACE_CONFIG_SCHEMA = {
         default: "OpenAI",
         description:
           "Embedding provider for codebase indexing / 代码库索引的嵌入提供商",
-        enum: ["OpenAI", "Ollama"],
+        enum: ["OpenAI", "Ollama", "openai-compatible"],
       },
       embeddingModel: {
         type: "enum",
@@ -74,6 +74,31 @@ export const WORKSPACE_CONFIG_SCHEMA = {
           "mbai-embed-large",
           "all-minilm",
         ],
+      },
+      openaiCompatible: {
+        description:
+          "Settings for OpenAI Compatible Embedding Provider / OpenAI 兼容嵌入提供商的设置",
+        baseUrl: {
+          type: "string",
+          default: "",
+          description: "Base URL for the compatible service / 兼容服务的基础 URL",
+        },
+        apiKey: {
+          type: "string",
+          default: "",
+          description: "API key for the compatible service / 兼容服务的 API 密钥",
+        },
+        model: {
+          type: "string",
+          default: "",
+          description: "Model name for the compatible service / 兼容服务的模型名称",
+        },
+        dimension: {
+          type: "number",
+          default: 1536,
+          description:
+            "Dimension of the embedding model / 嵌入模型的维度",
+        },
       },
       qdrantUrl: {
         type: "string",

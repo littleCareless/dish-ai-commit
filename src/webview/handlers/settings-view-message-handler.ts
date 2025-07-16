@@ -151,12 +151,15 @@ export class SettingsViewMessageHandler {
           }
         }
 
+        const embeddingModels = await AIProviderFactory.getAllEmbeddingModels();
+
         webview.postMessage({
           command: "loadSettings",
           data: {
             schema: [...detailedSettings, ...workspaceSettings], // Merge settings from both sources
             isIndexed: isIndexed, // 将索引状态添加到消息中
             indexStatusError: indexStatusError,
+            embeddingModels: embeddingModels, // 添加嵌入式模型
           },
         });
         break;

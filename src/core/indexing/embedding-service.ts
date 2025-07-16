@@ -9,7 +9,10 @@ import OpenAI from "openai";
 import { ConfigurationManager } from "../../config/configuration-manager";
 import { ConfigKey } from "../../config/types"; // Assuming ConfigKey is exported from types
 import { stateManager } from "../../utils/state/state-manager";
-import { WorkspaceConfigPath } from "../../config/workspace-config-schema";
+import {
+  WorkspaceConfigPath,
+  WORKSPACE_CONFIG_PATHS,
+} from "../../config/workspace-config-schema";
 import { formatMessage } from "../../utils/i18n/localization-manager";
 
 interface EmbeddingServiceErrorContext {
@@ -207,6 +210,9 @@ export class EmbeddingService {
   private openaiApiKey: string;
   private openaiBaseUrl?: string;
   private ollamaBaseUrl?: string;
+  private openaiCompatibleBaseUrl?: string;
+  private openaiCompatibleApiKey?: string;
+  private openaiCompatibleModel?: string;
   private processedBlocks: number = 0;
 
   constructor(
@@ -232,6 +238,20 @@ export class EmbeddingService {
     this.ollamaBaseUrl =
       configManager.getConfig("PROVIDERS_OLLAMA_BASEURL" as ConfigKey) ||
       undefined;
+
+    // Load OpenAI Compatible settings
+    this.openaiCompatibleBaseUrl = stateManager.getWorkspace(
+      WORKSPACE_CONFIG_PATHS.experimental.codeIndex.openaiCompatible
+        .baseUrl as WorkspaceConfigPath
+    );
+    this.openaiCompatibleApiKey = stateManager.getWorkspace(
+      WORKSPACE_CONFIG_PATHS.experimental.codeIndex.openaiCompatible
+        .apiKey as WorkspaceConfigPath
+    );
+    this.openaiCompatibleModel = stateManager.getWorkspace(
+      WORKSPACE_CONFIG_PATHS.experimental.codeIndex.openaiCompatible
+        .model as WorkspaceConfigPath
+    );
   }
 
   public async scanProjectFiles(
@@ -405,28 +425,48 @@ export class EmbeddingService {
         "experimental.codeIndex.embeddingProvider" as WorkspaceConfigPath,
         "OpenAI"
       );
-      const embeddingModelName = stateManager.getWorkspace(
-        "experimental.codeIndex.embeddingModel" as WorkspaceConfigPath,
-        "text-embedding-3-small"
-      );
-
       let embeddings: number[][];
+      let embeddingModelName: string;
       if (embeddingProvider === "Ollama") {
+        embeddingModelName = stateManager.getWorkspace(
+          "experimental.codeIndex.embeddingModel" as WorkspaceConfigPath,
+          "nomic-embed-text"
+        );
         embeddings = await generateOllamaEmbeddings(
           textsToEmbed,
           this.ollamaBaseUrl,
           embeddingModelName
         );
-      } else {
-        // Handles both "OpenAI" and "openai-compatible"
-        if (!this.openaiApiKey) {
+      } else if (embeddingProvider === "openai-compatible") {
+        if (!this.openaiCompatibleApiKey || !this.openaiCompatibleModel) {
           console.error(
-            `[EmbeddingService] ${embeddingProvider} API Key is not configured. Skipping embedding generation.`,
+            `[EmbeddingService] OpenAI Compatible API Key or Model is not configured. Skipping embedding generation.`
           );
           throw new Error(
             formatMessage("embedding.provider.apiKey.notConfigured", [
-              embeddingProvider,
-            ]),
+              "OpenAI Compatible",
+            ])
+          );
+        }
+        embeddingModelName = this.openaiCompatibleModel;
+        embeddings = await generateOpenAIEmbeddings(
+          textsToEmbed,
+          this.openaiCompatibleApiKey,
+          this.openaiCompatibleBaseUrl,
+          embeddingModelName
+        );
+      } else {
+        // Default to OpenAI
+        embeddingModelName = stateManager.getWorkspace(
+          "experimental.codeIndex.embeddingModel" as WorkspaceConfigPath,
+          "text-embedding-3-small"
+        );
+        if (!this.openaiApiKey) {
+          console.error(
+            `[EmbeddingService] OpenAI API Key is not configured. Skipping embedding generation.`
+          );
+          throw new Error(
+            formatMessage("embedding.provider.apiKey.notConfigured", ["OpenAI"])
           );
         }
         embeddings = await generateOpenAIEmbeddings(
@@ -592,43 +632,56 @@ export class EmbeddingService {
       "OpenAI"
     );
 
-    if (embeddingProvider === "Ollama") {
-      if (!this.ollamaBaseUrl) {
-        console.log(
-          formatMessage("embedding.ollama.baseUrl.missing.forSearch"),
-        );
-        return [];
-      }
-    } else {
-      // Handles both "OpenAI" and "openai-compatible"
-      if (!this.openaiApiKey) {
-        console.log(
-          formatMessage("embedding.provider.apiKey.missing.forSearch", [
-            embeddingProvider,
-          ]),
-        );
-        return [];
-      }
-    }
-
     console.log(
       `[EmbeddingService] Searching for code similar to: "${queryText}"`
     );
 
-    const embeddingModelName = stateManager.getWorkspace(
-      "experimental.codeIndex.embeddingModel" as WorkspaceConfigPath,
-      "text-embedding-3-small"
-    );
-
     let queryEmbeddings: number[][];
     if (embeddingProvider === "Ollama") {
+      if (!this.ollamaBaseUrl) {
+        console.log(
+          formatMessage("embedding.ollama.baseUrl.missing.forSearch")
+        );
+        return [];
+      }
+      const embeddingModelName = stateManager.getWorkspace(
+        "experimental.codeIndex.embeddingModel" as WorkspaceConfigPath,
+        "nomic-embed-text"
+      );
       queryEmbeddings = await generateOllamaEmbeddings(
         [queryText],
         this.ollamaBaseUrl,
         embeddingModelName
       );
+    } else if (embeddingProvider === "openai-compatible") {
+      if (!this.openaiCompatibleApiKey || !this.openaiCompatibleModel) {
+        console.log(
+          formatMessage("embedding.provider.apiKey.missing.forSearch", [
+            "OpenAI Compatible",
+          ])
+        );
+        return [];
+      }
+      queryEmbeddings = await generateOpenAIEmbeddings(
+        [queryText],
+        this.openaiCompatibleApiKey,
+        this.openaiCompatibleBaseUrl,
+        this.openaiCompatibleModel
+      );
     } else {
-      // Handles both "OpenAI" and "openai-compatible"
+      // Default to OpenAI
+      if (!this.openaiApiKey) {
+        console.log(
+          formatMessage("embedding.provider.apiKey.missing.forSearch", [
+            "OpenAI",
+          ])
+        );
+        return [];
+      }
+      const embeddingModelName = stateManager.getWorkspace(
+        "experimental.codeIndex.embeddingModel" as WorkspaceConfigPath,
+        "text-embedding-3-small"
+      );
       queryEmbeddings = await generateOpenAIEmbeddings(
         [queryText],
         this.openaiApiKey,
