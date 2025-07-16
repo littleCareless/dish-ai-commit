@@ -431,6 +431,16 @@ export abstract class AbstractAIProvider implements AIProvider {
 
   // 以下方法来自AIProvider接口，需要由具体提供者实现
   abstract getModels(): Promise<AIModel[]>;
+
+  /**
+   * 获取支持的嵌入式模型列表
+   * 默认返回空数组，具体提供者可以覆盖此方法
+   * @returns 嵌入式模型列表
+   */
+  async getEmbeddingModels(): Promise<AIModel[]> {
+    return Promise.resolve([]);
+  }
+
   abstract refreshModels(): Promise<string[]>;
   abstract isAvailable(): Promise<boolean>;
   abstract getName(): string;

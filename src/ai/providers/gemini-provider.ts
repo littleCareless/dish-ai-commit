@@ -87,6 +87,42 @@ const geminiModels: AIModel[] = [
   },
 ];
 
+const geminiEmbeddingModels: AIModel[] = [
+  {
+    id: "gemini-embedding-001",
+    name: "Gemini Embedding 001 (768)",
+    maxTokens: { input: 2048, output: 0 },
+    provider: { id: "gemini", name: "Gemini AI" },
+    capabilities: {
+      streaming: false,
+      functionCalling: false,
+    },
+    dimension: 768,
+  },
+  {
+    id: "gemini-embedding-001",
+    name: "Gemini Embedding 001 (1536)",
+    maxTokens: { input: 2048, output: 0 },
+    provider: { id: "gemini", name: "Gemini AI" },
+    capabilities: {
+      streaming: false,
+      functionCalling: false,
+    },
+    dimension: 1536,
+  },
+  {
+    id: "gemini-embedding-001",
+    name: "Gemini Embedding 001 (3072)",
+    maxTokens: { input: 2048, output: 0 },
+    provider: { id: "gemini", name: "Gemini AI" },
+    capabilities: {
+      streaming: false,
+      functionCalling: false,
+    },
+    dimension: 3072,
+  },
+];
+
 /**
  * Google Gemini AI服务提供者实现类
  * 继承自AbstractAIProvider，提供对Gemini API的访问能力
@@ -323,6 +359,10 @@ export class GeminiAIProvider extends AbstractAIProvider {
       return this.config.models;
     }
   }
+  async getEmbeddingModels(): Promise<AIModel[]> {
+    return Promise.resolve(geminiEmbeddingModels);
+  }
+
   /**
    * 检查Gemini服务是否可用
    * @returns 如果API密钥已配置返回true

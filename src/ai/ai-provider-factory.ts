@@ -1,4 +1,4 @@
-import { AIProvider as AIProviderInterface } from "./types";
+import { AIProvider as AIProviderInterface, AIModel } from "./types";
 import { OpenAIProvider } from "./providers/openai-provider";
 import { AnthropicAIProvider } from "./providers/anthropic-provider";
 import { OllamaProvider } from "./providers/ollama-provider";
@@ -209,5 +209,30 @@ export class AIProviderFactory {
     if (provider && "reinitialize" in provider) {
       (provider as any).reinitialize();
     }
+  }
+
+  /**
+   * 获取所有提供者支持的嵌入式模型列表
+   * @returns Promise<AIModel[]> 返回一个包含所有嵌入式模型的数组
+   */
+  public static async getAllEmbeddingModels(): Promise<AIModel[]> {
+    const allProviders = this.getAllProviders();
+    const allEmbeddingModels: AIModel[] = [];
+
+    for (const provider of allProviders) {
+      if (provider.getEmbeddingModels) {
+        try {
+          const models = await provider.getEmbeddingModels();
+          allEmbeddingModels.push(...models);
+        } catch (error) {
+          console.error(
+            `Failed to get embedding models from ${provider.getName()}:`,
+            error
+          );
+        }
+      }
+    }
+
+    return allEmbeddingModels;
   }
 }
