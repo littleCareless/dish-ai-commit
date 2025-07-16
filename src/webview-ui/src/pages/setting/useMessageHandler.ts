@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { vscode } from "@/lib/vscode";
 import { useToast } from "@/hooks/use-toast";
-import { SettingItem } from "./types";
+import { SettingItem, AIModel } from "./types";
 
 export const useMessageHandler = () => {
   const [settingsSchema, setSettingsSchema] = useState<SettingItem[]>([]);
+  const [embeddingModels, setEmbeddingModels] = useState<AIModel[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasChanges, setHasChanges] = useState(false);
   const [isIndexing, setIsIndexing] = useState<boolean>(false);
@@ -12,7 +13,6 @@ export const useMessageHandler = () => {
   const [indexedCount, setIndexedCount] = useState<number>(0);
   const [totalCount, setTotalCount] = useState<number>(0);
   const [isIndexed, setIsIndexed] = useState<number>(0);
-  const [processedModels, setProcessedModels] = useState<string[]>([]);
   const [indexingError, setIndexingError] = useState<string>("");
   const { toast } = useToast();
 
@@ -42,6 +42,8 @@ export const useMessageHandler = () => {
             const loadedSchema = message.data.schema || [];
             const isIndexed = message.data.isIndexed || 0;
             const indexStatusError = message.data.indexStatusError || null;
+            const embeddingModels = message.data.embeddingModels || [];
+            setEmbeddingModels(embeddingModels);
             setIsIndexed(isIndexed);
             setIndexingError(indexStatusError);
             setSettingsSchema(loadedSchema);
@@ -84,56 +86,6 @@ export const useMessageHandler = () => {
           });
           setIsLoading(false);
           break;
-        case "modelsForProviderLoaded": {
-          const rawModels = message.data.models;
-          type ModelItem = {
-            id: string | number;
-            name?: string;
-            [key: string]: unknown;
-          };
-
-          if (Array.isArray(rawModels) && rawModels.length > 0) {
-            const firstModelItem = rawModels[0];
-            if (typeof firstModelItem === "string") {
-              setProcessedModels(rawModels as string[]);
-            } else if (
-              typeof firstModelItem === "object" &&
-              firstModelItem !== null &&
-              "id" in firstModelItem
-            ) {
-              setProcessedModels(
-                rawModels.map((model: ModelItem) => String(model.id))
-              );
-            } else {
-              console.warn(
-                "Received models for %s in an unexpected array item format:",
-                message.data.modelSettingKey,
-                rawModels
-              );
-              setProcessedModels([]);
-            }
-          } else if (
-            typeof rawModels === "object" &&
-            rawModels !== null &&
-            "id" in rawModels
-          ) {
-            setProcessedModels([String((rawModels as ModelItem).id)]);
-          } else {
-            if (
-              rawModels !== null &&
-              rawModels !== undefined &&
-              !Array.isArray(rawModels)
-            ) {
-              console.warn(
-                "Received models for %s in an unexpected format:",
-                message.data.modelSettingKey,
-                rawModels
-              );
-            }
-            setProcessedModels([]);
-          }
-          break;
-        }
         case "getModelsForProviderError":
           toast({
             title: "Error loading models",
@@ -235,7 +187,7 @@ export const useMessageHandler = () => {
     indexedCount,
     totalCount,
     isIndexed,
-    processedModels,
+    embeddingModels,
     indexingError,
   };
 };

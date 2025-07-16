@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Layout,
   Button as ArcoButton,
@@ -13,22 +13,11 @@ import SettingsContent from "./setting/SettingsContent";
 import { useMessageHandler } from "./setting/useMessageHandler";
 import { ConfigValueType, SettingItem } from "./setting/types";
 
-const ollamaEmbeddingModels = [
-  { key: "nomic-embed-text", label: "nomic-embed-text" },
-  { key: "mbai-embed-large", label: "mbai-embed-large" },
-  { key: "all-minilm", label: "all-minilm" },
-];
-
-const openaiEmbeddingModels = [
-  { key: "text-embedding-3-small", label: "text-embedding-3-small" },
-  { key: "text-embedding-3-large", label: "text-embedding-3-large" },
-  { key: "text-embedding-ada-002", label: "text-embedding-ada-002" },
-];
-
 const SettingsPage: React.FC = () => {
   const {
     settingsSchema,
     setSettingsSchema,
+    embeddingModels,
     isLoading,
     hasChanges,
     setHasChanges,
@@ -55,7 +44,7 @@ const SettingsPage: React.FC = () => {
 
   useEffect(() => {
     const providerSetting = settingsSchema.find(
-      (s) => s.key === "codeIndexing.embeddingProvider"
+      (s) => s.key === "experimental.codeIndex.embeddingProvider"
     );
     if (providerSetting?.value) {
       setSelectedEmbeddingProvider(providerSetting.value as string);
@@ -70,7 +59,7 @@ const SettingsPage: React.FC = () => {
     );
     setHasChanges(true);
 
-    if (key === "codeIndexing.embeddingProvider") {
+    if (key === "experimental.codeIndex.embeddingProvider") {
       setSelectedEmbeddingProvider(value as string);
     }
   };
@@ -135,28 +124,6 @@ const SettingsPage: React.FC = () => {
     }
   };
 
-  const embeddingProviders = useMemo(() => {
-    const providerSetting = settingsSchema.find(
-      (s) => s.key === "codeIndexing.embeddingProvider"
-    );
-    if (providerSetting?.enum) {
-      return providerSetting.enum.map((p: string) => ({
-        key: p,
-        label: p,
-      }));
-    }
-    return [];
-  }, [settingsSchema]);
-
-  const embeddingModels = useMemo(() => {
-    if (selectedEmbeddingProvider === "Ollama") {
-      return ollamaEmbeddingModels.map((model) => model.key);
-    }
-    if (selectedEmbeddingProvider === "OpenAI") {
-      return openaiEmbeddingModels.map((model) => model.key);
-    }
-    return [];
-  }, [selectedEmbeddingProvider]);
 
   const embeddingSettingsChanged = hasEmbeddingSettingsChanged();
 
@@ -224,11 +191,10 @@ const SettingsPage: React.FC = () => {
             indexedCount={indexedCount}
             totalCount={totalCount}
             indexingError={indexingError}
+            embeddingModels={embeddingModels || []}
             selectedEmbeddingProvider={selectedEmbeddingProvider}
-            embeddingSettingsChanged={embeddingSettingsChanged}
             setSelectedEmbeddingProvider={setSelectedEmbeddingProvider}
-            embeddingProviders={embeddingProviders}
-            processedModels={embeddingModels}
+            embeddingSettingsChanged={embeddingSettingsChanged}
             handleClearIndex={handleClearIndex}
             handleStartIndexing={handleStartIndexing}
             onSettingChange={handleSettingChange}
