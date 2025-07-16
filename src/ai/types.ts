@@ -128,6 +128,8 @@ export interface AIModel<
     /** 是否支持函数调用 */
     functionCalling?: boolean;
   };
+  /** 嵌入模型的维度 */
+  readonly dimension?: number;
   /** 费用信息 */
   readonly cost?: {
     /** 输入token单价 */
@@ -199,6 +201,8 @@ export interface AIProvider {
   refreshModels(): Promise<string[]>;
   /** 获取支持的模型列表 */
   getModels(): Promise<AIModel[]>;
+  /** 获取支持的嵌入式模型列表 */
+  getEmbeddingModels?(): Promise<AIModel[]>;
   /** 获取提供者名称 */
   getName(): string;
   /** 获取提供者ID */
