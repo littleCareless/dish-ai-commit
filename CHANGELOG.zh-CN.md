@@ -6,6 +6,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.32.0 (2025-07-16)
+
+### ♻ Code Refactoring
+
+- **settings**: 重构代码索引的 Embedding 设置并支持 OpenAI 兼容模式 ([69d850e](https://github.com/littleCareless/dish-ai-commit/commit/69d850e))
+
+### ✨ Features
+
+- **ai**: 为 AI 提供者和模型添加嵌入式模型支持 ([2ca264a](https://github.com/littleCareless/dish-ai-commit/commit/2ca264a))
+- **core**: 引入项目文档、编码规范和 AI 规则系统 ([428d7bb](https://github.com/littleCareless/dish-ai-commit/commit/428d7bb))
+- **embedding**: 实现对嵌入式模型的支持和发现 ([93860eb](https://github.com/littleCareless/dish-ai-commit/commit/93860eb))
+- **git**: 重构 getDiff 方法并增强差异简化功能 ([c60de5c](https://github.com/littleCareless/dish-ai-commit/commit/c60de5c))
+- **indexing**: 支持 OpenAI 兼容的嵌入服务 ([732e759](https://github.com/littleCareless/dish-ai-commit/commit/732e759))
+- **provider**: 新增 SiliconFlow 提供商并重构模型类型系统 ([0a85dbf](https://github.com/littleCareless/dish-ai-commit/commit/0a85dbf))
+
+### 🎫 Chores
+
+- **release**: 发布 0.31.0 版本 ([73fa73b](https://github.com/littleCareless/dish-ai-commit/commit/73fa73b))
+
 # 0.31.0 (2025-07-06)
 
 ### ♻ Code Refactoring
