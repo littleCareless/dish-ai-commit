@@ -309,7 +309,7 @@ export class GitProvider implements ISCMProvider {
             .split("\n")
             .filter((file) => file.trim());
           for (const file of files) {
-            const escapedFile = file.replace(/"/g, '\\"');
+            const escapedFile = file.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
             try {
               // 使用git diff --no-index捕获新文件内容
               const result = await exec(
