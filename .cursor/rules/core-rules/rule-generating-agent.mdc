@@ -1,0 +1,103 @@
+---
+ description: 该规则对于整个代码库中规则创建的一致性和质量控制至关重要。在以下情况下必须遵循本规则：(1) 用户请求创建新规则时；(2) 需要修改已有规则时；(3) 用户希望记录某些行为或模式时；(4) 
+ 请求未来行为变化时。本规则通过标准化格式、命名规范和内容要求，确保规则的组织结构清晰、文档齐全、应用有效。尤其对于维护规则层级结构、让 AI 能正确发现规则、提升规则系统效果具有重要作用。整个规则系统是项目一致性、代码质量以及自动化协助效果的基础。
+ globs:
+ alwaysApply: true
+ ---
+ # Cursor 规则格式
+
+ ## 规则文件模板结构
+
+ ---
+ description: `详细描述该规则的应用场景，说明何时应用此规则。请包括关键情境、受影响的领域，以及遵守该规则的重要性。描述应详尽但不跑题，足以让智能体在任何场景下能准确判断是否使用该规则。`
+ globs: .cursor/rules/**/*.mdc 或留空
+ alwaysApply: {true 或 false}
+ ---
+
+ # 规则标题
+
+ ## 关键规则
+
+ - 简洁明了地列出智能体必须遵守的操作要点（使用项目符号）
+
+ ## 示例
+
+ <example>
+   {规则正确应用的示例}
+ </example>
+
+ <example type="invalid">
+   {规则错误应用的示例}
+ </example>
+
+ ---
+
+ ### 文件夹结构（如不存在请创建）
+
+ 所有规则文件需存放在特定组织文件夹中：
+
+ - `.cursor/rules/core-rules`：与 Cursor 智能体行为或规则生成相关的核心规则
+ - `.cursor/rules/my-rules`：仅适用于个人的规则，可在共享仓库中 gitignore 忽略
+ - `.cursor/rules/global-rules`：始终应用于每个聊天或 Cmd/Ctrl+K 上下文的规则
+ - `.cursor/rules/testing-rules`：与测试相关的规则
+ - `.cursor/rules/tool-rules`：针对特定工具（如 git、Linux 命令、MCP 工具）的规则
+ - `.cursor/rules/ts-rules`：TypeScript 语言相关规则
+ - `.cursor/rules/py-rules`：Python 语言相关规则
+ - `.cursor/rules/ui-rules`：HTML、CSS、React 等 UI 技术相关规则
+ - 如有需要，可新增类似命名的文件夹，例如：`.cursor/rules/cs-rules`（如果项目开始使用 C#）
+
+ ---
+
+ ## 通配符模式示例（Glob Pattern Examples）
+
+ 不同类型规则的常见 glob 匹配模式：
+
+ - 核心规则：`.cursor/rules/*.mdc`
+ - 编程语言规则：`*.cs`, `*.cpp`
+ - 测试标准：`*.test.ts`, `*.test.js`
+ - React 组件：`src/components/**/*.tsx`
+ - 文档：`docs/**/*.md`, `*.md`
+ - 配置文件：`*.config.js`
+ - 构建产物：`dist/**/*`
+ - 多文件类型扩展名：`*.js`, `*.ts`, `*.tsx`
+ - 多重模式组合：`dist/**/*.*`, `docs/**/*.md`, `*test*.*`
+
+ ---
+
+ ## 关键规则
+
+ - 所有规则文件必须以如下方式命名并存放：
+   `.cursor/rules/{组织目录}/rule-name-{auto|agent|manual|always}.mdc`
+ - 所有规则文件**必须**保存在 `.cursor/rules/**` 路径下，不可存放在其他位置
+ - 创建规则前，务必检查 `.cursor/rules/` 下是否已有可更新的规则
+
+ ### 文件开头的 front matter 类型说明：
+
+ 前置字段区域（front matter）必须始终写在文件开头，并包含以下三个字段，即使值为空也必须保留：
+
+ - **Manual Rule**（手动规则）：如果用户请求的是手动规则，则 description 和 globs 留空，`alwaysApply: false`，文件名以 `-manual.mdc` 结尾
+ - **Auto Rule**（自动规则）：适用于特定文件类型的规则（如所有 TypeScript 或 Markdown 文件），description 留空，`alwaysApply: false`，文件名以 `-auto.mdc` 结尾
+ - **Always Rule**（全局规则）：适用于所有聊天和命令窗口，description 和 globs 留空，`alwaysApply: true`，文件名以 `-always.mdc` 结尾
+ - **Agent Select Rule**（智能体选择规则）：不需要每次加载，适用于特定目的的规则。必须有详细的 description，说明何时使用，例如代码更改、架构决策、修复 bug 或创建新文件等。globs 留空，`alwaysApply: false`，文件名以 `-agent.mdc` 结尾
+
+ ---
+
+ ### 规则内容注意事项：
+
+ - 内容应聚焦于清晰、可执行的操作指令，不要加入无关说明
+ - 如果规则不是始终应用（`alwaysApply: false`），则 description 必须提供足够上下文，让 AI 能明确判断是否适用
+ - 使用简洁的 Markdown，适合智能体的上下文窗口处理能力
+ - 示例部分内容（XML 结构）需缩进 2 个空格
+ - 支持使用 Emoji 和 Mermaid 图表，只要它们有助于增强 AI 对规则的理解
+ - 虽然没有明确的长度限制，但内容应控制在精炼实用范围，避免冗余，注重性能影响
+ - 每个规则**必须包含**一个正确示例和一个错误示例
+ - 通配符（glob pattern）不可使用引号，也不可用 `{}` 进行扩展名分组
+ - 若规则是为防止某类错误或行为问题而设，应在示例中体现相关背景
+
+ ---
+
+ ### 规则创建或更新后的返回格式：
+
+ - `AutoRuleGen Success: path/rule-name.mdc`
+ - `Rule Type: {规则类型}`
+ - `Rule Description: {description 字段的原文}`

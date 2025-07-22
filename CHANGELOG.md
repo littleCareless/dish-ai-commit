@@ -6,6 +6,49 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.32.0 (2025-07-16)
+
+### ♻ Code Refactoring
+
+- **settings**: Refactor the code index's Embedding settings and support OpenAI compatibility mode ([69d850e](https://github.com/littleCareless/dish-ai-commit/commit/69d850e))
+
+### ✨ Features
+
+- **ai**: Add embedded model support for AI providers and models ([2ca264a](https://github.com/littleCareless/dish-ai-commit/commit/2ca264a))
+
+- **core**: Introduce project documentation, coding standards, and AI rule systems ([428d7bb](https://github.com/littleCareless/dish-ai-commit/commit/428d7bb))
+
+- **embedding**: Implement support and discovery for embedded models ([93860eb](https://github.com/littleCareless/dish-ai-commit/commit/93860eb))
+- **git**: Refactor getDiff method and enhance diff simplification ([c60de5c](https://github.com/littleCareless/dish-ai-commit/commit/c60de5c))
+- **indexing**: Support OpenAI compatible embedding service ([732e759](https://github.com/littleCareless/dish-ai-commit/commit/732e759))
+- **provider**: Add SiliconFlow provider and refactor model type system ([0a85dbf](https://github.com/littleCareless/dish-ai-commit/commit/0a85dbf))
+
+### 🎫 Chores
+
+- **release**: Release 0.31.0 Version ([73fa73b](https://github.com/littleCareless/dish-ai-commit/commit/73fa73b))
+
+# 0.31.0 (2025-07-06)
+
+### ♻ Code Refactoring
+
+- **core**: Remove debug log and add AI rule file ([3066909](https://github.com/littleCareless/dish-ai-commit/commit/3066909))
+
+### ✨ Features
+
+- **prompt**: Implement dynamic commit message prompt generator ([40974a0](https://github.com/littleCareless/dish-ai-commit/commit/40974a0))
+
+- **provider**: Add support for multiple AI service providers ([6477aa9](https://github.com/littleCareless/dish-ai-commit/commit/6477aa9))
+
+- **providers**: Add support for multiple mainstream AI service providers ([d335d11](https://github.com/littleCareless/dish-ai-commit/commit/d335d11))
+
+### 🎫 Chores
+
+- **release**: Release 0.30.0 ([724a3a4](https://github.com/littleCareless/dish-ai-commit/commit/724a3a4))
+
+### 🐛 Bug Fixes
+
+- **menu**: Adjust the order of the context menu of SCM resource folders ([3b3d281](https://github.com/littleCareless/dish-ai-commit/commit/3b3d281))
+
 # 0.30.0 (2025-07-02)
 
 ### ♻ Code Refactoring

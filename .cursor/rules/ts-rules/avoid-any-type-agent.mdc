@@ -1,0 +1,32 @@
+---
+description: '此规则旨在最大限度地减少 `any` 类型的使用，以维护 TypeScript 的类型安全。在定义变量、函数参数或返回值时，如果类型不确定，应优先使用 `unknown` 并进行类型检查，而不是使用 `any`。'
+globs: 
+alwaysApply: false
+---
+
+# 规则：避免使用 `any` 类型
+
+## 关键规则
+
+- 严禁使用 `any` 类型，因为它会破坏类型检查。
+- 当类型确实未知时，应使用 `unknown` 类型。
+- 在对 `unknown` 类型的值执行任何操作之前，必须先进行类型检查（例如，使用 `typeof`、`instanceof` 或类型断言）。
+
+## 示例
+
+<example>
+// 正确的做法：使用 unknown 并进行类型检查
+function processValue(value: unknown) {
+  if (typeof value === 'string') {
+    console.log(value.toUpperCase());
+  }
+}
+</example>
+
+<example type="invalid">
+// 错误的做法：使用 any
+function processValue(value: any) {
+  // 这会跳过类型检查，可能在运行时导致错误
+  console.log(value.toUpperCase());
+}
+</example>

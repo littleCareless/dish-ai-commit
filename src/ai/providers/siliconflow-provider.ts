@@ -1,7 +1,11 @@
 import { ConfigurationManager } from "../../config/configuration-manager";
 import { getMessage } from "../../utils/i18n";
 import { notify } from "../../utils/notification/notification-manager";
-import { type AIModel } from "../types";
+import {
+  type AIModel,
+  type AIProviders,
+  type SiliconFlowModels,
+} from "../types";
 import { BaseOpenAIProvider } from "./base-openai-provider";
 
 /** 硅基流动服务提供者标识信息 */
@@ -11,7 +15,7 @@ const provider = { id: "siliconflow", name: "SiliconFlow" } as const;
  * 硅基流动支持的模型列表配置
  * 根据最新官方支持的模型列表更新
  */
-const models: AIModel[] = [
+const models: AIModel<"siliconflow", SiliconFlowModels>[] = [
   // Qwen高级模型
   {
     id: "Qwen/QwQ-32B",

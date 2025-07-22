@@ -1,0 +1,57 @@
+---
+description: '此规则强制执行 TypeScript 的命名约定，以确保代码的一致性和可读性。当创建或修改变量、函数、类、类型、接口或枚举时，应应用此规则。'
+globs: 
+alwaysApply: false
+---
+
+# 规则：TypeScript 命名约定
+
+## 关键规则
+
+- 对类型、接口、枚举和类使用 `PascalCase`。
+- 对变量、函数和方法使用 `camelCase`。
+- 对常量使用 `UPPER_SNAKE_CASE`。
+- 不鼓励在接口名称前加 `I` 前缀。
+
+## 示例
+
+<example>
+// 正确的命名约定
+type UserProfile = {
+  userName: string;
+  isActive: boolean;
+};
+
+class DataProcessor {
+  processData(data: UserProfile[]): void {
+    // ...
+  }
+}
+
+const MAX_RETRIES = 3;
+
+function getUserProfile(): UserProfile {
+  // ...
+  return { userName: 'test', isActive: true };
+}
+</example>
+
+<example type="invalid">
+// 错误的命名约定
+type user_profile = {
+  UserName: string;
+  is_active: boolean;
+};
+
+interface IDataProcessor {
+  ProcessData(data: user_profile[]): void;
+    // ...
+}
+
+const maxRetries = 3;
+
+function GetUserProfile(): user_profile {
+  // ...
+  return { UserName: 'test', is_active: false };
+}
+</example>

@@ -1,0 +1,33 @@
+---
+description: '此规则要求在 TypeScript 项目中始终启用严格模式。在配置或审查 `tsconfig.json` 文件时应用此规则，以确保最高级别的类型安全。'
+globs: tsconfig.json
+alwaysApply: false
+---
+
+# 规则：启用 TypeScript 严格模式
+
+## 关键规则
+
+- 必须在 `tsconfig.json` 文件的 `compilerOptions` 中设置 `"strict": true`。
+
+## 示例
+
+<example>
+// 正确的 tsconfig.json 配置
+{
+  "compilerOptions": {
+    "strict": true,
+    // ... 其他选项
+  }
+}
+</example>
+
+<example type="invalid">
+// 错误的 tsconfig.json 配置
+{
+  "compilerOptions": {
+    "strict": false, // 或未定义
+    // ... 其他选项
+  }
+}
+</example>

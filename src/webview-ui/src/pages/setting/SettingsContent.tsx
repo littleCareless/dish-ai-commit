@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import { vscode } from "@/lib/vscode";
 import { SettingItem, ConfigValueType } from "./types";
 import {
@@ -15,6 +15,8 @@ import {
 } from "@arco-design/web-react";
 import { IconCheckCircle, IconCloseCircle } from "@arco-design/web-react/icon";
 
+import { AIModel } from "./types";
+
 interface SettingsContentProps {
   selectedMenuItemKey: string;
   settingsSchema: SettingItem[];
@@ -24,11 +26,10 @@ interface SettingsContentProps {
   indexedCount: number;
   totalCount: number;
   indexingError: string;
+  embeddingSettingsChanged: boolean;
+  embeddingModels: AIModel[];
   selectedEmbeddingProvider: string;
   setSelectedEmbeddingProvider: (value: string) => void;
-  embeddingSettingsChanged: boolean;
-  embeddingProviders: { key: string; label: string }[];
-  processedModels: string[];
   handleClearIndex: () => void;
   handleStartIndexing: () => void;
   onSettingChange: (key: string, value: ConfigValueType) => void;
@@ -45,10 +46,9 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
   indexedCount,
   totalCount,
   indexingError,
-  // selectedEmbeddingProvider,
-  // setSelectedEmbeddingProvider,
-  // embeddingProviders,
-  // processedModels,
+  embeddingModels,
+  selectedEmbeddingProvider,
+  setSelectedEmbeddingProvider,
   embeddingSettingsChanged,
   handleClearIndex,
   handleStartIndexing,
@@ -59,6 +59,18 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
   const [connectionStatus, setConnectionStatus] = React.useState<{
     [key: string]: "untested" | "testing" | "success" | "failed";
   }>({});
+
+  const groupedEmbeddingModels = useMemo(() => {
+    if (!embeddingModels) return {};
+    return embeddingModels.reduce((acc, model) => {
+      const providerName = model.provider.name;
+      if (!acc[providerName]) {
+        acc[providerName] = [];
+      }
+      acc[providerName].push(model);
+      return acc;
+    }, {} as Record<string, AIModel[]>);
+  }, [embeddingModels]);
 
   const handleTestConnection = (key: string, value: string) => {
     const service = key.includes("ollama")
@@ -152,10 +164,68 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
   const renderSetting = (setting: SettingItem) => {
     const { key, type, description, value, enum: enumOptions } = setting;
 
+    if (key.startsWith("experimental.codeIndex.openaiCompatible")) {
+      return null; // These are handled by the specific JSX block below
+    }
+
     const handleChange = (newValue: ConfigValueType) => {
       onSettingChange(key, newValue);
       setHasChanges(true);
     };
+
+    // Special rendering for embedding model selection
+    if (key === "experimental.codeIndex.embeddingModel") {
+      if (selectedEmbeddingProvider === "openai-compatible") {
+        return null;
+      }
+      const filteredModels =
+        groupedEmbeddingModels[selectedEmbeddingProvider] || [];
+      return (
+        <Form.Item key={key} label={description}>
+          <Select value={value as string} onChange={handleChange}>
+            {filteredModels.map((model) => (
+              <Select.Option key={model.id} value={model.id}>
+                {model.name}
+              </Select.Option>
+            ))}
+          </Select>
+        </Form.Item>
+      );
+    }
+
+    if (key === "experimental.codeIndex.embeddingProvider") {
+      // Start with providers that have models from the backend
+      const dynamicProviders = Object.keys(groupedEmbeddingModels);
+
+      // Use a Set to merge and ensure uniqueness
+      const providerSet = new Set(dynamicProviders);
+
+      // Add the static "openai-compatible" option
+      providerSet.add("openai-compatible");
+
+      // Convert back to an array
+      const providers = Array.from(providerSet);
+
+      return (
+        <Form.Item key={key} label={description}>
+          <Select
+            value={value as string}
+            onChange={(val) => {
+              handleChange(val);
+              setSelectedEmbeddingProvider(val);
+            }}
+          >
+            {providers.map((provider) => (
+              <Select.Option key={provider} value={provider}>
+                {provider === "openai-compatible"
+                  ? "OpenAI Compatible"
+                  : provider}
+              </Select.Option>
+            ))}
+          </Select>
+        </Form.Item>
+      );
+    }
 
     return (
       <Form.Item
@@ -199,10 +269,7 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
           </div>
         )}
         {type === "boolean" && (
-          <Switch
-            checked={value as boolean}
-            onChange={handleChange}
-          />
+          <Switch checked={value as boolean} onChange={handleChange} />
         )}
         {type === "number" && (
           <Input
@@ -212,15 +279,9 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
           />
         )}
         {type === "enum" && enumOptions && (
-          <Select
-            value={value as string}
-            onChange={handleChange}
-          >
+          <Select value={value as string} onChange={handleChange}>
             {enumOptions.map((option) => (
-              <Select.Option
-                key={option}
-                value={option}
-              >
+              <Select.Option key={option} value={option}>
                 {option}
               </Select.Option>
             ))}
@@ -264,7 +325,90 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
           </Collapse.Item>
         </Collapse>
       )}
-      <Form layout="vertical">{displayedSettings.map(renderSetting)}</Form>
+      <Form layout="vertical">
+        {displayedSettings.map(renderSetting)}
+        {selectedMenuItemKey === "experimental.codeIndex" &&
+          selectedEmbeddingProvider === "openai-compatible" && (
+            <>
+              <Form.Item label="基础 URL">
+                <Input
+                  value={
+                    (settingsSchema.find(
+                      (s) =>
+                        s.key ===
+                        "experimental.codeIndex.openaiCompatible.baseUrl"
+                    )?.value as string) || ""
+                  }
+                  onChange={(val) => {
+                    onSettingChange(
+                      "experimental.codeIndex.openaiCompatible.baseUrl",
+                      val
+                    );
+                    setHasChanges(true);
+                  }}
+                  placeholder="https://api.example.com"
+                />
+              </Form.Item>
+              <Form.Item label="API 密钥">
+                <Input.Password
+                  value={
+                    (settingsSchema.find(
+                      (s) =>
+                        s.key ===
+                        "experimental.codeIndex.openaiCompatible.apiKey"
+                    )?.value as string) || ""
+                  }
+                  onChange={(val) => {
+                    onSettingChange(
+                      "experimental.codeIndex.openaiCompatible.apiKey",
+                      val
+                    );
+                    setHasChanges(true);
+                  }}
+                  placeholder="输入你的 API密钥"
+                />
+              </Form.Item>
+              <Form.Item label="模型">
+                <Input
+                  value={
+                    (settingsSchema.find(
+                      (s) =>
+                        s.key === "experimental.codeIndex.openaiCompatible.model"
+                    )?.value as string) || ""
+                  }
+                  onChange={(val) => {
+                    onSettingChange(
+                      "experimental.codeIndex.openaiCompatible.model",
+                      val
+                    );
+                    setHasChanges(true);
+                  }}
+                  placeholder="输入模型名称"
+                />
+              </Form.Item>
+              <Form.Item label="模型维度">
+                <Input
+                  type="number"
+                  value={
+                    (settingsSchema.find(
+                      (s) =>
+                        s.key ===
+                        "experimental.codeIndex.openaiCompatible.dimension"
+                    )?.value as string) || ""
+                  }
+                  onChange={(val) => {
+                    onSettingChange(
+                      "experimental.codeIndex.openaiCompatible.dimension",
+                      val ? Number(val) : undefined
+                    );
+                    setHasChanges(true);
+                  }}
+                  placeholder="1536"
+                />
+              </Form.Item>
+            </>
+          )}
+      </Form>
       {selectedMenuItemKey === "experimental.codeIndex" && (
         <>
           <div className="flex justify-between mt-4">

@@ -45,6 +45,8 @@ export interface AIMessage {
   content: string;
   /** 工具调用ID，仅当角色为 'tool' 时需要 */
   tool_call_id?: string;
+  /** 消息发送者的名称 */
+  name?: string;
 }
 
 /**
@@ -126,6 +128,8 @@ export interface AIModel<
     /** 是否支持函数调用 */
     functionCalling?: boolean;
   };
+  /** 嵌入模型的维度 */
+  readonly dimension?: number;
   /** 费用信息 */
   readonly cost?: {
     /** 输入token单价 */
@@ -197,6 +201,8 @@ export interface AIProvider {
   refreshModels(): Promise<string[]>;
   /** 获取支持的模型列表 */
   getModels(): Promise<AIModel[]>;
+  /** 获取支持的嵌入式模型列表 */
+  getEmbeddingModels?(): Promise<AIModel[]>;
   /** 获取提供者名称 */
   getName(): string;
   /** 获取提供者ID */
@@ -317,6 +323,13 @@ export type GeminiAIModels =
   | "gemini-2.5-pro-preview-05-06"
   | "gemini-2.5-flash-preview-05-20";
 
+export type GoogleAIModels = "gemini-1.5-pro-latest" | "gemini-1.5-flash-latest";
+
+export type BaiduQianfanModels =
+  | "ERNIE-4.0-8K"
+  | "ERNIE-3.5-8K"
+  | "ERNIE-Speed-8K";
+
 export type DeepseekModels = "deepseek-chat" | "deepseek-reasoner";
 
 export type SiliconFlowModels =
@@ -371,6 +384,38 @@ export type OpenRouterModels =
   | "mistralai/mistral-medium"
   | "mistralai/mistral-small";
 
+export type PerplexityAIModels = "pplx-7b-online" | "pplx-8b-online";
+
+export type MistralAIModels =
+  | "mistral-large-latest"
+  | "mistral-small-latest"
+  | "open-mistral-7b"
+  | "open-mixtral-8x7b";
+
+export type TogetherAIModels =
+  | "meta-llama/Llama-3-8b-chat-hf"
+  | "meta-llama/Llama-3-70b-chat-hf"
+  | "mistralai/Mixtral-8x7B-Instruct-v0.1"
+  | "mistralai/Mistral-7B-Instruct-v0.3"
+  | "databricks/dbrx-instruct"
+  | "google/gemma-7b-it";
+
+export type TogetherAIModelID = TogetherAIModels;
+
+export type CloudflareWorkersAIModels =
+  | "@cf/meta/llama-3-8b-instruct"
+  | "@cf/meta/llama-2-7b-chat-fp16"
+  | "@cf/mistral/mistral-7b-instruct-v0.1"
+  | "@cf/google/gemma-7b-it";
+
+export type VertexAIModels =
+  | "gemini-1.5-flash-preview-0514"
+  | "gemini-1.5-pro-preview-0409"
+  | "gemini-1.0-pro"
+  | "code-bison@002";
+
+export type XAIModels = "grok-1.5-flash" | "grok-1.5";
+
 // 所有支持的模型名称类型
 export type ModelNames =
   | OpenAIModels
@@ -380,22 +425,48 @@ export type ModelNames =
   | DashScopeModels
   | DoubaoModels
   | GeminiAIModels
+  | GoogleAIModels
+  | BaiduQianfanModels
   | DeepseekModels
-  | SiliconFlowModels
-  | OpenRouterModels;
+  | OpenRouterModels
+  | PerplexityAIModels
+  | TogetherAIModels
+  | CloudflareWorkersAIModels
+  | VertexAIModels
+  | MistralAIModels
+  | XAIModels
+  | "mixtral-8x7b-32768";
+
+export type PremAIModels = string;
+export type PremAIModelID = PremAIModels;
 
 export type AIProviders =
   | "anthropic"
   | "github"
   | "openai"
+  | "perplexity"
   | "vscode"
   | "zhipu"
   | "dashscope"
   | "doubao"
   | "deepseek"
   | "gemini"
-  | "siliconflow"
-  | "openrouter";
+  | "google-ai"
+  | "openrouter"
+  | "premai"
+  | "together" // Add Together AI
+  | "xai"
+  | "mistral"
+  | "baidu-qianfan"
+  | "azure-openai"
+  | "cloudflare"
+  | "vertexai"
+  | "groq"
+  | "siliconflow";
+export type AnthropicAIModels =
+  | "claude-3-opus-20240229"
+  | "claude-3-sonnet-20240229"
+  | "claude-3-haiku-20240229";
 
 export type AIModels<Provider extends AIProviders = AIProviders> =
   Provider extends "github"
@@ -414,14 +485,36 @@ export type AIModels<Provider extends AIProviders = AIProviders> =
     ? DeepseekModels
     : Provider extends "gemini"
     ? GeminiAIModels
+    : Provider extends "google-ai"
+    ? GoogleAIModels
+    : Provider extends "baidu-qianfan"
+    ? BaiduQianfanModels
     : Provider extends "siliconflow"
     ? SiliconFlowModels
     : Provider extends "openrouter"
     ? OpenRouterModels
-    : OpenAIModels;
-
-export type SupportedAIModels =
-  | `github:${AIModels<"github">}`
+    : Provider extends "perplexity"
+    ? PerplexityAIModels
+    : Provider extends "premai"
+      ? PremAIModels
+      : Provider extends "together"
+        ? TogetherAIModels
+        : Provider extends "xai"
+          ? XAIModels
+          : Provider extends "anthropic"
+            ? AnthropicAIModels
+            : Provider extends "mistral"
+              ? MistralAIModels
+            : Provider extends "cloudflare"
+              ? CloudflareWorkersAIModels
+            : Provider extends "vertexai"
+              ? VertexAIModels
+            : Provider extends "groq"
+              ? "mixtral-8x7b-32768"
+              : OpenAIModels;
+        
+        export type SupportedAIModels =
+          | `github:${AIModels<"github">}`
   | `openai:${AIModels<"openai">}`
   | "vscode";
 

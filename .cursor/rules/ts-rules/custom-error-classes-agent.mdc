@@ -1,0 +1,42 @@
+---
+description: '此规则要求为不同类型的应用程序错误创建自定义错误类。在实现错误处理逻辑时，应通过扩展内置的 `Error` 类来创建更具体的错误类型，以便进行精确的错误捕获和处理。'
+globs: 
+alwaysApply: false
+---
+
+# 规则：使用自定义错误类
+
+## 关键规则
+
+- 为特定的错误场景（如 API 调用失败、配置错误）创建继承自 `Error` 的自定义错误类。
+- 自定义错误类应包含有助于调试的上下文信息（例如，HTTP 状态码）。
+
+## 示例
+
+<example>
+// 正确使用自定义错误类
+class ApiError extends Error {
+  constructor(message: string, public readonly statusCode: number) {
+    super(message);
+    this.name = 'ApiError';
+  }
+}
+
+try {
+  throw new ApiError('Not Found', 404);
+} catch (error) {
+  if (error instanceof ApiError) {
+    console.error(`API Error with status ${error.statusCode}: ${error.message}`);
+  }
+}
+</example>
+
+<example type="invalid">
+// 错误的做法：抛出通用错误
+try {
+  throw new Error('API call failed with status 404');
+} catch (error) {
+  // 难以区分错误来源
+  console.error(error.message);
+}
+</example>

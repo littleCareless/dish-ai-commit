@@ -48,17 +48,121 @@ export class DiffSimplifier {
     }
 
     const lines = diff.split("\n");
-    const simplified: string[] = [];
+    let simplified: string[] = [];
 
-    for (let i = 0; i < lines.length; i++) {
-      let line = lines[i];
+    // 处理上下文行数限制
+    if (config.contextLines !== undefined && config.contextLines > 0) {
+      simplified = this.limitContextLines(lines, config.contextLines);
+    } else {
+      simplified = lines;
+    }
 
-      // 当启用简化时,执行空格压缩
+    // 处理每一行
+    for (let i = 0; i < simplified.length; i++) {
+      let line = simplified[i];
+
+      // 压缩空格
       line = this.compressLine(line);
-      simplified.push(line);
+
+      // 限制行长度
+      // if (config.maxLineLength && config.maxLineLength > 0) {
+      //   line = this.truncateLine(line, config.maxLineLength);
+      // }
+
+      simplified[i] = line;
     }
 
     return simplified.join("\n");
+  }
+
+  /**
+   * 限制上下文行数
+   * @private
+   */
+  private static limitContextLines(
+    lines: string[],
+    maxContext: number
+  ): string[] {
+    const result: string[] = [];
+    let currentHunk: string[] = [];
+    let contextCount = 0;
+
+    for (const line of lines) {
+      if (this.isHeaderLine(line)) {
+        // 保留所有头部信息
+        if (currentHunk.length > 0) {
+          result.push(...currentHunk);
+          currentHunk = [];
+        }
+        result.push(line);
+        contextCount = 0;
+      } else if (this.isHunkHeader(line)) {
+        // 保留 hunk 头部
+        if (currentHunk.length > 0) {
+          result.push(...currentHunk);
+          currentHunk = [];
+        }
+        result.push(line);
+        contextCount = 0;
+      } else if (this.isChangeLine(line)) {
+        // 保留所有变更行
+        currentHunk.push(line);
+        contextCount = 0;
+      } else {
+        // 上下文行
+        if (contextCount < maxContext) {
+          currentHunk.push(line);
+          contextCount++;
+        } else if (this.hasChangesAhead(lines, lines.indexOf(line))) {
+          // 如果后面还有变更，保留一些上下文
+          currentHunk.push(line);
+        }
+      }
+    }
+
+    if (currentHunk.length > 0) {
+      result.push(...currentHunk);
+    }
+
+    return result;
+  }
+
+  /**
+   * 检查后面是否还有变更行
+   * @private
+   */
+  private static hasChangesAhead(
+    lines: string[],
+    currentIndex: number
+  ): boolean {
+    for (let i = currentIndex + 1; i < lines.length; i++) {
+      if (this.isChangeLine(lines[i])) {
+        return true;
+      }
+      if (this.isHunkHeader(lines[i])) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /**
+   * 截断过长的行
+   * @private
+   */
+  private static truncateLine(line: string, maxLength: number): string {
+    if (line.length <= maxLength) {
+      return line;
+    }
+
+    const prefix = line.match(/^[+\-@\s]/)?.at(0) ?? "";
+    const content = line.substring(prefix.length);
+
+    if (content.length <= maxLength - prefix.length - 3) {
+      return line;
+    }
+
+    return prefix + content.substring(0, maxLength - prefix.length - 3) + "...";
   }
 
   /**
@@ -66,6 +170,7 @@ export class DiffSimplifier {
    * - 合并连续空格为单个空格
    * - 去除行尾空格
    * - 保留行首缩进(最多保留2个空格)
+   * @private
    */
   private static compressLine(line: string): string {
     if (!line) {
@@ -73,7 +178,7 @@ export class DiffSimplifier {
     }
 
     // 保留差异标记(+/-等)
-    const prefix = line.match(/^[+ -]/)?.at(0) ?? "";
+    const prefix = line.match(/^[+\-@\s]/)?.at(0) ?? "";
     let content = prefix ? line.substring(1) : line;
 
     // 处理行首缩进
@@ -93,15 +198,32 @@ export class DiffSimplifier {
     );
   }
 
+  /**
+   * 检查是否为文件头部行
+   * @private
+   */
   private static isHeaderLine(line: string): boolean {
     return (
       line.startsWith("Index:") ||
       line.startsWith("===") ||
       line.startsWith("---") ||
-      line.startsWith("+++")
+      line.startsWith("+++") ||
+      line.startsWith("diff --git")
     );
   }
 
+  /**
+   * 检查是否为 hunk 头部行
+   * @private
+   */
+  private static isHunkHeader(line: string): boolean {
+    return line.startsWith("@@");
+  }
+
+  /**
+   * 检查是否为变更行
+   * @private
+   */
   private static isChangeLine(line: string): boolean {
     return line.startsWith("+") || line.startsWith("-");
   }

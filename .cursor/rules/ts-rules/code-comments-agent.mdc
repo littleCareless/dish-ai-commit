@@ -1,0 +1,39 @@
+---
+description: '此规则指导如何在 TypeScript 中编写有意义的注释。在为复杂逻辑添加解释或为公共 API 编写文档时，应应用此规则，以提高代码的可维护性和工具支持。'
+globs: 
+alwaysApply: false
+---
+
+# 规则：代码注释与 JSDoc
+
+## 关键规则
+
+- 为复杂、难以理解的逻辑编写注释，而不是简单地描述代码的功能。
+- 所有公共函数和方法都必须使用 JSDoc 风格的注释，以提供类型信息、参数说明和返回值描述。
+
+## 示例
+
+<example>
+// 正确的注释实践
+
+/**
+ * 使用所选的 AI 提供程序生成提交消息。
+ * @param diff 用于生成消息的 git diff。
+ * @returns 一个解析为生成的提交消息的 Promise。
+ */
+async function generateCommitMessage(diff: string): Promise<string> {
+  // 这是一个复杂算法的注释，解释了为什么选择这种方法。
+  // ... 实现
+}
+</example>
+
+<example type="invalid">
+// 错误的注释实践
+
+// 冗余的注释
+// 定义一个异步函数 generateCommitMessage
+async function generateCommitMessage(diff: string): Promise<string> {
+  // 没有为公共函数提供 JSDoc
+  // ...
+}
+</example>

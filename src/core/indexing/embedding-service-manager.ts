@@ -66,22 +66,39 @@ export class EmbeddingServiceManager {
           WORKSPACE_CONFIG_PATHS.experimental.codeIndex
             .embeddingProvider as WorkspaceConfigPath
         ) || "OpenAI"; // Default to OpenAI
-      const embeddingModel =
-        stateManager.getWorkspace<string>(
-          WORKSPACE_CONFIG_PATHS.experimental.codeIndex
-            .embeddingModel as WorkspaceConfigPath
-        ) || "text-embedding-3-small"; // Default model
 
-      const modelProfile =
-        EMBEDDING_MODEL_PROFILES[embeddingProvider.toLowerCase()]?.[
-          embeddingModel
-        ];
-      const vectorSize = modelProfile?.dimension || 1536; // Default to 1536 if not found
+      let embeddingModel: string;
+      let vectorSize: number;
 
-      if (!modelProfile) {
-        console.warn(
-          `[EmbeddingServiceManager] Could not find embedding model profile for provider: ${embeddingProvider}, model: ${embeddingModel}. Falling back to default vector size: 1536.`
-        );
+      if (embeddingProvider === "openai-compatible") {
+        embeddingModel =
+          stateManager.getWorkspace<string>(
+            WORKSPACE_CONFIG_PATHS.experimental.codeIndex.openaiCompatible
+              .model as WorkspaceConfigPath
+          ) || "";
+        vectorSize =
+          stateManager.getWorkspace<number>(
+            WORKSPACE_CONFIG_PATHS.experimental.codeIndex.openaiCompatible
+              .dimension as WorkspaceConfigPath
+          ) || 1536;
+      } else {
+        embeddingModel =
+          stateManager.getWorkspace<string>(
+            WORKSPACE_CONFIG_PATHS.experimental.codeIndex
+              .embeddingModel as WorkspaceConfigPath
+          ) || "text-embedding-3-small"; // Default model for others
+
+        const modelProfile =
+          EMBEDDING_MODEL_PROFILES[embeddingProvider.toLowerCase()]?.[
+            embeddingModel
+          ];
+        vectorSize = modelProfile?.dimension || 1536; // Default to 1536 if not found
+
+        if (!modelProfile) {
+          console.warn(
+            `[EmbeddingServiceManager] Could not find embedding model profile for provider: ${embeddingProvider}, model: ${embeddingModel}. Falling back to default vector size: 1536.`
+          );
+        }
       }
 
       const vectorStore = new VectorStore(

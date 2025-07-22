@@ -64,6 +64,33 @@ const models: AIModel[] = [
 ];
 
 /**
+ * OpenAI支持的嵌入式模型列表
+ */
+const embeddingModels: AIModel[] = [
+  {
+    id: "text-embedding-3-small",
+    name: "Text Embedding 3 Small",
+    maxTokens: { input: 8192, output: 0 }, // output is not applicable for embedding
+    provider: provider,
+    dimension: 1536,
+  },
+  {
+    id: "text-embedding-3-large",
+    name: "Text Embedding 3 Large",
+    maxTokens: { input: 8192, output: 0 },
+    provider: provider,
+    dimension: 3072,
+  },
+  {
+    id: "text-embedding-ada-002",
+    name: "Text Embedding Ada 002",
+    maxTokens: { input: 8192, output: 0 },
+    provider: provider,
+    dimension: 1536,
+  },
+];
+
+/**
  * OpenAI服务提供者实现类
  * 继承自BaseOpenAIProvider，提供对OpenAI API的标准访问能力
  */
@@ -141,5 +168,13 @@ export class OpenAIProvider extends BaseOpenAIProvider {
       notify.error("openai.models.fetch.failed");
       return [];
     }
+  }
+
+  /**
+   * 获取支持的嵌入式模型列表
+   * @returns Promise<AIModel[]> 返回嵌入式模型列表
+   */
+  async getEmbeddingModels(): Promise<AIModel[]> {
+    return Promise.resolve(embeddingModels);
   }
 }

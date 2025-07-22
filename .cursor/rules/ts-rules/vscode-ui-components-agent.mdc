@@ -1,0 +1,32 @@
+---
+description: '此规则要求在 VS Code 扩展中优先使用内置的 UI 组件，以确保用户体验的一致性。在需要与用户进行交互（如选择、输入或通知）时，应应用此规则。'
+globs: 
+alwaysApply: false
+---
+
+# 规则：使用 VSCode 的 UI 组件
+
+## 关键规则
+
+- 必须优先使用 VSCode 的原生 UI 组件，例如 `QuickPick`、`InputBox` 和通知 (`showInformationMessage`, `showWarningMessage`, `showErrorMessage`)。
+- 避免创建自定义的 UI 元素来替代已有的原生组件，以保持与 VSCode 整体风格的统一。
+
+## 示例
+
+<example>
+// 正确的做法：使用 QuickPick
+import * as vscode from 'vscode';
+
+async function showOptions() {
+  const selection = await vscode.window.showQuickPick(['Option 1', 'Option 2']);
+  // ...
+}
+</example>
+
+<example type="invalid">
+// 错误的做法：尝试实现一个自定义的选择菜单
+// (通常是通过 Webview，但这会带来不必要的复杂性和不一致的体验)
+function showCustomMenu() {
+  // 不应通过自定义 Webview 来实现一个简单的选择功能
+}
+</example>

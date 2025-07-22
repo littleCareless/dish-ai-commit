@@ -7,6 +7,7 @@ import {
   AIMessage,
 } from "../types";
 import { AbstractAIProvider } from "./abstract-ai-provider";
+import { AIProvider } from "../../config/types";
 import { ConfigurationManager } from "../../config/configuration-manager";
 import { notify } from "../../utils/notification/notification-manager";
 import {
@@ -25,9 +26,40 @@ export class OllamaProvider extends AbstractAIProvider {
 
   /** 提供者标识信息 */
   private readonly provider = {
-    id: "ollama" as AIProviders,
+    id: AIProvider.OLLAMA as AIProviders,
     name: "Ollama",
   } as const;
+
+  private static readonly embeddingModels: AIModel[] = [
+    {
+      id: "nomic-embed-text",
+      name: "nomic-embed-text",
+      maxTokens: { input: 8192, output: 0 },
+      provider: { id: AIProvider.OLLAMA as AIProviders, name: "Ollama" },
+      dimension: 768,
+    },
+    {
+      id: "nomic-embed-code",
+      name: "nomic-embed-code",
+      maxTokens: { input: 8192, output: 0 },
+      provider: { id: AIProvider.OLLAMA as AIProviders, name: "Ollama" },
+      dimension: 768,
+    },
+    {
+      id: "mxbai-embed-large",
+      name: "mxbai-embed-large",
+      maxTokens: { input: 8192, output: 0 },
+      provider: { id: AIProvider.OLLAMA as AIProviders, name: "Ollama" },
+      dimension: 1024,
+    },
+    {
+      id: "all-minilm",
+      name: "all-minilm",
+      maxTokens: { input: 8192, output: 0 },
+      provider: { id: AIProvider.OLLAMA as AIProviders, name: "Ollama" },
+      dimension: 384,
+    },
+  ];
 
   /** 配置管理器实例 */
   private configManager: ConfigurationManager;
@@ -240,6 +272,10 @@ export class OllamaProvider extends AbstractAIProvider {
       notify.error("ollama.models.fetch.failed");
       return Promise.reject(error);
     }
+  }
+
+  async getEmbeddingModels(): Promise<AIModel[]> {
+    return Promise.resolve(OllamaProvider.embeddingModels);
   }
 
   /**
