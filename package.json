@@ -2,7 +2,7 @@
   "name": "dish-ai-commit",
   "displayName": "Dish AI Commit Message Gen",
   "description": "🤖 由 AI 提供支持的 VSCode 扩展，用于生成标准化的 Git/SVN 提交消息 - 🤖 AI-Powered VSCode extension for generating standardized Git/SVN commit messages. ✨ Supports multiple AI services: OpenAI, ChatGPT, Ollama, Zhipu, DashScope, Doubao, Gemini and VS Code built-in AI. 🌍 Multi-language support (EN/CN/JP/KR/Other). 📊 Auto-generate weekly reports.",
-  "version": "0.32.0",
+  "version": "0.32.1",
   "engines": {
     "node": ">= 18.20.8",
     "pnpm": ">= 10.0.0",
@@ -79,42 +79,42 @@
         "command": "dish-ai-commit.generateCommitMessage",
         "title": "[Dish] Generate Commit with AI",
         "category": "[Dish AI Commit]",
-        "icon": "/images/icon.svg",
+        "icon": "images/icon.svg",
         "description": "使用 AI 生成提交信息"
       },
       {
         "command": "dish-ai-commit.selectModel",
         "title": "[Dish] Select AI Model",
         "category": "[Dish AI Commit]",
-        "icon": "/images/icon.svg",
-        "description": "选择用于生成提交信息的AI模型(OpenAI/Ollama/VS Code Provided)"
+        "icon": "images/brain.svg",
+        "description": "选择用于生成提交信息的AI模型"
       },
       {
         "command": "dish-ai-commit.generateWeeklyReport",
         "title": "[Dish] Generate Weekly Report with AI",
         "category": "[Dish AI Commit]",
-        "icon": "/images/icon.svg",
+        "icon": "images/chart-bar.svg",
         "description": "使用 AI 生成周报"
       },
       {
         "command": "dish-ai-commit.reviewCode",
         "title": "[Dish] Review Code with AI",
         "category": "[Dish AI Commit]",
-        "icon": "/images/icon.svg",
+        "icon": "images/clipboard-check.svg",
         "description": "使用 AI 对代码进行评审"
       },
       {
         "command": "dish-ai-commit.generateBranchName",
         "title": "[Dish] Generate Branch Name with AI",
         "category": "[Dish AI Commit]",
-        "icon": "/images/icon.svg",
+        "icon": "images/git-branch.svg",
         "description": "使用 AI 生成Git分支名称"
       },
       {
         "command": "dish-ai-commit.generatePRSummary",
         "title": "[Dish] Generate PR Summary with AI",
         "category": "[Dish AI Commit]",
-        "icon": "/images/icon.svg",
+        "icon": "images/git-pull-request.svg",
         "description": "使用 AI 生成 PR 摘要"
       }
     ],

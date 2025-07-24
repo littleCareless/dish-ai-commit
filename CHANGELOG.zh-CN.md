@@ -6,6 +6,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.32.1 (2025-07-24)
+
+### 🎫 Chores
+
+- **release**: 发布 0.32.0 版本 ([603ae47](https://github.com/littleCareless/dish-ai-commit/commit/603ae47))
+
+### 👷 Build System
+
+- **publish**: 添加对 Open VSX 仓库的发布支持 ([8db6498](https://github.com/littleCareless/dish-ai-commit/commit/8db6498))
+
+### 💄 Styles
+
+- **ui**: 为命令添加独立的图标以增强可识别性 ([7eabf3e](https://github.com/littleCareless/dish-ai-commit/commit/7eabf3e))
+
+### 🔧 Continuous Integration
+
+- **workflow**: 添加扩展自动部署工作流 ([0b8de9e](https://github.com/littleCareless/dish-ai-commit/commit/0b8de9e))
+
 # 0.32.0 (2025-07-16)
 
 ### ♻ Code Refactoring
