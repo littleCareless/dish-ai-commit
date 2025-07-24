@@ -16,7 +16,6 @@ A VSCode extension for generating standardized Git/SVN commit messages using AI
 [![][total-installs-shield]][total-installs-link]
 [![][avarage-rating-shield]][avarage-rating-link]
 [![][github-license-shield]][github-license-link]
-[![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/littleCareless/dish-ai-commit)
 
 ![Demo](images/demo.gif)
 
