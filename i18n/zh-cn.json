@@ -210,5 +210,18 @@
   "embedding.qdrant.connectFailed": "连接 Qdrant 向量数据库失败。请确认 Qdrant 服务正在运行，并确保可以通过 {0} 访问。\n原始错误：{1}",
   "embedding.vectorStore.statusCheck.unknownError": "无法检查向量索引状态（未知错误）",
   "info.using.function.calling": "正在使用函数调用模式生成提交信息...",
-  "prompt.length.info": "提示词长度: {0} 字符。模型最大限制: {1} 字符。"
+  "prompt.length.info": "提示词长度: {0} 字符。模型最大限制: {1} 字符。",
+  "context.truncated": "上下文区块 '{0}' 已被截断以适应模型的令牌限制。",
+  "context.block.truncated": "为缩减上下文大小，区块 '{0}' 的部分内容已被截断。",
+  "context.block.removed": "为缩减上下文大小，区块 '{0}' 已被移除。",
+  "prompt.large.warning": "预估的提示词大小（{0} tokens）已接近模型上限（{1} tokens），这可能导致内容被截断或生成失败。",
+  "prompt.large.continue": "仍然继续",
+  "prompt.large.cancel": "取消",
+  "prompt.user.cancelled": "因提示词过大，用户已取消操作。",
+  "error.request.too.large": "请求内容过大，无法被模型处理。请减少选择的文件数量或简化变更内容。",
+  "error.switch.to.larger.model": "切换到更大模型",
+  "git.base.branch.not.found": "在本地或远程 'origin' 未找到基础分支 '{0}'。",
+  "git.base.branch.not.found.default": "未找到默认基础分支 '{0}'。请检查您的仓库配置。",
+  "git.base.branch.not.found.error": "无法找到有效的基础分支进行比较。已尝试: {0}",
+  "git.log.failed": "获取 Git 提交日志失败: {0}"
 }

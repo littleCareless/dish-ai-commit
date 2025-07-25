@@ -208,5 +208,18 @@
   "embedding.qdrant.connectFailed": "Failed to connect to Qdrant vector database. Please confirm that the Qdrant service is running and accessible via {0}.\\nOriginal error: {1}",
   "embedding.vectorStore.statusCheck.unknownError": "Unable to check vector index status (unknown error)",
   "info.using.function.calling": "Generating commit message using function calling mode...",
-  "prompt.length.info": "Prompt length: {0} characters. Model max limit: {1} characters."
+  "prompt.length.info": "Prompt length: {0} characters. Model max limit: {1} characters.",
+  "context.truncated": "Context block '{0}' was truncated to fit within the model's token limit.",
+  "context.block.truncated": "Context block '{0}' was partially truncated to reduce context size.",
+  "context.block.removed": "Context block '{0}' was removed to reduce context size.",
+  "prompt.large.warning": "The estimated prompt size ({0} tokens) is close to the model's limit ({1} tokens). This may lead to truncation or failure.",
+  "prompt.large.continue": "Continue Anyway",
+  "prompt.large.cancel": "Cancel",
+  "prompt.user.cancelled": "Operation cancelled by user due to large prompt size.",
+  "error.request.too.large": "The request is too large to be processed by the model. Please reduce the number of selected files or simplify the changes.",
+  "error.switch.to.larger.model": "Switch to a Larger Model",
+  "git.base.branch.not.found": "Base branch '{0}' not found locally or on remote 'origin'.",
+  "git.base.branch.not.found.default": "Default base branch '{0}' not found. Please check your repository configuration.",
+  "git.base.branch.not.found.error": "Could not find a valid base branch to compare against. Tried: {0}",
+  "git.log.failed": "Failed to get Git commit log: {0}"
 }
