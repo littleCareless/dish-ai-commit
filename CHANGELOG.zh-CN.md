@@ -6,6 +6,58 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.35.0 (2025-07-25)
+
+### ✨ Features
+
+- **diff**: 添加 diff 目标配置，支持分析暂存区或所有变更 ([d5a769a](https://github.com/littleCareless/dish-ai-commit/commit/d5a769a))
+
+### 🎫 Chores
+
+- **release**: 发布 0.34.0 版本 ([8bc5ec6](https://github.com/littleCareless/dish-ai-commit/commit/8bc5ec6))
+
+# 0.34.0 (2025-07-25)
+
+### ✨ Features
+
+- **scm**: 为 SCM 提供者添加剪贴板回退功能 ([509b715](https://github.com/littleCareless/dish-ai-commit/commit/509b715))
+
+### 🎫 Chores
+
+- **release**: 发布 0.33.0 版本 ([96ff9ca](https://github.com/littleCareless/dish-ai-commit/commit/96ff9ca))
+
+### 🐛 Bug Fixes
+
+- **build**: 修复因缺少 tiktoken WASM 文件导致的激活失败 ([08d2951](https://github.com/littleCareless/dish-ai-commit/commit/08d2951))
+
+# 0.33.0 (2025-07-25)
+
+### ♻ Code Refactoring
+
+- **ai**: 重构上下文超长错误处理并添加 token 计算功能 ([de81990](https://github.com/littleCareless/dish-ai-commit/commit/de81990))
+- **core**: 引入 ContextManager 优化超长提示词处理 ([6d50f20](https://github.com/littleCareless/dish-ai-commit/commit/6d50f20))
+- **core**: 引入通知管理器以统一消息提示 ([a9b92a3](https://github.com/littleCareless/dish-ai-commit/commit/a9b92a3))
+- **diff**: 重构差异处理器以聚合输出 ([4ac8eaa](https://github.com/littleCareless/dish-ai-commit/commit/4ac8eaa))
+- **notification**: 使通知函数返回用户选择结果 ([9b8ef1f](https://github.com/littleCareless/dish-ai-commit/commit/9b8ef1f))
+
+### ✨ Features
+
+- **context**: 实现上下文管理器以智能处理 Token 限制 ([af7adc4](https://github.com/littleCareless/dish-ai-commit/commit/af7adc4))
+- **tokenizer**: 添加用于 token 计算和编解码的分词器服务 ([ab691a2](https://github.com/littleCareless/dish-ai-commit/commit/ab691a2))
+- **ui**: 为命令图标添加亮色和暗色主题支持 ([646051d](https://github.com/littleCareless/dish-ai-commit/commit/646051d))
+
+### 🎫 Chores
+
+- **i18n**: 为提示词管理和 Git 操作添加本地化文本 ([04f59d1](https://github.com/littleCareless/dish-ai-commit/commit/04f59d1))
+
+### 👷 Build System
+
+- **deps**: 更新依赖项 ([0abfaa3](https://github.com/littleCareless/dish-ai-commit/commit/0abfaa3))
+
+### 📝 Documentation
+
+- **readme**: 在鸣谢部分添加 vscode-copilot-chat ([bb7680a](https://github.com/littleCareless/dish-ai-commit/commit/bb7680a))
+
 ## 0.32.1 (2025-07-24)
 
 ### 🎫 Chores

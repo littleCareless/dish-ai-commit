@@ -7,6 +7,7 @@ import * as path from "path";
 import { getMessage, formatMessage } from "../utils/i18n";
 import { DiffProcessor } from "../utils/diff/diff-processor";
 import { DiffSimplifier } from "../utils";
+import { notify } from "../utils/notification/notification-manager";
 
 const exec = promisify(childProcess.exec);
 
@@ -242,9 +243,7 @@ export class SvnProvider implements ISCMProvider {
       const { stdout } = await exec(`"${this.svnPath}" --version`);
       const version = stdout.split("\n")[0].trim();
       Logger.log(LogLevel.Info, "SVN version:", version);
-      vscode.window.showInformationMessage(
-        formatMessage("svn.version.detected", [version])
-      );
+      notify.info("svn.version.detected", [version]);
 
       this.initialized = true;
     } catch (error) {
@@ -379,9 +378,7 @@ export class SvnProvider implements ISCMProvider {
 
       // 根据配置决定是否显示警告和简化diff
       if (enableSimplification) {
-        vscode.window.showWarningMessage(
-          getMessage("diff.simplification.warning")
-        );
+        notify.warn("diff.simplification.warning");
         return DiffSimplifier.simplify(rawDiff);
       }
 
@@ -390,9 +387,7 @@ export class SvnProvider implements ISCMProvider {
     } catch (error) {
       Logger.log(LogLevel.Error, "SVN diff failed:", error);
       if (error instanceof Error) {
-        vscode.window.showErrorMessage(
-          formatMessage("git.diff.failed", [error.message])
-        );
+        notify.error("git.diff.failed", [error.message]);
       }
       throw error;
     }
@@ -431,11 +426,20 @@ export class SvnProvider implements ISCMProvider {
    */
   async setCommitInput(message: string): Promise<void> {
     const repository = this.api?.repositories?.[0];
-    if (!repository) {
-      throw new Error(getMessage("git.repository.not.found"));
+    if (repository?.inputBox) {
+      repository.inputBox.value = message;
+    } else {
+      try {
+        await vscode.env.clipboard.writeText(message);
+        notify.info("commit.message.copied");
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        notify.error("commit.message.copy.failed", [errorMessage]);
+        vscode.window.showInformationMessage(
+          formatMessage("commit.message.manual.copy", [message])
+        );
+      }
     }
-
-    repository.inputBox.value = message;
   }
 
   /**
@@ -460,21 +464,19 @@ export class SvnProvider implements ISCMProvider {
    */
   async startStreamingInput(message: string): Promise<void> {
     const repository = this.api?.repositories?.[0];
-    if (!repository) {
-      throw new Error(getMessage("git.repository.not.found")); // 保持与现有代码一致，理想情况下应为 SVN 特定消息
-    }
-    if (repository.inputBox) {
+    if (repository?.inputBox) {
       repository.inputBox.value = message;
-      // 如果需要，可以确保输入框是启用的，但SVN插件的inputBox.enabled行为可能不一致
-      // if (typeof repository.inputBox.enabled === 'boolean') {
-      //   repository.inputBox.enabled = true;
-      // }
     } else {
-      Logger.log(
-        LogLevel.Error,
-        "SVN repository.inputBox is undefined. Cannot set streaming input."
-      );
-      throw new Error("SVN inputBox is not available to set streaming input.");
+      try {
+        await vscode.env.clipboard.writeText(message);
+        notify.info("commit.message.copied");
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        notify.error("commit.message.copy.failed", [errorMessage]);
+        vscode.window.showInformationMessage(
+          formatMessage("commit.message.manual.copy", [message])
+        );
+      }
     }
   }
 
@@ -568,9 +570,7 @@ export class SvnProvider implements ISCMProvider {
       Logger.log(LogLevel.Error, "SVN log failed:", error);
       if (error instanceof Error) {
         // 确保 i18n 文件中有 "svn.log.failed" 键
-        vscode.window.showErrorMessage(
-          formatMessage("svn.log.failed", [error.message])
-        );
+        notify.error("svn.log.failed", [error.message]);
       }
       return []; // 类似 git-provider，在错误时返回空数组
     }
@@ -640,6 +640,20 @@ export class SvnProvider implements ISCMProvider {
       }
     }
     return messages;
+  }
+
+  /**
+   * 将提交信息复制到剪贴板
+   * @param message 要复制的提交信息
+   */
+  async copyToClipboard(message: string): Promise<void> {
+    try {
+      await vscode.env.clipboard.writeText(message);
+      notify.info("commit.message.copied");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      notify.error("commit.message.copy.failed", [errorMessage]);
+    }
   }
 
   // /**

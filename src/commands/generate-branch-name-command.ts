@@ -53,20 +53,61 @@ export class GenerateBranchNameCommand extends BaseCommand {
           let progressMessageKeyGettingContent = "processing.description"; // i18n key
           let progressMessageKeyAnalyzing = "analyzing.description"; // i18n key
 
-          if (resources && resources.length > 0) {
-            // SCM Mode
-            progressMessageKeyGettingContent = "getting.file.changes";
-            progressMessageKeyAnalyzing = "analyzing.code.changes";
+          const generationMode = await vscode.window.showQuickPick(
+            [
+              {
+                label: getMessage("branch.gen.mode.from.changes.label"),
+                description: getMessage(
+                  "branch.gen.mode.from.changes.description"
+                ),
+                detail: getMessage("branch.gen.mode.from.changes.detail"),
+              },
+              {
+                label: getMessage("branch.gen.mode.from.description.label"),
+                description: getMessage(
+                  "branch.gen.mode.from.description.description"
+                ),
+                detail: getMessage("branch.gen.mode.from.description.detail"),
+              },
+            ],
+            {
+              placeHolder: getMessage("branch.gen.mode.select.placeholder"),
+              ignoreFocusOut: true,
+            }
+          );
 
-            progress.report({
-              increment: 5,
-              message: getMessage("checking.selected.files"),
+          if (!generationMode) {
+            return; // User cancelled
+          }
+
+          if (
+            generationMode.label ===
+            getMessage("branch.gen.mode.from.description.label")
+          ) {
+            const description = await vscode.window.showInputBox({
+              prompt: getMessage("enter.branch.description.prompt"),
+              placeHolder: getMessage("enter.branch.description.placeholder"),
+              ignoreFocusOut: true,
             });
-            const selectedFiles = this.getSelectedFiles(resources);
-            if (!selectedFiles || selectedFiles.length === 0) {
-              await notify.warn("no.changes.selected");
+
+            if (!description) {
+              notify.info("branch.description.cancelled");
               return;
             }
+            aiInputContent = description;
+            // SCM provider is not detected in this mode, but we need a type for the prompt
+            scmProviderForContext = { type: "git" };
+          } else {
+            let selectedFiles = this.getSelectedFiles(resources);
+
+            // If no files are explicitly selected (e.g., command run from palette),
+            // get all changes. `getDiff` handles `undefined` by getting all changes.
+            if (!selectedFiles || selectedFiles.length === 0) {
+              selectedFiles = undefined;
+            }
+
+            progressMessageKeyGettingContent = "getting.file.changes";
+            progressMessageKeyAnalyzing = "analyzing.code.changes";
 
             progress.report({
               increment: 5,
@@ -94,24 +135,6 @@ export class GenerateBranchNameCommand extends BaseCommand {
               await notify.warn(getMessage("no.changes.found"));
               return;
             }
-          } else {
-            // Description Mode (triggered from Command Palette)
-            progress.report({
-              increment: 10,
-              message: getMessage(progressMessageKeyGettingContent),
-            });
-            const description = await vscode.window.showInputBox({
-              prompt: getMessage("enter.branch.description.prompt"), // New i18n key
-              placeHolder: getMessage("enter.branch.description.placeholder"), // New i18n key
-              ignoreFocusOut: true,
-            });
-
-            if (!description || description.trim() === "") {
-              notify.info(getMessage("branch.description.cancelled")); // New i18n key
-              return;
-            }
-            aiInputContent = description;
-            // scmProviderForContext remains { type: "git" } as set by default
           }
 
           if (!aiInputContent) {

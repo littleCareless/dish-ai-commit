@@ -1,8 +1,10 @@
 import { exec } from "child_process";
 import { promisify } from "util";
+import * as vscode from "vscode";
 import { ISCMProvider } from "./scm-provider";
 import { getMessage } from "../utils";
 import { DiffProcessor } from "../utils/diff/diff-processor";
+import { notify } from "../utils/notification/notification-manager";
 
 const execAsync = promisify(exec);
 
@@ -53,9 +55,8 @@ export class CliSvnProvider implements ISCMProvider {
     });
   }
 
-  // 由于是命令行方式,这两个方法可能用不到,但需要实现接口
   async setCommitInput(message: string): Promise<void> {
-    throw new Error(getMessage("cli.commit.input.not.supported"));
+    await this.copyToClipboard(message);
   }
 
   async getCommitInput(): Promise<string> {
@@ -63,9 +64,7 @@ export class CliSvnProvider implements ISCMProvider {
   }
 
   async startStreamingInput(message: string): Promise<void> {
-    // 对于命令行SVN，流式输入通常不直接支持，可以抛出错误或记录日志
-    // 这里我们选择抛出错误，与setCommitInput行为保持一致
-    throw new Error(getMessage("cli.commit.input.not.supported"));
+    await this.copyToClipboard(message);
   }
 
   /**
@@ -147,5 +146,19 @@ export class CliSvnProvider implements ISCMProvider {
       }
     }
     return messages;
+  }
+
+  /**
+   * 将提交信息复制到剪贴板
+   * @param message 要复制的提交信息
+   */
+  async copyToClipboard(message: string): Promise<void> {
+    try {
+      await vscode.env.clipboard.writeText(message);
+      notify.info("commit.message.copied");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      notify.error("commit.message.copy.failed", [errorMessage]);
+    }
   }
 }

@@ -2,7 +2,7 @@
   "name": "dish-ai-commit",
   "displayName": "Dish AI Commit Message Gen",
   "description": "🤖 由 AI 提供支持的 VSCode 扩展，用于生成标准化的 Git/SVN 提交消息 - 🤖 AI-Powered VSCode extension for generating standardized Git/SVN commit messages. ✨ Supports multiple AI services: OpenAI, ChatGPT, Ollama, Zhipu, DashScope, Doubao, Gemini and VS Code built-in AI. 🌍 Multi-language support (EN/CN/JP/KR/Other). 📊 Auto-generate weekly reports.",
-  "version": "0.32.1",
+  "version": "0.35.0",
   "engines": {
     "node": ">= 18.20.8",
     "pnpm": ">= 10.0.0",
@@ -79,42 +79,60 @@
         "command": "dish-ai-commit.generateCommitMessage",
         "title": "[Dish] Generate Commit with AI",
         "category": "[Dish AI Commit]",
-        "icon": "images/icon.svg",
+        "icon": {
+          "light": "images/icon.svg",
+          "dark": "images/icon.svg"
+        },
         "description": "使用 AI 生成提交信息"
       },
       {
         "command": "dish-ai-commit.selectModel",
         "title": "[Dish] Select AI Model",
         "category": "[Dish AI Commit]",
-        "icon": "images/brain.svg",
+        "icon": {
+          "light": "images/light/brain.svg",
+          "dark": "images/dark/brain.svg"
+        },
         "description": "选择用于生成提交信息的AI模型"
       },
       {
         "command": "dish-ai-commit.generateWeeklyReport",
         "title": "[Dish] Generate Weekly Report with AI",
         "category": "[Dish AI Commit]",
-        "icon": "images/chart-bar.svg",
+        "icon": {
+          "light": "images/light/chart-bar.svg",
+          "dark": "images/dark/chart-bar.svg"
+        },
         "description": "使用 AI 生成周报"
       },
       {
         "command": "dish-ai-commit.reviewCode",
         "title": "[Dish] Review Code with AI",
         "category": "[Dish AI Commit]",
-        "icon": "images/clipboard-check.svg",
+        "icon": {
+          "light": "images/light/clipboard-check.svg",
+          "dark": "images/dark/clipboard-check.svg"
+        },
         "description": "使用 AI 对代码进行评审"
       },
       {
         "command": "dish-ai-commit.generateBranchName",
         "title": "[Dish] Generate Branch Name with AI",
         "category": "[Dish AI Commit]",
-        "icon": "images/git-branch.svg",
+        "icon": {
+          "light": "images/light/git-branch.svg",
+          "dark": "images/dark/git-branch.svg"
+        },
         "description": "使用 AI 生成Git分支名称"
       },
       {
         "command": "dish-ai-commit.generatePRSummary",
         "title": "[Dish] Generate PR Summary with AI",
         "category": "[Dish AI Commit]",
-        "icon": "images/git-pull-request.svg",
+        "icon": {
+          "light": "images/light/git-pull-request.svg",
+          "dark": "images/dark/git-pull-request.svg"
+        },
         "description": "使用 AI 生成 PR 摘要"
       }
     ],
@@ -354,6 +372,15 @@
           "type": "string",
           "default": "",
           "description": "Groq API Key / Groq API 密钥"
+        },
+        "dish-ai-commit.features.codeAnalysis.diffTarget": {
+          "type": "string",
+          "default": "all",
+          "description": "Specify the target for git diff: 'staged' for staged changes, 'all' for all changes. / 指定 git diff 的目标：'staged' 表示暂存区的更改，'all' 表示所有更改。",
+          "enum": [
+            "staged",
+            "all"
+          ]
         },
         "dish-ai-commit.features.codeAnalysis.simplifyDiff": {
           "type": "boolean",
@@ -616,13 +643,14 @@
     "@baiducloud/qianfan": "^0.2.3",
     "@google-cloud/aiplatform": "^4.2.0",
     "@google-cloud/vertexai": "^1.10.0",
-    "@google/genai": "^1.4.0",
+    "@google/genai": "^1.11.0",
     "@mistralai/mistralai": "^1.7.3",
     "@qdrant/js-client-rest": "^1.14.1",
     "groq-sdk": "^0.26.0",
     "inversify": "^7.5.2",
     "ollama": "^0.5.16",
     "openai": "^5.3.0",
+    "tiktoken": "^1.0.21",
     "tree-sitter-wasms": "^0.1.11",
     "web-tree-sitter": "^0.22.6"
   },

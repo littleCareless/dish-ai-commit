@@ -74,7 +74,7 @@ const showNotification = async (
   messageKey: string,
   args?: any[],
   options?: NotificationOptions
-): Promise<void> => {
+): Promise<string | undefined> => {
   try {
     validateOptions(options);
 
@@ -101,30 +101,36 @@ const showNotification = async (
         vscode.commands.executeCommand("closeNotification"),
       ]);
     }
+    return result;
   } catch (error) {
     console.error(`Failed to show ${type} notification:`, error);
+    return undefined;
   }
 };
 
 // Notify接口定义
 interface INotify {
-  add: (item: NotificationItem) => void;
+  add: (item: NotificationItem) => Promise<string | undefined>;
   info: (
     messageKey: string,
     args?: any[],
     options?: NotificationOptions
-  ) => void;
+  ) => Promise<string | undefined>;
   warn: (
     messageKey: string,
     args?: any[],
     options?: NotificationOptions
-  ) => void;
+  ) => Promise<string | undefined>;
   error: (
     messageKey: string,
     args?: any[],
     options?: NotificationOptions
-  ) => void;
-  confirm: (messageKey: string, onYes: () => void, onNo?: () => void) => void;
+  ) => Promise<string | undefined>;
+  confirm: (
+    messageKey: string,
+    onYes: () => void,
+    onNo?: () => void
+  ) => Promise<string | undefined>;
   prompt: (
     messageKey: string,
     ...actions: Array<{ title: string; handler: () => void }>
@@ -134,9 +140,8 @@ interface INotify {
 // 导出的函数接口使用显式类型
 export const notify: INotify = {
   // 基础通知方法
-  add: (item: NotificationItem) => {
-    showNotification(item.type, item.messageKey, item.args, item.options);
-  },
+  add: (item: NotificationItem) =>
+    showNotification(item.type, item.messageKey, item.args, item.options),
 
   info: (messageKey: string, args?: any[], options?: NotificationOptions) =>
     notify.add({ type: "info", messageKey, args, options }),

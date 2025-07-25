@@ -421,6 +421,7 @@ $ npm install
 - [vscode](https://github.com/microsoft/vscode) - Visual Studio Code 编辑器
 - [vscode-gitlens](https://github.com/gitkraken/vscode-gitlens) - VSCode 的 Git 超级助手
 - [ai-commit](https://github.com/Sitoi/ai-commit) - AI 辅助的 Git 提交消息生成
+- [vscode-copilot-chat](https://github.com/microsoft/vscode-copilot-chat) - 由 Copilot 提供支持的 AI 聊天功能
 
 ## 📄 许可证
 

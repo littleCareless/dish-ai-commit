@@ -4,7 +4,8 @@ import { promisify } from "util";
 import * as childProcess from "child_process";
 import { getMessage, formatMessage } from "../utils/i18n";
 import { DiffProcessor } from "../utils/diff/diff-processor";
-import { DiffSimplifier } from "../utils";
+import { notify } from "../utils/notification/notification-manager";
+import { ConfigurationManager } from "../config/configuration-manager";
 
 const exec = promisify(childProcess.exec);
 
@@ -168,6 +169,7 @@ export class GitProvider implements ISCMProvider {
       }
 
       if (files && files.length > 0) {
+        notify.info(formatMessage("diff.files.selected", [files.length]));
         // 处理指定文件的差异
         for (const file of files) {
           const fileStatus = await this.getFileStatus(file);
@@ -246,86 +248,177 @@ export class GitProvider implements ISCMProvider {
           }
         }
       } else {
-        // 获取所有更改的差异 - 需要组合多个命令的输出
-
-        // 1. 获取已跟踪文件的更改
-        let trackedChanges = "";
-        try {
-          if (hasInitialCommit) {
-            // 如果有初始提交，使用HEAD引用
-            const result = await exec("git diff HEAD", {
-              cwd: this.workspaceRoot,
-              maxBuffer: 1024 * 1024 * 10,
-            });
-            trackedChanges = result.stdout;
-          } else {
-            // 如果没有初始提交，使用不带HEAD的diff命令
-            const result = await exec("git diff", {
-              cwd: this.workspaceRoot,
-              maxBuffer: 1024 * 1024 * 10,
-            });
-            trackedChanges = result.stdout;
-          }
-        } catch (error) {
-          // 如果出现"bad revision 'HEAD'"错误，回退到不带HEAD的diff命令
-          if (
-            error instanceof Error &&
-            error.message.includes("bad revision 'HEAD'")
-          ) {
-            const result = await exec("git diff", {
-              cwd: this.workspaceRoot,
-              maxBuffer: 1024 * 1024 * 10,
-            });
-            trackedChanges = result.stdout;
-          } else {
-            throw error;
-          }
-        }
-
-        // 2. 获取已暂存的新文件更改
-        const { stdout: stagedChanges } = await exec("git diff --cached", {
-          cwd: this.workspaceRoot,
-          maxBuffer: 1024 * 1024 * 10,
-        });
-
-        // 3. 获取未跟踪的新文件列表
-        const { stdout: untrackedFiles } = await exec(
-          "git ls-files --others --exclude-standard",
-          {
-            cwd: this.workspaceRoot,
-          }
+        const diffTarget = ConfigurationManager.getInstance().getConfig(
+          "features.codeAnalysis.diffTarget" as any
         );
 
-        // 整合所有差异
-        diffOutput = trackedChanges;
-
-        if (stagedChanges.trim()) {
-          diffOutput += stagedChanges;
-        }
-
-        // 为每个未跟踪文件获取差异
-        if (untrackedFiles.trim()) {
-          const files = untrackedFiles
-            .split("\n")
-            .filter((file) => file.trim());
-          for (const file of files) {
-            const escapedFile = file.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+        if (diffTarget === "staged") {
+          try {
+            let stagedFilesOutput = "";
             try {
-              // 使用git diff --no-index捕获新文件内容
-              const result = await exec(
-                `git diff --no-index /dev/null "${escapedFile}"`,
-                {
-                  cwd: this.workspaceRoot,
-                  maxBuffer: 1024 * 1024 * 10,
+              const { stdout } = await exec("git diff --cached --name-only", {
+                cwd: this.workspaceRoot,
+              });
+              stagedFilesOutput = stdout;
+            } catch (e) {
+              if (e instanceof Error && "stdout" in e) {
+                stagedFilesOutput = (e as any).stdout;
+              } else {
+                throw e;
+              }
+            }
+            const fileCount = stagedFilesOutput
+              .split("\n")
+              .filter(Boolean).length;
+            if (fileCount > 0) {
+              notify.info(formatMessage("diff.staged.info", [fileCount]));
+            }
+          } catch (error) {
+            console.warn(
+              "Failed to count staged files for notification:",
+              error
+            );
+          }
+          // 只获取暂存区的更改
+          const { stdout: stagedChanges } = await exec("git diff --cached", {
+            cwd: this.workspaceRoot,
+            maxBuffer: 1024 * 1024 * 10,
+          });
+          diffOutput = stagedChanges;
+        } else {
+          // 获取所有更改的差异 - 需要组合多个命令的输出
+          try {
+            const getFileNames = async (command: string) => {
+              let output = "";
+              try {
+                const result = await exec(command, { cwd: this.workspaceRoot });
+                output = result.stdout;
+              } catch (e) {
+                if (e instanceof Error && "stdout" in e) {
+                  output = (e as any).stdout;
+                } else {
+                  throw e;
                 }
-              );
-              diffOutput += `\n=== New File: ${file} ===\n${result.stdout}`;
-            } catch (error) {
-              // git diff --no-index 在有差异时会返回非零状态码，需要捕获异常
-              if (error instanceof Error && "stdout" in error) {
-                diffOutput += `\n=== New File: ${file} ===\n${
-                  (error as any).stdout
-                }`;
+              }
+              return output.split("\n").filter(Boolean);
+            };
+
+            const trackedFiles = hasInitialCommit
+              ? await getFileNames("git diff HEAD --name-only")
+              : await getFileNames("git diff --name-only");
+
+            const stagedFiles = await getFileNames(
+              "git diff --cached --name-only"
+            );
+
+            const { stdout: untrackedFilesOutput } = await exec(
+              "git ls-files --others --exclude-standard",
+              {
+                cwd: this.workspaceRoot,
+              }
+            );
+            const untrackedFiles = untrackedFilesOutput
+              .split("\n")
+              .filter(Boolean);
+
+            const allFiles = new Set([
+              ...trackedFiles,
+              ...stagedFiles,
+              ...untrackedFiles,
+            ]);
+            const fileCount = allFiles.size;
+
+            if (fileCount > 0) {
+              notify.info(formatMessage("diff.all.info", [fileCount]));
+            }
+          } catch (error) {
+            console.warn(
+              "Failed to count all changed files for notification:",
+              error
+            );
+          }
+
+          // 1. 获取已跟踪文件的更改
+          let trackedChanges = "";
+          try {
+            if (hasInitialCommit) {
+              // 如果有初始提交，使用HEAD引用
+              const result = await exec("git diff HEAD", {
+                cwd: this.workspaceRoot,
+                maxBuffer: 1024 * 1024 * 10,
+              });
+              trackedChanges = result.stdout;
+            } else {
+              // 如果没有初始提交，使用不带HEAD的diff命令
+              const result = await exec("git diff", {
+                cwd: this.workspaceRoot,
+                maxBuffer: 1024 * 1024 * 10,
+              });
+              trackedChanges = result.stdout;
+            }
+          } catch (error) {
+            // 如果出现"bad revision 'HEAD'"错误，回退到不带HEAD的diff命令
+            if (
+              error instanceof Error &&
+              error.message.includes("bad revision 'HEAD'")
+            ) {
+              const result = await exec("git diff", {
+                cwd: this.workspaceRoot,
+                maxBuffer: 1024 * 1024 * 10,
+              });
+              trackedChanges = result.stdout;
+            } else {
+              throw error;
+            }
+          }
+
+          // 2. 获取已暂存的新文件更改
+          const { stdout: stagedChanges } = await exec("git diff --cached", {
+            cwd: this.workspaceRoot,
+            maxBuffer: 1024 * 1024 * 10,
+          });
+
+          // 3. 获取未跟踪的新文件列表
+          const { stdout: untrackedFiles } = await exec(
+            "git ls-files --others --exclude-standard",
+            {
+              cwd: this.workspaceRoot,
+            }
+          );
+
+          // 整合所有差异
+          diffOutput = trackedChanges;
+
+          if (stagedChanges.trim()) {
+            diffOutput += stagedChanges;
+          }
+
+          // 为每个未跟踪文件获取差异
+          if (untrackedFiles.trim()) {
+            const files = untrackedFiles
+              .split("\n")
+              .filter((file) => file.trim());
+            for (const file of files) {
+              const escapedFile = file
+                .replace(/\\/g, "\\\\")
+                .replace(/"/g, '\\"');
+              try {
+                // 使用git diff --no-index捕获新文件内容
+                const result = await exec(
+                  `git diff --no-index /dev/null "${escapedFile}"`,
+                  {
+                    cwd: this.workspaceRoot,
+                    maxBuffer: 1024 * 1024 * 10,
+                  }
+                );
+                diffOutput += `\n=== New File: ${file} ===\n${result.stdout}`;
+              } catch (error) {
+                // git diff --no-index 在有差异时会返回非零状态码，需要捕获异常
+                if (error instanceof Error && "stdout" in error) {
+                  diffOutput += `\n=== New File: ${file} ===\n${
+                    (error as any).stdout
+                  }`;
+                }
               }
             }
           }
@@ -336,32 +429,12 @@ export class GitProvider implements ISCMProvider {
         throw new Error(getMessage("diff.noChanges"));
       }
 
-      // 获取配置
-      const config = vscode.workspace.getConfiguration("dish-ai-commit");
-      const enableSimplification = config.get<boolean>(
-        "features.codeAnalysis.simplifyDiff"
-      );
-
-      // 根据配置决定是否显示警告和简化diff
-      if (enableSimplification) {
-        const result = await vscode.window.showWarningMessage(
-          getMessage("diff.simplification.warning"),
-          getMessage("button.yes"),
-          getMessage("button.no")
-        );
-        if (result === getMessage("button.yes")) {
-          return DiffSimplifier.simplify(diffOutput);
-        }
-      }
-
-      // 如果未启用简化，直接返回原始diff
+      // Process the diff to get structured data, including original file content.
       return DiffProcessor.process(diffOutput, "git");
     } catch (error) {
       if (error instanceof Error) {
         console.error("Git diff error:", error); // 添加调试日志
-        vscode.window.showErrorMessage(
-          formatMessage("git.diff.failed", [error.message])
-        );
+        notify.error("git.diff.failed", [error.message]);
       }
       throw error;
     }
@@ -393,11 +466,21 @@ export class GitProvider implements ISCMProvider {
     const api = this.gitExtension.getAPI(1);
     const repository = api.repositories[0];
 
-    if (!repository) {
-      throw new Error(getMessage("git.repository.not.found"));
+    if (repository?.inputBox) {
+      repository.inputBox.value = message;
+    } else {
+      try {
+        await vscode.env.clipboard.writeText(message);
+        notify.info("commit.message.copied");
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        notify.error("commit.message.copy.failed", [errorMessage]);
+        // Fallback to showing the message in an information dialog
+        vscode.window.showInformationMessage(
+          formatMessage("commit.message.manual.copy", [message])
+        );
+      }
     }
-
-    repository.inputBox.value = message;
   }
 
   /**
@@ -426,11 +509,20 @@ export class GitProvider implements ISCMProvider {
     const api = this.gitExtension.getAPI(1);
     const repository = api.repositories[0];
 
-    if (!repository) {
-      throw new Error(getMessage("git.repository.not.found"));
+    if (repository?.inputBox) {
+      repository.inputBox.value = message;
+    } else {
+      try {
+        await vscode.env.clipboard.writeText(message);
+        notify.info("commit.message.copied");
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        notify.error("commit.message.copy.failed", [errorMessage]);
+        vscode.window.showInformationMessage(
+          formatMessage("commit.message.manual.copy", [message])
+        );
+      }
     }
-
-    repository.inputBox.value = message;
   }
 
   /**
@@ -491,9 +583,7 @@ export class GitProvider implements ISCMProvider {
             }
           }
           if (!foundCommonBranch) {
-            vscode.window.showWarningMessage(
-              formatMessage("git.base.branch.not.found.default", [baseBranch])
-            );
+            notify.warn("git.base.branch.not.found.default", [baseBranch]);
             // 如果都找不到，可能需要用户手动指定，或者抛出错误
             // 这里我们暂时返回空数组，并在日志中记录
             console.error(
@@ -518,9 +608,7 @@ export class GitProvider implements ISCMProvider {
     } catch (error) {
       if (error instanceof Error) {
         console.error("Git log error:", error);
-        vscode.window.showErrorMessage(
-          formatMessage("git.log.failed", [error.message])
-        );
+        notify.error("git.log.failed", [error.message]);
       }
       // 对于获取日志失败的情况，返回空数组而不是抛出错误，让调用者处理
       return [];
@@ -556,9 +644,7 @@ export class GitProvider implements ISCMProvider {
       if (error instanceof Error) {
         console.error("Git branch list error:", error);
         // 考虑添加一个新的 i18n key for this error
-        vscode.window.showErrorMessage(
-          formatMessage("git.branch.list.failed", [error.message]) // 假设有这个key
-        );
+        notify.error("git.branch.list.failed", [error.message]);
       }
       return [];
     }
@@ -568,7 +654,6 @@ export class GitProvider implements ISCMProvider {
     const repositoryCommitMessages: string[] = [];
     const userCommitMessages: string[] = [];
     const repository = this.api.repositories[0];
-
     if (!repository) {
       return { repository: [], user: [] };
     }
@@ -585,15 +670,6 @@ export class GitProvider implements ISCMProvider {
         (await repository.getConfig("user.name")) ||
         (await repository.getGlobalConfig("user.name"));
 
-      console.log(
-        "author",
-        author,
-        "1",
-        await repository.getConfig("user.name"),
-        "2",
-        await repository.getGlobalConfig("user.name")
-      );
-
       const userCommits = await repository.log({ maxEntries: 5, author });
 
       userCommitMessages.push(
@@ -604,6 +680,20 @@ export class GitProvider implements ISCMProvider {
     }
 
     return { repository: repositoryCommitMessages, user: userCommitMessages };
+  }
+
+  /**
+   * 将提交信息复制到剪贴板
+   * @param message 要复制的提交信息
+   */
+  async copyToClipboard(message: string): Promise<void> {
+    try {
+      await vscode.env.clipboard.writeText(message);
+      notify.info("commit.message.copied");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      notify.error("commit.message.copy.failed", [errorMessage]);
+    }
   }
 
   // /**

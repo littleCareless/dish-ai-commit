@@ -24,8 +24,8 @@ importers:
         specifier: ^1.10.0
         version: 1.10.0
       '@google/genai':
-        specifier: ^1.4.0
-        version: 1.4.0(@modelcontextprotocol/sdk@1.12.1)
+        specifier: ^1.11.0
+        version: 1.11.0(@modelcontextprotocol/sdk@1.12.1)
       '@mistralai/mistralai':
         specifier: ^1.7.3
         version: 1.7.3(zod@3.25.62)
@@ -44,6 +44,9 @@ importers:
       openai:
         specifier: ^5.3.0
         version: 5.3.0(ws@8.18.2)(zod@3.25.62)
+      tiktoken:
+        specifier: ^1.0.21
+        version: 1.0.21
       tree-sitter-wasms:
         specifier: ^0.1.11
         version: 0.1.12
@@ -694,11 +697,14 @@ packages:
     resolution: {integrity: sha512-HqYqoivNtkq59po8m7KI0n+lWKdz4kabENncYQXZCX/hBWJfXtKAfR/2nUQsP+TwSfHKoA7zDL2RrJYIv/j3VQ==}
     engines: {node: '>=18.0.0'}
 
-  '@google/genai@1.4.0':
-    resolution: {integrity: sha512-u9LQZbWBhqaaLelCcYsxMNDTeW12jzNwGkI/eqUeMG/iB1gJBu56LCxrFJ/hkHeZQgPg+j1pckBLZS/dnOh+Bw==}
+  '@google/genai@1.11.0':
+    resolution: {integrity: sha512-4XFAHCvU91ewdWOU3RUdSeXpDuZRJHNYLqT9LKw7WqPjRQcEJvVU+VOU49ocruaSp8VuLKMecl0iadlQK+Zgfw==}
     engines: {node: '>=20.0.0'}
     peerDependencies:
       '@modelcontextprotocol/sdk': ^1.11.0
+    peerDependenciesMeta:
+      '@modelcontextprotocol/sdk':
+        optional: true
 
   '@grpc/grpc-js@1.13.4':
     resolution: {integrity: sha512-GsFaMXCkMqkKIvwCQjCrwH+GHbPKBjhwo/8ZuUkWHqbI73Kky9I+pQltrlT0+MWpedCoosda53lgjYfyEPgxBg==}
@@ -4704,6 +4710,9 @@ packages:
   through@2.3.8:
     resolution: {integrity: sha512-w89qg7PI8wAdvX60bMDP+bFoD5Dvhm9oLheFp5O4a2QF0cSBGsBX4qZmadPMvVqlLJBBci+WqGGOAPvcDeNSVg==}
 
+  tiktoken@1.0.21:
+    resolution: {integrity: sha512-/kqtlepLMptX0OgbYD9aMYbM7EFrMZCL7EoHM8Psmg2FuhXoo/bH64KqOiZGGwa6oS9TPdSEDKBnV2LuB8+5vQ==}
+
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
 
@@ -5852,13 +5861,12 @@ snapshots:
       - encoding
       - supports-color
 
-  '@google/genai@1.4.0(@modelcontextprotocol/sdk@1.12.1)':
+  '@google/genai@1.11.0(@modelcontextprotocol/sdk@1.12.1)':
     dependencies:
-      '@modelcontextprotocol/sdk': 1.12.1
       google-auth-library: 9.15.1
       ws: 8.18.2
-      zod: 3.25.62
-      zod-to-json-schema: 3.24.5(zod@3.25.62)
+    optionalDependencies:
+      '@modelcontextprotocol/sdk': 1.12.1
     transitivePeerDependencies:
       - bufferutil
       - encoding
@@ -6145,6 +6153,7 @@ snapshots:
       zod-to-json-schema: 3.24.5(zod@3.25.62)
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -6684,6 +6693,7 @@ snapshots:
     dependencies:
       mime-types: 3.0.1
       negotiator: 1.0.0
+    optional: true
 
   acorn-jsx@5.3.2(acorn@8.15.0):
     dependencies:
@@ -6911,6 +6921,7 @@ snapshots:
       type-is: 2.0.1
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   boolbase@1.0.0: {}
 
@@ -7222,6 +7233,7 @@ snapshots:
   content-disposition@1.0.0:
     dependencies:
       safe-buffer: 5.2.1
+    optional: true
 
   content-type@1.0.5: {}
 
@@ -7369,11 +7381,13 @@ snapshots:
 
   cookie-signature@1.0.6: {}
 
-  cookie-signature@1.2.2: {}
+  cookie-signature@1.2.2:
+    optional: true
 
   cookie@0.7.1: {}
 
-  cookie@0.7.2: {}
+  cookie@0.7.2:
+    optional: true
 
   core-util-is@1.0.3: {}
 
@@ -7381,6 +7395,7 @@ snapshots:
     dependencies:
       object-assign: 4.1.1
       vary: 1.1.2
+    optional: true
 
   cosmiconfig-typescript-loader@6.1.0(@types/node@16.18.126)(cosmiconfig@9.0.0(typescript@5.8.3))(typescript@5.8.3):
     dependencies:
@@ -7878,11 +7893,13 @@ snapshots:
 
   eventemitter3@5.0.1: {}
 
-  eventsource-parser@3.0.2: {}
+  eventsource-parser@3.0.2:
+    optional: true
 
   eventsource@3.0.7:
     dependencies:
       eventsource-parser: 3.0.2
+    optional: true
 
   execa@5.1.1:
     dependencies:
@@ -7918,6 +7935,7 @@ snapshots:
   express-rate-limit@7.5.0(express@5.1.0):
     dependencies:
       express: 5.1.0
+    optional: true
 
   express@4.21.2:
     dependencies:
@@ -7986,6 +8004,7 @@ snapshots:
       vary: 1.1.2
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   extend@3.0.2: {}
 
@@ -8074,6 +8093,7 @@ snapshots:
       statuses: 2.0.2
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   find-config@1.0.0:
     dependencies:
@@ -8166,7 +8186,8 @@ snapshots:
 
   fresh@0.5.2: {}
 
-  fresh@2.0.0: {}
+  fresh@2.0.0:
+    optional: true
 
   fs-constants@1.0.0:
     optional: true
@@ -8742,7 +8763,8 @@ snapshots:
 
   is-plain-obj@2.1.0: {}
 
-  is-promise@4.0.0: {}
+  is-promise@4.0.0:
+    optional: true
 
   is-regex@1.2.1:
     dependencies:
@@ -9462,7 +9484,8 @@ snapshots:
 
   media-typer@0.3.0: {}
 
-  media-typer@1.1.0: {}
+  media-typer@1.1.0:
+    optional: true
 
   memorystream@0.3.1: {}
 
@@ -9484,7 +9507,8 @@ snapshots:
 
   merge-descriptors@1.0.3: {}
 
-  merge-descriptors@2.0.0: {}
+  merge-descriptors@2.0.0:
+    optional: true
 
   merge-stream@2.0.0: {}
 
@@ -9501,7 +9525,8 @@ snapshots:
 
   mime-db@1.52.0: {}
 
-  mime-db@1.54.0: {}
+  mime-db@1.54.0:
+    optional: true
 
   mime-types@2.1.35:
     dependencies:
@@ -9510,6 +9535,7 @@ snapshots:
   mime-types@3.0.1:
     dependencies:
       mime-db: 1.54.0
+    optional: true
 
   mime@1.6.0: {}
 
@@ -9603,7 +9629,8 @@ snapshots:
 
   negotiator@0.6.3: {}
 
-  negotiator@1.0.0: {}
+  negotiator@1.0.0:
+    optional: true
 
   neo-async@2.6.2: {}
 
@@ -9669,7 +9696,8 @@ snapshots:
     dependencies:
       boolbase: 1.0.0
 
-  object-assign@4.1.1: {}
+  object-assign@4.1.1:
+    optional: true
 
   object-hash@3.0.0: {}
 
@@ -9874,7 +9902,8 @@ snapshots:
 
   path-to-regexp@0.1.12: {}
 
-  path-to-regexp@8.2.0: {}
+  path-to-regexp@8.2.0:
+    optional: true
 
   path-type@3.0.0:
     dependencies:
@@ -9904,7 +9933,8 @@ snapshots:
 
   pirates@4.0.7: {}
 
-  pkce-challenge@5.0.0: {}
+  pkce-challenge@5.0.0:
+    optional: true
 
   pkg-dir@4.2.0:
     dependencies:
@@ -10018,6 +10048,7 @@ snapshots:
       http-errors: 2.0.0
       iconv-lite: 0.6.3
       unpipe: 1.0.0
+    optional: true
 
   rc@1.2.8:
     dependencies:
@@ -10201,6 +10232,7 @@ snapshots:
       path-to-regexp: 8.2.0
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   run-applescript@7.0.0: {}
 
@@ -10284,6 +10316,7 @@ snapshots:
       statuses: 2.0.2
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   serialize-javascript@6.0.2:
     dependencies:
@@ -10306,6 +10339,7 @@ snapshots:
       send: 1.2.0
     transitivePeerDependencies:
       - supports-color
+    optional: true
 
   set-function-length@1.2.2:
     dependencies:
@@ -10465,7 +10499,8 @@ snapshots:
 
   statuses@2.0.1: {}
 
-  statuses@2.0.2: {}
+  statuses@2.0.2:
+    optional: true
 
   std-env@3.9.0: {}
 
@@ -10665,6 +10700,8 @@ snapshots:
 
   through@2.3.8: {}
 
+  tiktoken@1.0.21: {}
+
   tinybench@2.9.0: {}
 
   tinyexec@0.3.2: {}
@@ -10786,6 +10823,7 @@ snapshots:
       content-type: 1.0.5
       media-typer: 1.1.0
       mime-types: 3.0.1
+    optional: true
 
   typed-array-buffer@1.0.3:
     dependencies:

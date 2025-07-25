@@ -23,16 +23,37 @@ export class DiffProcessor {
         ? DiffSplitter.splitGitDiff(diff)
         : DiffSplitter.splitSvnDiff(diff);
 
-    const processedChunks = chunks
+    const processedParts = chunks
       .map((chunk) => this.processChunk(chunk, type))
-      .filter(Boolean)
-      .join(""); // Join with no separator, as each chunk now ends with a newline
+      .filter(
+        (
+          part
+        ): part is {
+          originalCode: string | null;
+          codeChanges: string;
+        } => part !== null
+      );
 
-    if (!processedChunks) {
+    if (processedParts.length === 0) {
       return "";
     }
 
-    return `<changes>\n${processedChunks}</changes>\n`;
+    const allOriginalCode = processedParts
+      .map((p) => p.originalCode)
+      .filter((c): c is string => c !== null)
+      .join("\n\n");
+
+    const allCodeChanges = processedParts
+      .map((p) => p.codeChanges)
+      .join("\n\n");
+
+    let finalContent = "";
+    if (allOriginalCode) {
+      finalContent += `<original-code>\n${allOriginalCode}\n</original-code>\n`;
+    }
+    finalContent += `<code-changes>\n${allCodeChanges}\n</code-changes>\n`;
+
+    return `<changes>\n${finalContent}</changes>\n`;
   }
 
   /**
@@ -41,7 +62,10 @@ export class DiffProcessor {
    * @param chunk - The diff chunk to process.
    * @returns The processed diff chunk content as a structured string, or null if not applicable.
    */
-  private static processChunk(chunk: DiffChunk, type: "git" | "svn"): string | null {
+  private static processChunk(
+    chunk: DiffChunk,
+    type: "git" | "svn"
+  ): { originalCode: string | null; codeChanges: string } | null {
     const config = getDiffConfig();
     let diffContent = chunk.content;
 
@@ -95,7 +119,7 @@ export class DiffProcessor {
     if (!workspaceRoot) {
       return null; // Cannot proceed without workspace root
     }
-    let originalCodeBlock = "";
+    let originalCode: string | null = null;
     let originalContent = "";
     try {
       const relativeFilePath = chunk.filename;
@@ -117,27 +141,24 @@ export class DiffProcessor {
     }
 
     if (originalContent) {
-      const originalCodeContent = [
+      originalCode = [
+        `# FILE: ${chunk.filename}`,
         "# ORIGINAL CODE:",
         `\`\`\`${language}`,
         originalContent.trim(),
         "```",
       ].join("\n");
-      originalCodeBlock = `<original-code>\n${originalCodeContent}\n</original-code>\n`;
     }
 
     // Generate # CODE CHANGES: block
-    const codeChangesContent = [
+    const codeChanges = [
+      `# FILE: ${chunk.filename}`,
       "# CODE CHANGES:",
       "```diff",
       simplifiedDiff.trim(),
       "```",
     ].join("\n");
-    const codeChangesBlock = `<code-changes>\n${codeChangesContent}\n</code-changes>\n`;
 
-    if (originalCodeBlock) {
-      return `${originalCodeBlock}${codeChangesBlock}`;
-    }
-    return codeChangesBlock;
+    return { originalCode, codeChanges };
   }
 }
