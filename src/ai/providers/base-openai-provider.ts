@@ -189,10 +189,12 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
           }
         }
       } catch (error) {
-        console.error("Error during AI stream request:", error);
-        // 对于流式请求，错误处理可能需要根据具体需求调整
-        // 这里简单地抛出错误，或者可以yield一个特定的错误标记
-        throw error;
+        this.handleContextLengthError(
+          error,
+          (params.model && params.model.id) ||
+            this.config.defaultModel ||
+            "gpt-3.5-turbo"
+        );
       }
     };
 

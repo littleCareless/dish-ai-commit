@@ -4,6 +4,7 @@ import {
   AIResponse,
   AIModel,
   LayeredCommitMessage,
+  ContextLengthExceededError,
 } from "../types";
 import {
   getSystemPrompt,
@@ -40,7 +41,7 @@ export abstract class AbstractAIProvider implements AIProvider {
         ];
       }
 
-      const result = await this.executeWithRetry(params, {
+      const result = await this.executeAIRequest(params, {
         temperature: 0.3, // 提交信息推荐温度值 0.3
       });
       return result;
@@ -62,21 +63,23 @@ export abstract class AbstractAIProvider implements AIProvider {
     params: AIRequestParams
   ): Promise<AsyncIterable<string>> {
     try {
-      // 注意：流式请求的重试逻辑可能与非流式请求不同。
-      // 这里直接调用 executeAIStreamRequest，具体的重试和错误处理
-      // 应该在 executeAIStreamRequest 的实现中或专门的流式重试辅助函数中处理。
-      // systemPrompt, userPrompt, userContent 将由 executeAIStreamRequest 的实现
-      // 从 params 中获取或计算。
+      if (!params.messages) {
+        const systemPrompt = getSystemPrompt(params);
+        params.messages = [
+          { role: "system", content: systemPrompt },
+          { role: "user", content: params.diff },
+        ];
+      }
+
       return this.executeAIStreamRequest(params, {
         temperature: 0.3, // 提交信息推荐温度值 0.3
-        // maxTokens 可以在这里设置，如果需要的话
       });
     } catch (error) {
-      // 流的错误可能在迭代过程中发生，这里的 catch 可能只捕获初始设置错误
-      // 需要在调用方迭代流时也处理错误
+      // 错误现在由 executeStreamWithRetry 内部处理和抛出
+      // 这里只捕获最终的、不可重试的错误
+      console.log("error", error);
       throw new Error(
         formatMessage("generation.failed", [
-          // 或者一个新的i18n key如 "streamGeneration.failed"
           error instanceof Error ? error.message : String(error),
         ])
       );
@@ -97,7 +100,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       const config = ConfigurationManager.getInstance().getConfiguration();
       const tools = getCommitMessageTools(config);
 
-      const result = await this.executeWithRetry(params, {
+      const result = await this.executeAIRequest(params, {
         temperature: 0.3,
         tools: tools,
       });
@@ -149,7 +152,7 @@ export abstract class AbstractAIProvider implements AIProvider {
           { role: "user", content: params.diff },
         ];
       }
-      const result = await this.executeWithRetry(params, {
+      const result = await this.executeAIRequest(params, {
         // parseAsJSON: true,
         temperature: 0.6, // 代码审查推荐温度值 0.6，范围 0.5-0.6
       });
@@ -190,7 +193,7 @@ export abstract class AbstractAIProvider implements AIProvider {
           { role: "user", content: params.diff },
         ];
       }
-      const result = await this.executeWithRetry(params, {
+      const result = await this.executeAIRequest(params, {
         temperature: 0.4, // 分支命名推荐温度值 0.4
       });
       return result;
@@ -235,7 +238,7 @@ export abstract class AbstractAIProvider implements AIProvider {
         model: model || this.getDefaultModel(),
         additionalContext: users ? `Team members: ${users.join(", ")}` : "", // 可以用 additionalContext
       };
-      const result = await this.executeWithRetry(
+      const result = await this.executeAIRequest(
         {
           ...params,
           messages: [
@@ -270,7 +273,7 @@ export abstract class AbstractAIProvider implements AIProvider {
 
       // 步骤1: 生成全局摘要
       const summarySystemPrompt = getGlobalSummaryPrompt(params);
-      const summaryResult = await this.executeWithRetry(
+      const summaryResult = await this.executeAIRequest(
         {
           ...params,
           messages: [
@@ -299,7 +302,7 @@ export abstract class AbstractAIProvider implements AIProvider {
 
         if (fileDiff) {
           const fileSystemPrompt = getFileDescriptionPrompt(params, filePath);
-          const fileResult = await this.executeWithRetry(
+          const fileResult = await this.executeAIRequest(
             {
               ...params,
               messages: [
@@ -327,50 +330,6 @@ export abstract class AbstractAIProvider implements AIProvider {
         ])
       );
     }
-  }
-
-  /**
-   * 使用重试机制执行AI请求
-   *
-   * @param params - 请求参数
-   * @param options - 额外选项
-   * @returns Promise<{content: string, usage?: any, jsonContent?: any}>
-   */
-  protected async executeWithRetry(
-    params: AIRequestParams,
-    options?: {
-      parseAsJSON?: boolean;
-      temperature?: number;
-      maxTokens?: number;
-      tools?: any[];
-    }
-  ): Promise<{
-    content: string;
-    usage?: any;
-    jsonContent?: any;
-    tool_calls?: any[];
-  }> {
-    return generateWithRetry(
-      params,
-      async (truncatedInput) => {
-        // 当输入被截断时，更新 params 中的 messages
-        const updatedParams = { ...params };
-        if (updatedParams.messages && updatedParams.messages.length > 0) {
-          // 假设最后一个消息是用户的主要内容
-          const lastMessage =
-            updatedParams.messages[updatedParams.messages.length - 1];
-          lastMessage.content = truncatedInput;
-        } else {
-          // Fallback for older structures or if messages is empty
-          updatedParams.diff = truncatedInput;
-        }
-        return this.executeAIRequest(updatedParams, options);
-      },
-      {
-        initialMaxLength: params.model?.maxTokens?.input || 16385,
-        provider: this.getId(),
-      }
-    );
   }
 
   /**
@@ -445,4 +404,59 @@ export abstract class AbstractAIProvider implements AIProvider {
   abstract isAvailable(): Promise<boolean>;
   abstract getName(): string;
   abstract getId(): string;
+
+  /**
+   * 计算文本的token数量。
+   * 这是一个可选方法，如果提供者支持，则应覆盖此方法。
+   * @param params - AI请求参数
+   * @returns 一个Promise，解析为包含token总数的对象
+   */
+  async countTokens(params: AIRequestParams): Promise<{ totalTokens: number }> {
+    // 动态导入以避免循环依赖
+    const { tokenizerService } = await import("../../utils/tokenizer");
+    const model = params.model || this.getDefaultModel();
+
+    if (!params.messages || params.messages.length === 0) {
+      console.warn(
+        `countTokens called with no messages for ${this.getName()}.`
+      );
+      return { totalTokens: 0 };
+    }
+
+    const totalTokens = params.messages.reduce((acc, message) => {
+      const content =
+        typeof message.content === "string"
+          ? message.content
+          : JSON.stringify(message.content);
+      return acc + tokenizerService.countTokens(content, model);
+    }, 0);
+
+    return { totalTokens };
+  }
+
+  /**
+   * 检查并处理上下文长度超出的错误。
+   * 如果错误信息匹配已知的上下文超长模式，则抛出统一的 `ContextLengthExceededError`。
+   * @param error - 捕获到的原始错误对象。
+   * @param modelId - 当前使用的模型ID，用于提供更详细的错误信息。
+   * @throws {ContextLengthExceededError} - 如果确认为上下文超长错误。
+   * @throws {Error} - 如果是其他类型的错误，则重新抛出原始错误。
+   */
+  protected handleContextLengthError(error: any, modelId: string): void {
+    const errorMessage = (error.message || "").toLowerCase();
+    const isContextLengthError =
+      errorMessage.includes("maximum context length") ||
+      errorMessage.includes("context length exceeded") ||
+      errorMessage.includes("exceeds token limit") ||
+      errorMessage.includes("is too large") || // OpenAI new error
+      errorMessage.includes("input is too long"); // Anthropic error
+
+    if (isContextLengthError) {
+      throw new ContextLengthExceededError(
+        `The context for model ${modelId} is too long. Original error: ${error.message}`
+      );
+    }
+
+    throw error;
+  }
 }

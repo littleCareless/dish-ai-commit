@@ -110,6 +110,70 @@ export async function generateWithRetry<T>(
 }
 
 /**
+ * 带重试机制的 AI 流式生成函数
+ * @template T 生成结果的类型
+ * @param {AIRequestParams} params - AI 请求参数
+ * @param {(truncatedDiff: string) => Promise<AsyncIterable<string>>} generateFn - 实际执行流式生成的函数
+ * @param {GenerateWithRetryOptions} options - 重试配置选项
+ * @returns {AsyncGenerator<string>} 一个异步生成器，用于逐块生成内容
+ */
+export async function* generateStreamWithRetry(
+  params: AIRequestParams,
+  generateFn: (truncatedDiff: string) => Promise<AsyncIterable<string>>,
+  options: GenerateWithRetryOptions
+): AsyncGenerator<string> {
+  const {
+    maxRetries = 2,
+    initialMaxLength,
+    reductionFactor = 0.8,
+    retryDelay = 1000,
+  } = options;
+
+  let retries = 0;
+  let maxInputLength = initialMaxLength;
+
+  while (true) {
+    try {
+      const truncatedPrompt = params.diff.substring(0, maxInputLength);
+
+      if (params.diff.length > maxInputLength) {
+        notify.warn(getMessage(`input.truncated`));
+      }
+
+      const stream = await generateFn(truncatedPrompt);
+      for await (const chunk of stream) {
+        yield chunk;
+      }
+      return; // 成功完成，退出循环
+    } catch (error: any) {
+      console.error("Error during stream generation:", error);
+
+      if (
+        retries < maxRetries &&
+        (error.message?.includes("maximum context length") ||
+          error.message?.includes("context length exceeded") ||
+          error.message?.includes("exceeds token limit"))
+      ) {
+        retries++;
+        maxInputLength = Math.floor(maxInputLength * reductionFactor);
+        notify.warn(
+          `Stream generation failed, retrying with smaller input size (${maxInputLength} chars). Retry ${retries}/${maxRetries}`
+        );
+        await new Promise((resolve) => setTimeout(resolve, retryDelay));
+        continue; // 继续下一次重试
+      }
+
+      // 达到最大重试次数或遇到不可重试的错误, 抛出异常
+      throw new Error(
+        `Stream generation failed after ${retries} retries: ${
+          error.message || String(error)
+        }`
+      );
+    }
+  }
+}
+
+/**
  * 向提示词添加语言约束
  * @param prompt - 原始提示词
  * @param params - 请求参数，包含可选的language或languages属性

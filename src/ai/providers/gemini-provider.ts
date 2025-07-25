@@ -204,12 +204,10 @@ export class GeminiAIProvider extends AbstractAIProvider {
       });
 
       const response = result.text;
-
-      // 由于Gemini API目前不返回token使用情况，我们无法提供精确的usage数据
       const usage = {
-        promptTokens: undefined,
-        completionTokens: undefined,
-        totalTokens: undefined,
+        promptTokens: result.usageMetadata?.promptTokenCount,
+        completionTokens: result.usageMetadata?.candidatesTokenCount,
+        totalTokens: result.usageMetadata?.totalTokenCount,
       };
 
       return { content: response ?? "", usage };
@@ -479,5 +477,41 @@ export class GeminiAIProvider extends AbstractAIProvider {
     }
 
     return { systemInstruction, contents };
+  }
+
+  /**
+   * 计算给定内容的token数量
+   * @param params AI请求参数
+   * @returns 包含总token数的Promise
+   */
+  async countTokens(params: AIRequestParams): Promise<{ totalTokens: number }> {
+    if (!this.genAI) {
+      throw new Error(
+        "Gemini API client not initialized. Please check your API key."
+      );
+    }
+
+    const modelId = (params.model?.id || this.config.defaultModel) as string;
+    const { contents } = this.buildProviderMessages(params) as {
+      contents: Content[];
+    };
+
+    // 将所有parts的文本内容连接成一个字符串
+    const plainTextContents = contents
+      .flatMap((content) =>
+        (content.parts || []).map((part) => ("text" in part ? part.text : ""))
+      )
+      .join("\n");
+
+    try {
+      const countTokensResponse = await this.genAI.models.countTokens({
+        model: modelId,
+        contents: plainTextContents,
+      });
+      return { totalTokens: countTokensResponse.totalTokens ?? 0 };
+    } catch (error) {
+      console.error("Gemini countTokens failed:", error);
+      throw error;
+    }
   }
 }

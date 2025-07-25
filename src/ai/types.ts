@@ -100,6 +100,17 @@ export interface AIError extends Error {
 }
 
 /**
+ * 当AI请求因上下文长度超出限制而失败时抛出的错误。
+ * 这使得重试逻辑可以明确地识别此类错误，而无需依赖于脆弱的错误消息字符串匹配。
+ */
+export class ContextLengthExceededError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ContextLengthExceededError";
+  }
+}
+
+/**
  * AI模型接口，定义了模型的基本信息和能力
  */
 export interface AIModel<
@@ -207,6 +218,12 @@ export interface AIProvider {
   getName(): string;
   /** 获取提供者ID */
   getId(): string;
+  /**
+   * 计算文本的token数量
+   * @param params - AI请求参数，主要使用其中的消息内容
+   * @returns 一个Promise，解析为包含token总数的对象
+   */
+  countTokens?(params: AIRequestParams): Promise<{ totalTokens: number }>;
 }
 
 /**
