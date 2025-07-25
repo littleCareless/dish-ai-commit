@@ -34,6 +34,22 @@ function copyWasmsToDist(): void {
     );
   }
 
+  // Copy tiktoken WASM file. This is the fix for the activation error.
+  const tiktokenWasmSource = path.join(
+    nodeModulesDir,
+    "tiktoken",
+    "tiktoken_bg.wasm"
+  );
+  const tiktokenWasmDest = path.join(distDir, "tiktoken_bg.wasm");
+  if (fs.existsSync(tiktokenWasmSource)) {
+    fs.copyFileSync(tiktokenWasmSource, tiktokenWasmDest);
+    console.log(`[copyWasms] Copied tiktoken_bg.wasm to ${tiktokenWasmDest}`);
+  } else {
+    console.error(
+      `[copyWasms] CRITICAL ERROR: tiktoken_bg.wasm not found at ${tiktokenWasmSource}. This is the likely cause of the activation error.`
+    );
+  }
+
   // Copy language-specific WASM files.
   const languageWasmDir = path.join(nodeModulesDir, "tree-sitter-wasms", "out");
   if (fs.existsSync(languageWasmDir)) {
