@@ -170,13 +170,13 @@ export class GenerateCommitCommand extends BaseCommand {
   ): Promise<string> {
     let currentInput = await scmProvider.getCommitInput();
     if (currentInput) {
-      currentInput = `<custom-instructions>
+      currentInput = `
 When generating the commit message, please use the following custom instructions provided by the user.
 You can ignore an instruction if it contradicts a system message.
 <instructions>
 ${currentInput}
 </instructions>
-</custom-instructions>`;
+`;
     }
     return currentInput;
   }
@@ -221,13 +221,17 @@ ${currentInput}
     if (userCommits || repoCommits) {
       return `---
 REMINDER:
-- Now generate a commit messages that describe the CODE CHANGES.
+ - IMPORTANT: You will be provided with code changes from MULTIPLE files.
+ - Your primary task is to analyze ALL provided file changes under the \`<code-changes>\` block and synthesize them into a single, coherent commit message.
+ - Do NOT focus on only the first file you see. A good commits messages covers the intent of all changes.
 - DO NOT COPY commits from RECENT COMMITS, but use it as reference for the commit style.
 - ONLY return a single markdown code block, NO OTHER PROSE!`;
     }
     return `---
 REMINDER:
-- Now generate a commit messages that describe the CODE CHANGES.
+ - IMPORTANT: You will be provided with code changes from MULTIPLE files.
+ - Your primary task is to analyze ALL provided file changes under the \`<code-changes>\` block and synthesize them into a single, coherent commit message.
+ - Do NOT focus on only the first file you see. A good commits messages covers the intent of all changes.
 - ONLY return a single markdown code block, NO OTHER PROSE!`;
   }
 
@@ -459,47 +463,51 @@ REMINDER:
       const contextManager = new ContextManager(selectedModel, systemPrompt);
       const { originalCode, codeChanges } = extractProcessedDiff(fileDiff);
 
+      if (userCommits) {
+        contextManager.addBlock({
+          content: userCommits,
+          priority: 700,
+          strategy: TruncationStrategy.TruncateTail,
+          name: "user-commits",
+        });
+      }
+      if (repoCommits) {
+        contextManager.addBlock({
+          content: repoCommits,
+          priority: 600,
+          strategy: TruncationStrategy.TruncateTail,
+          name: "recent-commits",
+        });
+      }
       contextManager.addBlock({
         content: originalCode,
-        priority: 200,
+        priority: 800,
         strategy: TruncationStrategy.SmartTruncateDiff,
         name: "original-code",
       });
       contextManager.addBlock({
         content: codeChanges,
-        priority: 100,
+        priority: 900,
         strategy: TruncationStrategy.SmartTruncateDiff,
         name: "code-changes",
       });
       contextManager.addBlock({
-        content: similarCodeContext,
-        priority: 320,
+        content: reminder,
+        priority: 900,
         strategy: TruncationStrategy.TruncateTail,
-        name: "similar-code",
-      });
-      contextManager.addBlock({
-        content: userCommits,
-        priority: 300,
-        strategy: TruncationStrategy.TruncateTail,
-        name: "user-commits",
-      });
-      contextManager.addBlock({
-        content: repoCommits,
-        priority: 400,
-        strategy: TruncationStrategy.TruncateTail,
-        name: "recent-commits",
+        name: "reminder",
       });
       contextManager.addBlock({
         content: currentInput,
-        priority: 250,
+        priority: 750,
         strategy: TruncationStrategy.TruncateTail,
         name: "custom-instructions",
       });
       contextManager.addBlock({
-        content: reminder,
-        priority: 100,
+        content: similarCodeContext,
+        priority: 320, 
         strategy: TruncationStrategy.TruncateTail,
-        name: "reminder",
+        name: "similar-code",
       });
 
       const messages = contextManager.buildMessages();
@@ -573,47 +581,53 @@ REMINDER:
     const contextManager = new ContextManager(selectedModel, systemPrompt);
     const { originalCode, codeChanges } = extractProcessedDiff(diffContent);
 
+    if (userCommits) {
+      contextManager.addBlock({
+        content: userCommits,
+        priority: 700,
+        strategy: TruncationStrategy.TruncateTail,
+        name: "user-commits",
+      });
+    }
+
+    if (repoCommits) {
+      contextManager.addBlock({
+        content: repoCommits,
+        priority: 600,
+        strategy: TruncationStrategy.TruncateTail,
+        name: "recent-commits",
+      });
+    }
+
     contextManager.addBlock({
       content: originalCode,
-      priority: 200, // original-code: 800
+      priority: 800,
       strategy: TruncationStrategy.SmartTruncateDiff,
       name: "original-code",
     });
     contextManager.addBlock({
       content: codeChanges,
-      priority: 100, // code-changes: 900
+      priority: 900,
       strategy: TruncationStrategy.SmartTruncateDiff,
       name: "code-changes",
     });
     contextManager.addBlock({
-      content: similarCodeContext,
-      priority: 320, // Inferred weight: 680
+      content: reminder,
+      priority: 900,
       strategy: TruncationStrategy.TruncateTail,
-      name: "similar-code",
-    });
-    contextManager.addBlock({
-      content: userCommits,
-      priority: 300, // user-commits: 700
-      strategy: TruncationStrategy.TruncateTail,
-      name: "user-commits",
-    });
-    contextManager.addBlock({
-      content: repoCommits,
-      priority: 400, // recent-commits: 600
-      strategy: TruncationStrategy.TruncateTail,
-      name: "recent-commits",
+      name: "reminder",
     });
     contextManager.addBlock({
       content: currentInput,
-      priority: 250, // custom-instructions: 750
+      priority: 750,
       strategy: TruncationStrategy.TruncateTail,
       name: "custom-instructions",
     });
     contextManager.addBlock({
-      content: reminder,
-      priority: 100, // reminder: 900
+      content: similarCodeContext,
+      priority: 320, // This priority is not specified in the user request, keeping it as is.
       strategy: TruncationStrategy.TruncateTail,
-      name: "reminder",
+      name: "similar-code",
     });
 
     return contextManager;

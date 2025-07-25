@@ -160,8 +160,8 @@ export class ContextManager {
    * @returns 经过智能截断和组装的 messages 数组
    */
   public buildMessages(): AIMessage[] {
-    // 按优先级排序，优先级高的在前面
-    this.blocks.sort((a, b) => a.priority - b.priority);
+    // 按优先级排序，优先级高的后前面
+    // this.blocks.sort((a, b) => b.priority - a.priority);
 
     const maxTokens = this.model.maxTokens?.input ?? 8192;
     const systemPromptTokens = tokenizerService.countTokens(
@@ -174,14 +174,15 @@ export class ContextManager {
     const includedBlocks: string[] = [];
     const excludedBlocks: string[] = [];
 
-
     for (const block of this.blocks) {
       const blockTokens = tokenizerService.countTokens(
         block.content,
         this.model
       );
+      const tagName = block.name.toLowerCase().replace(/\s+/g, "-");
+
       if (remainingTokens >= blockTokens) {
-        userContent += `\n\n--- START ${block.name} ---\n${block.content}\n--- END ${block.name} ---`;
+        userContent += `\n\n<${tagName}>\n${block.content}\n</${tagName}>`;
         remainingTokens -= blockTokens;
         includedBlocks.push(block.name);
       } else if (remainingTokens > 100) {
@@ -191,7 +192,7 @@ export class ContextManager {
           truncatedContent,
           this.model
         );
-        userContent += `\n\n--- START ${block.name} (TRUNCATED) ---\n${truncatedContent}\n--- END ${block.name} ---`;
+        userContent += `\n\n<${tagName} truncated="true">\n${truncatedContent}\n</${tagName}>`;
         remainingTokens -= truncatedTokens;
         includedBlocks.push(`${block.name} (Truncated)`);
         notify.warn(formatMessage("context.truncated", [block.name]));
@@ -241,7 +242,7 @@ export class ContextManager {
     }
 
     // 按优先级降序排序（数字大的在前）
-    this.blocks.sort((a, b) => b.priority - a.priority);
+    // this.blocks.sort((a, b) => b.priority - a.priority);
 
     const lowestPriorityBlock = this.blocks[0];
 
@@ -264,7 +265,7 @@ export class ContextManager {
       notify.warn(
         formatMessage("context.block.truncated", [lowestPriorityBlock.name])
       );
-      this.blocks.sort((a, b) => a.priority - b.priority); // 恢复升序
+      // this.blocks.sort((a, b) => a.priority - b.priority); // 恢复升序
       return true;
     }
 
@@ -276,7 +277,7 @@ export class ContextManager {
           formatMessage("context.block.removed", [removedBlock.name])
         );
       }
-      this.blocks.sort((a, b) => a.priority - b.priority); // 恢复升序
+      // this.blocks.sort((a, b) => a.priority - b.priority); // 恢复升序
       return true;
     }
 
