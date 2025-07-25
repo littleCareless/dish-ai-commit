@@ -3,6 +3,9 @@ on:
     branches:
       - main
       - develop
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
 
 name: Deploy Extension
 jobs:
