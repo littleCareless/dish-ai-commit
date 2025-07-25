@@ -18,7 +18,7 @@ jobs:
           node-version: 20
       - name: Install pnpm
         run: npm install -g pnpm
-      - run: pnpm install
+      - run: npm ci
       - name: Publish to Open VSX Registry (Pre-release)
         uses: HaaLeo/publish-vscode-extension@v2
         id: publishToOpenVSX
