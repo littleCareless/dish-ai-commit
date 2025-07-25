@@ -6,6 +6,22 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.36.0 (2025-07-25)
+
+### ✨ Features
+
+- **branch**: Introduce branch name generation mode selection ([3c0d3a9](https://github.com/littleCareless/dish-ai-commit/commit/3c0d3a9))
+
+- **commit**: Implement hierarchical commit detail generation ([a758efe](https://github.com/littleCareless/dish-ai-commit/commit/a758efe))
+
+### 🎫 Chores
+
+- **release**: Release 0.35.0 ([c866ae8](https://github.com/littleCareless/dish-ai-commit/commit/c866ae8))
+
+### 🔧 Continuous Integration
+
+- **workflow**: Integrate and automate deployment workflows ([c5c2686](https://github.com/littleCareless/dish-ai-commit/commit/c5c2686))
+
 # 0.35.0 (2025-07-25)
 
 ### ✨ Features
