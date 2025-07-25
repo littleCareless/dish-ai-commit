@@ -4,7 +4,7 @@ import { promisify } from "util";
 import * as childProcess from "child_process";
 import { getMessage, formatMessage } from "../utils/i18n";
 import { DiffProcessor } from "../utils/diff/diff-processor";
-import { DiffSimplifier } from "../utils";
+import { notify } from "../utils/notification/notification-manager";
 
 const exec = promisify(childProcess.exec);
 
@@ -309,7 +309,9 @@ export class GitProvider implements ISCMProvider {
             .split("\n")
             .filter((file) => file.trim());
           for (const file of files) {
-            const escapedFile = file.replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+            const escapedFile = file
+              .replace(/\\/g, "\\\\")
+              .replace(/"/g, '\\"');
             try {
               // 使用git diff --no-index捕获新文件内容
               const result = await exec(
@@ -336,32 +338,12 @@ export class GitProvider implements ISCMProvider {
         throw new Error(getMessage("diff.noChanges"));
       }
 
-      // 获取配置
-      const config = vscode.workspace.getConfiguration("dish-ai-commit");
-      const enableSimplification = config.get<boolean>(
-        "features.codeAnalysis.simplifyDiff"
-      );
-
-      // 根据配置决定是否显示警告和简化diff
-      if (enableSimplification) {
-        const result = await vscode.window.showWarningMessage(
-          getMessage("diff.simplification.warning"),
-          getMessage("button.yes"),
-          getMessage("button.no")
-        );
-        if (result === getMessage("button.yes")) {
-          return DiffSimplifier.simplify(diffOutput);
-        }
-      }
-
-      // 如果未启用简化，直接返回原始diff
+      // Process the diff to get structured data, including original file content.
       return DiffProcessor.process(diffOutput, "git");
     } catch (error) {
       if (error instanceof Error) {
         console.error("Git diff error:", error); // 添加调试日志
-        vscode.window.showErrorMessage(
-          formatMessage("git.diff.failed", [error.message])
-        );
+        notify.error("git.diff.failed", [error.message]);
       }
       throw error;
     }
@@ -491,9 +473,7 @@ export class GitProvider implements ISCMProvider {
             }
           }
           if (!foundCommonBranch) {
-            vscode.window.showWarningMessage(
-              formatMessage("git.base.branch.not.found.default", [baseBranch])
-            );
+            notify.warn("git.base.branch.not.found.default", [baseBranch]);
             // 如果都找不到，可能需要用户手动指定，或者抛出错误
             // 这里我们暂时返回空数组，并在日志中记录
             console.error(
@@ -518,9 +498,7 @@ export class GitProvider implements ISCMProvider {
     } catch (error) {
       if (error instanceof Error) {
         console.error("Git log error:", error);
-        vscode.window.showErrorMessage(
-          formatMessage("git.log.failed", [error.message])
-        );
+        notify.error("git.log.failed", [error.message]);
       }
       // 对于获取日志失败的情况，返回空数组而不是抛出错误，让调用者处理
       return [];
@@ -556,9 +534,7 @@ export class GitProvider implements ISCMProvider {
       if (error instanceof Error) {
         console.error("Git branch list error:", error);
         // 考虑添加一个新的 i18n key for this error
-        vscode.window.showErrorMessage(
-          formatMessage("git.branch.list.failed", [error.message]) // 假设有这个key
-        );
+        notify.error("git.branch.list.failed", [error.message]);
       }
       return [];
     }
@@ -568,7 +544,6 @@ export class GitProvider implements ISCMProvider {
     const repositoryCommitMessages: string[] = [];
     const userCommitMessages: string[] = [];
     const repository = this.api.repositories[0];
-
     if (!repository) {
       return { repository: [], user: [] };
     }
@@ -584,15 +559,6 @@ export class GitProvider implements ISCMProvider {
       const author =
         (await repository.getConfig("user.name")) ||
         (await repository.getGlobalConfig("user.name"));
-
-      console.log(
-        "author",
-        author,
-        "1",
-        await repository.getConfig("user.name"),
-        "2",
-        await repository.getGlobalConfig("user.name")
-      );
 
       const userCommits = await repository.log({ maxEntries: 5, author });
 

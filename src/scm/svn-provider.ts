@@ -7,6 +7,7 @@ import * as path from "path";
 import { getMessage, formatMessage } from "../utils/i18n";
 import { DiffProcessor } from "../utils/diff/diff-processor";
 import { DiffSimplifier } from "../utils";
+import { notify } from "../utils/notification/notification-manager";
 
 const exec = promisify(childProcess.exec);
 
@@ -242,9 +243,7 @@ export class SvnProvider implements ISCMProvider {
       const { stdout } = await exec(`"${this.svnPath}" --version`);
       const version = stdout.split("\n")[0].trim();
       Logger.log(LogLevel.Info, "SVN version:", version);
-      vscode.window.showInformationMessage(
-        formatMessage("svn.version.detected", [version])
-      );
+      notify.info("svn.version.detected", [version]);
 
       this.initialized = true;
     } catch (error) {
@@ -379,9 +378,7 @@ export class SvnProvider implements ISCMProvider {
 
       // 根据配置决定是否显示警告和简化diff
       if (enableSimplification) {
-        vscode.window.showWarningMessage(
-          getMessage("diff.simplification.warning")
-        );
+        notify.warn("diff.simplification.warning");
         return DiffSimplifier.simplify(rawDiff);
       }
 
@@ -390,9 +387,7 @@ export class SvnProvider implements ISCMProvider {
     } catch (error) {
       Logger.log(LogLevel.Error, "SVN diff failed:", error);
       if (error instanceof Error) {
-        vscode.window.showErrorMessage(
-          formatMessage("git.diff.failed", [error.message])
-        );
+        notify.error("git.diff.failed", [error.message]);
       }
       throw error;
     }
@@ -568,9 +563,7 @@ export class SvnProvider implements ISCMProvider {
       Logger.log(LogLevel.Error, "SVN log failed:", error);
       if (error instanceof Error) {
         // 确保 i18n 文件中有 "svn.log.failed" 键
-        vscode.window.showErrorMessage(
-          formatMessage("svn.log.failed", [error.message])
-        );
+        notify.error("svn.log.failed", [error.message]);
       }
       return []; // 类似 git-provider，在错误时返回空数组
     }
