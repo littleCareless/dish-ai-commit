@@ -225,4 +225,10 @@
   "diff.files.selected": "Selected {0} files for diff.",
   "diff.staged.info": "Getting staged changes for {0} files.",
   "diff.all.info": "Getting all changes for {0} files."
+,
+  "progress.generating.layered.commit": "Generating layered commit details...",
+  "progress.generating.commit.for.file": "Generating details for {0}...",
+  "provider.does.not.support.non.streaming.for.layered": "Provider {0} does not support non-streaming generation required for layered commits.",
+  "layered.commit.details.title": "Layered Commit Details",
+  "layered.commit.details.generated": "Layered commit details have been generated and opened in a new tab."
 }

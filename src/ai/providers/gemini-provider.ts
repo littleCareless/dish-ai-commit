@@ -194,7 +194,7 @@ export class GeminiAIProvider extends AbstractAIProvider {
 
     try {
       // 使用systemPrompt作为系统指令，使用combinedUserContent作为用户输入
-      const result = await this.genAI.models.generateContent({
+      const response = await this.genAI.models.generateContent({
         model: modelId,
         contents: contents,
         config: {
@@ -203,14 +203,33 @@ export class GeminiAIProvider extends AbstractAIProvider {
         },
       });
 
-      const response = result.text;
+      let content = response.text;
+
+      if (!content && response.candidates && response.candidates.length > 0) {
+        const candidate = response.candidates[0];
+        if (
+          candidate &&
+          candidate.content &&
+          Array.isArray(candidate.content.parts) &&
+          candidate.content.parts.length > 0
+        ) {
+          content = candidate.content.parts
+            .map((part: Part) =>
+              part && "text" in part && typeof part.text === "string"
+                ? part.text
+                : ""
+            )
+            .join("");
+        }
+      }
+
       const usage = {
-        promptTokens: result.usageMetadata?.promptTokenCount,
-        completionTokens: result.usageMetadata?.candidatesTokenCount,
-        totalTokens: result.usageMetadata?.totalTokenCount,
+        promptTokens: response.usageMetadata?.promptTokenCount,
+        completionTokens: response.usageMetadata?.candidatesTokenCount,
+        totalTokens: response.usageMetadata?.totalTokenCount,
       };
 
-      return { content: response ?? "", usage };
+      return { content: content ?? "", usage };
     } catch (error) {
       console.error("Gemini API request failed:", error);
       throw error;

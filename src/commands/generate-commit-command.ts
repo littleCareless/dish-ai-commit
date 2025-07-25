@@ -16,6 +16,7 @@ import {
 import { addSimilarCodeContext } from "../ai/utils/embedding-helper";
 import { stateManager } from "../utils/state/state-manager";
 import { getSystemPrompt } from "../ai/utils/generate-helper";
+import { getLayeredCommitFilePrompt } from "../prompt/layered-commit-file";
 import {
   ContextManager,
   TruncationStrategy,
@@ -375,6 +376,17 @@ REMINDER:
         newProvider,
         selectedModel?.id || "default",
       ]);
+
+      if (configuration.features.commitFormat.enableLayeredCommit) {
+        await this.performLayeredFileCommitGeneration(
+          aiProvider,
+          requestParams,
+          scmProvider,
+          selectedFiles,
+          token,
+          progress
+        );
+      }
     } catch (error) {
       if (error instanceof RequestTooLargeError) {
         const switchToLargerModel = getMessage("error.switch.to.larger.model");
@@ -394,6 +406,140 @@ REMINDER:
         throw error;
       }
     }
+  }
+
+  private async performLayeredFileCommitGeneration(
+    aiProvider: AIProvider,
+    requestParams: AIRequestParams,
+    scmProvider: ISCMProvider,
+    selectedFiles: string[],
+    token: vscode.CancellationToken,
+    progress: vscode.Progress<{ message?: string; increment?: number }>
+  ) {
+    progress.report({
+      message: getMessage("progress.generating.layered.commit"),
+    });
+
+    const fileDescriptions: { filePath: string; description: string }[] = [];
+    const config = ConfigurationManager.getInstance();
+    const configuration = config.getConfiguration();
+    const selectedModel = requestParams.model as AIModel;
+
+    // Pre-fetch global context to avoid fetching it in every loop iteration
+    const currentInput = await this._getSCMInputContext(scmProvider);
+    const { userCommits, repoCommits } = await this._getRecentCommits(
+      scmProvider,
+      configuration.features.commitMessage.useRecentCommitsAsReference
+    );
+    const reminder = this._getReminder(userCommits, repoCommits);
+
+    for (const filePath of selectedFiles) {
+      this.throwIfCancelled(token);
+      progress.report({
+        message: formatMessage("progress.generating.commit.for.file", [
+          filePath,
+        ]),
+      });
+
+      const fileDiff = await scmProvider.getDiff([filePath]);
+      if (!fileDiff) {
+        continue;
+      }
+
+      const fileRequestParams: AIRequestParams = {
+        ...requestParams,
+        diff: fileDiff,
+        changeFiles: [filePath],
+      };
+
+      const systemPrompt = getSystemPrompt(fileRequestParams);
+
+      // Build context manager for each file to get rich context
+      const similarCodeContext = await this._getSimilarCodeContext(fileDiff);
+      const contextManager = new ContextManager(selectedModel, systemPrompt);
+      const { originalCode, codeChanges } = extractProcessedDiff(fileDiff);
+
+      contextManager.addBlock({
+        content: originalCode,
+        priority: 200,
+        strategy: TruncationStrategy.SmartTruncateDiff,
+        name: "original-code",
+      });
+      contextManager.addBlock({
+        content: codeChanges,
+        priority: 100,
+        strategy: TruncationStrategy.SmartTruncateDiff,
+        name: "code-changes",
+      });
+      contextManager.addBlock({
+        content: similarCodeContext,
+        priority: 320,
+        strategy: TruncationStrategy.TruncateTail,
+        name: "similar-code",
+      });
+      contextManager.addBlock({
+        content: userCommits,
+        priority: 300,
+        strategy: TruncationStrategy.TruncateTail,
+        name: "user-commits",
+      });
+      contextManager.addBlock({
+        content: repoCommits,
+        priority: 400,
+        strategy: TruncationStrategy.TruncateTail,
+        name: "recent-commits",
+      });
+      contextManager.addBlock({
+        content: currentInput,
+        priority: 250,
+        strategy: TruncationStrategy.TruncateTail,
+        name: "custom-instructions",
+      });
+      contextManager.addBlock({
+        content: reminder,
+        priority: 100,
+        strategy: TruncationStrategy.TruncateTail,
+        name: "reminder",
+      });
+
+      const messages = contextManager.buildMessages();
+
+      if (!aiProvider.generateCommit) {
+        notify.warn("provider.does.not.support.non.streaming.for.layered", [
+          aiProvider.getId(),
+        ]);
+        continue;
+      }
+      const description = await aiProvider.generateCommit({
+        ...fileRequestParams,
+        messages,
+      });
+
+      fileDescriptions.push({
+        filePath,
+        description: description.content,
+      });
+    }
+
+    if (fileDescriptions.length > 0) {
+      await this._showLayeredCommitDetails(fileDescriptions);
+    }
+  }
+
+  private async _showLayeredCommitDetails(
+    fileChanges: { filePath: string; description: string }[]
+  ) {
+    let content = `# ${getMessage("layered.commit.details.title")}\n\n`;
+    for (const change of fileChanges) {
+      content += `### ${change.filePath}\n\n${change.description}\n\n---\n\n`;
+    }
+
+    const document = await vscode.workspace.openTextDocument({
+      content,
+      language: "markdown",
+    });
+    await vscode.window.showTextDocument(document);
+    notify.info("layered.commit.details.generated");
   }
 
   /**
