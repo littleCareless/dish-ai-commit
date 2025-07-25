@@ -6,6 +6,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.34.0 (2025-07-25)
+
+### ✨ Features
+
+- **scm**: 为 SCM 提供者添加剪贴板回退功能 ([509b715](https://github.com/littleCareless/dish-ai-commit/commit/509b715))
+
+### 🎫 Chores
+
+- **release**: 发布 0.33.0 版本 ([96ff9ca](https://github.com/littleCareless/dish-ai-commit/commit/96ff9ca))
+
+### 🐛 Bug Fixes
+
+- **build**: 修复因缺少 tiktoken WASM 文件导致的激活失败 ([08d2951](https://github.com/littleCareless/dish-ai-commit/commit/08d2951))
+
 # 0.33.0 (2025-07-25)
 
 ### ♻ Code Refactoring

@@ -6,6 +6,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.34.0 (2025-07-25)
+
+### ✨ Features
+
+- **scm**: Add clipboard fallback for SCM providers ([509b715](https://github.com/littleCareless/dish-ai-commit/commit/509b715))
+
+### 🎫 Chores
+
+- **release**: Release 0.33.0 ([96ff9ca](https://github.com/littleCareless/dish-ai-commit/commit/96ff9ca))
+
+### 🐛 Bug Fixes
+
+- **build**: Fix activation failure due to missing tiktoken WASM files ([08d2951](https://github.com/littleCareless/dish-ai-commit/commit/08d2951))
+
 # 0.33.0 (2025-07-25)
 
 ### ♻ Code Refactoring
