@@ -480,6 +480,12 @@ REMINDER:
         });
       }
       contextManager.addBlock({
+        content: similarCodeContext,
+        priority: 320, 
+        strategy: TruncationStrategy.TruncateTail,
+        name: "similar-code",
+      });
+      contextManager.addBlock({
         content: originalCode,
         priority: 800,
         strategy: TruncationStrategy.SmartTruncateDiff,
@@ -503,12 +509,7 @@ REMINDER:
         strategy: TruncationStrategy.TruncateTail,
         name: "custom-instructions",
       });
-      contextManager.addBlock({
-        content: similarCodeContext,
-        priority: 320, 
-        strategy: TruncationStrategy.TruncateTail,
-        name: "similar-code",
-      });
+
 
       const messages = contextManager.buildMessages();
 
@@ -598,7 +599,12 @@ REMINDER:
         name: "recent-commits",
       });
     }
-
+    contextManager.addBlock({
+      content: similarCodeContext,
+      priority: 320, // This priority is not specified in the user request, keeping it as is.
+      strategy: TruncationStrategy.TruncateTail,
+      name: "similar-code",
+    });
     contextManager.addBlock({
       content: originalCode,
       priority: 800,
@@ -623,12 +629,7 @@ REMINDER:
       strategy: TruncationStrategy.TruncateTail,
       name: "custom-instructions",
     });
-    contextManager.addBlock({
-      content: similarCodeContext,
-      priority: 320, // This priority is not specified in the user request, keeping it as is.
-      strategy: TruncationStrategy.TruncateTail,
-      name: "similar-code",
-    });
+
 
     return contextManager;
   }

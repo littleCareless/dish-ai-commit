@@ -160,64 +160,82 @@ export class ContextManager {
    * @returns 经过智能截断和组装的 messages 数组
    */
   public buildMessages(): AIMessage[] {
-    // 按优先级排序，优先级高的后前面
-    // this.blocks.sort((a, b) => b.priority - a.priority);
+    // 1. 按优先级（从高到低）排序，决定哪些区块优先保留
+     this.blocks.sort((a, b) => b.priority - a.priority);
 
     const maxTokens = this.model.maxTokens?.input ?? 8192;
     const systemPromptTokens = tokenizerService.countTokens(
       this.systemPrompt,
       this.model
     );
-    let remainingTokens = maxTokens - systemPromptTokens - 100; // 100 tokens buffer for response and other overhead
+    let remainingTokens = maxTokens - systemPromptTokens - 100; // 为响应和其他开销预留100个token
 
-    let userContent = "";
-    const includedBlocks: string[] = [];
-    const excludedBlocks: string[] = [];
+    const includedBlocks: ContextBlock[] = [];
+    const includedBlockNames: string[] = [];
+    const excludedBlockNames: string[] = [];
 
+    // 2. 确定哪些区块可以被包含和截断
     for (const block of this.blocks) {
-      const blockTokens = tokenizerService.countTokens(
-        block.content,
-        this.model
-      );
-      const tagName = block.name.toLowerCase().replace(/\s+/g, "-");
+      const blockTokens = tokenizerService.countTokens(block.content, this.model);
 
       if (remainingTokens >= blockTokens) {
-        userContent += `\n\n<${tagName}>\n${block.content}\n</${tagName}>`;
+        includedBlocks.push(block);
         remainingTokens -= blockTokens;
-        includedBlocks.push(block.name);
+        includedBlockNames.push(block.name);
       } else if (remainingTokens > 100) {
-        // 只有在还有足够空间时才尝试截断
         const truncatedContent = this.truncate(block, remainingTokens);
         const truncatedTokens = tokenizerService.countTokens(
           truncatedContent,
           this.model
         );
-        userContent += `\n\n<${tagName} truncated="true">\n${truncatedContent}\n</${tagName}>`;
+        includedBlocks.push({ ...block, content: truncatedContent });
         remainingTokens -= truncatedTokens;
-        includedBlocks.push(`${block.name} (Truncated)`);
+        includedBlockNames.push(`${block.name} (Truncated)`);
         notify.warn(formatMessage("context.truncated", [block.name]));
-        // 截断后，假设剩余空间已用尽或不足以添加更多块，因此跳出循环
-        // 将此块之后的所有块都标记为已排除
         const currentIndex = this.blocks.indexOf(block);
         this.blocks
           .slice(currentIndex + 1)
-          .forEach((b) => excludedBlocks.push(b.name));
-        break;
+          .forEach((b) => excludedBlockNames.push(b.name));
+        break; // 截断后，不再添加任何块
       } else {
-        // 剩余空间不足以容纳下一个块，即使截断也不行
-        excludedBlocks.push(block.name);
+        excludedBlockNames.push(block.name);
       }
     }
 
-    if (excludedBlocks.length > 0) {
+    // 3. 按照为LLM注意力机制优化的特定顺序重新排序区块
+    const finalOrder = [
+      "user-commits",
+      "recent-commits",
+      "similar-code",
+      "original-code",
+      "code-changes",
+      "reminder",
+      "custom-instructions",
+    ];
+
+    includedBlocks.sort(
+      (a, b) => finalOrder.indexOf(a.name) - finalOrder.indexOf(b.name)
+    );
+
+    // 4. 构建最终的用户内容字符串
+    let userContent = includedBlocks
+      .map((block) => {
+        const tagName = block.name.toLowerCase().replace(/\s+/g, "-");
+        const isTruncated = includedBlockNames.includes(`${block.name} (Truncated)`);
+        const tag = isTruncated ? `<${tagName} truncated="true">` : `<${tagName}>`;
+        return `${tag}\n${block.content}\n</${tagName}>`;
+      })
+      .join("\n\n");
+
+    if (excludedBlockNames.length > 0) {
       notify.warn(
-        formatMessage("context.blocks.removed", [excludedBlocks.join(", ")])
+        formatMessage("context.blocks.removed", [excludedBlockNames.join(", ")])
       );
     }
 
-    console.log("Included context blocks:", includedBlocks.join(", "));
-    if (excludedBlocks.length > 0) {
-      console.log("Excluded context blocks:", excludedBlocks.join(", "));
+    console.log("Included context blocks:", includedBlockNames.join(", "));
+    if (excludedBlockNames.length > 0) {
+      console.log("Excluded context blocks:", excludedBlockNames.join(", "));
     }
 
     return [
