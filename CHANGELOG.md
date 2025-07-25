@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.35.0 (2025-07-25)
+
+### ✨ Features
+
+- **diff**: Add diff target configuration to support analyzing staging area or all changes ([d5a769a](https://github.com/littleCareless/dish-ai-commit/commit/d5a769a))
+
+### 🎫 Chores
+
+- **release**: Release 0.34.0 version ([8bc5ec6](https://github.com/littleCareless/dish-ai-commit/commit/8bc5ec6))
+
 # 0.34.0 (2025-07-25)
 
 ### ✨ Features
