@@ -5,6 +5,7 @@ import * as childProcess from "child_process";
 import { getMessage, formatMessage } from "../utils/i18n";
 import { DiffProcessor } from "../utils/diff/diff-processor";
 import { notify } from "../utils/notification/notification-manager";
+import { ConfigurationManager } from "../config/configuration-manager";
 
 const exec = promisify(childProcess.exec);
 
@@ -168,6 +169,7 @@ export class GitProvider implements ISCMProvider {
       }
 
       if (files && files.length > 0) {
+        notify.info(formatMessage("diff.files.selected", [files.length]));
         // 处理指定文件的差异
         for (const file of files) {
           const fileStatus = await this.getFileStatus(file);
@@ -246,88 +248,177 @@ export class GitProvider implements ISCMProvider {
           }
         }
       } else {
-        // 获取所有更改的差异 - 需要组合多个命令的输出
-
-        // 1. 获取已跟踪文件的更改
-        let trackedChanges = "";
-        try {
-          if (hasInitialCommit) {
-            // 如果有初始提交，使用HEAD引用
-            const result = await exec("git diff HEAD", {
-              cwd: this.workspaceRoot,
-              maxBuffer: 1024 * 1024 * 10,
-            });
-            trackedChanges = result.stdout;
-          } else {
-            // 如果没有初始提交，使用不带HEAD的diff命令
-            const result = await exec("git diff", {
-              cwd: this.workspaceRoot,
-              maxBuffer: 1024 * 1024 * 10,
-            });
-            trackedChanges = result.stdout;
-          }
-        } catch (error) {
-          // 如果出现"bad revision 'HEAD'"错误，回退到不带HEAD的diff命令
-          if (
-            error instanceof Error &&
-            error.message.includes("bad revision 'HEAD'")
-          ) {
-            const result = await exec("git diff", {
-              cwd: this.workspaceRoot,
-              maxBuffer: 1024 * 1024 * 10,
-            });
-            trackedChanges = result.stdout;
-          } else {
-            throw error;
-          }
-        }
-
-        // 2. 获取已暂存的新文件更改
-        const { stdout: stagedChanges } = await exec("git diff --cached", {
-          cwd: this.workspaceRoot,
-          maxBuffer: 1024 * 1024 * 10,
-        });
-
-        // 3. 获取未跟踪的新文件列表
-        const { stdout: untrackedFiles } = await exec(
-          "git ls-files --others --exclude-standard",
-          {
-            cwd: this.workspaceRoot,
-          }
+        const diffTarget = ConfigurationManager.getInstance().getConfig(
+          "features.codeAnalysis.diffTarget" as any
         );
 
-        // 整合所有差异
-        diffOutput = trackedChanges;
-
-        if (stagedChanges.trim()) {
-          diffOutput += stagedChanges;
-        }
-
-        // 为每个未跟踪文件获取差异
-        if (untrackedFiles.trim()) {
-          const files = untrackedFiles
-            .split("\n")
-            .filter((file) => file.trim());
-          for (const file of files) {
-            const escapedFile = file
-              .replace(/\\/g, "\\\\")
-              .replace(/"/g, '\\"');
+        if (diffTarget === "staged") {
+          try {
+            let stagedFilesOutput = "";
             try {
-              // 使用git diff --no-index捕获新文件内容
-              const result = await exec(
-                `git diff --no-index /dev/null "${escapedFile}"`,
-                {
-                  cwd: this.workspaceRoot,
-                  maxBuffer: 1024 * 1024 * 10,
+              const { stdout } = await exec("git diff --cached --name-only", {
+                cwd: this.workspaceRoot,
+              });
+              stagedFilesOutput = stdout;
+            } catch (e) {
+              if (e instanceof Error && "stdout" in e) {
+                stagedFilesOutput = (e as any).stdout;
+              } else {
+                throw e;
+              }
+            }
+            const fileCount = stagedFilesOutput
+              .split("\n")
+              .filter(Boolean).length;
+            if (fileCount > 0) {
+              notify.info(formatMessage("diff.staged.info", [fileCount]));
+            }
+          } catch (error) {
+            console.warn(
+              "Failed to count staged files for notification:",
+              error
+            );
+          }
+          // 只获取暂存区的更改
+          const { stdout: stagedChanges } = await exec("git diff --cached", {
+            cwd: this.workspaceRoot,
+            maxBuffer: 1024 * 1024 * 10,
+          });
+          diffOutput = stagedChanges;
+        } else {
+          // 获取所有更改的差异 - 需要组合多个命令的输出
+          try {
+            const getFileNames = async (command: string) => {
+              let output = "";
+              try {
+                const result = await exec(command, { cwd: this.workspaceRoot });
+                output = result.stdout;
+              } catch (e) {
+                if (e instanceof Error && "stdout" in e) {
+                  output = (e as any).stdout;
+                } else {
+                  throw e;
                 }
-              );
-              diffOutput += `\n=== New File: ${file} ===\n${result.stdout}`;
-            } catch (error) {
-              // git diff --no-index 在有差异时会返回非零状态码，需要捕获异常
-              if (error instanceof Error && "stdout" in error) {
-                diffOutput += `\n=== New File: ${file} ===\n${
-                  (error as any).stdout
-                }`;
+              }
+              return output.split("\n").filter(Boolean);
+            };
+
+            const trackedFiles = hasInitialCommit
+              ? await getFileNames("git diff HEAD --name-only")
+              : await getFileNames("git diff --name-only");
+
+            const stagedFiles = await getFileNames(
+              "git diff --cached --name-only"
+            );
+
+            const { stdout: untrackedFilesOutput } = await exec(
+              "git ls-files --others --exclude-standard",
+              {
+                cwd: this.workspaceRoot,
+              }
+            );
+            const untrackedFiles = untrackedFilesOutput
+              .split("\n")
+              .filter(Boolean);
+
+            const allFiles = new Set([
+              ...trackedFiles,
+              ...stagedFiles,
+              ...untrackedFiles,
+            ]);
+            const fileCount = allFiles.size;
+
+            if (fileCount > 0) {
+              notify.info(formatMessage("diff.all.info", [fileCount]));
+            }
+          } catch (error) {
+            console.warn(
+              "Failed to count all changed files for notification:",
+              error
+            );
+          }
+
+          // 1. 获取已跟踪文件的更改
+          let trackedChanges = "";
+          try {
+            if (hasInitialCommit) {
+              // 如果有初始提交，使用HEAD引用
+              const result = await exec("git diff HEAD", {
+                cwd: this.workspaceRoot,
+                maxBuffer: 1024 * 1024 * 10,
+              });
+              trackedChanges = result.stdout;
+            } else {
+              // 如果没有初始提交，使用不带HEAD的diff命令
+              const result = await exec("git diff", {
+                cwd: this.workspaceRoot,
+                maxBuffer: 1024 * 1024 * 10,
+              });
+              trackedChanges = result.stdout;
+            }
+          } catch (error) {
+            // 如果出现"bad revision 'HEAD'"错误，回退到不带HEAD的diff命令
+            if (
+              error instanceof Error &&
+              error.message.includes("bad revision 'HEAD'")
+            ) {
+              const result = await exec("git diff", {
+                cwd: this.workspaceRoot,
+                maxBuffer: 1024 * 1024 * 10,
+              });
+              trackedChanges = result.stdout;
+            } else {
+              throw error;
+            }
+          }
+
+          // 2. 获取已暂存的新文件更改
+          const { stdout: stagedChanges } = await exec("git diff --cached", {
+            cwd: this.workspaceRoot,
+            maxBuffer: 1024 * 1024 * 10,
+          });
+
+          // 3. 获取未跟踪的新文件列表
+          const { stdout: untrackedFiles } = await exec(
+            "git ls-files --others --exclude-standard",
+            {
+              cwd: this.workspaceRoot,
+            }
+          );
+
+          // 整合所有差异
+          diffOutput = trackedChanges;
+
+          if (stagedChanges.trim()) {
+            diffOutput += stagedChanges;
+          }
+
+          // 为每个未跟踪文件获取差异
+          if (untrackedFiles.trim()) {
+            const files = untrackedFiles
+              .split("\n")
+              .filter((file) => file.trim());
+            for (const file of files) {
+              const escapedFile = file
+                .replace(/\\/g, "\\\\")
+                .replace(/"/g, '\\"');
+              try {
+                // 使用git diff --no-index捕获新文件内容
+                const result = await exec(
+                  `git diff --no-index /dev/null "${escapedFile}"`,
+                  {
+                    cwd: this.workspaceRoot,
+                    maxBuffer: 1024 * 1024 * 10,
+                  }
+                );
+                diffOutput += `\n=== New File: ${file} ===\n${result.stdout}`;
+              } catch (error) {
+                // git diff --no-index 在有差异时会返回非零状态码，需要捕获异常
+                if (error instanceof Error && "stdout" in error) {
+                  diffOutput += `\n=== New File: ${file} ===\n${
+                    (error as any).stdout
+                  }`;
+                }
               }
             }
           }

@@ -58,6 +58,7 @@ export const CONFIG_KEYS = {
   "PROVIDERS_GROQ_APIKEY": "dish-ai-commit.providers.groq.apiKey",
   "FEATURES": "dish-ai-commit.features",
   "FEATURES_CODEANALYSIS": "dish-ai-commit.features.codeAnalysis",
+  "FEATURES_CODEANALYSIS_DIFFTARGET": "dish-ai-commit.features.codeAnalysis.diffTarget",
   "FEATURES_CODEANALYSIS_SIMPLIFYDIFF": "dish-ai-commit.features.codeAnalysis.simplifyDiff",
   "FEATURES_COMMITFORMAT": "dish-ai-commit.features.commitFormat",
   "FEATURES_COMMITFORMAT_ENABLEEMOJI": "dish-ai-commit.features.commitFormat.enableEmoji",

@@ -289,6 +289,13 @@ export const CONFIG_SCHEMA = {
   features: {
     // Code analysis features
     codeAnalysis: {
+      diffTarget: {
+        type: "string",
+        default: "all",
+        description:
+          "Specify the target for git diff: 'staged' for staged changes, 'all' for all changes. / 指定 git diff 的目标：'staged' 表示暂存区的更改，'all' 表示所有更改。",
+        enum: ["staged", "all"],
+      },
       simplifyDiff: {
         type: "boolean",
         default: false,

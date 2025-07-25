@@ -221,5 +221,8 @@
   "git.base.branch.not.found": "Base branch '{0}' not found locally or on remote 'origin'.",
   "git.base.branch.not.found.default": "Default base branch '{0}' not found. Please check your repository configuration.",
   "git.base.branch.not.found.error": "Could not find a valid base branch to compare against. Tried: {0}",
-  "git.log.failed": "Failed to get Git commit log: {0}"
+  "git.log.failed": "Failed to get Git commit log: {0}",
+  "diff.files.selected": "Selected {0} files for diff.",
+  "diff.staged.info": "Getting staged changes for {0} files.",
+  "diff.all.info": "Getting all changes for {0} files."
 }
