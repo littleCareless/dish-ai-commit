@@ -1,15 +1,15 @@
+name: Deploy Extension
+
 on:
   push:
     branches:
       - main
       - develop
-    tags:
-      - "v*.*.*"
   workflow_dispatch:
 
-name: Deploy Extension
 jobs:
-  deploy:
+  deploy_prerelease:
+    if: github.ref == 'refs/heads/develop'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
@@ -18,13 +18,52 @@ jobs:
           node-version: 20
       - name: Install pnpm
         run: npm install -g pnpm
-      - run: npm ci
+      - run: pnpm install
+      - name: Publish to Open VSX Registry (Pre-release)
+        uses: HaaLeo/publish-vscode-extension@v2
+        id: publishToOpenVSX
+        with:
+          pat: ${{ secrets.OPEN_VSX_TOKEN }}
+          preRelease: true
+          skipDuplicate: true
+      - name: Publish to Visual Studio Marketplace (Pre-release)
+        uses: HaaLeo/publish-vscode-extension@v2
+        with:
+          pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
+          registryUrl: https://marketplace.visualstudio.com
+          extensionFile: ${{ steps.publishToOpenVSX.outputs.vsixPath }}
+          preRelease: true
+          skipDuplicate: true
+
+  deploy_release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Install pnpm
+        run: npm install -g pnpm
+      - run: pnpm install
+      - name: Bump version, commit, and push tag
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+          pnpm version patch --no-git-tag-version
+          VERSION=$(node -p "require('./package.json').version")
+          git add package.json
+          git commit -m "chore(release): v$VERSION"
+          git tag "v$VERSION"
+          git push
+          git push --tags
       - name: Publish to Open VSX Registry
         uses: HaaLeo/publish-vscode-extension@v2
         id: publishToOpenVSX
         with:
           pat: ${{ secrets.OPEN_VSX_TOKEN }}
-          preRelease: ${{ github.ref == 'refs/heads/develop' }}
           skipDuplicate: true
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v2
