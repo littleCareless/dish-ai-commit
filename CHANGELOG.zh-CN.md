@@ -6,6 +6,28 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.37.0 (2025-07-25)
+
+### ♻ Code Refactoring
+
+- **context-manager**: 优化消息构建逻辑并改进区块处理顺序 ([220f0b7](https://github.com/littleCareless/dish-ai-commit/commit/220f0b7))
+- **context**: 重构上下文构建以改进提示结构和质量 ([65e2027](https://github.com/littleCareless/dish-ai-commit/commit/65e2027))
+
+### ✨ Features
+
+- **branch**: 引入分支名生成模式选择 ([3c0d3a9](https://github.com/littleCareless/dish-ai-commit/commit/3c0d3a9))
+- **commit**: 实现分层提交详情生成 ([a758efe](https://github.com/littleCareless/dish-ai-commit/commit/a758efe))
+
+### 🎫 Chores
+
+- **release**: 发布 0.35.0 版本 ([c866ae8](https://github.com/littleCareless/dish-ai-commit/commit/c866ae8))
+- **release**: 发布 0.36.0 版本 ([8938ac4](https://github.com/littleCareless/dish-ai-commit/commit/8938ac4))
+
+### 🔧 Continuous Integration
+
+- **release**: 自动化预发布和正式发布流程 ([4681ee4](https://github.com/littleCareless/dish-ai-commit/commit/4681ee4))
+- **workflow**: 整合并自动化部署工作流 ([c5c2686](https://github.com/littleCareless/dish-ai-commit/commit/c5c2686))
+
 # 0.36.0 (2025-07-25)
 
 ### ✨ Features
