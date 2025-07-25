@@ -375,11 +375,21 @@ export class GitProvider implements ISCMProvider {
     const api = this.gitExtension.getAPI(1);
     const repository = api.repositories[0];
 
-    if (!repository) {
-      throw new Error(getMessage("git.repository.not.found"));
+    if (repository?.inputBox) {
+      repository.inputBox.value = message;
+    } else {
+      try {
+        await vscode.env.clipboard.writeText(message);
+        notify.info("commit.message.copied");
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        notify.error("commit.message.copy.failed", [errorMessage]);
+        // Fallback to showing the message in an information dialog
+        vscode.window.showInformationMessage(
+          formatMessage("commit.message.manual.copy", [message])
+        );
+      }
     }
-
-    repository.inputBox.value = message;
   }
 
   /**
@@ -408,11 +418,20 @@ export class GitProvider implements ISCMProvider {
     const api = this.gitExtension.getAPI(1);
     const repository = api.repositories[0];
 
-    if (!repository) {
-      throw new Error(getMessage("git.repository.not.found"));
+    if (repository?.inputBox) {
+      repository.inputBox.value = message;
+    } else {
+      try {
+        await vscode.env.clipboard.writeText(message);
+        notify.info("commit.message.copied");
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        notify.error("commit.message.copy.failed", [errorMessage]);
+        vscode.window.showInformationMessage(
+          formatMessage("commit.message.manual.copy", [message])
+        );
+      }
     }
-
-    repository.inputBox.value = message;
   }
 
   /**
@@ -570,6 +589,20 @@ export class GitProvider implements ISCMProvider {
     }
 
     return { repository: repositoryCommitMessages, user: userCommitMessages };
+  }
+
+  /**
+   * 将提交信息复制到剪贴板
+   * @param message 要复制的提交信息
+   */
+  async copyToClipboard(message: string): Promise<void> {
+    try {
+      await vscode.env.clipboard.writeText(message);
+      notify.info("commit.message.copied");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      notify.error("commit.message.copy.failed", [errorMessage]);
+    }
   }
 
   // /**

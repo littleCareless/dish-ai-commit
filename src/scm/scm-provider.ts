@@ -55,6 +55,12 @@ export interface ISCMProvider {
   * 获取最近的提交信息
   */
   getRecentCommitMessages(): Promise<RecentCommitMessages>;
+
+  /**
+   * 将提交信息复制到剪贴板
+   * @param message 要复制的提交信息
+   */
+  copyToClipboard(message: string): Promise<void>;
 }
 
 /**

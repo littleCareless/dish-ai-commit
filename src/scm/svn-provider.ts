@@ -426,11 +426,20 @@ export class SvnProvider implements ISCMProvider {
    */
   async setCommitInput(message: string): Promise<void> {
     const repository = this.api?.repositories?.[0];
-    if (!repository) {
-      throw new Error(getMessage("git.repository.not.found"));
+    if (repository?.inputBox) {
+      repository.inputBox.value = message;
+    } else {
+      try {
+        await vscode.env.clipboard.writeText(message);
+        notify.info("commit.message.copied");
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        notify.error("commit.message.copy.failed", [errorMessage]);
+        vscode.window.showInformationMessage(
+          formatMessage("commit.message.manual.copy", [message])
+        );
+      }
     }
-
-    repository.inputBox.value = message;
   }
 
   /**
@@ -455,21 +464,19 @@ export class SvnProvider implements ISCMProvider {
    */
   async startStreamingInput(message: string): Promise<void> {
     const repository = this.api?.repositories?.[0];
-    if (!repository) {
-      throw new Error(getMessage("git.repository.not.found")); // 保持与现有代码一致，理想情况下应为 SVN 特定消息
-    }
-    if (repository.inputBox) {
+    if (repository?.inputBox) {
       repository.inputBox.value = message;
-      // 如果需要，可以确保输入框是启用的，但SVN插件的inputBox.enabled行为可能不一致
-      // if (typeof repository.inputBox.enabled === 'boolean') {
-      //   repository.inputBox.enabled = true;
-      // }
     } else {
-      Logger.log(
-        LogLevel.Error,
-        "SVN repository.inputBox is undefined. Cannot set streaming input."
-      );
-      throw new Error("SVN inputBox is not available to set streaming input.");
+      try {
+        await vscode.env.clipboard.writeText(message);
+        notify.info("commit.message.copied");
+      } catch (error) {
+        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        notify.error("commit.message.copy.failed", [errorMessage]);
+        vscode.window.showInformationMessage(
+          formatMessage("commit.message.manual.copy", [message])
+        );
+      }
     }
   }
 
@@ -633,6 +640,20 @@ export class SvnProvider implements ISCMProvider {
       }
     }
     return messages;
+  }
+
+  /**
+   * 将提交信息复制到剪贴板
+   * @param message 要复制的提交信息
+   */
+  async copyToClipboard(message: string): Promise<void> {
+    try {
+      await vscode.env.clipboard.writeText(message);
+      notify.info("commit.message.copied");
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      notify.error("commit.message.copy.failed", [errorMessage]);
+    }
   }
 
   // /**
