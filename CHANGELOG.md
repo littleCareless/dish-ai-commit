@@ -6,6 +6,34 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.33.0 (2025-07-25)
+
+### ♻ Code Refactoring
+
+- **ai**: Refactor the context overlength error handling and add token calculation function ([de81990](https://github.com/littleCareless/dish-ai-commit/commit/de81990))
+- **core**: Introduce ContextManager to optimize overlength prompt word processing ([6d50f20](https://github.com/littleCareless/dish-ai-commit/commit/6d50f20))
+- **core**: Introduce notification manager to unify message prompts ([a9b92a3](https://github.com/littleCareless/dish-ai-commit/commit/a9b92a3))
+- **diff**: Refactor the difference processor to aggregate output ([4ac8eaa](https://github.com/littleCareless/dish-ai-commit/commit/4ac8eaa))
+- **notification**: Make notification function return user selection result ([9b8ef1f](https://github.com/littleCareless/dish-ai-commit/commit/9b8ef1f))
+
+### ✨ Features
+
+- **context**: Implement context manager to handle token limit intelligently ([af7adc4](https://github.com/littleCareless/dish-ai-commit/commit/af7adc4))
+- **tokenizer**: Add tokenizer service for token calculation and encoding and decoding ([ab691a2](https://github.com/littleCareless/dish-ai-commit/commit/ab691a2))
+- **ui**: Add light and dark theme support for command icons ([646051d](https://github.com/littleCareless/dish-ai-commit/commit/646051d))
+
+### 🎫 Chores
+
+- **i18n**: Add localized text for prompt management and Git operations ([04f59d1](https://github.com/littleCareless/dish-ai-commit/commit/04f59d1))
+
+### 👷 Build System
+
+- **deps**: Update dependencies ([0abfaa3](https://github.com/littleCareless/dish-ai-commit/commit/0abfaa3))
+
+### 📝 Documentation
+
+- **readme**: Add vscode-copilot-chat to the credits section ([bb7680a](https://github.com/littleCareless/dish-ai-commit/commit/bb7680a))
+
 ## 0.32.1 (2025-07-24)
 
 ### 🎫 Chores
