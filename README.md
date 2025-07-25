@@ -411,6 +411,7 @@ This project is inspired by and references these excellent open source projects:
 - [vscode](https://github.com/microsoft/vscode) - Visual Studio Code editor
 - [vscode-gitlens](https://github.com/gitkraken/vscode-gitlens) - Git supercharged for VSCode
 - [ai-commit](https://github.com/Sitoi/ai-commit) - AI assisted Git commit message generation
+- [vscode-copilot-chat](https://github.com/microsoft/vscode-copilot-chat) - AI chat features powered by Copilot
 
 ## 📄 License
 
