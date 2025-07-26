@@ -249,7 +249,7 @@ export class GitProvider implements ISCMProvider {
         }
       } else {
         const diffTarget = ConfigurationManager.getInstance().getConfig(
-          "features.codeAnalysis.diffTarget" as any
+          "FEATURES_CODEANALYSIS_DIFFTARGET"
         );
 
         if (diffTarget === "staged") {
@@ -473,7 +473,8 @@ export class GitProvider implements ISCMProvider {
         await vscode.env.clipboard.writeText(message);
         notify.info("commit.message.copied");
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
         notify.error("commit.message.copy.failed", [errorMessage]);
         // Fallback to showing the message in an information dialog
         vscode.window.showInformationMessage(
@@ -516,7 +517,8 @@ export class GitProvider implements ISCMProvider {
         await vscode.env.clipboard.writeText(message);
         notify.info("commit.message.copied");
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
         notify.error("commit.message.copy.failed", [errorMessage]);
         vscode.window.showInformationMessage(
           formatMessage("commit.message.manual.copy", [message])
@@ -691,7 +693,8 @@ export class GitProvider implements ISCMProvider {
       await vscode.env.clipboard.writeText(message);
       notify.info("commit.message.copied");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       notify.error("commit.message.copy.failed", [errorMessage]);
     }
   }
