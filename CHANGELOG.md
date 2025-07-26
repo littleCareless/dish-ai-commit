@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.37.1 (2025-07-26)
+
+### 🎫 Chores
+
+- Updated version number to 0.37.0 and updated change log ([703e94a](https://github.com/littleCareless/dish-ai-commit/commit/703e94a))
+
+### 🐛 Bug Fixes
+
+- **git-provider**: Fix the runtime error caused by incorrect configuration key name setting ([33a3d5a](https://github.com/littleCareless/dish-ai-commit/commit/33a3d5a))
+
 # 0.37.0 (2025-07-25)
 
 ### ♻ Code Refactoring

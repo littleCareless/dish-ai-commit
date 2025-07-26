@@ -6,6 +6,16 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.37.1 (2025-07-26)
+
+### 🎫 Chores
+
+- 更新版本号至 0.37.0 并更新变更日志 ([703e94a](https://github.com/littleCareless/dish-ai-commit/commit/703e94a))
+
+### 🐛 Bug Fixes
+
+- **git-provider**: 修复配置键名设置错误 导致的运行错误 ([33a3d5a](https://github.com/littleCareless/dish-ai-commit/commit/33a3d5a))
+
 # 0.37.0 (2025-07-25)
 
 ### ♻ Code Refactoring
