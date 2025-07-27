@@ -6,6 +6,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.39.0 (2025-07-27)
+
+### ♻ Code Refactoring
+
+- **scm**: Optimize warehouse path detection logic and support multi-warehouse environment ([2214234](https://github.com/littleCareless/dish-ai-commit/commit/2214234))
+
+- Update ESLint plugin and improve code block bracket style ([3cae2dc](https://github.com/littleCareless/dish-ai-commit/commit/3cae2dc))
+
+### ✅ Tests
+
+- **scm-factory**: Update test cases to use fs.PathLike to replace string type parameters ([7c988b6](https://github.com/littleCareless/dish-ai-commit/commit/7c988b6))
+
+### ✨ Features
+
+- **core**: Released version 0.38.0, supporting multi-repository location and testing infrastructure ([5e36789](https://github.com/littleCareless/dish-ai-commit/commit/5e36789))
+- **theme**: Implemented VSCode theme adaptation function ([6491f11](https://github.com/littleCareless/dish-ai-commit/commit/6491f11))
+
+### 🎫 Chores
+
+- **lint**: Updated lint configuration and pre-commit hook ([8051fcd](https://github.com/littleCareless/dish-ai-commit/commit/8051fcd))
+
+### 👷 Build System
+
+- **core**: Upgraded vite to 7.0.6 and optimized dependency management ([6df99b4](https://github.com/littleCareless/dish-ai-commit/commit/6df99b4))
+- Update @stylistic/eslint-plugin dependency to version 5.2.2 ([9c43f1d](https://github.com/littleCareless/dish-ai-commit/commit/9c43f1d))
+
 # 0.38.0 (2025-07-27)
 
 ### ♻ Code Refactoring

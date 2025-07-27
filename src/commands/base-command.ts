@@ -179,7 +179,7 @@ export abstract class BaseCommand {
     files?: string[]
   ): string | undefined {
     // 获取Git扩展API
-    const gitExtension = vscode.extensions.getExtension("vscode.git");
+    const gitExtension = vscode.extensions.getExtension('vscode.git');
     if (!gitExtension?.isActive) {
       return undefined;
     }
@@ -214,11 +214,9 @@ export abstract class BaseCommand {
 
         for (const state of states) {
           // 尝试从resourceState中获取仓库信息
-          const repository = state as any;
+          const repository = (state as any)?.repository;
           if (repository?.rootUri?.fsPath) {
-            console.log(
-              `Found repository from resourceState: ${repository.rootUri.fsPath}`
-            );
+            console.log(`Found repository from resourceState: ${repository.rootUri.fsPath}`);
             return repository.rootUri.fsPath;
           }
         }
@@ -249,24 +247,18 @@ export abstract class BaseCommand {
       | vscode.SourceControlResourceState
       | vscode.SourceControlResourceState[]
       | string[]
-  ): Promise<
-    | {
-        scmProvider: ISCMProvider;
-        selectedFiles: string[] | undefined;
-        repositoryPath: string | undefined;
-      }
-    | undefined
-  > {
+  ): Promise<{
+    scmProvider: ISCMProvider;
+    selectedFiles: string[] | undefined;
+    repositoryPath: string | undefined;
+  } | undefined> {
     let selectedFiles: string[] | undefined;
     let repositoryPath: string | undefined;
 
     // 判断参数类型并处理
     if (resourcesOrFiles) {
       // 如果是字符串数组，直接作为文件路径使用（保持向后兼容）
-      if (
-        Array.isArray(resourcesOrFiles) &&
-        typeof resourcesOrFiles[0] === "string"
-      ) {
+      if (Array.isArray(resourcesOrFiles) && typeof resourcesOrFiles[0] === 'string') {
         selectedFiles = resourcesOrFiles as string[];
       }
       // 如果是资源状态，提取文件和仓库信息
@@ -275,17 +267,11 @@ export abstract class BaseCommand {
           | vscode.SourceControlResourceState
           | vscode.SourceControlResourceState[];
         selectedFiles = this.getSelectedFiles(resources);
-        repositoryPath = this.getRepositoryFromResources(
-          resources,
-          selectedFiles
-        );
+        repositoryPath = this.getRepositoryFromResources(resources, selectedFiles);
       }
     }
 
-    const scmProvider = await SCMFactory.detectSCM(
-      selectedFiles,
-      repositoryPath
-    );
+    const scmProvider = await SCMFactory.detectSCM(selectedFiles, repositoryPath);
     if (!scmProvider) {
       await notify.error(getMessage("scm.not.detected"));
       return;

@@ -6,6 +6,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.39.0 (2025-07-27)
+
+### ♻ Code Refactoring
+
+- **scm**: 优化仓库路径检测逻辑并支持多仓库环境 ([2214234](https://github.com/littleCareless/dish-ai-commit/commit/2214234))
+- 更新 ESLint 插件并改进代码块括号风格 ([3cae2dc](https://github.com/littleCareless/dish-ai-commit/commit/3cae2dc))
+
+### ✅ Tests
+
+- **scm-factory**: 更新测试用例中使用 fs.PathLike 替换 string 类型参数 ([7c988b6](https://github.com/littleCareless/dish-ai-commit/commit/7c988b6))
+
+### ✨ Features
+
+- **core**: 发布 0.38.0 版本，支持多仓库定位与测试基础设施 ([5e36789](https://github.com/littleCareless/dish-ai-commit/commit/5e36789))
+- **theme**: 实现 VSCode 主题适配功能 ([6491f11](https://github.com/littleCareless/dish-ai-commit/commit/6491f11))
+
+### 🎫 Chores
+
+- **lint**: 更新 lint 配置和 pre-commit 钩子 ([8051fcd](https://github.com/littleCareless/dish-ai-commit/commit/8051fcd))
+
+### 👷 Build System
+
+- **core**: 升级 vite 至 7.0.6 并优化依赖项管理 ([6df99b4](https://github.com/littleCareless/dish-ai-commit/commit/6df99b4))
+- 更新 @stylistic/eslint-plugin 依赖至 5.2.2 版本 ([9c43f1d](https://github.com/littleCareless/dish-ai-commit/commit/9c43f1d))
+
 # 0.38.0 (2025-07-27)
 
 ### ♻ Code Refactoring
