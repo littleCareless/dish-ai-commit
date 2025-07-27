@@ -185,7 +185,9 @@ export class CodeIndexer {
       ) {
         const potentialNameNode =
           parent.childForFieldName("name") || parent.childForFieldName("left");
-        if (potentialNameNode) return potentialNameNode.text;
+        if (potentialNameNode) {
+          return potentialNameNode.text;
+        }
       }
       return "anonymous_arrow_function";
     }
