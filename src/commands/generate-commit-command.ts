@@ -256,6 +256,11 @@ REMINDER:
     const config = ConfigurationManager.getInstance();
     const configuration = config.getConfiguration();
 
+    // 在获取diff之前设置当前文件，确保使用正确的仓库
+    if (scmProvider.setCurrentFiles) {
+      scmProvider.setCurrentFiles(selectedFiles);
+    }
+
     progress.report({ message: getMessage("progress.getting.diff") });
     const diffContent = await scmProvider.getDiff(selectedFiles);
 

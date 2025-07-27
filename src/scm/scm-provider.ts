@@ -61,6 +61,12 @@ export interface ISCMProvider {
    * @param message 要复制的提交信息
    */
   copyToClipboard(message: string): Promise<void>;
+
+  /**
+   * 设置当前操作的文件列表（可选方法）
+   * @param files 文件路径列表
+   */
+  setCurrentFiles?(files?: string[]): void;
 }
 
 /**
@@ -70,6 +76,8 @@ export interface ISCMProvider {
 export class SCMFactory {
   /** 当前激活的SCM提供者实例 */
   private static currentProvider: ISCMProvider | undefined;
+  /** 缓存的SCM提供者实例，按工作区路径索引 */
+  private static providerCache: Map<string, ISCMProvider> = new Map();
 
   /**
    * 根据选中的文件确定工作区根目录
@@ -184,14 +192,23 @@ export class SCMFactory {
     selectedFiles?: string[]
   ): Promise<ISCMProvider | undefined> {
     try {
-      if (this.currentProvider) {
-        return this.currentProvider;
-      }
-
       // 使用新方法获取工作区根目录
       const workspaceRoot = this.findWorkspaceRoot(selectedFiles);
       if (!workspaceRoot) {
         return undefined;
+      }
+
+      // 检查缓存中是否已有该工作区的提供者
+      const cachedProvider = this.providerCache.get(workspaceRoot);
+      if (cachedProvider) {
+        // 验证缓存的提供者是否仍然可用
+        if (await cachedProvider.isAvailable()) {
+          this.currentProvider = cachedProvider;
+          return cachedProvider;
+        } else {
+          // 如果不可用，从缓存中移除
+          this.providerCache.delete(workspaceRoot);
+        }
       }
 
       // 通过目录检测，包括选定的文件路径
@@ -202,6 +219,8 @@ export class SCMFactory {
         "littleCareless.svn-scm-ai"
       );
 
+      let provider: ISCMProvider | undefined;
+
       // 如果检测到Git
       if (scmType === "git") {
         const git = gitExtension?.exports
@@ -210,8 +229,7 @@ export class SCMFactory {
         if (git) {
           await git.init();
           if (await git.isAvailable()) {
-            this.currentProvider = git;
-            return git;
+            provider = git;
           }
         }
       }
@@ -225,20 +243,25 @@ export class SCMFactory {
         if (svn) {
           await svn.init();
           if (await svn.isAvailable()) {
-            this.currentProvider = svn;
-            return svn;
+            provider = svn;
           }
         }
 
         // 如果没有插件但系统有SVN命令,使用命令行方式
-        if (await this.checkSCMCommand("svn")) {
+        if (!provider && await this.checkSCMCommand("svn")) {
           const cliSvn = new CliSvnProvider(workspaceRoot);
           await cliSvn.init();
           if (await cliSvn.isAvailable()) {
-            this.currentProvider = cliSvn;
-            return cliSvn;
+            provider = cliSvn;
           }
         }
+      }
+
+      if (provider) {
+        // 缓存提供者实例
+        this.providerCache.set(workspaceRoot, provider);
+        this.currentProvider = provider;
+        return provider;
       }
 
       return undefined;

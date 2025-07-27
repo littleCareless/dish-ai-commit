@@ -64,6 +64,9 @@ export class GitProvider implements ISCMProvider {
   /** Git API实例 */
   private readonly api: GitAPI;
 
+  /** 当前操作的文件路径列表，用于确定正确的仓库 */
+  private currentFiles?: string[];
+
   /**
    * 创建Git提供者实例
    * @param gitExtension - VS Code Git扩展实例
@@ -156,6 +159,9 @@ export class GitProvider implements ISCMProvider {
    */
   async getDiff(files?: string[]): Promise<string | undefined> {
     try {
+      // 设置当前操作的文件列表，用于后续的仓库匹配
+      this.setCurrentFiles(files);
+      
       let diffOutput = "";
       console.log("this.workspaceRoot", this.workspaceRoot);
 
@@ -373,10 +379,12 @@ export class GitProvider implements ISCMProvider {
           }
 
           // 2. 获取已暂存的新文件更改
-          const { stdout: stagedChanges } = await exec("git diff --cached", {
+          const execResult = await exec("git diff --cached", {
             cwd: this.workspaceRoot,
             maxBuffer: 1024 * 1024 * 10,
           });
+          console.log('DEBUG: exec result for git diff --cached:', execResult);
+          const { stdout: stagedChanges } = execResult;
 
           // 3. 获取未跟踪的新文件列表
           const { stdout: untrackedFiles } = await exec(
@@ -441,6 +449,67 @@ export class GitProvider implements ISCMProvider {
   }
 
   /**
+   * 设置当前操作的文件列表
+   * @param files 文件路径列表
+   */
+  setCurrentFiles(files?: string[]): void {
+    this.currentFiles = files;
+  }
+
+  /**
+   * 根据当前工作区路径和文件路径找到对应的Git仓库
+   * @returns {GitRepository | undefined} 匹配的Git仓库实例
+   * @private
+   */
+  private findRepositoryForWorkspace(): GitRepository | undefined {
+    const api = this.gitExtension.getAPI(1);
+    const repositories = api.repositories;
+
+    if (repositories.length === 0) {
+      return undefined;
+    }
+
+    // 如果只有一个仓库，直接返回
+    if (repositories.length === 1) {
+      return repositories[0];
+    }
+
+    // 如果有当前文件列表，优先根据文件路径匹配仓库
+    if (this.currentFiles && this.currentFiles.length > 0) {
+      for (const file of this.currentFiles) {
+        for (const repository of repositories) {
+          const repoPath = (repository as any).rootUri?.fsPath;
+          if (repoPath && file.startsWith(repoPath)) {
+            console.log(`Found repository for file ${file}: ${repoPath}`);
+            return repository;
+          }
+        }
+      }
+    }
+
+    // 多仓库情况下，根据工作区路径匹配
+    for (const repository of repositories) {
+      // 检查仓库的根路径是否与当前工作区路径匹配
+      const repoPath = (repository as any).rootUri?.fsPath;
+      if (repoPath && this.workspaceRoot.startsWith(repoPath)) {
+        return repository;
+      }
+    }
+
+    // 如果没有找到匹配的仓库，尝试更精确的匹配
+    for (const repository of repositories) {
+      const repoPath = (repository as any).rootUri?.fsPath;
+      if (repoPath && repoPath.startsWith(this.workspaceRoot)) {
+        return repository;
+      }
+    }
+
+    // 如果仍然没有找到，返回第一个仓库作为fallback
+    console.warn(`No matching repository found for workspace: ${this.workspaceRoot}, using first repository as fallback`);
+    return repositories[0];
+  }
+
+  /**
    * 提交更改
    * @param {string} message - 提交信息
    * @param {string[]} [files] - 要提交的文件路径数组
@@ -448,7 +517,7 @@ export class GitProvider implements ISCMProvider {
    */
   async commit(message: string, files?: string[]): Promise<void> {
     const api = this.gitExtension.getAPI(1);
-    const repository = api.repositories[0];
+    const repository = this.findRepositoryForWorkspace();
 
     if (!repository) {
       throw new Error(getMessage("git.repository.not.found"));
@@ -464,7 +533,7 @@ export class GitProvider implements ISCMProvider {
    */
   async setCommitInput(message: string): Promise<void> {
     const api = this.gitExtension.getAPI(1);
-    const repository = api.repositories[0];
+    const repository = this.findRepositoryForWorkspace();
 
     if (repository?.inputBox) {
       repository.inputBox.value = message;
@@ -491,7 +560,7 @@ export class GitProvider implements ISCMProvider {
    */
   async getCommitInput(): Promise<string> {
     const api = this.gitExtension.getAPI(1);
-    const repository = api.repositories[0];
+    const repository = this.findRepositoryForWorkspace();
 
     if (!repository) {
       throw new Error(getMessage("git.repository.not.found"));
@@ -508,7 +577,7 @@ export class GitProvider implements ISCMProvider {
    */
   async startStreamingInput(message: string): Promise<void> {
     const api = this.gitExtension.getAPI(1);
-    const repository = api.repositories[0];
+    const repository = this.findRepositoryForWorkspace();
 
     if (repository?.inputBox) {
       repository.inputBox.value = message;
