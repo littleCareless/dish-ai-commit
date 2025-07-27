@@ -10,6 +10,15 @@ import { AbstractAIProvider } from "../ai/providers/abstract-ai-provider";
 import { tokenizerService } from "./tokenizer";
 
 /**
+ * 定义需要强制保留的上下文区块名称
+ * 这些区块在空间不足时不会被截断或移除。
+ */
+export const FORCE_RETAIN_BLOCKS: string[] = [
+  "code-changes",
+  // "custom-instructions",
+  // "reminder",
+];
+/**
  * 定义上下文区块的截断策略
  */
 export enum TruncationStrategy {
@@ -161,7 +170,7 @@ export class ContextManager {
    */
   public buildMessages(): AIMessage[] {
     // 1. 按优先级（从高到低）排序，决定哪些区块优先保留
-     this.blocks.sort((a, b) => b.priority - a.priority);
+    this.blocks.sort((a, b) => b.priority - a.priority);
 
     const maxTokens = this.model.maxTokens?.input ?? 8192;
     const systemPromptTokens = tokenizerService.countTokens(
@@ -176,7 +185,10 @@ export class ContextManager {
 
     // 2. 确定哪些区块可以被包含和截断
     for (const block of this.blocks) {
-      const blockTokens = tokenizerService.countTokens(block.content, this.model);
+      const blockTokens = tokenizerService.countTokens(
+        block.content,
+        this.model
+      );
 
       if (remainingTokens >= blockTokens) {
         includedBlocks.push(block);
@@ -221,8 +233,12 @@ export class ContextManager {
     let userContent = includedBlocks
       .map((block) => {
         const tagName = block.name.toLowerCase().replace(/\s+/g, "-");
-        const isTruncated = includedBlockNames.includes(`${block.name} (Truncated)`);
-        const tag = isTruncated ? `<${tagName} truncated="true">` : `<${tagName}>`;
+        const isTruncated = includedBlockNames.includes(
+          `${block.name} (Truncated)`
+        );
+        const tag = isTruncated
+          ? `<${tagName} truncated="true">`
+          : `<${tagName}>`;
         return `${tag}\n${block.content}\n</${tagName}>`;
       })
       .join("\n\n");
@@ -255,20 +271,41 @@ export class ContextManager {
    * @returns 如果成功缩减了上下文则返回 true，否则返回 false
    */
   private smartTruncate(): boolean {
-    if (this.blocks.length === 0) {
-      return false;
+    // 1. 识别出可以被截断的区块（即不在强制保留列表中的）
+    const truncatableBlocks = this.blocks
+      .filter((b) => !FORCE_RETAIN_BLOCKS.includes(b.name))
+      .sort((a, b) => b.priority - a.priority); // 按优先级降序排序
+
+    if (truncatableBlocks.length === 0) {
+      // 如果没有可截断的块，尝试截断 'code-changes' 块
+      const diffBlock = this.blocks.find((b) => b.name === "code-changes");
+      if (diffBlock) {
+        const originalLength = diffBlock.content.length;
+        const originalTokens = tokenizerService.countTokens(
+          diffBlock.content,
+          this.model
+        );
+        diffBlock.content = this.smartTruncateDiff(
+          diffBlock.content,
+          Math.floor(originalTokens * 0.8)
+        );
+        if (diffBlock.content.length < originalLength) {
+          notify.warn(
+            formatMessage("context.block.truncated", [diffBlock.name])
+          );
+          return true;
+        }
+      }
+      return false; // 确实无法再截断
     }
 
-    // 按优先级降序排序（数字大的在前）
-    // this.blocks.sort((a, b) => b.priority - a.priority);
+    // 2. 从可截断的区块中，选取优先级最低的（即排序后的第一个）
+    const lowestPriorityBlock = truncatableBlocks[0];
 
-    const lowestPriorityBlock = this.blocks[0];
-
-    // 策略1: 截断非核心区块
+    // 3. 策略1: 截断该区块
     if (
-      lowestPriorityBlock.name !== "Code Diff" &&
       tokenizerService.countTokens(lowestPriorityBlock.content, this.model) >
-        100 // 避免截断太短的内容
+      100
     ) {
       const tokens = tokenizerService.encode(
         lowestPriorityBlock.content,
@@ -283,38 +320,17 @@ export class ContextManager {
       notify.warn(
         formatMessage("context.block.truncated", [lowestPriorityBlock.name])
       );
-      // this.blocks.sort((a, b) => a.priority - b.priority); // 恢复升序
       return true;
     }
 
-    // 策略2: 移除整个非核心区块
-    if (this.blocks.length > 1 && lowestPriorityBlock.name !== "Code Diff") {
-      const removedBlock = this.blocks.shift(); // 移除优先级最低的
-      if (removedBlock) {
-        notify.warn(
-          formatMessage("context.block.removed", [removedBlock.name])
-        );
-      }
-      // this.blocks.sort((a, b) => a.priority - b.priority); // 恢复升序
+    // 4. 策略2: 如果截断不了（或太短），则直接移除该区块
+    const blockIndex = this.blocks.findIndex(
+      (b) => b.name === lowestPriorityBlock.name
+    );
+    if (blockIndex > -1) {
+      const [removedBlock] = this.blocks.splice(blockIndex, 1);
+      notify.warn(formatMessage("context.block.removed", [removedBlock.name]));
       return true;
-    }
-
-    // 策略3: 智能截断核心的 Diff 区块
-    const diffBlock = this.blocks.find((b) => b.name === "Code Diff");
-    if (diffBlock) {
-      const originalLength = diffBlock.content.length;
-      const originalTokens = tokenizerService.countTokens(
-        diffBlock.content,
-        this.model
-      );
-      diffBlock.content = this.smartTruncateDiff(
-        diffBlock.content,
-        Math.floor(originalTokens * 0.8)
-      );
-      if (diffBlock.content.length < originalLength) {
-        notify.warn(formatMessage("context.block.truncated", [diffBlock.name]));
-        return true;
-      }
     }
 
     return false; // 无法进一步截断
