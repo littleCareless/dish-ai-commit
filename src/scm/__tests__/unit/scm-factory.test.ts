@@ -75,7 +75,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
 
@@ -119,7 +119,7 @@ describe('SCMFactory', () => {
         const selectedFiles = ['/mock/workspace/subproject/file.txt'];
         const gitPath = path.join(subProjectPath, '.git');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
 
@@ -173,7 +173,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const svnPath = path.join(workspacePath, '.svn');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === svnPath;
         });
 
@@ -217,7 +217,7 @@ describe('SCMFactory', () => {
         const selectedFiles = ['/mock/workspace/subproject/file.txt'];
         const svnPath = path.join(subProjectPath, '.svn');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === svnPath;
         });
 
@@ -273,7 +273,7 @@ describe('SCMFactory', () => {
         const selectedFiles = ['/mock/workspace/src/components/Button.tsx'];
         
         // Mock directory traversal - Git found at workspace root
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           const gitPath = path.join(workspacePath, '.git');
           return filePath === gitPath;
         });
@@ -317,7 +317,7 @@ describe('SCMFactory', () => {
         const selectedFiles = ['/mock/workspace/trunk/src/main.c'];
         
         // Mock directory traversal - SVN found at workspace root
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           const svnPath = path.join(workspacePath, '.svn');
           return filePath === svnPath;
         });
@@ -364,7 +364,7 @@ describe('SCMFactory', () => {
         ];
         
         // Mock Git found at workspace root
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           const gitPath = path.join(workspacePath, '.git');
           return filePath === gitPath;
         });
@@ -420,7 +420,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
 
@@ -464,7 +464,7 @@ describe('SCMFactory', () => {
         const svnPath = path.join(workspacePath, '.svn');
         
         // Both directories exist, but Git should be prioritized
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath || filePath === svnPath;
         });
 
@@ -510,7 +510,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
 
@@ -553,7 +553,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
 
@@ -575,7 +575,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
 
@@ -603,7 +603,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
 
@@ -647,7 +647,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const svnPath = path.join(workspacePath, '.svn');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === svnPath;
         });
 
@@ -690,7 +690,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const svnPath = path.join(workspacePath, '.svn');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === svnPath;
         });
 
@@ -735,7 +735,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const svnPath = path.join(workspacePath, '.svn');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === svnPath;
         });
 
@@ -768,7 +768,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const svnPath = path.join(workspacePath, '.svn');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === svnPath;
         });
 
@@ -833,7 +833,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
 
@@ -935,7 +935,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const svnPath = path.join(workspacePath, '.svn');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === svnPath;
         });
 
@@ -966,7 +966,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const svnPath = path.join(workspacePath, '.svn');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === svnPath;
         });
 
@@ -1001,7 +1001,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
 
@@ -1041,7 +1041,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const svnPath = path.join(workspacePath, '.svn');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === svnPath;
         });
 
@@ -1081,7 +1081,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
 
@@ -1137,7 +1137,7 @@ describe('SCMFactory', () => {
         const gitPath = path.join(workspacePath, '.git');
         
         // Mock fs.existsSync to throw permission error
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           if (filePath === gitPath) {
             const error = new Error('EACCES: permission denied') as any;
             error.code = 'EACCES';
@@ -1160,7 +1160,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
 
@@ -1218,7 +1218,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
         
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
 
@@ -1289,7 +1289,7 @@ describe('SCMFactory', () => {
         const selectedFiles = [circularPath + '/file.txt'];
         
         // Mock path operations to simulate circular reference
-        mockFs.existsSync.mockImplementation((filePath: string) => {
+        mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           // Simulate that we never find SCM directories due to circular reference
           return false;
         });
