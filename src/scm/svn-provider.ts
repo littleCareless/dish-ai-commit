@@ -8,6 +8,7 @@ import { getMessage, formatMessage } from "../utils/i18n";
 import { DiffProcessor } from "../utils/diff/diff-processor";
 import { DiffSimplifier } from "../utils";
 import { notify } from "../utils/notification/notification-manager";
+import { ConfigurationManager } from "../config/configuration-manager";
 
 const exec = promisify(childProcess.exec);
 
@@ -371,9 +372,9 @@ export class SvnProvider implements ISCMProvider {
       }
 
       // 获取配置
-      const config = vscode.workspace.getConfiguration("dish-ai-commit");
-      const enableSimplification = config.get<boolean>(
-        "features.codeAnalysis.simplifyDiff"
+      const configManager = ConfigurationManager.getInstance();
+      const enableSimplification = configManager.getConfig(
+        "FEATURES_CODEANALYSIS_SIMPLIFYDIFF"
       );
 
       // 根据配置决定是否显示警告和简化diff
@@ -424,7 +425,7 @@ export class SvnProvider implements ISCMProvider {
    * @param {string} message - 要设置的提交信息
    * @throws {Error} 当未找到仓库时抛出错误
    */
-  async setCommitInput(message: string): Promise<void> {
+  async setCommitInput(message: string, repositoryPath?: string): Promise<void> {
     const repository = this.api?.repositories?.[0];
     if (repository?.inputBox) {
       repository.inputBox.value = message;
@@ -462,7 +463,7 @@ export class SvnProvider implements ISCMProvider {
    * @param {string} message - 要设置的提交信息
    * @throws {Error} 当未找到仓库或inputBox时抛出错误
    */
-  async startStreamingInput(message: string): Promise<void> {
+  async startStreamingInput(message: string, repositoryPath?: string): Promise<void> {
     const repository = this.api?.repositories?.[0];
     if (repository?.inputBox) {
       repository.inputBox.value = message;

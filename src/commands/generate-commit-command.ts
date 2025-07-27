@@ -87,6 +87,7 @@ export class GenerateCommitCommand extends BaseCommand {
    * @param resources - 源代码管理资源状态列表
    */
   async execute(resources: vscode.SourceControlResourceState[]): Promise<void> {
+    console.log('resources',resources);
     if (!(await this.showConfirmAIProviderToS())) {
       return;
     }
@@ -97,16 +98,19 @@ export class GenerateCommitCommand extends BaseCommand {
     const { provider, model } = configResult;
 
     try {
-      const selectedFiles = this.getSelectedFiles(resources);
-      if (!selectedFiles) {
-        // 如果没有选择文件，可以通知用户或直接返回
-        notify.info("no.files.selected");
+      const result = await this.detectSCMProvider(resources);
+      if (!result) {
         return;
       }
-      const scmProvider = await this.detectSCMProvider(selectedFiles);
-      if (!scmProvider) {
+
+      const { scmProvider, selectedFiles, repositoryPath } = result;
+
+      if (!repositoryPath) {
+        await notify.warn("repository.not.found");
         return;
       }
+      
+      console.log(`Working with repository: ${repositoryPath}`);
 
       await ProgressHandler.withProgress(
         formatMessage("progress.generating.commit", [
@@ -119,7 +123,8 @@ export class GenerateCommitCommand extends BaseCommand {
             provider,
             model,
             scmProvider,
-            selectedFiles
+            selectedFiles,
+            repositoryPath
           )
       );
     } catch (error) {
@@ -243,7 +248,8 @@ REMINDER:
    * @param provider - 当前选择的 AI 供应器名称。
    * @param model - 当前选择的 AI 模型名称。
    * @param scmProvider - SCM 供应器实例。
-   * @param selectedFiles - 用户选择的待提交文件列表。
+   * @param selectedFiles - 用户选择的待提交文件列表，可以为 undefined。
+   * @param repositoryPath - 可选的仓库路径。
    */
   private async performStreamingGeneration(
     progress: vscode.Progress<{ message?: string; increment?: number }>,
@@ -251,13 +257,14 @@ REMINDER:
     provider: string,
     model: string,
     scmProvider: ISCMProvider,
-    selectedFiles: string[]
+    selectedFiles: string[] | undefined,
+    repositoryPath?: string
   ) {
     const config = ConfigurationManager.getInstance();
     const configuration = config.getConfiguration();
 
     // 在获取diff之前设置当前文件，确保使用正确的仓库
-    if (scmProvider.setCurrentFiles) {
+    if (scmProvider.setCurrentFiles && selectedFiles) {
       scmProvider.setCurrentFiles(selectedFiles);
     }
 
@@ -297,7 +304,7 @@ REMINDER:
       ...configuration.features.codeAnalysis,
       model: selectedModel,
       scm: scmProvider.type ?? "git",
-      changeFiles: selectedFiles,
+      changeFiles: selectedFiles || [],
       languages: configuration.base.language,
       diff: diffContent, // diff 仍然需要用于生成提示
       additionalContext: "",
@@ -367,7 +374,8 @@ REMINDER:
           { ...requestParams, messages },
           scmProvider,
           token,
-          progress
+          progress,
+          repositoryPath
         );
       } else {
         await this.streamAndApplyMessage(
@@ -376,7 +384,8 @@ REMINDER:
           scmProvider,
           token,
           progress,
-          contextManager
+          contextManager,
+          repositoryPath
         );
       }
 
@@ -421,13 +430,19 @@ REMINDER:
     aiProvider: AIProvider,
     requestParams: AIRequestParams,
     scmProvider: ISCMProvider,
-    selectedFiles: string[],
+    selectedFiles: string[] | undefined,
     token: vscode.CancellationToken,
     progress: vscode.Progress<{ message?: string; increment?: number }>
   ) {
     progress.report({
       message: getMessage("progress.generating.layered.commit"),
     });
+
+    // 如果没有选择文件，则退出
+    if (!selectedFiles || selectedFiles.length === 0) {
+      notify.warn("no.files.selected.for.layered.commit");
+      return;
+    }
 
     const fileDescriptions: { filePath: string; description: string }[] = [];
     const config = ConfigurationManager.getInstance();
@@ -647,6 +662,7 @@ REMINDER:
    * @param token - VS Code 取消令牌。
    * @param progress - VS Code 进度报告器。
    * @param contextManager - 上下文管理器实例，用于构建带重试逻辑的请求。
+   * @param repositoryPath - 可选的仓库路径。
    */
   private async streamAndApplyMessage(
     aiProvider: AbstractAIProvider,
@@ -654,7 +670,8 @@ REMINDER:
     scmProvider: ISCMProvider,
     token: vscode.CancellationToken,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
-    contextManager: ContextManager // 接收 ContextManager 实例
+    contextManager: ContextManager, // 接收 ContextManager 实例
+    repositoryPath?: string
   ) {
     this.throwIfCancelled(token);
     progress.report({
@@ -670,12 +687,12 @@ REMINDER:
       accumulatedMessage += chunk;
       let filteredMessage = filterCodeBlockMarkers(accumulatedMessage);
       filteredMessage = filteredMessage.trimStart();
-      await scmProvider.startStreamingInput(filteredMessage);
+      await scmProvider.startStreamingInput(filteredMessage, repositoryPath);
       // 移除小的延时，让流式更新更平滑
     }
     this.throwIfCancelled(token);
     const finalMessage = filterCodeBlockMarkers(accumulatedMessage).trim();
-    await scmProvider.startStreamingInput(finalMessage);
+    await scmProvider.startStreamingInput(finalMessage, repositoryPath);
   }
 
   /**
@@ -686,13 +703,15 @@ REMINDER:
    * @param scmProvider - SCM 供应器实例。
    * @param token - VS Code 取消令牌。
    * @param progress - VS Code 进度报告器。
+   * @param repositoryPath - 可选的仓库路径。
    */
   private async performFunctionCallingGeneration(
     aiProvider: AIProvider,
     requestParams: AIRequestParams & { messages: AIMessage[] },
     scmProvider: ISCMProvider,
     token: vscode.CancellationToken,
-    progress: vscode.Progress<{ message?: string; increment?: number }>
+    progress: vscode.Progress<{ message?: string; increment?: number }>,
+    repositoryPath?: string
   ) {
     this.throwIfCancelled(token);
     progress.report({
@@ -712,7 +731,7 @@ REMINDER:
     this.throwIfCancelled(token);
 
     const finalMessage = filterCodeBlockMarkers(aiResponse.content).trim();
-    await scmProvider.startStreamingInput(finalMessage);
+    await scmProvider.startStreamingInput(finalMessage, repositoryPath);
   }
 
   /**

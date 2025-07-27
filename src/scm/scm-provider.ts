@@ -37,13 +37,13 @@ export interface ISCMProvider {
   commit(message: string, files?: string[]): Promise<void>;
 
   /** 设置提交信息 */
-  setCommitInput(message: string): Promise<void>;
+  setCommitInput(message: string, repositoryPath?: string): Promise<void>;
 
   /** 获取当前提交信息 */
   getCommitInput(): Promise<string>;
 
   /** 开始流式输入提交信息 */
-  startStreamingInput(message: string): Promise<void>;
+  startStreamingInput(message: string, repositoryPath?: string): Promise<void>;
 
   /** 获取提交日志 */
   getCommitLog(baseBranch?: string, headBranch?: string): Promise<string[]>;
@@ -87,28 +87,81 @@ export class SCMFactory {
   private static findWorkspaceRoot(
     selectedFiles?: string[]
   ): string | undefined {
-    // 如果没有提供文件，则使用VS Code的第一个工作区
+    // 如果没有提供文件，尝试从当前活动编辑器或窗口状态获取工作区
     if (!selectedFiles || selectedFiles.length === 0) {
-      return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+      // 1. 尝试从当前活动编辑器获取文件路径
+      const activeEditor = vscode.window.activeTextEditor;
+      if (activeEditor && activeEditor.document.uri.scheme === 'file') {
+        const activeFilePath = activeEditor.document.uri.fsPath;
+        const workspaceFromActiveFile = this.findWorkspaceRootFromFile(activeFilePath);
+        if (workspaceFromActiveFile) {
+          return workspaceFromActiveFile;
+        }
+      }
+
+      // 2. 尝试从最近打开的文件获取工作区
+      const recentFiles = vscode.workspace.textDocuments
+        .filter(doc => doc.uri.scheme === 'file')
+        .map(doc => doc.uri.fsPath);
+      
+      if (recentFiles.length > 0) {
+        const workspaceFromRecentFile = this.findWorkspaceRootFromFile(recentFiles[0]);
+        if (workspaceFromRecentFile) {
+          return workspaceFromRecentFile;
+        }
+      }
+
+      // 3. 如果有多个工作区，尝试根据当前焦点或最近活动确定
+      const workspaceFolders = vscode.workspace.workspaceFolders;
+      if (workspaceFolders && workspaceFolders.length > 1) {
+        // 检查是否有工作区包含当前活动文件
+        if (activeEditor && activeEditor.document.uri.scheme === 'file') {
+          const activeFilePath = activeEditor.document.uri.fsPath;
+          for (const folder of workspaceFolders) {
+            if (activeFilePath.startsWith(folder.uri.fsPath)) {
+              return folder.uri.fsPath;
+            }
+          }
+        }
+        
+        // 如果无法确定，返回第一个工作区（保持向后兼容）
+        console.warn('Multiple workspaces found, using first workspace as fallback');
+      }
+
+      // 4. 最后回退到第一个工作区
+      return workspaceFolders?.[0]?.uri.fsPath;
     }
 
     // 检查每个文件的目录，寻找.git或.svn文件夹
     for (const file of selectedFiles) {
-      let currentDir = path.dirname(file);
-      // 向上查找直到根目录
-      while (currentDir && currentDir !== path.parse(currentDir).root) {
-        if (
-          fs.existsSync(path.join(currentDir, ".git")) ||
-          fs.existsSync(path.join(currentDir, ".svn"))
-        ) {
-          return currentDir;
-        }
-        currentDir = path.dirname(currentDir);
+      const workspaceRoot = this.findWorkspaceRootFromFile(file);
+      if (workspaceRoot) {
+        return workspaceRoot;
       }
     }
 
     // 如果没找到，回退到VS Code工作区
     return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+  }
+
+  /**
+   * 从单个文件路径查找工作区根目录
+   * @param filePath 文件路径
+   * @returns 工作区根目录路径或undefined
+   */
+  private static findWorkspaceRootFromFile(filePath: string): string | undefined {
+    let currentDir = path.dirname(filePath);
+    // 向上查找直到根目录
+    while (currentDir && currentDir !== path.parse(currentDir).root) {
+      if (
+        fs.existsSync(path.join(currentDir, ".git")) ||
+        fs.existsSync(path.join(currentDir, ".svn"))
+      ) {
+        return currentDir;
+      }
+      currentDir = path.dirname(currentDir);
+    }
+    return undefined;
   }
 
   /**
@@ -186,14 +239,16 @@ export class SCMFactory {
   /**
    * 检测并创建可用的SCM提供者
    * @param {string[] | undefined} selectedFiles - 可选的选定文件路径列表
+   * @param {string | undefined} repositoryPath - 可选的仓库路径，如果提供则优先使用此路径
    * @returns {Promise<ISCMProvider | undefined>} 返回可用的SCM提供者实例,如果没有可用的提供者则返回undefined
    */
   static async detectSCM(
-    selectedFiles?: string[]
+    selectedFiles?: string[],
+    repositoryPath?: string
   ): Promise<ISCMProvider | undefined> {
     try {
-      // 使用新方法获取工作区根目录
-      const workspaceRoot = this.findWorkspaceRoot(selectedFiles);
+      // 优先使用传入的 repositoryPath，如果没有则使用检测方法获取工作区根目录
+      const workspaceRoot = repositoryPath || this.findWorkspaceRoot(selectedFiles);
       if (!workspaceRoot) {
         return undefined;
       }

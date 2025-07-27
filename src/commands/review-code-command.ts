@@ -48,10 +48,11 @@ export class ReviewCodeCommand extends BaseCommand {
           message: getMessage("detecting.scm.provider"),
         });
         // 检测SCM提供程序
-        const scmProvider = await this.detectSCMProvider(selectedFiles);
-        if (!scmProvider) {
+        const result = await this.detectSCMProvider(selectedFiles);
+        if (!result) {
           return;
         }
+        const { scmProvider } = result;
 
         const currentInput = await scmProvider.getCommitInput();
 

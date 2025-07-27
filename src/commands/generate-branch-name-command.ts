@@ -113,13 +113,12 @@ export class GenerateBranchNameCommand extends BaseCommand {
               increment: 5,
               message: getMessage("detecting.scm.provider"),
             });
-            const detectedScmProvider = await this.detectSCMProvider(
-              selectedFiles
-            );
-            if (!detectedScmProvider) {
+            const result = await this.detectSCMProvider(selectedFiles);
+            if (!result) {
               // detectSCMProvider usually shows a notification if it fails
               return;
             }
+            const { scmProvider: detectedScmProvider } = result;
             if (detectedScmProvider.type !== "git") {
               await notify.warn("branch.name.git.only");
               return;
