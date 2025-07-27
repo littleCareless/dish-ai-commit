@@ -140,25 +140,28 @@
     blockquote {
       margin: 1em 0;
       padding-left: 1em;
-      border-left: 4px solid #ddd;
-      color: #555;
+      border-left: 4px solid var(--color-border);
+      color: var(--color-muted-foreground);
       font-style: italic;
     }
   
     /* 代码块 */
     pre {
-      background: #f7f7f7;
+      background: var(--color-muted);
+      color: var(--color-foreground);
       padding: 1em;
       overflow-x: auto;
       font-family: monospace;
       font-size: 0.9em;
       border-radius: 4px;
       margin: 1em 0;
+      border: 1px solid var(--color-border);
     }
   
     code {
       font-family: monospace;
-      background: #f0f0f0;
+      background: var(--color-muted);
+      color: var(--color-foreground);
       padding: 0.2em 0.4em;
       border-radius: 4px;
       font-size: 0.95em;
@@ -167,13 +170,13 @@
     /* 水平分隔线 */
     hr {
       border: none;
-      border-top: 1px solid #ccc;
+      border-top: 1px solid var(--color-border);
       margin: 2em 0;
     }
   
     /* 链接 */
     a {
-      color: #1d4ed8; /* Tailwind 的 blue-700 */
+      color: var(--color-accent);
       text-decoration: underline;
     }
   
@@ -200,8 +203,8 @@
     font-weight: 400;
 
     color-scheme: light dark;
-    color: rgba(255, 255, 255, 0.87);
-    background-color: #242424;
+    color: var(--color-foreground);
+    background-color: var(--color-background);
 
     font-synthesis: none;
     text-rendering: optimizeLegibility;
@@ -211,11 +214,11 @@
 
   a {
     font-weight: 500;
-    color: #646cff;
+    color: var(--color-accent);
     text-decoration: inherit;
   }
   a:hover {
-    color: #535bf2;
+    color: var(--color-accent-foreground);
   }
 
   body {
@@ -224,47 +227,87 @@
     place-items: center;
     min-width: 320px;
     min-height: 100vh;
+    background-color: var(--color-background);
+    color: var(--color-foreground);
   }
 
   h1 {
     font-size: 3.2em;
     line-height: 1.1;
+    color: var(--color-foreground);
   }
 
   button {
     border-radius: 8px;
-    border: 1px solid transparent;
+    border: 1px solid var(--color-border);
     padding: 0.6em 1.2em;
     font-size: 1em;
     font-weight: 500;
     font-family: inherit;
     cursor: pointer;
     transition: border-color 0.25s;
+    background-color: var(--color-secondary);
+    color: var(--color-secondary-foreground);
   }
   button:hover {
-    border-color: #646cff;
+    border-color: var(--color-accent);
+    background-color: var(--color-accent);
+    color: var(--color-accent-foreground);
   }
   button:focus,
   button:focus-visible {
-    outline: 4px auto -webkit-focus-ring-color;
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
   }
 
   @media (prefers-color-scheme: light) {
     :root {
-      color: #213547;
-      background-color: #ffffff;
+      color: var(--color-foreground);
+      background-color: var(--color-background);
     }
     a:hover {
-      color: #747bff;
+      color: var(--color-accent-foreground);
     }
     button {
-      background-color: #f9f9f9;
+      background-color: var(--color-secondary);
+      color: var(--color-secondary-foreground);
     }
   }
 }
 
 @layer base {
+  /* VSCode主题适配 - 使用VSCode提供的CSS变量 */
   :root {
+    /* 基础颜色使用VSCode变量，如果不存在则使用默认值 */
+    --background: var(--vscode-editor-background, 0 0% 100%);
+    --foreground: var(--vscode-editor-foreground, 0 0% 3.9%);
+    --card: var(--vscode-sideBar-background, 0 0% 100%);
+    --card-foreground: var(--vscode-sideBar-foreground, 0 0% 3.9%);
+    --popover: var(--vscode-dropdown-background, 0 0% 100%);
+    --popover-foreground: var(--vscode-dropdown-foreground, 0 0% 3.9%);
+    --primary: var(--vscode-button-background, 0 0% 9%);
+    --primary-foreground: var(--vscode-button-foreground, 0 0% 98%);
+    --secondary: var(--vscode-button-secondaryBackground, 0 0% 96.1%);
+    --secondary-foreground: var(--vscode-button-secondaryForeground, 0 0% 9%);
+    --muted: var(--vscode-input-background, 0 0% 96.1%);
+    --muted-foreground: var(--vscode-input-placeholderForeground, 0 0% 45.1%);
+    --accent: var(--vscode-focusBorder, 0 0% 96.1%);
+    --accent-foreground: var(--vscode-foreground, 0 0% 9%);
+    --destructive: var(--vscode-errorForeground, 0 84.2% 60.2%);
+    --destructive-foreground: var(--vscode-errorBackground, 0 0% 98%);
+    --border: var(--vscode-panel-border, 0 0% 89.8%);
+    --input: var(--vscode-input-background, 0 0% 89.8%);
+    --ring: var(--vscode-focusBorder, 0 0% 3.9%);
+    --chart-1: 12 76% 61%;
+    --chart-2: 173 58% 39%;
+    --chart-3: 197 37% 24%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.5rem;
+  }
+
+  /* 浅色主题 */
+  :root.light {
     --background: 0 0% 100%;
     --foreground: 0 0% 3.9%;
     --card: 0 0% 100%;
@@ -284,14 +327,10 @@
     --border: 0 0% 89.8%;
     --input: 0 0% 89.8%;
     --ring: 0 0% 3.9%;
-    --chart-1: 12 76% 61%;
-    --chart-2: 173 58% 39%;
-    --chart-3: 197 37% 24%;
-    --chart-4: 43 74% 66%;
-    --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
   }
-  .dark {
+
+  /* 深色主题 */
+  :root.dark {
     --background: 0 0% 3.9%;
     --foreground: 0 0% 98%;
     --card: 0 0% 3.9%;
@@ -311,11 +350,29 @@
     --border: 0 0% 14.9%;
     --input: 0 0% 14.9%;
     --ring: 0 0% 83.1%;
-    --chart-1: 220 70% 50%;
-    --chart-2: 160 60% 45%;
-    --chart-3: 30 80% 55%;
-    --chart-4: 280 65% 60%;
-    --chart-5: 340 75% 55%;
+  }
+
+  /* 高对比度主题 */
+  :root.high-contrast {
+    --background: 0 0% 0%;
+    --foreground: 0 0% 100%;
+    --card: 0 0% 0%;
+    --card-foreground: 0 0% 100%;
+    --popover: 0 0% 0%;
+    --popover-foreground: 0 0% 100%;
+    --primary: 0 0% 100%;
+    --primary-foreground: 0 0% 0%;
+    --secondary: 0 0% 20%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 0 0% 20%;
+    --muted-foreground: 0 0% 80%;
+    --accent: 0 0% 20%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 100% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 50%;
+    --input: 0 0% 20%;
+    --ring: 0 0% 100%;
   }
 }
 
@@ -325,5 +382,42 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Arco Design 暗黑模式支持 */
+    background-color: var(--color-bg-1, var(--color-background));
+    color: var(--color-text-1, var(--color-foreground));
+  }
+  
+  /* Arco Design 暗黑模式 CSS 变量 */
+  body[arco-theme="dark"] {
+    --color-bg-1: var(--color-background);
+    --color-bg-2: var(--color-card);
+    --color-bg-3: var(--color-muted);
+    --color-text-1: var(--color-foreground);
+    --color-text-2: var(--color-muted-foreground);
+    --color-border: var(--color-border);
+    --color-fill-1: var(--color-secondary);
+    --color-fill-2: var(--color-muted);
+    --color-primary-6: var(--color-primary);
+    --color-primary-light-1: var(--color-primary-foreground);
+    color-scheme: dark;
+  }
+  
+  /* 确保 Arco Design 组件在暗黑模式下正确显示 */
+  body[arco-theme="dark"] .arco-menu,
+  body[arco-theme="dark"] .arco-layout-sider,
+  body[arco-theme="dark"] .arco-layout-sider-trigger {
+    background-color: var(--color-background) !important;
+    color: var(--color-foreground) !important;
+    border-color: var(--color-border) !important;
+  }
+  
+  body[arco-theme="dark"] .arco-menu-item {
+    color: var(--color-foreground) !important;
+  }
+  
+  body[arco-theme="dark"] .arco-menu-item:hover,
+  body[arco-theme="dark"] .arco-menu-item-selected {
+    background-color: var(--color-secondary) !important;
+    color: var(--color-secondary-foreground) !important;
   }
 }

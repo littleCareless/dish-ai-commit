@@ -78,7 +78,13 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({
     <ArcoMenu
       selectedKeys={[selectedMenuItemKey]}
       onClickMenuItem={(key) => setSelectedMenuItemKey(key)}
-      style={{ width: "100%", height: "100%" }}
+      style={{ 
+        width: "100%", 
+        height: "100%",
+        backgroundColor: "var(--color-background)",
+        color: "var(--color-foreground)",
+        borderColor: "var(--color-border)"
+      }}
       collapse={false}
     >
       {menuItems.map((item) =>
