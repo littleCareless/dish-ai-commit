@@ -6,6 +6,38 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.38.0 (2025-07-27)
+
+### ♻ Code Refactoring
+
+- **context-manager**: Optimize message building logic and improve block processing order ([220f0b7](https://github.com/littleCareless/dish-ai-commit/commit/220f0b7))
+
+- **context**: Refactor context building to improve prompt structure and quality ([65e2027](https://github.com/littleCareless/dish-ai-commit/commit/65e2027))
+
+- **core**: Support multi-repository file location and SCM cache optimization ([cb6546d](https://github.com/littleCareless/dish-ai-commit/commit/cb6546d))
+
+### ✨ Features
+
+- **branch**: Introduce branch name generation mode selection ([3c0d3a9](https://github.com/littleCareless/dish-ai-commit/commit/3c0d3a9))
+- **commit**: Implement hierarchical commit detail generation ([a758efe](https://github.com/littleCareless/dish-ai-commit/commit/a758efe))
+- **tests**: Add SCM test infrastructure and unit tests ([6a70c28](https://github.com/littleCareless/dish-ai-commit/commit/6a70c28))
+
+### 🎫 Chores
+
+- **release**: Released version 0.35.0 ([c866ae8](https://github.com/littleCareless/dish-ai-commit/commit/c866ae8))
+- **release**: Released version 0.36.0 ([8938ac4](https://github.com/littleCareless/dish-ai-commit/commit/8938ac4))
+- **release**: Fix the runtime error caused by the configuration key name setting error ([2e11a6c](https://github.com/littleCareless/dish-ai-commit/commit/2e11a6c))
+- Update the version number to 0.37.0 and update the change log ([703e94a](https://github.com/littleCareless/dish-ai-commit/commit/703e94a))
+
+### 🐛 Bug Fixes
+
+- **git-provider**: Fix the runtime error caused by the configuration key name setting error ([33a3d5a](https://github.com/littleCareless/dish-ai-commit/commit/33a3d5a))
+
+### 🔧 Continuous Integration
+
+- **release**: Automated pre-release and official release processes ([4681ee4](https://github.com/littleCareless/dish-ai-commit/commit/4681ee4))
+- **workflow**: Integrate and automate deployment workflows ([c5c2686](https://github.com/littleCareless/dish-ai-commit/commit/c5c2686))
+
 ## 0.37.1 (2025-07-26)
 
 ### 🎫 Chores
