@@ -77,14 +77,22 @@ jobs:
           fi
 
       # =================================================================
-      # 3. 生成更新日志 (Generate Changelog)
+      # 3. 获取更新日志 (Generate Changelog)
       # =================================================================
-      - name: Generate changelog
-        id: changelog
-        uses: TriPSs/conventional-changelog-action@v5
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          skip-on-empty: "false"
+      - name: Extract latest changelog section (中文)
+        id: extract_changelog
+        run: |
+          body=$(awk '
+            BEGIN { capture=0 }
+            /^## \[/ {
+              if (capture) exit;
+              capture=1;
+            }
+            capture { print }
+          ' CHANGELOG.zh-CN.md)
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$body" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       # =================================================================
       # 4. 发布到市场 (Publish to Marketplaces)
@@ -114,8 +122,7 @@ jobs:
         id: create_release
         uses: softprops/action-gh-release@v2
         with:
-          body: ${{ steps.changelog.outputs.body }}
-          # 上传由上一步生成的 .vsix 文件
+          body: ${{ steps.extract_changelog.outputs.body }}
           files: |
             ${{ steps.publishToOpenVSX.outputs.vsixPath }}
           prerelease: ${{ steps.determine_prerelease.outputs.is_prerelease }}
