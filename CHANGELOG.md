@@ -6,6 +6,52 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.40.0 (2025-07-28)
+
+### ♻ Code Refactoring
+
+- **context-manager**: Introduce mandatory retention blocks and optimize truncation strategy ([0b5b7cf](https://github.com/littleCareless/dish-ai-commit/commit/0b5b7cf))
+- **context-manager**: Optimize message building logic and improve block processing order ([220f0b7](https://github.com/littleCareless/dish-ai-commit/commit/220f0b7))
+- **context**: Refactor context building to improve prompt structure and quality ([65e2027](https://github.com/littleCareless/dish-ai-commit/commit/65e2027))
+- **core**: Support multi-repository file location and SCM cache optimization ([cb6546d](https://github.com/littleCareless/dish-ai-commit/commit/cb6546d))
+- **scm**: Extract SCM detection logic to SCMDetectorService ([a48bc7e](https://github.com/littleCareless/dish-ai-commit/commit/a48bc7e))
+- **scm**: Optimize repository path detection logic and support multi-repository environment ([2214234](https://github.com/littleCareless/dish-ai-commit/commit/2214234))
+- **scm**: Refactor SCM provider logic to enhance multi-repository support ([cb842e7](https://github.com/littleCareless/dish-ai-commit/commit/cb842e7))
+- Update ESLint plugin and improve code block bracket style ([3cae2dc](https://github.com/littleCareless/dish-ai-commit/commit/3cae2dc))
+
+### ✅ Tests
+
+- **scm-factory**: Update test cases to use fs.PathLike to replace string type parameters ([7c988b6](https://github.com/littleCareless/dish-ai-commit/commit/7c988b6))
+
+### ✨ Features
+
+- **core**: Release 0.38.0 version, support multi-warehouse location and test infrastructure ([5e36789](https://github.com/littleCareless/dish-ai-commit/commit/5e36789))
+
+- **tests**: Add SCM test infrastructure and unit tests ([6a70c28](https://github.com/littleCareless/dish-ai-commit/commit/6a70c28))
+- **theme**: Implement VSCode theme adaptation function ([6491f11](https://github.com/littleCareless/dish-ai-commit/commit/6491f11))
+
+### 🎫 Chores
+
+- **lint**: Update lint configuration and pre-commit hook ([8051fcd](https://github.com/littleCareless/dish-ai-commit/commit/8051fcd))
+- **release**: Release 0.36.0 version ([8938ac4](https://github.com/littleCareless/dish-ai-commit/commit/8938ac4))
+- **release**: Fix runtime errors caused by incorrect configuration key name settings ([2e11a6c](https://github.com/littleCareless/dish-ai-commit/commit/2e11a6c))
+- Update version number to 0.37.0 and update change log ([703e94a](https://github.com/littleCareless/dish-ai-commit/commit/703e94a))
+- Update version number to 0.39.0 and optimize code style ([1b30ac7](https://github.com/littleCareless/dish-ai-commit/commit/1b30ac7))
+
+### 🐛 Bug Fixes
+
+- **git-provider**: Fix runtime errors caused by incorrect configuration key name settings ([33a3d5a](https://github.com/littleCareless/dish-ai-commit/commit/33a3d5a))
+
+### 👷 Build System
+
+- **core**: Upgrade vite to 7.0.6 and optimize dependency management ([6df99b4](https://github.com/littleCareless/dish-ai-commit/commit/6df99b4))
+- Update @stylistic/eslint-plugin dependency to version 5.2.2 ([9c43f1d](https://github.com/littleCareless/dish-ai-commit/commit/9c43f1d))
+
+### 🔧 Continuous Integration
+
+- **release**: Add automated release workflow ([8bd15ca](https://github.com/littleCareless/dish-ai-commit/commit/8bd15ca))
+- **release**: Automated pre-release and official release processes ([4681ee4](https://github.com/littleCareless/dish-ai-commit/commit/4681ee4))
+
 # 0.39.0 (2025-07-27)
 
 ### ♻ Code Refactoring
