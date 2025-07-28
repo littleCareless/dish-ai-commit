@@ -110,7 +110,7 @@ jobs:
         id: publishToVSMarketplace
         with:
           pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
-          # 使用从上一步获取的 .vsix 文件路径，确保发布的是同一个文件
+          registryUrl: https://marketplace.visualstudio.com
           extensionFile: ${{ steps.publishToOpenVSX.outputs.vsixPath }}
           preRelease: ${{ steps.determine_prerelease.outputs.is_prerelease }}
           skipDuplicate: true
