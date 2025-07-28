@@ -47,7 +47,7 @@ jobs:
           version: 10.12.1
 
       - name: Install dependencies
-        run: pnpm install
+        run: npm ci
 
       # =================================================================
       # 1. 代码质量保证 (Code Quality Assurance)

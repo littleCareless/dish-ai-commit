@@ -47,7 +47,7 @@ jobs:
           node-version: 20
       - name: Install pnpm
         run: npm install -g pnpm
-      - run: pnpm install
+      - run: npm ci
       - name: Bump version, commit, and push tag
         run: |
           git config --global user.name 'github-actions[bot]'
