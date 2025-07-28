@@ -19,7 +19,7 @@ name: Release
 on:
   push:
     tags:
-      - 'v*.*.*'
+      - "v*.*.*"
 
 jobs:
   release:
@@ -33,19 +33,17 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
         with:
-          # 拉取所有历史记录，以便正确生成 Changelog
           fetch-depth: 0
 
       - name: Set up Node.js
         uses: actions/setup-node@v4
         with:
-          # 使用您参考文件中指定的 Node.js 版本
-          node-version: '20'
+          node-version: "20"
 
       - name: Set up pnpm
         uses: pnpm/action-setup@v3
         with:
-          version: 8
+          version: 10.12.1
 
       - name: Install dependencies
         run: pnpm install
@@ -54,10 +52,10 @@ jobs:
       # 1. 代码质量保证 (Code Quality Assurance)
       # =================================================================
       # - name: Lint code
-      #   run: pnpm lint 
+      #   run: pnpm lint
 
       # - name: Run tests
-      #   run: pnpm test 
+      #   run: pnpm test
 
       # =================================================================
       # 2. 确定发布类型 (Determine Release Type)
@@ -85,7 +83,7 @@ jobs:
         uses: TriPSs/conventional-changelog-action@v5
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          skip-on-empty: 'false'
+          skip-on-empty: "false"
 
       # =================================================================
       # 4. 发布到市场 (Publish to Marketplaces)
