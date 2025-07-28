@@ -13,7 +13,7 @@ export class SCMDetectorService {
    * @param resourceStates - 源代码管理资源状态
    * @returns 文件路径列表，如果没有选择文件则返回undefined
    */
-  private static getSelectedFiles(
+  public static getSelectedFiles(
     resourceStates?:
       | vscode.SourceControlResourceState
       | vscode.SourceControlResourceState[]

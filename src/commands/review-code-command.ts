@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { BaseCommand } from "./base-command";
+import { SCMDetectorService } from "../services/scm-detector-service";
 import { getMessage, formatMessage } from "../utils/i18n";
 import {
   notify,
@@ -37,7 +38,7 @@ export class ReviewCodeCommand extends BaseCommand {
           message: getMessage("checking.selected.files"),
         });
         // 检查是否有选中的文件
-        const selectedFiles = this.getSelectedFiles(resources);
+        const selectedFiles = SCMDetectorService.getSelectedFiles(resources);
         if (!selectedFiles || selectedFiles.length === 0) {
           await notify.warn("no.changes.selected");
           return;
