@@ -87,7 +87,6 @@ export class GenerateCommitCommand extends BaseCommand {
    * @param resources - 源代码管理资源状态列表
    */
   async execute(resources: vscode.SourceControlResourceState[]): Promise<void> {
-    console.log('resources',resources);
     if (!(await this.showConfirmAIProviderToS())) {
       return;
     }
@@ -109,7 +108,7 @@ export class GenerateCommitCommand extends BaseCommand {
         await notify.warn("repository.not.found");
         return;
       }
-      
+
       console.log(`Working with repository: ${repositoryPath}`);
 
       await ProgressHandler.withProgress(
@@ -142,7 +141,8 @@ export class GenerateCommitCommand extends BaseCommand {
    * @returns 包含用户提交和仓库提交字符串的对象。
    */
   private async _getRecentCommitsContext(
-    scmProvider: ISCMProvider
+    scmProvider: ISCMProvider,
+    repositoryPath?: string
   ): Promise<{ userCommits: string; repoCommits: string }> {
     const recentMessages = await scmProvider.getRecentCommitMessages();
     let userCommits = "";
@@ -501,7 +501,7 @@ REMINDER:
       }
       contextManager.addBlock({
         content: similarCodeContext,
-        priority: 320, 
+        priority: 320,
         strategy: TruncationStrategy.TruncateTail,
         name: "similar-code",
       });
@@ -529,7 +529,6 @@ REMINDER:
         strategy: TruncationStrategy.TruncateTail,
         name: "custom-instructions",
       });
-
 
       const messages = contextManager.buildMessages();
 
@@ -650,7 +649,6 @@ REMINDER:
       name: "custom-instructions",
     });
 
-
     return contextManager;
   }
 
@@ -687,12 +685,12 @@ REMINDER:
       accumulatedMessage += chunk;
       let filteredMessage = filterCodeBlockMarkers(accumulatedMessage);
       filteredMessage = filteredMessage.trimStart();
-      await scmProvider.startStreamingInput(filteredMessage, repositoryPath);
+      await scmProvider.startStreamingInput(filteredMessage);
       // 移除小的延时，让流式更新更平滑
     }
     this.throwIfCancelled(token);
     const finalMessage = filterCodeBlockMarkers(accumulatedMessage).trim();
-    await scmProvider.startStreamingInput(finalMessage, repositoryPath);
+    await scmProvider.startStreamingInput(finalMessage);
   }
 
   /**
@@ -731,7 +729,7 @@ REMINDER:
     this.throwIfCancelled(token);
 
     const finalMessage = filterCodeBlockMarkers(aiResponse.content).trim();
-    await scmProvider.startStreamingInput(finalMessage, repositoryPath);
+    await scmProvider.startStreamingInput(finalMessage);
   }
 
   /**
