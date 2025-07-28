@@ -27,6 +27,9 @@ interface GitAPI {
  * Git仓库接口定义
  */
 interface GitRepository {
+  /** 仓库根目录的URI */
+  readonly rootUri: vscode.Uri;
+
   /** 提交信息输入框 */
   inputBox: {
     value: string;
@@ -58,33 +61,23 @@ export class GitProvider implements ISCMProvider {
   /** SCM类型标识符 */
   type = "git" as const;
 
-  /** 工作区根目录路径 */
-  private workspaceRoot: string;
-
   /** Git API实例 */
   private readonly api: GitAPI;
-
-  /** 当前操作的文件路径列表，用于确定正确的仓库 */
-  private currentFiles?: string[];
+  private readonly repositoryPath?: string;
 
   /**
    * 创建Git提供者实例
    * @param gitExtension - VS Code Git扩展实例
-   * @param workspaceRoot - 工作区根目录路径，可选
+   * @param repositoryPath - 可选的仓库路径
    * @throws {Error} 当未找到工作区时抛出错误
    */
-  constructor(private readonly gitExtension: any, workspaceRoot?: string) {
+  constructor(private readonly gitExtension: any, repositoryPath?: string) {
     this.api = gitExtension.getAPI(1);
+    this.repositoryPath = repositoryPath;
 
-    if (!workspaceRoot) {
-      workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    }
-
-    if (!workspaceRoot) {
+    if (!vscode.workspace.workspaceFolders?.length) {
       throw new Error(getMessage("workspace.not.found"));
     }
-
-    this.workspaceRoot = workspaceRoot;
   }
 
   /**
@@ -119,12 +112,15 @@ export class GitProvider implements ISCMProvider {
    * @returns {Promise<string>} 返回文件状态描述
    * @private
    */
-  private async getFileStatus(file: string): Promise<string> {
+  private async getFileStatus(
+    file: string,
+    repositoryPath: string
+  ): Promise<string> {
     try {
       const { stdout: status } = await exec(
         `git status --porcelain "${file}"`,
         {
-          cwd: this.workspaceRoot,
+          cwd: repositoryPath,
         }
       );
 
@@ -159,14 +155,13 @@ export class GitProvider implements ISCMProvider {
    */
   async getDiff(files?: string[]): Promise<string | undefined> {
     try {
-      console.log("files", files);
-      // 设置当前操作的文件列表，用于后续的仓库匹配
-      this.setCurrentFiles(files);
+      const repository = this.findRepository(files);
+      if (!repository) {
+        throw new Error(getMessage("git.repository.not.found"));
+      }
+      const currentWorkspaceRoot = repository.rootUri.fsPath;
 
       let diffOutput = "";
-      // 使用动态获取的工作区根目录
-      const currentWorkspaceRoot = this.getCurrentWorkspaceRoot();
-      console.log("currentWorkspaceRoot", currentWorkspaceRoot);
 
       // 检查仓库是否有初始提交
       let hasInitialCommit = true;
@@ -181,7 +176,10 @@ export class GitProvider implements ISCMProvider {
         notify.info(formatMessage("diff.files.selected", [files.length]));
         // 处理指定文件的差异
         for (const file of files) {
-          const fileStatus = await this.getFileStatus(file);
+          const fileStatus = await this.getFileStatus(
+            file,
+            currentWorkspaceRoot
+          );
           const escapedFile = file.replace(/"/g, '\\"');
 
           // 对于删除的文件不获取diff内容
@@ -300,7 +298,9 @@ export class GitProvider implements ISCMProvider {
             const getFileNames = async (command: string) => {
               let output = "";
               try {
-                const result = await exec(command, { cwd: currentWorkspaceRoot });
+                const result = await exec(command, {
+                  cwd: currentWorkspaceRoot,
+                });
                 output = result.stdout;
               } catch (e) {
                 if (e instanceof Error && "stdout" in e) {
@@ -386,7 +386,6 @@ export class GitProvider implements ISCMProvider {
             cwd: currentWorkspaceRoot,
             maxBuffer: 1024 * 1024 * 10,
           });
-          console.log("DEBUG: exec result for git diff --cached:", execResult);
           const { stdout: stagedChanges } = execResult;
 
           // 3. 获取未跟踪的新文件列表
@@ -452,191 +451,63 @@ export class GitProvider implements ISCMProvider {
   }
 
   /**
-   * 设置当前操作的文件列表
-   * @param files 文件路径列表
-   */
-  setCurrentFiles(files?: string[]): void {
-    this.currentFiles = files;
-    // 如果提供了文件列表，尝试更新工作区根目录以匹配文件所在的仓库
-    if (files && files.length > 0) {
-      this.updateWorkspaceRootFromFiles(files);
-    }
-  }
-
-  /**
-   * 根据文件列表更新工作区根目录
-   * @param files 文件路径列表
+   * 根据文件路径或当前上下文找到最匹配的Git仓库。
+   * @param filePaths - 可选的文件路径数组，用于精确定位仓库。
+   * @returns {GitRepository | undefined} 匹配的Git仓库实例。
    * @private
    */
-  private updateWorkspaceRootFromFiles(files: string[]): void {
-    const api = this.gitExtension.getAPI(1);
-    const repositories = api.repositories;
+  private findRepository(filePaths?: string[]): GitRepository | undefined {
+    const { repositories } = this.api;
 
-    // 查找包含这些文件的仓库
-    for (const file of files) {
-      for (const repository of repositories) {
-        const repoPath = (repository as any).rootUri?.fsPath;
-        if (repoPath && file.startsWith(repoPath)) {
-          // 如果找到了更合适的工作区根目录，更新它
-          if (this.workspaceRoot !== repoPath) {
-            console.log(`Updating workspace root from ${this.workspaceRoot} to ${repoPath} based on file: ${file}`);
-            this.workspaceRoot = repoPath;
-          }
-          return;
-        }
-      }
-    }
-  }
-
-  /**
-   * 获取当前最合适的工作区根目录
-   * 如果没有显式文件，会尝试从当前活动编辑器或最近文件中推断
-   * @returns 工作区根目录路径
-   * @private
-   */
-  private getCurrentWorkspaceRoot(): string {
-    // 如果没有显式文件，尝试从当前上下文推断工作区
-    if (!this.currentFiles || this.currentFiles.length === 0) {
-      const api = this.gitExtension.getAPI(1);
-      const repositories = api.repositories;
-
-      // 尝试从当前活动编辑器获取工作区
-      const activeEditor = vscode.window.activeTextEditor;
-      if (activeEditor && activeEditor.document.uri.scheme === 'file') {
-        const activeFilePath = activeEditor.document.uri.fsPath;
-        for (const repository of repositories) {
-          const repoPath = (repository as any).rootUri?.fsPath;
-          if (repoPath && activeFilePath.startsWith(repoPath)) {
-            return repoPath;
-          }
-        }
-      }
-
-      // 尝试从最近打开的文件获取工作区
-      const recentFiles = vscode.workspace.textDocuments
-        .filter(doc => doc.uri.scheme === 'file')
-        .map(doc => doc.uri.fsPath);
-      
-      for (const recentFile of recentFiles) {
-        for (const repository of repositories) {
-          const repoPath = (repository as any).rootUri?.fsPath;
-          if (repoPath && recentFile.startsWith(repoPath)) {
-            return repoPath;
-          }
-        }
-      }
-    }
-
-    // 返回当前设置的工作区根目录
-    return this.workspaceRoot;
-  }
-
-  /**
-   * 根据当前工作区路径和文件路径找到对应的Git仓库
-   * @param repositoryPath - 可选的仓库路径，如果提供则优先使用此路径查找仓库
-   * @returns {GitRepository | undefined} 匹配的Git仓库实例
-   * @private
-   */
-  private findRepositoryForWorkspace(repositoryPath?: string): GitRepository | undefined {
-    const api = this.gitExtension.getAPI(1);
-    const repositories = api.repositories;
-
-    if (repositories.length === 0) {
+    if (!repositories.length) {
       return undefined;
     }
 
-    // 如果提供了repositoryPath，优先根据此路径查找仓库
-    if (repositoryPath) {
-      // 首先尝试精确匹配仓库根路径
-      for (const repository of repositories) {
-        const repoPath = (repository as any).rootUri?.fsPath;
-        if (repoPath && repoPath === repositoryPath) {
-          console.log(`Found repository by exact path match: ${repositoryPath}`);
-          return repository;
-        }
-      }
-      
-      // 如果精确匹配失败，尝试查找包含此路径的仓库
-      for (const repository of repositories) {
-        const repoPath = (repository as any).rootUri?.fsPath;
-        if (repoPath && repositoryPath.startsWith(repoPath)) {
-          console.log(`Found repository by path containment: ${repositoryPath} -> ${repoPath}`);
-          return repository;
-        }
-      }
-      
-      console.warn(`Repository not found for provided path: ${repositoryPath}`);
+    // 1. 如果在构造时提供了特定的仓库路径，优先使用它
+    if (this.repositoryPath) {
+      const specificRepo = repositories.find(
+        (repo) => repo.rootUri.fsPath === this.repositoryPath
+      );
+      // 如果提供了特定的仓库路径，我们只信任这个路径。
+      // 如果找不到，则返回 undefined，让调用者处理错误，
+      // 避免错误地回退到其他仓库。
+      return specificRepo;
     }
+
+    // --- Fallback Logic ---
+    // 仅在未提供 repositoryPath 时执行以下逻辑
 
     // 如果只有一个仓库，直接返回
     if (repositories.length === 1) {
       return repositories[0];
     }
 
-    // 如果有当前文件列表，优先根据文件路径匹配仓库
-    if (this.currentFiles && this.currentFiles.length > 0) {
-      for (const file of this.currentFiles) {
-        for (const repository of repositories) {
-          const repoPath = (repository as any).rootUri?.fsPath;
-          if (repoPath && file.startsWith(repoPath)) {
-            console.log(`Found repository for file ${file}: ${repoPath}`);
-            return repository;
+    const uris = filePaths?.map((path) => vscode.Uri.file(path));
+
+    // 2. 根据提供的文件路径查找
+    if (uris && uris.length > 0) {
+      for (const uri of uris) {
+        for (const repo of repositories) {
+          if (uri.fsPath.startsWith(repo.rootUri.fsPath)) {
+            return repo; // 找到第一个匹配的就返回
           }
         }
       }
     }
 
-    // 如果没有显式文件，尝试从当前活动编辑器获取仓库
-    if (!this.currentFiles || this.currentFiles.length === 0) {
-      const activeEditor = vscode.window.activeTextEditor;
-      if (activeEditor && activeEditor.document.uri.scheme === 'file') {
-        const activeFilePath = activeEditor.document.uri.fsPath;
-        for (const repository of repositories) {
-          const repoPath = (repository as any).rootUri?.fsPath;
-          if (repoPath && activeFilePath.startsWith(repoPath)) {
-            console.log(`Found repository for active file ${activeFilePath}: ${repoPath}`);
-            return repository;
-          }
-        }
-      }
-
-      // 尝试从最近打开的文件获取仓库
-      const recentFiles = vscode.workspace.textDocuments
-        .filter(doc => doc.uri.scheme === 'file')
-        .map(doc => doc.uri.fsPath);
-      
-      for (const recentFile of recentFiles) {
-        for (const repository of repositories) {
-          const repoPath = (repository as any).rootUri?.fsPath;
-          if (repoPath && recentFile.startsWith(repoPath)) {
-            console.log(`Found repository for recent file ${recentFile}: ${repoPath}`);
-            return repository;
-          }
+    // 3. 根据当前打开的活动编辑器查找
+    const activeEditor = vscode.window.activeTextEditor;
+    if (activeEditor?.document.uri.scheme === "file") {
+      const activeFileUri = activeEditor.document.uri;
+      for (const repo of repositories) {
+        if (activeFileUri.fsPath.startsWith(repo.rootUri.fsPath)) {
+          return repo;
         }
       }
     }
 
-    // 多仓库情况下，根据工作区路径匹配
-    for (const repository of repositories) {
-      // 检查仓库的根路径是否与当前工作区路径匹配
-      const repoPath = (repository as any).rootUri?.fsPath;
-      if (repoPath && this.workspaceRoot.startsWith(repoPath)) {
-        return repository;
-      }
-    }
-
-    // 如果没有找到匹配的仓库，尝试更精确的匹配
-    for (const repository of repositories) {
-      const repoPath = (repository as any).rootUri?.fsPath;
-      if (repoPath && repoPath.startsWith(this.workspaceRoot)) {
-        return repository;
-      }
-    }
-
-    // 如果仍然没有找到，返回第一个仓库作为fallback
-    console.warn(
-      `No matching repository found for workspace: ${this.workspaceRoot}, using first repository as fallback`
-    );
+    // 4. 如果上述都找不到，返回第一个仓库作为备选
+    // 这种策略在多仓库工作区可能不准确，但提供了一个回退方案
     return repositories[0];
   }
 
@@ -644,31 +515,25 @@ export class GitProvider implements ISCMProvider {
    * 提交更改
    * @param {string} message - 提交信息
    * @param {string[]} [files] - 要提交的文件路径数组
-   * @param {string} [repositoryPath] - 可选的仓库路径
    * @throws {Error} 当提交失败或未找到仓库时抛出错误
    */
-  async commit(message: string, files?: string[], repositoryPath?: string): Promise<void> {
-    const api = this.gitExtension.getAPI(1);
-    const repository = this.findRepositoryForWorkspace(repositoryPath);
+  async commit(message: string, files?: string[]): Promise<void> {
+    const repository = this.findRepository(files);
 
     if (!repository) {
       throw new Error(getMessage("git.repository.not.found"));
     }
 
-    await repository.commit(message, { all: files ? false : true, files });
+    await repository.commit(message, { all: !files, files });
   }
 
   /**
    * 设置提交输入框的内容
    * @param {string} message - 要设置的提交信息
-   * @param {string} [repositoryPath] - 可选的仓库路径
    * @throws {Error} 当未找到仓库时抛出错误
    */
-  async setCommitInput(message: string, repositoryPath?: string): Promise<void> {
-    const api = this.gitExtension.getAPI(1);
-    // 优先使用传入的 repositoryPath，如果没有则使用构造函数中的 workspaceRoot
-    const targetPath = repositoryPath || this.workspaceRoot;
-    const repository = this.findRepositoryForWorkspace(targetPath);
+  async setCommitInput(message: string): Promise<void> {
+    const repository = this.findRepository();
 
     if (repository?.inputBox) {
       repository.inputBox.value = message;
@@ -690,13 +555,11 @@ export class GitProvider implements ISCMProvider {
 
   /**
    * 获取提交输入框的当前内容
-   * @param {string} [repositoryPath] - 可选的仓库路径
    * @returns {Promise<string>} 返回当前的提交信息
    * @throws {Error} 当未找到仓库时抛出错误
    */
-  async getCommitInput(repositoryPath?: string): Promise<string> {
-    const api = this.gitExtension.getAPI(1);
-    const repository = this.findRepositoryForWorkspace(repositoryPath);
+  async getCommitInput(): Promise<string> {
+    const repository = this.findRepository();
 
     if (!repository) {
       throw new Error(getMessage("git.repository.not.found"));
@@ -709,14 +572,10 @@ export class GitProvider implements ISCMProvider {
    * 开始流式设置提交输入框的内容。
    * 根据ISCMProvider接口，此方法接收完整消息并设置。
    * @param {string} message - 要设置的提交信息
-   * @param {string} [repositoryPath] - 可选的仓库路径
    * @throws {Error} 当未找到仓库时抛出错误
    */
-  async startStreamingInput(message: string, repositoryPath?: string): Promise<void> {
-    const api = this.gitExtension.getAPI(1);
-    // 优先使用传入的 repositoryPath，如果没有则使用构造函数中的 workspaceRoot
-    const targetPath = repositoryPath || this.workspaceRoot;
-    const repository = this.findRepositoryForWorkspace(targetPath);
+  async startStreamingInput(message: string): Promise<void> {
+    const repository = this.findRepository();
 
     if (repository?.inputBox) {
       repository.inputBox.value = message;
@@ -745,7 +604,13 @@ export class GitProvider implements ISCMProvider {
     baseBranch = "origin/main",
     headBranch = "HEAD"
   ): Promise<string[]> {
-    const currentWorkspaceRoot = this.getCurrentWorkspaceRoot();
+    const repository = this.findRepository();
+    if (!repository) {
+      notify.warn("git.repository.not.found.for.log");
+      return [];
+    }
+    const currentWorkspaceRoot = repository.rootUri.fsPath;
+
     try {
       // 确保基础分支存在
       try {
@@ -831,7 +696,13 @@ export class GitProvider implements ISCMProvider {
    * @returns 返回分支名称列表
    */
   async getBranches(): Promise<string[]> {
-    const currentWorkspaceRoot = this.getCurrentWorkspaceRoot();
+    const repository = this.findRepository();
+    if (!repository) {
+      notify.warn("git.repository.not.found.for.branches");
+      return [];
+    }
+    const currentWorkspaceRoot = repository.rootUri.fsPath;
+
     try {
       const command = `git branch -a --format="%(refname:short)"`;
       const { stdout } = await exec(command, {
@@ -865,7 +736,7 @@ export class GitProvider implements ISCMProvider {
   async getRecentCommitMessages() {
     const repositoryCommitMessages: string[] = [];
     const userCommitMessages: string[] = [];
-    const repository = this.api.repositories[0];
+    const repository = this.findRepository();
     if (!repository) {
       return { repository: [], user: [] };
     }

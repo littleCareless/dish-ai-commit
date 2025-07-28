@@ -425,7 +425,7 @@ export class SvnProvider implements ISCMProvider {
    * @param {string} message - 要设置的提交信息
    * @throws {Error} 当未找到仓库时抛出错误
    */
-  async setCommitInput(message: string, repositoryPath?: string): Promise<void> {
+  async setCommitInput(message: string): Promise<void> {
     const repository = this.api?.repositories?.[0];
     if (repository?.inputBox) {
       repository.inputBox.value = message;
@@ -434,7 +434,8 @@ export class SvnProvider implements ISCMProvider {
         await vscode.env.clipboard.writeText(message);
         notify.info("commit.message.copied");
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
         notify.error("commit.message.copy.failed", [errorMessage]);
         vscode.window.showInformationMessage(
           formatMessage("commit.message.manual.copy", [message])
@@ -463,7 +464,7 @@ export class SvnProvider implements ISCMProvider {
    * @param {string} message - 要设置的提交信息
    * @throws {Error} 当未找到仓库或inputBox时抛出错误
    */
-  async startStreamingInput(message: string, repositoryPath?: string): Promise<void> {
+  async startStreamingInput(message: string): Promise<void> {
     const repository = this.api?.repositories?.[0];
     if (repository?.inputBox) {
       repository.inputBox.value = message;
@@ -472,7 +473,8 @@ export class SvnProvider implements ISCMProvider {
         await vscode.env.clipboard.writeText(message);
         notify.info("commit.message.copied");
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
         notify.error("commit.message.copy.failed", [errorMessage]);
         vscode.window.showInformationMessage(
           formatMessage("commit.message.manual.copy", [message])
@@ -652,7 +654,8 @@ export class SvnProvider implements ISCMProvider {
       await vscode.env.clipboard.writeText(message);
       notify.info("commit.message.copied");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       notify.error("commit.message.copy.failed", [errorMessage]);
     }
   }

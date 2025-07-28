@@ -37,13 +37,13 @@ export interface ISCMProvider {
   commit(message: string, files?: string[]): Promise<void>;
 
   /** 设置提交信息 */
-  setCommitInput(message: string, repositoryPath?: string): Promise<void>;
+  setCommitInput(message: string): Promise<void>;
 
   /** 获取当前提交信息 */
   getCommitInput(): Promise<string>;
 
   /** 开始流式输入提交信息 */
-  startStreamingInput(message: string, repositoryPath?: string): Promise<void>;
+  startStreamingInput(message: string): Promise<void>;
 
   /** 获取提交日志 */
   getCommitLog(baseBranch?: string, headBranch?: string): Promise<string[]>;
@@ -51,9 +51,9 @@ export interface ISCMProvider {
   /** 获取所有分支的列表 (主要用于 Git) */
   getBranches?: () => Promise<string[]>;
 
- /**
-  * 获取最近的提交信息
-  */
+  /**
+   * 获取最近的提交信息
+   */
   getRecentCommitMessages(): Promise<RecentCommitMessages>;
 
   /**
@@ -78,6 +78,11 @@ export class SCMFactory {
   private static currentProvider: ISCMProvider | undefined;
   /** 缓存的SCM提供者实例，按工作区路径索引 */
   private static providerCache: Map<string, ISCMProvider> = new Map();
+  /** 正在进行的检测操作，用于防止并发问题 */
+  private static pendingDetections: Map<
+    string,
+    Promise<ISCMProvider | undefined>
+  > = new Map();
 
   /**
    * 根据选中的文件确定工作区根目录
@@ -91,9 +96,10 @@ export class SCMFactory {
     if (!selectedFiles || selectedFiles.length === 0) {
       // 1. 尝试从当前活动编辑器获取文件路径
       const activeEditor = vscode.window.activeTextEditor;
-      if (activeEditor && activeEditor.document.uri.scheme === 'file') {
+      if (activeEditor && activeEditor.document.uri.scheme === "file") {
         const activeFilePath = activeEditor.document.uri.fsPath;
-        const workspaceFromActiveFile = this.findWorkspaceRootFromFile(activeFilePath);
+        const workspaceFromActiveFile =
+          this.findWorkspaceRootFromFile(activeFilePath);
         if (workspaceFromActiveFile) {
           return workspaceFromActiveFile;
         }
@@ -101,11 +107,13 @@ export class SCMFactory {
 
       // 2. 尝试从最近打开的文件获取工作区
       const recentFiles = vscode.workspace.textDocuments
-        .filter(doc => doc.uri.scheme === 'file')
-        .map(doc => doc.uri.fsPath);
-      
+        .filter((doc) => doc.uri.scheme === "file")
+        .map((doc) => doc.uri.fsPath);
+
       if (recentFiles.length > 0) {
-        const workspaceFromRecentFile = this.findWorkspaceRootFromFile(recentFiles[0]);
+        const workspaceFromRecentFile = this.findWorkspaceRootFromFile(
+          recentFiles[0]
+        );
         if (workspaceFromRecentFile) {
           return workspaceFromRecentFile;
         }
@@ -115,7 +123,7 @@ export class SCMFactory {
       const workspaceFolders = vscode.workspace.workspaceFolders;
       if (workspaceFolders && workspaceFolders.length > 1) {
         // 检查是否有工作区包含当前活动文件
-        if (activeEditor && activeEditor.document.uri.scheme === 'file') {
+        if (activeEditor && activeEditor.document.uri.scheme === "file") {
           const activeFilePath = activeEditor.document.uri.fsPath;
           for (const folder of workspaceFolders) {
             if (activeFilePath.startsWith(folder.uri.fsPath)) {
@@ -123,9 +131,11 @@ export class SCMFactory {
             }
           }
         }
-        
+
         // 如果无法确定，返回第一个工作区（保持向后兼容）
-        console.warn('Multiple workspaces found, using first workspace as fallback');
+        console.warn(
+          "Multiple workspaces found, using first workspace as fallback"
+        );
       }
 
       // 4. 最后回退到第一个工作区
@@ -149,7 +159,12 @@ export class SCMFactory {
    * @param filePath 文件路径
    * @returns 工作区根目录路径或undefined
    */
-  private static findWorkspaceRootFromFile(filePath: string): string | undefined {
+  private static findWorkspaceRootFromFile(
+    filePath: string
+  ): string | undefined {
+    if (!filePath) {
+      return undefined;
+    }
     let currentDir = path.dirname(filePath);
     // 向上查找直到根目录
     while (currentDir && currentDir !== path.parse(currentDir).root) {
@@ -188,9 +203,13 @@ export class SCMFactory {
 
       // 如果提供了文件路径，检查这些文件所在的目录
       if (filePaths && filePaths.length > 0) {
-        // 获取所有唯一的目录路径
+        // 获取所有唯一的目录路径，过滤掉null/undefined值
         const dirPaths = [
-          ...new Set(filePaths.map((file) => path.dirname(file))),
+          ...new Set(
+            filePaths
+              .filter((file) => file && typeof file === "string")
+              .map((file) => path.dirname(file))
+          ),
         ];
 
         for (const dir of dirPaths) {
@@ -248,24 +267,85 @@ export class SCMFactory {
   ): Promise<ISCMProvider | undefined> {
     try {
       // 优先使用传入的 repositoryPath，如果没有则使用检测方法获取工作区根目录
-      const workspaceRoot = repositoryPath || this.findWorkspaceRoot(selectedFiles);
+      const workspaceRoot =
+        repositoryPath || this.findWorkspaceRoot(selectedFiles);
       if (!workspaceRoot) {
         return undefined;
+      }
+
+      // 检查是否已有正在进行的检测操作
+      const pendingDetection = this.pendingDetections.get(workspaceRoot);
+      if (pendingDetection) {
+        return pendingDetection;
       }
 
       // 检查缓存中是否已有该工作区的提供者
       const cachedProvider = this.providerCache.get(workspaceRoot);
       if (cachedProvider) {
         // 验证缓存的提供者是否仍然可用
-        if (await cachedProvider.isAvailable()) {
-          this.currentProvider = cachedProvider;
-          return cachedProvider;
-        } else {
-          // 如果不可用，从缓存中移除
+        try {
+          if (await this.withTimeout(cachedProvider.isAvailable())) {
+            this.currentProvider = cachedProvider;
+            return cachedProvider;
+          } else {
+            // 如果不可用，从缓存中移除
+            this.providerCache.delete(workspaceRoot);
+          }
+        } catch (error) {
+          // 如果检查可用性时出错，从缓存中移除
           this.providerCache.delete(workspaceRoot);
         }
       }
 
+      // 创建新的检测操作
+      const detectionPromise = this.performDetection(
+        workspaceRoot,
+        selectedFiles
+      );
+      this.pendingDetections.set(workspaceRoot, detectionPromise);
+
+      try {
+        const result = await detectionPromise;
+        return result;
+      } finally {
+        // 清理pending状态
+        this.pendingDetections.delete(workspaceRoot);
+      }
+    } catch (error) {
+      console.error(
+        "SCM detection failed:",
+        error instanceof Error ? error.message : error
+      );
+      return undefined;
+    }
+  }
+
+  /**
+   * 执行实际的SCM检测逻辑
+   * @param workspaceRoot 工作区根目录
+   * @param selectedFiles 选中的文件列表
+   * @returns SCM提供者实例或undefined
+   */
+  /**
+   * 创建一个带超时的Promise包装器
+   */
+  private static withTimeout<T>(
+    promise: Promise<T>,
+    timeoutMs: number = 5000
+  ): Promise<T> {
+    return Promise.race([
+      promise,
+      new Promise<T>((_, reject) =>
+        setTimeout(() => reject(new Error("Operation timed out")), timeoutMs)
+      ),
+    ]);
+  }
+
+  private static async performDetection(
+    workspaceRoot: string,
+    selectedFiles?: string[]
+  ): Promise<ISCMProvider | undefined> {
+    try {
       // 通过目录检测，包括选定的文件路径
       const scmType = this.detectSCMFromDir(workspaceRoot, selectedFiles);
 
@@ -278,36 +358,52 @@ export class SCMFactory {
 
       // 如果检测到Git
       if (scmType === "git") {
-        const git = gitExtension?.exports
-          ? new GitProvider(gitExtension.exports, workspaceRoot)
-          : undefined;
-        if (git) {
-          await git.init();
-          if (await git.isAvailable()) {
-            provider = git;
+        try {
+          const git = gitExtension?.exports
+            ? new GitProvider(gitExtension.exports, workspaceRoot)
+            : undefined;
+          if (git) {
+            await this.withTimeout(git.init());
+            if (await this.withTimeout(git.isAvailable())) {
+              provider = git;
+            }
           }
+        } catch (error) {
+          console.error("Git provider initialization failed:", error);
+          // Continue to try other providers
         }
       }
 
       // 如果检测到SVN
       if (scmType === "svn") {
         // 先尝试使用SVN插件
-        const svn = svnExtension?.exports
-          ? new SvnProvider(svnExtension.exports)
-          : undefined;
-        if (svn) {
-          await svn.init();
-          if (await svn.isAvailable()) {
-            provider = svn;
+        try {
+          const svn = svnExtension?.exports
+            ? new SvnProvider(svnExtension.exports)
+            : undefined;
+          if (svn) {
+            await this.withTimeout(svn.init());
+            if (await this.withTimeout(svn.isAvailable())) {
+              provider = svn;
+            }
           }
+        } catch (error) {
+          console.error("SVN provider initialization failed:", error);
+          // Continue to try CLI SVN
         }
 
         // 如果没有插件但系统有SVN命令,使用命令行方式
-        if (!provider && await this.checkSCMCommand("svn")) {
-          const cliSvn = new CliSvnProvider(workspaceRoot);
-          await cliSvn.init();
-          if (await cliSvn.isAvailable()) {
-            provider = cliSvn;
+        if (!provider) {
+          try {
+            if (await this.withTimeout(this.checkSCMCommand("svn"))) {
+              const cliSvn = new CliSvnProvider(workspaceRoot);
+              await this.withTimeout(cliSvn.init());
+              if (await this.withTimeout(cliSvn.isAvailable())) {
+                provider = cliSvn;
+              }
+            }
+          } catch (error) {
+            console.error("CLI SVN provider initialization failed:", error);
           }
         }
       }

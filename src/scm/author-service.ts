@@ -110,7 +110,7 @@ export class AuthorService {
         .split("\n")
         .map((author) => author.trim())
         .filter((author) => author); // 去除空行
-      return [...new Set(authors)]; // 去重
+      return Array.from(new Set(authors)); // 去重
     } catch (error) {
       console.error("Error getting all Git authors:", error);
       // 发生错误时可以返回空数组或抛出特定错误
