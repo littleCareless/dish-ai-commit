@@ -221,7 +221,7 @@
   "context.truncated": "上下文区块 '{0}' 已被截断以适应模型的令牌限制。",
   "context.block.truncated": "为缩减上下文大小，区块 '{0}' 的部分内容已被截断。",
   "context.block.removed": "为缩减上下文大小，区块 '{0}' 已被移除。",
-  "prompt.large.warning": "预估的提示词大小（{0} tokens）已接近模型上限（{1} tokens），这可能导致内容被截断或生成失败。",
+  "prompt.large.warning.with.fallback": "预估的提示词大小（{0} tokens）已超过模型上限（{1} tokens）的75%，这可能导致内容被截断或生成失败。使用更简洁的备用提示词可以节省Token，并可能提高生成效果。",
   "prompt.large.continue": "仍然继续",
   "prompt.large.cancel": "取消",
   "prompt.user.cancelled": "因提示词过大，用户已取消操作。",
@@ -240,5 +240,10 @@
   "progress.generating.commit.for.file": "正在为 {0} 生成详情...",
   "provider.does.not.support.non.streaming.for.layered": "提供商 {0} 不支持分层提交所需的非流式生成。",
   "layered.commit.details.title": "分层提交详情",
-  "layered.commit.details.generated": "分层提交详情已生成并在新标签页中打开。"
+  "layered.commit.details.generated": "分层提交详情已生成并在新标签页中打开。",
+  "prompt.complex.changes": "变更内容较复杂，使用更简洁的提示词可能会产生更好的结果。是否切换到备用提示词？",
+  "fallback.use": "使用备用提示词",
+  "fallback.continue": "继续使用标准提示词",
+  "info.using.fallback.prompt": "正在使用备用提示词进行生成...",
+  "commit.message.generated.stream.ask.fallback": "提交信息已生成。如果结果不理想，可以尝试使用更简洁的提示词重新生成。"
 }

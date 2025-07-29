@@ -219,7 +219,7 @@
   "context.truncated": "Context block '{0}' was truncated to fit within the model's token limit.",
   "context.block.truncated": "Context block '{0}' was partially truncated to reduce context size.",
   "context.block.removed": "Context block '{0}' was removed to reduce context size.",
-  "prompt.large.warning": "The estimated prompt size ({0} tokens) is close to the model's limit ({1} tokens). This may lead to truncation or failure.",
+  "prompt.large.warning.with.fallback": "The estimated prompt size ({0} tokens) is over 75% of the model's limit ({1} tokens). This may lead to truncation or failure. Using a simpler fallback prompt can save tokens and might improve results.",
   "prompt.large.continue": "Continue Anyway",
   "prompt.large.cancel": "Cancel",
   "prompt.user.cancelled": "Operation cancelled by user due to large prompt size.",
@@ -238,5 +238,10 @@
   "progress.generating.commit.for.file": "Generating details for {0}...",
   "provider.does.not.support.non.streaming.for.layered": "Provider {0} does not support non-streaming generation required for layered commits.",
   "layered.commit.details.title": "Layered Commit Details",
-  "layered.commit.details.generated": "Layered commit details have been generated and opened in a new tab."
+  "layered.commit.details.generated": "Layered commit details have been generated and opened in a new tab.",
+  "prompt.complex.changes": "The changes are complex. Using a simpler prompt might yield better results. Would you like to switch to the fallback prompt?",
+  "fallback.use": "Use Fallback Prompt",
+  "fallback.continue": "Continue with Standard Prompt",
+  "info.using.fallback.prompt": "Using fallback prompt for generation...",
+  "commit.message.generated.stream.ask.fallback": "Commit message generated. If the result is not ideal, you can try regenerating with a simpler prompt."
 }

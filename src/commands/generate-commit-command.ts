@@ -222,22 +222,23 @@ ${currentInput}
    * @param repoCommits - 仓库最近的提交。
    * @returns 提醒信息字符串。
    */
-  private _getReminder(userCommits: string, repoCommits: string): string {
-    if (userCommits || repoCommits) {
-      return `---
-REMINDER:
- - IMPORTANT: You will be provided with code changes from MULTIPLE files.
- - Your primary task is to analyze ALL provided file changes under the \`<code-changes>\` block and synthesize them into a single, coherent commit message.
- - Do NOT focus on only the first file you see. A good commits messages covers the intent of all changes.
-- DO NOT COPY commits from RECENT COMMITS, but use it as reference for the commit style.
-- ONLY return a single markdown code block, NO OTHER PROSE!`;
-    }
+  private _getReminder(
+    userCommits: string,
+    repoCommits: string,
+    language: string
+  ): string {
+    const languageReminder = `\n - The commit message MUST be in ${language}.`;
+    const recentCommitsReminder =
+      userCommits || repoCommits
+        ? "\n- DO NOT COPY commits from RECENT COMMITS, but use it as reference for the commit style."
+        : "";
+
     return `---
 REMINDER:
  - IMPORTANT: You will be provided with code changes from MULTIPLE files.
  - Your primary task is to analyze ALL provided file changes under the \`<code-changes>\` block and synthesize them into a single, coherent commit message.
- - Do NOT focus on only the first file you see. A good commits messages covers the intent of all changes.
-- ONLY return a single markdown code block, NO OTHER PROSE!`;
+ - Do NOT focus on only the first file you see. A good commits messages covers the intent of all changes.${recentCommitsReminder}${languageReminder}
+ - Now only show your message, Do not provide any explanations or details`;
   }
 
   /**
@@ -334,21 +335,25 @@ REMINDER:
         maxTokens.toLocaleString(),
       ])
     );
-
-    // 大 Prompt 警告
-    if (promptLength > maxTokens * 0.8) {
+    // 大 Prompt 警告和备用提示词切换逻辑
+    if (promptLength > maxTokens * 0.75) {
+      const useFallbackChoice = getMessage("fallback.use");
       const continueAnyway = getMessage("prompt.large.continue");
       const cancel = getMessage("prompt.large.cancel");
+
       const choice = await notify.warn(
-        "prompt.large.warning",
+        "prompt.large.warning.with.fallback",
         [promptLength.toLocaleString(), maxTokens.toLocaleString()],
         {
           modal: true,
-          buttons: [continueAnyway, cancel],
+          buttons: [useFallbackChoice, continueAnyway],
         }
       );
-
-      if (choice !== continueAnyway) {
+      if (choice === useFallbackChoice) {
+        const fallbackSystemPrompt = getSystemPrompt(tempParams, true, true);
+        contextManager.setSystemPrompt(fallbackSystemPrompt);
+        notify.info("info.using.fallback.prompt");
+      } else if (choice !== continueAnyway) {
         throw new Error(getMessage("prompt.user.cancelled"));
       }
     }
@@ -455,7 +460,11 @@ REMINDER:
       scmProvider,
       configuration.features.commitMessage.useRecentCommitsAsReference
     );
-    const reminder = this._getReminder(userCommits, repoCommits);
+    const reminder = this._getReminder(
+      userCommits,
+      repoCommits,
+      configuration.base.language
+    );
 
     for (const filePath of selectedFiles) {
       this.throwIfCancelled(token);
@@ -595,7 +604,11 @@ REMINDER:
       configuration.features.commitMessage.useRecentCommitsAsReference
     );
     const similarCodeContext = await this._getSimilarCodeContext(diffContent);
-    const reminder = this._getReminder(userCommits, repoCommits);
+    const reminder = this._getReminder(
+      userCommits,
+      repoCommits,
+      configuration.base.language
+    );
 
     // 2. 构建 ContextManager
     const contextManager = new ContextManager(selectedModel, systemPrompt);
