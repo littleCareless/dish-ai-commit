@@ -6,6 +6,32 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.41.0 (2025-07-29)
+
+### ♻ Code Refactoring
+
+- **context-manager**: 重构上下文构建逻辑以优先保留关键区块 ([7570a93](https://github.com/littleCareless/dish-ai-commit/commit/7570a93))
+- **scm**: 重构文件选择逻辑至 SCMDetectorService ([e854af3](https://github.com/littleCareless/dish-ai-commit/commit/e854af3))
+
+### ✨ Features
+
+- **prompt**: 引入备用提示词以处理复杂或大型变更 ([c095cb4](https://github.com/littleCareless/dish-ai-commit/commit/c095cb4))
+
+### 🎫 Chores
+
+- **release**: 发布 0.40.0 版本 ([f9a1a80](https://github.com/littleCareless/dish-ai-commit/commit/f9a1a80))
+
+### 🐛 Bug Fixes
+
+- **ci**: 为 VS Marketplace 发布步骤指定 registryUrl ([da2bf30](https://github.com/littleCareless/dish-ai-commit/commit/da2bf30))
+
+### 🔧 Continuous Integration
+
+- **release**: 改用从 CHANGELOG.md 文件提取发布日志 ([f990a95](https://github.com/littleCareless/dish-ai-commit/commit/f990a95))
+- **release**: 允许手动触发发布工作流 ([caeca42](https://github.com/littleCareless/dish-ai-commit/commit/caeca42))
+- **workflow**: 更新发布工作流配置 ([6ba5a96](https://github.com/littleCareless/dish-ai-commit/commit/6ba5a96))
+- **workflow**: 使用 npm ci 替代 pnpm install ([886df2f](https://github.com/littleCareless/dish-ai-commit/commit/886df2f))
+
 # 0.40.0 (2025-07-28)
 
 ### ♻ Code Refactoring

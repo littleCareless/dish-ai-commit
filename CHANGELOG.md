@@ -6,6 +6,33 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.41.0 (2025-07-29)
+
+### ♻ Code Refactoring
+
+- **context-manager**: Refactor context building logic to prioritize key blocks ([7570a93](https://github.com/littleCareless/dish-ai-commit/commit/7570a93))
+
+- **scm**: Refactor file selection logic to SCMDetectorService ([e854af3](https://github.com/littleCareless/dish-ai-commit/commit/e854af3))
+
+### ✨ Features
+
+- **prompt**: Introduce alternative prompt words to handle complex or large changes ([c095cb4](https://github.com/littleCareless/dish-ai-commit/commit/c095cb4))
+
+### 🎫 Chores
+
+- **release**: Released version 0.40.0 ([f9a1a80](https://github.com/littleCareless/dish-ai-commit/commit/f9a1a80))
+
+### 🐛 Bug Fixes
+
+- **ci**: Specify registryUrl for VS Marketplace release step ([da2bf30](https://github.com/littleCareless/dish-ai-commit/commit/da2bf30))
+
+### 🔧 Continuous Integration
+
+- **release**: Use release log extracted from CHANGELOG.md file instead ([f990a95](https://github.com/littleCareless/dish-ai-commit/commit/f990a95))
+- **release**: Allow manual triggering of release workflow ([caeca42](https://github.com/littleCareless/dish-ai-commit/commit/caeca42))
+- **workflow**: Update release workflow configuration ([6ba5a96](https://github.com/littleCareless/dish-ai-commit/commit/6ba5a96))
+- **workflow**: Use npm ci instead of pnpm install ([886df2f](https://github.com/littleCareless/dish-ai-commit/commit/886df2f))
+
 # 0.40.0 (2025-07-28)
 
 ### ♻ Code Refactoring
