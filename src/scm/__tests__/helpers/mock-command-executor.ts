@@ -13,19 +13,64 @@ export class MockCommandExecutor {
   private static commandMocks = new Map<string, CommandResult | CommandError>();
   private static commandPatterns = new Map<RegExp, (match: RegExpMatchArray) => CommandResult | CommandError>();
   private static defaultBehavior: 'success' | 'failure' = 'success';
+  private static executedCommands: string[] = [];
+  private static lastCommand: string = '';
+
+  constructor() {
+    // Setup the mock for child_process.exec when instance is created
+    const { exec } = require('child_process');
+    if (exec && typeof exec.mockImplementation === 'function') {
+      exec.mockImplementation(this.getExecImplementation());
+    }
+  }
 
   /**
    * Mock a specific command with a result
+   */
+  mockExec(command: string, result: CommandResult): void {
+    MockCommandExecutor.commandMocks.set(command, result);
+  }
+
+  /**
+   * Mock a command with an error
+   */
+  mockExecError(command: string, error: CommandError): void {
+    MockCommandExecutor.commandMocks.set(command, error);
+  }
+
+  /**
+   * Mock a specific command with a result (static version)
    */
   static mockExec(command: string, result: CommandResult): void {
     this.commandMocks.set(command, result);
   }
 
   /**
-   * Mock a command with an error
+   * Mock a command with an error (static version)
    */
   static mockExecError(command: string, error: CommandError): void {
     this.commandMocks.set(command, error);
+  }
+
+  /**
+   * Get the last executed command
+   */
+  getLastCommand(): string {
+    return MockCommandExecutor.lastCommand;
+  }
+
+  /**
+   * Get all executed commands
+   */
+  getExecutedCommands(): string[] {
+    return [...MockCommandExecutor.executedCommands];
+  }
+
+  /**
+   * Clear all mocks and reset state
+   */
+  clearMocks(): void {
+    MockCommandExecutor.clearMocks();
   }
 
   /**
@@ -52,6 +97,29 @@ export class MockCommandExecutor {
     this.commandMocks.clear();
     this.commandPatterns.clear();
     this.defaultBehavior = 'success';
+    this.executedCommands = [];
+    this.lastCommand = '';
+  }
+
+  /**
+   * Get the mock implementation for child_process.exec
+   */
+  private getExecImplementation() {
+    return (command: string, options: any, callback?: Function) => {
+      MockCommandExecutor.executedCommands.push(command);
+      MockCommandExecutor.lastCommand = command;
+
+      const actualCallback = typeof options === 'function' ? options : callback;
+      const result = MockCommandExecutor.executeCommand(command);
+
+      // Use immediate callback execution for synchronous behavior in tests
+      if (result instanceof Error) {
+        actualCallback(result);
+      } else {
+        // child_process.exec callback signature: (error, stdout, stderr)
+        actualCallback(null, result.stdout || '', result.stderr || '');
+      }
+    };
   }
 
   /**
@@ -59,32 +127,34 @@ export class MockCommandExecutor {
    */
   static getExecMock() {
     return vi.fn().mockImplementation((command: string, options: any, callback?: Function) => {
+      MockCommandExecutor.executedCommands.push(command);
+      MockCommandExecutor.lastCommand = command;
+
       const actualCallback = typeof options === 'function' ? options : callback;
       const result = this.executeCommand(command);
-      
-      // Always use callback style - promisify will handle the Promise wrapping
-      setTimeout(() => {
-        if (result instanceof Error) {
-          actualCallback(result);
-        } else {
-          // child_process.exec callback signature: (error, stdout, stderr)
-          actualCallback(null, result.stdout || '', result.stderr || '');
-        }
-      }, 0);
+
+      // Use immediate callback execution for synchronous behavior in tests
+      if (result instanceof Error) {
+        actualCallback(result);
+      } else {
+        // child_process.exec callback signature: (error, stdout, stderr)
+        actualCallback(null, result.stdout || '', result.stderr || '');
+      }
     });
   }
 
   /**
    * Execute a command and return the mocked result
    */
-  private static executeCommand(command: string): CommandResult | CommandError {
+  static executeCommand(command: string): CommandResult | CommandError {
     // Check exact command matches first
     if (this.commandMocks.has(command)) {
       return this.commandMocks.get(command)!;
     }
 
     // Check pattern matches
-    for (const [pattern, handler] of this.commandPatterns.entries()) {
+    const patterns = Array.from(this.commandPatterns.entries());
+    for (const [pattern, handler] of patterns) {
       const match = command.match(pattern);
       if (match) {
         return handler(match);
@@ -258,7 +328,7 @@ export class MockCommandExecutor {
     } as CommandError);
 
     this.mockExecError('svn update', {
-      name: 'NetworkError', 
+      name: 'NetworkError',
       message: 'svn: E170013: Unable to connect to a repository',
       code: 1,
     } as CommandError);
@@ -407,10 +477,10 @@ export class MockCommandExecutor {
    * Get execution statistics for testing
    */
   static getExecutionStats(): {
-    totalCalls: number;
-    successfulCalls: number;
-    failedCalls: number;
-    averageExecutionTime: number;
+    totalCalls: number
+    successfulCalls: number
+    failedCalls: number
+    averageExecutionTime: number
   } {
     // This would be implemented to track actual execution statistics
     // For now, return mock data

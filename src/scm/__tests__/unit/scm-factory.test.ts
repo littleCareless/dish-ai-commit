@@ -7,6 +7,7 @@ import { describe, it, expect, beforeEach, afterEach, vi } from 'vitest';
 import * as fs from 'fs';
 import * as path from 'path';
 import * as vscode from 'vscode';
+import { exec } from 'child_process';
 
 import { SCMFactory, ISCMProvider } from '../../scm-provider';
 import { GitProvider } from '../../git-provider';
@@ -18,13 +19,19 @@ import { TestConfig } from '../helpers/test-interfaces';
 
 // Mock external dependencies
 vi.mock('fs');
-vi.mock('child_process');
+vi.mock('child_process', () => ({
+  exec: vi.fn(),
+}));
 vi.mock('vscode', () => ({
   workspace: {
     workspaceFolders: [],
+    textDocuments: [],
   },
   extensions: {
     getExtension: vi.fn(),
+  },
+  window: {
+    activeTextEditor: undefined,
   },
 }));
 
@@ -34,6 +41,7 @@ vi.mock('../../svn-provider');
 vi.mock('../../cli-svn-provider');
 
 const mockFs = vi.mocked(fs);
+const mockExec = vi.mocked(exec);
 
 describe('SCMFactory', () => {
   let testConfig: TestConfig;
@@ -41,7 +49,7 @@ describe('SCMFactory', () => {
   beforeEach(() => {
     // Reset all mocks
     vi.clearAllMocks();
-    
+
     // Create default test configuration
     testConfig = {
       mockWorkspacePath: '/mock/workspace',
@@ -60,7 +68,9 @@ describe('SCMFactory', () => {
     ];
 
     // Reset SCMFactory internal state
-    (SCMFactory as any).currentProvider = undefined;
+    (SCMFactory as any).currentProvider = undefined
+      ; (SCMFactory as any).providerCache = new Map()
+      ; (SCMFactory as any).pendingDetections = new Map();
   });
 
   afterEach(() => {
@@ -74,7 +84,7 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
-        
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
@@ -83,14 +93,14 @@ describe('SCMFactory', () => {
         const mockGitAPI = {
           repositories: [],
         };
-        
+
         const mockGitExtension = {
           exports: mockGitAPI,
           getAPI: vi.fn().mockReturnValue(mockGitAPI),
         };
-        
+
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
-          if (id === 'vscode.git') {return mockGitExtension as any;}
+          if (id === 'vscode.git') { return mockGitExtension as any; }
           return undefined;
         });
 
@@ -118,7 +128,7 @@ describe('SCMFactory', () => {
         const subProjectPath = '/mock/workspace/subproject';
         const selectedFiles = ['/mock/workspace/subproject/file.txt'];
         const gitPath = path.join(subProjectPath, '.git');
-        
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
@@ -127,14 +137,14 @@ describe('SCMFactory', () => {
         const mockGitAPI = {
           repositories: [],
         };
-        
+
         const mockGitExtension = {
           exports: mockGitAPI,
           getAPI: vi.fn().mockReturnValue(mockGitAPI),
         };
-        
+
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
-          if (id === 'vscode.git') {return mockGitExtension as any;}
+          if (id === 'vscode.git') { return mockGitExtension as any; }
           return undefined;
         });
 
@@ -172,7 +182,7 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const svnPath = path.join(workspacePath, '.svn');
-        
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === svnPath;
         });
@@ -181,14 +191,14 @@ describe('SCMFactory', () => {
         const mockSvnAPI = {
           repositories: [],
         };
-        
+
         const mockSvnExtension = {
           exports: mockSvnAPI,
           getAPI: vi.fn().mockReturnValue(mockSvnAPI),
         };
-        
+
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
-          if (id === 'littleCareless.svn-scm-ai') {return mockSvnExtension as any;}
+          if (id === 'littleCareless.svn-scm-ai') { return mockSvnExtension as any; }
           return undefined;
         });
 
@@ -216,7 +226,7 @@ describe('SCMFactory', () => {
         const subProjectPath = '/mock/workspace/subproject';
         const selectedFiles = ['/mock/workspace/subproject/file.txt'];
         const svnPath = path.join(subProjectPath, '.svn');
-        
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === svnPath;
         });
@@ -225,14 +235,14 @@ describe('SCMFactory', () => {
         const mockSvnAPI = {
           repositories: [],
         };
-        
+
         const mockSvnExtension = {
           exports: mockSvnAPI,
           getAPI: vi.fn().mockReturnValue(mockSvnAPI),
         };
-        
+
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
-          if (id === 'littleCareless.svn-scm-ai') {return mockSvnExtension as any;}
+          if (id === 'littleCareless.svn-scm-ai') { return mockSvnExtension as any; }
           return undefined;
         });
 
@@ -271,7 +281,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const nestedPath = '/mock/workspace/src/components';
         const selectedFiles = ['/mock/workspace/src/components/Button.tsx'];
-        
+
         // Mock directory traversal - Git found at workspace root
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           const gitPath = path.join(workspacePath, '.git');
@@ -282,14 +292,14 @@ describe('SCMFactory', () => {
         const mockGitAPI = {
           repositories: [],
         };
-        
+
         const mockGitExtension = {
           exports: mockGitAPI,
           getAPI: vi.fn().mockReturnValue(mockGitAPI),
         };
-        
+
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
-          if (id === 'vscode.git') {return mockGitExtension as any;}
+          if (id === 'vscode.git') { return mockGitExtension as any; }
           return undefined;
         });
 
@@ -315,7 +325,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const nestedPath = '/mock/workspace/trunk/src';
         const selectedFiles = ['/mock/workspace/trunk/src/main.c'];
-        
+
         // Mock directory traversal - SVN found at workspace root
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           const svnPath = path.join(workspacePath, '.svn');
@@ -326,14 +336,14 @@ describe('SCMFactory', () => {
         const mockSvnAPI = {
           repositories: [],
         };
-        
+
         const mockSvnExtension = {
           exports: mockSvnAPI,
           getAPI: vi.fn().mockReturnValue(mockSvnAPI),
         };
-        
+
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
-          if (id === 'littleCareless.svn-scm-ai') {return mockSvnExtension as any;}
+          if (id === 'littleCareless.svn-scm-ai') { return mockSvnExtension as any; }
           return undefined;
         });
 
@@ -362,7 +372,7 @@ describe('SCMFactory', () => {
           '/mock/workspace/tests/unit.test.ts',
           '/mock/workspace/docs/README.md'
         ];
-        
+
         // Mock Git found at workspace root
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           const gitPath = path.join(workspacePath, '.git');
@@ -373,14 +383,14 @@ describe('SCMFactory', () => {
         const mockGitAPI = {
           repositories: [],
         };
-        
+
         const mockGitExtension = {
           exports: mockGitAPI,
           getAPI: vi.fn().mockReturnValue(mockGitAPI),
         };
-        
+
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
-          if (id === 'vscode.git') {return mockGitExtension as any;}
+          if (id === 'vscode.git') { return mockGitExtension as any; }
           return undefined;
         });
 
@@ -404,7 +414,7 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const selectedFiles = ['/mock/workspace/file.txt'];
-        
+
         // No SCM directories found
         mockFs.existsSync.mockReturnValue(false);
 
@@ -419,7 +429,7 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
-        
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
@@ -428,14 +438,14 @@ describe('SCMFactory', () => {
         const mockGitAPI = {
           repositories: [],
         };
-        
+
         const mockGitExtension = {
           exports: mockGitAPI,
           getAPI: vi.fn().mockReturnValue(mockGitAPI),
         };
-        
+
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
-          if (id === 'vscode.git') {return mockGitExtension as any;}
+          if (id === 'vscode.git') { return mockGitExtension as any; }
           return undefined;
         });
 
@@ -462,7 +472,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
         const svnPath = path.join(workspacePath, '.svn');
-        
+
         // Both directories exist, but Git should be prioritized
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath || filePath === svnPath;
@@ -472,14 +482,14 @@ describe('SCMFactory', () => {
         const mockGitAPI = {
           repositories: [],
         };
-        
+
         const mockGitExtension = {
           exports: mockGitAPI,
           getAPI: vi.fn().mockReturnValue(mockGitAPI),
         };
-        
+
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
-          if (id === 'vscode.git') {return mockGitExtension as any;}
+          if (id === 'vscode.git') { return mockGitExtension as any; }
           return undefined;
         });
 
@@ -509,7 +519,7 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
-        
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
@@ -518,14 +528,14 @@ describe('SCMFactory', () => {
         const mockGitAPI = {
           repositories: [],
         };
-        
+
         const mockGitExtension = {
           exports: mockGitAPI,
           getAPI: vi.fn().mockReturnValue(mockGitAPI),
         };
-        
+
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
-          if (id === 'vscode.git') {return mockGitExtension as any;}
+          if (id === 'vscode.git') { return mockGitExtension as any; }
           return undefined;
         });
 
@@ -552,7 +562,7 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
-        
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
@@ -574,7 +584,7 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
-        
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
@@ -584,9 +594,9 @@ describe('SCMFactory', () => {
           exports: undefined,
           getAPI: vi.fn(),
         };
-        
+
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
-          if (id === 'vscode.git') {return mockGitExtension as any;}
+          if (id === 'vscode.git') { return mockGitExtension as any; }
           return undefined;
         });
 
@@ -602,7 +612,7 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
-        
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
@@ -611,14 +621,14 @@ describe('SCMFactory', () => {
         const mockGitAPI = {
           repositories: [],
         };
-        
+
         const mockGitExtension = {
           exports: mockGitAPI,
           getAPI: vi.fn().mockReturnValue(mockGitAPI),
         };
-        
+
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
-          if (id === 'vscode.git') {return mockGitExtension as any;}
+          if (id === 'vscode.git') { return mockGitExtension as any; }
           return undefined;
         });
 
@@ -646,7 +656,7 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const svnPath = path.join(workspacePath, '.svn');
-        
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === svnPath;
         });
@@ -655,14 +665,14 @@ describe('SCMFactory', () => {
         const mockSvnAPI = {
           repositories: [],
         };
-        
+
         const mockSvnExtension = {
           exports: mockSvnAPI,
           getAPI: vi.fn().mockReturnValue(mockSvnAPI),
         };
-        
+
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
-          if (id === 'littleCareless.svn-scm-ai') {return mockSvnExtension as any;}
+          if (id === 'littleCareless.svn-scm-ai') { return mockSvnExtension as any; }
           return undefined;
         });
 
@@ -689,7 +699,7 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const svnPath = path.join(workspacePath, '.svn');
-        
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === svnPath;
         });
@@ -734,7 +744,7 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const svnPath = path.join(workspacePath, '.svn');
-        
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === svnPath;
         });
@@ -767,7 +777,7 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const svnPath = path.join(workspacePath, '.svn');
-        
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === svnPath;
         });
@@ -776,14 +786,14 @@ describe('SCMFactory', () => {
         const mockSvnAPI = {
           repositories: [],
         };
-        
+
         const mockSvnExtension = {
           exports: mockSvnAPI,
           getAPI: vi.fn().mockReturnValue(mockSvnAPI),
         };
-        
+
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
-          if (id === 'littleCareless.svn-scm-ai') {return mockSvnExtension as any;}
+          if (id === 'littleCareless.svn-scm-ai') { return mockSvnExtension as any; }
           return undefined;
         });
 
@@ -832,7 +842,7 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
-        
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
@@ -841,14 +851,14 @@ describe('SCMFactory', () => {
         const mockGitAPI = {
           repositories: [],
         };
-        
+
         const mockGitExtension = {
           exports: mockGitAPI,
           getAPI: vi.fn().mockReturnValue(mockGitAPI),
         };
-        
+
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
-          if (id === 'vscode.git') {return mockGitExtension as any;}
+          if (id === 'vscode.git') { return mockGitExtension as any; }
           return undefined;
         });
 
@@ -862,7 +872,7 @@ describe('SCMFactory', () => {
 
         // Act - First call
         const provider1 = await SCMFactory.detectSCM();
-        
+
         // Act - Second call
         const provider2 = await SCMFactory.detectSCM();
 
@@ -934,7 +944,12 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const svnPath = path.join(workspacePath, '.svn');
-        
+
+        // Set up workspace folders
+        vi.mocked(vscode.workspace).workspaceFolders = [
+          { uri: { fsPath: workspacePath } } as any
+        ];
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === svnPath;
         });
@@ -945,8 +960,6 @@ describe('SCMFactory', () => {
         });
 
         // Mock exec to throw an error
-        const { exec } = await import('child_process');
-        const mockExec = vi.mocked(exec);
         mockExec.mockImplementation((command: string, callback: any) => {
           const error = new Error('Command execution failed');
           callback(error, '', 'Command not found');
@@ -965,10 +978,15 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const svnPath = path.join(workspacePath, '.svn');
-        
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === svnPath;
         });
+
+        // Set up workspace folders
+        vi.mocked(vscode.workspace).workspaceFolders = [
+          { uri: { fsPath: workspacePath } } as any
+        ];
 
         // No SVN extension available
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
@@ -976,8 +994,6 @@ describe('SCMFactory', () => {
         });
 
         // Mock exec to simulate timeout by calling callback with error after delay
-        const { exec } = await import('child_process');
-        const mockExec = vi.mocked(exec);
         mockExec.mockImplementation((command: string, callback: any) => {
           // Simulate timeout by calling callback with error after a short delay
           setTimeout(() => {
@@ -1000,7 +1016,12 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
-        
+
+        // Set up workspace folders
+        vi.mocked(vscode.workspace).workspaceFolders = [
+          { uri: { fsPath: workspacePath } } as any
+        ];
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
@@ -1009,14 +1030,14 @@ describe('SCMFactory', () => {
         const mockGitAPI = {
           repositories: [],
         };
-        
+
         const mockGitExtension = {
           exports: mockGitAPI,
           getAPI: vi.fn().mockReturnValue(mockGitAPI),
         };
-        
+
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
-          if (id === 'vscode.git') {return mockGitExtension as any;}
+          if (id === 'vscode.git') { return mockGitExtension as any; }
           return undefined;
         });
 
@@ -1040,7 +1061,12 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const svnPath = path.join(workspacePath, '.svn');
-        
+
+        // Set up workspace folders
+        vi.mocked(vscode.workspace).workspaceFolders = [
+          { uri: { fsPath: workspacePath } } as any
+        ];
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === svnPath;
         });
@@ -1049,14 +1075,14 @@ describe('SCMFactory', () => {
         const mockSvnAPI = {
           repositories: [],
         };
-        
+
         const mockSvnExtension = {
           exports: mockSvnAPI,
           getAPI: vi.fn().mockReturnValue(mockSvnAPI),
         };
-        
+
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
-          if (id === 'littleCareless.svn-scm-ai') {return mockSvnExtension as any;}
+          if (id === 'littleCareless.svn-scm-ai') { return mockSvnExtension as any; }
           return undefined;
         });
 
@@ -1080,7 +1106,12 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
-        
+
+        // Set up workspace folders
+        vi.mocked(vscode.workspace).workspaceFolders = [
+          { uri: { fsPath: workspacePath } } as any
+        ];
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
@@ -1089,14 +1120,14 @@ describe('SCMFactory', () => {
         const mockGitAPI = {
           repositories: [],
         };
-        
+
         const mockGitExtension = {
           exports: mockGitAPI,
           getAPI: vi.fn().mockReturnValue(mockGitAPI),
         };
-        
+
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
-          if (id === 'vscode.git') {return mockGitExtension as any;}
+          if (id === 'vscode.git') { return mockGitExtension as any; }
           return undefined;
         });
 
@@ -1118,7 +1149,7 @@ describe('SCMFactory', () => {
       it('should handle fs.existsSync errors gracefully', async () => {
         // Arrange
         const workspacePath = '/mock/workspace';
-        
+
         // Mock fs.existsSync to throw an error
         mockFs.existsSync.mockImplementation(() => {
           throw new Error('File system error');
@@ -1135,7 +1166,7 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
-        
+
         // Mock fs.existsSync to throw permission error
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           if (filePath === gitPath) {
@@ -1159,7 +1190,12 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
-        
+
+        // Set up workspace folders
+        vi.mocked(vscode.workspace).workspaceFolders = [
+          { uri: { fsPath: workspacePath } } as any
+        ];
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
@@ -1168,21 +1204,21 @@ describe('SCMFactory', () => {
         const mockGitAPI = {
           repositories: [],
         };
-        
+
         const mockGitExtension = {
           exports: mockGitAPI,
           getAPI: vi.fn().mockReturnValue(mockGitAPI),
         };
-        
+
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
-          if (id === 'vscode.git') {return mockGitExtension as any;}
+          if (id === 'vscode.git') { return mockGitExtension as any; }
           return undefined;
         });
 
         // Mock GitProvider with delayed initialization
         const mockGitProvider = {
           type: 'git' as const,
-          init: vi.fn().mockImplementation(() => 
+          init: vi.fn().mockImplementation(() =>
             new Promise(resolve => setTimeout(resolve, 10))
           ),
           isAvailable: vi.fn().mockResolvedValue(true),
@@ -1198,7 +1234,7 @@ describe('SCMFactory', () => {
           SCMFactory.detectSCM(),
           SCMFactory.detectSCM(),
         ];
-        
+
         const results = await Promise.all(promises);
 
         // Assert
@@ -1206,7 +1242,7 @@ describe('SCMFactory', () => {
         expect(results[0]).toBeDefined();
         expect(results[1]).toBeDefined();
         expect(results[2]).toBeDefined();
-        
+
         // Note: The current SCMFactory implementation doesn't prevent concurrent creation
         // This test verifies that concurrent calls don't crash the system
         // In a real implementation, you might want to add proper synchronization
@@ -1217,7 +1253,12 @@ describe('SCMFactory', () => {
         // Arrange
         const workspacePath = '/mock/workspace';
         const gitPath = path.join(workspacePath, '.git');
-        
+
+        // Set up workspace folders
+        vi.mocked(vscode.workspace).workspaceFolders = [
+          { uri: { fsPath: workspacePath } } as any
+        ];
+
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           return filePath === gitPath;
         });
@@ -1226,14 +1267,14 @@ describe('SCMFactory', () => {
         const mockGitAPI = {
           repositories: [],
         };
-        
+
         const mockGitExtension = {
           exports: mockGitAPI,
           getAPI: vi.fn().mockReturnValue(mockGitAPI),
         };
-        
+
         vi.mocked(vscode.extensions.getExtension).mockImplementation((id: string) => {
-          if (id === 'vscode.git') {return mockGitExtension as any;}
+          if (id === 'vscode.git') { return mockGitExtension as any; }
           return undefined;
         });
 
@@ -1261,7 +1302,7 @@ describe('SCMFactory', () => {
           expect(result).toBeDefined();
           expect(result?.type).toBe('git');
         });
-        
+
         // Should handle race conditions gracefully
         expect(initCallCount).toBeGreaterThan(0);
       });
@@ -1272,7 +1313,7 @@ describe('SCMFactory', () => {
         // Arrange
         const longPath = '/mock/workspace/' + 'a'.repeat(1000) + '/file.txt';
         const selectedFiles = [longPath];
-        
+
         mockFs.existsSync.mockReturnValue(false);
 
         // Act
@@ -1287,7 +1328,7 @@ describe('SCMFactory', () => {
         const workspacePath = '/mock/workspace';
         const circularPath = '/mock/workspace/link/to/workspace';
         const selectedFiles = [circularPath + '/file.txt'];
-        
+
         // Mock path operations to simulate circular reference
         mockFs.existsSync.mockImplementation((filePath: fs.PathLike) => {
           // Simulate that we never find SCM directories due to circular reference
@@ -1305,7 +1346,7 @@ describe('SCMFactory', () => {
         // Arrange
         const specialPath = '/mock/workspace/特殊字符/файл.txt';
         const selectedFiles = [specialPath];
-        
+
         mockFs.existsSync.mockReturnValue(false);
 
         // Act

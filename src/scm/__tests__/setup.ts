@@ -39,10 +39,8 @@ const mockVSCode = {
 vi.mock('vscode', () => mockVSCode);
 
 // Mock child_process for command execution
-import { MockCommandExecutor } from './helpers/mock-command-executor';
-
 vi.mock('child_process', () => ({
-  exec: MockCommandExecutor.getExecMock(),
+  exec: vi.fn(),
   spawn: vi.fn(),
 }));
 
@@ -76,16 +74,9 @@ export const TEST_CONFIG = {
   teardownTimeout: 5000,
 };
 
-// Set up command mocks
-beforeAll(() => {
-  MockCommandExecutor.setupAllMocks();
-});
-
 // Clean up after each test
 afterEach(() => {
   vi.clearAllMocks();
-  MockCommandExecutor.clearMocks();
-  MockCommandExecutor.setupAllMocks();
 });
 
 // Global error handler for unhandled promise rejections
