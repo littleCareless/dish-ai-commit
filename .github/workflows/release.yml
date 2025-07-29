@@ -46,6 +46,11 @@ jobs:
         with:
           version: 10.12.1
 
+      - name: Clean up local tags
+        run: |
+          git tag -d $(git tag -l) 2>/dev/null || true
+          git fetch --tags
+
       - name: Install dependencies
         run: npm ci
 
@@ -64,18 +69,57 @@ jobs:
       - name: Determine if pre-release
         id: determine_prerelease
         run: |
-          # 检查标签是否在 develop 分支上
-          # git branch --contains <tag> 在 CI 环境中可能不直接工作
-          # 更可靠的方法是检查与标签关联的提交是否是 develop 分支的一部分
-          git fetch --all --tags
-          BRANCH_NAME=$(git branch -r --contains ${{ github.ref }} | grep -v 'HEAD' | sed -n 's/origin\///p' | head -n 1)
-          echo "Tag ${{ github.ref }} is on branch: $BRANCH_NAME"
-          # 判断是否为预发布分支
-          if [[ "$BRANCH_NAME" == release/* || "$BRANCH_NAME" == "main" ]]; then
-            echo "is_prerelease=false" >> $GITHUB_OUTPUT
-          else
-            echo "is_prerelease=true" >> $GITHUB_OUTPUT
-          fi
+          # 安全地获取远程信息，避免标签冲突
+          git fetch origin --prune --prune-tags
+          git fetch origin +refs/heads/*:refs/remotes/origin/* --force
+
+          # 获取当前标签对应的提交哈希
+          TAG_COMMIT=$(git rev-list -n 1 ${{ github.ref }})
+          echo "Tag ${{ github.ref }} points to commit: $TAG_COMMIT"
+
+          # 检查该提交在哪些分支上
+          BRANCHES=$(git branch -r --contains $TAG_COMMIT | grep -v 'HEAD' | sed 's/origin\///' | tr -d ' ')
+          echo "Commit is on branches: $BRANCHES"
+
+          # 获取主要分支（优先级：main > master > release/* > develop）
+          MAIN_BRANCH=""
+          for branch in $BRANCHES; do
+            case $branch in
+              main)
+                MAIN_BRANCH="main"
+                break
+                ;;
+              master)
+                if [[ -z "$MAIN_BRANCH" ]]; then
+                  MAIN_BRANCH="master"
+                fi
+                ;;
+              release/*)
+                if [[ -z "$MAIN_BRANCH" ]] || [[ "$MAIN_BRANCH" != "main" && "$MAIN_BRANCH" != "master" ]]; then
+                  MAIN_BRANCH="$branch"
+                fi
+                ;;
+              develop)
+                if [[ -z "$MAIN_BRANCH" ]] || [[ "$MAIN_BRANCH" == "develop" ]]; then
+                  MAIN_BRANCH="develop"
+                fi
+                ;;
+            esac
+          done
+
+          echo "Primary branch for this tag: $MAIN_BRANCH"
+
+          # 判断是否为预发布
+          case $MAIN_BRANCH in
+            main|master|release/*)
+              echo "is_prerelease=false" >> $GITHUB_OUTPUT
+              echo "This is a stable release from branch: $MAIN_BRANCH"
+              ;;
+            *)
+              echo "is_prerelease=true" >> $GITHUB_OUTPUT
+              echo "This is a pre-release from branch: $MAIN_BRANCH"
+              ;;
+          esac
 
       # =================================================================
       # 3. 获取更新日志 (Generate Changelog)
