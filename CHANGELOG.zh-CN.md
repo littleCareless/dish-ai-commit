@@ -27,10 +27,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0
 
 ### 🔧 Continuous Integration
 
-- **release**: 改用从 CHANGELOG.md 文件提取发布日志 ([f990a95](https://github.com/littleCareless/dish-ai-commit/commit/f990a95))
-- **release**: 允许手动触发发布工作流 ([caeca42](https://github.com/littleCareless/dish-ai-commit/commit/caeca42))
-- **workflow**: 更新发布工作流配置 ([6ba5a96](https://github.com/littleCareless/dish-ai-commit/commit/6ba5a96))
-- **workflow**: 使用 npm ci 替代 pnpm install ([886df2f](https://github.com/littleCareless/dish-ai-commit/commit/886df2f))
+- **release**: 调整预发布判断逻辑以支持 release 分支 ([2df11c0](https://github.com/littleCareless/dish-ai-commit/commit/2df11c0))
+- **release**: 修复发布工作流中更新日志的提取逻辑 ([c3df252](https://github.com/littleCareless/dish-ai-commit/commit/c3df252))
+* **release**: 改用从 CHANGELOG.md 文件提取发布日志 ([f990a95](https://github.com/littleCareless/dish-ai-commit/commit/f990a95))
+* **release**: 允许手动触发发布工作流 ([caeca42](https://github.com/littleCareless/dish-ai-commit/commit/caeca42))
+* **workflow**: 更新发布工作流配置 ([6ba5a96](https://github.com/littleCareless/dish-ai-commit/commit/6ba5a96))
+* **workflow**: 使用 npm ci 替代 pnpm install ([886df2f](https://github.com/littleCareless/dish-ai-commit/commit/886df2f))
 
 # 0.40.0 (2025-07-28)
 

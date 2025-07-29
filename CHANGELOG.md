@@ -28,10 +28,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0
 
 ### 🔧 Continuous Integration
 
-- **release**: Use release log extracted from CHANGELOG.md file instead ([f990a95](https://github.com/littleCareless/dish-ai-commit/commit/f990a95))
-- **release**: Allow manual triggering of release workflow ([caeca42](https://github.com/littleCareless/dish-ai-commit/commit/caeca42))
-- **workflow**: Update release workflow configuration ([6ba5a96](https://github.com/littleCareless/dish-ai-commit/commit/6ba5a96))
-- **workflow**: Use npm ci instead of pnpm install ([886df2f](https://github.com/littleCareless/dish-ai-commit/commit/886df2f))
+- **release**: Adjust pre-release judgment logic to support release branches ([2df11c0](https://github.com/littleCareless/dish-ai-commit/commit/2df11c0))
+- **release**: Fix the extraction logic of change log in release workflow ([c3df252](https://github.com/littleCareless/dish-ai-commit/commit/c3df252))
+
+* **release**: Use the release log extracted from the CHANGELOG.md file instead ([f990a95](https://github.com/littleCareless/dish-ai-commit/commit/f990a95))
+* **release**: Allow manual triggering of release workflow ([caeca42](https://github.com/littleCareless/dish-ai-commit/commit/caeca42))
+* **workflow**: Update release workflow configuration ([6ba5a96](https://github.com/littleCareless/dish-ai-commit/commit/6ba5a96))
+* **workflow**: Use npm ci instead of pnpm install ([886df2f](https://github.com/littleCareless/dish-ai-commit/commit/886df2f))
 
 # 0.40.0 (2025-07-28)
 
