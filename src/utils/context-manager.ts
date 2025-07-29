@@ -16,7 +16,7 @@ import { tokenizerService } from "./tokenizer";
 export const FORCE_RETAIN_BLOCKS: string[] = [
   "code-changes",
   // "custom-instructions",
-  // "reminder",
+  "reminder",
 ];
 /**
  * 定义上下文区块的截断策略
@@ -89,6 +89,14 @@ export class ContextManager {
     if (block.content && block.content.trim().length > 0) {
       this.blocks.push(block);
     }
+  }
+
+  /**
+   * 设置新的系统提示
+   * @param systemPrompt - 新的系统提示字符串
+   */
+  setSystemPrompt(systemPrompt: string) {
+    this.systemPrompt = systemPrompt;
   }
 
   /**
@@ -169,7 +177,7 @@ export class ContextManager {
    * @returns 经过智能截断和组装的 messages 数组
    */
   public buildMessages(): AIMessage[] {
-    // 1. 按优先级（从高到低）排序，决定哪些区块优先保留
+    // 1. 按优先级（从高到低）排序
     this.blocks.sort((a, b) => b.priority - a.priority);
 
     const maxTokens = this.model.maxTokens?.input ?? 8192;
@@ -182,9 +190,33 @@ export class ContextManager {
     const includedBlocks: ContextBlock[] = [];
     const includedBlockNames: string[] = [];
     const excludedBlockNames: string[] = [];
+    const processableBlocks: ContextBlock[] = [];
 
-    // 2. 确定哪些区块可以被包含和截断
+    // 2. 首先处理强制保留的区块
     for (const block of this.blocks) {
+      if (FORCE_RETAIN_BLOCKS.includes(block.name)) {
+        const blockTokens = tokenizerService.countTokens(
+          block.content,
+          this.model
+        );
+        if (remainingTokens >= blockTokens) {
+          includedBlocks.push(block);
+          remainingTokens -= blockTokens;
+          includedBlockNames.push(block.name);
+        } else {
+          // 如果连强制保留的块都放不下，这是一个严重问题
+          // notify.error(
+          //   formatMessage("context.forceRetainBlockTooLarge", [block.name])
+          // );
+          excludedBlockNames.push(block.name);
+        }
+      } else {
+        processableBlocks.push(block);
+      }
+    }
+
+    // 3. 接着处理剩余的可选区块
+    for (const block of processableBlocks) {
       const blockTokens = tokenizerService.countTokens(
         block.content,
         this.model
@@ -195,6 +227,7 @@ export class ContextManager {
         remainingTokens -= blockTokens;
         includedBlockNames.push(block.name);
       } else if (remainingTokens > 100) {
+        // 至少需要100个token才有截断的意义
         const truncatedContent = this.truncate(block, remainingTokens);
         const truncatedTokens = tokenizerService.countTokens(
           truncatedContent,
@@ -204,8 +237,10 @@ export class ContextManager {
         remainingTokens -= truncatedTokens;
         includedBlockNames.push(`${block.name} (Truncated)`);
         notify.warn(formatMessage("context.truncated", [block.name]));
-        const currentIndex = this.blocks.indexOf(block);
-        this.blocks
+
+        // 截断后，将所有剩余的可处理块标记为已排除
+        const currentIndex = processableBlocks.indexOf(block);
+        processableBlocks
           .slice(currentIndex + 1)
           .forEach((b) => excludedBlockNames.push(b.name));
         break; // 截断后，不再添加任何块
@@ -214,7 +249,7 @@ export class ContextManager {
       }
     }
 
-    // 3. 按照为LLM注意力机制优化的特定顺序重新排序区块
+    // 4. 按照为LLM注意力机制优化的特定顺序重新排序区块
     const finalOrder = [
       "user-commits",
       "recent-commits",
@@ -229,7 +264,7 @@ export class ContextManager {
       (a, b) => finalOrder.indexOf(a.name) - finalOrder.indexOf(b.name)
     );
 
-    // 4. 构建最终的用户内容字符串
+    // 5. 构建最终的用户内容字符串
     let userContent = includedBlocks
       .map((block) => {
         const tagName = block.name.toLowerCase().replace(/\s+/g, "-");
@@ -245,7 +280,7 @@ export class ContextManager {
 
     if (excludedBlockNames.length > 0) {
       notify.warn(
-        formatMessage("context.blocks.removed", [excludedBlockNames.join(", ")])
+        formatMessage("context.block.removed", [excludedBlockNames.join(", ")])
       );
     }
 
