@@ -70,10 +70,11 @@ jobs:
           git fetch --all --tags
           BRANCH_NAME=$(git branch -r --contains ${{ github.ref }} | grep -v 'HEAD' | sed -n 's/origin\///p' | head -n 1)
           echo "Tag ${{ github.ref }} is on branch: $BRANCH_NAME"
-          if [[ "$BRANCH_NAME" == "develop" ]]; then
-            echo "is_prerelease=true" >> $GITHUB_OUTPUT
-          else
+          # 判断是否为预发布分支
+          if [[ "$BRANCH_NAME" == release/* || "$BRANCH_NAME" == "main" ]]; then
             echo "is_prerelease=false" >> $GITHUB_OUTPUT
+          else
+            echo "is_prerelease=true" >> $GITHUB_OUTPUT
           fi
 
       # =================================================================
