@@ -4,6 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 import { getMessage, formatMessage } from "../utils/i18n";
+import { notify } from "../utils/notification/notification-manager";
 
 const execAsync = promisify(exec);
 
@@ -442,9 +443,12 @@ export class SvnUtils {
    */
   private static async triggerAuth(workspacePath: string): Promise<void> {
     // 显示认证提示
-    const choice = await vscode.window.showErrorMessage(
-      getMessage("svn.auth.required"),
-      getMessage("svn.auth.button")
+    const choice = await notify.error(
+      "svn.auth.required",
+      [],
+      {
+        buttons: [getMessage("svn.auth.button")]
+      }
     );
 
     if (choice === getMessage("svn.auth.button")) {
