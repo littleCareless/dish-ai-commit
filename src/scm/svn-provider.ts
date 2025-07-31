@@ -437,9 +437,7 @@ export class SvnProvider implements ISCMProvider {
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
         notify.error("commit.message.copy.failed", [errorMessage]);
-        vscode.window.showInformationMessage(
-          formatMessage("commit.message.manual.copy", [message])
-        );
+        notify.info("commit.message.manual.copy", [message]);
       }
     }
   }
@@ -476,9 +474,7 @@ export class SvnProvider implements ISCMProvider {
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
         notify.error("commit.message.copy.failed", [errorMessage]);
-        vscode.window.showInformationMessage(
-          formatMessage("commit.message.manual.copy", [message])
-        );
+        notify.info("commit.message.manual.copy", [message]);
       }
     }
   }

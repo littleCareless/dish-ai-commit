@@ -87,9 +87,7 @@ export class GitProvider implements ISCMProvider {
     try {
       const { stdout } = await exec("git --version");
       const version = stdout.trim();
-      vscode.window.showInformationMessage(
-        formatMessage("git.version.detected", [version])
-      );
+      notify.info("git.version.detected", [version]);
     } catch (error) {
       // 在初始化阶段，即使获取版本失败也不应阻塞，仅记录警告
       console.warn("Failed to get git version:", error);
@@ -546,9 +544,7 @@ export class GitProvider implements ISCMProvider {
           error instanceof Error ? error.message : "Unknown error";
         notify.error("commit.message.copy.failed", [errorMessage]);
         // Fallback to showing the message in an information dialog
-        vscode.window.showInformationMessage(
-          formatMessage("commit.message.manual.copy", [message])
-        );
+        notify.info("commit.message.manual.copy", [message]);
       }
     }
   }
@@ -587,9 +583,7 @@ export class GitProvider implements ISCMProvider {
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
         notify.error("commit.message.copy.failed", [errorMessage]);
-        vscode.window.showInformationMessage(
-          formatMessage("commit.message.manual.copy", [message])
-        );
+        notify.info("commit.message.manual.copy", [message]);
       }
     }
   }

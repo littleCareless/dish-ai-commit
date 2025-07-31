@@ -188,20 +188,25 @@ export abstract class BaseCommand {
       isCloseAffordance: true,
     };
 
-    const result = await vscode.window.showInformationMessage(
-      getMessage("confirm.ai.provider.tos.message"),
-      { modal: true },
-      acceptAlways,
-      acceptWorkspace,
-      cancel
+    const result = await notify.info(
+      "confirm.ai.provider.tos.message",
+      undefined,
+      { 
+        modal: true, 
+        buttons: [
+          acceptAlways.title,
+          acceptWorkspace.title,
+          cancel.title
+        ]
+      }
     );
 
-    if (result === acceptWorkspace) {
+    if (result === acceptWorkspace.title) {
       void stateManager.setWorkspace(`confirm:dish:ai:tos`, true).catch();
       return true;
     }
 
-    if (result === acceptAlways) {
+    if (result === acceptAlways.title) {
       void stateManager.setGlobal(`confirm:dish:ai:tos`, true).catch();
       return true;
     }

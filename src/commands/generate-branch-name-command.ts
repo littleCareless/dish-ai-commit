@@ -225,11 +225,9 @@ export class GenerateBranchNameCommand extends BaseCommand {
         const createBranch = getMessage("create.branch");
         const copyToClipboard = getMessage("copy.to.clipboard");
 
-        const selection = await vscode.window.showInformationMessage(
-          formatMessage("branch.name.selected", [selectedBranch]),
-          createBranch,
-          copyToClipboard
-        );
+        const selection = await notify.info("branch.name.selected", undefined, {
+          buttons: [selectedBranch, createBranch, copyToClipboard],
+        });
 
         if (selection === createBranch) {
           try {
