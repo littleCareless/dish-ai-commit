@@ -62,6 +62,15 @@ export class AIProviderFactory {
   private static providerTimestamps: Map<string, number> = new Map();
 
   /**
+   * 记录每个提供者实例创建时的配置哈希值
+   * 用于检测配置是否发生变化
+   * - key: 提供者类型标识符
+   * - value: 配置哈希值
+   * @private
+   */
+  private static providerConfigHashes: Map<string, string> = new Map();
+
+  /**
    * 清理过期的提供者实例
    * 遍历时间戳映射，移除超过TTL的实例和对应时间戳
    * @private
@@ -72,13 +81,103 @@ export class AIProviderFactory {
       if (now - timestamp > this.PROVIDER_CACHE_TTL) {
         this.providers.delete(id);
         this.providerTimestamps.delete(id);
+        this.providerConfigHashes.delete(id);
       }
     }
   }
 
   /**
+   * 生成提供者配置的哈希值
+   * 用于检测配置是否发生变化
+   * @private
+   */
+  private static getProviderConfigHash(providerType: string): string {
+    const config = ConfigurationManager.getInstance().getConfiguration();
+    const providerConfig = this.getProviderSpecificConfig(providerType, config);
+    return JSON.stringify(providerConfig);
+  }
+
+  /**
+   * 获取特定提供者的相关配置
+   * @private
+   */
+  private static getProviderSpecificConfig(providerType: string, config: any): any {
+    const lowerType = providerType.toLowerCase();
+    const baseConfig = {
+      provider: config.base?.provider,
+      model: config.base?.model,
+    };
+
+    // 根据提供者类型获取对应的配置
+    switch (lowerType) {
+      case AIProvider.OPENAI:
+        return { ...baseConfig, ...config.providers?.openai };
+      case AIProvider.ANTHROPIC:
+        return { ...baseConfig, ...config.providers?.anthropic };
+      case AIProvider.OLLAMA:
+        return { ...baseConfig, ...config.providers?.ollama };
+      case AIProvider.ZHIPU:
+        return { ...baseConfig, ...config.providers?.zhipuai };
+      case AIProvider.DASHSCOPE:
+        return { ...baseConfig, ...config.providers?.dashscope };
+      case AIProvider.DOUBAO:
+        return { ...baseConfig, ...config.providers?.doubao };
+      case AIProvider.GEMINI:
+        return { ...baseConfig, ...config.providers?.gemini };
+      case AIProvider.DEEPSEEK:
+        return { ...baseConfig, ...config.providers?.deepseek };
+      case AIProvider.SILICONFLOW:
+        return { ...baseConfig, ...config.providers?.siliconflow };
+      case AIProvider.OPENROUTER:
+        return { ...baseConfig, ...config.providers?.openrouter };
+      case AIProvider.PREMAI:
+        return { ...baseConfig, ...config.providers?.premai };
+      case AIProvider.TOGETHER:
+        return { ...baseConfig, ...config.providers?.together };
+      case AIProvider.XAI:
+        return { ...baseConfig, ...config.providers?.xai };
+      case AIProvider.AZURE_OPENAI:
+        return { ...baseConfig, ...config.providers?.azureOpenai };
+      case AIProvider.CLOUDFLARE:
+        return { ...baseConfig, ...config.providers?.cloudflare };
+      case AIProvider.VERTEXAI:
+        return { ...baseConfig, ...config.providers?.vertexai };
+      case AIProvider.GROQ:
+        return { ...baseConfig, ...config.providers?.groq };
+      case AIProvider.MISTRAL:
+        return { ...baseConfig, ...config.providers?.mistral };
+      case AIProvider.BAIDU_QIANFAN:
+        return { ...baseConfig, ...config.providers?.baiduQianfan };
+      default:
+        return baseConfig;
+    }
+  }
+
+  /**
+   * 检查是否需要强制重新创建提供者实例
+   * @private
+   */
+  private static shouldForceRecreateProvider(providerType: string): boolean {
+    const currentConfigHash = this.getProviderConfigHash(providerType);
+    const cachedConfigHash = this.providerConfigHashes.get(providerType);
+    
+    return cachedConfigHash !== undefined && cachedConfigHash !== currentConfigHash;
+  }
+
+  /**
+   * 清除指定提供者的缓存实例
+   * @private
+   */
+  private static clearProvider(providerType: string): void {
+    this.providers.delete(providerType);
+    this.providerTimestamps.delete(providerType);
+    this.providerConfigHashes.delete(providerType);
+  }
+
+  /**
    * 获取指定类型的AI提供者实例
    * 优先从缓存中获取，如果不存在或已过期则创建新实例
+   * 当配置发生变化时会自动清除对应的缓存实例
    *
    * @param type - 提供者类型标识符，如果未指定则使用配置中的默认值
    * @returns AI提供者实例
@@ -90,6 +189,12 @@ export class AIProviderFactory {
       type ||
       ConfigurationManager.getInstance().getConfig("BASE_PROVIDER") ||
       AIProvider.OPENAI;
+
+    // 检查是否需要强制重新创建实例（配置可能已变更）
+    const shouldForceRecreate = this.shouldForceRecreateProvider(providerType);
+    if (shouldForceRecreate) {
+      this.clearProvider(providerType);
+    }
 
     let provider = this.providers.get(providerType);
 
@@ -161,6 +266,7 @@ export class AIProviderFactory {
       if (provider) {
         this.providers.set(providerType, provider);
         this.providerTimestamps.set(providerType, Date.now());
+        this.providerConfigHashes.set(providerType, this.getProviderConfigHash(providerType));
       }
     }
 
@@ -201,6 +307,7 @@ export class AIProviderFactory {
   /**
    * 重新初始化指定的缓存提供者实例
    * 如果提供者存在且支持重初始化功能，则调用其reinitialize方法
+   * 同时清除缓存以确保下次获取时使用新配置
    *
    * @param providerId - 需要重初始化的提供者ID
    */
@@ -209,6 +316,28 @@ export class AIProviderFactory {
     if (provider && "reinitialize" in provider) {
       (provider as any).reinitialize();
     }
+    // 清除缓存以确保下次获取时使用新配置
+    this.clearProvider(providerId);
+  }
+
+  /**
+   * 清除指定提供者的缓存实例
+   * 用于在配置变更时强制重新创建实例
+   *
+   * @param providerType - 提供者类型标识符
+   */
+  public static clearProviderCache(providerType: string): void {
+    this.clearProvider(providerType);
+  }
+
+  /**
+   * 清除所有提供者的缓存实例
+   * 用于在全局配置变更时强制重新创建所有实例
+   */
+  public static clearAllProviderCache(): void {
+    this.providers.clear();
+    this.providerTimestamps.clear();
+    this.providerConfigHashes.clear();
   }
 
   /**
