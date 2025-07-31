@@ -56,60 +56,67 @@ export class SCMDetectorService {
       | vscode.SourceControlResourceState[],
     files?: string[]
   ): string | undefined {
-    const gitExtension = vscode.extensions.getExtension("vscode.git");
-    if (!gitExtension?.isActive) {
-      console.warn("Git extension is not active.");
-      return undefined;
+    // 如果没有提供files，从resourceStates中提取
+    if (!files && resourceStates) {
+      files = this.getSelectedFiles(resourceStates);
     }
 
-    try {
-      const gitApi = gitExtension.exports.getAPI(1);
-      const repositories = gitApi.repositories;
-
-      if (repositories.length === 0) {
-        return undefined;
-      }
-
-      // 如果没有提供files，从resourceStates中提取
-      if (!files && resourceStates) {
-        files = this.getSelectedFiles(resourceStates);
-      }
-
-      // 如果有文件路径，从文件路径中查找仓库
-      if (files && files.length > 0) {
-        for (const file of files) {
-          for (const repository of repositories) {
-            const repoPath = (repository as any).rootUri?.fsPath;
-            if (repoPath && file.startsWith(repoPath)) {
-              return repoPath;
+    // 优先尝试通过Git扩展获取仓库路径，以保证对Git的兼容性
+    const gitExtension = vscode.extensions.getExtension("vscode.git");
+    if (gitExtension?.isActive) {
+      try {
+        const gitApi = gitExtension.exports.getAPI(1);
+        const repositories = gitApi.repositories;
+        if (repositories.length > 0) {
+          if (files && files.length > 0) {
+            for (const file of files) {
+              for (const repository of repositories) {
+                const repoPath = (repository as any).rootUri?.fsPath;
+                if (repoPath && file.startsWith(repoPath)) {
+                  return repoPath;
+                }
+              }
             }
           }
+          // 如果没有文件匹配，但存在Git仓库，返回第一个作为备用
+          return (repositories[0] as any).rootUri?.fsPath;
+        }
+      } catch (error) {
+        console.warn("Failed to get repository from Git extension:", error);
+      }
+    }
+
+    // 尝试从resourceStates直接获取（通用方式）
+    if (resourceStates) {
+      const states = Array.isArray(resourceStates)
+        ? resourceStates
+        : [resourceStates];
+      for (const state of states) {
+        // 尝试访问 sourceControl.rootUri，这是一个更可靠的属性
+        const sc = (state as any).resourceGroup?.sourceControl;
+        if (sc?.rootUri?.fsPath) {
+          return sc.rootUri.fsPath;
+        }
+        // 备用方案，直接访问 rootUri
+        if ((state as any)?.rootUri?.fsPath) {
+          return (state as any)?.rootUri?.fsPath;
         }
       }
+    }
 
-      // 如果没有文件或从文件中找不到仓库，尝试从resourceStates中直接获取仓库信息
-      if (resourceStates) {
-        const states = Array.isArray(resourceStates)
-          ? resourceStates
-          : [resourceStates];
-
-        for (const state of states) {
-          const repository = state;
-          if ((repository as any)?.rootUri?.fsPath) {
-            return (repository as any)?.rootUri?.fsPath;
-          }
+    // 回退到使用工作区文件夹（通用方式）
+    const workspaceFolders = vscode.workspace.workspaceFolders;
+    if (workspaceFolders) {
+      if (files && files.length > 0) {
+        const fileUri = vscode.Uri.file(files[0]);
+        const folder = vscode.workspace.getWorkspaceFolder(fileUri);
+        if (folder) {
+          return folder.uri.fsPath;
         }
       }
-
-      // 如果都没找到，返回第一个可用的仓库（作为fallback）
-      if (repositories.length > 0) {
-        const fallbackRepo = (repositories[0] as any).rootUri?.fsPath;
-        if (fallbackRepo) {
-          return fallbackRepo;
-        }
+      if (workspaceFolders.length > 0) {
+        return workspaceFolders[0].uri.fsPath;
       }
-    } catch (error) {
-      console.warn("Failed to get repository from resources:", error);
     }
 
     return undefined;

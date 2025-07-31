@@ -12,6 +12,25 @@ import { ConfigurationManager } from "../config/configuration-manager";
 
 const exec = promisify(childProcess.exec);
 
+/**
+ * SVN API接口定义
+ */
+interface SvnAPI {
+  repositories: SvnRepository[];
+  getAPI(version: number): SvnAPI;
+}
+
+/**
+ * SVN仓库接口定义
+ */
+export interface SvnRepository {
+  readonly rootUri: vscode.Uri;
+  inputBox: {
+    value: string;
+  };
+  commitFiles(files: string[], message: string): Promise<void>;
+}
+
 // 添加日志工具类
 const enum LogLevel {
   Info,
@@ -177,13 +196,13 @@ export class SvnProvider implements ISCMProvider {
   type = "svn" as const;
 
   /** SVN API实例 */
-  private api: any;
-
-  /** 工作区根目录路径 */
-  private workspaceRoot: string;
+  private api: SvnAPI;
 
   /** SVN仓库集合 */
-  private repositories: any;
+  private repositories: SvnRepository[];
+
+  /** 可选的仓库路径 */
+  private readonly repositoryPath?: string;
 
   /** 存储 SVN 路径 */
   private svnPath: string = "svn";
@@ -196,13 +215,17 @@ export class SvnProvider implements ISCMProvider {
    * @param svnExtension - VS Code SVN扩展实例
    * @throws {Error} 当未找到工作区时抛出错误
    */
-  constructor(private readonly svnExtension: any) {
-    this.api = svnExtension;
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    if (!workspaceRoot) {
+  constructor(
+    private readonly svnExtension: any,
+    repositoryPath?: string
+  ) {
+    this.api = svnExtension.getAPI(1);
+    this.repositories = this.api.repositories;
+    this.repositoryPath = repositoryPath;
+
+    if (!vscode.workspace.workspaceFolders?.length) {
       throw new Error(getMessage("workspace.not.found"));
     }
-    this.workspaceRoot = workspaceRoot;
 
     this.config = this.loadConfig();
 
@@ -292,7 +315,7 @@ export class SvnProvider implements ISCMProvider {
         return false;
       }
 
-      const api = this.svnExtension.getAPI();
+      const api = this.svnExtension.getAPI(1);
       const repositories = api.repositories;
       if (repositories.length > 0) {
         this.api = api;
@@ -320,11 +343,16 @@ export class SvnProvider implements ISCMProvider {
       if (!this.initialized) {
         throw new Error(getMessage("svn.not.initialized"));
       }
+      const repository = this.findRepository([file]);
+      if (!repository) {
+        return "Unknown"; // Or throw an error
+      }
+      const repositoryPath = repository.rootUri.fsPath;
 
       const { stdout: status } = await exec(
         `"${this.svnPath}" status "${file}"`,
         {
-          cwd: this.workspaceRoot,
+          cwd: repositoryPath,
           env: this.getEnvironmentConfig(),
         }
       );
@@ -358,11 +386,17 @@ export class SvnProvider implements ISCMProvider {
         throw new Error(getMessage("svn.not.initialized"));
       }
 
+      const repository = this.findRepository(files);
+      if (!repository) {
+        throw new Error(getMessage("svn.repository.not.found"));
+      }
+      const currentWorkspaceRoot = repository.rootUri.fsPath;
+
       const filePaths = files?.map((f) => `"${f}"`).join(" ") || "";
       const command = `"${this.svnPath}" diff ${filePaths}`;
 
       const { stdout: rawDiff } = await exec(command, {
-        cwd: this.workspaceRoot,
+        cwd: currentWorkspaceRoot,
         maxBuffer: 1024 * 1024 * 10,
         env: this.getEnvironmentConfig(),
       });
@@ -401,9 +435,9 @@ export class SvnProvider implements ISCMProvider {
    * @throws {Error} 当提交失败或未选择文件时抛出错误
    */
   async commit(message: string, files?: string[]): Promise<void> {
-    const repository = this.api?.repositories?.[0];
+    const repository = this.findRepository(files);
     if (!repository) {
-      throw new Error(getMessage("git.repository.not.found"));
+      throw new Error(getMessage("svn.repository.not.found"));
     }
 
     try {
@@ -426,7 +460,7 @@ export class SvnProvider implements ISCMProvider {
    * @throws {Error} 当未找到仓库时抛出错误
    */
   async setCommitInput(message: string): Promise<void> {
-    const repository = this.api?.repositories?.[0];
+    const repository = this.findRepository();
     if (repository?.inputBox) {
       repository.inputBox.value = message;
     } else {
@@ -448,9 +482,9 @@ export class SvnProvider implements ISCMProvider {
    * @throws {Error} 当未找到仓库时抛出错误
    */
   async getCommitInput(): Promise<string> {
-    const repository = this.api?.repositories?.[0];
+    const repository = this.findRepository();
     if (!repository) {
-      throw new Error(getMessage("git.repository.not.found"));
+      throw new Error(getMessage("svn.repository.not.found"));
     }
 
     return repository.inputBox.value;
@@ -463,7 +497,7 @@ export class SvnProvider implements ISCMProvider {
    * @throws {Error} 当未找到仓库或inputBox时抛出错误
    */
   async startStreamingInput(message: string): Promise<void> {
-    const repository = this.api?.repositories?.[0];
+    const repository = this.findRepository();
     if (repository?.inputBox) {
       repository.inputBox.value = message;
     } else {
@@ -492,6 +526,11 @@ export class SvnProvider implements ISCMProvider {
     if (!this.initialized) {
       throw new Error(getMessage("svn.not.initialized"));
     }
+    const repository = this.findRepository();
+    if (!repository) {
+      throw new Error(getMessage("svn.repository.not.found"));
+    }
+    const currentWorkspaceRoot = repository.rootUri.fsPath;
 
     try {
       let commandArgs = "";
@@ -516,11 +555,11 @@ export class SvnProvider implements ISCMProvider {
         }
       }
 
-      const command = `"${this.svnPath}" log ${commandArgs} "${this.workspaceRoot}"`;
+      const command = `"${this.svnPath}" log ${commandArgs} "${currentWorkspaceRoot}"`;
       Logger.log(LogLevel.Info, `Executing SVN log command: ${command}`);
 
       const { stdout } = await exec(command, {
-        cwd: this.workspaceRoot,
+        cwd: currentWorkspaceRoot,
         maxBuffer: 1024 * 1024 * 10, // 10MB buffer
         env: this.getEnvironmentConfig(),
       });
@@ -578,26 +617,31 @@ export class SvnProvider implements ISCMProvider {
   async getRecentCommitMessages() {
     const repositoryCommitMessages: string[] = [];
     const userCommitMessages: string[] = [];
+    const repository = this.findRepository();
+    if (!repository) {
+      return { repository: [], user: [] };
+    }
+    const currentWorkspaceRoot = repository.rootUri.fsPath;
 
     try {
       // Last 5 commit messages (repository)
-      const logCommand = `"${this.svnPath}" log -l 5 "${this.workspaceRoot}"`;
+      const logCommand = `"${this.svnPath}" log -l 5 "${currentWorkspaceRoot}"`;
       const { stdout: logOutput } = await exec(logCommand, {
-        cwd: this.workspaceRoot,
+        cwd: currentWorkspaceRoot,
         env: this.getEnvironmentConfig(),
       });
       repositoryCommitMessages.push(...this.parseSvnLog(logOutput));
 
       // Last 5 commit messages (user)
       const { stdout: user } = await exec(
-        `"${this.svnPath}" info --show-item last-changed-author "${this.workspaceRoot}"`
+        `"${this.svnPath}" info --show-item last-changed-author "${currentWorkspaceRoot}"`
       );
       const author = user.trim();
 
       if (author) {
-        const userLogCommand = `"${this.svnPath}" log -l 5 -r HEAD:1 --search "${author}" "${this.workspaceRoot}"`;
+        const userLogCommand = `"${this.svnPath}" log -l 5 -r HEAD:1 --search "${author}" "${currentWorkspaceRoot}"`;
         const { stdout: userLogOutput } = await exec(userLogCommand, {
-          cwd: this.workspaceRoot,
+          cwd: currentWorkspaceRoot,
           env: this.getEnvironmentConfig(),
         });
         userCommitMessages.push(...this.parseSvnLog(userLogOutput));
@@ -654,6 +698,63 @@ export class SvnProvider implements ISCMProvider {
         error instanceof Error ? error.message : "Unknown error";
       notify.error("commit.message.copy.failed", [errorMessage]);
     }
+  }
+
+  /**
+   * 根据文件路径或当前上下文找到最匹配的SVN仓库。
+   * @param filePaths - 可选的文件路径数组，用于精确定位仓库。
+   * @returns {SvnRepository | undefined} 匹配的SVN仓库实例。
+   * @private
+   */
+  private findRepository(filePaths?: string[]): SvnRepository | undefined {
+    const { repositories } = this;
+
+    if (!repositories.length) {
+      return undefined;
+    }
+
+    // 1. 如果在构造时提供了特定的仓库路径，优先使用它
+    if (this.repositoryPath) {
+      const specificRepo = repositories.find(
+        (repo) => repo.rootUri.fsPath === this.repositoryPath
+      );
+      return specificRepo;
+    }
+
+    // --- Fallback Logic ---
+    // 仅在未提供 repositoryPath 时执行以下逻辑
+
+    // 如果只有一个仓库，直接返回
+    if (repositories.length === 1) {
+      return repositories[0];
+    }
+
+    const uris = filePaths?.map((path) => vscode.Uri.file(path));
+
+    // 2. 根据提供的文件路径查找
+    if (uris && uris.length > 0) {
+      for (const uri of uris) {
+        for (const repo of repositories) {
+          if (uri.fsPath.startsWith(repo.rootUri.fsPath)) {
+            return repo; // 找到第一个匹配的就返回
+          }
+        }
+      }
+    }
+
+    // 3. 根据当前打开的活动编辑器查找
+    const activeEditor = vscode.window.activeTextEditor;
+    if (activeEditor?.document.uri.scheme === "file") {
+      const activeFileUri = activeEditor.document.uri;
+      for (const repo of repositories) {
+        if (activeFileUri.fsPath.startsWith(repo.rootUri.fsPath)) {
+          return repo;
+        }
+      }
+    }
+
+    // 4. 如果上述都找不到，返回第一个仓库作为备选
+    return repositories[0];
   }
 
   // /**
