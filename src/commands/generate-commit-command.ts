@@ -105,7 +105,11 @@ export class GenerateCommitCommand extends BaseCommand {
       const { scmProvider, selectedFiles, repositoryPath } = result;
 
       if (!repositoryPath) {
-        await notify.warn("repository.not.found");
+        await notify.warn(
+          formatMessage("scm.repository.not.found", [
+            scmProvider.type.toUpperCase(),
+          ])
+        );
         return;
       }
 
@@ -273,8 +277,12 @@ REMINDER:
     const diffContent = await scmProvider.getDiff(selectedFiles);
 
     if (!diffContent) {
-      notify.info("no.changes");
-      throw new Error(getMessage("no.changes"));
+      notify.info(
+        formatMessage("scm.no.changes", [scmProvider.type.toUpperCase()])
+      );
+      throw new Error(
+        formatMessage("scm.no.changes", [scmProvider.type.toUpperCase()])
+      );
     }
 
     progress.report({
@@ -336,7 +344,10 @@ REMINDER:
       ])
     );
     // 大 Prompt 警告和备用提示词切换逻辑
-    if (promptLength > maxTokens * 0.75) {
+    if (
+      promptLength > maxTokens * 0.75 &&
+      !configuration.features.suppressNonCriticalWarnings
+    ) {
       const useFallbackChoice = getMessage("fallback.use");
       const continueAnyway = getMessage("prompt.large.continue");
       const cancel = getMessage("prompt.large.cancel");

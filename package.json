@@ -373,6 +373,11 @@
           "default": "",
           "description": "Groq API Key / Groq API 密钥"
         },
+        "dish-ai-commit.features.suppressNonCriticalWarnings": {
+          "type": "boolean",
+          "default": true,
+          "description": "Suppress non-critical warning popups, such as context length warnings. / 禁用非关键性警告弹窗，例如上下文长度警告。"
+        },
         "dish-ai-commit.features.codeAnalysis.diffTarget": {
           "type": "string",
           "default": "all",
