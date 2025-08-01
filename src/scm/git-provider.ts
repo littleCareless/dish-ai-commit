@@ -27,6 +27,9 @@ interface GitAPI {
  * Git仓库接口定义
  */
 interface GitRepository {
+  /** 仓库根目录的URI */
+  readonly rootUri: vscode.Uri;
+
   /** 提交信息输入框 */
   inputBox: {
     value: string;
@@ -58,30 +61,23 @@ export class GitProvider implements ISCMProvider {
   /** SCM类型标识符 */
   type = "git" as const;
 
-  /** 工作区根目录路径 */
-  private workspaceRoot: string;
-
   /** Git API实例 */
   private readonly api: GitAPI;
+  private readonly repositoryPath?: string;
 
   /**
    * 创建Git提供者实例
    * @param gitExtension - VS Code Git扩展实例
-   * @param workspaceRoot - 工作区根目录路径，可选
+   * @param repositoryPath - 可选的仓库路径
    * @throws {Error} 当未找到工作区时抛出错误
    */
-  constructor(private readonly gitExtension: any, workspaceRoot?: string) {
+  constructor(private readonly gitExtension: any, repositoryPath?: string) {
     this.api = gitExtension.getAPI(1);
+    this.repositoryPath = repositoryPath;
 
-    if (!workspaceRoot) {
-      workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    }
-
-    if (!workspaceRoot) {
+    if (!vscode.workspace.workspaceFolders?.length) {
       throw new Error(getMessage("workspace.not.found"));
     }
-
-    this.workspaceRoot = workspaceRoot;
   }
 
   /**
@@ -91,9 +87,7 @@ export class GitProvider implements ISCMProvider {
     try {
       const { stdout } = await exec("git --version");
       const version = stdout.trim();
-      vscode.window.showInformationMessage(
-        formatMessage("git.version.detected", [version])
-      );
+      notify.info(formatMessage("scm.version.detected", ["Git", version]));
     } catch (error) {
       // 在初始化阶段，即使获取版本失败也不应阻塞，仅记录警告
       console.warn("Failed to get git version:", error);
@@ -116,12 +110,15 @@ export class GitProvider implements ISCMProvider {
    * @returns {Promise<string>} 返回文件状态描述
    * @private
    */
-  private async getFileStatus(file: string): Promise<string> {
+  private async getFileStatus(
+    file: string,
+    repositoryPath: string
+  ): Promise<string> {
     try {
       const { stdout: status } = await exec(
         `git status --porcelain "${file}"`,
         {
-          cwd: this.workspaceRoot,
+          cwd: repositoryPath,
         }
       );
 
@@ -156,13 +153,18 @@ export class GitProvider implements ISCMProvider {
    */
   async getDiff(files?: string[]): Promise<string | undefined> {
     try {
+      const repository = this.findRepository(files);
+      if (!repository) {
+        throw new Error(formatMessage("scm.repository.not.found", ["Git"]));
+      }
+      const currentWorkspaceRoot = repository.rootUri.fsPath;
+
       let diffOutput = "";
-      console.log("this.workspaceRoot", this.workspaceRoot);
 
       // 检查仓库是否有初始提交
       let hasInitialCommit = true;
       try {
-        await exec("git rev-parse HEAD", { cwd: this.workspaceRoot });
+        await exec("git rev-parse HEAD", { cwd: currentWorkspaceRoot });
       } catch (error) {
         // 如果执行失败，说明没有初始提交
         hasInitialCommit = false;
@@ -172,7 +174,10 @@ export class GitProvider implements ISCMProvider {
         notify.info(formatMessage("diff.files.selected", [files.length]));
         // 处理指定文件的差异
         for (const file of files) {
-          const fileStatus = await this.getFileStatus(file);
+          const fileStatus = await this.getFileStatus(
+            file,
+            currentWorkspaceRoot
+          );
           const escapedFile = file.replace(/"/g, '\\"');
 
           // 对于删除的文件不获取diff内容
@@ -189,7 +194,7 @@ export class GitProvider implements ISCMProvider {
               const result = await exec(
                 `git diff --no-index /dev/null "${escapedFile}"`,
                 {
-                  cwd: this.workspaceRoot,
+                  cwd: currentWorkspaceRoot,
                   maxBuffer: 1024 * 1024 * 10,
                 }
               );
@@ -203,7 +208,7 @@ export class GitProvider implements ISCMProvider {
           } else if (fileStatus === "Added File") {
             // 处理已暂存的新文件
             const result = await exec(`git diff --cached -- "${escapedFile}"`, {
-              cwd: this.workspaceRoot,
+              cwd: currentWorkspaceRoot,
               maxBuffer: 1024 * 1024 * 10,
             });
             stdout = result.stdout;
@@ -213,14 +218,14 @@ export class GitProvider implements ISCMProvider {
               // 尝试使用 HEAD 引用
               if (hasInitialCommit) {
                 const result = await exec(`git diff HEAD -- "${escapedFile}"`, {
-                  cwd: this.workspaceRoot,
+                  cwd: currentWorkspaceRoot,
                   maxBuffer: 1024 * 1024 * 10,
                 });
                 stdout = result.stdout;
               } else {
                 // 如果没有初始提交，则使用不带HEAD的diff命令
                 const result = await exec(`git diff -- "${escapedFile}"`, {
-                  cwd: this.workspaceRoot,
+                  cwd: currentWorkspaceRoot,
                   maxBuffer: 1024 * 1024 * 10,
                 });
                 stdout = result.stdout;
@@ -232,7 +237,7 @@ export class GitProvider implements ISCMProvider {
                 error.message.includes("bad revision 'HEAD'")
               ) {
                 const result = await exec(`git diff -- "${escapedFile}"`, {
-                  cwd: this.workspaceRoot,
+                  cwd: currentWorkspaceRoot,
                   maxBuffer: 1024 * 1024 * 10,
                 });
                 stdout = result.stdout;
@@ -249,7 +254,7 @@ export class GitProvider implements ISCMProvider {
         }
       } else {
         const diffTarget = ConfigurationManager.getInstance().getConfig(
-          "features.codeAnalysis.diffTarget" as any
+          "FEATURES_CODEANALYSIS_DIFFTARGET"
         );
 
         if (diffTarget === "staged") {
@@ -257,7 +262,7 @@ export class GitProvider implements ISCMProvider {
             let stagedFilesOutput = "";
             try {
               const { stdout } = await exec("git diff --cached --name-only", {
-                cwd: this.workspaceRoot,
+                cwd: currentWorkspaceRoot,
               });
               stagedFilesOutput = stdout;
             } catch (e) {
@@ -281,7 +286,7 @@ export class GitProvider implements ISCMProvider {
           }
           // 只获取暂存区的更改
           const { stdout: stagedChanges } = await exec("git diff --cached", {
-            cwd: this.workspaceRoot,
+            cwd: currentWorkspaceRoot,
             maxBuffer: 1024 * 1024 * 10,
           });
           diffOutput = stagedChanges;
@@ -291,7 +296,9 @@ export class GitProvider implements ISCMProvider {
             const getFileNames = async (command: string) => {
               let output = "";
               try {
-                const result = await exec(command, { cwd: this.workspaceRoot });
+                const result = await exec(command, {
+                  cwd: currentWorkspaceRoot,
+                });
                 output = result.stdout;
               } catch (e) {
                 if (e instanceof Error && "stdout" in e) {
@@ -314,7 +321,7 @@ export class GitProvider implements ISCMProvider {
             const { stdout: untrackedFilesOutput } = await exec(
               "git ls-files --others --exclude-standard",
               {
-                cwd: this.workspaceRoot,
+                cwd: currentWorkspaceRoot,
               }
             );
             const untrackedFiles = untrackedFilesOutput
@@ -344,14 +351,14 @@ export class GitProvider implements ISCMProvider {
             if (hasInitialCommit) {
               // 如果有初始提交，使用HEAD引用
               const result = await exec("git diff HEAD", {
-                cwd: this.workspaceRoot,
+                cwd: currentWorkspaceRoot,
                 maxBuffer: 1024 * 1024 * 10,
               });
               trackedChanges = result.stdout;
             } else {
               // 如果没有初始提交，使用不带HEAD的diff命令
               const result = await exec("git diff", {
-                cwd: this.workspaceRoot,
+                cwd: currentWorkspaceRoot,
                 maxBuffer: 1024 * 1024 * 10,
               });
               trackedChanges = result.stdout;
@@ -363,7 +370,7 @@ export class GitProvider implements ISCMProvider {
               error.message.includes("bad revision 'HEAD'")
             ) {
               const result = await exec("git diff", {
-                cwd: this.workspaceRoot,
+                cwd: currentWorkspaceRoot,
                 maxBuffer: 1024 * 1024 * 10,
               });
               trackedChanges = result.stdout;
@@ -373,16 +380,17 @@ export class GitProvider implements ISCMProvider {
           }
 
           // 2. 获取已暂存的新文件更改
-          const { stdout: stagedChanges } = await exec("git diff --cached", {
-            cwd: this.workspaceRoot,
+          const execResult = await exec("git diff --cached", {
+            cwd: currentWorkspaceRoot,
             maxBuffer: 1024 * 1024 * 10,
           });
+          const { stdout: stagedChanges } = execResult;
 
           // 3. 获取未跟踪的新文件列表
           const { stdout: untrackedFiles } = await exec(
             "git ls-files --others --exclude-standard",
             {
-              cwd: this.workspaceRoot,
+              cwd: currentWorkspaceRoot,
             }
           );
 
@@ -407,7 +415,7 @@ export class GitProvider implements ISCMProvider {
                 const result = await exec(
                   `git diff --no-index /dev/null "${escapedFile}"`,
                   {
-                    cwd: this.workspaceRoot,
+                    cwd: currentWorkspaceRoot,
                     maxBuffer: 1024 * 1024 * 10,
                   }
                 );
@@ -433,11 +441,72 @@ export class GitProvider implements ISCMProvider {
       return DiffProcessor.process(diffOutput, "git");
     } catch (error) {
       if (error instanceof Error) {
-        console.error("Git diff error:", error); // 添加调试日志
-        notify.error("git.diff.failed", [error.message]);
+        console.error(formatMessage("scm.diff.error", ["Git", error])); // 添加调试日志
+        notify.error(formatMessage("scm.diff.failed", ["Git", error.message]));
       }
       throw error;
     }
+  }
+
+  /**
+   * 根据文件路径或当前上下文找到最匹配的Git仓库。
+   * @param filePaths - 可选的文件路径数组，用于精确定位仓库。
+   * @returns {GitRepository | undefined} 匹配的Git仓库实例。
+   * @private
+   */
+  private findRepository(filePaths?: string[]): GitRepository | undefined {
+    const { repositories } = this.api;
+
+    if (!repositories.length) {
+      return undefined;
+    }
+
+    // 1. 如果在构造时提供了特定的仓库路径，优先使用它
+    if (this.repositoryPath) {
+      const specificRepo = repositories.find(
+        (repo) => repo.rootUri.fsPath === this.repositoryPath
+      );
+      // 如果提供了特定的仓库路径，我们只信任这个路径。
+      // 如果找不到，则返回 undefined，让调用者处理错误，
+      // 避免错误地回退到其他仓库。
+      return specificRepo;
+    }
+
+    // --- Fallback Logic ---
+    // 仅在未提供 repositoryPath 时执行以下逻辑
+
+    // 如果只有一个仓库，直接返回
+    if (repositories.length === 1) {
+      return repositories[0];
+    }
+
+    const uris = filePaths?.map((path) => vscode.Uri.file(path));
+
+    // 2. 根据提供的文件路径查找
+    if (uris && uris.length > 0) {
+      for (const uri of uris) {
+        for (const repo of repositories) {
+          if (uri.fsPath.startsWith(repo.rootUri.fsPath)) {
+            return repo; // 找到第一个匹配的就返回
+          }
+        }
+      }
+    }
+
+    // 3. 根据当前打开的活动编辑器查找
+    const activeEditor = vscode.window.activeTextEditor;
+    if (activeEditor?.document.uri.scheme === "file") {
+      const activeFileUri = activeEditor.document.uri;
+      for (const repo of repositories) {
+        if (activeFileUri.fsPath.startsWith(repo.rootUri.fsPath)) {
+          return repo;
+        }
+      }
+    }
+
+    // 4. 如果上述都找不到，返回第一个仓库作为备选
+    // 这种策略在多仓库工作区可能不准确，但提供了一个回退方案
+    return repositories[0];
   }
 
   /**
@@ -447,14 +516,13 @@ export class GitProvider implements ISCMProvider {
    * @throws {Error} 当提交失败或未找到仓库时抛出错误
    */
   async commit(message: string, files?: string[]): Promise<void> {
-    const api = this.gitExtension.getAPI(1);
-    const repository = api.repositories[0];
+    const repository = this.findRepository(files);
 
     if (!repository) {
-      throw new Error(getMessage("git.repository.not.found"));
+      throw new Error(formatMessage("scm.repository.not.found", ["Git"]));
     }
 
-    await repository.commit(message, { all: files ? false : true, files });
+    await repository.commit(message, { all: !files, files });
   }
 
   /**
@@ -463,8 +531,7 @@ export class GitProvider implements ISCMProvider {
    * @throws {Error} 当未找到仓库时抛出错误
    */
   async setCommitInput(message: string): Promise<void> {
-    const api = this.gitExtension.getAPI(1);
-    const repository = api.repositories[0];
+    const repository = this.findRepository();
 
     if (repository?.inputBox) {
       repository.inputBox.value = message;
@@ -473,12 +540,11 @@ export class GitProvider implements ISCMProvider {
         await vscode.env.clipboard.writeText(message);
         notify.info("commit.message.copied");
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
         notify.error("commit.message.copy.failed", [errorMessage]);
         // Fallback to showing the message in an information dialog
-        vscode.window.showInformationMessage(
-          formatMessage("commit.message.manual.copy", [message])
-        );
+        notify.info("commit.message.manual.copy", [message]);
       }
     }
   }
@@ -489,11 +555,10 @@ export class GitProvider implements ISCMProvider {
    * @throws {Error} 当未找到仓库时抛出错误
    */
   async getCommitInput(): Promise<string> {
-    const api = this.gitExtension.getAPI(1);
-    const repository = api.repositories[0];
+    const repository = this.findRepository();
 
     if (!repository) {
-      throw new Error(getMessage("git.repository.not.found"));
+      throw new Error(formatMessage("scm.repository.not.found", ["Git"]));
     }
 
     return repository.inputBox.value;
@@ -506,8 +571,7 @@ export class GitProvider implements ISCMProvider {
    * @throws {Error} 当未找到仓库时抛出错误
    */
   async startStreamingInput(message: string): Promise<void> {
-    const api = this.gitExtension.getAPI(1);
-    const repository = api.repositories[0];
+    const repository = this.findRepository();
 
     if (repository?.inputBox) {
       repository.inputBox.value = message;
@@ -516,11 +580,10 @@ export class GitProvider implements ISCMProvider {
         await vscode.env.clipboard.writeText(message);
         notify.info("commit.message.copied");
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
         notify.error("commit.message.copy.failed", [errorMessage]);
-        vscode.window.showInformationMessage(
-          formatMessage("commit.message.manual.copy", [message])
-        );
+        notify.info("commit.message.manual.copy", [message]);
       }
     }
   }
@@ -535,11 +598,18 @@ export class GitProvider implements ISCMProvider {
     baseBranch = "origin/main",
     headBranch = "HEAD"
   ): Promise<string[]> {
+    const repository = this.findRepository();
+    if (!repository) {
+      notify.warn(formatMessage("scm.repository.not.found", ["Git"]));
+      return [];
+    }
+    const currentWorkspaceRoot = repository.rootUri.fsPath;
+
     try {
       // 确保基础分支存在
       try {
         await exec(`git show-ref --verify --quiet refs/remotes/${baseBranch}`, {
-          cwd: this.workspaceRoot,
+          cwd: currentWorkspaceRoot,
         });
       } catch (error) {
         // 如果远程分支不存在，尝试本地分支
@@ -549,7 +619,7 @@ export class GitProvider implements ISCMProvider {
               "origin/",
               ""
             )}`,
-            { cwd: this.workspaceRoot }
+            { cwd: currentWorkspaceRoot }
           );
           baseBranch = baseBranch.replace("origin/", ""); // 更新为本地分支名
         } catch (localError) {
@@ -563,7 +633,7 @@ export class GitProvider implements ISCMProvider {
             try {
               await exec(
                 `git show-ref --verify --quiet refs/remotes/origin/${branch}`,
-                { cwd: this.workspaceRoot }
+                { cwd: currentWorkspaceRoot }
               );
               baseBranch = `origin/${branch}`;
               foundCommonBranch = true;
@@ -572,7 +642,7 @@ export class GitProvider implements ISCMProvider {
               try {
                 await exec(
                   `git show-ref --verify --quiet refs/heads/${branch}`,
-                  { cwd: this.workspaceRoot }
+                  { cwd: currentWorkspaceRoot }
                 );
                 baseBranch = branch;
                 foundCommonBranch = true;
@@ -596,7 +666,7 @@ export class GitProvider implements ISCMProvider {
 
       const command = `git log ${baseBranch}..${headBranch} --pretty=format:"%s" --no-merges`;
       const { stdout } = await exec(command, {
-        cwd: this.workspaceRoot,
+        cwd: currentWorkspaceRoot,
         maxBuffer: 1024 * 1024 * 10, // 10MB buffer
       });
 
@@ -608,7 +678,7 @@ export class GitProvider implements ISCMProvider {
     } catch (error) {
       if (error instanceof Error) {
         console.error("Git log error:", error);
-        notify.error("git.log.failed", [error.message]);
+        notify.error(formatMessage("scm.log.failed", ["Git", error.message]));
       }
       // 对于获取日志失败的情况，返回空数组而不是抛出错误，让调用者处理
       return [];
@@ -620,10 +690,17 @@ export class GitProvider implements ISCMProvider {
    * @returns 返回分支名称列表
    */
   async getBranches(): Promise<string[]> {
+    const repository = this.findRepository();
+    if (!repository) {
+      notify.warn(formatMessage("scm.repository.not.found", ["Git"]));
+      return [];
+    }
+    const currentWorkspaceRoot = repository.rootUri.fsPath;
+
     try {
       const command = `git branch -a --format="%(refname:short)"`;
       const { stdout } = await exec(command, {
-        cwd: this.workspaceRoot,
+        cwd: currentWorkspaceRoot,
         maxBuffer: 1024 * 1024 * 1, // 1MB buffer, should be enough for branch names
       });
 
@@ -644,7 +721,9 @@ export class GitProvider implements ISCMProvider {
       if (error instanceof Error) {
         console.error("Git branch list error:", error);
         // 考虑添加一个新的 i18n key for this error
-        notify.error("git.branch.list.failed", [error.message]);
+        notify.error(
+          formatMessage("scm.branch.list.failed", ["Git", error.message])
+        );
       }
       return [];
     }
@@ -653,7 +732,7 @@ export class GitProvider implements ISCMProvider {
   async getRecentCommitMessages() {
     const repositoryCommitMessages: string[] = [];
     const userCommitMessages: string[] = [];
-    const repository = this.api.repositories[0];
+    const repository = this.findRepository();
     if (!repository) {
       return { repository: [], user: [] };
     }
@@ -691,7 +770,8 @@ export class GitProvider implements ISCMProvider {
       await vscode.env.clipboard.writeText(message);
       notify.info("commit.message.copied");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       notify.error("commit.message.copy.failed", [errorMessage]);
     }
   }
@@ -706,7 +786,7 @@ export class GitProvider implements ISCMProvider {
   //   const repository = api.repositories[0];
 
   //   if (!repository) {
-  //     throw new Error(getMessage("git.repository.not.found"));
+  //     throw new Error(formatMessage("scm.repository.not.found", ["Git"]));
   //   }
   //   repository.inputBox.value += chunk;
   // }
@@ -721,7 +801,7 @@ export class GitProvider implements ISCMProvider {
   //   const repository = api.repositories[0];
   //
   //   if (!repository) {
-  //     throw new Error(getMessage("git.repository.not.found"));
+  //     throw new Error(formatMessage("scm.repository.not.found", ["Git"]));
   //   }
   //   // Git的inputBox标准接口没有enabled属性。
   //   // 如果未来API支持enabled，可以在这里添加:

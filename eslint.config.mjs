@@ -1,4 +1,4 @@
-import stylisticTs from "@stylistic/eslint-plugin-ts";
+import stylistic from "@stylistic/eslint-plugin";
 import parserTs from "@typescript-eslint/parser";
 
 export default [
@@ -8,7 +8,7 @@ export default [
   {
     files: ["src/**/*.ts"],
     plugins: {
-      "@stylistic/ts": stylisticTs,
+      "@stylistic": stylistic,
     },
 
     languageOptions: {
@@ -26,7 +26,7 @@ export default [
       //   },
       // ],
 
-      "@stylistic/ts/semi": "warn",
+      "@stylistic/semi": "warn",
       curly: "warn",
       eqeqeq: "warn",
       "no-throw-literal": "warn",

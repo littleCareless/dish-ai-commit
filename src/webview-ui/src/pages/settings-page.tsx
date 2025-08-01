@@ -136,13 +136,13 @@ const SettingsPage: React.FC = () => {
   }
 
   return (
-    <Layout style={{ height: "100vh" }}>
+    <Layout style={{ height: "100vh", backgroundColor: "var(--color-background)" }}>
       <Layout.Sider
         width={150}
         collapsed={false}
         collapsible
         style={{
-          background: "var(--color-bg-2)",
+          background: "var(--color-card)",
           borderRight: "1px solid var(--color-border)",
         }}
       >
@@ -152,14 +152,15 @@ const SettingsPage: React.FC = () => {
           settingsSchema={settingsSchema}
         />
       </Layout.Sider>
-      <Layout.Content style={{ display: "flex", flexDirection: "column" }}>
+      <Layout.Content style={{ display: "flex", flexDirection: "column", backgroundColor: "var(--color-background)" }}>
         <PageHeader
           title="设置"
           style={{
-            background: "var(--color-bg-2)",
+            background: "var(--color-card)",
             padding: "12px 0px",
             borderBottom: "1px solid var(--color-border)",
             flexShrink: 0,
+            color: "var(--color-foreground)",
           }}
           extra={
             <div style={{ display: "flex", alignItems: "center" }}>
@@ -167,7 +168,7 @@ const SettingsPage: React.FC = () => {
                 <Alert
                   type="warning"
                   content="有未保存的更改"
-                  style={{ marginRight: 8 }}
+                  style={{ marginRight: 8, backgroundColor: "var(--color-muted)", color: "var(--color-foreground)" }}
                 />
               )}
               <ArcoButton
@@ -175,13 +176,18 @@ const SettingsPage: React.FC = () => {
                 onClick={handleSaveSettings}
                 disabled={!hasChanges || saveDisabled}
                 icon={<Save size={16} />}
+                style={{
+                  backgroundColor: "var(--color-primary)",
+                  borderColor: "var(--color-primary)",
+                  color: "var(--color-primary-foreground)",
+                }}
               >
                 保存
               </ArcoButton>
             </div>
           }
         />
-        <div style={{ flexGrow: 1, overflowY: "auto", padding: "24px" }}>
+        <div style={{ flexGrow: 1, overflowY: "auto", padding: "24px", backgroundColor: "var(--color-background)", color: "var(--color-foreground)" }}>
           <SettingsContent
             selectedMenuItemKey={selectedMenuItemKey}
             settingsSchema={settingsSchema}

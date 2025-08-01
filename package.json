@@ -2,7 +2,7 @@
   "name": "dish-ai-commit",
   "displayName": "Dish AI Commit Message Gen",
   "description": "🤖 由 AI 提供支持的 VSCode 扩展，用于生成标准化的 Git/SVN 提交消息 - 🤖 AI-Powered VSCode extension for generating standardized Git/SVN commit messages. ✨ Supports multiple AI services: OpenAI, ChatGPT, Ollama, Zhipu, DashScope, Doubao, Gemini and VS Code built-in AI. 🌍 Multi-language support (EN/CN/JP/KR/Other). 📊 Auto-generate weekly reports.",
-  "version": "0.35.0",
+  "version": "0.42.0",
   "engines": {
     "node": ">= 18.20.8",
     "pnpm": ">= 10.0.0",
@@ -373,6 +373,11 @@
           "default": "",
           "description": "Groq API Key / Groq API 密钥"
         },
+        "dish-ai-commit.features.suppressNonCriticalWarnings": {
+          "type": "boolean",
+          "default": true,
+          "description": "Suppress non-critical warning popups, such as context length warnings. / 禁用非关键性警告弹窗，例如上下文长度警告。"
+        },
         "dish-ai-commit.features.codeAnalysis.diffTarget": {
           "type": "string",
           "default": "all",
@@ -589,6 +594,15 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage",
+    "test:scm": "vitest run src/scm",
+    "test:scm:watch": "vitest src/scm",
+    "test:scm:coverage": "vitest run src/scm --coverage",
+    "test:scm:unit": "vitest run src/scm/__tests__/unit",
+    "test:scm:integration": "vitest run src/scm/__tests__/integration",
+    "test:scm:e2e": "vitest run src/scm/__tests__/e2e",
+    "coverage:check": "node scripts/check-coverage-thresholds.js",
+    "coverage:detailed": "node scripts/check-coverage-thresholds.js --detailed",
+    "quality-gate": "npm run test:coverage && npm run coverage:check",
     "prepare": "husky",
     "commit": "git add . && git-cz",
     "release": "standard-version --preset gitmoji-config -i CHANGELOG.zh-CN.md",
@@ -607,7 +621,7 @@
   "devDependencies": {
     "@commitlint/cli": "^19.8.1",
     "@commitlint/config-conventional": "^19.8.1",
-    "@stylistic/eslint-plugin-ts": "^4.4.1",
+    "@stylistic/eslint-plugin": "^5.2.2",
     "@types/jest": "^29.5.14",
     "@types/mocha": "^10.0.10",
     "@types/node": "~24.0.0",
@@ -616,6 +630,7 @@
     "@typescript-eslint/eslint-plugin": "^8.34.0",
     "@typescript-eslint/parser": "^8.34.0",
     "@typescript/native-preview": "7.0.0-dev.20250610.1",
+    "@vitest/coverage-v8": "3.2.3",
     "@vscode/test-cli": "^0.0.11",
     "@vscode/test-electron": "^2.5.2",
     "@vscode/vsce": "~3.3.2",
@@ -652,6 +667,7 @@
     "openai": "^5.3.0",
     "tiktoken": "^1.0.21",
     "tree-sitter-wasms": "^0.1.11",
+    "vite": "^7.0.6",
     "web-tree-sitter": "^0.22.6"
   },
   "overrides": {
@@ -673,7 +689,7 @@
     }
   },
   "lint-staged": {
-    "src/**/*.{ts}": "npm run lint"
+    "src/**/*.ts": "npm run lint"
   },
   "commitlint": {
     "extends": [
