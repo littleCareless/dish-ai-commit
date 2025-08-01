@@ -379,7 +379,7 @@ export class SCMFactory {
         // 先尝试使用SVN插件
         try {
           const svn = svnExtension?.exports
-            ? new SvnProvider(svnExtension.exports)
+            ? new SvnProvider(svnExtension.exports, workspaceRoot)
             : undefined;
           if (svn) {
             await this.withTimeout(svn.init());
