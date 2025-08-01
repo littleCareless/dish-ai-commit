@@ -6,6 +6,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.42.0 (2025-08-01)
+
+### ♻ Code Refactoring
+
+- **context**: 重构 ContextManager 并添加警告抑制功能 ([63e5873](https://github.com/littleCareless/dish-ai-commit/commit/63e5873))
+- **notification**: 重构通知系统并统一 i18n 消息键 ([9047a9b](https://github.com/littleCareless/dish-ai-commit/commit/9047a9b))
+- **notification**: 重构信息提示以统一使用通知管理器 ([b5181b6](https://github.com/littleCareless/dish-ai-commit/commit/b5181b6))
+- **scm**: 重构 SCM 层以支持多 SVN 仓库 ([e8aed8b](https://github.com/littleCareless/dish-ai-commit/commit/e8aed8b))
+- **scm**: 重构 SvnProvider 以支持多仓库并统一通知 ([ef974c9](https://github.com/littleCareless/dish-ai-commit/commit/ef974c9))
+
+### ✨ Features
+
+- **core**: 新增禁用非关键警告弹窗的选项 ([0c47529](https://github.com/littleCareless/dish-ai-commit/commit/0c47529))
+
+### 🎫 Chores
+
+- **i18n**: 统一 SCM 和 AI 提供商的国际化文案 ([a1443a7](https://github.com/littleCareless/dish-ai-commit/commit/a1443a7))
+
+### 🐛 Bug Fixes
+
+- **ai**: 修复 AI 提供者配置变更后缓存不更新的问题 ([f7c1d82](https://github.com/littleCareless/dish-ai-commit/commit/f7c1d82))
+- **ui**: 修复命令执行后进度条未完成的问题 ([654ba88](https://github.com/littleCareless/dish-ai-commit/commit/654ba88))
+
 # 0.41.0 (2025-07-29)
 
 ### ♻ Code Refactoring
@@ -29,6 +52,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0
 
 - **release**: 调整预发布判断逻辑以支持 release 分支 ([2df11c0](https://github.com/littleCareless/dish-ai-commit/commit/2df11c0))
 - **release**: 修复发布工作流中更新日志的提取逻辑 ([c3df252](https://github.com/littleCareless/dish-ai-commit/commit/c3df252))
+
 * **release**: 改用从 CHANGELOG.md 文件提取发布日志 ([f990a95](https://github.com/littleCareless/dish-ai-commit/commit/f990a95))
 * **release**: 允许手动触发发布工作流 ([caeca42](https://github.com/littleCareless/dish-ai-commit/commit/caeca42))
 * **workflow**: 更新发布工作流配置 ([6ba5a96](https://github.com/littleCareless/dish-ai-commit/commit/6ba5a96))

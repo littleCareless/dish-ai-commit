@@ -6,6 +6,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.42.0 (2025-08-01)
+
+### ♻ Code Refactoring
+
+- **context**: Refactor ContextManager and add warning suppression ([63e5873](https://github.com/littleCareless/dish-ai-commit/commit/63e5873))
+- **notification**: Refactor notification system and unify i18n message keys ([9047a9b](https://github.com/littleCareless/dish-ai-commit/commit/9047a9b))
+- **notification**: Refactor message prompts to use the notification manager ([b5181b6](https://github.com/littleCareless/dish-ai-commit/commit/b5181b6))
+- **scm**: Refactor the SCM layer to support multiple SVN repositories ([e8aed8b](https://github.com/littleCareless/dish-ai-commit/commit/e8aed8b))
+- **scm**: Refactor the SvnProvider to support multiple repositories and unify notifications ([ef974c9](https://github.com/littleCareless/dish-ai-commit/commit/ef974c9))
+
+### ✨ Features
+
+- **core**: Added an option to disable non-critical warning popups ([0c47529](https://github.com/littleCareless/dish-ai-commit/commit/0c47529))
+
+### 🎫 Chores
+
+- **i18n**: Unify internationalization text for SCM and AI providers ([a1443a7](https://github.com/littleCareless/dish-ai-commit/commit/a1443a7))
+
+### 🐛 Bug Fixes
+
+- **ai**: Fixed an issue where the cache wasn't updated after AI provider configuration changes. ([f7c1d82](https://github.com/littleCareless/dish-ai-commit/commit/f7c1d82))
+- **ui**: Fixed an issue where the progress bar didn't complete after command execution. ([654ba88](https://github.com/littleCareless/dish-ai-commit/commit/654ba88))
+
 # 0.41.0 (2025-07-29)
 
 ### ♻ Code Refactoring
