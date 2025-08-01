@@ -237,9 +237,7 @@ ${currentInput}
         ? "\n- DO NOT COPY commits from RECENT COMMITS, but use it as reference for the commit style."
         : "";
 
-    return `---
-REMINDER:
- - IMPORTANT: You will be provided with code changes from MULTIPLE files.
+    return `- IMPORTANT: You will be provided with code changes from MULTIPLE files.
  - Your primary task is to analyze ALL provided file changes under the \`<code-changes>\` block and synthesize them into a single, coherent commit message.
  - Do NOT focus on only the first file you see. A good commits messages covers the intent of all changes.${recentCommitsReminder}${languageReminder}
  - Now only show your message, Do not provide any explanations or details`;
@@ -336,13 +334,14 @@ REMINDER:
 
     const promptLength = contextManager.getEstimatedTokenCount();
     const maxTokens = selectedModel.maxTokens?.input ?? 8192;
-
-    notify.info(
-      formatMessage("prompt.length.info", [
-        promptLength.toLocaleString(),
-        maxTokens.toLocaleString(),
-      ])
-    );
+    if (!configuration.features.suppressNonCriticalWarnings) {
+      notify.info(
+        formatMessage("prompt.length.info", [
+          promptLength.toLocaleString(),
+          maxTokens.toLocaleString(),
+        ])
+      );
+    }
     // 大 Prompt 警告和备用提示词切换逻辑
     if (
       promptLength > maxTokens * 0.75 &&
@@ -500,7 +499,11 @@ REMINDER:
 
       // Build context manager for each file to get rich context
       const similarCodeContext = await this._getSimilarCodeContext(fileDiff);
-      const contextManager = new ContextManager(selectedModel, systemPrompt);
+      const contextManager = new ContextManager(
+        selectedModel,
+        systemPrompt,
+        configuration.features.suppressNonCriticalWarnings
+      );
       const { originalCode, codeChanges } = extractProcessedDiff(fileDiff);
 
       if (userCommits) {
@@ -622,7 +625,11 @@ REMINDER:
     );
 
     // 2. 构建 ContextManager
-    const contextManager = new ContextManager(selectedModel, systemPrompt);
+    const contextManager = new ContextManager(
+      selectedModel,
+      systemPrompt,
+      configuration.features.suppressNonCriticalWarnings
+    );
     const { originalCode, codeChanges } = extractProcessedDiff(diffContent);
 
     if (userCommits) {
