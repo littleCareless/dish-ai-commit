@@ -119,7 +119,7 @@ export class ReviewCodeCommand extends BaseCommand {
                 model: selectedModel,
                 scm: scmProvider.type ?? "git",
                 changeFiles: [filePath],
-                additionalContext: currentInput, 
+                additionalContext: currentInput,
               };
 
               await addSimilarCodeContext(requestParams);
@@ -165,12 +165,16 @@ export class ReviewCodeCommand extends BaseCommand {
           return;
         }
 
-        await this.showReviewResults(fileReviews);
+        this.showReviewResults(fileReviews);
 
         await notify.info(
           // Changed to info as it's a success message
           formatMessage("review.complete.count", [fileReviews.size.toString()])
         );
+
+        progress.report({
+          increment: 100,
+        });
       });
     } catch (error) {
       console.log("ReviewCodeCommand error", error);

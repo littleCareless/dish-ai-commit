@@ -175,6 +175,9 @@ export class GenerateBranchNameCommand extends BaseCommand {
             branchNameResult.content,
             scmProviderForContext
           );
+          progress.report({
+            increment: 100,
+          });
         }
       );
     } catch (error) {

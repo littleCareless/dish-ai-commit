@@ -206,6 +206,9 @@ export class GeneratePRSummaryCommand extends BaseCommand {
           } else {
             notify.error("pr.summary.generation.failed");
           }
+          progress.report({
+            increment: 100,
+          });
         }
       );
     } catch (error) {
