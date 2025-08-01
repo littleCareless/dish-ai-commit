@@ -533,7 +533,7 @@ describe('GitProvider - 提交相关操作测试', () => {
         const gitProviderNoRepo = new GitProvider(mockGitExtensionNoRepo, mockWorkspacePath);
 
         // Act & Assert
-        await expect(gitProviderNoRepo.commit(commitMessage)).rejects.toThrow('mock.git.repository.not.found');
+        await expect(gitProviderNoRepo.commit(commitMessage)).rejects.toThrow('mock.scm.repository.not.found.Git');
       });
 
       it('应该处理提交失败的情况', async () => {
@@ -667,7 +667,7 @@ describe('GitProvider - 提交相关操作测试', () => {
         const gitProviderNoRepo = new GitProvider(mockGitExtensionNoRepo, mockWorkspacePath);
 
         // Act & Assert
-        await expect(gitProviderNoRepo.getCommitInput()).rejects.toThrow('mock.git.repository.not.found');
+        await expect(gitProviderNoRepo.getCommitInput()).rejects.toThrow('mock.scm.repository.not.found.Git');
       });
 
       it('应该返回空字符串当输入框为空时', async () => {
@@ -1597,7 +1597,7 @@ describe('GitProvider - 初始化和可用性测试', () => {
 
       // Assert
       expect(mockVSCode.window.showInformationMessage).toHaveBeenCalledWith(
-        `mock.git.version.detected.${gitVersion}`
+        `mock.scm.version.detected.Git.${gitVersion}`
       );
     });
 
@@ -1620,7 +1620,7 @@ describe('GitProvider - 初始化和可用性测试', () => {
 
       // Assert
       expect(mockVSCode.window.showInformationMessage).toHaveBeenCalledWith(
-        `mock.git.version.detected.${gitVersionOutput.trim()}`
+        `mock.scm.version.detected.Git.${gitVersionOutput.trim()}`
       );
     });
   });

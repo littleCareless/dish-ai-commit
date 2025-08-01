@@ -87,7 +87,7 @@ export class GitProvider implements ISCMProvider {
     try {
       const { stdout } = await exec("git --version");
       const version = stdout.trim();
-      notify.info("git.version.detected", [version]);
+      notify.info(formatMessage("scm.version.detected", ["Git", version]));
     } catch (error) {
       // 在初始化阶段，即使获取版本失败也不应阻塞，仅记录警告
       console.warn("Failed to get git version:", error);
@@ -155,7 +155,7 @@ export class GitProvider implements ISCMProvider {
     try {
       const repository = this.findRepository(files);
       if (!repository) {
-        throw new Error(getMessage("git.repository.not.found"));
+        throw new Error(formatMessage("scm.repository.not.found", ["Git"]));
       }
       const currentWorkspaceRoot = repository.rootUri.fsPath;
 
@@ -441,8 +441,8 @@ export class GitProvider implements ISCMProvider {
       return DiffProcessor.process(diffOutput, "git");
     } catch (error) {
       if (error instanceof Error) {
-        console.error("Git diff error:", error); // 添加调试日志
-        notify.error("git.diff.failed", [error.message]);
+        console.error(formatMessage("scm.diff.error", ["Git", error])); // 添加调试日志
+        notify.error(formatMessage("scm.diff.failed", ["Git", error.message]));
       }
       throw error;
     }
@@ -519,7 +519,7 @@ export class GitProvider implements ISCMProvider {
     const repository = this.findRepository(files);
 
     if (!repository) {
-      throw new Error(getMessage("git.repository.not.found"));
+      throw new Error(formatMessage("scm.repository.not.found", ["Git"]));
     }
 
     await repository.commit(message, { all: !files, files });
@@ -558,7 +558,7 @@ export class GitProvider implements ISCMProvider {
     const repository = this.findRepository();
 
     if (!repository) {
-      throw new Error(getMessage("git.repository.not.found"));
+      throw new Error(formatMessage("scm.repository.not.found", ["Git"]));
     }
 
     return repository.inputBox.value;
@@ -600,7 +600,7 @@ export class GitProvider implements ISCMProvider {
   ): Promise<string[]> {
     const repository = this.findRepository();
     if (!repository) {
-      notify.warn("git.repository.not.found.for.log");
+      notify.warn(formatMessage("scm.repository.not.found", ["Git"]));
       return [];
     }
     const currentWorkspaceRoot = repository.rootUri.fsPath;
@@ -678,7 +678,7 @@ export class GitProvider implements ISCMProvider {
     } catch (error) {
       if (error instanceof Error) {
         console.error("Git log error:", error);
-        notify.error("git.log.failed", [error.message]);
+        notify.error(formatMessage("scm.log.failed", ["Git", error.message]));
       }
       // 对于获取日志失败的情况，返回空数组而不是抛出错误，让调用者处理
       return [];
@@ -692,7 +692,7 @@ export class GitProvider implements ISCMProvider {
   async getBranches(): Promise<string[]> {
     const repository = this.findRepository();
     if (!repository) {
-      notify.warn("git.repository.not.found.for.branches");
+      notify.warn(formatMessage("scm.repository.not.found", ["Git"]));
       return [];
     }
     const currentWorkspaceRoot = repository.rootUri.fsPath;
@@ -721,7 +721,9 @@ export class GitProvider implements ISCMProvider {
       if (error instanceof Error) {
         console.error("Git branch list error:", error);
         // 考虑添加一个新的 i18n key for this error
-        notify.error("git.branch.list.failed", [error.message]);
+        notify.error(
+          formatMessage("scm.branch.list.failed", ["Git", error.message])
+        );
       }
       return [];
     }
@@ -784,7 +786,7 @@ export class GitProvider implements ISCMProvider {
   //   const repository = api.repositories[0];
 
   //   if (!repository) {
-  //     throw new Error(getMessage("git.repository.not.found"));
+  //     throw new Error(formatMessage("scm.repository.not.found", ["Git"]));
   //   }
   //   repository.inputBox.value += chunk;
   // }
@@ -799,7 +801,7 @@ export class GitProvider implements ISCMProvider {
   //   const repository = api.repositories[0];
   //
   //   if (!repository) {
-  //     throw new Error(getMessage("git.repository.not.found"));
+  //     throw new Error(formatMessage("scm.repository.not.found", ["Git"]));
   //   }
   //   // Git的inputBox标准接口没有enabled属性。
   //   // 如果未来API支持enabled，可以在这里添加:
