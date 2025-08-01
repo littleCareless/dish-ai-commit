@@ -179,6 +179,7 @@ jobs:
       # =================================================================
       - name: Send Slack Notification on Success
         if: success()
+        continue-on-error: true
         uses: slackapi/slack-github-action@v1.26.0
         with:
           payload: |
