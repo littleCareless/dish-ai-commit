@@ -389,16 +389,310 @@ export class SvnProvider implements ISCMProvider {
       }
       const { repository, repositoryPath } = repoInfo;
 
-      const filePaths = files?.map((f) => `"${f}"`).join(" ") || "";
-      const command = `"${this.svnPath}" diff ${filePaths}`;
+      let diffOutput = "";
 
-      const { stdout: rawDiff } = await exec(command, {
-        cwd: repositoryPath,
-        maxBuffer: 1024 * 1024 * 10,
-        env: this.getEnvironmentConfig(),
-      });
+      if (files && files.length > 0) {
+        notify.info(formatMessage("diff.files.selected", [files.length]));
+        // 处理指定文件的差异
+        for (const file of files) {
+          const fileStatus = await this.getFileStatus(file);
+          const escapedFile = file.replace(/"/g, '\\"');
 
-      if (!rawDiff.trim()) {
+          // 对于删除的文件不获取diff内容
+          if (fileStatus === "Deleted File") {
+            diffOutput += `\n=== ${fileStatus}: ${file} ===\n`;
+            continue;
+          }
+
+          // 根据文件状态选择合适的diff命令
+          let stdout = "";
+          if (fileStatus === "New File") {
+            // 处理未跟踪的新文件
+            try {
+              // SVN没有类似git的/dev/null比较，使用空白比较
+              const tempDir = path.join(repositoryPath, ".svn", "tmp");
+              if (!fs.existsSync(tempDir)) {
+                fs.mkdirSync(tempDir, { recursive: true });
+              }
+              const tempEmptyFile = path.join(tempDir, "empty-file-for-diff");
+              fs.writeFileSync(tempEmptyFile, "");
+
+              const result = await exec(
+                `"${this.svnPath}" diff --diff-cmd diff -x "-u" "${tempEmptyFile}" "${escapedFile}"`,
+                {
+                  cwd: repositoryPath,
+                  maxBuffer: 1024 * 1024 * 10,
+                  env: this.getEnvironmentConfig(),
+                }
+              );
+              stdout = result.stdout;
+
+              // 清理临时文件
+              try {
+                fs.unlinkSync(tempEmptyFile);
+              } catch (e) {
+                // 忽略清理错误
+              }
+            } catch (error) {
+              // 如果外部diff命令失败，尝试使用内置diff
+              if (error instanceof Error && "stdout" in error) {
+                stdout = (error as any).stdout;
+              } else {
+                // 回退到读取整个文件内容
+                const fileContent = fs.readFileSync(file, "utf8");
+                stdout = `--- /dev/null\n+++ ${file}\n@@ -0,0 +1,${
+                  fileContent.split("\n").length
+                } @@\n${fileContent
+                  .split("\n")
+                  .map((line) => `+${line}`)
+                  .join("\n")}`;
+              }
+            }
+          } else {
+            // 处理已跟踪且修改的文件
+            try {
+              const result = await exec(
+                `"${this.svnPath}" diff "${escapedFile}"`,
+                {
+                  cwd: repositoryPath,
+                  maxBuffer: 1024 * 1024 * 10,
+                  env: this.getEnvironmentConfig(),
+                }
+              );
+              stdout = result.stdout;
+            } catch (error) {
+              if (error instanceof Error && "stdout" in error) {
+                stdout = (error as any).stdout;
+              } else {
+                throw error;
+              }
+            }
+          }
+
+          // 添加文件状态和差异信息
+          if (stdout.trim()) {
+            diffOutput += `\n=== ${fileStatus}: ${file} ===\n${stdout}`;
+          }
+        }
+      } else {
+        const diffTarget = ConfigurationManager.getInstance().getConfig(
+          "FEATURES_CODEANALYSIS_DIFFTARGET"
+        );
+
+        if (diffTarget === "staged") {
+          // SVN没有暂存区概念，但可以获取已添加到版本控制的文件的更改
+          try {
+            // 获取已添加到版本控制但未提交的文件列表
+            const { stdout: changedFiles } = await exec(
+              `"${this.svnPath}" status --xml`,
+              {
+                cwd: repositoryPath,
+                env: this.getEnvironmentConfig(),
+              }
+            );
+
+            // 解析XML输出以获取已添加的文件
+            const addedFiles =
+              changedFiles.match(
+                /<entry[^>]*>\s*<wc-status[^>]*item="added"[^>]*>[\s\S]*?<\/entry>/g
+              ) || [];
+            const fileCount = addedFiles.length;
+
+            if (fileCount > 0) {
+              notify.info(formatMessage("diff.staged.info", [fileCount]));
+            }
+
+            // 获取已添加文件的差异
+            for (const xmlEntry of addedFiles) {
+              const pathMatch = xmlEntry.match(/path="([^"]+)"/);
+              if (pathMatch && pathMatch[1]) {
+                const filePath = pathMatch[1];
+                const escapedFile = filePath.replace(/"/g, '\\"');
+
+                try {
+                  // 对于已添加的文件，使用空文件比较
+                  const tempDir = path.join(repositoryPath, ".svn", "tmp");
+                  if (!fs.existsSync(tempDir)) {
+                    fs.mkdirSync(tempDir, { recursive: true });
+                  }
+                  const tempEmptyFile = path.join(
+                    tempDir,
+                    "empty-file-for-diff"
+                  );
+                  fs.writeFileSync(tempEmptyFile, "");
+
+                  const result = await exec(
+                    `"${this.svnPath}" diff --diff-cmd diff -x "-u" "${tempEmptyFile}" "${escapedFile}"`,
+                    {
+                      cwd: repositoryPath,
+                      maxBuffer: 1024 * 1024 * 10,
+                      env: this.getEnvironmentConfig(),
+                    }
+                  );
+                  diffOutput += `\n=== Added File: ${filePath} ===\n${result.stdout}`;
+
+                  // 清理临时文件
+                  try {
+                    fs.unlinkSync(tempEmptyFile);
+                  } catch (e) {
+                    // 忽略清理错误
+                  }
+                } catch (error) {
+                  if (error instanceof Error && "stdout" in error) {
+                    diffOutput += `\n=== Added File: ${filePath} ===\n${
+                      (error as any).stdout
+                    }`;
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            console.warn(
+              "Failed to count staged files for notification:",
+              error
+            );
+          }
+        } else {
+          // 获取所有更改的差异
+          try {
+            // 获取文件列表函数
+            const getFileNames = async (
+              statusFilter: string
+            ): Promise<string[]> => {
+              let output = "";
+              try {
+                const result = await exec(
+                  `"${this.svnPath}" status ${statusFilter} --xml`,
+                  {
+                    cwd: repositoryPath,
+                    env: this.getEnvironmentConfig(),
+                  }
+                );
+                output = result.stdout;
+
+                // 解析XML输出以获取文件路径
+                const fileMatches = output.match(/path="([^"]+)"/g) || [];
+                return fileMatches.map((match) =>
+                  match.replace(/path="([^"]+)"/, "$1")
+                );
+              } catch (e) {
+                if (e instanceof Error && "stdout" in e) {
+                  output = (e as any).stdout;
+                  const fileMatches = output.match(/path="([^"]+)"/g) || [];
+                  return fileMatches.map((match) =>
+                    match.replace(/path="([^"]+)"/, "$1")
+                  );
+                } else {
+                  throw e;
+                }
+              }
+            };
+
+            // 获取已修改的文件
+            const modifiedFiles = await getFileNames("--no-ignore");
+
+            // 通知用户文件数量
+            const fileCount = modifiedFiles.length;
+            if (fileCount > 0) {
+              notify.info(formatMessage("diff.all.info", [fileCount]));
+            }
+
+            // 获取所有文件的差异
+            const { stdout: allChanges } = await exec(
+              `"${this.svnPath}" diff`,
+              {
+                cwd: repositoryPath,
+                maxBuffer: 1024 * 1024 * 10,
+                env: this.getEnvironmentConfig(),
+              }
+            );
+
+            diffOutput = allChanges;
+
+            // 获取未版本控制的文件列表
+            const { stdout: statusOutput } = await exec(
+              `"${this.svnPath}" status`,
+              {
+                cwd: repositoryPath,
+                env: this.getEnvironmentConfig(),
+              }
+            );
+
+            // 解析未版本控制的文件
+            const untrackedFiles = statusOutput
+              .split("\n")
+              .filter((line) => line.startsWith("?"))
+              .map((line) => line.substring(1).trim());
+
+            // 为每个未版本控制文件获取差异
+            if (untrackedFiles.length > 0) {
+              for (const file of untrackedFiles) {
+                const escapedFile = file.replace(/"/g, '\\"');
+                try {
+                  // 创建临时空文件用于比较
+                  const tempDir = path.join(repositoryPath, ".svn", "tmp");
+                  if (!fs.existsSync(tempDir)) {
+                    fs.mkdirSync(tempDir, { recursive: true });
+                  }
+                  const tempEmptyFile = path.join(
+                    tempDir,
+                    "empty-file-for-diff"
+                  );
+                  fs.writeFileSync(tempEmptyFile, "");
+
+                  const result = await exec(
+                    `"${this.svnPath}" diff --diff-cmd diff -x "-u" "${tempEmptyFile}" "${escapedFile}"`,
+                    {
+                      cwd: repositoryPath,
+                      maxBuffer: 1024 * 1024 * 10,
+                      env: this.getEnvironmentConfig(),
+                    }
+                  );
+                  diffOutput += `\n=== New File: ${file} ===\n${result.stdout}`;
+
+                  // 清理临时文件
+                  try {
+                    fs.unlinkSync(tempEmptyFile);
+                  } catch (e) {
+                    // 忽略清理错误
+                  }
+                } catch (error) {
+                  // 如果外部diff命令失败，尝试使用内置diff
+                  if (error instanceof Error && "stdout" in error) {
+                    diffOutput += `\n=== New File: ${file} ===\n${
+                      (error as any).stdout
+                    }`;
+                  } else {
+                    // 回退到读取整个文件内容
+                    try {
+                      const fileContent = fs.readFileSync(
+                        path.join(repositoryPath, file),
+                        "utf8"
+                      );
+                      const diffContent = `--- /dev/null\n+++ ${file}\n@@ -0,0 +1,${
+                        fileContent.split("\n").length
+                      } @@\n${fileContent
+                        .split("\n")
+                        .map((line) => `+${line}`)
+                        .join("\n")}`;
+                      diffOutput += `\n=== New File: ${file} ===\n${diffContent}`;
+                    } catch (readError) {
+                      console.error(`Failed to read file ${file}:`, readError);
+                    }
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            console.warn(
+              "Failed to count all changed files for notification:",
+              error
+            );
+          }
+        }
+      }
+
+      if (!diffOutput.trim()) {
         throw new Error(getMessage("diff.noChanges"));
       }
 
@@ -411,15 +705,15 @@ export class SvnProvider implements ISCMProvider {
       // 根据配置决定是否显示警告和简化diff
       if (enableSimplification) {
         notify.warn("diff.simplification.warning");
-        return DiffSimplifier.simplify(rawDiff);
+        return DiffSimplifier.simplify(diffOutput);
       }
 
-      // 如果未启用简化，直接返回原始diff
-      return DiffProcessor.process(rawDiff, "svn");
+      // 处理diff以获取结构化数据，包括原始文件内容
+      return DiffProcessor.process(diffOutput, "svn");
     } catch (error) {
-      Logger.log(LogLevel.Error, "SVN diff failed:", error);
       if (error instanceof Error) {
-        notify.error(formatMessage("scm.diff.failed", ["SVN", error.message]));
+        console.error(formatMessage("scm.diff.error", ["SVN", error])); // 添加调试日志
+        // notify.error(formatMessage("scm.diff.failed", ["SVN", error.message]));
       }
       throw error;
     }
@@ -707,9 +1001,9 @@ export class SvnProvider implements ISCMProvider {
     return (repo as any).root;
   }
 
-  private _findRepositoryAndPath(files?: string[]):
-    | { repository: SvnRepository; repositoryPath: string }
-    | undefined {
+  private _findRepositoryAndPath(
+    files?: string[]
+  ): { repository: SvnRepository; repositoryPath: string } | undefined {
     const repository = this.findRepository(files);
     if (!repository) {
       return undefined;
@@ -728,11 +1022,33 @@ export class SvnProvider implements ISCMProvider {
       return undefined;
     }
 
+    /**
+     * 标准化路径以进行比较
+     * 1. 将所有反斜杠转换为正斜杠
+     * 2. 在Windows上进行不区分大小写的比较
+     * @param p 需要标准化的路径
+     * @returns 标准化后的路径
+     */
+    const normalizePath = (p: string): string => {
+      if (!p) return p;
+      // 统一使用正斜杠
+      let normalized = p.replace(/\\/g, "/");
+      // 在Windows上转换为小写以进行不区分大小写的比较
+      if (process.platform === "win32") {
+        // 处理驱动器盘符 (例如 C: -> c:)
+        normalized = normalized.toLowerCase();
+      }
+      // 确保路径末尾没有斜杠
+      return normalized.endsWith("/") ? normalized.slice(0, -1) : normalized;
+    };
+
     // 1. 如果在构造时提供了特定的仓库路径，优先使用它
     if (this.repositoryPath) {
-      const specificRepo = repositories.find(
-        (repo) => this._getRepoFsPath(repo) === this.repositoryPath
-      );
+      const normalizedRepoPath = normalizePath(this.repositoryPath);
+      const specificRepo = repositories.find((repo) => {
+        const repoFsPath = this._getRepoFsPath(repo);
+        return repoFsPath && normalizePath(repoFsPath) === normalizedRepoPath;
+      });
       return specificRepo;
     }
 
@@ -749,9 +1065,13 @@ export class SvnProvider implements ISCMProvider {
     // 2. 根据提供的文件路径查找
     if (uris && uris.length > 0) {
       for (const uri of uris) {
+        const normalizedUriPath = normalizePath(uri.fsPath);
         for (const repo of repositories) {
           const repoPath = this._getRepoFsPath(repo);
-          if (repoPath && uri.fsPath.startsWith(repoPath)) {
+          if (
+            repoPath &&
+            normalizedUriPath.startsWith(normalizePath(repoPath))
+          ) {
             return repo; // 找到第一个匹配的就返回
           }
         }
@@ -762,9 +1082,13 @@ export class SvnProvider implements ISCMProvider {
     const activeEditor = vscode.window.activeTextEditor;
     if (activeEditor?.document.uri.scheme === "file") {
       const activeFileUri = activeEditor.document.uri;
+      const normalizedActiveFilePath = normalizePath(activeFileUri.fsPath);
       for (const repo of repositories) {
         const repoPath = this._getRepoFsPath(repo);
-        if (repoPath && activeFileUri.fsPath.startsWith(repoPath)) {
+        if (
+          repoPath &&
+          normalizedActiveFilePath.startsWith(normalizePath(repoPath))
+        ) {
           return repo;
         }
       }
