@@ -55,7 +55,8 @@
   "skip": {
     "bump": false,
     "changelog": false,
-    "commit": true,
+    "commit": false,
     "tag": false
-  }
+  },
+  "releaseCommitMessageFormat": "🚀 chore(release): {{currentTag}}"
 }
