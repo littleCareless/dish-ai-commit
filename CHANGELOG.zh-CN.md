@@ -6,6 +6,23 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+# 0.43.0 (2025-08-06)
+
+### ♻ Code Refactoring
+
+- **ai**: 使用更精确的方式获取模型 token 限制 ([19cb5b3](https://github.com/littleCareless/dish-ai-commit/commit/19cb5b3))
+- **context-manager**: 重构上下文管理器以实现模块化 ([eafc680](https://github.com/littleCareless/dish-ai-commit/commit/eafc680))
+
+### ✨ Features
+
+- **model-registry**: 实现增强型模型信息获取器 ([1a574fb](https://github.com/littleCareless/dish-ai-commit/commit/1a574fb))
+- **model**: 实现手动更新模型信息功能 ([c26f9b6](https://github.com/littleCareless/dish-ai-commit/commit/c26f9b6))
+- **zhipu-provider**: 更新智谱 AI 模型配置为 2025 最新版本 ([cb102d1](https://github.com/littleCareless/dish-ai-commit/commit/cb102d1))
+
+### 📝 Documentation
+
+- **webview-ui**: 添加文档链接 ([ab8fe08](https://github.com/littleCareless/dish-ai-commit/commit/ab8fe08))
+
 # 0.42.0 (2025-08-01)
 
 ### ♻ Code Refactoring
