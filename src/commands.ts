@@ -5,7 +5,8 @@ import { SelectModelCommand } from "./commands/select-model-command";
 import { GenerateWeeklyReportCommand } from "./commands/generate-weekly-report-command";
 import { ReviewCodeCommand } from "./commands/review-code-command";
 import { GenerateBranchNameCommand } from "./commands/generate-branch-name-command";
-import { GeneratePRSummaryCommand } from "./commands/generate-pr-summary-command"; // 导入新命令
+import { GeneratePRSummaryCommand } from "./commands/generate-pr-summary-command";
+import { UpdateModelInfoCommand } from "./commands/update-model-info-command";
 import { notify } from "./utils";
 
 /**
@@ -37,7 +38,8 @@ export class CommandManager implements vscode.Disposable {
       const weeklyReportCommand = new GenerateWeeklyReportCommand(this.context);
       const reviewCodeCommand = new ReviewCodeCommand(this.context);
       const branchNameCommand = new GenerateBranchNameCommand(this.context);
-      const prSummaryCommand = new GeneratePRSummaryCommand(this.context); // 实例化新命令
+      const prSummaryCommand = new GeneratePRSummaryCommand(this.context);
+      const updateModelInfoCommand = new UpdateModelInfoCommand(this.context);
 
       this.disposables.push(
         // 注册生成commit信息命令
@@ -116,6 +118,20 @@ export class CommandManager implements vscode.Disposable {
             } catch (error) {
               // 处理PR摘要生成失败
               notify.error("command.pr.summary.failed", [
+                error instanceof Error ? error.message : String(error),
+              ]);
+            }
+          }
+        ),
+        // 注册更新模型信息命令
+        vscode.commands.registerCommand(
+          COMMANDS.UPDATE_MODEL_INFO.UPDATE,
+          async () => {
+            try {
+              await updateModelInfoCommand.execute();
+            } catch (error) {
+              // 处理模型信息更新失败
+              notify.error("command.update.model.info.failed", [
                 error instanceof Error ? error.message : String(error),
               ]);
             }

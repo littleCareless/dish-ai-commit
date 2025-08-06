@@ -134,6 +134,16 @@
           "dark": "images/dark/git-pull-request.svg"
         },
         "description": "使用 AI 生成 PR 摘要"
+      },
+      {
+        "command": "dish-ai-commit.updateModelInfo",
+        "title": "[Dish] Update Model Info",
+        "category": "[Dish AI Commit]",
+        "icon": {
+          "light": "images/light/brain.svg",
+          "dark": "images/dark/brain.svg"
+        },
+        "description": "更新 AI 模型信息"
       }
     ],
     "configuration": {
@@ -495,6 +505,11 @@
           "command": "dish-ai-commit.selectModel",
           "when": "scmProvider =~ /(git|svn)/",
           "group": "2_z_dish@5"
+        },
+        {
+          "command": "dish-ai-commit.updateModelInfo",
+          "when": "scmProvider =~ /(git|svn)/",
+          "group": "2_z_dish@7"
         }
       ],
       "scm/resourceState/context": [
@@ -527,6 +542,11 @@
           "command": "dish-ai-commit.selectModel",
           "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
           "group": "2_z_dish@5"
+        },
+        {
+          "command": "dish-ai-commit.updateModelInfo",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "2_z_dish@7"
         }
       ],
       "scm/resourceFolder/context": [
@@ -559,6 +579,11 @@
           "command": "dish-ai-commit.selectModel",
           "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
           "group": "inline"
+        },
+        {
+          "command": "dish-ai-commit.updateModelInfo",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "inline"
         }
       ],
       "commandPalette": [
@@ -579,6 +604,9 @@
         },
         {
           "command": "dish-ai-commit.reviewCode"
+        },
+        {
+          "command": "dish-ai-commit.updateModelInfo"
         }
       ]
     }
