@@ -22,6 +22,7 @@ import {
   TruncationStrategy,
   RequestTooLargeError,
 } from "../utils/context-manager";
+import { getAccurateTokenLimits } from "../ai/model-registry";
 
 /**
  * 将分层提交信息格式化为结构化的提交信息文本
@@ -332,16 +333,20 @@ ${currentInput}
       diff: diffContent, // 保持 diff 字段用于可能的重试逻辑
     };
 
-    const promptLength = contextManager.getEstimatedTokenCount();
-    const maxTokens = selectedModel.maxTokens?.input ?? 8192;
-    if (!configuration.features.suppressNonCriticalWarnings) {
-      notify.info(
-        formatMessage("prompt.length.info", [
-          promptLength.toLocaleString(),
-          maxTokens.toLocaleString(),
-        ])
-      );
-    }
+    const promptLength = contextManager.getEstimatedRawTokenCount();
+
+    // 使用新的模型信息获取机制获取准确的token限制
+    const tokenLimits = await getAccurateTokenLimits(selectedModel);
+    const maxTokens = tokenLimits.input;
+
+    // if (!configuration.features.suppressNonCriticalWarnings) {
+    //   notify.info(
+    //     formatMessage("prompt.length.info", [
+    //       promptLength.toLocaleString(),
+    //       maxTokens.toLocaleString(),
+    //     ])
+    //   );
+    // }
     // 大 Prompt 警告和备用提示词切换逻辑
     if (
       promptLength > maxTokens * 0.75 &&
