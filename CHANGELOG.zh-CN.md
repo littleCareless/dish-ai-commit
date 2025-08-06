@@ -1,10 +1,20 @@
-# Changelog
+# Changelog 
 
-[English](CHANGELOG.md) | [简体中文](CHANGELOG.zh-CN.md)
+[English](CHANGELOG.md) | [简体中文](CHANGELOG.zh-CN.md) 
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+## 0.43.1 (2025-08-06)
+
+
+### 🔧 Continuous Integration
+
+* **github**: 新增 release-please 自动化发布流程 ([328ef21](https://github.com/littleCareless/dish-ai-commit/commit/328ef21))
+
+
+
+
 
 # 0.43.0 (2025-08-06)
 
