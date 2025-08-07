@@ -5,6 +5,7 @@ import { ISCMProvider } from "./scm-provider";
 import { getMessage } from "../utils";
 import { DiffProcessor } from "../utils/diff/diff-processor";
 import { notify } from "../utils/notification/notification-manager";
+import { ImprovedPathUtils } from "./utils/improved-path-utils";
 
 const execAsync = promisify(exec);
 
@@ -13,7 +14,7 @@ export class CliSvnProvider implements ISCMProvider {
   private workspaceRoot: string;
 
   constructor(workspaceRoot: string) {
-    this.workspaceRoot = workspaceRoot;
+    this.workspaceRoot = ImprovedPathUtils.normalizePath(workspaceRoot);
   }
 
   async init(): Promise<void> {
@@ -23,7 +24,8 @@ export class CliSvnProvider implements ISCMProvider {
 
   async isAvailable(): Promise<boolean> {
     try {
-      await execAsync("svn --version");
+      const options = ImprovedPathUtils.createExecOptions(this.workspaceRoot);
+      await execAsync("svn --version", options);
       return true;
     } catch {
       return false;
@@ -32,16 +34,24 @@ export class CliSvnProvider implements ISCMProvider {
 
   async getDiff(files?: string[]): Promise<string | undefined> {
     try {
-      const filePaths = files?.join(" ") || ".";
-      const { stdout: rawDiff } = await execAsync(`svn diff ${filePaths}`, {
-        cwd: this.workspaceRoot,
-      });
+      let filePaths = ".";
+      if (files && files.length > 0) {
+        // 使用 ImprovedPathUtils 处理和转义文件路径
+        const escapedPaths = files.map(file => 
+          ImprovedPathUtils.escapeShellPath(ImprovedPathUtils.normalizePath(file))
+        );
+        filePaths = escapedPaths.join(" ");
+      }
+      
+      const options = ImprovedPathUtils.createExecOptions(this.workspaceRoot);
+      const command = filePaths === "." ? "svn diff ." : `svn diff ${filePaths}`;
+      const { stdout: rawDiff } = await execAsync(command, options);
 
-      if (!rawDiff.trim()) {
+      if (!rawDiff.toString().trim()) {
         return undefined;
       }
 
-      return DiffProcessor.process(rawDiff, "svn");
+      return DiffProcessor.process(rawDiff.toString(), "svn");
     } catch (error) {
       console.error("Failed to get SVN diff:", error);
       return undefined;
@@ -49,10 +59,23 @@ export class CliSvnProvider implements ISCMProvider {
   }
 
   async commit(message: string, files?: string[]): Promise<void> {
-    const filePaths = files?.join(" ") || ".";
-    await execAsync(`svn commit -m "${message}" ${filePaths}`, {
-      cwd: this.workspaceRoot,
-    });
+    let filePaths = ".";
+    if (files && files.length > 0) {
+      // 使用 ImprovedPathUtils 处理和转义文件路径
+      const escapedPaths = files.map(file => 
+        ImprovedPathUtils.escapeShellPath(ImprovedPathUtils.normalizePath(file))
+      );
+      filePaths = escapedPaths.join(" ");
+    }
+    
+    // 转义提交消息
+    const escapedMessage = ImprovedPathUtils.escapeShellPath(message);
+    const options = ImprovedPathUtils.createExecOptions(this.workspaceRoot);
+    
+    const commitCommand = filePaths === "." 
+      ? `svn commit -m ${escapedMessage} .`
+      : `svn commit -m ${escapedMessage} ${filePaths}`;
+    await execAsync(commitCommand, options);
   }
 
   async setCommitInput(message: string, repositoryPath?: string): Promise<void> {
@@ -88,26 +111,25 @@ export class CliSvnProvider implements ISCMProvider {
     const userCommitMessages: string[] = [];
 
     try {
+      const options = ImprovedPathUtils.createExecOptions(this.workspaceRoot);
+      
       // Last 5 commit messages (repository)
-      const logCommand = `svn log -l 5`;
-      const { stdout: logOutput } = await execAsync(logCommand, {
-        cwd: this.workspaceRoot,
-      });
-      repositoryCommitMessages.push(...this.parseSvnLog(logOutput));
+      const { stdout: logOutput } = await execAsync("svn log -l 5", options);
+      repositoryCommitMessages.push(...this.parseSvnLog(logOutput.toString()));
 
       // Last 5 commit messages (user)
       const { stdout: user } = await execAsync(
-        `svn info --show-item last-changed-author`,
-        { cwd: this.workspaceRoot }
+        "svn info --show-item last-changed-author",
+        options
       );
-      const author = user.trim();
+      const author = user.toString().trim();
 
       if (author) {
-        const userLogCommand = `svn log -l 5 --search "${author}"`;
-        const { stdout: userLogOutput } = await execAsync(userLogCommand, {
-          cwd: this.workspaceRoot,
-        });
-        userCommitMessages.push(...this.parseSvnLog(userLogOutput));
+        // 转义作者名称以防止命令注入
+        const escapedAuthor = ImprovedPathUtils.escapeShellPath(author);
+        const searchCommand = `svn log -l 5 --search ${escapedAuthor}`;
+        const { stdout: userLogOutput } = await execAsync(searchCommand, options);
+        userCommitMessages.push(...this.parseSvnLog(userLogOutput.toString()));
       }
     } catch (err) {
       console.error("Failed to get recent SVN commit messages:", err);

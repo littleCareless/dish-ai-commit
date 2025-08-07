@@ -5,6 +5,7 @@ import { exec } from "child_process";
 import { GitProvider } from "./git-provider";
 import { SvnProvider } from "./svn-provider";
 import { CliSvnProvider } from "./cli-svn-provider";
+import { ImprovedPathUtils } from "./utils/improved-path-utils";
 
 /**
  * 最近提交信息
@@ -97,7 +98,7 @@ export class SCMFactory {
       // 1. 尝试从当前活动编辑器获取文件路径
       const activeEditor = vscode.window.activeTextEditor;
       if (activeEditor && activeEditor.document.uri.scheme === "file") {
-        const activeFilePath = activeEditor.document.uri.fsPath;
+        const activeFilePath = ImprovedPathUtils.normalizePath(activeEditor.document.uri.fsPath);
         const workspaceFromActiveFile =
           this.findWorkspaceRootFromFile(activeFilePath);
         if (workspaceFromActiveFile) {
@@ -108,7 +109,7 @@ export class SCMFactory {
       // 2. 尝试从最近打开的文件获取工作区
       const recentFiles = vscode.workspace.textDocuments
         .filter((doc) => doc.uri.scheme === "file")
-        .map((doc) => doc.uri.fsPath);
+        .map((doc) => ImprovedPathUtils.normalizePath(doc.uri.fsPath));
 
       if (recentFiles.length > 0) {
         const workspaceFromRecentFile = this.findWorkspaceRootFromFile(
@@ -124,10 +125,11 @@ export class SCMFactory {
       if (workspaceFolders && workspaceFolders.length > 1) {
         // 检查是否有工作区包含当前活动文件
         if (activeEditor && activeEditor.document.uri.scheme === "file") {
-          const activeFilePath = activeEditor.document.uri.fsPath;
+          const activeFilePath = ImprovedPathUtils.normalizePath(activeEditor.document.uri.fsPath);
           for (const folder of workspaceFolders) {
-            if (activeFilePath.startsWith(folder.uri.fsPath)) {
-              return folder.uri.fsPath;
+            const folderPath = ImprovedPathUtils.normalizePath(folder.uri.fsPath);
+            if (activeFilePath.startsWith(folderPath)) {
+              return folderPath;
             }
           }
         }
@@ -139,19 +141,23 @@ export class SCMFactory {
       }
 
       // 4. 最后回退到第一个工作区
-      return workspaceFolders?.[0]?.uri.fsPath;
+      const firstWorkspace = workspaceFolders?.[0]?.uri.fsPath;
+      return firstWorkspace ? ImprovedPathUtils.normalizePath(firstWorkspace) : undefined;
     }
 
     // 检查每个文件的目录，寻找.git或.svn文件夹
     for (const file of selectedFiles) {
-      const workspaceRoot = this.findWorkspaceRootFromFile(file);
-      if (workspaceRoot) {
-        return workspaceRoot;
+      if (ImprovedPathUtils.isValidPath(file)) {
+        const workspaceRoot = this.findWorkspaceRootFromFile(file);
+        if (workspaceRoot) {
+          return workspaceRoot;
+        }
       }
     }
 
     // 如果没找到，回退到VS Code工作区
-    return vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const fallbackWorkspace = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    return fallbackWorkspace ? ImprovedPathUtils.normalizePath(fallbackWorkspace) : undefined;
   }
 
   /**
@@ -162,21 +168,14 @@ export class SCMFactory {
   private static findWorkspaceRootFromFile(
     filePath: string
   ): string | undefined {
-    if (!filePath) {
+    if (!ImprovedPathUtils.isValidPath(filePath)) {
       return undefined;
     }
-    let currentDir = path.dirname(filePath);
-    // 向上查找直到根目录
-    while (currentDir && currentDir !== path.parse(currentDir).root) {
-      if (
-        fs.existsSync(path.join(currentDir, ".git")) ||
-        fs.existsSync(path.join(currentDir, ".svn"))
-      ) {
-        return currentDir;
-      }
-      currentDir = path.dirname(currentDir);
-    }
-    return undefined;
+    
+    const normalizedPath = ImprovedPathUtils.normalizePath(filePath);
+    const workspaceRoot = ImprovedPathUtils.findWorkspaceRoot(normalizedPath, [".git", ".svn"]);
+    
+    return workspaceRoot ? ImprovedPathUtils.normalizePath(workspaceRoot) : undefined;
   }
 
   /**
@@ -190,25 +189,31 @@ export class SCMFactory {
     filePaths?: string[]
   ): "git" | "svn" | undefined {
     try {
-      // 首先检查工作区根目录
-      const gitPath = path.join(workspaceRoot, ".git");
-      const svnPath = path.join(workspaceRoot, ".svn");
+      if (!ImprovedPathUtils.isValidPath(workspaceRoot)) {
+        return undefined;
+      }
 
-      if (fs.existsSync(gitPath)) {
+      const normalizedWorkspaceRoot = ImprovedPathUtils.normalizePath(workspaceRoot);
+      
+      // 首先检查工作区根目录
+      const gitPath = path.join(normalizedWorkspaceRoot, ".git");
+      const svnPath = path.join(normalizedWorkspaceRoot, ".svn");
+
+      if (ImprovedPathUtils.safeExists(gitPath)) {
         return "git";
       }
-      if (fs.existsSync(svnPath)) {
+      if (ImprovedPathUtils.safeExists(svnPath)) {
         return "svn";
       }
 
       // 如果提供了文件路径，检查这些文件所在的目录
       if (filePaths && filePaths.length > 0) {
-        // 获取所有唯一的目录路径，过滤掉null/undefined值
+        // 获取所有唯一的目录路径，过滤掉null/undefined值并验证路径有效性
         const dirPaths = [
           ...new Set(
             filePaths
-              .filter((file) => file && typeof file === "string")
-              .map((file) => path.dirname(file))
+              .filter((file) => file && typeof file === "string" && ImprovedPathUtils.isValidPath(file))
+              .map((file) => ImprovedPathUtils.normalizePath(path.dirname(file)))
           ),
         ];
 
@@ -216,21 +221,23 @@ export class SCMFactory {
           // 从文件所在目录向上查找，直到工作区根目录
           let currentDir = dir;
           while (
-            currentDir.startsWith(workspaceRoot) &&
-            currentDir !== workspaceRoot
+            currentDir.startsWith(normalizedWorkspaceRoot) &&
+            currentDir !== normalizedWorkspaceRoot
           ) {
             const gitSubPath = path.join(currentDir, ".git");
             const svnSubPath = path.join(currentDir, ".svn");
 
-            if (fs.existsSync(gitSubPath)) {
+            if (ImprovedPathUtils.safeExists(gitSubPath)) {
               return "git";
             }
-            if (fs.existsSync(svnSubPath)) {
+            if (ImprovedPathUtils.safeExists(svnSubPath)) {
               return "svn";
             }
 
             // 向上一级目录
-            currentDir = path.dirname(currentDir);
+            const parentDir = path.dirname(currentDir);
+            if (parentDir === currentDir) break; // 防止无限循环
+            currentDir = parentDir;
           }
         }
       }
@@ -269,18 +276,21 @@ export class SCMFactory {
       // 优先使用传入的 repositoryPath，如果没有则使用检测方法获取工作区根目录
       const workspaceRoot =
         repositoryPath || this.findWorkspaceRoot(selectedFiles);
-      if (!workspaceRoot) {
+      if (!workspaceRoot || !ImprovedPathUtils.isValidPath(workspaceRoot)) {
         return undefined;
       }
 
+      // 规范化工作区根目录路径，用作缓存键
+      const normalizedWorkspaceRoot = ImprovedPathUtils.normalizePath(workspaceRoot);
+
       // 检查是否已有正在进行的检测操作
-      const pendingDetection = this.pendingDetections.get(workspaceRoot);
+      const pendingDetection = this.pendingDetections.get(normalizedWorkspaceRoot);
       if (pendingDetection) {
         return pendingDetection;
       }
 
       // 检查缓存中是否已有该工作区的提供者
-      const cachedProvider = this.providerCache.get(workspaceRoot);
+      const cachedProvider = this.providerCache.get(normalizedWorkspaceRoot);
       if (cachedProvider) {
         // 验证缓存的提供者是否仍然可用
         try {
@@ -289,27 +299,27 @@ export class SCMFactory {
             return cachedProvider;
           } else {
             // 如果不可用，从缓存中移除
-            this.providerCache.delete(workspaceRoot);
+            this.providerCache.delete(normalizedWorkspaceRoot);
           }
         } catch (error) {
           // 如果检查可用性时出错，从缓存中移除
-          this.providerCache.delete(workspaceRoot);
+          this.providerCache.delete(normalizedWorkspaceRoot);
         }
       }
 
       // 创建新的检测操作
       const detectionPromise = this.performDetection(
-        workspaceRoot,
+        normalizedWorkspaceRoot,
         selectedFiles
       );
-      this.pendingDetections.set(workspaceRoot, detectionPromise);
+      this.pendingDetections.set(normalizedWorkspaceRoot, detectionPromise);
 
       try {
         const result = await detectionPromise;
         return result;
       } finally {
         // 清理pending状态
-        this.pendingDetections.delete(workspaceRoot);
+        this.pendingDetections.delete(normalizedWorkspaceRoot);
       }
     } catch (error) {
       console.error(
@@ -346,8 +356,15 @@ export class SCMFactory {
     selectedFiles?: string[]
   ): Promise<ISCMProvider | undefined> {
     try {
+      if (!ImprovedPathUtils.isValidPath(workspaceRoot)) {
+        console.error("Invalid workspace root path:", workspaceRoot);
+        return undefined;
+      }
+
+      const normalizedWorkspaceRoot = ImprovedPathUtils.normalizePath(workspaceRoot);
+      
       // 通过目录检测，包括选定的文件路径
-      const scmType = this.detectSCMFromDir(workspaceRoot, selectedFiles);
+      const scmType = this.detectSCMFromDir(normalizedWorkspaceRoot, selectedFiles);
 
       const gitExtension = vscode.extensions.getExtension("vscode.git");
       const svnExtension = vscode.extensions.getExtension(
@@ -360,7 +377,7 @@ export class SCMFactory {
       if (scmType === "git") {
         try {
           const git = gitExtension?.exports
-            ? new GitProvider(gitExtension.exports, workspaceRoot)
+            ? new GitProvider(gitExtension.exports, normalizedWorkspaceRoot)
             : undefined;
           if (git) {
             await this.withTimeout(git.init());
@@ -379,7 +396,7 @@ export class SCMFactory {
         // 先尝试使用SVN插件
         try {
           const svn = svnExtension?.exports
-            ? new SvnProvider(svnExtension.exports, workspaceRoot)
+            ? new SvnProvider(svnExtension.exports, normalizedWorkspaceRoot)
             : undefined;
           if (svn) {
             await this.withTimeout(svn.init());
@@ -396,7 +413,7 @@ export class SCMFactory {
         if (!provider) {
           try {
             if (await this.withTimeout(this.checkSCMCommand("svn"))) {
-              const cliSvn = new CliSvnProvider(workspaceRoot);
+              const cliSvn = new CliSvnProvider(normalizedWorkspaceRoot);
               await this.withTimeout(cliSvn.init());
               if (await this.withTimeout(cliSvn.isAvailable())) {
                 provider = cliSvn;
@@ -409,8 +426,8 @@ export class SCMFactory {
       }
 
       if (provider) {
-        // 缓存提供者实例
-        this.providerCache.set(workspaceRoot, provider);
+        // 缓存提供者实例（使用规范化的路径作为键）
+        this.providerCache.set(normalizedWorkspaceRoot, provider);
         this.currentProvider = provider;
         return provider;
       }
