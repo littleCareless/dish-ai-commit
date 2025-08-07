@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { BaseCommand } from "./base-command";
+import { SCMDetectorService } from "../services/scm-detector-service";
 import { getMessage, formatMessage } from "../utils/i18n";
 import {
   notify,
@@ -98,7 +99,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
             // SCM provider is not detected in this mode, but we need a type for the prompt
             scmProviderForContext = { type: "git" };
           } else {
-            let selectedFiles = this.getSelectedFiles(resources);
+            let selectedFiles = SCMDetectorService.getSelectedFiles(resources);
 
             // If no files are explicitly selected (e.g., command run from palette),
             // get all changes. `getDiff` handles `undefined` by getting all changes.
@@ -113,13 +114,12 @@ export class GenerateBranchNameCommand extends BaseCommand {
               increment: 5,
               message: getMessage("detecting.scm.provider"),
             });
-            const detectedScmProvider = await this.detectSCMProvider(
-              selectedFiles
-            );
-            if (!detectedScmProvider) {
+            const result = await this.detectSCMProvider(selectedFiles);
+            if (!result) {
               // detectSCMProvider usually shows a notification if it fails
               return;
             }
+            const { scmProvider: detectedScmProvider } = result;
             if (detectedScmProvider.type !== "git") {
               await notify.warn("branch.name.git.only");
               return;
@@ -175,6 +175,9 @@ export class GenerateBranchNameCommand extends BaseCommand {
             branchNameResult.content,
             scmProviderForContext
           );
+          progress.report({
+            increment: 100,
+          });
         }
       );
     } catch (error) {
@@ -225,11 +228,9 @@ export class GenerateBranchNameCommand extends BaseCommand {
         const createBranch = getMessage("create.branch");
         const copyToClipboard = getMessage("copy.to.clipboard");
 
-        const selection = await vscode.window.showInformationMessage(
-          formatMessage("branch.name.selected", [selectedBranch]),
-          createBranch,
-          copyToClipboard
-        );
+        const selection = await notify.info("branch.name.selected", undefined, {
+          buttons: [selectedBranch, createBranch, copyToClipboard],
+        });
 
         if (selection === createBranch) {
           try {

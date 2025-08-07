@@ -1,5 +1,6 @@
 import { notify } from "../../utils/notification/notification-manager";
 import { generateCommitMessageSystemPrompt } from "../../prompt/generate-commit";
+import { generateFallbackCommitMessageSystemPrompt } from "../../prompt/generate-commit-fallback";
 import {
   generateBranchNameSystemPrompt,
   generateBranchNameUserPrompt,
@@ -237,7 +238,8 @@ let isGeneratingPrompt = false;
  */
 export function getSystemPrompt(
   params: AIRequestParams,
-  directOutput: boolean = false
+  directOutput: boolean = false,
+  useFallback: boolean = false
 ): string {
   if (isGeneratingPrompt) {
     return ""; // 防止循环调用
@@ -246,27 +248,32 @@ export function getSystemPrompt(
   try {
     isGeneratingPrompt = true;
 
+    const config = ConfigurationManager.getInstance().getConfiguration();
+
     // 1. 优先使用params中提供的系统提示
-    if (params.systemPrompt) {
-      return appendConstraints(params.systemPrompt, params, directOutput);
-    }
+    // if (params.systemPrompt) {
+    //   return appendConstraints(params.systemPrompt, params, directOutput);
+    // }
 
     // 2. 检查配置中是否有自定义提示词
-    const config = ConfigurationManager.getInstance().getConfiguration();
     const configuredPrompt = config.features?.commitMessage?.systemPrompt;
 
     if (configuredPrompt) {
       return appendConstraints(configuredPrompt, params, directOutput);
     }
 
-    // 3. 使用默认生成的提示词
-    const prompt = generateCommitMessageSystemPrompt({
+    // 3. 根据 useFallback 标志选择使用默认提示词还是备用提示词
+    const promptGenerator = useFallback
+      ? generateFallbackCommitMessageSystemPrompt
+      : generateCommitMessageSystemPrompt;
+
+    const prompt = promptGenerator({
       config,
       vcsType: (params.scm === "svn" ? "svn" : "git") as "git" | "svn",
     });
 
     // 仅当需要直接输出结果时才添加输出约束
-    return directOutput ? appendOutputConstraint(prompt) : prompt;
+    return appendConstraints(prompt, params, directOutput);
   } finally {
     isGeneratingPrompt = false;
   }

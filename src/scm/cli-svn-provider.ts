@@ -55,7 +55,7 @@ export class CliSvnProvider implements ISCMProvider {
     });
   }
 
-  async setCommitInput(message: string): Promise<void> {
+  async setCommitInput(message: string, repositoryPath?: string): Promise<void> {
     await this.copyToClipboard(message);
   }
 
@@ -63,7 +63,7 @@ export class CliSvnProvider implements ISCMProvider {
     return "";
   }
 
-  async startStreamingInput(message: string): Promise<void> {
+  async startStreamingInput(message: string, repositoryPath?: string): Promise<void> {
     await this.copyToClipboard(message);
   }
 

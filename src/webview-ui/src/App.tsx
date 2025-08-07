@@ -7,6 +7,7 @@ import WeeklyReportPage from "./pages/weekly-report-page";
 
 interface InitialData {
   viewType?: string;
+  vscodeTheme?: string;
   // Add other properties if initialData can contain more
 }
 
@@ -15,6 +16,12 @@ const App: React.FC = () => {
   // Access initialData passed from the extension's HTML
   // Ensure this runs after the window object is fully available.
   const [viewType, setViewType] = useState<string | null>(null);
+  const [theme, setTheme] = useState<string>('light');
+
+  // 应用主题到document元素
+  useEffect(() => {
+    document.documentElement.className = theme;
+  }, [theme]);
 
   useEffect(() => {
     // initialData might be set by a script in the HTML.
@@ -29,6 +36,26 @@ const App: React.FC = () => {
       // This could happen if the webview is opened for the weekly report directly
       setViewType("weeklyReportPage"); // Or handle as an error/unknown state
     }
+    
+    // 设置初始主题
+    if (initialData && initialData.vscodeTheme) {
+      setTheme(initialData.vscodeTheme);
+    }
+  }, []);
+
+  useEffect(() => {
+    // 监听主题变化事件
+    const handleThemeChange = (event: CustomEvent) => {
+      const newTheme = event.detail;
+      setTheme(newTheme);
+      console.log('Theme changed to:', newTheme);
+    };
+
+    window.addEventListener('vscode-theme-changed', handleThemeChange as EventListener);
+
+    return () => {
+      window.removeEventListener('vscode-theme-changed', handleThemeChange as EventListener);
+    };
   }, []);
 
 

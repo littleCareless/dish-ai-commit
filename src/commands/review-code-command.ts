@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { BaseCommand } from "./base-command";
+import { SCMDetectorService } from "../services/scm-detector-service";
 import { getMessage, formatMessage } from "../utils/i18n";
 import {
   notify,
@@ -37,7 +38,7 @@ export class ReviewCodeCommand extends BaseCommand {
           message: getMessage("checking.selected.files"),
         });
         // 检查是否有选中的文件
-        const selectedFiles = this.getSelectedFiles(resources);
+        const selectedFiles = SCMDetectorService.getSelectedFiles(resources);
         if (!selectedFiles || selectedFiles.length === 0) {
           await notify.warn("no.changes.selected");
           return;
@@ -48,10 +49,11 @@ export class ReviewCodeCommand extends BaseCommand {
           message: getMessage("detecting.scm.provider"),
         });
         // 检测SCM提供程序
-        const scmProvider = await this.detectSCMProvider(selectedFiles);
-        if (!scmProvider) {
+        const result = await this.detectSCMProvider(selectedFiles);
+        if (!result) {
           return;
         }
+        const { scmProvider } = result;
 
         const currentInput = await scmProvider.getCommitInput();
 
@@ -117,7 +119,7 @@ export class ReviewCodeCommand extends BaseCommand {
                 model: selectedModel,
                 scm: scmProvider.type ?? "git",
                 changeFiles: [filePath],
-                additionalContext: currentInput, 
+                additionalContext: currentInput,
               };
 
               await addSimilarCodeContext(requestParams);
@@ -163,12 +165,16 @@ export class ReviewCodeCommand extends BaseCommand {
           return;
         }
 
-        await this.showReviewResults(fileReviews);
+        this.showReviewResults(fileReviews);
 
         await notify.info(
           // Changed to info as it's a success message
           formatMessage("review.complete.count", [fileReviews.size.toString()])
         );
+
+        progress.report({
+          increment: 100,
+        });
       });
     } catch (error) {
       console.log("ReviewCodeCommand error", error);

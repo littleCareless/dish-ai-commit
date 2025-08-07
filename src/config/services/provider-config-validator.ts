@@ -21,6 +21,7 @@
 import * as vscode from "vscode";
 import { PROVIDER_REQUIRED_FIELDS, ExtensionConfiguration } from "../types";
 import { getMessage } from "../../utils/i18n";
+import { notify } from "../../utils/notification/notification-manager";
 
 /**
  * 验证AI提供商配置
@@ -62,10 +63,12 @@ export class ProviderConfigValidator {
       !providerConfig[requiredField as keyof typeof providerConfig]
     ) {
       const settingKey = `providers.${provider.toLowerCase()}.${requiredField.toLowerCase()}`;
-      const action = await vscode.window.showErrorMessage(
-        getMessage(`${provider}.${requiredField}.missing`),
-        getMessage("button.yes"),
-        getMessage("button.no")
+      const action = await notify.error(
+        `${requiredField}.missing`,
+        [provider],
+        {
+          buttons: [getMessage("button.yes"), getMessage("button.no")]
+        }
       );
 
       if (action === getMessage("button.yes")) {

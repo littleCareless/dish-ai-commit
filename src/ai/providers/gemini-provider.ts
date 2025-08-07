@@ -511,21 +511,28 @@ export class GeminiAIProvider extends AbstractAIProvider {
     }
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
-    const { contents } = this.buildProviderMessages(params) as {
+    const { systemInstruction, contents } = this.buildProviderMessages(
+      params
+    ) as {
+      systemInstruction?: string;
       contents: Content[];
     };
 
-    // 将所有parts的文本内容连接成一个字符串
-    const plainTextContents = contents
+    // 将 systemInstruction 和所有 parts 的文本内容连接成一个字符串
+    const contentsText = contents
       .flatMap((content) =>
         (content.parts || []).map((part) => ("text" in part ? part.text : ""))
       )
       .join("\n");
 
+    const combinedText = [systemInstruction, contentsText]
+      .filter(Boolean)
+      .join("\n\n");
+
     try {
       const countTokensResponse = await this.genAI.models.countTokens({
         model: modelId,
-        contents: plainTextContents,
+        contents: combinedText,
       });
       return { totalTokens: countTokensResponse.totalTokens ?? 0 };
     } catch (error) {

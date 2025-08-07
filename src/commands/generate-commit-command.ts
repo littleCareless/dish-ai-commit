@@ -22,6 +22,7 @@ import {
   TruncationStrategy,
   RequestTooLargeError,
 } from "../utils/context-manager";
+import { getAccurateTokenLimits } from "../ai/model-registry";
 
 /**
  * 将分层提交信息格式化为结构化的提交信息文本
@@ -97,16 +98,23 @@ export class GenerateCommitCommand extends BaseCommand {
     const { provider, model } = configResult;
 
     try {
-      const selectedFiles = this.getSelectedFiles(resources);
-      if (!selectedFiles) {
-        // 如果没有选择文件，可以通知用户或直接返回
-        notify.info("no.files.selected");
+      const result = await this.detectSCMProvider(resources);
+      if (!result) {
         return;
       }
-      const scmProvider = await this.detectSCMProvider(selectedFiles);
-      if (!scmProvider) {
+
+      const { scmProvider, selectedFiles, repositoryPath } = result;
+
+      if (!repositoryPath) {
+        await notify.warn(
+          formatMessage("scm.repository.not.found", [
+            scmProvider.type.toUpperCase(),
+          ])
+        );
         return;
       }
+
+      console.log(`Working with repository: ${repositoryPath}`);
 
       await ProgressHandler.withProgress(
         formatMessage("progress.generating.commit", [
@@ -119,7 +127,8 @@ export class GenerateCommitCommand extends BaseCommand {
             provider,
             model,
             scmProvider,
-            selectedFiles
+            selectedFiles,
+            repositoryPath
           )
       );
     } catch (error) {
@@ -137,7 +146,8 @@ export class GenerateCommitCommand extends BaseCommand {
    * @returns 包含用户提交和仓库提交字符串的对象。
    */
   private async _getRecentCommitsContext(
-    scmProvider: ISCMProvider
+    scmProvider: ISCMProvider,
+    repositoryPath?: string
   ): Promise<{ userCommits: string; repoCommits: string }> {
     const recentMessages = await scmProvider.getRecentCommitMessages();
     let userCommits = "";
@@ -170,13 +180,13 @@ export class GenerateCommitCommand extends BaseCommand {
   ): Promise<string> {
     let currentInput = await scmProvider.getCommitInput();
     if (currentInput) {
-      currentInput = `<custom-instructions>
+      currentInput = `
 When generating the commit message, please use the following custom instructions provided by the user.
 You can ignore an instruction if it contradicts a system message.
 <instructions>
 ${currentInput}
 </instructions>
-</custom-instructions>`;
+`;
     }
     return currentInput;
   }
@@ -217,18 +227,21 @@ ${currentInput}
    * @param repoCommits - 仓库最近的提交。
    * @returns 提醒信息字符串。
    */
-  private _getReminder(userCommits: string, repoCommits: string): string {
-    if (userCommits || repoCommits) {
-      return `---
-REMINDER:
-- Now generate a commit messages that describe the CODE CHANGES.
-- DO NOT COPY commits from RECENT COMMITS, but use it as reference for the commit style.
-- ONLY return a single markdown code block, NO OTHER PROSE!`;
-    }
-    return `---
-REMINDER:
-- Now generate a commit messages that describe the CODE CHANGES.
-- ONLY return a single markdown code block, NO OTHER PROSE!`;
+  private _getReminder(
+    userCommits: string,
+    repoCommits: string,
+    language: string
+  ): string {
+    const languageReminder = `\n - The commit message MUST be in ${language}.`;
+    const recentCommitsReminder =
+      userCommits || repoCommits
+        ? "\n- DO NOT COPY commits from RECENT COMMITS, but use it as reference for the commit style."
+        : "";
+
+    return `- IMPORTANT: You will be provided with code changes from MULTIPLE files.
+ - Your primary task is to analyze ALL provided file changes under the \`<code-changes>\` block and synthesize them into a single, coherent commit message.
+ - Do NOT focus on only the first file you see. A good commits messages covers the intent of all changes.${recentCommitsReminder}${languageReminder}
+ - Now only show your message, Do not provide any explanations or details`;
   }
 
   /**
@@ -239,7 +252,8 @@ REMINDER:
    * @param provider - 当前选择的 AI 供应器名称。
    * @param model - 当前选择的 AI 模型名称。
    * @param scmProvider - SCM 供应器实例。
-   * @param selectedFiles - 用户选择的待提交文件列表。
+   * @param selectedFiles - 用户选择的待提交文件列表，可以为 undefined。
+   * @param repositoryPath - 可选的仓库路径。
    */
   private async performStreamingGeneration(
     progress: vscode.Progress<{ message?: string; increment?: number }>,
@@ -247,17 +261,27 @@ REMINDER:
     provider: string,
     model: string,
     scmProvider: ISCMProvider,
-    selectedFiles: string[]
+    selectedFiles: string[] | undefined,
+    repositoryPath?: string
   ) {
     const config = ConfigurationManager.getInstance();
     const configuration = config.getConfiguration();
+
+    // 在获取diff之前设置当前文件，确保使用正确的仓库
+    if (scmProvider.setCurrentFiles && selectedFiles) {
+      scmProvider.setCurrentFiles(selectedFiles);
+    }
 
     progress.report({ message: getMessage("progress.getting.diff") });
     const diffContent = await scmProvider.getDiff(selectedFiles);
 
     if (!diffContent) {
-      notify.info("no.changes");
-      throw new Error(getMessage("no.changes"));
+      notify.info(
+        formatMessage("scm.no.changes", [scmProvider.type.toUpperCase()])
+      );
+      throw new Error(
+        formatMessage("scm.no.changes", [scmProvider.type.toUpperCase()])
+      );
     }
 
     progress.report({
@@ -288,7 +312,7 @@ REMINDER:
       ...configuration.features.codeAnalysis,
       model: selectedModel,
       scm: scmProvider.type ?? "git",
-      changeFiles: selectedFiles,
+      changeFiles: selectedFiles || [],
       languages: configuration.base.language,
       diff: diffContent, // diff 仍然需要用于生成提示
       additionalContext: "",
@@ -309,30 +333,42 @@ REMINDER:
       diff: diffContent, // 保持 diff 字段用于可能的重试逻辑
     };
 
-    const promptLength = contextManager.getEstimatedTokenCount();
-    const maxTokens = selectedModel.maxTokens?.input ?? 8192;
+    const promptLength = contextManager.getEstimatedRawTokenCount();
 
-    notify.info(
-      formatMessage("prompt.length.info", [
-        promptLength.toLocaleString(),
-        maxTokens.toLocaleString(),
-      ])
-    );
+    // 使用新的模型信息获取机制获取准确的token限制
+    const tokenLimits = await getAccurateTokenLimits(selectedModel);
+    const maxTokens = tokenLimits.input;
 
-    // 大 Prompt 警告
-    if (promptLength > maxTokens * 0.8) {
+    // if (!configuration.features.suppressNonCriticalWarnings) {
+    //   notify.info(
+    //     formatMessage("prompt.length.info", [
+    //       promptLength.toLocaleString(),
+    //       maxTokens.toLocaleString(),
+    //     ])
+    //   );
+    // }
+    // 大 Prompt 警告和备用提示词切换逻辑
+    if (
+      promptLength > maxTokens * 0.75 &&
+      !configuration.features.suppressNonCriticalWarnings
+    ) {
+      const useFallbackChoice = getMessage("fallback.use");
       const continueAnyway = getMessage("prompt.large.continue");
       const cancel = getMessage("prompt.large.cancel");
+
       const choice = await notify.warn(
-        "prompt.large.warning",
+        "prompt.large.warning.with.fallback",
         [promptLength.toLocaleString(), maxTokens.toLocaleString()],
         {
           modal: true,
-          buttons: [continueAnyway, cancel],
+          buttons: [useFallbackChoice, continueAnyway],
         }
       );
-
-      if (choice !== continueAnyway) {
+      if (choice === useFallbackChoice) {
+        const fallbackSystemPrompt = getSystemPrompt(tempParams, true, true);
+        contextManager.setSystemPrompt(fallbackSystemPrompt);
+        notify.info("info.using.fallback.prompt");
+      } else if (choice !== continueAnyway) {
         throw new Error(getMessage("prompt.user.cancelled"));
       }
     }
@@ -358,7 +394,8 @@ REMINDER:
           { ...requestParams, messages },
           scmProvider,
           token,
-          progress
+          progress,
+          repositoryPath
         );
       } else {
         await this.streamAndApplyMessage(
@@ -367,7 +404,8 @@ REMINDER:
           scmProvider,
           token,
           progress,
-          contextManager
+          contextManager,
+          repositoryPath
         );
       }
 
@@ -412,13 +450,19 @@ REMINDER:
     aiProvider: AIProvider,
     requestParams: AIRequestParams,
     scmProvider: ISCMProvider,
-    selectedFiles: string[],
+    selectedFiles: string[] | undefined,
     token: vscode.CancellationToken,
     progress: vscode.Progress<{ message?: string; increment?: number }>
   ) {
     progress.report({
       message: getMessage("progress.generating.layered.commit"),
     });
+
+    // 如果没有选择文件，则退出
+    if (!selectedFiles || selectedFiles.length === 0) {
+      notify.warn("no.files.selected.for.layered.commit");
+      return;
+    }
 
     const fileDescriptions: { filePath: string; description: string }[] = [];
     const config = ConfigurationManager.getInstance();
@@ -431,7 +475,11 @@ REMINDER:
       scmProvider,
       configuration.features.commitMessage.useRecentCommitsAsReference
     );
-    const reminder = this._getReminder(userCommits, repoCommits);
+    const reminder = this._getReminder(
+      userCommits,
+      repoCommits,
+      configuration.base.language
+    );
 
     for (const filePath of selectedFiles) {
       this.throwIfCancelled(token);
@@ -456,21 +504,29 @@ REMINDER:
 
       // Build context manager for each file to get rich context
       const similarCodeContext = await this._getSimilarCodeContext(fileDiff);
-      const contextManager = new ContextManager(selectedModel, systemPrompt);
+      const contextManager = new ContextManager(
+        selectedModel,
+        systemPrompt,
+        configuration.features.suppressNonCriticalWarnings
+      );
       const { originalCode, codeChanges } = extractProcessedDiff(fileDiff);
 
-      contextManager.addBlock({
-        content: originalCode,
-        priority: 200,
-        strategy: TruncationStrategy.SmartTruncateDiff,
-        name: "original-code",
-      });
-      contextManager.addBlock({
-        content: codeChanges,
-        priority: 100,
-        strategy: TruncationStrategy.SmartTruncateDiff,
-        name: "code-changes",
-      });
+      if (userCommits) {
+        contextManager.addBlock({
+          content: userCommits,
+          priority: 700,
+          strategy: TruncationStrategy.TruncateTail,
+          name: "user-commits",
+        });
+      }
+      if (repoCommits) {
+        contextManager.addBlock({
+          content: repoCommits,
+          priority: 600,
+          strategy: TruncationStrategy.TruncateTail,
+          name: "recent-commits",
+        });
+      }
       contextManager.addBlock({
         content: similarCodeContext,
         priority: 320,
@@ -478,28 +534,28 @@ REMINDER:
         name: "similar-code",
       });
       contextManager.addBlock({
-        content: userCommits,
-        priority: 300,
-        strategy: TruncationStrategy.TruncateTail,
-        name: "user-commits",
+        content: originalCode,
+        priority: 800,
+        strategy: TruncationStrategy.SmartTruncateDiff,
+        name: "original-code",
       });
       contextManager.addBlock({
-        content: repoCommits,
-        priority: 400,
-        strategy: TruncationStrategy.TruncateTail,
-        name: "recent-commits",
-      });
-      contextManager.addBlock({
-        content: currentInput,
-        priority: 250,
-        strategy: TruncationStrategy.TruncateTail,
-        name: "custom-instructions",
+        content: codeChanges,
+        priority: 900,
+        strategy: TruncationStrategy.SmartTruncateDiff,
+        name: "code-changes",
       });
       contextManager.addBlock({
         content: reminder,
-        priority: 100,
+        priority: 900,
         strategy: TruncationStrategy.TruncateTail,
         name: "reminder",
+      });
+      contextManager.addBlock({
+        content: currentInput,
+        priority: 750,
+        strategy: TruncationStrategy.TruncateTail,
+        name: "custom-instructions",
       });
 
       const messages = contextManager.buildMessages();
@@ -567,53 +623,66 @@ REMINDER:
       configuration.features.commitMessage.useRecentCommitsAsReference
     );
     const similarCodeContext = await this._getSimilarCodeContext(diffContent);
-    const reminder = this._getReminder(userCommits, repoCommits);
+    const reminder = this._getReminder(
+      userCommits,
+      repoCommits,
+      configuration.base.language
+    );
 
     // 2. 构建 ContextManager
-    const contextManager = new ContextManager(selectedModel, systemPrompt);
+    const contextManager = new ContextManager(
+      selectedModel,
+      systemPrompt,
+      configuration.features.suppressNonCriticalWarnings
+    );
     const { originalCode, codeChanges } = extractProcessedDiff(diffContent);
 
+    if (userCommits) {
+      contextManager.addBlock({
+        content: userCommits,
+        priority: 700,
+        strategy: TruncationStrategy.TruncateTail,
+        name: "user-commits",
+      });
+    }
+
+    if (repoCommits) {
+      contextManager.addBlock({
+        content: repoCommits,
+        priority: 600,
+        strategy: TruncationStrategy.TruncateTail,
+        name: "recent-commits",
+      });
+    }
+    contextManager.addBlock({
+      content: similarCodeContext,
+      priority: 320, // This priority is not specified in the user request, keeping it as is.
+      strategy: TruncationStrategy.TruncateTail,
+      name: "similar-code",
+    });
     contextManager.addBlock({
       content: originalCode,
-      priority: 200, // original-code: 800
+      priority: 800,
       strategy: TruncationStrategy.SmartTruncateDiff,
       name: "original-code",
     });
     contextManager.addBlock({
       content: codeChanges,
-      priority: 100, // code-changes: 900
+      priority: 900,
       strategy: TruncationStrategy.SmartTruncateDiff,
       name: "code-changes",
     });
     contextManager.addBlock({
-      content: similarCodeContext,
-      priority: 320, // Inferred weight: 680
+      content: reminder,
+      priority: 900,
       strategy: TruncationStrategy.TruncateTail,
-      name: "similar-code",
-    });
-    contextManager.addBlock({
-      content: userCommits,
-      priority: 300, // user-commits: 700
-      strategy: TruncationStrategy.TruncateTail,
-      name: "user-commits",
-    });
-    contextManager.addBlock({
-      content: repoCommits,
-      priority: 400, // recent-commits: 600
-      strategy: TruncationStrategy.TruncateTail,
-      name: "recent-commits",
+      name: "reminder",
     });
     contextManager.addBlock({
       content: currentInput,
-      priority: 250, // custom-instructions: 750
+      priority: 750,
       strategy: TruncationStrategy.TruncateTail,
       name: "custom-instructions",
-    });
-    contextManager.addBlock({
-      content: reminder,
-      priority: 100, // reminder: 900
-      strategy: TruncationStrategy.TruncateTail,
-      name: "reminder",
     });
 
     return contextManager;
@@ -627,6 +696,7 @@ REMINDER:
    * @param token - VS Code 取消令牌。
    * @param progress - VS Code 进度报告器。
    * @param contextManager - 上下文管理器实例，用于构建带重试逻辑的请求。
+   * @param repositoryPath - 可选的仓库路径。
    */
   private async streamAndApplyMessage(
     aiProvider: AbstractAIProvider,
@@ -634,7 +704,8 @@ REMINDER:
     scmProvider: ISCMProvider,
     token: vscode.CancellationToken,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
-    contextManager: ContextManager // 接收 ContextManager 实例
+    contextManager: ContextManager, // 接收 ContextManager 实例
+    repositoryPath?: string
   ) {
     this.throwIfCancelled(token);
     progress.report({
@@ -666,13 +737,15 @@ REMINDER:
    * @param scmProvider - SCM 供应器实例。
    * @param token - VS Code 取消令牌。
    * @param progress - VS Code 进度报告器。
+   * @param repositoryPath - 可选的仓库路径。
    */
   private async performFunctionCallingGeneration(
     aiProvider: AIProvider,
     requestParams: AIRequestParams & { messages: AIMessage[] },
     scmProvider: ISCMProvider,
     token: vscode.CancellationToken,
-    progress: vscode.Progress<{ message?: string; increment?: number }>
+    progress: vscode.Progress<{ message?: string; increment?: number }>,
+    repositoryPath?: string
   ) {
     this.throwIfCancelled(token);
     progress.report({
