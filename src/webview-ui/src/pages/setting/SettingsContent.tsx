@@ -210,7 +210,7 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
         <Form.Item key={key} label={description}>
           <Select
             value={value as string}
-            onChange={(val) => {
+            onChange={(val: string) => {
               handleChange(val);
               setSelectedEmbeddingProvider(val);
             }}
@@ -243,7 +243,7 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
           <div style={{ display: "flex", alignItems: "center", width: "100%" }}>
             <Input
               value={value as string}
-              onChange={(val) => handleChange(val)}
+              onChange={(val: string) => handleChange(val)}
               style={{ flex: 1 }}
             />
             {(key === "providers.ollama.url" ||
@@ -275,7 +275,7 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
           <Input
             type="number"
             value={String(value)}
-            onChange={(val) => handleChange(Number(val))}
+            onChange={(val: string) => handleChange(Number(val))}
           />
         )}
         {type === "enum" && enumOptions && (
@@ -309,7 +309,7 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
               size="small"
               header={<Tag color="green">优点</Tag>}
               dataSource={pageFeatureData.benefits}
-              render={(item, index) => (
+              render={(item: string, index: number) => (
                 <List.Item key={index}>{item}</List.Item>
               )}
               style={{ marginBottom: "10px" }}
@@ -318,7 +318,7 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
               size="small"
               header={<Tag color="red">缺点</Tag>}
               dataSource={pageFeatureData.drawbacks}
-              render={(item, index) => (
+              render={(item: string, index: number) => (
                 <List.Item key={index}>{item}</List.Item>
               )}
             />
@@ -339,7 +339,7 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
                         "experimental.codeIndex.openaiCompatible.baseUrl"
                     )?.value as string) || ""
                   }
-                  onChange={(val) => {
+                  onChange={(val: string) => {
                     onSettingChange(
                       "experimental.codeIndex.openaiCompatible.baseUrl",
                       val
@@ -358,7 +358,7 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
                         "experimental.codeIndex.openaiCompatible.apiKey"
                     )?.value as string) || ""
                   }
-                  onChange={(val) => {
+                  onChange={(val: string) => {
                     onSettingChange(
                       "experimental.codeIndex.openaiCompatible.apiKey",
                       val
@@ -376,7 +376,7 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
                         s.key === "experimental.codeIndex.openaiCompatible.model"
                     )?.value as string) || ""
                   }
-                  onChange={(val) => {
+                  onChange={(val: string) => {
                     onSettingChange(
                       "experimental.codeIndex.openaiCompatible.model",
                       val
@@ -396,7 +396,7 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
                         "experimental.codeIndex.openaiCompatible.dimension"
                     )?.value as string) || ""
                   }
-                  onChange={(val) => {
+                  onChange={(val: string) => {
                     onSettingChange(
                       "experimental.codeIndex.openaiCompatible.dimension",
                       val ? Number(val) : undefined
