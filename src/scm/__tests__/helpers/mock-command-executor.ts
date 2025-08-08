@@ -83,8 +83,9 @@ export class MockCommandExecutor {
       return this.commandMocks.get(command)!;
     }
 
-    // Check pattern matches
-    for (const [pattern, handler] of this.commandPatterns.entries()) {
+    // Check pattern matches (later-registered patterns take precedence)
+    const patternEntries = Array.from(this.commandPatterns.entries()).reverse();
+    for (const [pattern, handler] of patternEntries) {
       const match = command.match(pattern);
       if (match) {
         return handler(match);
@@ -143,7 +144,8 @@ export class MockCommandExecutor {
     // Git log
     this.mockExecPattern(/^git log/, (match) => {
       const commits = GitTestData.generateCommitLog(5);
-      const format = match[0].includes('--oneline') ? '--oneline' : 'default';
+      const fullCommand = (match as any).input || match[0];
+      const format = fullCommand.includes('--oneline') ? '--oneline' : 'default';
       return {
         stdout: GitTestData.generateGitLogFormatted(commits, format),
         stderr: '',

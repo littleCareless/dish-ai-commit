@@ -1,186 +1,175 @@
-import { exec } from "child_process";
-import { promisify } from "util";
-import * as vscode from "vscode";
 import { ISCMProvider } from "./scm-provider";
-import { getMessage } from "../utils";
-import { DiffProcessor } from "../utils/diff/diff-processor";
+import { formatMessage } from "../utils/i18n";
 import { notify } from "../utils/notification/notification-manager";
-import { ImprovedPathUtils } from "./utils/improved-path-utils";
+import { SCMErrorHandler } from "./utils/error-handler";
+import { SCMPathHandler } from "./utils/path-handler";
+import { SCMCommandExecutor } from "./utils/command-executor";
+import { SvnUtils } from "./utils/svn-utils";
+import { UnifiedDiffProcessor } from "./utils/unified-diff-processor";
+import { SCMClipboard } from "./utils/clipboard";
 
-const execAsync = promisify(exec);
-
+/**
+ * 命令行SVN提供者实现（统一重构版本）
+ * 使用共享工具类消除重复代码
+ */
 export class CliSvnProvider implements ISCMProvider {
-  type: "svn" = "svn";
+  /** SCM类型标识符 */
+  readonly type = "svn" as const;
+
+  /** 工作区根目录 */
   private workspaceRoot: string;
 
+  /** SVN路径 */
+  private svnPath: string = "svn";
+
+  /** 初始化状态 */
+  private initialized: boolean = false;
+
+  /**
+   * 创建命令行SVN提供者实例
+   * @param workspaceRoot - 工作区根目录
+   */
   constructor(workspaceRoot: string) {
-    this.workspaceRoot = ImprovedPathUtils.normalizePath(workspaceRoot);
+    this.workspaceRoot = SCMPathHandler.normalizePath(workspaceRoot);
   }
 
+  /**
+   * 初始化Provider
+   */
   async init(): Promise<void> {
-    // No async initialization needed for this provider.
+    try {
+      // 尝试获取SVN路径
+      const svnPath = await SvnUtils.getSvnPath();
+      this.svnPath = svnPath;
+
+      // 验证SVN可执行
+      const { stdout } = await SvnUtils.execCommand(
+        `"${this.svnPath}" --version`
+      );
+      const version = stdout.toString().split("\n")[0].trim();
+      notify.info(formatMessage("scm.version.detected", ["SVN", version]));
+
+      this.initialized = true;
+    } catch (error) {
+      // 如果获取SVN路径失败，使用默认的"svn"命令
+      console.warn(
+        "Failed to get SVN path, using default 'svn' command:",
+        error
+      );
+      this.initialized = true;
+    }
+
     return Promise.resolve();
   }
 
+  /**
+   * 检查SVN是否可用
+   */
   async isAvailable(): Promise<boolean> {
     try {
-      const options = ImprovedPathUtils.createExecOptions(this.workspaceRoot);
-      await execAsync("svn --version", options);
+      await SCMCommandExecutor.execute("svn --version", this.workspaceRoot);
       return true;
     } catch {
       return false;
     }
   }
 
+  /**
+   * 获取文件差异信息
+   */
   async getDiff(files?: string[]): Promise<string | undefined> {
     try {
-      let filePaths = ".";
-      if (files && files.length > 0) {
-        // 使用 ImprovedPathUtils 处理和转义文件路径
-        const escapedPaths = files.map(file => 
-          ImprovedPathUtils.escapeShellPath(ImprovedPathUtils.normalizePath(file))
-        );
-        filePaths = escapedPaths.join(" ");
-      }
-      
-      const options = ImprovedPathUtils.createExecOptions(this.workspaceRoot);
-      const command = filePaths === "." ? "svn diff ." : `svn diff ${filePaths}`;
-      const { stdout: rawDiff } = await execAsync(command, options);
-
-      if (!rawDiff.toString().trim()) {
-        return undefined;
-      }
-
-      return DiffProcessor.process(rawDiff.toString(), "svn");
+      return await UnifiedDiffProcessor.getDiff(
+        "svn",
+        this.workspaceRoot,
+        files
+      );
     } catch (error) {
       console.error("Failed to get SVN diff:", error);
       return undefined;
     }
   }
 
+  /**
+   * 提交更改
+   */
   async commit(message: string, files?: string[]): Promise<void> {
     let filePaths = ".";
     if (files && files.length > 0) {
-      // 使用 ImprovedPathUtils 处理和转义文件路径
-      const escapedPaths = files.map(file => 
-        ImprovedPathUtils.escapeShellPath(ImprovedPathUtils.normalizePath(file))
+      // 使用 SCMPathHandler 处理和转义文件路径
+      const escapedPaths = files.map((file) =>
+        SCMPathHandler.escapeShellPath(SCMPathHandler.normalizePath(file))
       );
       filePaths = escapedPaths.join(" ");
     }
-    
+
     // 转义提交消息
-    const escapedMessage = ImprovedPathUtils.escapeShellPath(message);
-    const options = ImprovedPathUtils.createExecOptions(this.workspaceRoot);
-    
-    const commitCommand = filePaths === "." 
-      ? `svn commit -m ${escapedMessage} .`
-      : `svn commit -m ${escapedMessage} ${filePaths}`;
-    await execAsync(commitCommand, options);
+    const escapedMessage = SCMPathHandler.escapeShellPath(message);
+
+    const commitCommand =
+      filePaths === "."
+        ? `"${this.svnPath}" commit -m ${escapedMessage} .`
+        : `"${this.svnPath}" commit -m ${escapedMessage} ${filePaths}`;
+
+    try {
+      await SCMCommandExecutor.execute(commitCommand, this.workspaceRoot);
+    } catch (error) {
+      SCMErrorHandler.handleCommitError("SVN", error);
+    }
   }
 
-  async setCommitInput(message: string, repositoryPath?: string): Promise<void> {
+  /**
+   * 设置提交输入框的内容
+   */
+  async setCommitInput(message: string): Promise<void> {
     await this.copyToClipboard(message);
   }
 
+  /**
+   * 获取提交输入框的当前内容
+   */
   async getCommitInput(): Promise<string> {
     return "";
   }
 
-  async startStreamingInput(message: string, repositoryPath?: string): Promise<void> {
+  /**
+   * 开始流式设置提交输入框的内容
+   */
+  async startStreamingInput(message: string): Promise<void> {
     await this.copyToClipboard(message);
   }
 
   /**
-   * 获取提交日志 (占位符实现)
-   * @param baseBranch - 基础分支
-   * @param headBranch - 当前分支
-   * @returns 返回一个空数组
+   * 获取提交日志
    */
   async getCommitLog(
-    baseBranch?: string,
-    headBranch?: string
+    baseRevisionInput?: string,
+    headRevisionInput: string = "HEAD"
   ): Promise<string[]> {
-    console.warn(
-      "getCommitLog is not implemented for CliSvnProvider and will return an empty array."
-    );
-    return [];
-  }
-
-  async getRecentCommitMessages() {
-    const repositoryCommitMessages: string[] = [];
-    const userCommitMessages: string[] = [];
-
     try {
-      const options = ImprovedPathUtils.createExecOptions(this.workspaceRoot);
-      
-      // Last 5 commit messages (repository)
-      const { stdout: logOutput } = await execAsync("svn log -l 5", options);
-      repositoryCommitMessages.push(...this.parseSvnLog(logOutput.toString()));
-
-      // Last 5 commit messages (user)
-      const { stdout: user } = await execAsync(
-        "svn info --show-item last-changed-author",
-        options
+      return await SvnUtils.getCommitLog(
+        this.svnPath,
+        this.workspaceRoot,
+        baseRevisionInput,
+        headRevisionInput
       );
-      const author = user.toString().trim();
-
-      if (author) {
-        // 转义作者名称以防止命令注入
-        const escapedAuthor = ImprovedPathUtils.escapeShellPath(author);
-        const searchCommand = `svn log -l 5 --search ${escapedAuthor}`;
-        const { stdout: userLogOutput } = await execAsync(searchCommand, options);
-        userCommitMessages.push(...this.parseSvnLog(userLogOutput.toString()));
-      }
-    } catch (err) {
-      console.error("Failed to get recent SVN commit messages:", err);
+    } catch (error) {
+      console.warn("Failed to get SVN commit log:", error);
+      return [];
     }
-
-    return { repository: repositoryCommitMessages, user: userCommitMessages };
   }
 
-  private parseSvnLog(log: string): string[] {
-    const messages: string[] = [];
-    const entries = log.split(
-      /^------------------------------------------------------------------------$/m
-    );
-
-    for (const rawEntry of entries) {
-      const entry = rawEntry.trim();
-      if (!entry) {
-        continue;
-      }
-
-      const lines = entry.split("\n");
-      if (lines.length === 0 || !lines[0].match(/^r\d+\s+\|/)) {
-        continue;
-      }
-
-      let messageStartIndex = 1;
-      if (lines.length > 1 && lines[messageStartIndex].trim() === "") {
-        messageStartIndex++;
-      }
-
-      if (messageStartIndex < lines.length) {
-        const message = lines.slice(messageStartIndex).join("\n").trim();
-        if (message) {
-          messages.push(message.split("\n")[0]);
-        }
-      }
-    }
-    return messages;
+  /**
+   * 获取最近的提交信息
+   */
+  async getRecentCommitMessages() {
+    return SvnUtils.getRecentCommitMessages(this.svnPath, this.workspaceRoot);
   }
 
   /**
    * 将提交信息复制到剪贴板
-   * @param message 要复制的提交信息
    */
   async copyToClipboard(message: string): Promise<void> {
-    try {
-      await vscode.env.clipboard.writeText(message);
-      notify.info("commit.message.copied");
-    } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
-      notify.error("commit.message.copy.failed", [errorMessage]);
-    }
+    await SCMClipboard.copy(message);
   }
 }

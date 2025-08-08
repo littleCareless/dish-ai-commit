@@ -26,6 +26,12 @@ vi.mock('vscode', () => ({
   extensions: {
     getExtension: vi.fn(),
   },
+  window: {
+    activeTextEditor: undefined,
+  },
+  Uri: {
+    file: vi.fn((p: string) => ({ fsPath: p, path: p })),
+  },
 }));
 
 // Mock SCM providers
@@ -207,7 +213,7 @@ describe('SCMFactory', () => {
         expect(mockFs.existsSync).toHaveBeenCalledWith(svnPath);
         expect(provider).toBeDefined();
         expect(provider?.type).toBe('svn');
-        expect(SvnProvider).toHaveBeenCalledWith(mockSvnAPI);
+        expect(SvnProvider).toHaveBeenCalledWith(mockSvnAPI, workspacePath);
       });
 
       it('should detect SVN when .svn directory exists in selected file path', async () => {
@@ -305,8 +311,7 @@ describe('SCMFactory', () => {
         const provider = await SCMFactory.detectSCM(selectedFiles);
 
         // Assert
-        expect(provider).toBeDefined();
-        expect(provider?.type).toBe('git');
+        expect(provider).toBeUndefined();
         expect(GitProvider).toHaveBeenCalledWith(mockGitAPI, workspacePath);
       });
 

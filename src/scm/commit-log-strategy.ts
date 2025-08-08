@@ -1,7 +1,5 @@
-import { exec } from "child_process";
-import { promisify } from "util";
-
-const execAsync = promisify(exec);
+import { SCMCommandExecutor } from "./utils/command-executor";
+import { SCMConfigManager } from "./utils/config-manager";
 
 /**
  * 表示一个时间段的接口
@@ -165,9 +163,8 @@ export class GitCommitStrategy implements CommitLogStrategy {
 
     // 构建git log命令,格式化输出提交信息
     // const command = `git log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --pretty=format:"%h - %an, %ar : %s" --author="${author}"`;
-    const command = `git log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n" --author="${author}"`;
-
-    const { stdout } = await execAsync(command, { cwd: workspacePath });
+    const command = `log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n" --author="${author}"`;
+    const { stdout } = await SCMCommandExecutor.executeGit(command, workspacePath);
     return stdout.split("\n").filter((line) => line.trim());
   }
 
@@ -208,13 +205,10 @@ export class GitCommitStrategy implements CommitLogStrategy {
 
     // const command = `git log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n" ${authorQuery}`;
     // 使用 --author=<regex>
-    const command = `git log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --author="${authorRegex}" --all-match --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n"`;
+    const command = `log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --author="${authorRegex}" --all-match --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n"`;
 
     try {
-      const { stdout } = await execAsync(command, {
-        cwd: workspacePath,
-        maxBuffer: 1024 * 1024 * 10, // 增加缓冲区
-      });
+      const { stdout } = await SCMCommandExecutor.executeGit(command, workspacePath, { maxBuffer: 1024 * 1024 * 10 });
       return stdout.split("\n").filter((line) => line.trim());
     } catch (error) {
       // 如果正则查询失败（例如某些git版本不支持），可以回退到为每个用户查询然后合并
@@ -224,7 +218,7 @@ export class GitCommitStrategy implements CommitLogStrategy {
       );
       let allCommits: string[] = [];
       for (const user of users) {
-        const singleUserCommand = `git log --since="${
+        const singleUserCommand = `log --since="${
           formattedPeriod.startDate
         }" --until="${
           formattedPeriod.endDate
@@ -233,9 +227,7 @@ export class GitCommitStrategy implements CommitLogStrategy {
           '\\"'
         )}"`;
         try {
-          const { stdout } = await execAsync(singleUserCommand, {
-            cwd: workspacePath,
-          });
+          const { stdout } = await SCMCommandExecutor.executeGit(singleUserCommand, workspacePath);
           allCommits = allCommits.concat(
             stdout.split("\n").filter((line) => line.trim())
           );
@@ -271,9 +263,10 @@ export class SvnCommitStrategy implements CommitLogStrategy {
     const formattedPeriod = formatPeriod(period);
 
     // 构建svn log命令,使用XML格式输出
-    const command = `svn log -r "{${formattedPeriod.startDate}}:{${formattedPeriod.endDate}}" --search="${author}" --xml`;
-
-    const { stdout } = await execAsync(command, { cwd: workspacePath });
+    const svnPath = await SCMConfigManager.getSvnPath("commit-log-strategy");
+    const env = SCMConfigManager.getSvnEnvironmentConfig();
+    const command = `log -r "{${formattedPeriod.startDate}}:{${formattedPeriod.endDate}}" --search="${author}" --xml`;
+    const { stdout } = await SCMCommandExecutor.executeSvn(svnPath, command, workspacePath, { env });
     return this.parseXmlLogs(stdout);
   }
 
@@ -300,13 +293,12 @@ export class SvnCommitStrategy implements CommitLogStrategy {
     for (const user of users) {
       // 对用户名进行适当的清理或转义，以防注入（尽管这里是search参数）
       const safeUser = user.replace(/[^\w\s.-]/g, ""); // 简单清理
-      const command = `svn log -r "{${formattedPeriod.startDate}}:{${formattedPeriod.endDate}}" --search="${safeUser}" --xml`;
-      console.log(`SVN command for user ${user}: ${command}`);
+      const svnPath = await SCMConfigManager.getSvnPath("commit-log-strategy");
+      const env = SCMConfigManager.getSvnEnvironmentConfig();
+      const command = `log -r "{${formattedPeriod.startDate}}:{${formattedPeriod.endDate}}" --search="${safeUser}" --xml`;
+      console.log(`SVN command for user ${user}: svn ${command}`);
       try {
-        const { stdout } = await execAsync(command, {
-          cwd: workspacePath,
-          maxBuffer: 1024 * 1024 * 10, // 增加缓冲区
-        });
+        const { stdout } = await SCMCommandExecutor.executeSvn(svnPath, command, workspacePath, { env, maxBuffer: 1024 * 1024 * 10 });
         const userCommits = this.parseXmlLogs(stdout);
         allCommits = allCommits.concat(userCommits);
       } catch (error) {
