@@ -1,8 +1,11 @@
 import * as vscode from "vscode";
+import * as fs from "fs";
 import * as path from "path";
-import { SCMPathHandler } from "./utils/path-handler";
-import { SCMProviderFactory } from "./scm-provider-factory";
-import { SCMCommandExecutor } from "./utils/command-executor";
+import { exec } from "child_process";
+import { GitProvider } from "./git-provider";
+import { SvnProvider } from "./svn-provider";
+import { CliSvnProvider } from "./cli-svn-provider";
+import { ImprovedPathUtils } from "./utils/improved-path-utils";
 
 /**
  * 最近提交信息
@@ -95,9 +98,7 @@ export class SCMFactory {
       // 1. 尝试从当前活动编辑器获取文件路径
       const activeEditor = vscode.window.activeTextEditor;
       if (activeEditor && activeEditor.document.uri.scheme === "file") {
-        const activeFilePath = SCMPathHandler.normalizePath(
-          activeEditor.document.uri.fsPath
-        );
+        const activeFilePath = ImprovedPathUtils.normalizePath(activeEditor.document.uri.fsPath);
         const workspaceFromActiveFile =
           this.findWorkspaceRootFromFile(activeFilePath);
         if (workspaceFromActiveFile) {
@@ -108,7 +109,7 @@ export class SCMFactory {
       // 2. 尝试从最近打开的文件获取工作区
       const recentFiles = vscode.workspace.textDocuments
         .filter((doc) => doc.uri.scheme === "file")
-        .map((doc) => SCMPathHandler.normalizePath(doc.uri.fsPath));
+        .map((doc) => ImprovedPathUtils.normalizePath(doc.uri.fsPath));
 
       if (recentFiles.length > 0) {
         const workspaceFromRecentFile = this.findWorkspaceRootFromFile(
@@ -124,11 +125,9 @@ export class SCMFactory {
       if (workspaceFolders && workspaceFolders.length > 1) {
         // 检查是否有工作区包含当前活动文件
         if (activeEditor && activeEditor.document.uri.scheme === "file") {
-          const activeFilePath = SCMPathHandler.normalizePath(
-            activeEditor.document.uri.fsPath
-          );
+          const activeFilePath = ImprovedPathUtils.normalizePath(activeEditor.document.uri.fsPath);
           for (const folder of workspaceFolders) {
-            const folderPath = SCMPathHandler.normalizePath(folder.uri.fsPath);
+            const folderPath = ImprovedPathUtils.normalizePath(folder.uri.fsPath);
             if (activeFilePath.startsWith(folderPath)) {
               return folderPath;
             }
@@ -143,14 +142,12 @@ export class SCMFactory {
 
       // 4. 最后回退到第一个工作区
       const firstWorkspace = workspaceFolders?.[0]?.uri.fsPath;
-      return firstWorkspace
-        ? SCMPathHandler.normalizePath(firstWorkspace)
-        : undefined;
+      return firstWorkspace ? ImprovedPathUtils.normalizePath(firstWorkspace) : undefined;
     }
 
     // 检查每个文件的目录，寻找.git或.svn文件夹
     for (const file of selectedFiles) {
-      if (SCMPathHandler.isValidPath(file)) {
+      if (ImprovedPathUtils.isValidPath(file)) {
         const workspaceRoot = this.findWorkspaceRootFromFile(file);
         if (workspaceRoot) {
           return workspaceRoot;
@@ -159,11 +156,8 @@ export class SCMFactory {
     }
 
     // 如果没找到，回退到VS Code工作区
-    const fallbackWorkspace =
-      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    return fallbackWorkspace
-      ? SCMPathHandler.normalizePath(fallbackWorkspace)
-      : undefined;
+    const fallbackWorkspace = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    return fallbackWorkspace ? ImprovedPathUtils.normalizePath(fallbackWorkspace) : undefined;
   }
 
   /**
@@ -174,19 +168,14 @@ export class SCMFactory {
   private static findWorkspaceRootFromFile(
     filePath: string
   ): string | undefined {
-    if (!SCMPathHandler.isValidPath(filePath)) {
+    if (!ImprovedPathUtils.isValidPath(filePath)) {
       return undefined;
     }
-
-    const normalizedPath = SCMPathHandler.normalizePath(filePath);
-    const workspaceRoot = SCMPathHandler.findWorkspaceRoot(normalizedPath, [
-      ".git",
-      ".svn",
-    ]);
-
-    return workspaceRoot
-      ? SCMPathHandler.normalizePath(workspaceRoot)
-      : undefined;
+    
+    const normalizedPath = ImprovedPathUtils.normalizePath(filePath);
+    const workspaceRoot = ImprovedPathUtils.findWorkspaceRoot(normalizedPath, [".git", ".svn"]);
+    
+    return workspaceRoot ? ImprovedPathUtils.normalizePath(workspaceRoot) : undefined;
   }
 
   /**
@@ -200,21 +189,20 @@ export class SCMFactory {
     filePaths?: string[]
   ): "git" | "svn" | undefined {
     try {
-      if (!SCMPathHandler.isValidPath(workspaceRoot)) {
+      if (!ImprovedPathUtils.isValidPath(workspaceRoot)) {
         return undefined;
       }
 
-      const normalizedWorkspaceRoot =
-        SCMPathHandler.normalizePath(workspaceRoot);
-
+      const normalizedWorkspaceRoot = ImprovedPathUtils.normalizePath(workspaceRoot);
+      
       // 首先检查工作区根目录
       const gitPath = path.join(normalizedWorkspaceRoot, ".git");
       const svnPath = path.join(normalizedWorkspaceRoot, ".svn");
 
-      if (SCMPathHandler.safeExists(gitPath)) {
+      if (ImprovedPathUtils.safeExists(gitPath)) {
         return "git";
       }
-      if (SCMPathHandler.safeExists(svnPath)) {
+      if (ImprovedPathUtils.safeExists(svnPath)) {
         return "svn";
       }
 
@@ -224,13 +212,8 @@ export class SCMFactory {
         const dirPaths = [
           ...new Set(
             filePaths
-              .filter(
-                (file) =>
-                  file &&
-                  typeof file === "string" &&
-                  SCMPathHandler.isValidPath(file)
-              )
-              .map((file) => SCMPathHandler.normalizePath(path.dirname(file)))
+              .filter((file) => file && typeof file === "string" && ImprovedPathUtils.isValidPath(file))
+              .map((file) => ImprovedPathUtils.normalizePath(path.dirname(file)))
           ),
         ];
 
@@ -244,18 +227,16 @@ export class SCMFactory {
             const gitSubPath = path.join(currentDir, ".git");
             const svnSubPath = path.join(currentDir, ".svn");
 
-            if (SCMPathHandler.safeExists(gitSubPath)) {
+            if (ImprovedPathUtils.safeExists(gitSubPath)) {
               return "git";
             }
-            if (SCMPathHandler.safeExists(svnSubPath)) {
+            if (ImprovedPathUtils.safeExists(svnSubPath)) {
               return "svn";
             }
 
             // 向上一级目录
             const parentDir = path.dirname(currentDir);
-            if (parentDir === currentDir) {
-              break;
-            } // 防止无限循环
+            if (parentDir === currentDir) break; // 防止无限循环
             currentDir = parentDir;
           }
         }
@@ -273,7 +254,13 @@ export class SCMFactory {
    * @param cmd 要检测的命令
    * @returns {Promise<boolean>} 命令是否可用
    */
-  // duplicate helper removed; use SCMCommandExecutor.checkCommandAvailable instead
+  private static async checkSCMCommand(cmd: string): Promise<boolean> {
+    return new Promise((resolve) => {
+      exec(`${cmd} --version`, (error) => {
+        resolve(!error);
+      });
+    });
+  }
 
   /**
    * 检测并创建可用的SCM提供者
@@ -289,18 +276,15 @@ export class SCMFactory {
       // 优先使用传入的 repositoryPath，如果没有则使用检测方法获取工作区根目录
       const workspaceRoot =
         repositoryPath || this.findWorkspaceRoot(selectedFiles);
-      if (!workspaceRoot || !SCMPathHandler.isValidPath(workspaceRoot)) {
+      if (!workspaceRoot || !ImprovedPathUtils.isValidPath(workspaceRoot)) {
         return undefined;
       }
 
       // 规范化工作区根目录路径，用作缓存键
-      const normalizedWorkspaceRoot =
-        SCMPathHandler.normalizePath(workspaceRoot);
+      const normalizedWorkspaceRoot = ImprovedPathUtils.normalizePath(workspaceRoot);
 
       // 检查是否已有正在进行的检测操作
-      const pendingDetection = this.pendingDetections.get(
-        normalizedWorkspaceRoot
-      );
+      const pendingDetection = this.pendingDetections.get(normalizedWorkspaceRoot);
       if (pendingDetection) {
         return pendingDetection;
       }
@@ -372,19 +356,15 @@ export class SCMFactory {
     selectedFiles?: string[]
   ): Promise<ISCMProvider | undefined> {
     try {
-      if (!SCMPathHandler.isValidPath(workspaceRoot)) {
+      if (!ImprovedPathUtils.isValidPath(workspaceRoot)) {
         console.error("Invalid workspace root path:", workspaceRoot);
         return undefined;
       }
 
-      const normalizedWorkspaceRoot =
-        SCMPathHandler.normalizePath(workspaceRoot);
-
+      const normalizedWorkspaceRoot = ImprovedPathUtils.normalizePath(workspaceRoot);
+      
       // 通过目录检测，包括选定的文件路径
-      const scmType = this.detectSCMFromDir(
-        normalizedWorkspaceRoot,
-        selectedFiles
-      );
+      const scmType = this.detectSCMFromDir(normalizedWorkspaceRoot, selectedFiles);
 
       const gitExtension = vscode.extensions.getExtension("vscode.git");
       const svnExtension = vscode.extensions.getExtension(
@@ -393,74 +373,54 @@ export class SCMFactory {
 
       let provider: ISCMProvider | undefined;
 
-      // 使用工厂类创建提供者实例
-      if (scmType === "git" && gitExtension?.exports) {
+      // 如果检测到Git
+      if (scmType === "git") {
         try {
-          // 使用工厂类创建Git提供者
-          provider = SCMProviderFactory.createProvider("git", {
-            extension: gitExtension.exports,
-            repositoryPath: normalizedWorkspaceRoot,
-          });
-
-          if (provider) {
-            await this.withTimeout(provider.init());
-            if (!(await this.withTimeout(provider.isAvailable()))) {
-              provider = undefined;
+          const git = gitExtension?.exports
+            ? new GitProvider(gitExtension.exports, normalizedWorkspaceRoot)
+            : undefined;
+          if (git) {
+            await this.withTimeout(git.init());
+            if (await this.withTimeout(git.isAvailable())) {
+              provider = git;
             }
           }
         } catch (error) {
           console.error("Git provider initialization failed:", error);
-          provider = undefined;
+          // Continue to try other providers
         }
-      } else if (scmType === "svn") {
-        // 先尝试使用SVN插件
-        if (svnExtension?.exports) {
-          try {
-            // 使用工厂类创建SVN提供者
-            provider = SCMProviderFactory.createProvider("svn", {
-              extension: svnExtension.exports,
-              repositoryPath: normalizedWorkspaceRoot,
-            });
+      }
 
-            if (provider) {
-              await this.withTimeout(provider.init());
-              if (!(await this.withTimeout(provider.isAvailable()))) {
-                provider = undefined;
-              }
+      // 如果检测到SVN
+      if (scmType === "svn") {
+        // 先尝试使用SVN插件
+        try {
+          const svn = svnExtension?.exports
+            ? new SvnProvider(svnExtension.exports, normalizedWorkspaceRoot)
+            : undefined;
+          if (svn) {
+            await this.withTimeout(svn.init());
+            if (await this.withTimeout(svn.isAvailable())) {
+              provider = svn;
             }
-          } catch (error) {
-            console.error("SVN provider initialization failed:", error);
-            provider = undefined;
           }
+        } catch (error) {
+          console.error("SVN provider initialization failed:", error);
+          // Continue to try CLI SVN
         }
 
         // 如果没有插件但系统有SVN命令,使用命令行方式
         if (!provider) {
           try {
-            if (
-              await this.withTimeout(
-                SCMCommandExecutor.checkCommandAvailable(
-                  "svn",
-                  normalizedWorkspaceRoot
-                )
-              )
-            ) {
-              // 使用工厂类创建CLI SVN提供者
-              provider = SCMProviderFactory.createProvider("svn", {
-                repositoryPath: normalizedWorkspaceRoot,
-                useCli: true,
-              });
-
-              if (provider) {
-                await this.withTimeout(provider.init());
-                if (!(await this.withTimeout(provider.isAvailable()))) {
-                  provider = undefined;
-                }
+            if (await this.withTimeout(this.checkSCMCommand("svn"))) {
+              const cliSvn = new CliSvnProvider(normalizedWorkspaceRoot);
+              await this.withTimeout(cliSvn.init());
+              if (await this.withTimeout(cliSvn.isAvailable())) {
+                provider = cliSvn;
               }
             }
           } catch (error) {
             console.error("CLI SVN provider initialization failed:", error);
-            provider = undefined;
           }
         }
       }

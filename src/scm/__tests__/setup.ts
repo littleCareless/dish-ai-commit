@@ -8,8 +8,7 @@ import { vi } from 'vitest';
 // Mock VS Code API globally
 const mockVSCode = {
   workspace: {
-    workspaceFolders: [ { uri: { fsPath: '/mock/workspace' } } ],
-    textDocuments: [],
+    workspaceFolders: [],
     getConfiguration: vi.fn(),
     onDidChangeConfiguration: vi.fn(),
   },

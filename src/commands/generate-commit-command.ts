@@ -276,6 +276,9 @@ ${currentInput}
     const diffContent = await scmProvider.getDiff(selectedFiles);
 
     if (!diffContent) {
+      notify.info(
+        formatMessage("scm.no.changes", [scmProvider.type.toUpperCase()])
+      );
       throw new Error(
         formatMessage("scm.no.changes", [scmProvider.type.toUpperCase()])
       );

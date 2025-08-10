@@ -163,9 +163,7 @@ describe('Test Infrastructure Verification', () => {
       
       execMock('git log --oneline', {}, (error: any, stdout: string) => {
         expect(error).toBeNull();
-        // 允许两种返回：旧版固定字符串或新版格式化列表
-        const ok = stdout === 'Log for --oneline' || /commit\d{7}.*Commit message 1/.test(stdout);
-        expect(ok).toBe(true);
+        expect(stdout).toBe('Log for --oneline');
       });
     });
   });
