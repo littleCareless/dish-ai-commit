@@ -81,6 +81,7 @@ export class DiffProcessor {
           line.startsWith("Index: ") ||
           line.startsWith("====") ||
           line.startsWith("diff --git") ||
+          line.startsWith("=== ") ||
           line.startsWith("@@")
         ) {
           importantLines.add(index);
