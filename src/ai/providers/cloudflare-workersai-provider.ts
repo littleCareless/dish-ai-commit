@@ -199,7 +199,9 @@ export class CloudflareWorkersAIProvider extends AbstractAIProvider {
       try {
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            break;
+          }
 
           const chunk = decoder.decode(value, { stream: true });
           const lines = chunk.split("\n");
@@ -242,8 +244,12 @@ export class CloudflareWorkersAIProvider extends AbstractAIProvider {
         messages.push({ role: "system", content: systemPrompt });
       }
       let combinedUserContent = "";
-      if (userContent) combinedUserContent += userContent;
-      if (userPrompt) combinedUserContent += "\n\n" + userPrompt;
+      if (userContent) {
+        combinedUserContent += userContent;
+      }
+      if (userPrompt) {
+        combinedUserContent += "\n\n" + userPrompt;
+      }
 
       if (combinedUserContent) {
         messages.push({ role: "user", content: combinedUserContent });

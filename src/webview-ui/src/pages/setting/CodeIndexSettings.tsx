@@ -69,7 +69,7 @@ const CodeIndexSettings: React.FC<CodeIndexSettingsProps> = ({
           <ArcoSelect
             style={{ width: "100%" }}
             placeholder="选择嵌入提供商"
-            onChange={(value) => {
+            onChange={(value: string) => {
               setSelectedEmbeddingProvider(value as string);
               setHasChanges(true);
             }}
@@ -103,7 +103,7 @@ const CodeIndexSettings: React.FC<CodeIndexSettingsProps> = ({
           <ArcoSelect
             style={{ width: "100%" }}
             placeholder="选择模型"
-            onChange={(value) => {
+            onChange={(value: string) => {
               setEmbeddingModel(value as string);
               // onSettingChange("experimental.codeIndex.embeddingModel", value);
               setHasChanges(true);
@@ -139,7 +139,7 @@ const CodeIndexSettings: React.FC<CodeIndexSettingsProps> = ({
             "experimental.codeIndex.qdrantUrl",
             "http://localhost:6333"
           )}
-          onChange={(value) =>
+          onChange={(value: string) =>
             onSettingChange("experimental.codeIndex.qdrantUrl", value)
           }
           placeholder="http://localhost:6333"
@@ -159,7 +159,7 @@ const CodeIndexSettings: React.FC<CodeIndexSettingsProps> = ({
         <ArcoInput
           style={{ width: "100%" }}
           value={getSettingValue("experimental.codeIndex.qdrantKey", "")}
-          onChange={(value) =>
+          onChange={(value: string) =>
             onSettingChange("experimental.codeIndex.qdrantKey", value)
           }
           placeholder="Qdrant Key"

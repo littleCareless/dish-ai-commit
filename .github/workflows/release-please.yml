@@ -1,0 +1,50 @@
+name: Release Please
+
+on:
+  push:
+    branches:
+      - develop
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: google-github-actions/release-please-action@v4
+        id: release
+        with:
+          # (推荐) 使用个人访问令牌 (PAT) 而非默认的 GITHUB_TOKEN
+          # 这可以确保发布后能触发其他 GitHub Actions, 例如自动部署或 npm 发布
+          # 1. 在 GitHub 创建一个有 repo 和 workflow 权限的 PAT
+          # 2. 在仓库的 Secrets and variables > Actions 中添加一个名为 RELEASE_PLEASE_TOKEN 的 secret
+          # token: ${{ secrets.RELEASE_PLEASE_TOKEN }}
+
+          # 对于简单项目，或者不需要触发后续工作流的场景，可以直接使用 GITHUB_TOKEN
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+          # 告诉 release-please 这是一个 Node.js 项目
+          # 它会自动处理 package.json, package-lock.json 和 CHANGELOG.md
+          release-type: node
+
+          # (可选) 自定义创建的 Release PR 的标题
+          # pull-request-title: "chore(release): release ${version}"
+
+          # (可选) 自定义生成的 CHANGELOG 的章节标题
+          # 这能让你的日志更清晰，更符合中文习惯
+          # changelog-types: >
+          #   [
+          #     { "type": "feat", "section": "✨ 新功能", "hidden": false },
+          #     { "type": "fix", "section": "🐛 Bug 修复", "hidden": false },
+          #     { "type": "perf", "section": "🚀 性能优化", "hidden": false },
+          #     { "type": "revert", "section": "⏪ 回滚", "hidden": false },
+          #     { "type": "docs", "section": "📝 文档", "hidden": false },
+          #     { "type": "style", "section": "💄 风格", "hidden": true },
+          #     { "type": "chore", "section": "🧹 杂项", "hidden": false },
+          #     { "type": "refactor", "section": "♻️ 重构", "hidden": false },
+          #     { "type": "test", "section": "✅ 测试", "hidden": true },
+          #     { "type": "build", "section": "📦 构建", "hidden": true },
+          #     { "type": "ci", "section": "🤖 CI/CD", "hidden": true }
+          #   ]`

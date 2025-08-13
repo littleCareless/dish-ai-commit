@@ -13,6 +13,7 @@ import {
 } from "../../config/workspace-config-schema";
 import { CONFIG_SCHEMA } from "../../config/config-schema";
 import { isConfigValue } from "../../config/utils/config-validation";
+import { notify } from "../../utils/notification/notification-manager";
 
 export class SettingsViewMessageHandler {
   private readonly _extensionId: string;
@@ -201,11 +202,11 @@ export class SettingsViewMessageHandler {
           });
           await Promise.all(promises);
           webview.postMessage({ command: "settingsSaved" });
-          vscode.window.showInformationMessage("设置已成功保存！");
+          notify.info("settings.save.success");
         } catch (error) {
           const errorMessage =
             error instanceof Error ? error.message : String(error);
-          vscode.window.showErrorMessage(`保存设置失败: ${errorMessage}`);
+          notify.error("settings.save.failed", [errorMessage]);
           webview.postMessage({
             command: "saveSettingsError",
             error: `保存设置失败: ${errorMessage}`,
@@ -278,17 +279,17 @@ export class SettingsViewMessageHandler {
   private async handleClearIndex(webview: vscode.Webview): Promise<void> {
     if (!this._embeddingService) {
       const errorMessage = "EmbeddingService is not initialized.";
-      vscode.window.showErrorMessage(errorMessage);
+      notify.error("embedding.service.not.initialized");
       return;
     }
     try {
       await this._embeddingService.clearIndex();
-      vscode.window.showInformationMessage("Index cleared successfully.");
+      notify.info("index.clear.success");
       webview.postMessage({ command: "indexCleared", data: { isIndexed: 0 } });
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      vscode.window.showErrorMessage(`Failed to clear index: ${errorMessage}`);
+      notify.error("index.clear.failed", [errorMessage]);
     }
   }
 

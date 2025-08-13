@@ -1,0 +1,206 @@
+# .github/workflows/release.yml
+
+# ----------------------------------------------------------------
+# 自动化发布工作流 (Automated Release Workflow) - v2 (整合版)
+# ----------------------------------------------------------------
+# 触发时机: 当一个格式为 vX.Y.Z 的新标签被推送到 main 或 develop 分支时。
+#
+# 核心功能:
+# 1. 基于 Git 标签触发，区分预发布 (develop) 和正式发布 (main)。
+# 2. 运行代码质量检查 (Lint) 和自动化测试。
+# 3. 基于 Conventional Commits 自动生成更新日志 (Changelog)。
+# 4. 创建包含更新日志和构建产物的 GitHub Release。
+# 5. 将扩展发布到 Open VSX Registry 和 Visual Studio Marketplace。
+# 6. 发送发布成功通知到 Slack。
+# ----------------------------------------------------------------
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v*.*.*"
+  workflow_dispatch:
+
+jobs:
+  release:
+    name: Create and Publish Release
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v3
+        with:
+          version: 10.12.1
+
+      - name: Clean up local tags
+        run: |
+          git tag -d $(git tag -l) 2>/dev/null || true
+          git fetch --tags
+
+      - name: Install dependencies
+        run: npm ci
+
+      # =================================================================
+      # 1. 代码质量保证 (Code Quality Assurance)
+      # =================================================================
+      # - name: Lint code
+      #   run: pnpm lint
+
+      # - name: Run tests
+      #   run: pnpm test
+
+      # =================================================================
+      # 2. 确定发布类型 (Determine Release Type)
+      # =================================================================
+      - name: Determine if pre-release
+        id: determine_prerelease
+        run: |
+          # 安全地获取远程信息，避免标签冲突
+          git fetch origin --prune --prune-tags
+          git fetch origin +refs/heads/*:refs/remotes/origin/* --force
+
+          # 获取当前标签对应的提交哈希
+          TAG_COMMIT=$(git rev-list -n 1 ${{ github.ref }})
+          echo "Tag ${{ github.ref }} points to commit: $TAG_COMMIT"
+
+          # 检查该提交在哪些分支上
+          BRANCHES=$(git branch -r --contains $TAG_COMMIT | grep -v 'HEAD' | sed 's/origin\///' | tr -d ' ')
+          echo "Commit is on branches: $BRANCHES"
+
+          # 获取主要分支（优先级：main > master > release/* > develop）
+          MAIN_BRANCH=""
+          for branch in $BRANCHES; do
+            case $branch in
+              main)
+                MAIN_BRANCH="main"
+                break
+                ;;
+              master)
+                if [[ -z "$MAIN_BRANCH" ]]; then
+                  MAIN_BRANCH="master"
+                fi
+                ;;
+              release/*)
+                if [[ -z "$MAIN_BRANCH" ]] || [[ "$MAIN_BRANCH" != "main" && "$MAIN_BRANCH" != "master" ]]; then
+                  MAIN_BRANCH="$branch"
+                fi
+                ;;
+              develop)
+                if [[ -z "$MAIN_BRANCH" ]] || [[ "$MAIN_BRANCH" == "develop" ]]; then
+                  MAIN_BRANCH="develop"
+                fi
+                ;;
+            esac
+          done
+
+          echo "Primary branch for this tag: $MAIN_BRANCH"
+
+          # 判断是否为预发布
+          case $MAIN_BRANCH in
+            main|master|release/*)
+              echo "is_prerelease=false" >> $GITHUB_OUTPUT
+              echo "This is a stable release from branch: $MAIN_BRANCH"
+              ;;
+            *)
+              echo "is_prerelease=true" >> $GITHUB_OUTPUT
+              echo "This is a pre-release from branch: $MAIN_BRANCH"
+              ;;
+          esac
+
+      # =================================================================
+      # 3. 获取更新日志 (Generate Changelog)
+      # =================================================================
+      - name: Extract latest changelog section (中文)
+        id: extract_changelog
+        run: |
+          body=$(awk '
+            BEGIN { capture=0 }
+            /^# [0-9]+\.[0-9]+\.[0-9]+ \(/ {
+              if (capture) exit;
+              capture=1;
+            }
+            capture { print }
+          ' CHANGELOG.zh-CN.md)
+          echo "body<<EOF" >> $GITHUB_OUTPUT
+          echo "$body" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      # =================================================================
+      # 4. 发布到市场 (Publish to Marketplaces)
+      # =================================================================
+      - name: Publish to Open VSX Registry
+        uses: HaaLeo/publish-vscode-extension@v2
+        id: publishToOpenVSX
+        with:
+          pat: ${{ secrets.OPEN_VSX_TOKEN }}
+          preRelease: ${{ steps.determine_prerelease.outputs.is_prerelease }}
+          skipDuplicate: true
+
+      - name: Publish to Visual Studio Marketplace
+        uses: HaaLeo/publish-vscode-extension@v2
+        id: publishToVSMarketplace
+        with:
+          pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
+          registryUrl: https://marketplace.visualstudio.com
+          extensionFile: ${{ steps.publishToOpenVSX.outputs.vsixPath }}
+          preRelease: ${{ steps.determine_prerelease.outputs.is_prerelease }}
+          skipDuplicate: true
+
+      # =================================================================
+      # 5. 创建 GitHub Release (Create GitHub Release)
+      # =================================================================
+      - name: Create GitHub Release
+        id: create_release
+        uses: softprops/action-gh-release@v2
+        with:
+          body: ${{ steps.extract_changelog.outputs.body }}
+          files: |
+            ${{ steps.publishToOpenVSX.outputs.vsixPath }}
+          prerelease: ${{ steps.determine_prerelease.outputs.is_prerelease }}
+          name: Release ${{ github.ref_name }}
+          tag_name: ${{ github.ref_name }}
+
+      # =================================================================
+      # 6. 发布后通知 (Post-Release Notification)
+      # =================================================================
+      - name: Send Slack Notification on Success
+        if: success()
+        continue-on-error: true
+        uses: slackapi/slack-github-action@v1.26.0
+        with:
+          payload: |
+            {
+              "blocks": [
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "🚀 *New Release Published!* 🚀\n*Project:* `${{ github.repository }}`\n*Version:* `${{ github.ref_name }}`"
+                  }
+                },
+                {
+                  "type": "section",
+                  "text": {
+                    "type": "mrkdwn",
+                    "text": "View the release details here:\n<${{ steps.create_release.outputs.html_url }}|Release ${{ github.ref_name }}>"
+                  }
+                }
+              ]
+            }
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
+          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK

@@ -287,6 +287,12 @@ export const CONFIG_SCHEMA = {
     },
   },
   features: {
+    suppressNonCriticalWarnings: {
+      type: "boolean",
+      default: true,
+      description:
+        "Suppress non-critical warning popups, such as context length warnings. / 禁用非关键性警告弹窗，例如上下文长度警告。",
+    },
     // Code analysis features
     codeAnalysis: {
       diffTarget: {

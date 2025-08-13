@@ -41,11 +41,12 @@ export class GeneratePRSummaryCommand extends BaseCommand {
             increment: 5,
             message: getMessage("detecting.scm.provider"),
           });
-          const scmProvider = await this.detectSCMProvider();
-          if (!scmProvider) {
+          const result = await this.detectSCMProvider();
+          if (!result) {
             notify.error("scm.not.detected");
             return;
           }
+          const { scmProvider } = result;
 
           if (scmProvider.type !== "git") {
             notify.error("pr.summary.git.only");
@@ -205,6 +206,9 @@ export class GeneratePRSummaryCommand extends BaseCommand {
           } else {
             notify.error("pr.summary.generation.failed");
           }
+          progress.report({
+            increment: 100,
+          });
         }
       );
     } catch (error) {
