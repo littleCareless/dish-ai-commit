@@ -81,7 +81,6 @@
   "editor.format.orderedList": "Ordered List",
   "editor.format.unorderedList": "Unordered List",
   "editor.copy": "Copy Content",
-
   "reviewing.code": "Reviewing code",
   "getting.file.changes": "Getting file changes...",
   "no.valid.changes.selected": "No valid changes selected for review",
@@ -202,8 +201,7 @@
   "git.base.branch.not.found.error": "Could not find a valid base branch to compare against. Tried: {0}",
   "diff.files.selected": "Selected {0} files for diff.",
   "diff.staged.info": "Getting staged changes for {0} files.",
-  "diff.all.info": "Getting all changes for {0} files."
-,
+  "diff.all.info": "Getting all changes for {0} files.",
   "checking.selected.files": "Checking selected files...",
   "progress.generating.layered.commit": "Generating layered commit details...",
   "progress.generating.commit.for.file": "Generating details for {0}...",
@@ -222,5 +220,10 @@
   "scm.log.failed": "Failed to get {0} commit log: {1}",
   "scm.no.changes": "No changes to commit in {0}",
   "scm.repository.not.found": "{0} repository not found",
-  "scm.version.detected": "Detected {0} version: {1}"
+  "scm.version.detected": "Detected {0} version: {1}",
+  "settings.save.success": "Settings saved successfully",
+  "settings.save.failed": "Failed to save settings: {0}",
+  "embedding.service.not.initialized": "EmbeddingService is not initialized",
+  "index.clear.success": "Index cleared successfully",
+  "index.clear.failed": "Failed to clear index: {0}"
 }
