@@ -32,12 +32,13 @@ export class SCMDetectorService {
 
     const files = [
       ...new Set(
-        states
-          .map(
-            (state) =>
-              (state as any)?._resourceUri?.fsPath || state?.resourceUri?.fsPath
-          )
-          .filter(Boolean)
+        states.flatMap((state) =>
+          [
+            (state as any)?.resourceUri?.fsPath,
+            (state as any)?._renameResourceUri?.fsPath,
+            (state as any)?._resourceUri?.fsPath,
+          ].filter(Boolean)
+        )
       ),
     ];
 
@@ -61,48 +62,44 @@ export class SCMDetectorService {
       files = this.getSelectedFiles(resourceStates);
     }
 
-    // 优先尝试通过Git扩展获取仓库路径，以保证对Git的兼容性
+    // 先尝试从 resourceStates 直接获取（单工作区多仓库场景更可靠）
+    if (resourceStates) {
+      const states = Array.isArray(resourceStates)
+        ? resourceStates
+        : [resourceStates];
+      for (const state of states) {
+        const sc = (state as any).resourceGroup?.sourceControl;
+        if (sc?.rootUri?.fsPath) {
+          return sc.rootUri.fsPath;
+        }
+        if ((state as any)?.rootUri?.fsPath) {
+          return (state as any)?.rootUri?.fsPath;
+        }
+      }
+    }
+
+    // 通过 Git 扩展匹配（仅当提供了 files 时）
     const gitExtension = vscode.extensions.getExtension("vscode.git");
     if (gitExtension?.isActive) {
       try {
         const gitApi = gitExtension.exports.getAPI(1);
         const repositories = gitApi.repositories;
-        if (repositories.length > 0) {
-          if (files && files.length > 0) {
-            for (const file of files) {
-              for (const repository of repositories) {
-                const repoPath = (repository as any).rootUri?.fsPath;
-                if (repoPath && file.startsWith(repoPath)) {
-                  return repoPath;
-                }
+        if (repositories.length > 0 && files && files.length > 0) {
+          for (const file of files) {
+            for (const repository of repositories) {
+              const repoPath = (repository as any).rootUri?.fsPath;
+              if (repoPath && file.startsWith(repoPath)) {
+                return repoPath;
               }
             }
           }
-          // 如果没有文件匹配，但存在Git仓库，返回第一个作为备用
-          return (repositories[0] as any).rootUri?.fsPath;
         }
       } catch (error) {
         console.warn("Failed to get repository from Git extension:", error);
       }
     }
 
-    // 尝试从resourceStates直接获取（通用方式）
-    if (resourceStates) {
-      const states = Array.isArray(resourceStates)
-        ? resourceStates
-        : [resourceStates];
-      for (const state of states) {
-        // 尝试访问 sourceControl.rootUri，这是一个更可靠的属性
-        const sc = (state as any).resourceGroup?.sourceControl;
-        if (sc?.rootUri?.fsPath) {
-          return sc.rootUri.fsPath;
-        }
-        // 备用方案，直接访问 rootUri
-        if ((state as any)?.rootUri?.fsPath) {
-          return (state as any)?.rootUri?.fsPath;
-        }
-      }
-    }
+    // 已在上方通过 resourceStates 处理
 
     // 回退到使用工作区文件夹（通用方式）
     const workspaceFolders = vscode.workspace.workspaceFolders;
@@ -112,6 +109,18 @@ export class SCMDetectorService {
         const folder = vscode.workspace.getWorkspaceFolder(fileUri);
         if (folder) {
           return folder.uri.fsPath;
+        }
+      }
+      // 如果未能确定，且仅存在单一 Git 仓库，则返回该仓库路径
+      if (gitExtension?.isActive) {
+        try {
+          const gitApi = gitExtension.exports.getAPI(1);
+          const repositories = gitApi.repositories;
+          if (repositories.length === 1) {
+            return (repositories[0] as any).rootUri?.fsPath;
+          }
+        } catch (error) {
+          console.warn("Failed to fallback to single Git repository:", error);
         }
       }
       if (workspaceFolders.length > 0) {
