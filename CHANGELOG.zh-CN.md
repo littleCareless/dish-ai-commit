@@ -5,6 +5,33 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+# 0.44.0 (2025-08-13)
+
+
+### ♻ Code Refactoring
+
+* **setting**: 为设置页面组件添加显式类型定义 ([c17f8f6](https://github.com/littleCareless/dish-ai-commit/commit/c17f8f6))
+
+
+### ✅ Tests
+
+* **scm**: 为 ImprovedPathUtils 添加单元测试 ([42b67c8](https://github.com/littleCareless/dish-ai-commit/commit/42b67c8))
+
+
+### ✨ Features
+
+* **scm**: 新增改进的跨平台路径处理工具类 ([6e07e4a](https://github.com/littleCareless/dish-ai-commit/commit/6e07e4a))
+
+
+### 🐛 Bug Fixes
+
+* **scm**: 修复 SVN 提供程序中的路径处理和命令注入问题 ([9da13a2](https://github.com/littleCareless/dish-ai-commit/commit/9da13a2))
+* **scm**: 修复已删除文件无法正确生成 diff 的问题 ([16f1fad](https://github.com/littleCareless/dish-ai-commit/commit/16f1fad))
+
+
+
+
+
 ## 0.43.1 (2025-08-06)
 
 
