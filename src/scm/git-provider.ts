@@ -121,7 +121,7 @@ export class GitProvider implements ISCMProvider {
         `git status --porcelain ${escapedFile}`,
         {
           ...ImprovedPathUtils.createExecOptions(repositoryPath),
-          encoding: 'utf8'
+          encoding: "utf8",
         }
       );
 
@@ -170,7 +170,7 @@ export class GitProvider implements ISCMProvider {
       try {
         await exec("git rev-parse HEAD", {
           ...ImprovedPathUtils.createExecOptions(currentWorkspaceRoot),
-          encoding: 'utf8'
+          encoding: "utf8",
         });
       } catch (error) {
         // 如果执行失败，说明没有初始提交
@@ -185,13 +185,7 @@ export class GitProvider implements ISCMProvider {
             file,
             currentWorkspaceRoot
           );
-                const escapedFile = ImprovedPathUtils.escapeShellPath(file);
-
-          // 对于删除的文件不获取diff内容
-          if (fileStatus === "Deleted File") {
-            diffOutput += `\n=== ${fileStatus}: ${file} ===\n`;
-            continue;
-          }
+          const escapedFile = ImprovedPathUtils.escapeShellPath(file);
 
           // 根据文件状态选择合适的diff命令
           let stdout = "";
@@ -202,7 +196,7 @@ export class GitProvider implements ISCMProvider {
                 `git diff --no-index /dev/null ${escapedFile}`,
                 {
                   ...ImprovedPathUtils.createExecOptions(currentWorkspaceRoot),
-                  encoding: 'utf8'
+                  encoding: "utf8",
                 }
               );
               stdout = result.stdout.toString();
@@ -216,7 +210,7 @@ export class GitProvider implements ISCMProvider {
             // 处理已暂存的新文件
             const result = await exec(`git diff --cached -- ${escapedFile}`, {
               ...ImprovedPathUtils.createExecOptions(currentWorkspaceRoot),
-              encoding: 'utf8'
+              encoding: "utf8",
             });
             stdout = result.stdout.toString();
           } else {
@@ -234,7 +228,7 @@ export class GitProvider implements ISCMProvider {
                 const result = await exec(`git diff -- ${escapedFile}`, {
                   cwd: currentWorkspaceRoot,
                   maxBuffer: 1024 * 1024 * 10,
-                  encoding: 'utf8'
+                  encoding: "utf8",
                 });
                 stdout = result.stdout.toString();
               }
@@ -247,7 +241,7 @@ export class GitProvider implements ISCMProvider {
                 const result = await exec(`git diff -- ${escapedFile}`, {
                   cwd: currentWorkspaceRoot,
                   maxBuffer: 1024 * 1024 * 10,
-                  encoding: 'utf8'
+                  encoding: "utf8",
                 });
                 stdout = result.stdout.toString();
               } else {
@@ -471,7 +465,9 @@ export class GitProvider implements ISCMProvider {
     // 1. 如果在构造时提供了特定的仓库路径，优先使用它
     if (this.repositoryPath) {
       const specificRepo = repositories.find(
-        (repo) => ImprovedPathUtils.normalizePath(repo.rootUri.fsPath) === ImprovedPathUtils.normalizePath(this.repositoryPath!)
+        (repo) =>
+          ImprovedPathUtils.normalizePath(repo.rootUri.fsPath) ===
+          ImprovedPathUtils.normalizePath(this.repositoryPath!)
       );
       // 如果提供了特定的仓库路径，我们只信任这个路径。
       // 如果找不到，则返回 undefined，让调用者处理错误，
@@ -493,7 +489,11 @@ export class GitProvider implements ISCMProvider {
     if (uris && uris.length > 0) {
       for (const uri of uris) {
         for (const repo of repositories) {
-          if (ImprovedPathUtils.normalizePath(uri.fsPath).startsWith(ImprovedPathUtils.normalizePath(repo.rootUri.fsPath))) {
+          if (
+            ImprovedPathUtils.normalizePath(uri.fsPath).startsWith(
+              ImprovedPathUtils.normalizePath(repo.rootUri.fsPath)
+            )
+          ) {
             return repo; // 找到第一个匹配的就返回
           }
         }
@@ -505,7 +505,11 @@ export class GitProvider implements ISCMProvider {
     if (activeEditor?.document.uri.scheme === "file") {
       const activeFileUri = activeEditor.document.uri;
       for (const repo of repositories) {
-        if (ImprovedPathUtils.normalizePath(activeFileUri.fsPath).startsWith(ImprovedPathUtils.normalizePath(repo.rootUri.fsPath))) {
+        if (
+          ImprovedPathUtils.normalizePath(activeFileUri.fsPath).startsWith(
+            ImprovedPathUtils.normalizePath(repo.rootUri.fsPath)
+          )
+        ) {
           return repo;
         }
       }
