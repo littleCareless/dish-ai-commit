@@ -1,10 +1,7 @@
 import * as vscode from "vscode";
-import { promisify } from "util";
-import { exec } from "child_process";
-import { SvnUtils } from "./svn-utils";
+import { SCMCommandExecutor } from "./utils/command-executor";
+import { SvnUtils } from "./utils/svn-utils";
 import { getMessage } from "../utils/i18n";
-
-const execAsync = promisify(exec);
 
 /**
  * 作者服务类
@@ -34,7 +31,7 @@ export class AuthorService {
    * @returns Git配置中的用户名
    */
   private async getGitAuthor(): Promise<string> {
-    const { stdout } = await execAsync("git config user.name");
+    const { stdout } = await SCMCommandExecutor.executeGit("config user.name", this.workspacePath);
     return stdout.trim();
   }
 
@@ -45,20 +42,20 @@ export class AuthorService {
    * @throws 如果无法获取作者信息则抛出错误
    */
   private async getSvnAuthor(): Promise<string> {
-    // Try getting author from auth cache first
-    const authorFromAuth = await SvnUtils.getSvnAuthorFromAuth(
-      this.workspacePath
-    );
-    if (authorFromAuth) {
-      return authorFromAuth;
-    }
-
-    // If auth cache empty, try getting from svn info
+    // Try getting author from svn info first
     const authorFromInfo = await SvnUtils.getSvnAuthorFromInfo(
       this.workspacePath
     );
     if (authorFromInfo) {
       return authorFromInfo;
+    }
+
+    // If svn info fails, try getting from svn log
+    const authorFromLog = await SvnUtils.getSvnAuthorFromLog(
+      this.workspacePath
+    );
+    if (authorFromLog) {
+      return authorFromLog;
     }
 
     // If both methods fail, prompt user for input
@@ -100,12 +97,7 @@ export class AuthorService {
   private async getAllGitAuthors(): Promise<string[]> {
     try {
       // --no-merges 排除合并提交的作者，通常这些不是直接的贡献者
-      const { stdout } = await execAsync(
-        "git log --all --format='%aN' --no-merges",
-        {
-          cwd: this.workspacePath,
-        }
-      );
+      const { stdout } = await SCMCommandExecutor.executeGit("log --all --format='%aN' --no-merges", this.workspacePath);
       const authors = stdout
         .split("\n")
         .map((author) => author.trim())
@@ -132,10 +124,7 @@ export class AuthorService {
     );
     // 尝试从 `svn log` 中提取，这可能非常耗时且不精确
     try {
-      const { stdout } = await execAsync(`svn log --quiet`, {
-        cwd: this.workspacePath,
-        maxBuffer: 1024 * 1024 * 10, // 增加缓冲区以处理大型日志
-      });
+      const { stdout } = await SCMCommandExecutor.execute("svn log --quiet", this.workspacePath, { maxBuffer: 1024 * 1024 * 10 });
       // 这是一个非常基础的解析，可能不准确，依赖于svn log的默认格式
       const authorRegex = /r\d+ \| ([^|]+) \|/g;
       let match;
