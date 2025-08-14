@@ -6,6 +6,7 @@ import { GitProvider } from "./git-provider";
 import { SvnProvider } from "./svn-provider";
 import { CliSvnProvider } from "./cli-svn-provider";
 import { ImprovedPathUtils } from "./utils/improved-path-utils";
+import { RepositoryManager } from "./utils/repository-manager";
 
 /**
  * 最近提交信息
@@ -89,93 +90,26 @@ export class SCMFactory {
    * 根据选中的文件确定工作区根目录
    * @param selectedFiles 选中的文件路径列表
    * @returns 工作区根目录路径或undefined
+   * @deprecated 使用 RepositoryDetector.detectRepository 替代
    */
   private static findWorkspaceRoot(
     selectedFiles?: string[]
   ): string | undefined {
-    // 如果没有提供文件，尝试从当前活动编辑器或窗口状态获取工作区
-    if (!selectedFiles || selectedFiles.length === 0) {
-      // 1. 尝试从当前活动编辑器获取文件路径
-      const activeEditor = vscode.window.activeTextEditor;
-      if (activeEditor && activeEditor.document.uri.scheme === "file") {
-        const activeFilePath = ImprovedPathUtils.normalizePath(activeEditor.document.uri.fsPath);
-        const workspaceFromActiveFile =
-          this.findWorkspaceRootFromFile(activeFilePath);
-        if (workspaceFromActiveFile) {
-          return workspaceFromActiveFile;
-        }
-      }
-
-      // 2. 尝试从最近打开的文件获取工作区
-      const recentFiles = vscode.workspace.textDocuments
-        .filter((doc) => doc.uri.scheme === "file")
-        .map((doc) => ImprovedPathUtils.normalizePath(doc.uri.fsPath));
-
-      if (recentFiles.length > 0) {
-        const workspaceFromRecentFile = this.findWorkspaceRootFromFile(
-          recentFiles[0]
-        );
-        if (workspaceFromRecentFile) {
-          return workspaceFromRecentFile;
-        }
-      }
-
-      // 3. 如果有多个工作区，尝试根据当前焦点或最近活动确定
-      const workspaceFolders = vscode.workspace.workspaceFolders;
-      if (workspaceFolders && workspaceFolders.length > 1) {
-        // 检查是否有工作区包含当前活动文件
-        if (activeEditor && activeEditor.document.uri.scheme === "file") {
-          const activeFilePath = ImprovedPathUtils.normalizePath(activeEditor.document.uri.fsPath);
-          for (const folder of workspaceFolders) {
-            const folderPath = ImprovedPathUtils.normalizePath(folder.uri.fsPath);
-            if (activeFilePath.startsWith(folderPath)) {
-              return folderPath;
-            }
-          }
-        }
-
-        // 如果无法确定，返回第一个工作区（保持向后兼容）
-        console.warn(
-          "Multiple workspaces found, using first workspace as fallback"
-        );
-      }
-
-      // 4. 最后回退到第一个工作区
-      const firstWorkspace = workspaceFolders?.[0]?.uri.fsPath;
-      return firstWorkspace ? ImprovedPathUtils.normalizePath(firstWorkspace) : undefined;
-    }
-
-    // 检查每个文件的目录，寻找.git或.svn文件夹
-    for (const file of selectedFiles) {
-      if (ImprovedPathUtils.isValidPath(file)) {
-        const workspaceRoot = this.findWorkspaceRootFromFile(file);
-        if (workspaceRoot) {
-          return workspaceRoot;
-        }
-      }
-    }
-
-    // 如果没找到，回退到VS Code工作区
-    const fallbackWorkspace = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    return fallbackWorkspace ? ImprovedPathUtils.normalizePath(fallbackWorkspace) : undefined;
+    const result = RepositoryManager.detectRepository({ files: selectedFiles });
+    return result?.repositoryPath;
   }
 
   /**
    * 从单个文件路径查找工作区根目录
    * @param filePath 文件路径
    * @returns 工作区根目录路径或undefined
+   * @deprecated 使用 RepositoryDetector.detectSCMFromFileSystem 替代
    */
   private static findWorkspaceRootFromFile(
     filePath: string
   ): string | undefined {
-    if (!ImprovedPathUtils.isValidPath(filePath)) {
-      return undefined;
-    }
-    
-    const normalizedPath = ImprovedPathUtils.normalizePath(filePath);
-    const workspaceRoot = ImprovedPathUtils.findWorkspaceRoot(normalizedPath, [".git", ".svn"]);
-    
-    return workspaceRoot ? ImprovedPathUtils.normalizePath(workspaceRoot) : undefined;
+    const result = RepositoryManager.detectSCMFromFileSystem(filePath);
+    return result?.repositoryPath;
   }
 
   /**
@@ -274,8 +208,11 @@ export class SCMFactory {
   ): Promise<ISCMProvider | undefined> {
     try {
       // 优先使用传入的 repositoryPath，如果没有则使用检测方法获取工作区根目录
-      const workspaceRoot =
-        repositoryPath || this.findWorkspaceRoot(selectedFiles);
+      const detectionResult = RepositoryManager.detectRepository({
+        files: selectedFiles,
+        repositoryPath: repositoryPath
+      });
+      const workspaceRoot = detectionResult?.repositoryPath;
       if (!workspaceRoot || !ImprovedPathUtils.isValidPath(workspaceRoot)) {
         return undefined;
       }
@@ -363,8 +300,9 @@ export class SCMFactory {
 
       const normalizedWorkspaceRoot = ImprovedPathUtils.normalizePath(workspaceRoot);
       
-      // 通过目录检测，包括选定的文件路径
-      const scmType = this.detectSCMFromDir(normalizedWorkspaceRoot, selectedFiles);
+      // 通过RepositoryDetector检测SCM类型
+      const detectionResult = RepositoryManager.detectSCMFromFileSystem(normalizedWorkspaceRoot);
+      const scmType = detectionResult?.scmType;
 
       const gitExtension = vscode.extensions.getExtension("vscode.git");
       const svnExtension = vscode.extensions.getExtension(
