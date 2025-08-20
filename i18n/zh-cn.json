@@ -214,8 +214,8 @@
   "git.base.branch.not.found.error": "无法找到有效的基础分支进行比较。已尝试: {0}",
   "diff.files.selected": "已选择 {0} 个文件进行比较。",
   "diff.staged.info": "正在获取 {0} 个文件的暂存更改。",
-  "diff.all.info": "正在获取所有 {0} 个文件的更改。"
-,
+  "diff.all.info": "正在获取所有 {0} 个文件的更改。",
+  "diff.selected.info": "已选择 {0} 个文件进行分析。",
   "checking.selected.files": "正在检查选定的文件...",
   "progress.generating.layered.commit": "正在生成分层提交详情...",
   "progress.generating.commit.for.file": "正在为 {0} 生成详情...",
@@ -234,5 +234,11 @@
   "scm.log.failed": "获取 {0} 提交日志失败: {1}",
   "scm.no.changes": "{0} 没有要提交的更改",
   "scm.repository.not.found": "未找到 {0} 仓库",
-  "scm.version.detected": "检测到 {0} 版本: {1}"
+  "scm.version.detected": "检测到 {0} 版本: {1}",
+  "progress.generating.layered.summary": "正在生成分层提交摘要...",
+  "error.generating.commit.for.file": "为 {0} 生成提交时出错：{1}",
+  "warn.no.file.descriptions.generated": "无法生成任何文件描述。正在中止。",
+  "error.parsing.layered.summary": "从 AI 解析分层提交摘要失败。显示原始详细信息作为后备。",
+  "layered.commit.fallback.title": "分层提交详情（后备）",
+  "layered.commit.fallback.description": "AI 未能生成结构化摘要。以下是原始的、按文件分的描述。您可以使用这些来手动创建提交信息。"
 }
