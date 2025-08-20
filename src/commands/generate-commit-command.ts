@@ -405,7 +405,8 @@ ${currentInput}
             scmProvider,
             selectedFiles,
             token,
-            progress
+            progress,
+            selectedModel
           );
         } else {
           await this.streamAndApplyMessage(
@@ -452,7 +453,8 @@ ${currentInput}
     scmProvider: ISCMProvider,
     selectedFiles: string[] | undefined,
     token: vscode.CancellationToken,
-    progress: vscode.Progress<{ message?: string; increment?: number }>
+    progress: vscode.Progress<{ message?: string; increment?: number }>,
+    selectedModel: AIModel
   ) {
     progress.report({
       message: getMessage("progress.generating.layered.commit"),
@@ -463,6 +465,7 @@ ${currentInput}
       return;
     }
 
+    const config = ConfigurationManager.getInstance().getConfiguration();
     const fileDescriptionPromises = selectedFiles.map(async (filePath) => {
       this.throwIfCancelled(token);
       progress.report({
@@ -476,17 +479,20 @@ ${currentInput}
         return null;
       }
 
-      const fileRequestParams: AIRequestParams = {
-        ...requestParams,
-        diff: fileDiff,
-        changeFiles: [filePath],
-      };
+      const systemPrompt = getLayeredCommitFilePrompt({
+        config: config.features.commitFormat,
+        language: config.base.language,
+        filePath: filePath,
+      });
 
-      const systemPrompt = getLayeredCommitFilePrompt(fileRequestParams);
-      const messages: AIMessage[] = [
-        { role: "system", content: systemPrompt },
-        { role: "user", content: "please generate" },
-      ];
+      const contextManager = await this._buildContextManager(
+        selectedModel,
+        systemPrompt,
+        scmProvider,
+        fileDiff,
+        config
+      );
+      const messages = contextManager.buildMessages();
 
       if (!aiProvider.generateCommit) {
         notify.warn("provider.does.not.support.non.streaming.for.layered", [
@@ -497,8 +503,9 @@ ${currentInput}
 
       try {
         const description = await aiProvider.generateCommit({
-          ...fileRequestParams,
+          ...requestParams, // Pass original params for model, etc.
           messages,
+          diff: "", // Diff is now in messages, clear this
         });
 
         return {
@@ -546,6 +553,8 @@ ${currentInput}
       message: getMessage("progress.generating.layered.summary"),
     });
 
+    const config = ConfigurationManager.getInstance().getConfiguration();
+
     const formattedFileChanges = fileChanges
       .map(
         (change) =>
@@ -553,47 +562,31 @@ ${currentInput}
       )
       .join("\n\n");
 
-    const summarySystemPrompt = `You are an expert programmer tasked with writing a final, consolidated commit message.
-You will be given a series of file-specific descriptions. Your job is to synthesize them into a single, coherent, and formal commit message that follows the Conventional Commits specification.
+    // Build a temporary params object for the system prompt, forcing merge commit behavior
+    const summaryParams = {
+      ...config.features.commitMessage,
+      ...config.features.commitFormat,
+      ...config.features.codeAnalysis,
+      model: requestParams.model,
+      scm: scmProvider.type ?? "git",
+      changeFiles: fileChanges.map((fc) => fc.filePath),
+      languages: config.base.language,
+      diff: formattedFileChanges, // Use the descriptions as the "diff" for the summary
+      additionalContext: "",
+      enableMergeCommit: true, // Force merge commit style for the summary
+    };
 
-**File-Specific Changes:**
-<file-changes>
-${formattedFileChanges}
-</file-changes>
+    const summarySystemPrompt = getSystemPrompt(summaryParams);
 
-**Instructions:**
-1.  **Analyze All Changes:** Read through all the provided file-specific descriptions to understand the full scope of the changes.
-2.  **Create a Conventional Commit Header:** Write a short, imperative summary of the entire change (e.g., "feat(auth): implement user authentication"). This will be the subject line of the commit.
-    - The format is 'type(scope): subject'.
-    - 'type' must be one of: feat, fix, docs, style, refactor, test, chore, build, ci, perf, revert.
-3.  **Write a Detailed Body:**
-    - After the header, add a blank line.
-    - Provide a more detailed explanation of the changes in the body of the commit message.
-    - Use bullet points for individual file changes to keep it organized, listing the file path and then the description.
-4.  **Do NOT use JSON.** Your output must be a single, complete commit message string.
+    const summaryContextManager = await this._buildLayeredSummaryContextManager(
+      requestParams.model as AIModel,
+      summarySystemPrompt,
+      scmProvider,
+      formattedFileChanges,
+      config
+    );
 
-**Example Output:**
-\`\`\`
-feat(api): implement new user authentication endpoint
-
-- **src/controllers/auth.ts**: Added the main logic for the new authentication endpoint, including request validation and response handling.
-- **src/routes/user.ts**: Registered the new authentication route and connected it to the controller.
-- **src/models/user.ts**: Updated the user model with a new field for tracking the last login timestamp.
-\`\`\`
-
-REMINDER:
-- The final output MUST be a single string containing the full commit message.
-- Do not include any other text, JSON, or explanations outside the commit message itself.
-`;
-
-    const messages: AIMessage[] = [
-      { role: "system", content: summarySystemPrompt },
-      {
-        role: "user",
-        content:
-          "Please generate the commit message based on the file changes provided.",
-      },
-    ];
+    const messages = summaryContextManager.buildMessages();
 
     if (!aiProvider.generateCommit) {
       throw new Error(
@@ -645,6 +638,76 @@ REMINDER:
     notify.info("layered.commit.details.generated");
   }
 
+  private async _buildLayeredSummaryContextManager(
+    selectedModel: AIModel,
+    systemPrompt: string,
+    scmProvider: ISCMProvider,
+    formattedFileChanges: string,
+    configuration: any
+  ): Promise<ContextManager> {
+    // 1. 获取上下文信息（不包括需要真实 diff 的部分）
+    const currentInput = await this._getSCMInputContext(scmProvider);
+    const { userCommits, repoCommits } = await this._getRecentCommits(
+      scmProvider,
+      configuration.features.commitMessage.useRecentCommitsAsReference
+    );
+    const reminder = this._getReminder(
+      userCommits,
+      repoCommits,
+      configuration.base.language
+    );
+
+    // 2. 构建 ContextManager
+    const contextManager = new ContextManager(
+      selectedModel,
+      systemPrompt,
+      configuration.features.suppressNonCriticalWarnings
+    );
+
+    // 添加与摘要生成相关的块
+    if (userCommits) {
+      contextManager.addBlock({
+        content: userCommits,
+        priority: 700,
+        strategy: TruncationStrategy.TruncateTail,
+        name: "user-commits",
+      });
+    }
+
+    if (repoCommits) {
+      contextManager.addBlock({
+        content: repoCommits,
+        priority: 600,
+        strategy: TruncationStrategy.TruncateTail,
+        name: "recent-commits",
+      });
+    }
+
+    // 将格式化后的文件变更作为主要内容块添加
+    contextManager.addBlock({
+      content: formattedFileChanges,
+      priority: 900,
+      strategy: TruncationStrategy.TruncateTail,
+      name: "file-changes-summary",
+    });
+
+    contextManager.addBlock({
+      content: reminder,
+      priority: 900, // 优先级高
+      strategy: TruncationStrategy.TruncateTail,
+      name: "reminder",
+    });
+
+    contextManager.addBlock({
+      content: currentInput,
+      priority: 750,
+      strategy: TruncationStrategy.TruncateTail,
+      name: "custom-instructions",
+    });
+
+    return contextManager;
+  }
+
   /**
    * 构建并配置 ContextManager 实例。
    * 此函数负责收集所有必要的上下文信息（如用户指令、最近提交、相似代码等），
@@ -661,7 +724,8 @@ REMINDER:
     systemPrompt: string,
     scmProvider: ISCMProvider,
     diffContent: string,
-    configuration: any
+    configuration: any,
+    options: { exclude?: string[] } = {}
   ): Promise<ContextManager> {
     // 1. 获取所有上下文信息
     const currentInput = await this._getSCMInputContext(scmProvider);
@@ -669,7 +733,10 @@ REMINDER:
       scmProvider,
       configuration.features.commitMessage.useRecentCommitsAsReference
     );
-    const similarCodeContext = await this._getSimilarCodeContext(diffContent);
+    const { exclude = [] } = options;
+    const similarCodeContext = exclude.includes("similar-code")
+      ? ""
+      : await this._getSimilarCodeContext(diffContent);
     const reminder = this._getReminder(
       userCommits,
       repoCommits,
@@ -707,12 +774,14 @@ REMINDER:
       strategy: TruncationStrategy.TruncateTail,
       name: "similar-code",
     });
-    contextManager.addBlock({
-      content: originalCode,
-      priority: 800,
-      strategy: TruncationStrategy.SmartTruncateDiff,
-      name: "original-code",
-    });
+    if (!exclude.includes("original-code")) {
+      contextManager.addBlock({
+        content: originalCode,
+        priority: 800,
+        strategy: TruncationStrategy.SmartTruncateDiff,
+        name: "original-code",
+      });
+    }
     contextManager.addBlock({
       content: codeChanges,
       priority: 900,
