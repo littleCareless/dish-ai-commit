@@ -1,6 +1,13 @@
-import { ContextBlock, BlockPartitionResult, BlockProcessingResult } from "./types";
+import {
+  ContextBlock,
+  BlockPartitionResult,
+  BlockProcessingResult,
+} from "./types";
 import { TokenCalculator } from "./token-calculator";
-import { FORCE_RETAIN_BLOCKS, MIN_BLOCK_SIZE_FOR_TRUNCATION } from "./constants";
+import {
+  FORCE_RETAIN_BLOCKS,
+  MIN_BLOCK_SIZE_FOR_TRUNCATION,
+} from "./constants";
 import { ContentTruncator } from "./content-truncator";
 import { notify } from "../notification";
 import { formatMessage } from "../i18n";
@@ -14,7 +21,7 @@ export class BlockProcessor {
   private suppressNonCriticalWarnings: boolean;
 
   constructor(
-    tokenCalculator: TokenCalculator, 
+    tokenCalculator: TokenCalculator,
     contentTruncator: ContentTruncator,
     suppressNonCriticalWarnings: boolean = false
   ) {
@@ -31,7 +38,7 @@ export class BlockProcessor {
   partitionAndSortBlocks(blocks: ContextBlock[]): BlockPartitionResult {
     const forcedBlocks: ContextBlock[] = [];
     const processableBlocks: ContextBlock[] = [];
-    
+
     for (const block of blocks) {
       if (FORCE_RETAIN_BLOCKS.includes(block.name)) {
         forcedBlocks.push(block);
@@ -39,10 +46,10 @@ export class BlockProcessor {
         processableBlocks.push(block);
       }
     }
-    
+
     forcedBlocks.sort((a, b) => a.priority - b.priority);
     processableBlocks.sort((a, b) => b.priority - a.priority);
-    
+
     return { forcedBlocks, processableBlocks };
   }
 
@@ -62,8 +69,10 @@ export class BlockProcessor {
     let remainingTokens = availableTokens;
 
     for (const block of blocks) {
-      const blockTokens = this.tokenCalculator.calculateContentTokens(block.content);
-      
+      const blockTokens = this.tokenCalculator.calculateContentTokens(
+        block.content
+      );
+
       if (remainingTokens >= blockTokens) {
         includedBlocks.push(block);
         remainingTokens -= blockTokens;
@@ -87,7 +96,7 @@ export class BlockProcessor {
       includedBlocks,
       includedBlockNames,
       excludedBlockNames,
-      remainingTokens
+      remainingTokens,
     };
   }
 
@@ -107,7 +116,9 @@ export class BlockProcessor {
     let remainingTokens = availableTokens;
 
     for (const block of blocks) {
-      const blockTokens = this.tokenCalculator.calculateContentTokens(block.content);
+      const blockTokens = this.tokenCalculator.calculateContentTokens(
+        block.content
+      );
 
       if (remainingTokens >= blockTokens) {
         includedBlocks.push(block);
@@ -121,7 +132,7 @@ export class BlockProcessor {
           includedBlockNames
         );
         remainingTokens -= truncationResult;
-        
+
         const currentIndex = blocks.indexOf(block);
         blocks
           .slice(currentIndex + 1)
@@ -136,7 +147,7 @@ export class BlockProcessor {
       includedBlocks,
       includedBlockNames,
       excludedBlockNames,
-      remainingTokens
+      remainingTokens,
     };
   }
 
@@ -154,16 +165,55 @@ export class BlockProcessor {
     includedBlocks: ContextBlock[],
     includedBlockNames: string[]
   ): number {
-    const truncatedContent = this.contentTruncator.truncate(block, maxTokens);
-    const truncatedTokens = this.tokenCalculator.calculateContentTokens(truncatedContent);
-    
+    let truncatedContent: string;
+    if (block.name === "code-changes") {
+      truncatedContent = this.truncateCodeChangesBlock(block, maxTokens);
+    } else {
+      truncatedContent = this.contentTruncator.truncate(block, maxTokens);
+    }
+
+    const truncatedTokens =
+      this.tokenCalculator.calculateContentTokens(truncatedContent);
+
     includedBlocks.push({ ...block, content: truncatedContent });
     includedBlockNames.push(`${block.name} (Truncated)`);
-    
+
     if (!this.suppressNonCriticalWarnings) {
       notify.warn(formatMessage("context.truncated", [block.name]));
     }
-    
+
     return truncatedTokens;
+  }
+
+  private truncateCodeChangesBlock(
+    block: ContextBlock,
+    maxTokens: number
+  ): string {
+    const fileBlocks = block.content.split("# FILE: ").filter(Boolean);
+    const selectedBlocks: string[] = [];
+    let currentTokens = 0;
+
+    for (let i = fileBlocks.length - 1; i >= 0; i--) {
+      const fileBlock = "# FILE: " + fileBlocks[i];
+      const blockTokens =
+        this.tokenCalculator.calculateContentTokens(fileBlock);
+
+      if (currentTokens + blockTokens <= maxTokens) {
+        selectedBlocks.unshift(fileBlock);
+        currentTokens += blockTokens;
+      } else {
+        break;
+      }
+    }
+
+    if (selectedBlocks.length === 0 && fileBlocks.length > 0) {
+      const firstBlock = "# FILE: " + fileBlocks[0];
+      return this.contentTruncator.truncate(
+        { ...block, content: firstBlock },
+        maxTokens
+      );
+    }
+
+    return selectedBlocks.join("\n");
   }
 }
