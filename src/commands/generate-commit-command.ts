@@ -398,15 +398,26 @@ ${currentInput}
           repositoryPath
         );
       } else {
-        await this.streamAndApplyMessage(
-          aiProvider as AbstractAIProvider,
-          requestParams,
-          scmProvider,
-          token,
-          progress,
-          contextManager,
-          repositoryPath
-        );
+        if (configuration.features.commitFormat.enableLayeredCommit) {
+          await this.performLayeredFileCommitGeneration(
+            aiProvider,
+            requestParams,
+            scmProvider,
+            selectedFiles,
+            token,
+            progress
+          );
+        } else {
+          await this.streamAndApplyMessage(
+            aiProvider as AbstractAIProvider,
+            requestParams,
+            scmProvider,
+            token,
+            progress,
+            contextManager,
+            repositoryPath
+          );
+        }
       }
 
       notify.info("commit.message.generated.stream", [
@@ -414,17 +425,6 @@ ${currentInput}
         newProvider,
         selectedModel?.id || "default",
       ]);
-
-      if (configuration.features.commitFormat.enableLayeredCommit) {
-        await this.performLayeredFileCommitGeneration(
-          aiProvider,
-          requestParams,
-          scmProvider,
-          selectedFiles,
-          token,
-          progress
-        );
-      }
     } catch (error) {
       if (error instanceof RequestTooLargeError) {
         const switchToLargerModel = getMessage("error.switch.to.larger.model");
@@ -458,30 +458,12 @@ ${currentInput}
       message: getMessage("progress.generating.layered.commit"),
     });
 
-    // 如果没有选择文件，则退出
     if (!selectedFiles || selectedFiles.length === 0) {
       notify.warn("no.files.selected.for.layered.commit");
       return;
     }
 
-    const fileDescriptions: { filePath: string; description: string }[] = [];
-    const config = ConfigurationManager.getInstance();
-    const configuration = config.getConfiguration();
-    const selectedModel = requestParams.model as AIModel;
-
-    // Pre-fetch global context to avoid fetching it in every loop iteration
-    const currentInput = await this._getSCMInputContext(scmProvider);
-    const { userCommits, repoCommits } = await this._getRecentCommits(
-      scmProvider,
-      configuration.features.commitMessage.useRecentCommitsAsReference
-    );
-    const reminder = this._getReminder(
-      userCommits,
-      repoCommits,
-      configuration.base.language
-    );
-
-    for (const filePath of selectedFiles) {
+    const fileDescriptionPromises = selectedFiles.map(async (filePath) => {
       this.throwIfCancelled(token);
       progress.report({
         message: formatMessage("progress.generating.commit.for.file", [
@@ -491,7 +473,7 @@ ${currentInput}
 
       const fileDiff = await scmProvider.getDiff([filePath]);
       if (!fileDiff) {
-        continue;
+        return null;
       }
 
       const fileRequestParams: AIRequestParams = {
@@ -500,92 +482,157 @@ ${currentInput}
         changeFiles: [filePath],
       };
 
-      const systemPrompt = getSystemPrompt(fileRequestParams);
-
-      // Build context manager for each file to get rich context
-      const similarCodeContext = await this._getSimilarCodeContext(fileDiff);
-      const contextManager = new ContextManager(
-        selectedModel,
-        systemPrompt,
-        configuration.features.suppressNonCriticalWarnings
-      );
-      const { originalCode, codeChanges } = extractProcessedDiff(fileDiff);
-
-      if (userCommits) {
-        contextManager.addBlock({
-          content: userCommits,
-          priority: 700,
-          strategy: TruncationStrategy.TruncateTail,
-          name: "user-commits",
-        });
-      }
-      if (repoCommits) {
-        contextManager.addBlock({
-          content: repoCommits,
-          priority: 600,
-          strategy: TruncationStrategy.TruncateTail,
-          name: "recent-commits",
-        });
-      }
-      contextManager.addBlock({
-        content: similarCodeContext,
-        priority: 320,
-        strategy: TruncationStrategy.TruncateTail,
-        name: "similar-code",
-      });
-      contextManager.addBlock({
-        content: originalCode,
-        priority: 800,
-        strategy: TruncationStrategy.SmartTruncateDiff,
-        name: "original-code",
-      });
-      contextManager.addBlock({
-        content: codeChanges,
-        priority: 900,
-        strategy: TruncationStrategy.SmartTruncateDiff,
-        name: "code-changes",
-      });
-      contextManager.addBlock({
-        content: reminder,
-        priority: 900,
-        strategy: TruncationStrategy.TruncateTail,
-        name: "reminder",
-      });
-      contextManager.addBlock({
-        content: currentInput,
-        priority: 750,
-        strategy: TruncationStrategy.TruncateTail,
-        name: "custom-instructions",
-      });
-
-      const messages = contextManager.buildMessages();
+      const systemPrompt = getLayeredCommitFilePrompt(fileRequestParams);
+      const messages: AIMessage[] = [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: "please generate" },
+      ];
 
       if (!aiProvider.generateCommit) {
         notify.warn("provider.does.not.support.non.streaming.for.layered", [
           aiProvider.getId(),
         ]);
-        continue;
+        return null;
       }
-      const description = await aiProvider.generateCommit({
-        ...fileRequestParams,
-        messages,
-      });
 
-      fileDescriptions.push({
-        filePath,
-        description: description.content,
-      });
-    }
+      try {
+        const description = await aiProvider.generateCommit({
+          ...fileRequestParams,
+          messages,
+        });
+
+        return {
+          filePath,
+          description: description.content,
+        };
+      } catch (error) {
+        notify.error(
+          formatMessage("error.generating.commit.for.file", [
+            filePath,
+            (error as Error).message,
+          ])
+        );
+        return null;
+      }
+    });
+
+    const fileDescriptions = (
+      await Promise.all(fileDescriptionPromises)
+    ).filter((d): d is { filePath: string; description: string } => d !== null);
 
     if (fileDescriptions.length > 0) {
-      await this._showLayeredCommitDetails(fileDescriptions);
+      await this._generateAndApplyLayeredSummary(
+        aiProvider,
+        requestParams,
+        scmProvider,
+        fileDescriptions,
+        token,
+        progress
+      );
+    } else {
+      notify.warn("warn.no.file.descriptions.generated");
+    }
+  }
+
+  private async _generateAndApplyLayeredSummary(
+    aiProvider: AIProvider,
+    requestParams: AIRequestParams,
+    scmProvider: ISCMProvider,
+    fileChanges: { filePath: string; description: string }[],
+    token: vscode.CancellationToken,
+    progress: vscode.Progress<{ message?: string; increment?: number }>
+  ) {
+    progress.report({
+      message: getMessage("progress.generating.layered.summary"),
+    });
+
+    const formattedFileChanges = fileChanges
+      .map(
+        (change) =>
+          `File: ${change.filePath}\nDescription: ${change.description}`
+      )
+      .join("\n\n");
+
+    const summarySystemPrompt = `You are an expert programmer tasked with writing a final, consolidated commit message.
+You will be given a series of file-specific descriptions. Your job is to synthesize them into a single, coherent, and formal commit message that follows the Conventional Commits specification.
+
+**File-Specific Changes:**
+<file-changes>
+${formattedFileChanges}
+</file-changes>
+
+**Instructions:**
+1.  **Analyze All Changes:** Read through all the provided file-specific descriptions to understand the full scope of the changes.
+2.  **Create a Conventional Commit Header:** Write a short, imperative summary of the entire change (e.g., "feat(auth): implement user authentication"). This will be the subject line of the commit.
+    - The format is 'type(scope): subject'.
+    - 'type' must be one of: feat, fix, docs, style, refactor, test, chore, build, ci, perf, revert.
+3.  **Write a Detailed Body:**
+    - After the header, add a blank line.
+    - Provide a more detailed explanation of the changes in the body of the commit message.
+    - Use bullet points for individual file changes to keep it organized, listing the file path and then the description.
+4.  **Do NOT use JSON.** Your output must be a single, complete commit message string.
+
+**Example Output:**
+\`\`\`
+feat(api): implement new user authentication endpoint
+
+- **src/controllers/auth.ts**: Added the main logic for the new authentication endpoint, including request validation and response handling.
+- **src/routes/user.ts**: Registered the new authentication route and connected it to the controller.
+- **src/models/user.ts**: Updated the user model with a new field for tracking the last login timestamp.
+\`\`\`
+
+REMINDER:
+- The final output MUST be a single string containing the full commit message.
+- Do not include any other text, JSON, or explanations outside the commit message itself.
+`;
+
+    const messages: AIMessage[] = [
+      { role: "system", content: summarySystemPrompt },
+      {
+        role: "user",
+        content:
+          "Please generate the commit message based on the file changes provided.",
+      },
+    ];
+
+    if (!aiProvider.generateCommit) {
+      throw new Error(
+        `Provider ${aiProvider.getId()} does not support non-streaming for layered commit summary.`
+      );
+    }
+
+    const summaryResponse = await aiProvider.generateCommit({
+      ...requestParams,
+      messages,
+      diff: "", // Not needed for summary
+    });
+
+    this.throwIfCancelled(token);
+
+    try {
+      const finalMessage = summaryResponse.content;
+      const filteredMessage = filterCodeBlockMarkers(finalMessage);
+      await scmProvider.startStreamingInput(filteredMessage.trim());
+    } catch (error) {
+      console.error("Error applying layered commit summary:", error);
+      // Fallback to showing raw details if applying fails
+      await this._showLayeredCommitDetails(fileChanges, true);
+      notify.error("error.applying.layered.summary");
     }
   }
 
   private async _showLayeredCommitDetails(
-    fileChanges: { filePath: string; description: string }[]
+    fileChanges: { filePath: string; description: string }[],
+    isFallback = false
   ) {
-    let content = `# ${getMessage("layered.commit.details.title")}\n\n`;
+    const title = isFallback
+      ? getMessage("layered.commit.fallback.title")
+      : getMessage("layered.commit.details.title");
+    let content = `# ${title}\n\n`;
+    if (isFallback) {
+      content += `${getMessage("layered.commit.fallback.description")}\n\n`;
+    }
+
     for (const change of fileChanges) {
       content += `### ${change.filePath}\n\n${change.description}\n\n---\n\n`;
     }
