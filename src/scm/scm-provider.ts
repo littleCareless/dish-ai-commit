@@ -87,103 +87,6 @@ export class SCMFactory {
   > = new Map();
 
   /**
-   * 根据选中的文件确定工作区根目录
-   * @param selectedFiles 选中的文件路径列表
-   * @returns 工作区根目录路径或undefined
-   * @deprecated 使用 RepositoryDetector.detectRepository 替代
-   */
-  private static findWorkspaceRoot(
-    selectedFiles?: string[]
-  ): string | undefined {
-    const result = RepositoryManager.detectRepository({ files: selectedFiles });
-    return result?.repositoryPath;
-  }
-
-  /**
-   * 从单个文件路径查找工作区根目录
-   * @param filePath 文件路径
-   * @returns 工作区根目录路径或undefined
-   * @deprecated 使用 RepositoryDetector.detectSCMFromFileSystem 替代
-   */
-  private static findWorkspaceRootFromFile(
-    filePath: string
-  ): string | undefined {
-    const result = RepositoryManager.detectSCMFromFileSystem(filePath);
-    return result?.repositoryPath;
-  }
-
-  /**
-   * 通过项目目录检测SCM类型
-   * @param workspaceRoot 工作区根目录
-   * @param filePaths 选定文件的路径列表（可选）
-   * @returns {"git" | "svn" | undefined} SCM类型
-   */
-  private static detectSCMFromDir(
-    workspaceRoot: string,
-    filePaths?: string[]
-  ): "git" | "svn" | undefined {
-    try {
-      if (!ImprovedPathUtils.isValidPath(workspaceRoot)) {
-        return undefined;
-      }
-
-      const normalizedWorkspaceRoot = ImprovedPathUtils.normalizePath(workspaceRoot);
-      
-      // 首先检查工作区根目录
-      const gitPath = path.join(normalizedWorkspaceRoot, ".git");
-      const svnPath = path.join(normalizedWorkspaceRoot, ".svn");
-
-      if (ImprovedPathUtils.safeExists(gitPath)) {
-        return "git";
-      }
-      if (ImprovedPathUtils.safeExists(svnPath)) {
-        return "svn";
-      }
-
-      // 如果提供了文件路径，检查这些文件所在的目录
-      if (filePaths && filePaths.length > 0) {
-        // 获取所有唯一的目录路径，过滤掉null/undefined值并验证路径有效性
-        const dirPaths = [
-          ...new Set(
-            filePaths
-              .filter((file) => file && typeof file === "string" && ImprovedPathUtils.isValidPath(file))
-              .map((file) => ImprovedPathUtils.normalizePath(path.dirname(file)))
-          ),
-        ];
-
-        for (const dir of dirPaths) {
-          // 从文件所在目录向上查找，直到工作区根目录
-          let currentDir = dir;
-          while (
-            currentDir.startsWith(normalizedWorkspaceRoot) &&
-            currentDir !== normalizedWorkspaceRoot
-          ) {
-            const gitSubPath = path.join(currentDir, ".git");
-            const svnSubPath = path.join(currentDir, ".svn");
-
-            if (ImprovedPathUtils.safeExists(gitSubPath)) {
-              return "git";
-            }
-            if (ImprovedPathUtils.safeExists(svnSubPath)) {
-              return "svn";
-            }
-
-            // 向上一级目录
-            const parentDir = path.dirname(currentDir);
-            if (parentDir === currentDir) break; // 防止无限循环
-            currentDir = parentDir;
-          }
-        }
-      }
-
-      return undefined;
-    } catch (error) {
-      console.error("Failed to detect SCM from directory:", error);
-      return undefined;
-    }
-  }
-
-  /**
    * 检测系统是否安装了指定的SCM命令
    * @param cmd 要检测的命令
    * @returns {Promise<boolean>} 命令是否可用
@@ -210,7 +113,7 @@ export class SCMFactory {
       // 优先使用传入的 repositoryPath，如果没有则使用检测方法获取工作区根目录
       const detectionResult = RepositoryManager.detectRepository({
         files: selectedFiles,
-        repositoryPath: repositoryPath
+        repositoryPath: repositoryPath,
       });
       const workspaceRoot = detectionResult?.repositoryPath;
       if (!workspaceRoot || !ImprovedPathUtils.isValidPath(workspaceRoot)) {
@@ -218,10 +121,13 @@ export class SCMFactory {
       }
 
       // 规范化工作区根目录路径，用作缓存键
-      const normalizedWorkspaceRoot = ImprovedPathUtils.normalizePath(workspaceRoot);
+      const normalizedWorkspaceRoot =
+        ImprovedPathUtils.normalizePath(workspaceRoot);
 
       // 检查是否已有正在进行的检测操作
-      const pendingDetection = this.pendingDetections.get(normalizedWorkspaceRoot);
+      const pendingDetection = this.pendingDetections.get(
+        normalizedWorkspaceRoot
+      );
       if (pendingDetection) {
         return pendingDetection;
       }
@@ -298,10 +204,13 @@ export class SCMFactory {
         return undefined;
       }
 
-      const normalizedWorkspaceRoot = ImprovedPathUtils.normalizePath(workspaceRoot);
-      
+      const normalizedWorkspaceRoot =
+        ImprovedPathUtils.normalizePath(workspaceRoot);
+
       // 通过RepositoryDetector检测SCM类型
-      const detectionResult = RepositoryManager.detectSCMFromFileSystem(normalizedWorkspaceRoot);
+      const detectionResult = RepositoryManager.detectSCMFromFileSystem(
+        normalizedWorkspaceRoot
+      );
       const scmType = detectionResult?.scmType;
 
       const gitExtension = vscode.extensions.getExtension("vscode.git");
