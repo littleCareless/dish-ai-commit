@@ -5,6 +5,46 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+# 0.45.0 (2025-08-28)
+
+
+### ♻ Code Refactoring
+
+* **config**: 优化 CodeAnalysis 差异检测配置结构 ([feb8b4d](https://github.com/littleCareless/dish-ai-commit/commit/feb8b4d))
+* **prompt**: 重构分层提交文件提示模板以支持配置选项 ([ce95d59](https://github.com/littleCareless/dish-ai-commit/commit/ce95d59))
+* **scm**: 改进跨平台路径处理 ([ea60595](https://github.com/littleCareless/dish-ai-commit/commit/ea60595))
+
+
+### ✨ Features
+
+* **commit-generation**: 实现自动检测暂存区内容和分层提交优化 ([f68c52a](https://github.com/littleCareless/dish-ai-commit/commit/f68c52a))
+* **scm**: 添加暂存区内容检测功能及相关组件 ([ade8655](https://github.com/littleCareless/dish-ai-commit/commit/ade8655))
+
+
+### 🐛 Bug Fixes
+
+* **svn**: 修复 Windows 平台下 SVN 路径检测和环境配置 ([86f4a3d](https://github.com/littleCareless/dish-ai-commit/commit/86f4a3d))
+
+
+### 📝 Documentation
+
+* **i18n**: 添加缺失的国际化字符串 ([ff3a2a0](https://github.com/littleCareless/dish-ai-commit/commit/ff3a2a0))
+
+
+
+
+
+## 0.43.2 (2025-08-06)
+
+
+### 🎫 Chores
+
+* **release**: 0.43.2 ([512e809](https://github.com/littleCareless/dish-ai-commit/commit/512e809))
+
+
+
+
+
 # 0.44.0 (2025-08-13)
 
 
