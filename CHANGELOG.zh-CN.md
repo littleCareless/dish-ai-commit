@@ -5,6 +5,22 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+## 0.45.1 (2025-08-28)
+
+
+### ✅ Tests
+
+* 提升测试可靠性和模拟 ([aa85a22](https://github.com/littleCareless/dish-ai-commit/commit/aa85a22))
+
+
+### 🎫 Chores
+
+* 增强 lint-staged 配置 ([ba81db1](https://github.com/littleCareless/dish-ai-commit/commit/ba81db1))
+
+
+
+
+
 # 0.45.0 (2025-08-28)
 
 
