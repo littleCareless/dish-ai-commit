@@ -43,7 +43,9 @@ interface SvnConfig {
 
 const DEFAULT_CONFIG: SvnConfig = {
   environmentConfig: {
-    path: ["/usr/local/bin", "/opt/homebrew/bin"],
+    path: process.platform === "win32" 
+      ? ["C:\\Program Files\\TortoiseSVN\\bin", "C:\\Program Files (x86)\\TortoiseSVN\\bin", "C:\\Program Files\\SlikSvn\\bin"]
+      : ["/usr/local/bin", "/opt/homebrew/bin"],
     locale: "en_US.UTF-8",
   },
 };
@@ -140,16 +142,46 @@ export class SvnUtils {
         return this.config.svnPath;
       }
 
-      // 3. 自动检测
-      const { stdout } = await execAsync("which svn");
-      const detectedPath = stdout.trim();
-      if (detectedPath) {
-        Logger.log(LogLevel.Info, "Detected SVN path:", detectedPath);
-        return detectedPath;
+      // 3. 自动检测 - 平台兼容版本
+      const command = process.platform === "win32" ? "where svn" : "which svn";
+      try {
+        const { stdout } = await execAsync(command);
+        // Windows下where命令可能返回多行结果，取第一行
+        const detectedPath = stdout.toString().split("\n")[0].trim();
+        if (detectedPath) {
+          Logger.log(LogLevel.Info, "Detected SVN path:", detectedPath);
+          return detectedPath;
+        }
+      } catch (cmdError) {
+        Logger.log(LogLevel.Warning, `${command} failed:`, cmdError);
+        // 命令失败继续后续检测
+      }
+      
+      // 4. Windows平台特殊处理
+      if (process.platform === "win32") {
+        // 检查常见Windows安装路径
+        const programFiles = process.env["ProgramFiles"] || "C:\\Program Files";
+        const programFilesX86 = process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)";
+        
+        const commonPaths = [
+          path.join(programFiles, "TortoiseSVN", "bin", "svn.exe"),
+          path.join(programFilesX86, "TortoiseSVN", "bin", "svn.exe"),
+          path.join(programFiles, "SlikSvn", "bin", "svn.exe"),
+          path.join(programFiles, "VisualSVN Server", "bin", "svn.exe")
+        ];
+        
+        for (const svnPath of commonPaths) {
+          if (fs.existsSync(svnPath)) {
+            Logger.log(LogLevel.Info, "Found SVN in common location:", svnPath);
+            return svnPath;
+          }
+        }
       }
 
-      // 4. 使用默认路径
-      const defaultPath = "/opt/homebrew/bin/svn";
+      // 5. 使用平台相关的默认路径
+      const defaultPath = process.platform === "win32" 
+        ? "C:\\Program Files\\TortoiseSVN\\bin\\svn.exe" 
+        : "/opt/homebrew/bin/svn";
       Logger.log(LogLevel.Warning, "Using default SVN path:", defaultPath);
       return defaultPath;
     } catch (error) {
@@ -165,10 +197,14 @@ export class SvnUtils {
     if (!this.config?.environmentConfig) {
       throw new Error(getMessage("svn.invalid.env.config"));
     }
+    
+    // 根据平台使用正确的路径分隔符
+    const pathDelimiter = process.platform === "win32" ? ";" : ":";
+    
     return {
       ...process.env,
-      PATH: `${process.env.PATH}:${this.config.environmentConfig.path.join(
-        ":"
+      PATH: `${process.env.PATH}${pathDelimiter}${this.config.environmentConfig.path.join(
+        pathDelimiter
       )}`,
       LC_ALL: this.config.environmentConfig.locale,
     };
