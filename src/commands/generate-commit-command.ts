@@ -23,6 +23,10 @@ import {
   RequestTooLargeError,
 } from "../utils/context-manager";
 import { getAccurateTokenLimits } from "../ai/model-registry";
+import { stagedContentDetector } from "../scm/staged-content-detector";
+import { multiRepositoryContextManager } from "../scm/multi-repository-context-manager";
+import { smartDiffSelector } from "../scm/smart-diff-selector";
+import { DiffTarget } from "../scm/staged-detector-types";
 
 /**
  * 将分层提交信息格式化为结构化的提交信息文本
@@ -272,8 +276,58 @@ ${currentInput}
       scmProvider.setCurrentFiles(selectedFiles);
     }
 
-    progress.report({ message: getMessage("progress.getting.diff") });
-    const diffContent = await scmProvider.getDiff(selectedFiles);
+    // ===== 新增：自动检测暂存区内容逻辑 =====
+    progress.report({ message: getMessage("progress.detecting.staged.content") || "检测暂存区内容..." });
+    
+    let diffContent: string | undefined;
+    const diffTargetConfig = configuration.features.codeAnalysis.diffTarget;
+    
+    // 如果配置为自动检测模式
+    if (diffTargetConfig === 'auto') {
+      try {
+        // 1. 识别当前仓库上下文
+        const repositoryContext = await multiRepositoryContextManager.identifyRepository(
+          selectedFiles,
+          vscode.window.activeTextEditor
+        );
+
+        // 2. 检测暂存区内容
+        const detectionResult = await stagedContentDetector.detectStagedContent({
+          repository: repositoryContext,
+          includeFileDetails: true,
+          useCache: true
+        });
+
+        // 3. 智能选择diff目标
+        const selectedTarget = await smartDiffSelector.selectDiffTarget(
+          scmProvider,
+          detectionResult,
+          DiffTarget.AUTO
+        );
+
+        // 4. 获取diff内容
+        const diffResult = await smartDiffSelector.getDiffWithTarget(
+          scmProvider,
+          selectedTarget,
+          selectedFiles
+        );
+        
+        diffContent = diffResult.content;
+
+        // 记录选择的目标用于调试
+        console.log(`Auto-detection selected target: ${selectedTarget}, files: ${diffResult.files.length}`);
+      } catch (error) {
+        console.warn('Auto-detection failed, falling back to traditional method:', error);
+        // 回退到传统方法
+        progress.report({ message: getMessage("progress.getting.diff") });
+        diffContent = await scmProvider.getDiff(selectedFiles);
+      }
+    } else {
+      // 传统方法：直接获取diff
+      progress.report({ message: getMessage("progress.getting.diff") });
+      diffContent = await scmProvider.getDiff(selectedFiles);
+    }
+    // ===== 自动检测逻辑结束 =====
 
     if (!diffContent) {
       notify.info(
@@ -398,15 +452,33 @@ ${currentInput}
           repositoryPath
         );
       } else {
-        await this.streamAndApplyMessage(
-          aiProvider as AbstractAIProvider,
-          requestParams,
-          scmProvider,
-          token,
-          progress,
-          contextManager,
-          repositoryPath
-        );
+        // 检查是否启用分层提交且选择了多个文件
+        const shouldUseLayeredCommit = 
+          configuration.features.commitFormat.enableLayeredCommit && 
+          selectedFiles && 
+          selectedFiles.length > 1;
+
+        if (shouldUseLayeredCommit) {
+          await this.performLayeredFileCommitGeneration(
+            aiProvider,
+            requestParams,
+            scmProvider,
+            selectedFiles,
+            token,
+            progress,
+            selectedModel
+          );
+        } else {
+          await this.streamAndApplyMessage(
+            aiProvider as AbstractAIProvider,
+            requestParams,
+            scmProvider,
+            token,
+            progress,
+            contextManager,
+            repositoryPath
+          );
+        }
       }
 
       notify.info("commit.message.generated.stream", [
@@ -414,17 +486,6 @@ ${currentInput}
         newProvider,
         selectedModel?.id || "default",
       ]);
-
-      if (configuration.features.commitFormat.enableLayeredCommit) {
-        await this.performLayeredFileCommitGeneration(
-          aiProvider,
-          requestParams,
-          scmProvider,
-          selectedFiles,
-          token,
-          progress
-        );
-      }
     } catch (error) {
       if (error instanceof RequestTooLargeError) {
         const switchToLargerModel = getMessage("error.switch.to.larger.model");
@@ -452,24 +513,199 @@ ${currentInput}
     scmProvider: ISCMProvider,
     selectedFiles: string[] | undefined,
     token: vscode.CancellationToken,
-    progress: vscode.Progress<{ message?: string; increment?: number }>
+    progress: vscode.Progress<{ message?: string; increment?: number }>,
+    selectedModel: AIModel
   ) {
     progress.report({
       message: getMessage("progress.generating.layered.commit"),
     });
 
-    // 如果没有选择文件，则退出
     if (!selectedFiles || selectedFiles.length === 0) {
       notify.warn("no.files.selected.for.layered.commit");
       return;
     }
 
-    const fileDescriptions: { filePath: string; description: string }[] = [];
-    const config = ConfigurationManager.getInstance();
-    const configuration = config.getConfiguration();
-    const selectedModel = requestParams.model as AIModel;
+    const config = ConfigurationManager.getInstance().getConfiguration();
+    const fileDescriptionPromises = selectedFiles.map(async (filePath) => {
+      this.throwIfCancelled(token);
+      progress.report({
+        message: formatMessage("progress.generating.commit.for.file", [
+          filePath,
+        ]),
+      });
 
-    // Pre-fetch global context to avoid fetching it in every loop iteration
+      const fileDiff = await scmProvider.getDiff([filePath]);
+      if (!fileDiff) {
+        return null;
+      }
+
+      const systemPrompt = getLayeredCommitFilePrompt({
+        config: config.features.commitFormat,
+        language: config.base.language,
+        filePath: filePath,
+      });
+
+      const contextManager = await this._buildContextManager(
+        selectedModel,
+        systemPrompt,
+        scmProvider,
+        fileDiff,
+        config
+      );
+      const messages = contextManager.buildMessages();
+
+      if (!aiProvider.generateCommit) {
+        notify.warn("provider.does.not.support.non.streaming.for.layered", [
+          aiProvider.getId(),
+        ]);
+        return null;
+      }
+
+      try {
+        const description = await aiProvider.generateCommit({
+          ...requestParams, // Pass original params for model, etc.
+          messages,
+          diff: "", // Diff is now in messages, clear this
+        });
+
+        return {
+          filePath,
+          description: description.content,
+        };
+      } catch (error) {
+        notify.error(
+          formatMessage("error.generating.commit.for.file", [
+            filePath,
+            (error as Error).message,
+          ])
+        );
+        return null;
+      }
+    });
+
+    const fileDescriptions = (
+      await Promise.all(fileDescriptionPromises)
+    ).filter((d): d is { filePath: string; description: string } => d !== null);
+
+    if (fileDescriptions.length > 0) {
+      await this._generateAndApplyLayeredSummary(
+        aiProvider,
+        requestParams,
+        scmProvider,
+        fileDescriptions,
+        token,
+        progress
+      );
+    } else {
+      notify.warn("warn.no.file.descriptions.generated");
+    }
+  }
+
+  private async _generateAndApplyLayeredSummary(
+    aiProvider: AIProvider,
+    requestParams: AIRequestParams,
+    scmProvider: ISCMProvider,
+    fileChanges: { filePath: string; description: string }[],
+    token: vscode.CancellationToken,
+    progress: vscode.Progress<{ message?: string; increment?: number }>
+  ) {
+    progress.report({
+      message: getMessage("progress.generating.layered.summary"),
+    });
+
+    const config = ConfigurationManager.getInstance().getConfiguration();
+
+    const formattedFileChanges = fileChanges
+      .map(
+        (change) =>
+          `File: ${change.filePath}\nDescription: ${change.description}`
+      )
+      .join("\n\n");
+
+    // Build a temporary params object for the system prompt, forcing merge commit behavior
+    const summaryParams = {
+      ...config.features.commitMessage,
+      ...config.features.commitFormat,
+      ...config.features.codeAnalysis,
+      model: requestParams.model,
+      scm: scmProvider.type ?? "git",
+      changeFiles: fileChanges.map((fc) => fc.filePath),
+      languages: config.base.language,
+      diff: formattedFileChanges, // Use the descriptions as the "diff" for the summary
+      additionalContext: "",
+      enableMergeCommit: true, // Force merge commit style for the summary
+    };
+
+    const summarySystemPrompt = getSystemPrompt(summaryParams);
+
+    const summaryContextManager = await this._buildLayeredSummaryContextManager(
+      requestParams.model as AIModel,
+      summarySystemPrompt,
+      scmProvider,
+      formattedFileChanges,
+      config
+    );
+
+    const messages = summaryContextManager.buildMessages();
+
+    if (!aiProvider.generateCommit) {
+      throw new Error(
+        `Provider ${aiProvider.getId()} does not support non-streaming for layered commit summary.`
+      );
+    }
+
+    const summaryResponse = await aiProvider.generateCommit({
+      ...requestParams,
+      messages,
+      diff: "", // Not needed for summary
+    });
+
+    this.throwIfCancelled(token);
+
+    try {
+      const finalMessage = summaryResponse.content;
+      const filteredMessage = filterCodeBlockMarkers(finalMessage);
+      await scmProvider.startStreamingInput(filteredMessage.trim());
+    } catch (error) {
+      console.error("Error applying layered commit summary:", error);
+      // Fallback to showing raw details if applying fails
+      await this._showLayeredCommitDetails(fileChanges, true);
+      notify.error("error.applying.layered.summary");
+    }
+  }
+
+  private async _showLayeredCommitDetails(
+    fileChanges: { filePath: string; description: string }[],
+    isFallback = false
+  ) {
+    const title = isFallback
+      ? getMessage("layered.commit.fallback.title")
+      : getMessage("layered.commit.details.title");
+    let content = `# ${title}\n\n`;
+    if (isFallback) {
+      content += `${getMessage("layered.commit.fallback.description")}\n\n`;
+    }
+
+    for (const change of fileChanges) {
+      content += `### ${change.filePath}\n\n${change.description}\n\n---\n\n`;
+    }
+
+    const document = await vscode.workspace.openTextDocument({
+      content,
+      language: "``",
+    });
+    await vscode.window.showTextDocument(document);
+    notify.info("layered.commit.details.generated");
+  }
+
+  private async _buildLayeredSummaryContextManager(
+    selectedModel: AIModel,
+    systemPrompt: string,
+    scmProvider: ISCMProvider,
+    formattedFileChanges: string,
+    configuration: any
+  ): Promise<ContextManager> {
+    // 1. 获取上下文信息（不包括需要真实 diff 的部分）
     const currentInput = await this._getSCMInputContext(scmProvider);
     const { userCommits, repoCommits } = await this._getRecentCommits(
       scmProvider,
@@ -481,121 +717,55 @@ ${currentInput}
       configuration.base.language
     );
 
-    for (const filePath of selectedFiles) {
-      this.throwIfCancelled(token);
-      progress.report({
-        message: formatMessage("progress.generating.commit.for.file", [
-          filePath,
-        ]),
-      });
+    // 2. 构建 ContextManager
+    const contextManager = new ContextManager(
+      selectedModel,
+      systemPrompt,
+      configuration.features.suppressNonCriticalWarnings
+    );
 
-      const fileDiff = await scmProvider.getDiff([filePath]);
-      if (!fileDiff) {
-        continue;
-      }
-
-      const fileRequestParams: AIRequestParams = {
-        ...requestParams,
-        diff: fileDiff,
-        changeFiles: [filePath],
-      };
-
-      const systemPrompt = getSystemPrompt(fileRequestParams);
-
-      // Build context manager for each file to get rich context
-      const similarCodeContext = await this._getSimilarCodeContext(fileDiff);
-      const contextManager = new ContextManager(
-        selectedModel,
-        systemPrompt,
-        configuration.features.suppressNonCriticalWarnings
-      );
-      const { originalCode, codeChanges } = extractProcessedDiff(fileDiff);
-
-      if (userCommits) {
-        contextManager.addBlock({
-          content: userCommits,
-          priority: 700,
-          strategy: TruncationStrategy.TruncateTail,
-          name: "user-commits",
-        });
-      }
-      if (repoCommits) {
-        contextManager.addBlock({
-          content: repoCommits,
-          priority: 600,
-          strategy: TruncationStrategy.TruncateTail,
-          name: "recent-commits",
-        });
-      }
+    // 添加与摘要生成相关的块
+    if (userCommits) {
       contextManager.addBlock({
-        content: similarCodeContext,
-        priority: 320,
+        content: userCommits,
+        priority: 700,
         strategy: TruncationStrategy.TruncateTail,
-        name: "similar-code",
-      });
-      contextManager.addBlock({
-        content: originalCode,
-        priority: 800,
-        strategy: TruncationStrategy.SmartTruncateDiff,
-        name: "original-code",
-      });
-      contextManager.addBlock({
-        content: codeChanges,
-        priority: 900,
-        strategy: TruncationStrategy.SmartTruncateDiff,
-        name: "code-changes",
-      });
-      contextManager.addBlock({
-        content: reminder,
-        priority: 900,
-        strategy: TruncationStrategy.TruncateTail,
-        name: "reminder",
-      });
-      contextManager.addBlock({
-        content: currentInput,
-        priority: 750,
-        strategy: TruncationStrategy.TruncateTail,
-        name: "custom-instructions",
-      });
-
-      const messages = contextManager.buildMessages();
-
-      if (!aiProvider.generateCommit) {
-        notify.warn("provider.does.not.support.non.streaming.for.layered", [
-          aiProvider.getId(),
-        ]);
-        continue;
-      }
-      const description = await aiProvider.generateCommit({
-        ...fileRequestParams,
-        messages,
-      });
-
-      fileDescriptions.push({
-        filePath,
-        description: description.content,
+        name: "user-commits",
       });
     }
 
-    if (fileDescriptions.length > 0) {
-      await this._showLayeredCommitDetails(fileDescriptions);
-    }
-  }
-
-  private async _showLayeredCommitDetails(
-    fileChanges: { filePath: string; description: string }[]
-  ) {
-    let content = `# ${getMessage("layered.commit.details.title")}\n\n`;
-    for (const change of fileChanges) {
-      content += `### ${change.filePath}\n\n${change.description}\n\n---\n\n`;
+    if (repoCommits) {
+      contextManager.addBlock({
+        content: repoCommits,
+        priority: 600,
+        strategy: TruncationStrategy.TruncateTail,
+        name: "recent-commits",
+      });
     }
 
-    const document = await vscode.workspace.openTextDocument({
-      content,
-      language: "markdown",
+    // 将格式化后的文件变更作为主要内容块添加
+    contextManager.addBlock({
+      content: formattedFileChanges,
+      priority: 900,
+      strategy: TruncationStrategy.TruncateTail,
+      name: "file-changes-summary",
     });
-    await vscode.window.showTextDocument(document);
-    notify.info("layered.commit.details.generated");
+
+    contextManager.addBlock({
+      content: reminder,
+      priority: 900, // 优先级高
+      strategy: TruncationStrategy.TruncateTail,
+      name: "reminder",
+    });
+
+    contextManager.addBlock({
+      content: currentInput,
+      priority: 750,
+      strategy: TruncationStrategy.TruncateTail,
+      name: "custom-instructions",
+    });
+
+    return contextManager;
   }
 
   /**
@@ -614,7 +784,8 @@ ${currentInput}
     systemPrompt: string,
     scmProvider: ISCMProvider,
     diffContent: string,
-    configuration: any
+    configuration: any,
+    options: { exclude?: string[] } = {}
   ): Promise<ContextManager> {
     // 1. 获取所有上下文信息
     const currentInput = await this._getSCMInputContext(scmProvider);
@@ -622,7 +793,10 @@ ${currentInput}
       scmProvider,
       configuration.features.commitMessage.useRecentCommitsAsReference
     );
-    const similarCodeContext = await this._getSimilarCodeContext(diffContent);
+    const { exclude = [] } = options;
+    const similarCodeContext = exclude.includes("similar-code")
+      ? ""
+      : await this._getSimilarCodeContext(diffContent);
     const reminder = this._getReminder(
       userCommits,
       repoCommits,
@@ -660,12 +834,14 @@ ${currentInput}
       strategy: TruncationStrategy.TruncateTail,
       name: "similar-code",
     });
-    contextManager.addBlock({
-      content: originalCode,
-      priority: 800,
-      strategy: TruncationStrategy.SmartTruncateDiff,
-      name: "original-code",
-    });
+    if (!exclude.includes("original-code")) {
+      contextManager.addBlock({
+        content: originalCode,
+        priority: 800,
+        strategy: TruncationStrategy.SmartTruncateDiff,
+        name: "original-code",
+      });
+    }
     contextManager.addBlock({
       content: codeChanges,
       priority: 900,
