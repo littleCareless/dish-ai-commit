@@ -29,7 +29,7 @@ vi.mock('vscode', () => ({
     activeTextEditor: undefined,
   },
   extensions: {
-    getExtension: vi.fn(),
+    getExtension: vi.fn().mockReturnValue(undefined),
   },
   Uri: {
     file: vi.fn((path: string) => ({ fsPath: path })),
@@ -60,7 +60,17 @@ describe('MultiRepositoryContextManager', () => {
       }
     ];
 
-    mockVscode.workspace.workspaceFolders = mockWorkspaceFolders;
+    // Create a new mock object with the workspace folders
+    const mockWorkspace = {
+      ...mockVscode.workspace,
+      workspaceFolders: mockWorkspaceFolders
+    };
+    
+    // Replace the workspace object in mockVscode
+    Object.defineProperty(mockVscode, 'workspace', {
+      value: mockWorkspace,
+      configurable: true
+    });
   });
 
   afterEach(() => {
@@ -126,7 +136,7 @@ describe('MultiRepositoryContextManager', () => {
           })
         }
       };
-      mockVscode.extensions.getExtension.mockReturnValue(mockGitExtension as any);
+      vi.mocked(mockVscode.extensions.getExtension).mockReturnValue(mockGitExtension as any);
 
       // Act
       const context = await manager.identifyRepository();
@@ -138,7 +148,17 @@ describe('MultiRepositoryContextManager', () => {
 
     it('应该抛出错误当没有找到仓库时', async () => {
       // Arrange
-      mockVscode.workspace.workspaceFolders = [];
+      // Create a new mock object with empty workspace folders
+      const mockWorkspace = {
+        ...mockVscode.workspace,
+        workspaceFolders: []
+      };
+      
+      // Replace the workspace object in mockVscode
+      Object.defineProperty(mockVscode, 'workspace', {
+        value: mockWorkspace,
+        configurable: true
+      });
       setupMockRepositories([]);
 
       // Act & Assert
@@ -222,7 +242,7 @@ describe('MultiRepositoryContextManager', () => {
           })
         }
       };
-      mockVscode.extensions.getExtension.mockReturnValue(mockGitExtension as any);
+      vi.mocked(mockVscode.extensions.getExtension).mockReturnValue(mockGitExtension as any);
 
       // Act
       const primary = await manager.getPrimaryRepository();
@@ -247,7 +267,7 @@ describe('MultiRepositoryContextManager', () => {
       ]);
 
       // Mock git extension not available
-      mockVscode.extensions.getExtension.mockReturnValue(undefined);
+      vi.mocked(mockVscode.extensions.getExtension).mockReturnValue(undefined);
 
       // Act
       const primary = await manager.getPrimaryRepository();
@@ -264,7 +284,7 @@ describe('MultiRepositoryContextManager', () => {
       ]);
 
       // Mock no git extension and no active editor
-      mockVscode.extensions.getExtension.mockReturnValue(undefined);
+      vi.mocked(mockVscode.extensions.getExtension).mockReturnValue(undefined);
       mockVscode.window.activeTextEditor = undefined;
 
       // Act

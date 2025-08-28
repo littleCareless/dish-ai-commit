@@ -25,7 +25,7 @@ const execAsync = promisify(exec);
 vi.mock('child_process');
 vi.mock('vscode', () => ({
   workspace: {
-    getConfiguration: vi.fn(),
+    getConfiguration: vi.fn().mockReturnValue({}),
   },
 }));
 
@@ -62,7 +62,7 @@ describe('StagedContentDetector', () => {
         return defaultValue;
       })
     };
-    mockVscode.workspace.getConfiguration.mockReturnValue(mockConfig as any);
+    vi.mocked(mockVscode.workspace.getConfiguration).mockReturnValue(mockConfig as any);
   });
 
   afterEach(() => {

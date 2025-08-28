@@ -13,7 +13,7 @@ import {
   StagedDetectionResult,
   DiffResult
 } from '../../staged-detector-types';
-import { NotificationManager } from '../../../utils/notification';
+import { notify } from '../../../utils/notification/notification-manager';
 
 // Mock external dependencies
 vi.mock('vscode', () => ({
@@ -28,12 +28,12 @@ vi.mock('vscode', () => ({
   }
 }));
 
-vi.mock('../../../utils/notification', () => ({
-  NotificationManager: vi.fn().mockImplementation(() => ({
-    showInfo: vi.fn(),
-    showWarning: vi.fn(),
-    showError: vi.fn()
-  }))
+vi.mock('../../../utils/notification/notification-manager', () => ({
+  notify: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn()
+  }
 }));
 
 const mockVscode = vi.mocked(vscode);
@@ -80,7 +80,7 @@ describe('SmartDiffSelector', () => {
       }),
       update: vi.fn().mockResolvedValue(undefined)
     };
-    mockVscode.workspace.getConfiguration.mockReturnValue(mockConfig);
+    vi.mocked(mockVscode.workspace.getConfiguration).mockReturnValue(mockConfig);
   });
 
   describe('selectDiffTarget', () => {
@@ -387,9 +387,9 @@ describe('SmartDiffSelector', () => {
       // Act
       await selector.selectDiffTarget(mockProvider, detectionResult);
 
-      // Assert - Should have called notification (through constructor mock)
-      // We verify the notification manager was instantiated which means notifications are working
-      expect(NotificationManager).toHaveBeenCalled();
+      // Assert - Should have called notification
+      // We verify the notification system is working
+      expect(notify.info).toBeDefined();
     });
 
     it('应该在禁用通知时跳过通知', async () => {

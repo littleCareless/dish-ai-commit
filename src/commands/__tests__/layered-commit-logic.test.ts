@@ -77,18 +77,15 @@ describe('Layered Commit Logic', () => {
       }
     };
     
-    const selectedFiles = undefined; // No files selected
+    const selectedFiles: string[] = []; // Empty array with explicit type
     
     // Act
-    // 注意：这里我们需要处理selectedFiles为undefined的情况
     const shouldUseLayeredCommit = 
       configuration.features.commitFormat.enableLayeredCommit && 
       selectedFiles && 
       selectedFiles.length > 1;
     
     // Assert
-    // 当selectedFiles为undefined时，整个表达式的结果是undefined，而不是false
-    // 但在实际代码中，undefined会被视为falsy值
     expect(!!shouldUseLayeredCommit).toBe(false);
   });
 });
