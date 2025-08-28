@@ -151,11 +151,26 @@ export class ImprovedPathUtils {
    * @param path2 路径2
    * @returns 是否相等
    */
-  private static pathsEqual(path1: string, path2: string): boolean {
+  static pathsEqual(path1: string, path2: string): boolean {
     if (process.platform === 'win32') {
       return path1.toLowerCase() === path2.toLowerCase();
     }
     return path1 === path2;
+  }
+
+  /**
+   * 检查路径是否以指定前缀开头（跨平台）
+   * @param path 要检查的路径
+   * @param prefix 前缀路径
+   * @returns 是否以指定前缀开头
+   */
+  static pathStartsWith(path: string, prefix: string): boolean {
+    if (process.platform === 'win32') {
+      // Windows上进行不区分大小写的比较
+      return path.toLowerCase().startsWith(prefix.toLowerCase());
+    }
+    // Unix-like系统上进行区分大小写的比较
+    return path.startsWith(prefix);
   }
 
   /**
@@ -181,6 +196,11 @@ export class ImprovedPathUtils {
     // 在某些情况下，path.normalize可能不会完全处理所有问题
     // 特别是在Windows上，我们需要额外的处理
     if (process.platform === 'win32') {
+      // 标准化驱动器盘符为大写（如 c: -> C:）
+      if (normalized.length > 1 && normalized[1] === ':') {
+        normalized = normalized[0].toUpperCase() + normalized.substring(1);
+      }
+      
       // 处理连续的反斜杠
       normalized = normalized.replace(/\\+/g, '\\');
       

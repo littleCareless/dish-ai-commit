@@ -86,12 +86,46 @@ export class SCMDetectorService {
       }
     }
 
+    // 尝试通过SVN扩展获取仓库路径
+    const svnExtension = vscode.extensions.getExtension("littleCareless.svn-scm-ai");
+    if (svnExtension?.isActive) {
+      try {
+        const svnApi = svnExtension.exports.svnAPI;
+        const repositories = svnApi.repositories;
+        if (repositories.length > 0) {
+          if (files && files.length > 0) {
+            for (const file of files) {
+              for (const repository of repositories) {
+                const repoPath = repository.root;
+                if (repoPath && file.startsWith(repoPath)) {
+                  return repoPath;
+                }
+              }
+            }
+          }
+          // 如果没有文件匹配，但存在SVN仓库，返回第一个作为备用
+          return repositories[0].root;
+        }
+      } catch (error) {
+        console.warn("Failed to get repository from SVN extension:", error);
+      }
+    }
+
     // 尝试从resourceStates直接获取（通用方式）
     if (resourceStates) {
       const states = Array.isArray(resourceStates)
         ? resourceStates
         : [resourceStates];
       for (const state of states) {
+        // 检查是否为SVN资源状态
+        if ((state as any).type === "svn") {
+          // SVN特有的结构
+          const svnRoot = (state as any).repository?.root;
+          if (svnRoot) {
+            return svnRoot;
+          }
+        }
+        
         // 尝试访问 sourceControl.rootUri，这是一个更可靠的属性
         const sc = (state as any).resourceGroup?.sourceControl;
         if (sc?.rootUri?.fsPath) {

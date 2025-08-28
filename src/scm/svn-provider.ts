@@ -1004,7 +1004,9 @@ export class SvnProvider implements ISCMProvider {
         if (!repoFsPath) return false;
         const normalizedRepoPath = ImprovedPathUtils.normalizePath(repoFsPath);
         const normalizedTargetPath = ImprovedPathUtils.normalizePath(this.repositoryPath!);
-        return normalizedRepoPath === normalizedTargetPath;
+        
+        // Use the pathsEqual method which handles platform-specific path comparison
+        return ImprovedPathUtils.pathsEqual(normalizedRepoPath, normalizedTargetPath);
       });
       return specificRepo;
     }
@@ -1027,7 +1029,9 @@ export class SvnProvider implements ISCMProvider {
           if (repoPath) {
             const normalizedRepoPath = ImprovedPathUtils.normalizePath(repoPath);
             const normalizedFilePath = ImprovedPathUtils.normalizePath(uri.fsPath);
-            if (normalizedFilePath.startsWith(normalizedRepoPath)) {
+            
+            // Use the pathStartsWith helper for platform-aware path prefix checking
+            if (ImprovedPathUtils.pathStartsWith(normalizedFilePath, normalizedRepoPath)) {
               return repo; // 找到第一个匹配的就返回
             }
           }
@@ -1044,7 +1048,9 @@ export class SvnProvider implements ISCMProvider {
         if (repoPath) {
           const normalizedRepoPath = ImprovedPathUtils.normalizePath(repoPath);
           const normalizedFilePath = ImprovedPathUtils.normalizePath(activeFileUri.fsPath);
-          if (normalizedFilePath.startsWith(normalizedRepoPath)) {
+          
+          // Use the pathStartsWith helper for platform-aware path prefix checking
+          if (ImprovedPathUtils.pathStartsWith(normalizedFilePath, normalizedRepoPath)) {
             return repo;
           }
         }
