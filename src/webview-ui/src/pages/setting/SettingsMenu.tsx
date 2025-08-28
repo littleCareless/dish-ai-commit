@@ -77,7 +77,7 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({
   return (
     <ArcoMenu
       selectedKeys={[selectedMenuItemKey]}
-      onClickMenuItem={(key) => setSelectedMenuItemKey(key)}
+      onClickMenuItem={(key: string) => setSelectedMenuItemKey(key)}
       style={{ 
         width: "100%", 
         height: "100%",
