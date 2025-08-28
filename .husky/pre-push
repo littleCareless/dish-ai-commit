@@ -1,0 +1,12 @@
+#!/usr/bin/env sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# 运行TypeScript编译检查
+echo "🔍 正在进行TypeScript编译验证..."
+npm run check-types || (echo "❌ TypeScript编译失败，请修复错误后再提交" && exit 1)
+echo "✅ TypeScript编译验证通过"
+
+# 运行构建检查
+echo "🔨 正在进行构建验证..."
+npm run compile:esbuild || (echo "❌ 构建失败，请修复错误后再提交" && exit 1)
+echo "✅ 构建验证通过"

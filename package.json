@@ -717,7 +717,7 @@
     }
   },
   "lint-staged": {
-    "src/**/*.ts": "npm run lint"
+    "src/**/*.ts": ["npm run lint", "npm run check-types", "npm run compile:esbuild"]
   },
   "commitlint": {
     "extends": [
