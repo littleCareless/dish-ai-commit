@@ -2,6 +2,7 @@ import * as vscode from "vscode";
 import { SCMFactory, ISCMProvider } from "../scm/scm-provider";
 import { notify } from "../utils/notification/notification-manager";
 import { getMessage } from "../utils/i18n";
+import { SvnUtils } from "../scm/svn-utils";
 
 /**
  * SCM检测器服务
@@ -50,12 +51,12 @@ export class SCMDetectorService {
    * @param files - 可选的文件路径列表，如果不提供则从resourceStates中提取
    * @returns Git仓库路径，如果未找到则返回undefined
    */
-  private static getRepositoryFromResources(
+  private static async getRepositoryFromResources(
     resourceStates?:
       | vscode.SourceControlResourceState
       | vscode.SourceControlResourceState[],
     files?: string[]
-  ): string | undefined {
+  ): Promise<string | undefined> {
     // 如果没有提供files，从resourceStates中提取
     if (!files && resourceStates) {
       files = this.getSelectedFiles(resourceStates);
@@ -78,54 +79,55 @@ export class SCMDetectorService {
               }
             }
           }
-          // 如果没有文件匹配，但存在Git仓库，返回第一个作为备用
-          return (repositories[0] as any).rootUri?.fsPath;
         }
       } catch (error) {
         console.warn("Failed to get repository from Git extension:", error);
       }
     }
 
-    // 尝试通过SVN扩展获取仓库路径
-    const svnExtension = vscode.extensions.getExtension("littleCareless.svn-scm-ai");
+    // 尝试通过SVN扩展获取仓库路径, 兼容多个插件
+    const svnExtensionIds = [
+      "littleCareless.svn-scm-ai",
+      "johnstoncode.svn-scm",
+    ];
+    let svnExtension: vscode.Extension<any> | undefined;
+    for (const id of svnExtensionIds) {
+      const extension = vscode.extensions.getExtension(id);
+      if (extension) {
+        svnExtension = extension;
+        break;
+      }
+    }
     if (svnExtension?.isActive) {
       try {
-        const svnApi = svnExtension.exports.svnAPI;
-        const repositories = svnApi.repositories;
-        if (repositories.length > 0) {
-          if (files && files.length > 0) {
-            for (const file of files) {
-              for (const repository of repositories) {
-                const repoPath = repository.root;
-                if (repoPath && file.startsWith(repoPath)) {
-                  return repoPath;
+        const svnScmApi = svnExtension.exports;
+        if (svnScmApi && typeof svnScmApi.getRepositories === "function") {
+          const repositories = await svnScmApi.getRepositories();
+          if (repositories && repositories.length > 0) {
+            if (files && files.length > 0) {
+              for (const file of files) {
+                for (const repository of repositories) {
+                  const repoPath = repository.root;
+                  if (repoPath && file.startsWith(repoPath)) {
+                    return repoPath;
+                  }
                 }
               }
             }
           }
-          // 如果没有文件匹配，但存在SVN仓库，返回第一个作为备用
-          return repositories[0].root;
         }
       } catch (error) {
         console.warn("Failed to get repository from SVN extension:", error);
       }
     }
 
-    // 尝试从resourceStates直接获取（通用方式）
+    // 尝试从resourceStates直接获取
+    // 基本都是 svn 的情况了，因为 git 插件 在 vscode 中是预装的
     if (resourceStates) {
       const states = Array.isArray(resourceStates)
         ? resourceStates
         : [resourceStates];
       for (const state of states) {
-        // 检查是否为SVN资源状态
-        if ((state as any).type === "svn") {
-          // SVN特有的结构
-          const svnRoot = (state as any).repository?.root;
-          if (svnRoot) {
-            return svnRoot;
-          }
-        }
-        
         // 尝试访问 sourceControl.rootUri，这是一个更可靠的属性
         const sc = (state as any).resourceGroup?.sourceControl;
         if (sc?.rootUri?.fsPath) {
@@ -135,21 +137,17 @@ export class SCMDetectorService {
         if ((state as any)?.rootUri?.fsPath) {
           return (state as any)?.rootUri?.fsPath;
         }
-      }
-    }
-
-    // 回退到使用工作区文件夹（通用方式）
-    const workspaceFolders = vscode.workspace.workspaceFolders;
-    if (workspaceFolders) {
-      if (files && files.length > 0) {
-        const fileUri = vscode.Uri.file(files[0]);
-        const folder = vscode.workspace.getWorkspaceFolder(fileUri);
-        if (folder) {
-          return folder.uri.fsPath;
+        // 最终备用方案：从 resourceUri 向上查找 SVN 根目录
+        const resourceUriPath =
+          (state as any)?._resourceUri?.fsPath || state?.resourceUri?.fsPath;
+        if (resourceUriPath) {
+          // 使用 SvnUtils.findSvnRoot 向上递归查找 .svn 目录，
+          // 这是处理文件或子目录路径时最可靠的方法。
+          const svnRoot = await SvnUtils.findSvnRoot(resourceUriPath);
+          if (svnRoot) {
+            return svnRoot;
+          }
         }
-      }
-      if (workspaceFolders.length > 0) {
-        return workspaceFolders[0].uri.fsPath;
       }
     }
 
@@ -192,7 +190,7 @@ export class SCMDetectorService {
           | vscode.SourceControlResourceState
           | vscode.SourceControlResourceState[];
         selectedFiles = this.getSelectedFiles(resources);
-        repositoryPath = this.getRepositoryFromResources(
+        repositoryPath = await this.getRepositoryFromResources(
           resources,
           selectedFiles
         );
