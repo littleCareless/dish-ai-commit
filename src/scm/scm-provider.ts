@@ -98,7 +98,9 @@ export class SCMFactory {
       // 1. 尝试从当前活动编辑器获取文件路径
       const activeEditor = vscode.window.activeTextEditor;
       if (activeEditor && activeEditor.document.uri.scheme === "file") {
-        const activeFilePath = ImprovedPathUtils.normalizePath(activeEditor.document.uri.fsPath);
+        const activeFilePath = ImprovedPathUtils.normalizePath(
+          activeEditor.document.uri.fsPath
+        );
         const workspaceFromActiveFile =
           this.findWorkspaceRootFromFile(activeFilePath);
         if (workspaceFromActiveFile) {
@@ -125,9 +127,13 @@ export class SCMFactory {
       if (workspaceFolders && workspaceFolders.length > 1) {
         // 检查是否有工作区包含当前活动文件
         if (activeEditor && activeEditor.document.uri.scheme === "file") {
-          const activeFilePath = ImprovedPathUtils.normalizePath(activeEditor.document.uri.fsPath);
+          const activeFilePath = ImprovedPathUtils.normalizePath(
+            activeEditor.document.uri.fsPath
+          );
           for (const folder of workspaceFolders) {
-            const folderPath = ImprovedPathUtils.normalizePath(folder.uri.fsPath);
+            const folderPath = ImprovedPathUtils.normalizePath(
+              folder.uri.fsPath
+            );
             if (activeFilePath.startsWith(folderPath)) {
               return folderPath;
             }
@@ -142,7 +148,9 @@ export class SCMFactory {
 
       // 4. 最后回退到第一个工作区
       const firstWorkspace = workspaceFolders?.[0]?.uri.fsPath;
-      return firstWorkspace ? ImprovedPathUtils.normalizePath(firstWorkspace) : undefined;
+      return firstWorkspace
+        ? ImprovedPathUtils.normalizePath(firstWorkspace)
+        : undefined;
     }
 
     // 检查每个文件的目录，寻找.git或.svn文件夹
@@ -156,8 +164,11 @@ export class SCMFactory {
     }
 
     // 如果没找到，回退到VS Code工作区
-    const fallbackWorkspace = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    return fallbackWorkspace ? ImprovedPathUtils.normalizePath(fallbackWorkspace) : undefined;
+    const fallbackWorkspace =
+      vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    return fallbackWorkspace
+      ? ImprovedPathUtils.normalizePath(fallbackWorkspace)
+      : undefined;
   }
 
   /**
@@ -171,11 +182,16 @@ export class SCMFactory {
     if (!ImprovedPathUtils.isValidPath(filePath)) {
       return undefined;
     }
-    
+
     const normalizedPath = ImprovedPathUtils.normalizePath(filePath);
-    const workspaceRoot = ImprovedPathUtils.findWorkspaceRoot(normalizedPath, [".git", ".svn"]);
-    
-    return workspaceRoot ? ImprovedPathUtils.normalizePath(workspaceRoot) : undefined;
+    const workspaceRoot = ImprovedPathUtils.findWorkspaceRoot(normalizedPath, [
+      ".git",
+      ".svn",
+    ]);
+
+    return workspaceRoot
+      ? ImprovedPathUtils.normalizePath(workspaceRoot)
+      : undefined;
   }
 
   /**
@@ -193,8 +209,9 @@ export class SCMFactory {
         return undefined;
       }
 
-      const normalizedWorkspaceRoot = ImprovedPathUtils.normalizePath(workspaceRoot);
-      
+      const normalizedWorkspaceRoot =
+        ImprovedPathUtils.normalizePath(workspaceRoot);
+
       // 首先检查工作区根目录
       const gitPath = path.join(normalizedWorkspaceRoot, ".git");
       const svnPath = path.join(normalizedWorkspaceRoot, ".svn");
@@ -212,8 +229,15 @@ export class SCMFactory {
         const dirPaths = [
           ...new Set(
             filePaths
-              .filter((file) => file && typeof file === "string" && ImprovedPathUtils.isValidPath(file))
-              .map((file) => ImprovedPathUtils.normalizePath(path.dirname(file)))
+              .filter(
+                (file) =>
+                  file &&
+                  typeof file === "string" &&
+                  ImprovedPathUtils.isValidPath(file)
+              )
+              .map((file) =>
+                ImprovedPathUtils.normalizePath(path.dirname(file))
+              )
           ),
         ];
 
@@ -236,7 +260,9 @@ export class SCMFactory {
 
             // 向上一级目录
             const parentDir = path.dirname(currentDir);
-            if (parentDir === currentDir) break; // 防止无限循环
+            if (parentDir === currentDir) {
+              break;
+            } // 防止无限循环
             currentDir = parentDir;
           }
         }
@@ -281,10 +307,13 @@ export class SCMFactory {
       }
 
       // 规范化工作区根目录路径，用作缓存键
-      const normalizedWorkspaceRoot = ImprovedPathUtils.normalizePath(workspaceRoot);
+      const normalizedWorkspaceRoot =
+        ImprovedPathUtils.normalizePath(workspaceRoot);
 
       // 检查是否已有正在进行的检测操作
-      const pendingDetection = this.pendingDetections.get(normalizedWorkspaceRoot);
+      const pendingDetection = this.pendingDetections.get(
+        normalizedWorkspaceRoot
+      );
       if (pendingDetection) {
         return pendingDetection;
       }
@@ -361,10 +390,14 @@ export class SCMFactory {
         return undefined;
       }
 
-      const normalizedWorkspaceRoot = ImprovedPathUtils.normalizePath(workspaceRoot);
-      
+      const normalizedWorkspaceRoot =
+        ImprovedPathUtils.normalizePath(workspaceRoot);
+
       // 通过目录检测，包括选定的文件路径
-      const scmType = this.detectSCMFromDir(normalizedWorkspaceRoot, selectedFiles);
+      const scmType = this.detectSCMFromDir(
+        normalizedWorkspaceRoot,
+        selectedFiles
+      );
 
       const gitExtension = vscode.extensions.getExtension("vscode.git");
       const svnExtension = vscode.extensions.getExtension(

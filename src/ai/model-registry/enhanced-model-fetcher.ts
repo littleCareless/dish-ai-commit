@@ -6,7 +6,11 @@
 import { ConfigurationManager } from "../../config/configuration-manager";
 import { ModelSpec, findModelSpec, getDefaultTokenLimits } from "./model-specs";
 import { AIModel } from "../types";
-import { ModelValidator, ModelValidationResult, ProxyDetectionResult } from "./model-validator";
+import {
+  ModelValidator,
+  ModelValidationResult,
+  ProxyDetectionResult,
+} from "./model-validator";
 
 export interface EnhancedModelSpec extends ModelSpec {
   /** 验证信息 */
@@ -15,9 +19,17 @@ export interface EnhancedModelSpec extends ModelSpec {
     confidence: number;
     actualModelId?: string;
     proxyDetected?: boolean;
-    validationMethod: 'exact_match' | 'known_mapping' | 'fuzzy_match' | 'local_spec' | 'fallback';
+    validationMethod:
+      | "exact_match"
+      | "known_mapping"
+      | "fuzzy_match"
+      | "local_spec"
+      | "fallback";
     reason?: string;
-    suggestion?: 'use_local_spec' | 'retry_with_mapping' | 'fallback_to_default';
+    suggestion?:
+      | "use_local_spec"
+      | "retry_with_mapping"
+      | "fallback_to_default";
   };
   /** 代理信息 */
   proxyInfo?: ProxyDetectionResult;
@@ -40,7 +52,10 @@ export interface ModelFetchOptions {
 export class EnhancedModelFetcher {
   private static instance: EnhancedModelFetcher;
   private validator: ModelValidator;
-  private cache = new Map<string, { spec: EnhancedModelSpec; timestamp: number }>();
+  private cache = new Map<
+    string,
+    { spec: EnhancedModelSpec; timestamp: number }
+  >();
   private readonly CACHE_TTL = 24 * 60 * 60 * 1000; // 24小时
 
   private constructor() {
@@ -65,7 +80,7 @@ export class EnhancedModelFetcher {
       forceRefresh = false,
       minConfidence = 0.5,
       allowFuzzyMatch = true,
-      enableProxyDetection = true
+      enableProxyDetection = true,
     } = options;
 
     const cacheKey = `${model.provider.id}:${model.id}`;
@@ -85,14 +100,21 @@ export class EnhancedModelFetcher {
       const apiSpec = await this.fetchFromAPI(model, {
         enableProxyDetection,
         allowFuzzyMatch,
-        minConfidence
+        minConfidence,
       });
 
-      if (apiSpec && apiSpec.validation && apiSpec.validation.confidence >= minConfidence) {
+      if (
+        apiSpec &&
+        apiSpec.validation &&
+        apiSpec.validation.confidence >= minConfidence
+      ) {
         enhancedSpec = apiSpec;
       } else {
         // 降级到本地规格
-        enhancedSpec = await this.fallbackToLocalSpec(model, apiSpec?.validation);
+        enhancedSpec = await this.fallbackToLocalSpec(
+          model,
+          apiSpec?.validation
+        );
       }
     } catch (error) {
       console.warn(`API获取失败，降级到本地规格: ${model.id}`, error);
@@ -118,9 +140,9 @@ export class EnhancedModelFetcher {
     const providerId = model.provider.id;
 
     switch (providerId) {
-      case 'openai':
+      case "openai":
         return this.fetchOpenAIModelInfo(model, options);
-      case 'github':
+      case "github":
         return this.fetchGitHubModelInfo(model, options);
       default:
         return null;
@@ -141,7 +163,9 @@ export class EnhancedModelFetcher {
     try {
       const config = ConfigurationManager.getInstance();
       const apiKey = config.getConfig("PROVIDERS_OPENAI_APIKEY");
-      const baseURL = config.getConfig("PROVIDERS_OPENAI_BASEURL") || "https://api.openai.com/v1";
+      const baseURL =
+        config.getConfig("PROVIDERS_OPENAI_BASEURL") ||
+        "https://api.openai.com/v1";
 
       if (!apiKey) {
         return null;
@@ -156,20 +180,22 @@ export class EnhancedModelFetcher {
       // 2. 获取模型列表
       const response = await fetch(`${baseURL}/models`, {
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
-        throw new Error(`API请求失败: ${response.status} ${response.statusText}`);
+        throw new Error(
+          `API请求失败: ${response.status} ${response.statusText}`
+        );
       }
 
       const modelsData = await response.json();
       const models = modelsData.data || [];
 
       if (models.length === 0) {
-        throw new Error('API返回空的模型列表');
+        throw new Error("API返回空的模型列表");
       }
 
       // 3. 查找目标模型
@@ -178,18 +204,28 @@ export class EnhancedModelFetcher {
 
       if (targetModel) {
         // 直接匹配成功
-        validation = await this.validator.validateModelIdentity(model, targetModel, baseURL);
+        validation = await this.validator.validateModelIdentity(
+          model,
+          targetModel,
+          baseURL
+        );
       } else if (options.allowFuzzyMatch && proxyInfo?.isProxy) {
         // 在代理环境中尝试智能匹配
         targetModel = this.findBestModelMatch(model.id as string, models);
         if (targetModel) {
-          validation = await this.validator.validateModelIdentity(model, targetModel, baseURL);
+          validation = await this.validator.validateModelIdentity(
+            model,
+            targetModel,
+            baseURL
+          );
         } else {
           validation = {
             isValid: false,
             confidence: 0,
-            reason: `未找到匹配的模型，可用模型: ${models.map((m: any) => m.id).join(', ')}`,
-            suggestion: 'use_local_spec'
+            reason: `未找到匹配的模型，可用模型: ${models
+              .map((m: any) => m.id)
+              .join(", ")}`,
+            suggestion: "use_local_spec",
           };
         }
       } else {
@@ -197,12 +233,15 @@ export class EnhancedModelFetcher {
           isValid: false,
           confidence: 0,
           reason: `模型 ${model.id} 不在API返回的模型列表中`,
-          suggestion: 'use_local_spec'
+          suggestion: "use_local_spec",
         };
       }
 
       // 4. 根据验证结果决定是否使用API数据
-      if (!validation.isValid || validation.confidence < options.minConfidence) {
+      if (
+        !validation.isValid ||
+        validation.confidence < options.minConfidence
+      ) {
         console.warn(`模型验证失败: ${validation.reason}`);
         return null;
       }
@@ -220,24 +259,29 @@ export class EnhancedModelFetcher {
         provider: model.provider,
         maxTokens: tokenLimits,
         lastUpdated: new Date().toISOString(),
-        source: proxyInfo?.isProxy ? 'api-proxy' : 'api',
+        source: proxyInfo?.isProxy ? "api-proxy" : "api",
         capabilities: {
           streaming: true,
-          functionCalling: this.supportsOpenAIFunctionCalling(model.id as string),
+          functionCalling: this.supportsOpenAIFunctionCalling(
+            model.id as string
+          ),
         },
         validation: {
           isValid: validation.isValid,
           confidence: validation.confidence,
           actualModelId: validation.actualModel || targetModel?.id,
           proxyDetected: validation.proxyDetected,
-          validationMethod: validation.confidence === 1.0 ? 'exact_match' : 
-                          validation.confidence > 0.8 ? 'known_mapping' : 'fuzzy_match'
+          validationMethod:
+            validation.confidence === 1.0
+              ? "exact_match"
+              : validation.confidence > 0.8
+              ? "known_mapping"
+              : "fuzzy_match",
         },
-        proxyInfo
+        proxyInfo,
       };
 
       return enhancedSpec;
-
     } catch (error) {
       console.warn(`OpenAI API获取失败: ${error}`);
       return null;
@@ -264,7 +308,7 @@ export class EnhancedModelFetcher {
       }
 
       const baseURL = "https://models.inference.ai.azure.com";
-      
+
       // 代理检测
       let proxyInfo: ProxyDetectionResult | undefined;
       if (options.enableProxyDetection) {
@@ -273,9 +317,9 @@ export class EnhancedModelFetcher {
 
       const response = await fetch(`${baseURL}/models`, {
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
@@ -290,9 +334,16 @@ export class EnhancedModelFetcher {
         return null;
       }
 
-      const validation = await this.validator.validateModelIdentity(model, targetModel, baseURL);
+      const validation = await this.validator.validateModelIdentity(
+        model,
+        targetModel,
+        baseURL
+      );
 
-      if (!validation.isValid || validation.confidence < options.minConfidence) {
+      if (
+        !validation.isValid ||
+        validation.confidence < options.minConfidence
+      ) {
         return null;
       }
 
@@ -302,10 +353,10 @@ export class EnhancedModelFetcher {
         provider: model.provider,
         maxTokens: {
           input: targetModel.context_length || 128000,
-          output: targetModel.max_output_tokens || 16384
+          output: targetModel.max_output_tokens || 16384,
         },
         lastUpdated: new Date().toISOString(),
-        source: 'api',
+        source: "api",
         capabilities: {
           streaming: true,
           functionCalling: targetModel.supports_function_calling || false,
@@ -315,15 +366,14 @@ export class EnhancedModelFetcher {
           confidence: validation.confidence,
           actualModelId: validation.actualModel,
           proxyDetected: validation.proxyDetected,
-          validationMethod: 'exact_match'
+          validationMethod: "exact_match",
         },
-        proxyInfo
+        proxyInfo,
       };
 
       return enhancedSpec;
-
     } catch (error) {
-      console.warn('GitHub Models API获取失败:', error);
+      console.warn("GitHub Models API获取失败:", error);
       return null;
     }
   }
@@ -336,15 +386,15 @@ export class EnhancedModelFetcher {
     previousValidation?: ModelValidationResult
   ): Promise<EnhancedModelSpec> {
     const localSpec = findModelSpec(model.id as string);
-    
+
     if (localSpec) {
       return {
         ...localSpec,
         validation: {
           isValid: true,
           confidence: 0.8,
-          validationMethod: 'local_spec'
-        }
+          validationMethod: "local_spec",
+        },
       };
     }
 
@@ -356,39 +406,50 @@ export class EnhancedModelFetcher {
       provider: model.provider,
       maxTokens: defaultLimits,
       lastUpdated: new Date().toISOString(),
-      source: 'fallback',
+      source: "fallback",
       capabilities: model.capabilities,
       validation: {
         isValid: false,
         confidence: 0.3,
-        validationMethod: 'fallback'
-      }
+        validationMethod: "fallback",
+      },
     };
   }
 
   /**
    * 智能模型匹配
    */
-  private findBestModelMatch(requestedId: string, availableModels: any[]): any | null {
+  private findBestModelMatch(
+    requestedId: string,
+    availableModels: any[]
+  ): any | null {
     // 1. 精确匹配
-    let match = availableModels.find(m => m.id === requestedId);
-    if (match) return match;
+    let match = availableModels.find((m) => m.id === requestedId);
+    if (match) {
+      return match;
+    }
 
     // 2. 前缀匹配
-    const requestedPrefix = requestedId.split('-')[0];
-    match = availableModels.find(m => m.id.startsWith(requestedPrefix));
-    if (match) return match;
+    const requestedPrefix = requestedId.split("-")[0];
+    match = availableModels.find((m) => m.id.startsWith(requestedPrefix));
+    if (match) {
+      return match;
+    }
 
     // 3. 相似度匹配
-    const similarities = availableModels.map(m => ({
+    const similarities = availableModels.map((m) => ({
       model: m,
-      score: this.calculateSimilarity(requestedId, m.id)
+      score: this.calculateSimilarity(requestedId, m.id),
     }));
 
     similarities.sort((a, b) => b.score - a.score);
-    
+
     if (similarities[0]?.score > 0.6) {
-      console.log(`模糊匹配: ${requestedId} -> ${similarities[0].model.id} (相似度: ${similarities[0].score.toFixed(2)})`);
+      console.log(
+        `模糊匹配: ${requestedId} -> ${
+          similarities[0].model.id
+        } (相似度: ${similarities[0].score.toFixed(2)})`
+      );
       return similarities[0].model;
     }
 
@@ -413,7 +474,10 @@ export class EnhancedModelFetcher {
     if (apiModel?.context_length) {
       return {
         input: apiModel.context_length,
-        output: Math.min(apiModel.max_output_tokens || 4096, apiModel.context_length * 0.25)
+        output: Math.min(
+          apiModel.max_output_tokens || 4096,
+          apiModel.context_length * 0.25
+        ),
       };
     }
 
@@ -424,15 +488,18 @@ export class EnhancedModelFetcher {
   /**
    * 根据模型ID推断token限制
    */
-  private inferTokenLimitsByModelId(modelId: string): { input: number; output: number } {
+  private inferTokenLimitsByModelId(modelId: string): {
+    input: number;
+    output: number;
+  } {
     const knownLimits: Record<string, { input: number; output: number }> = {
-      'o1-preview': { input: 128000, output: 32768 },
-      'o1-mini': { input: 128000, output: 65536 },
-      'gpt-4o': { input: 128000, output: 16384 },
-      'gpt-4o-mini': { input: 128000, output: 16384 },
-      'gpt-4-turbo': { input: 128000, output: 4096 },
-      'gpt-4': { input: 8192, output: 4096 },
-      'gpt-3.5-turbo': { input: 16385, output: 4096 },
+      "o1-preview": { input: 128000, output: 32768 },
+      "o1-mini": { input: 128000, output: 65536 },
+      "gpt-4o": { input: 128000, output: 16384 },
+      "gpt-4o-mini": { input: 128000, output: 16384 },
+      "gpt-4-turbo": { input: 128000, output: 4096 },
+      "gpt-4": { input: 8192, output: 4096 },
+      "gpt-3.5-turbo": { input: 16385, output: 4096 },
     };
 
     // 精确匹配
@@ -442,7 +509,7 @@ export class EnhancedModelFetcher {
 
     // 模糊匹配
     for (const [pattern, limits] of Object.entries(knownLimits)) {
-      if (modelId.includes(pattern.split('-')[0])) {
+      if (modelId.includes(pattern.split("-")[0])) {
         return limits;
       }
     }
@@ -456,11 +523,16 @@ export class EnhancedModelFetcher {
    */
   private supportsOpenAIFunctionCalling(modelId: string): boolean {
     const supportedModels = [
-      'gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'
+      "gpt-4o",
+      "gpt-4o-mini",
+      "gpt-4-turbo",
+      "gpt-4",
+      "gpt-3.5-turbo",
     ];
-    
-    return supportedModels.some(supported => 
-      modelId.includes(supported) || supported.includes(modelId.split('-')[0])
+
+    return supportedModels.some(
+      (supported) =>
+        modelId.includes(supported) || supported.includes(modelId.split("-")[0])
     );
   }
 
@@ -470,9 +542,11 @@ export class EnhancedModelFetcher {
   private calculateSimilarity(str1: string, str2: string): number {
     const longer = str1.length > str2.length ? str1 : str2;
     const shorter = str1.length > str2.length ? str2 : str1;
-    
-    if (longer.length === 0) return 1.0;
-    
+
+    if (longer.length === 0) {
+      return 1.0;
+    }
+
     const editDistance = this.levenshteinDistance(longer, shorter);
     return (longer.length - editDistance) / longer.length;
   }
@@ -481,13 +555,17 @@ export class EnhancedModelFetcher {
    * 计算编辑距离
    */
   private levenshteinDistance(str1: string, str2: string): number {
-    const matrix = Array(str2.length + 1).fill(null).map(() => 
-      Array(str1.length + 1).fill(null)
-    );
-    
-    for (let i = 0; i <= str1.length; i++) matrix[0][i] = i;
-    for (let j = 0; j <= str2.length; j++) matrix[j][0] = j;
-    
+    const matrix = Array(str2.length + 1)
+      .fill(null)
+      .map(() => Array(str1.length + 1).fill(null));
+
+    for (let i = 0; i <= str1.length; i++) {
+      matrix[0][i] = i;
+    }
+    for (let j = 0; j <= str2.length; j++) {
+      matrix[j][0] = j;
+    }
+
     for (let j = 1; j <= str2.length; j++) {
       for (let i = 1; i <= str1.length; i++) {
         const indicator = str1[i - 1] === str2[j - 1] ? 0 : 1;
@@ -498,7 +576,7 @@ export class EnhancedModelFetcher {
         );
       }
     }
-    
+
     return matrix[str2.length][str1.length];
   }
 
@@ -526,7 +604,7 @@ export class EnhancedModelFetcher {
   private cacheSpec(cacheKey: string, spec: EnhancedModelSpec): void {
     this.cache.set(cacheKey, {
       spec,
-      timestamp: Date.now()
+      timestamp: Date.now(),
     });
   }
 

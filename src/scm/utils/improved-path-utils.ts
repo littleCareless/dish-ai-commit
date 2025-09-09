@@ -20,7 +20,7 @@ export class ImprovedPathUtils {
    * @returns 是否为绝对路径
    */
   static isAbsolute(filePath: string): boolean {
-    if (!filePath) return false;
+    if (!filePath) {return false;}
     
     if (process.platform === 'win32') {
       // Windows: 检查驱动器盘符或UNC路径
@@ -238,7 +238,7 @@ export class ImprovedPathUtils {
    * @returns 转义后的路径
    */
   static escapeShellPath(filePath: string): string {
-    if (!filePath || typeof filePath !== 'string') return filePath;
+    if (!filePath || typeof filePath !== 'string') {return filePath;}
     
     if (process.platform === 'win32') {
       // Windows: 使用双引号包围包含特殊字符的路径

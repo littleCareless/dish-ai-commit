@@ -1001,7 +1001,7 @@ export class SvnProvider implements ISCMProvider {
     if (this.repositoryPath) {
       const specificRepo = repositories.find((repo) => {
         const repoFsPath = this._getRepoFsPath(repo);
-        if (!repoFsPath) return false;
+        if (!repoFsPath) {return false;}
         const normalizedRepoPath = ImprovedPathUtils.normalizePath(repoFsPath);
         const normalizedTargetPath = ImprovedPathUtils.normalizePath(this.repositoryPath!);
         

@@ -1,6 +1,6 @@
-import { BaseOpenAIProvider } from "./base-openai-provider"
-import { ConfigurationManager } from "../../config/configuration-manager"
-import { AIModel, type AIProviders } from "../types"
+import { BaseOpenAIProvider } from "./base-openai-provider";
+import { ConfigurationManager } from "../../config/configuration-manager";
+import { AIModel, type AIProviders } from "../types";
 
 /**
  * 智谱AI模型配置列表
@@ -164,7 +164,7 @@ const zhipuModels: AIModel[] = [
       functionCalling: true,
     },
   },
-]
+];
 
 /**
  * 智谱AI服务提供者实现类
@@ -181,7 +181,7 @@ export class ZhipuAIProvider extends BaseOpenAIProvider {
    * 从配置管理器获取API密钥，初始化基类
    */
   constructor() {
-    const configManager = ConfigurationManager.getInstance()
+    const configManager = ConfigurationManager.getInstance();
     super({
       apiKey: configManager.getConfig("PROVIDERS_ZHIPU_APIKEY"),
       baseURL: "https://open.bigmodel.cn/api/paas/v4/",
@@ -189,7 +189,7 @@ export class ZhipuAIProvider extends BaseOpenAIProvider {
       providerName: "zhipu",
       models: zhipuModels,
       defaultModel: "glm-4.5",
-    })
+    });
   }
 
   /**
@@ -201,33 +201,33 @@ export class ZhipuAIProvider extends BaseOpenAIProvider {
   async isAvailable(): Promise<boolean> {
     try {
       if (!this.config.apiKey) {
-        return false
+        return false;
       }
 
       const checkPromise = this.withTimeout(
         this.withRetry(async () => {
           try {
             // 执行一个轻量的API调用来验证可用性
-            await this.openai.models.list()
-            return true
+            await this.openai.models.list();
+            return true;
           } catch {
-            return false
+            return false;
           }
         })
-      )
+      );
 
       // 异步执行检查
       setTimeout(async () => {
         try {
-          await checkPromise
+          await checkPromise;
         } catch (error) {
-          console.error("Background availability check failed:", error)
+          console.error("Background availability check failed:", error);
         }
-      })
+      });
 
-      return true
+      return true;
     } catch {
-      return false
+      return false;
     }
   }
 
@@ -238,6 +238,6 @@ export class ZhipuAIProvider extends BaseOpenAIProvider {
    * @returns Promise<string[]> 返回所有支持的模型ID数组
    */
   async refreshModels(): Promise<string[]> {
-    return Promise.resolve(zhipuModels.map((m) => m.id))
+    return Promise.resolve(zhipuModels.map((m) => m.id));
   }
 }
