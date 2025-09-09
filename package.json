@@ -641,6 +641,7 @@
     "publish:pre": "rm -rf node_modules && rm -rf src/webview-ui/node_modules && npm install && vsce publish --pre-release && npx ovsx publish --pre-release -p $OVSX_PAT",
     "compile:esbuild": "npm run check-types && ts-node esbuild.ts",
     "check-types": "tsc --noEmit",
+    "check-types:staged": "tsc-files --noEmit",
     "watch:esbuild": "npm-run-all -p watch:esbuild-bundle watch:esbuild-tsc",
     "watch:esbuild-bundle": "ts-node esbuild.ts --watch",
     "watch:esbuild-tsc": "tsc --noEmit --watch --project tsconfig.json",
@@ -677,6 +678,7 @@
     "standard-version": "^9.5.0",
     "ts-jest": "^29.3.4",
     "ts-node": "^10.9.2",
+    "tsc-files": "^1.1.4",
     "typescript": "^5.8.3",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.3"
@@ -719,7 +721,7 @@
   "lint-staged": {
     "src/**/*.ts": [
       "npm run lint",
-      "npm run check-types",
+      "npm run check-types:staged",
       "npm run compile:esbuild"
     ]
   },
