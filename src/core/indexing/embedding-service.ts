@@ -114,7 +114,7 @@ async function generateOllamaEmbeddings(
 ): Promise<number[][]> {
   if (!baseUrl) {
     throw new EmbeddingServiceError(
-      formatMessage("embedding.ollama.baseUrl.missing"),
+      formatMessage("ollama.baseUrl.missing"),
       {
         source: "internal",
         type: "unknown",

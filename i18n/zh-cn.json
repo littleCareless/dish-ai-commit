@@ -240,5 +240,17 @@
   "warn.no.file.descriptions.generated": "无法生成任何文件描述。正在中止。",
   "error.parsing.layered.summary": "从 AI 解析分层提交摘要失败。显示原始详细信息作为后备。",
   "layered.commit.fallback.title": "分层提交详情（后备）",
-  "layered.commit.fallback.description": "AI 未能生成结构化摘要。以下是原始的、按文件分的描述。您可以使用这些来手动创建提交信息。"
+  "layered.commit.fallback.description": "AI 未能生成结构化摘要。以下是原始的、按文件分的描述。您可以使用这些来手动创建提交信息。",
+  "progress.detecting.staged.content": "检测暂存区内容...",
+  "svn.path.not.found": "未找到SVN路径",
+  "svn.auth.required": "需要SVN认证",
+  "svn.auth.button": "认证",
+  "svn.auth.cancelled": "SVN认证已取消",
+  "model.selection.cancelled": "模型选择已取消",
+  "embedding.openai.noEmbeddings": "OpenAI API 未返回任何嵌入。",
+  "embedding.openai.unknownError": "OpenAI 发生未知错误",
+  "embedding.ollama.requestFailed": "Ollama API 请求失败，状态码：{0}",
+  "embedding.ollama.invalidFormat": "从 Ollama API 收到无效的嵌入格式。",
+  "embedding.ollama.baseUrl.missing.forSearch": "Ollama 基础 URL 未配置。跳过搜索。",
+  "branch.name.suggestions": "分支名称建议"
 }

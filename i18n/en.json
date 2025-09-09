@@ -228,5 +228,17 @@
   "warn.no.file.descriptions.generated": "Could not generate any file descriptions. Aborting.",
   "error.parsing.layered.summary": "Failed to parse layered commit summary from AI. Showing raw details as a fallback.",
   "layered.commit.fallback.title": "Layered Commit Details (Fallback)",
-  "layered.commit.fallback.description": "The AI failed to generate a structured summary. Below are the raw, per-file descriptions. You can use these to manually craft your commit message."
+  "layered.commit.fallback.description": "The AI failed to generate a structured summary. Below are the raw, per-file descriptions. You can use these to manually craft your commit message.",
+  "progress.detecting.staged.content": "Detecting staged content...",
+  "svn.path.not.found": "SVN path not found",
+  "svn.auth.required": "SVN authentication required",
+  "svn.auth.button": "Authenticate",
+  "svn.auth.cancelled": "SVN authentication cancelled",
+  "model.selection.cancelled": "Model selection cancelled",
+  "embedding.openai.noEmbeddings": "OpenAI API did not return any embeddings.",
+  "embedding.openai.unknownError": "An unknown error occurred with OpenAI",
+  "embedding.ollama.requestFailed": "Ollama API request failed with status code: {0}",
+  "embedding.ollama.invalidFormat": "Invalid embedding format received from Ollama API.",
+  "embedding.ollama.baseUrl.missing.forSearch": "Ollama Base URL is not configured. Skipping search.",
+  "branch.name.suggestions": "Branch Name Suggestions"
 }
