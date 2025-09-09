@@ -5,6 +5,38 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+# 0.46.0 (2025-09-09)
+
+
+### ♻ Code Refactoring
+
+* **scm**: 重构仓库检测逻辑以增强 SVN 支持 ([f338931](https://github.com/littleCareless/dish-ai-commit/commit/f338931))
+
+
+### ⚡ Performance Improvements
+
+* **ci**: 使用 tsc-files 加速暂存文件的类型检查 ([0aa72fe](https://github.com/littleCareless/dish-ai-commit/commit/0aa72fe))
+
+
+### ✨ Features
+
+* **ai**: 增强模型验证逻辑并统一代码风格 ([1f7c779](https://github.com/littleCareless/dish-ai-commit/commit/1f7c779))
+
+
+### 🎫 Chores
+
+* **project**: 移除过时和无用的项目文件 ([fdcb2a4](https://github.com/littleCareless/dish-ai-commit/commit/fdcb2a4))
+* **scripts**: 移除冗余的 SCM 测试脚本 ([1ce46fd](https://github.com/littleCareless/dish-ai-commit/commit/1ce46fd))
+
+
+### 🐛 Bug Fixes
+
+* **tsconfig**: 更正 tsconfig.json 的 schema 地址 ([92f4b9b](https://github.com/littleCareless/dish-ai-commit/commit/92f4b9b))
+
+
+
+
+
 ## 0.45.1 (2025-08-28)
 
 
