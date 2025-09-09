@@ -5,6 +5,33 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+# 0.47.0 (2025-09-09)
+
+
+### ♻ Code Refactoring
+
+* **ai**: 将 buildProviderMessages 和 getSystemPrompt 改为异步方法 ([8148332](https://github.com/littleCareless/dish-ai-commit/commit/8148332))
+
+
+### ✨ Features
+
+* **i18n**: 完善 SVN 与模型功能的国际化支持 ([dda11c8](https://github.com/littleCareless/dish-ai-commit/commit/dda11c8))
+* **prompt**: 支持从 commitlint 配置动态生成提交类型 ([2972447](https://github.com/littleCareless/dish-ai-commit/commit/2972447))
+
+
+### 🎫 Chores
+
+* **github**: 添加 issue 模板 ([d7c3dc0](https://github.com/littleCareless/dish-ai-commit/commit/d7c3dc0))
+
+
+### 🐛 Bug Fixes
+
+* **scm**: 修复 AI 响应中代码块标记的处理 ([e6d365f](https://github.com/littleCareless/dish-ai-commit/commit/e6d365f))
+
+
+
+
+
 # 0.46.0 (2025-09-09)
 
 
