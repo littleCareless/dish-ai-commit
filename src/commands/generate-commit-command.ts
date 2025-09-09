@@ -59,8 +59,13 @@ function formatLayeredCommitMessage(
  * @returns 过滤后的提交信息
  */
 function filterCodeBlockMarkers(commitMessage: string): string {
-  // 移除Markdown代码块标记（三个反引号）
-  return commitMessage.replace(/```/g, "");
+  let cleanedMessage = commitMessage.trim();
+  // 移除开头的代码块标记，例如 ```json, ```text, ```
+  cleanedMessage = cleanedMessage.replace(/^```[a-zA-Z]*\s*\n?/, "");
+  // 移除结尾的代码块标记
+  cleanedMessage = cleanedMessage.replace(/\n?```$/, "");
+  // 再次 trim 以处理移除标记后可能留下的空格
+  return cleanedMessage.trim();
 }
 
 /**
@@ -692,7 +697,7 @@ ${currentInput}
 
     const document = await vscode.workspace.openTextDocument({
       content,
-      language: "``",
+      language: "markdown",
     });
     await vscode.window.showTextDocument(document);
     notify.info("layered.commit.details.generated");
@@ -895,13 +900,14 @@ ${currentInput}
     for await (const chunk of stream) {
       this.throwIfCancelled(token);
       accumulatedMessage += chunk;
-      let filteredMessage = filterCodeBlockMarkers(accumulatedMessage);
-      filteredMessage = filteredMessage.trimStart();
-      await scmProvider.startStreamingInput(filteredMessage);
-      // 移除小的延时，让流式更新更平滑
+      // During streaming, we show the raw output from the AI.
+      await scmProvider.startStreamingInput(accumulatedMessage);
     }
+
     this.throwIfCancelled(token);
-    const finalMessage = filterCodeBlockMarkers(accumulatedMessage).trim();
+
+    // After the stream is complete, filter the final message and apply it.
+    const finalMessage = filterCodeBlockMarkers(accumulatedMessage);
     await scmProvider.startStreamingInput(finalMessage);
   }
 
