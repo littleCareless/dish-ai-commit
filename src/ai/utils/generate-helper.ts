@@ -1,6 +1,7 @@
 import { notify } from "../../utils/notification/notification-manager";
 import { generateCommitMessageSystemPrompt } from "../../prompt/generate-commit";
 import { generateFallbackCommitMessageSystemPrompt } from "../../prompt/generate-commit-fallback";
+import { loadCommitlintConfig } from "../../utils/commitlint";
 import {
   generateBranchNameSystemPrompt,
   generateBranchNameUserPrompt,
@@ -192,7 +193,7 @@ function appendLanguageConstraint(
   }
 
   // 添加语言约束
-  return `${prompt.trim()}\n\nRespond in the following locale: ${language}`;
+  return `${prompt?.trim()}\n\nRespond in the following locale: ${language}`;
 }
 
 /**
@@ -236,11 +237,13 @@ let isGeneratingPrompt = false;
  * @param {boolean} directOutput - 是否要求直接输出结果，不包含解释
  * @returns {string} 系统提示文本
  */
-export function getSystemPrompt(
+export async function getSystemPrompt(
   params: AIRequestParams,
   directOutput: boolean = false,
   useFallback: boolean = false
-): string {
+): Promise<string> {
+  console.log("调用栈:\n", new Error().stack);
+
   if (isGeneratingPrompt) {
     return ""; // 防止循环调用
   }
@@ -249,6 +252,7 @@ export function getSystemPrompt(
     isGeneratingPrompt = true;
 
     const config = ConfigurationManager.getInstance().getConfiguration();
+    const commitlintConfig = await loadCommitlintConfig(params.workspaceRoot);
 
     // 1. 优先使用params中提供的系统提示
     // if (params.systemPrompt) {
@@ -270,6 +274,7 @@ export function getSystemPrompt(
     const prompt = promptGenerator({
       config,
       vcsType: (params.scm === "svn" ? "svn" : "git") as "git" | "svn",
+      commitlintConfig,
     });
 
     // 仅当需要直接输出结果时才添加输出约束
@@ -361,14 +366,16 @@ export function getBranchNameUserPrompt(diffContent: string): string {
  * @param {AIRequestParams} params - AI 请求参数
  * @returns {string} 全局摘要生成的系统提示文本
  */
-export function getGlobalSummaryPrompt(params: AIRequestParams): string {
+export async function getGlobalSummaryPrompt(
+  params: AIRequestParams
+): Promise<string> {
   try {
     // 提示AI生成全局摘要
     const prompt = `请根据以下代码差异内容，生成一个简洁的全局摘要，概括所有变更的整体目的和意图。
 摘要应该是高层次的，不需要包含每个文件的细节，而是关注整体变更的目标。
 摘要内容应保持在1-3句话之内。
 
-${getSystemPrompt(params)}`;
+${await getSystemPrompt(params)}`;
 
     // 全局摘要提示词不是自定义提示词，不应用语言约束
     return prompt;
@@ -382,17 +389,17 @@ ${getSystemPrompt(params)}`;
  * @param {string} filePath - 文件路径
  * @returns {string} 文件级描述生成的系统提示文本
  */
-export function getFileDescriptionPrompt(
+export async function getFileDescriptionPrompt(
   params: AIRequestParams,
   filePath: string
-): string {
+): Promise<string> {
   try {
     // 提示AI生成文件级描述
     const prompt = `请针对文件 "${filePath}" 的变更，生成一个简洁明了的描述。
 描述应该只关注这个特定文件的变化，说明做了什么修改以及为什么做这些修改。
 描述应该保持在1-2句话之内。
 
-${getSystemPrompt(params)}`;
+${await getSystemPrompt(params)}`;
 
     // 文件描述提示词不是自定义提示词，不应用语言约束
     return prompt;

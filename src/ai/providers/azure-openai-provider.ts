@@ -114,7 +114,7 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
     }
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
-    const messages = this.buildProviderMessages(params);
+    const messages = await this.buildProviderMessages(params);
 
     try {
       const completion = await this.openai!.chat.completions.create({
@@ -161,7 +161,7 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
     }
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
-    const messages = this.buildProviderMessages(params);
+    const messages = await this.buildProviderMessages(params);
 
     const processStream = async function* (
       this: AzureOpenAIProvider
@@ -267,9 +267,9 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
     return { content: response.content, usage: response.usage };
   }
 
-  protected buildProviderMessages(
+  protected async buildProviderMessages(
     params: AIRequestParams
-  ): ChatCompletionMessageParam[] {
+  ): Promise<ChatCompletionMessageParam[]> {
     const validRoles: ChatCompletionMessageParam["role"][] = [
       "system",
       "user",
@@ -292,7 +292,7 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
     }
 
     const messages: ChatCompletionMessageParam[] = [];
-    const systemPrompt = getSystemPrompt(params);
+    const systemPrompt = await getSystemPrompt(params);
     messages.push({ role: "system", content: systemPrompt });
 
     let userContent = "";

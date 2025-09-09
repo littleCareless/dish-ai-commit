@@ -34,7 +34,7 @@ export abstract class AbstractAIProvider implements AIProvider {
   async generateCommit(params: AIRequestParams): Promise<AIResponse> {
     try {
       if (!params.messages) {
-        const systemPrompt = getSystemPrompt(params);
+        const systemPrompt = await getSystemPrompt(params);
         params.messages = [
           { role: "system", content: systemPrompt },
           { role: "user", content: params.diff },
@@ -64,7 +64,7 @@ export abstract class AbstractAIProvider implements AIProvider {
   ): Promise<AsyncIterable<string>> {
     try {
       if (!params.messages) {
-        const systemPrompt = getSystemPrompt(params);
+        const systemPrompt = await getSystemPrompt(params);
         params.messages = [
           { role: "system", content: systemPrompt },
           { role: "user", content: params.diff },
@@ -91,14 +91,17 @@ export abstract class AbstractAIProvider implements AIProvider {
   ): Promise<AIResponse> {
     try {
       if (!params.messages) {
-        const systemPrompt = getSystemPrompt(params);
+        const systemPrompt = await getSystemPrompt(params);
         params.messages = [
           { role: "system", content: systemPrompt },
           { role: "user", content: params.diff },
         ];
       }
       const config = ConfigurationManager.getInstance().getConfiguration();
-      const tools = getCommitMessageTools(config);
+      // Directly await the async function
+      const { loadCommitlintConfig } = await import("../../utils/commitlint");
+      const commitlintConfig = await loadCommitlintConfig(params.workspaceRoot);
+      const tools = getCommitMessageTools(config, commitlintConfig);
 
       const result = await this.executeAIRequest(params, {
         temperature: 0.3,
@@ -272,7 +275,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       const modifiedFiles = extractModifiedFilePaths(params.diff);
 
       // 步骤1: 生成全局摘要
-      const summarySystemPrompt = getGlobalSummaryPrompt(params);
+      const summarySystemPrompt = await getGlobalSummaryPrompt(params);
       const summaryResult = await this.executeAIRequest(
         {
           ...params,
@@ -301,7 +304,10 @@ export abstract class AbstractAIProvider implements AIProvider {
         const fileDiff = params.diff.match(filePattern)?.[0] || "";
 
         if (fileDiff) {
-          const fileSystemPrompt = getFileDescriptionPrompt(params, filePath);
+          const fileSystemPrompt = await getFileDescriptionPrompt(
+            params,
+            filePath
+          );
           const fileResult = await this.executeAIRequest(
             {
               ...params,
@@ -360,7 +366,9 @@ export abstract class AbstractAIProvider implements AIProvider {
    * @param params - AI请求参数
    * @returns 适合提供商API的消息结构
    */
-  protected abstract buildProviderMessages(params: AIRequestParams): any;
+  protected abstract buildProviderMessages(
+    params: AIRequestParams
+  ): Promise<any>;
 
   /**
    * 需要由具体提供者实现的核心流式方法。

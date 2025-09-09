@@ -119,7 +119,7 @@ export class OllamaProvider extends AbstractAIProvider {
     }
   ): Promise<{ content: string; usage?: any; jsonContent?: any }> {
     const model = params.model || this.getDefaultModel();
-    const messages = this.buildProviderMessages(params);
+    const messages = await this.buildProviderMessages(params);
 
     console.log("Final messages for AI:", JSON.stringify(messages, null, 2));
 
@@ -180,7 +180,7 @@ export class OllamaProvider extends AbstractAIProvider {
     const self = this; // 确保在异步生成器中正确使用 'this'
     async function* streamLogic(): AsyncIterable<string> {
       if (!params.messages) {
-        const systemPrompt = getSystemPrompt(params);
+        const systemPrompt = await getSystemPrompt(params);
         const userPrompt = params.additionalContext || "";
         const userContent = params.diff;
         params.messages = [{ role: "system", content: systemPrompt }];
@@ -193,7 +193,7 @@ export class OllamaProvider extends AbstractAIProvider {
       }
 
       const model = params.model || self.getDefaultModel();
-      const messages = self.buildProviderMessages(params);
+      const messages = await self.buildProviderMessages(params);
 
       console.log("Final messages for AI:", JSON.stringify(messages, null, 2));
 
@@ -330,10 +330,12 @@ export class OllamaProvider extends AbstractAIProvider {
    * @param params - AI请求参数
    * @returns 适合Ollama API的消息数组
    */
-  protected buildProviderMessages(params: AIRequestParams): AIMessage[] {
+  protected async buildProviderMessages(
+    params: AIRequestParams
+  ): Promise<AIMessage[]> {
     if (!params.messages || params.messages.length === 0) {
       // 作为备用，如果 messages 未提供，则根据旧结构构建
-      const systemPrompt = getSystemPrompt(params);
+      const systemPrompt = await getSystemPrompt(params);
       const userContent = params.diff;
       const userPrompt = params.additionalContext || "";
 

@@ -99,9 +99,9 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       maxTokens?: number;
     }
   ): Promise<{ content: string; usage?: any; jsonContent?: any }> {
-    const messages = this.buildProviderMessages(
+    const messages = (await this.buildProviderMessages(
       params
-    ) as ChatCompletionMessageParam[];
+    )) as ChatCompletionMessageParam[];
 
     console.log("Final messages for AI:", JSON.stringify(messages, null, 2));
 
@@ -144,9 +144,9 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       maxTokens?: number;
     }
   ): Promise<AsyncIterable<string>> {
-    const messages = this.buildProviderMessages(
+    const messages = (await this.buildProviderMessages(
       params
-    ) as ChatCompletionMessageParam[];
+    )) as ChatCompletionMessageParam[];
 
     const filteredMessages = messages.filter((msg) => {
       if (typeof msg.content === "string") {
@@ -317,9 +317,9 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
    * @param params AI请求参数
    * @returns 转换后的ChatCompletionMessageParam数组
    */
-  protected buildProviderMessages(params: AIRequestParams): any {
+  protected async buildProviderMessages(params: AIRequestParams): Promise<any> {
     if (!params.messages || params.messages.length === 0) {
-      const systemPrompt = getSystemPrompt(params);
+      const systemPrompt = await getSystemPrompt(params);
       const userPrompt = params.additionalContext || "";
       const userContent = params.diff;
 

@@ -74,8 +74,9 @@ export class GroqAIProvider extends AbstractAIProvider {
     }
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
-    const { systemInstruction, contents } =
-      this.buildProviderMessages(params);
+    const { systemInstruction, contents } = await this.buildProviderMessages(
+      params
+    );
 
     console.log(
       "Final messages for AI:",
@@ -128,8 +129,9 @@ export class GroqAIProvider extends AbstractAIProvider {
     }
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
-    const { systemInstruction, contents } =
-      this.buildProviderMessages(params);
+    const { systemInstruction, contents } = await this.buildProviderMessages(
+      params
+    );
 
     const processStream = async function* (
       this: GroqAIProvider
@@ -222,10 +224,10 @@ export class GroqAIProvider extends AbstractAIProvider {
 
     return { content: response.content, usage: response.usage };
   }
-  protected buildProviderMessages(params: AIRequestParams): {
+  protected async buildProviderMessages(params: AIRequestParams): Promise<{
     systemInstruction: string;
     contents: ChatCompletionMessageParam[];
-  } {
+  }> {
     const messages = params.messages || [];
     let systemInstruction = "";
     const contents: ChatCompletionMessageParam[] = messages.map((message) => {

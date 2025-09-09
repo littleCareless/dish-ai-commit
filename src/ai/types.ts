@@ -69,6 +69,8 @@ export interface AIRequestParams {
   additionalContext: string;
   /** 源代码管理类型 */
   scm?: string;
+  /** 当前工作区的根路径 */
+  workspaceRoot?: string;
   /** 修改的文件列表 */
   changeFiles?: string[];
   /** 目标语言 */
@@ -340,7 +342,9 @@ export type GeminiAIModels =
   | "gemini-2.5-pro-preview-05-06"
   | "gemini-2.5-flash-preview-05-20";
 
-export type GoogleAIModels = "gemini-1.5-pro-latest" | "gemini-1.5-flash-latest";
+export type GoogleAIModels =
+  | "gemini-1.5-pro-latest"
+  | "gemini-1.5-flash-latest";
 
 export type BaiduQianfanModels =
   | "ERNIE-4.0-8K"
@@ -513,25 +517,25 @@ export type AIModels<Provider extends AIProviders = AIProviders> =
     : Provider extends "perplexity"
     ? PerplexityAIModels
     : Provider extends "premai"
-      ? PremAIModels
-      : Provider extends "together"
-        ? TogetherAIModels
-        : Provider extends "xai"
-          ? XAIModels
-          : Provider extends "anthropic"
-            ? AnthropicAIModels
-            : Provider extends "mistral"
-              ? MistralAIModels
-            : Provider extends "cloudflare"
-              ? CloudflareWorkersAIModels
-            : Provider extends "vertexai"
-              ? VertexAIModels
-            : Provider extends "groq"
-              ? "mixtral-8x7b-32768"
-              : OpenAIModels;
-        
-        export type SupportedAIModels =
-          | `github:${AIModels<"github">}`
+    ? PremAIModels
+    : Provider extends "together"
+    ? TogetherAIModels
+    : Provider extends "xai"
+    ? XAIModels
+    : Provider extends "anthropic"
+    ? AnthropicAIModels
+    : Provider extends "mistral"
+    ? MistralAIModels
+    : Provider extends "cloudflare"
+    ? CloudflareWorkersAIModels
+    : Provider extends "vertexai"
+    ? VertexAIModels
+    : Provider extends "groq"
+    ? "mixtral-8x7b-32768"
+    : OpenAIModels;
+
+export type SupportedAIModels =
+  | `github:${AIModels<"github">}`
   | `openai:${AIModels<"openai">}`
   | "vscode";
 

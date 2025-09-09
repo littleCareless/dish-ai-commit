@@ -111,7 +111,7 @@ export class CloudflareWorkersAIProvider extends AbstractAIProvider {
     const modelId = params.model?.id || this.config.defaultModel;
     const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/ai/run/${modelId}`;
 
-    const messages = this.buildProviderMessages(params);
+    const messages = await this.buildProviderMessages(params);
 
     const body = {
       messages,
@@ -165,7 +165,7 @@ export class CloudflareWorkersAIProvider extends AbstractAIProvider {
     const modelId = params.model?.id || this.config.defaultModel;
     const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/ai/run/${modelId}`;
 
-    const messages = this.buildProviderMessages(params);
+    const messages = await this.buildProviderMessages(params);
 
     const body = {
       messages,
@@ -231,11 +231,11 @@ export class CloudflareWorkersAIProvider extends AbstractAIProvider {
     return Promise.resolve(processStream());
   }
 
-  protected buildProviderMessages(
+  protected async buildProviderMessages(
     params: AIRequestParams
-  ): { role: string; content: string }[] {
+  ): Promise<{ role: string; content: string }[]> {
     if (!params.messages || params.messages.length === 0) {
-      const systemPrompt = getSystemPrompt(params);
+      const systemPrompt = await getSystemPrompt(params);
       const userPrompt = params.additionalContext || "";
       const userContent = params.diff;
 

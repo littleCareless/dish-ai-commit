@@ -180,9 +180,9 @@ export class GeminiAIProvider extends AbstractAIProvider {
 
     // 获取模型ID
     const modelId = (params.model?.id || this.config.defaultModel) as string;
-    const { systemInstruction, contents } = this.buildProviderMessages(
+    const { systemInstruction, contents } = (await this.buildProviderMessages(
       params
-    ) as {
+    )) as {
       systemInstruction?: string;
       contents: Content[];
     };
@@ -254,9 +254,9 @@ export class GeminiAIProvider extends AbstractAIProvider {
     }
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
-    const { systemInstruction, contents } = this.buildProviderMessages(
+    const { systemInstruction, contents } = (await this.buildProviderMessages(
       params
-    ) as {
+    )) as {
       systemInstruction?: string;
       contents: Content[];
     };
@@ -452,9 +452,9 @@ export class GeminiAIProvider extends AbstractAIProvider {
    * @param params - AI请求参数
    * @returns 包含 systemInstruction 和 contents 的对象
    */
-  protected buildProviderMessages(params: AIRequestParams): any {
+  protected async buildProviderMessages(params: AIRequestParams): Promise<any> {
     if (!params.messages || params.messages.length === 0) {
-      const systemPrompt = getSystemPrompt(params);
+      const systemPrompt = await getSystemPrompt(params);
       const userPrompt = params.additionalContext || "";
       const userContent = params.diff;
 
@@ -511,9 +511,9 @@ export class GeminiAIProvider extends AbstractAIProvider {
     }
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
-    const { systemInstruction, contents } = this.buildProviderMessages(
+    const { systemInstruction, contents } = (await this.buildProviderMessages(
       params
-    ) as {
+    )) as {
       systemInstruction?: string;
       contents: Content[];
     };

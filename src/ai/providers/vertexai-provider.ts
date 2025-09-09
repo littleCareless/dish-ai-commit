@@ -85,7 +85,9 @@ export class VertexAIProvider extends AbstractAIProvider {
     super();
     const configManager = ConfigurationManager.getInstance();
 
-    const apiEndpoint = configManager.getConfig("PROVIDERS_VERTEXAI_APIENDPOINT");
+    const apiEndpoint = configManager.getConfig(
+      "PROVIDERS_VERTEXAI_APIENDPOINT"
+    );
     const authOptionsString = configManager.getConfig(
       "PROVIDERS_VERTEXAI_GOOGLEAUTHOPTIONS"
     );
@@ -142,7 +144,9 @@ export class VertexAIProvider extends AbstractAIProvider {
     }
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
-    const { systemInstruction, contents } = this.buildProviderMessages(params) as {
+    const { systemInstruction, contents } = (await this.buildProviderMessages(
+      params
+    )) as {
       systemInstruction?: { role: string; parts: Part[] };
       contents: Content[];
     };
@@ -162,7 +166,8 @@ export class VertexAIProvider extends AbstractAIProvider {
       });
 
       const response = result.response;
-      const responseText = response.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
+      const responseText =
+        response.candidates?.[0]?.content?.parts?.[0]?.text ?? "";
 
       // Vertex AI API may not return token usage in the same way.
       const usage = {
@@ -192,7 +197,9 @@ export class VertexAIProvider extends AbstractAIProvider {
     }
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
-    const { systemInstruction, contents } = this.buildProviderMessages(params) as {
+    const { systemInstruction, contents } = (await this.buildProviderMessages(
+      params
+    )) as {
       systemInstruction?: { role: string; parts: Part[] };
       contents: Content[];
     };
@@ -290,9 +297,9 @@ export class VertexAIProvider extends AbstractAIProvider {
     return { content: response.content, usage: response.usage };
   }
 
-  protected buildProviderMessages(params: AIRequestParams): any {
+  protected async buildProviderMessages(params: AIRequestParams): Promise<{}> {
     if (!params.messages || params.messages.length === 0) {
-      const systemPrompt = getSystemPrompt(params);
+      const systemPrompt = await getSystemPrompt(params);
       const userPrompt = params.additionalContext || "";
       const userContent = params.diff;
 

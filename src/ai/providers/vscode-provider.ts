@@ -45,9 +45,9 @@ export class VSCodeProvider extends AbstractAIProvider {
     // let retries = 0;
 
     // while (true) {
-    const messages = this.buildProviderMessages(
+    const messages = (await this.buildProviderMessages(
       params
-    ) as vscode.LanguageModelChatMessage[];
+    )) as vscode.LanguageModelChatMessage[];
 
     console.log("Final messages for AI:", JSON.stringify(messages, null, 2));
 
@@ -119,9 +119,9 @@ export class VSCodeProvider extends AbstractAIProvider {
     const chatModel =
       models.find((model) => model.id === params.model?.id) || models[0];
 
-    const messages = this.buildProviderMessages(
+    const messages = (await this.buildProviderMessages(
       params
-    ) as vscode.LanguageModelChatMessage[];
+    )) as vscode.LanguageModelChatMessage[];
 
     console.log("Final messages for AI:", JSON.stringify(messages, null, 2));
 
@@ -234,9 +234,11 @@ export class VSCodeProvider extends AbstractAIProvider {
    * @param params AI请求参数
    * @returns 转换后的vscode.LanguageModelChatMessage数组
    */
-  protected buildProviderMessages(params: AIRequestParams): any {
+  protected async buildProviderMessages(
+    params: AIRequestParams
+  ): Promise<any> {
     if (!params.messages || params.messages.length === 0) {
-      const systemPrompt = getSystemPrompt(params);
+      const systemPrompt = await getSystemPrompt(params);
       const userPrompt = params.additionalContext || "";
       const userContent = params.diff;
 
