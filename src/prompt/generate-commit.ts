@@ -3,6 +3,95 @@ import { ExtensionConfiguration } from "../config/types";
 interface SystemPromptParams {
   config: ExtensionConfiguration; // 配置项
   vcsType: "git" | "svn"; // 运行时参数
+  commitlintConfig?: any;
+}
+
+const typeDescriptions: { [key: string]: string } = {
+  feat: "New feature",
+  fix: "Bug fix",
+  init: "Initial commit",
+  docs: "Documentation",
+  style: "Code style",
+  refactor: "Code refactoring",
+  perf: "Performance",
+  test: "Testing",
+  revert: "Revert changes",
+  chore: "Other changes",
+  build: "Build system",
+  ci: "CI config",
+  i18n: "Internationalization",
+};
+
+function getDefaultTypeReference(enableEmoji: boolean): string {
+  return enableEmoji
+    ? `| Type     | Emoji | Description          | Example Scopes      |
+| -------- | ----- | -------------------- | ------------------- |
+| feat     | ✨    | New feature          | user, payment       |
+| fix      | 🐛    | Bug fix              | auth, data          |
+| docs     | 📝    | Documentation        | README, API         |
+| style    | 💄    | Code style           | formatting          |
+| refactor | ♻️    | Code refactoring     | utils, helpers      |
+| perf     | ⚡️   | Performance          | query, cache        |
+| test     | ✅    | Testing              | unit, e2e           |
+| build    | 📦️    | Build system         | webpack, npm        |
+| ci       | 👷    | CI config            | Travis, Jenkins     |
+| chore    | 🔧    | Other changes        | scripts, config     |
+| i18n     | 🌐    | Internationalization | locale, translation |`
+    : `| Type     | Description          | Example Scopes      |
+| -------- | -------------------- | ------------------- |
+| feat     | New feature          | user, payment       |
+| fix      | Bug fix              | auth, data          |
+| docs     | Documentation        | README, API         |
+| style    | Code style           | formatting          |
+| refactor | Code refactoring     | utils, helpers      |
+| perf     | Performance          | query, cache        |
+| test     | Testing              | unit, e2e           |
+| build    | Build system         | webpack, npm        |
+| ci       | CI config            | Travis, Jenkins     |
+| chore    | Other changes        | scripts, config     |
+| i18n     | Internationalization | locale, translation |`;
+}
+
+function generateTypeReferenceFromConfig(
+  commitlintConfig: any,
+  enableEmoji: boolean
+): string {
+  const typeEnum = commitlintConfig?.rules?.["type-enum"]?.[2];
+  if (!Array.isArray(typeEnum)) {
+    return getDefaultTypeReference(enableEmoji); // Fallback
+  }
+
+  const headers = enableEmoji
+    ? "| Type     | Emoji | Description          |"
+    : "| Type     | Description          |";
+  const separator = enableEmoji
+    ? "| -------- | ----- | -------------------- |"
+    : "| -------- | -------------------- |";
+
+  const rows = typeEnum
+    .map((item: string) => {
+      const match = item.match(/(\p{Emoji_Presentation})?\s*([a-z:]+)/u);
+      if (!match) {
+        return null;
+      }
+
+      const emoji = match[1] || "";
+      const type = match[2].replace(":", "");
+      const description = typeDescriptions[type] || "Other changes";
+
+      if (enableEmoji) {
+        return `| ${type.padEnd(8, " ")} | ${emoji.padEnd(
+          5,
+          " "
+        )} | ${description.padEnd(20, " ")} |`;
+      } else {
+        return `| ${type.padEnd(8, " ")} | ${description.padEnd(20, " ")} |`;
+      }
+    })
+    .filter(Boolean)
+    .join("\n");
+
+  return `${headers}\n${separator}\n${rows}`;
 }
 
 function getMergeCommitsSection(
@@ -103,6 +192,7 @@ function getSVNExamples(
 export function generateCommitMessageSystemPrompt({
   config,
   vcsType,
+  commitlintConfig,
 }: SystemPromptParams) {
   const {
     base: { language },
@@ -167,33 +257,9 @@ When generating commit messages, always consider both the file status and the co
 ## TYPE REFERENCE
 
 ${
-  enableEmoji
-    ? `| Type     | Emoji | Description          | Example Scopes      |
-| -------- | ----- | -------------------- | ------------------- |
-| feat     | ✨    | New feature          | user, payment       |
-| fix      | 🐛    | Bug fix              | auth, data          |
-| docs     | 📝    | Documentation        | README, API         |
-| style    | 💄    | Code style           | formatting          |
-| refactor | ♻️    | Code refactoring     | utils, helpers      |
-| perf     | ⚡️   | Performance          | query, cache        |
-| test     | ✅    | Testing              | unit, e2e           |
-| build    | 📦️    | Build system         | webpack, npm        |
-| ci       | 👷    | CI config            | Travis, Jenkins     |
-| chore    | 🔧    | Other changes        | scripts, config     |
-| i18n     | 🌐    | Internationalization | locale, translation |`
-    : `| Type     | Description          | Example Scopes      |
-| -------- | -------------------- | ------------------- |
-| feat     | New feature          | user, payment       |
-| fix      | Bug fix              | auth, data          |
-| docs     | Documentation        | README, API         |
-| style    | Code style           | formatting          |
-| refactor | Code refactoring     | utils, helpers      |
-| perf     | Performance          | query, cache        |
-| test     | Testing              | unit, e2e           |
-| build    | Build system         | webpack, npm        |
-| ci       | CI config            | Travis, Jenkins     |
-| chore    | Other changes        | scripts, config     |
-| i18n     | Internationalization | locale, translation |`
+  commitlintConfig
+    ? generateTypeReferenceFromConfig(commitlintConfig, enableEmoji)
+    : getDefaultTypeReference(enableEmoji)
 }
 
 ## WRITING RULES
@@ -451,7 +517,10 @@ function generateThinkingProcessPrompt(useRecentCommitsAsReference = false) {
 
 export function generateCommitMessageUserPrompt(language: string) {}
 
-export function getCommitMessageTools(config: ExtensionConfiguration) {
+export function getCommitMessageTools(
+  config: ExtensionConfiguration,
+  commitlintConfig?: any
+) {
   const {
     base: { language },
     features: {
@@ -459,24 +528,34 @@ export function getCommitMessageTools(config: ExtensionConfiguration) {
     },
   } = config;
 
+  let typeEnum = [
+    "feat",
+    "fix",
+    "docs",
+    "style",
+    "refactor",
+    "perf",
+    "test",
+    "build",
+    "ci",
+    "chore",
+    "i18n",
+  ];
+
+  if (commitlintConfig?.rules?.["type-enum"]?.[2]) {
+    typeEnum = commitlintConfig.rules["type-enum"][2].map((item: string) => {
+      const match = item.match(/\s*([a-z:]+)/u);
+      return match ? match[1].replace(":", "") : item;
+    });
+  }
+
   const properties: any = {
     type: {
       type: "string",
-      description:
-        "Commit type, must be one of: feat, fix, docs, style, refactor, perf, test, build, ci, chore, i18n. See TYPE REFERENCE for details.",
-      enum: [
-        "feat",
-        "fix",
-        "docs",
-        "style",
-        "refactor",
-        "perf",
-        "test",
-        "build",
-        "ci",
-        "chore",
-        "i18n",
-      ],
+      description: `Commit type, must be one of: ${typeEnum.join(
+        ", "
+      )}. See TYPE REFERENCE for details.`,
+      enum: typeEnum,
     },
     scope: {
       type: "string",

@@ -282,26 +282,32 @@ ${currentInput}
     }
 
     // ===== 新增：自动检测暂存区内容逻辑 =====
-    progress.report({ message: getMessage("progress.detecting.staged.content") || "检测暂存区内容..." });
-    
+    progress.report({
+      message:
+        getMessage("progress.detecting.staged.content") || "检测暂存区内容...",
+    });
+
     let diffContent: string | undefined;
     const diffTargetConfig = configuration.features.codeAnalysis.diffTarget;
-    
+
     // 如果配置为自动检测模式
-    if (diffTargetConfig === 'auto') {
+    if (diffTargetConfig === "auto") {
       try {
         // 1. 识别当前仓库上下文
-        const repositoryContext = await multiRepositoryContextManager.identifyRepository(
-          selectedFiles,
-          vscode.window.activeTextEditor
-        );
+        const repositoryContext =
+          await multiRepositoryContextManager.identifyRepository(
+            selectedFiles,
+            vscode.window.activeTextEditor
+          );
 
         // 2. 检测暂存区内容
-        const detectionResult = await stagedContentDetector.detectStagedContent({
-          repository: repositoryContext,
-          includeFileDetails: true,
-          useCache: true
-        });
+        const detectionResult = await stagedContentDetector.detectStagedContent(
+          {
+            repository: repositoryContext,
+            includeFileDetails: true,
+            useCache: true,
+          }
+        );
 
         // 3. 智能选择diff目标
         const selectedTarget = await smartDiffSelector.selectDiffTarget(
@@ -316,13 +322,18 @@ ${currentInput}
           selectedTarget,
           selectedFiles
         );
-        
+
         diffContent = diffResult.content;
 
         // 记录选择的目标用于调试
-        console.log(`Auto-detection selected target: ${selectedTarget}, files: ${diffResult.files.length}`);
+        console.log(
+          `Auto-detection selected target: ${selectedTarget}, files: ${diffResult.files.length}`
+        );
       } catch (error) {
-        console.warn('Auto-detection failed, falling back to traditional method:', error);
+        console.warn(
+          "Auto-detection failed, falling back to traditional method:",
+          error
+        );
         // 回退到传统方法
         progress.report({ message: getMessage("progress.getting.diff") });
         diffContent = await scmProvider.getDiff(selectedFiles);
@@ -371,12 +382,13 @@ ${currentInput}
       ...configuration.features.codeAnalysis,
       model: selectedModel,
       scm: scmProvider.type ?? "git",
+      workspaceRoot: repositoryPath,
       changeFiles: selectedFiles || [],
       languages: configuration.base.language,
-      diff: diffContent, // diff 仍然需要用于生成提示
+      diff: diffContent,
       additionalContext: "",
     };
-    const systemPrompt = getSystemPrompt(tempParams);
+    const systemPrompt = await getSystemPrompt(tempParams);
 
     const contextManager = await this._buildContextManager(
       selectedModel,
@@ -424,7 +436,11 @@ ${currentInput}
         }
       );
       if (choice === useFallbackChoice) {
-        const fallbackSystemPrompt = getSystemPrompt(tempParams, true, true);
+        const fallbackSystemPrompt = await getSystemPrompt(
+          tempParams,
+          true,
+          true
+        );
         contextManager.setSystemPrompt(fallbackSystemPrompt);
         notify.info("info.using.fallback.prompt");
       } else if (choice !== continueAnyway) {
@@ -458,9 +474,9 @@ ${currentInput}
         );
       } else {
         // 检查是否启用分层提交且选择了多个文件
-        const shouldUseLayeredCommit = 
-          configuration.features.commitFormat.enableLayeredCommit && 
-          selectedFiles && 
+        const shouldUseLayeredCommit =
+          configuration.features.commitFormat.enableLayeredCommit &&
+          selectedFiles &&
           selectedFiles.length > 1;
 
         if (shouldUseLayeredCommit) {
@@ -641,7 +657,7 @@ ${currentInput}
       enableMergeCommit: true, // Force merge commit style for the summary
     };
 
-    const summarySystemPrompt = getSystemPrompt(summaryParams);
+    const summarySystemPrompt = await getSystemPrompt(summaryParams);
 
     const summaryContextManager = await this._buildLayeredSummaryContextManager(
       requestParams.model as AIModel,

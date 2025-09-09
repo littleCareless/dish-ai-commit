@@ -92,8 +92,8 @@ export class ConfigurationService {
           model: {},
         };
 
-        config.features.commitMessage.systemPrompt =
-          getSystemPrompt(promptConfig);
+        // config.features.commitMessage.systemPrompt =
+        //   getSystemPrompt(promptConfig);
       }
 
       return config as ExtensionConfiguration;
