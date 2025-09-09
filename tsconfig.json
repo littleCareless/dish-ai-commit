@@ -1,5 +1,5 @@
 {
-  "$schema": "https://json.schemastore.org/jsconfig",
+  "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
     "module": "commonjs",
     "target": "ES2022",
