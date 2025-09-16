@@ -5,6 +5,23 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+# 0.48.0 (2025-09-16)
+
+
+### ♻ Code Refactoring
+
+* 统一使用可选链操作符处理字符串 trim 方法 ([b827b23](https://github.com/littleCareless/dish-ai-commit/commit/b827b23))
+
+
+### ✨ Features
+
+* **notification**: 为成功操作添加原生系统通知 ([2695bb6](https://github.com/littleCareless/dish-ai-commit/commit/2695bb6))
+* **notification**: 优化通知体验并修复超时关闭功能 ([7ba57e1](https://github.com/littleCareless/dish-ai-commit/commit/7ba57e1))
+
+
+
+
+
 # 0.47.0 (2025-09-09)
 
 
