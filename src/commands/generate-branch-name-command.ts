@@ -319,7 +319,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
    */
   private formatBranchName(branchName: string): string {
     // 去除多余的空格
-    let formatted = branchName.trim();
+    let formatted = branchName?.trim();
 
     // 如果有冒号或类似的前缀格式，保留它
     if (

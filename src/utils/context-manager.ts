@@ -8,12 +8,15 @@ import { AbstractAIProvider } from "../ai/providers/abstract-ai-provider";
 import { notify } from "./notification";
 
 // 导入模块化组件
-import { 
-  ContextBlock, 
-  TruncationStrategy, 
-  RequestTooLargeError 
+import {
+  ContextBlock,
+  TruncationStrategy,
+  RequestTooLargeError,
 } from "./context-manager/types";
-import { FORCE_RETAIN_BLOCKS, DEFAULT_TOKEN_RESERVE } from "./context-manager/constants";
+import {
+  FORCE_RETAIN_BLOCKS,
+  DEFAULT_TOKEN_RESERVE,
+} from "./context-manager/constants";
 import { TokenCalculator } from "./context-manager/token-calculator";
 import { BlockProcessor } from "./context-manager/block-processor";
 import { ContentTruncator } from "./context-manager/content-truncator";
@@ -72,7 +75,7 @@ export class ContextManager {
    * @param block - 要添加的区块
    */
   addBlock(block: ContextBlock) {
-    if (block.content && block.content.trim().length > 0) {
+    if (block.content && block.content?.trim().length > 0) {
       this.blocks.push(block);
     }
   }
@@ -103,10 +106,10 @@ export class ContextManager {
     // 如果提供了自定义消息，则使用它们；否则构建系统消息和用户内容
     const messages = customMessages || [
       { role: "system", content: this.systemPrompt },
-      { 
-        role: "user", 
-        content: this.contentBuilder.buildRawUserContent(this.blocks)
-      }
+      {
+        role: "user",
+        content: this.contentBuilder.buildRawUserContent(this.blocks),
+      },
     ];
 
     return this.tokenCalculator.calculateMessagesTokens(messages);
@@ -170,35 +173,53 @@ export class ContextManager {
    * @returns 经过智能截断和组装的 messages 数组
    */
   public buildMessages(): AIMessage[] {
-    const { maxTokens, systemPromptTokens } = this.tokenCalculator.calculateInitialTokens(this.systemPrompt);
-    let remainingTokens = maxTokens - systemPromptTokens - DEFAULT_TOKEN_RESERVE;
+    const { maxTokens, systemPromptTokens } =
+      this.tokenCalculator.calculateInitialTokens(this.systemPrompt);
+    let remainingTokens =
+      maxTokens - systemPromptTokens - DEFAULT_TOKEN_RESERVE;
 
-    const { forcedBlocks, processableBlocks } = this.blockProcessor.partitionAndSortBlocks(this.blocks);
+    const { forcedBlocks, processableBlocks } =
+      this.blockProcessor.partitionAndSortBlocks(this.blocks);
 
     // 处理强制保留的区块
-    const forcedResult = this.blockProcessor.processForcedBlocks(forcedBlocks, remainingTokens);
-    
+    const forcedResult = this.blockProcessor.processForcedBlocks(
+      forcedBlocks,
+      remainingTokens
+    );
+
     // 处理可处理的区块
     const processableResult = this.blockProcessor.processProcessableBlocks(
-      processableBlocks, 
+      processableBlocks,
       forcedResult.remainingTokens
     );
 
     // 合并结果
-    const allIncludedBlocks = [...forcedResult.includedBlocks, ...processableResult.includedBlocks];
-    const allIncludedBlockNames = [...forcedResult.includedBlockNames, ...processableResult.includedBlockNames];
-    const allExcludedBlockNames = [...forcedResult.excludedBlockNames, ...processableResult.excludedBlockNames];
+    const allIncludedBlocks = [
+      ...forcedResult.includedBlocks,
+      ...processableResult.includedBlocks,
+    ];
+    const allIncludedBlockNames = [
+      ...forcedResult.includedBlockNames,
+      ...processableResult.includedBlockNames,
+    ];
+    const allExcludedBlockNames = [
+      ...forcedResult.excludedBlockNames,
+      ...processableResult.excludedBlockNames,
+    ];
 
     const userContent = this.contentBuilder.sortAndBuildUserContent(
       allIncludedBlocks,
       allIncludedBlockNames
     );
 
-    this.contextLogger.logContextBlockReport(allIncludedBlockNames, allExcludedBlockNames);
+    this.contextLogger.logContextBlockReport(
+      allIncludedBlockNames,
+      allExcludedBlockNames
+    );
 
     return [
       { role: "system", content: this.systemPrompt },
-      { role: "user", content: userContent.trim() },
+      { role: "user", content: userContent?.trim() },
     ];
   }
 

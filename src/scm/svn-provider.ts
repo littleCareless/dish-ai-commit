@@ -99,9 +99,9 @@ const findSvnExecutable = async (): Promise<string | null> => {
   const command = process.platform === "win32" ? "where svn" : "which svn";
   try {
     const { stdout } = await exec(command);
-    const lines = stdout.toString().trim().split("\n");
+    const lines = stdout.toString()?.trim().split("\n");
     for (const line of lines) {
-      const p = line.trim();
+      const p = line?.trim();
       if (p && (await isValidSvnPath(p))) {
         return ImprovedPathUtils.handleLongPath(p);
       }
@@ -265,7 +265,7 @@ export class SvnProvider implements ISCMProvider {
 
       // 验证SVN可执行
       const { stdout } = await exec(`"${this.svnPath}" --version`);
-      const version = stdout.toString().split("\n")[0].trim();
+      const version = stdout.toString().split("\n")[0]?.trim();
       Logger.log(LogLevel.Info, "SVN version:", version);
       notify.info(formatMessage("scm.version.detected", ["SVN", version]));
 
@@ -280,7 +280,7 @@ export class SvnProvider implements ISCMProvider {
   private async detectSvnPath(): Promise<string | null> {
     try {
       const { stdout } = await exec("which svn");
-      const path = stdout.toString().trim();
+      const path = stdout.toString()?.trim();
       Logger.log(LogLevel.Info, "Detected SVN path:", path);
       return path;
     } catch (error) {
@@ -298,9 +298,9 @@ export class SvnProvider implements ISCMProvider {
     }
     return {
       ...process.env,
-      PATH: `${process.env.PATH}${path.delimiter}${this.config.environmentConfig.path.join(
+      PATH: `${process.env.PATH}${
         path.delimiter
-      )}`,
+      }${this.config.environmentConfig.path.join(path.delimiter)}`,
       LC_ALL: this.config.environmentConfig.locale,
     };
   }
@@ -414,11 +414,17 @@ export class SvnProvider implements ISCMProvider {
             // 处理未跟踪的新文件
             try {
               // 使用 ImprovedPathUtils 创建临时空文件用于比较
-              const tempEmptyFile = ImprovedPathUtils.createTempFilePath("empty-file-for-diff");
+              const tempEmptyFile = ImprovedPathUtils.createTempFilePath(
+                "empty-file-for-diff"
+              );
               fs.writeFileSync(tempEmptyFile, "");
 
               const result = await exec(
-                `"${this.svnPath}" diff --diff-cmd diff -x "-u" ${ImprovedPathUtils.escapeShellPath(tempEmptyFile)} ${escapedFile}`,
+                `"${
+                  this.svnPath
+                }" diff --diff-cmd diff -x "-u" ${ImprovedPathUtils.escapeShellPath(
+                  tempEmptyFile
+                )} ${escapedFile}`,
                 ImprovedPathUtils.createExecOptions(repositoryPath)
               );
               stdout = result.stdout.toString();
@@ -465,7 +471,7 @@ export class SvnProvider implements ISCMProvider {
           }
 
           // 添加文件状态和差异信息
-          if (stdout.toString().trim()) {
+          if (stdout.toString()?.trim()) {
             diffOutput += `\n=== ${fileStatus}: ${file} ===\n${stdout.toString()}`;
           }
         }
@@ -507,11 +513,17 @@ export class SvnProvider implements ISCMProvider {
 
                 try {
                   // 使用 ImprovedPathUtils 创建临时空文件用于比较
-                  const tempEmptyFile = ImprovedPathUtils.createTempFilePath("empty-file-for-diff");
+                  const tempEmptyFile = ImprovedPathUtils.createTempFilePath(
+                    "empty-file-for-diff"
+                  );
                   fs.writeFileSync(tempEmptyFile, "");
 
                   const result = await exec(
-                    `"${this.svnPath}" diff --diff-cmd diff -x "-u" ${ImprovedPathUtils.escapeShellPath(tempEmptyFile)} ${escapedFile}`,
+                    `"${
+                      this.svnPath
+                    }" diff --diff-cmd diff -x "-u" ${ImprovedPathUtils.escapeShellPath(
+                      tempEmptyFile
+                    )} ${escapedFile}`,
                     ImprovedPathUtils.createExecOptions(repositoryPath)
                   );
                   diffOutput += `\n=== Added File: ${filePath} ===\n${result.stdout.toString()}`;
@@ -524,9 +536,9 @@ export class SvnProvider implements ISCMProvider {
                   }
                 } catch (error) {
                   if (error instanceof Error && "stdout" in error) {
-                    diffOutput += `\n=== Added File: ${filePath} ===\n${
-                      (error as any).stdout.toString()
-                    }`;
+                    diffOutput += `\n=== Added File: ${filePath} ===\n${(
+                      error as any
+                    ).stdout.toString()}`;
                   }
                 }
               }
@@ -607,7 +619,7 @@ export class SvnProvider implements ISCMProvider {
             const untrackedFiles = statusOutputStr
               .split("\n")
               .filter((line: string) => line.startsWith("?"))
-              .map((line: string) => line.substring(1).trim());
+              .map((line: string) => line.substring(1)?.trim());
 
             // 为每个未版本控制文件获取差异
             if (untrackedFiles.length > 0) {
@@ -615,11 +627,17 @@ export class SvnProvider implements ISCMProvider {
                 const escapedFile = ImprovedPathUtils.escapeShellPath(file);
                 try {
                   // 使用 ImprovedPathUtils 创建临时空文件用于比较
-                  const tempEmptyFile = ImprovedPathUtils.createTempFilePath("empty-file-for-diff");
+                  const tempEmptyFile = ImprovedPathUtils.createTempFilePath(
+                    "empty-file-for-diff"
+                  );
                   fs.writeFileSync(tempEmptyFile, "");
 
                   const result = await exec(
-                    `"${this.svnPath}" diff --diff-cmd diff -x "-u" ${ImprovedPathUtils.escapeShellPath(tempEmptyFile)} ${escapedFile}`,
+                    `"${
+                      this.svnPath
+                    }" diff --diff-cmd diff -x "-u" ${ImprovedPathUtils.escapeShellPath(
+                      tempEmptyFile
+                    )} ${escapedFile}`,
                     ImprovedPathUtils.createExecOptions(repositoryPath)
                   );
                   diffOutput += `\n=== New File: ${file} ===\n${result.stdout.toString()}`;
@@ -633,9 +651,9 @@ export class SvnProvider implements ISCMProvider {
                 } catch (error) {
                   // 如果外部diff命令失败，尝试使用内置diff
                   if (error instanceof Error && "stdout" in error) {
-                    diffOutput += `\n=== New File: ${file} ===\n${
-                      (error as any).stdout.toString()
-                    }`;
+                    diffOutput += `\n=== New File: ${file} ===\n${(
+                      error as any
+                    ).stdout.toString()}`;
                   } else {
                     // 回退到读取整个文件内容
                     try {
@@ -666,7 +684,7 @@ export class SvnProvider implements ISCMProvider {
         }
       }
 
-      if (!diffOutput.trim()) {
+      if (!diffOutput?.trim()) {
         throw new Error(getMessage("diff.noChanges"));
       }
 
@@ -829,7 +847,7 @@ export class SvnProvider implements ISCMProvider {
       });
 
       const stdoutStr = stdout.toString();
-      if (!stdoutStr.trim()) {
+      if (!stdoutStr?.trim()) {
         return [];
       }
 
@@ -843,7 +861,7 @@ export class SvnProvider implements ISCMProvider {
       );
 
       for (const rawEntry of entries) {
-        const entry = rawEntry.trim();
+        const entry = rawEntry?.trim();
         if (!entry) {
           continue;
         }
@@ -856,12 +874,12 @@ export class SvnProvider implements ISCMProvider {
 
         // 确定实际提交信息的起始行
         let messageStartIndex = 1; // 假设信息在头信息之后的第一行
-        if (lines.length > 1 && lines[messageStartIndex].trim() === "") {
+        if (lines.length > 1 && lines[messageStartIndex]?.trim() === "") {
           messageStartIndex++; // 如果头信息后是空行，则跳过空行
         }
 
         if (messageStartIndex < lines.length) {
-          const message = lines.slice(messageStartIndex).join("\n").trim();
+          const message = lines.slice(messageStartIndex).join("\n")?.trim();
           if (message) {
             commitMessages.push(message);
           }
@@ -902,7 +920,7 @@ export class SvnProvider implements ISCMProvider {
         `"${this.svnPath}" info --show-item last-changed-author "${repositoryPath}"`,
         ImprovedPathUtils.createExecOptions(repositoryPath)
       );
-      const author = user.toString().trim();
+      const author = user.toString()?.trim();
 
       if (author) {
         const userLogCommand = `"${this.svnPath}" log -l 5 -r HEAD:1 --search "${author}" "${repositoryPath}"`;
@@ -926,7 +944,7 @@ export class SvnProvider implements ISCMProvider {
     );
 
     for (const rawEntry of entries) {
-      const entry = rawEntry.trim();
+      const entry = rawEntry?.trim();
       if (!entry) {
         continue;
       }
@@ -937,12 +955,12 @@ export class SvnProvider implements ISCMProvider {
       }
 
       let messageStartIndex = 1;
-      if (lines.length > 1 && lines[messageStartIndex].trim() === "") {
+      if (lines.length > 1 && lines[messageStartIndex]?.trim() === "") {
         messageStartIndex++;
       }
 
       if (messageStartIndex < lines.length) {
-        const message = lines.slice(messageStartIndex).join("\n").trim();
+        const message = lines.slice(messageStartIndex).join("\n")?.trim();
         if (message) {
           messages.push(message.split("\n")[0]);
         }
@@ -1001,12 +1019,19 @@ export class SvnProvider implements ISCMProvider {
     if (this.repositoryPath) {
       const specificRepo = repositories.find((repo) => {
         const repoFsPath = this._getRepoFsPath(repo);
-        if (!repoFsPath) {return false;}
+        if (!repoFsPath) {
+          return false;
+        }
         const normalizedRepoPath = ImprovedPathUtils.normalizePath(repoFsPath);
-        const normalizedTargetPath = ImprovedPathUtils.normalizePath(this.repositoryPath!);
-        
+        const normalizedTargetPath = ImprovedPathUtils.normalizePath(
+          this.repositoryPath!
+        );
+
         // Use the pathsEqual method which handles platform-specific path comparison
-        return ImprovedPathUtils.pathsEqual(normalizedRepoPath, normalizedTargetPath);
+        return ImprovedPathUtils.pathsEqual(
+          normalizedRepoPath,
+          normalizedTargetPath
+        );
       });
       return specificRepo;
     }
@@ -1027,11 +1052,19 @@ export class SvnProvider implements ISCMProvider {
         for (const repo of repositories) {
           const repoPath = this._getRepoFsPath(repo);
           if (repoPath) {
-            const normalizedRepoPath = ImprovedPathUtils.normalizePath(repoPath);
-            const normalizedFilePath = ImprovedPathUtils.normalizePath(uri.fsPath);
-            
+            const normalizedRepoPath =
+              ImprovedPathUtils.normalizePath(repoPath);
+            const normalizedFilePath = ImprovedPathUtils.normalizePath(
+              uri.fsPath
+            );
+
             // Use the pathStartsWith helper for platform-aware path prefix checking
-            if (ImprovedPathUtils.pathStartsWith(normalizedFilePath, normalizedRepoPath)) {
+            if (
+              ImprovedPathUtils.pathStartsWith(
+                normalizedFilePath,
+                normalizedRepoPath
+              )
+            ) {
               return repo; // 找到第一个匹配的就返回
             }
           }
@@ -1047,10 +1080,17 @@ export class SvnProvider implements ISCMProvider {
         const repoPath = this._getRepoFsPath(repo);
         if (repoPath) {
           const normalizedRepoPath = ImprovedPathUtils.normalizePath(repoPath);
-          const normalizedFilePath = ImprovedPathUtils.normalizePath(activeFileUri.fsPath);
-          
+          const normalizedFilePath = ImprovedPathUtils.normalizePath(
+            activeFileUri.fsPath
+          );
+
           // Use the pathStartsWith helper for platform-aware path prefix checking
-          if (ImprovedPathUtils.pathStartsWith(normalizedFilePath, normalizedRepoPath)) {
+          if (
+            ImprovedPathUtils.pathStartsWith(
+              normalizedFilePath,
+              normalizedRepoPath
+            )
+          ) {
             return repo;
           }
         }
@@ -1101,4 +1141,3 @@ export class SvnProvider implements ISCMProvider {
   //   }
   // }
 }
-

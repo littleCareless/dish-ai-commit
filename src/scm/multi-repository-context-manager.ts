@@ -3,18 +3,18 @@
  * for single workspace with multiple repositories scenarios
  */
 
-import * as vscode from 'vscode';
-import * as path from 'path';
-import * as fs from 'fs';
-import { promisify } from 'util';
-import { exec } from 'child_process';
+import * as vscode from "vscode";
+import * as path from "path";
+import * as fs from "fs";
+import { promisify } from "util";
+import { exec } from "child_process";
 import {
   IMultiRepositoryContextManager,
   RepositoryInfo,
   RepositoryContext,
   DetectionErrorType,
-  StagedDetectionError
-} from './staged-detector-types';
+  StagedDetectionError,
+} from "./staged-detector-types";
 
 const execAsync = promisify(exec);
 const statAsync = promisify(fs.stat);
@@ -23,7 +23,9 @@ const readdirAsync = promisify(fs.readdir);
 /**
  * Manages multiple repositories within a single workspace
  */
-export class MultiRepositoryContextManager implements IMultiRepositoryContextManager {
+export class MultiRepositoryContextManager
+  implements IMultiRepositoryContextManager
+{
   private repositoryCache = new Map<string, RepositoryInfo>();
   private cacheTimestamp = 0;
   private readonly cacheTimeout = 30000; // 30 seconds cache
@@ -39,11 +41,11 @@ export class MultiRepositoryContextManager implements IMultiRepositoryContextMan
     activeEditor?: vscode.TextEditor
   ): Promise<RepositoryContext> {
     const repositories = await this.getAllRepositories();
-    
+
     if (repositories.length === 0) {
       throw new StagedDetectionError(
         DetectionErrorType.INVALID_REPOSITORY,
-        'No valid repositories found in workspace'
+        "No valid repositories found in workspace"
       );
     }
 
@@ -54,12 +56,18 @@ export class MultiRepositoryContextManager implements IMultiRepositoryContextMan
     // Priority 1: Use selected files to determine repository
     if (selectedFiles && selectedFiles.length > 0) {
       selectedFilesList = selectedFiles;
-      targetRepository = this.findRepositoryForFiles(selectedFiles, repositories);
+      targetRepository = this.findRepositoryForFiles(
+        selectedFiles,
+        repositories
+      );
     }
     // Priority 2: Use active editor file
     else if (activeEditor?.document?.fileName) {
       activeFile = activeEditor.document.fileName;
-      targetRepository = this.findRepositoryForFiles([activeFile], repositories);
+      targetRepository = this.findRepositoryForFiles(
+        [activeFile],
+        repositories
+      );
     }
     // Priority 3: Use primary/active repository
     else {
@@ -74,9 +82,13 @@ export class MultiRepositoryContextManager implements IMultiRepositoryContextMan
 
     return {
       repository: targetRepository,
-      selectedFiles: selectedFilesList.length > 0 ? selectedFilesList : undefined,
+      selectedFiles:
+        selectedFilesList.length > 0 ? selectedFilesList : undefined,
       activeFile,
-      workingDirectory: this.getWorkingDirectory(targetRepository, selectedFilesList[0] || activeFile)
+      workingDirectory: this.getWorkingDirectory(
+        targetRepository,
+        selectedFilesList[0] || activeFile
+      ),
     };
   }
 
@@ -115,35 +127,40 @@ export class MultiRepositoryContextManager implements IMultiRepositoryContextMan
    */
   async getPrimaryRepository(): Promise<RepositoryInfo | undefined> {
     const repositories = await this.getAllRepositories();
-    
+
     // Try to get active repository from VS Code's git extension
-    const gitExtension = vscode.extensions.getExtension('vscode.git');
+    const gitExtension = vscode.extensions.getExtension("vscode.git");
     if (gitExtension && gitExtension.isActive) {
       try {
         const gitApi = gitExtension.exports.getAPI(1);
         if (gitApi.repositories.length > 0) {
           const activeRepo = gitApi.repositories[0]; // First repo is typically active
           const repoPath = activeRepo.rootUri.fsPath;
-          
+
           // Find matching repository info
-          const matchingRepo = repositories.find(repo => 
-            repo.path === repoPath || path.resolve(repo.path) === path.resolve(repoPath)
+          const matchingRepo = repositories.find(
+            (repo) =>
+              repo.path === repoPath ||
+              path.resolve(repo.path) === path.resolve(repoPath)
           );
-          
+
           if (matchingRepo) {
             return { ...matchingRepo, isActive: true };
           }
         }
       } catch (error) {
         // Git extension not available or error accessing it
-        console.warn('Could not access git extension API:', error);
+        console.warn("Could not access git extension API:", error);
       }
     }
 
     // Fallback: return first repository or one containing active file
     const activeEditor = vscode.window.activeTextEditor;
     if (activeEditor?.document?.fileName) {
-      const activeFileRepo = this.findRepositoryForFiles([activeEditor.document.fileName], repositories);
+      const activeFileRepo = this.findRepositoryForFiles(
+        [activeEditor.document.fileName],
+        repositories
+      );
       if (activeFileRepo) {
         return { ...activeFileRepo, isActive: true };
       }
@@ -166,7 +183,9 @@ export class MultiRepositoryContextManager implements IMultiRepositoryContextMan
    * @param filePath File path to check
    * @returns Repository info if found, undefined otherwise
    */
-  async getRepositoryForPath(filePath: string): Promise<RepositoryInfo | undefined> {
+  async getRepositoryForPath(
+    filePath: string
+  ): Promise<RepositoryInfo | undefined> {
     const repositories = await this.getAllRepositories();
     return this.findRepositoryForFiles([filePath], repositories);
   }
@@ -175,7 +194,9 @@ export class MultiRepositoryContextManager implements IMultiRepositoryContextMan
    * Discover repositories in a given directory
    * @private
    */
-  private async discoverRepositories(rootPath: string): Promise<RepositoryInfo[]> {
+  private async discoverRepositories(
+    rootPath: string
+  ): Promise<RepositoryInfo[]> {
     const repositories: RepositoryInfo[] = [];
 
     try {
@@ -186,7 +207,7 @@ export class MultiRepositoryContextManager implements IMultiRepositoryContextMan
       } else {
         // Search subdirectories for repositories
         const subdirs = await this.getSubdirectories(rootPath);
-        
+
         for (const subdir of subdirs) {
           const subdirPath = path.join(rootPath, subdir);
           const repo = await this.checkRepository(subdirPath);
@@ -206,7 +227,9 @@ export class MultiRepositoryContextManager implements IMultiRepositoryContextMan
    * Check if a directory is a valid repository
    * @private
    */
-  private async checkRepository(dirPath: string): Promise<RepositoryInfo | undefined> {
+  private async checkRepository(
+    dirPath: string
+  ): Promise<RepositoryInfo | undefined> {
     try {
       const stat = await statAsync(dirPath);
       if (!stat.isDirectory()) {
@@ -235,23 +258,28 @@ export class MultiRepositoryContextManager implements IMultiRepositoryContextMan
    * Check if directory is a git repository
    * @private
    */
-  private async checkGitRepository(dirPath: string): Promise<RepositoryInfo | undefined> {
+  private async checkGitRepository(
+    dirPath: string
+  ): Promise<RepositoryInfo | undefined> {
     try {
-      const { stdout } = await execAsync('git rev-parse --show-toplevel', {
+      const { stdout } = await execAsync("git rev-parse --show-toplevel", {
         cwd: dirPath,
-        encoding: 'utf8'
+        encoding: "utf8",
       });
 
-      const repoPath = stdout.trim();
-      
+      const repoPath = stdout?.trim();
+
       // Get current branch
       let branch: string | undefined;
       try {
-        const { stdout: branchOutput } = await execAsync('git rev-parse --abbrev-ref HEAD', {
-          cwd: repoPath,
-          encoding: 'utf8'
-        });
-        branch = branchOutput.trim();
+        const { stdout: branchOutput } = await execAsync(
+          "git rev-parse --abbrev-ref HEAD",
+          {
+            cwd: repoPath,
+            encoding: "utf8",
+          }
+        );
+        branch = branchOutput?.trim();
       } catch {
         // Branch detection failed, continue without branch info
       }
@@ -259,9 +287,9 @@ export class MultiRepositoryContextManager implements IMultiRepositoryContextMan
       return {
         path: repoPath,
         name: path.basename(repoPath),
-        type: 'git',
+        type: "git",
         isActive: false,
-        branch
+        branch,
       };
     } catch {
       return undefined;
@@ -272,17 +300,19 @@ export class MultiRepositoryContextManager implements IMultiRepositoryContextMan
    * Check if directory is an SVN repository
    * @private
    */
-  private async checkSvnRepository(dirPath: string): Promise<RepositoryInfo | undefined> {
+  private async checkSvnRepository(
+    dirPath: string
+  ): Promise<RepositoryInfo | undefined> {
     try {
-      const svnDir = path.join(dirPath, '.svn');
+      const svnDir = path.join(dirPath, ".svn");
       const stat = await statAsync(svnDir);
-      
+
       if (stat.isDirectory()) {
         return {
           path: dirPath,
           name: path.basename(dirPath),
-          type: 'svn',
-          isActive: false
+          type: "svn",
+          isActive: false,
         };
       }
     } catch {
@@ -302,7 +332,7 @@ export class MultiRepositoryContextManager implements IMultiRepositoryContextMan
       const subdirs: string[] = [];
 
       for (const entry of entries) {
-        if (entry.startsWith('.')) {
+        if (entry.startsWith(".")) {
           continue; // Skip hidden directories
         }
 
@@ -327,19 +357,22 @@ export class MultiRepositoryContextManager implements IMultiRepositoryContextMan
    * Find which repository contains the given files
    * @private
    */
-  private findRepositoryForFiles(files: string[], repositories: RepositoryInfo[]): RepositoryInfo {
+  private findRepositoryForFiles(
+    files: string[],
+    repositories: RepositoryInfo[]
+  ): RepositoryInfo {
     if (files.length === 0 || repositories.length === 0) {
       return repositories[0] || this.createFallbackRepository();
     }
 
     const firstFile = files[0];
-    
+
     // Find repository that contains this file
     for (const repo of repositories) {
       const relativePath = path.relative(repo.path, firstFile);
-      
+
       // If relative path doesn't start with '../', the file is within this repository
-      if (!relativePath.startsWith('..')) {
+      if (!relativePath.startsWith("..")) {
         return repo;
       }
     }
@@ -352,13 +385,16 @@ export class MultiRepositoryContextManager implements IMultiRepositoryContextMan
    * Get working directory relative to repository root
    * @private
    */
-  private getWorkingDirectory(repository: RepositoryInfo, filePath?: string): string {
+  private getWorkingDirectory(
+    repository: RepositoryInfo,
+    filePath?: string
+  ): string {
     if (!filePath) {
-      return '';
+      return "";
     }
 
     const relativePath = path.relative(repository.path, path.dirname(filePath));
-    return relativePath.startsWith('..') ? '' : relativePath;
+    return relativePath.startsWith("..") ? "" : relativePath;
   }
 
   /**
@@ -372,8 +408,8 @@ export class MultiRepositoryContextManager implements IMultiRepositoryContextMan
     return {
       path: fallbackPath,
       name: path.basename(fallbackPath),
-      type: 'unknown',
-      isActive: true
+      type: "unknown",
+      isActive: true,
     };
   }
 
@@ -382,7 +418,7 @@ export class MultiRepositoryContextManager implements IMultiRepositoryContextMan
    * @private
    */
   private isCacheValid(): boolean {
-    return (Date.now() - this.cacheTimestamp) < this.cacheTimeout;
+    return Date.now() - this.cacheTimestamp < this.cacheTimeout;
   }
 
   /**
@@ -391,7 +427,7 @@ export class MultiRepositoryContextManager implements IMultiRepositoryContextMan
    */
   private updateCache(repositories: RepositoryInfo[]): void {
     this.repositoryCache.clear();
-    repositories.forEach(repo => {
+    repositories.forEach((repo) => {
       this.repositoryCache.set(repo.path, repo);
     });
     this.cacheTimestamp = Date.now();
@@ -401,4 +437,5 @@ export class MultiRepositoryContextManager implements IMultiRepositoryContextMan
 /**
  * Singleton instance for global access
  */
-export const multiRepositoryContextManager = new MultiRepositoryContextManager();
+export const multiRepositoryContextManager =
+  new MultiRepositoryContextManager();

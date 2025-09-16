@@ -12,7 +12,7 @@ export class DiffSplitter {
     const files = diff.split("diff --git");
 
     for (const file of files) {
-      if (!file.trim()) {
+      if (!file?.trim()) {
         continue;
       }
 
@@ -24,7 +24,7 @@ export class DiffSplitter {
 
       chunks.push({
         filename: fileNameMatch[1],
-        content: file.trim(),
+        content: file?.trim(),
       });
     }
 
@@ -42,17 +42,17 @@ export class DiffSplitter {
     const files = diff.split("Index: ");
 
     for (const file of files) {
-      if (!file.trim()) {
+      if (!file?.trim()) {
         continue;
       }
 
       // SVN diff 中文件名在第一行
       const lines = file.split("\n");
-      const filename = lines[0].trim();
+      const filename = lines[0]?.trim();
 
       chunks.push({
         filename,
-        content: file.trim(),
+        content: file?.trim(),
       });
     }
 

@@ -209,7 +209,7 @@ export class CloudflareWorkersAIProvider extends AbstractAIProvider {
           for (const line of lines) {
             if (line.startsWith("data: ")) {
               const data = line.substring(6);
-              if (data.trim() === "[DONE]") {
+              if (data?.trim() === "[DONE]") {
                 return;
               }
               try {

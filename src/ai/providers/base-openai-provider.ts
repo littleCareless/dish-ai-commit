@@ -150,11 +150,11 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
 
     const filteredMessages = messages.filter((msg) => {
       if (typeof msg.content === "string") {
-        return msg.content.trim() !== "";
+        return msg.content?.trim() !== "";
       } else if (Array.isArray(msg.content)) {
         // 过滤掉 content 为空数组或者数组里全是空字符串
         const nonEmptyParts = msg.content.filter((part) => {
-          if (part.type === "text" && part.text.trim() !== "") {
+          if (part.type === "text" && part.text?.trim() !== "") {
             return true;
           }
           // 这里如果有别的类型，也可以加判断
@@ -395,4 +395,3 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
     );
   }
 }
-

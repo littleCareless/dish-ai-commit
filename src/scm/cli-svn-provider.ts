@@ -37,17 +37,20 @@ export class CliSvnProvider implements ISCMProvider {
       let filePaths = ".";
       if (files && files.length > 0) {
         // 使用 ImprovedPathUtils 处理和转义文件路径
-        const escapedPaths = files.map(file => 
-          ImprovedPathUtils.escapeShellPath(ImprovedPathUtils.normalizePath(file))
+        const escapedPaths = files.map((file) =>
+          ImprovedPathUtils.escapeShellPath(
+            ImprovedPathUtils.normalizePath(file)
+          )
         );
         filePaths = escapedPaths.join(" ");
       }
-      
+
       const options = ImprovedPathUtils.createExecOptions(this.workspaceRoot);
-      const command = filePaths === "." ? "svn diff ." : `svn diff ${filePaths}`;
+      const command =
+        filePaths === "." ? "svn diff ." : `svn diff ${filePaths}`;
       const { stdout: rawDiff } = await execAsync(command, options);
 
-      if (!rawDiff.toString().trim()) {
+      if (!rawDiff.toString()?.trim()) {
         return undefined;
       }
 
@@ -62,23 +65,27 @@ export class CliSvnProvider implements ISCMProvider {
     let filePaths = ".";
     if (files && files.length > 0) {
       // 使用 ImprovedPathUtils 处理和转义文件路径
-      const escapedPaths = files.map(file => 
+      const escapedPaths = files.map((file) =>
         ImprovedPathUtils.escapeShellPath(ImprovedPathUtils.normalizePath(file))
       );
       filePaths = escapedPaths.join(" ");
     }
-    
+
     // 转义提交消息
     const escapedMessage = ImprovedPathUtils.escapeShellPath(message);
     const options = ImprovedPathUtils.createExecOptions(this.workspaceRoot);
-    
-    const commitCommand = filePaths === "." 
-      ? `svn commit -m ${escapedMessage} .`
-      : `svn commit -m ${escapedMessage} ${filePaths}`;
+
+    const commitCommand =
+      filePaths === "."
+        ? `svn commit -m ${escapedMessage} .`
+        : `svn commit -m ${escapedMessage} ${filePaths}`;
     await execAsync(commitCommand, options);
   }
 
-  async setCommitInput(message: string, repositoryPath?: string): Promise<void> {
+  async setCommitInput(
+    message: string,
+    repositoryPath?: string
+  ): Promise<void> {
     await this.copyToClipboard(message);
   }
 
@@ -86,7 +93,10 @@ export class CliSvnProvider implements ISCMProvider {
     return "";
   }
 
-  async startStreamingInput(message: string, repositoryPath?: string): Promise<void> {
+  async startStreamingInput(
+    message: string,
+    repositoryPath?: string
+  ): Promise<void> {
     await this.copyToClipboard(message);
   }
 
@@ -112,7 +122,7 @@ export class CliSvnProvider implements ISCMProvider {
 
     try {
       const options = ImprovedPathUtils.createExecOptions(this.workspaceRoot);
-      
+
       // Last 5 commit messages (repository)
       const { stdout: logOutput } = await execAsync("svn log -l 5", options);
       repositoryCommitMessages.push(...this.parseSvnLog(logOutput.toString()));
@@ -122,13 +132,16 @@ export class CliSvnProvider implements ISCMProvider {
         "svn info --show-item last-changed-author",
         options
       );
-      const author = user.toString().trim();
+      const author = user.toString()?.trim();
 
       if (author) {
         // 转义作者名称以防止命令注入
         const escapedAuthor = ImprovedPathUtils.escapeShellPath(author);
         const searchCommand = `svn log -l 5 --search ${escapedAuthor}`;
-        const { stdout: userLogOutput } = await execAsync(searchCommand, options);
+        const { stdout: userLogOutput } = await execAsync(
+          searchCommand,
+          options
+        );
         userCommitMessages.push(...this.parseSvnLog(userLogOutput.toString()));
       }
     } catch (err) {
@@ -145,7 +158,7 @@ export class CliSvnProvider implements ISCMProvider {
     );
 
     for (const rawEntry of entries) {
-      const entry = rawEntry.trim();
+      const entry = rawEntry?.trim();
       if (!entry) {
         continue;
       }
@@ -156,12 +169,12 @@ export class CliSvnProvider implements ISCMProvider {
       }
 
       let messageStartIndex = 1;
-      if (lines.length > 1 && lines[messageStartIndex].trim() === "") {
+      if (lines.length > 1 && lines[messageStartIndex]?.trim() === "") {
         messageStartIndex++;
       }
 
       if (messageStartIndex < lines.length) {
-        const message = lines.slice(messageStartIndex).join("\n").trim();
+        const message = lines.slice(messageStartIndex).join("\n")?.trim();
         if (message) {
           messages.push(message.split("\n")[0]);
         }
@@ -179,7 +192,8 @@ export class CliSvnProvider implements ISCMProvider {
       await vscode.env.clipboard.writeText(message);
       notify.info("commit.message.copied");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       notify.error("commit.message.copy.failed", [errorMessage]);
     }
   }

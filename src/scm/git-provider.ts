@@ -87,7 +87,7 @@ export class GitProvider implements ISCMProvider {
   async init(): Promise<void> {
     try {
       const { stdout } = await exec("git --version");
-      const version = stdout.trim();
+      const version = stdout?.trim();
       notify.info(formatMessage("scm.version.detected", ["Git", version]));
     } catch (error) {
       // 在初始化阶段，即使获取版本失败也不应阻塞，仅记录警告
@@ -251,7 +251,7 @@ export class GitProvider implements ISCMProvider {
           }
 
           // 添加文件状态和差异信息
-          if (stdout.trim()) {
+          if (stdout?.trim()) {
             diffOutput += `\n=== ${fileStatus}: ${file} ===\n${stdout}`;
           }
         }
@@ -400,15 +400,15 @@ export class GitProvider implements ISCMProvider {
           // 整合所有差异
           diffOutput = trackedChanges;
 
-          if (stagedChanges.trim()) {
+          if (stagedChanges?.trim()) {
             diffOutput += stagedChanges;
           }
 
           // 为每个未跟踪文件获取差异
-          if (untrackedFiles.trim()) {
+          if (untrackedFiles?.trim()) {
             const files = untrackedFiles
               .split("\n")
-              .filter((file) => file.trim());
+              .filter((file) => file?.trim());
             for (const file of files) {
               const escapedFile = ImprovedPathUtils.escapeShellPath(file);
               try {
@@ -434,7 +434,7 @@ export class GitProvider implements ISCMProvider {
         }
       }
 
-      if (!diffOutput.trim()) {
+      if (!diffOutput?.trim()) {
         throw new Error(getMessage("diff.noChanges"));
       }
 
@@ -681,11 +681,11 @@ export class GitProvider implements ISCMProvider {
         maxBuffer: 1024 * 1024 * 10, // 10MB buffer
       });
 
-      if (!stdout.trim()) {
+      if (!stdout?.trim()) {
         return [];
       }
 
-      return stdout.split("\n").filter((line) => line.trim() !== "");
+      return stdout.split("\n").filter((line) => line?.trim() !== "");
     } catch (error) {
       if (error instanceof Error) {
         console.error("Git log error:", error);
@@ -715,14 +715,14 @@ export class GitProvider implements ISCMProvider {
         maxBuffer: 1024 * 1024 * 1, // 1MB buffer, should be enough for branch names
       });
 
-      if (!stdout.trim()) {
+      if (!stdout?.trim()) {
         return [];
       }
 
       // 清理分支名称，移除可能存在的 "remotes/" 前缀，并去重
       const branches = stdout
         .split("\n")
-        .map((branch) => branch.trim())
+        .map((branch) => branch?.trim())
         .filter((branch) => branch && !branch.includes("->")) // 过滤掉 HEAD 指向等特殊行
         .map((branch) => branch.replace(/^remotes\//, "")) // 移除 remotes/ 前缀，方便用户选择
         .filter((branch, index, self) => self.indexOf(branch) === index); // 去重

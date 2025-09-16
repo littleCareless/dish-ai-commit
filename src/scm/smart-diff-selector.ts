@@ -3,16 +3,16 @@
  * Integrates with existing SCM providers and configuration system
  */
 
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 import {
   ISmartDiffSelector,
   StagedDetectionResult,
   DiffTarget,
   DiffResult,
-  AutoDetectionConfig
-} from './staged-detector-types';
-import { ISCMProvider } from './scm-provider';
-import { notify } from '../utils/notification/notification-manager';
+  AutoDetectionConfig,
+} from "./staged-detector-types";
+import { ISCMProvider } from "./scm-provider";
+import { notify } from "../utils/notification/notification-manager";
 
 /**
  * Provides intelligent diff target selection based on detection results and user preferences
@@ -38,34 +38,52 @@ export class SmartDiffSelector implements ISmartDiffSelector {
 
     // If user explicitly specified a preference (not auto), honor it
     if (userPreference && userPreference !== DiffTarget.AUTO) {
-      await this.notifySelection(userPreference, detectionResult, 'User preference');
+      await this.notifySelection(
+        userPreference,
+        detectionResult,
+        "User preference"
+      );
       return userPreference;
     }
 
     // If auto-detection is disabled, use traditional config mode
     if (!config.enabled) {
-      const target = config.preferredTarget !== DiffTarget.AUTO 
-        ? config.preferredTarget 
-        : DiffTarget.ALL;
-      await this.notifySelection(target, detectionResult, 'Auto-detection disabled');
+      const target =
+        config.preferredTarget !== DiffTarget.AUTO
+          ? config.preferredTarget
+          : DiffTarget.ALL;
+      await this.notifySelection(
+        target,
+        detectionResult,
+        "Auto-detection disabled"
+      );
       return target;
     }
 
     // Handle detection errors
     if (detectionResult.errorMessage) {
-      const fallbackTarget = config.fallbackToAll ? DiffTarget.ALL : DiffTarget.STAGED;
+      const fallbackTarget = config.fallbackToAll
+        ? DiffTarget.ALL
+        : DiffTarget.STAGED;
       await this.notifySelection(
-        fallbackTarget, 
-        detectionResult, 
+        fallbackTarget,
+        detectionResult,
         `Detection failed: ${detectionResult.errorMessage}`
       );
       return fallbackTarget;
     }
 
     // Smart selection based on detection results
-    const selectedTarget = await this.performSmartSelection(detectionResult, config);
-    await this.notifySelection(selectedTarget, detectionResult, 'Auto-detection');
-    
+    const selectedTarget = await this.performSmartSelection(
+      detectionResult,
+      config
+    );
+    await this.notifySelection(
+      selectedTarget,
+      detectionResult,
+      "Auto-detection"
+    );
+
     return selectedTarget;
   }
 
@@ -109,10 +127,12 @@ export class SmartDiffSelector implements ISmartDiffSelector {
         content,
         target,
         files: actualFiles,
-        repositoryPath: this.getRepositoryPath(provider)
+        repositoryPath: this.getRepositoryPath(provider),
       };
     } catch (error) {
-      throw new Error(`Failed to get diff content for target '${target}': ${error}`);
+      throw new Error(
+        `Failed to get diff content for target '${target}': ${error}`
+      );
     }
   }
 
@@ -121,13 +141,24 @@ export class SmartDiffSelector implements ISmartDiffSelector {
    * @private
    */
   private getAutoDetectionConfig(): AutoDetectionConfig {
-    const config = vscode.workspace.getConfiguration('dish-ai-commit');
-    
+    const config = vscode.workspace.getConfiguration("dish-ai-commit");
+
     return {
-      enabled: config.get<boolean>('features.codeAnalysis.autoDetectStaged', true),
-      fallbackToAll: config.get<boolean>('features.codeAnalysis.fallbackToAll', true),
-      preferredTarget: config.get<string>('features.codeAnalysis.diffTarget', 'auto') as DiffTarget,
-      showNotifications: config.get<boolean>('features.suppressNonCriticalWarnings', true) === false
+      enabled: config.get<boolean>(
+        "features.codeAnalysis.autoDetectStaged",
+        true
+      ),
+      fallbackToAll: config.get<boolean>(
+        "features.codeAnalysis.fallbackToAll",
+        true
+      ),
+      preferredTarget: config.get<string>(
+        "features.codeAnalysis.diffTarget",
+        "auto"
+      ) as DiffTarget,
+      showNotifications:
+        config.get<boolean>("features.suppressNonCriticalWarnings", true) ===
+        false,
     };
   }
 
@@ -159,17 +190,28 @@ export class SmartDiffSelector implements ISmartDiffSelector {
    * Get staged diff content from provider
    * @private
    */
-  private async getStagedDiff(provider: ISCMProvider, files?: string[]): Promise<string> {
+  private async getStagedDiff(
+    provider: ISCMProvider,
+    files?: string[]
+  ): Promise<string> {
     // Temporarily set diffTarget to 'staged' for this call
-    const config = vscode.workspace.getConfiguration('dish-ai-commit');
-    const originalTarget = config.get('features.codeAnalysis.diffTarget');
-    
+    const config = vscode.workspace.getConfiguration("dish-ai-commit");
+    const originalTarget = config.get("features.codeAnalysis.diffTarget");
+
     try {
-      await config.update('features.codeAnalysis.diffTarget', 'staged', vscode.ConfigurationTarget.Workspace);
-      return await provider.getDiff(files) || '';
+      await config.update(
+        "features.codeAnalysis.diffTarget",
+        "staged",
+        vscode.ConfigurationTarget.Workspace
+      );
+      return (await provider.getDiff(files)) || "";
     } finally {
       // Restore original target
-      await config.update('features.codeAnalysis.diffTarget', originalTarget, vscode.ConfigurationTarget.Workspace);
+      await config.update(
+        "features.codeAnalysis.diffTarget",
+        originalTarget,
+        vscode.ConfigurationTarget.Workspace
+      );
     }
   }
 
@@ -177,17 +219,28 @@ export class SmartDiffSelector implements ISmartDiffSelector {
    * Get all changes diff content from provider
    * @private
    */
-  private async getAllDiff(provider: ISCMProvider, files?: string[]): Promise<string> {
+  private async getAllDiff(
+    provider: ISCMProvider,
+    files?: string[]
+  ): Promise<string> {
     // Temporarily set diffTarget to 'all' for this call
-    const config = vscode.workspace.getConfiguration('dish-ai-commit');
-    const originalTarget = config.get('features.codeAnalysis.diffTarget');
-    
+    const config = vscode.workspace.getConfiguration("dish-ai-commit");
+    const originalTarget = config.get("features.codeAnalysis.diffTarget");
+
     try {
-      await config.update('features.codeAnalysis.diffTarget', 'all', vscode.ConfigurationTarget.Workspace);
-      return await provider.getDiff(files) || '';
+      await config.update(
+        "features.codeAnalysis.diffTarget",
+        "all",
+        vscode.ConfigurationTarget.Workspace
+      );
+      return (await provider.getDiff(files)) || "";
     } finally {
       // Restore original target
-      await config.update('features.codeAnalysis.diffTarget', originalTarget, vscode.ConfigurationTarget.Workspace);
+      await config.update(
+        "features.codeAnalysis.diffTarget",
+        originalTarget,
+        vscode.ConfigurationTarget.Workspace
+      );
     }
   }
 
@@ -195,7 +248,10 @@ export class SmartDiffSelector implements ISmartDiffSelector {
    * Get list of staged files from provider
    * @private
    */
-  private async getStagedFilesList(provider: ISCMProvider, files?: string[]): Promise<string[]> {
+  private async getStagedFilesList(
+    provider: ISCMProvider,
+    files?: string[]
+  ): Promise<string[]> {
     // This would typically call git diff --cached --name-only
     // For now, return the files parameter or empty array
     return files || [];
@@ -205,7 +261,10 @@ export class SmartDiffSelector implements ISmartDiffSelector {
    * Get list of all changed files from provider
    * @private
    */
-  private async getAllChangedFilesList(provider: ISCMProvider, files?: string[]): Promise<string[]> {
+  private async getAllChangedFilesList(
+    provider: ISCMProvider,
+    files?: string[]
+  ): Promise<string[]> {
     // This would typically call git diff --name-only (unstaged) + git diff --cached --name-only (staged)
     // For now, return the files parameter or empty array
     return files || [];
@@ -217,10 +276,13 @@ export class SmartDiffSelector implements ISmartDiffSelector {
    */
   private getRepositoryPath(provider: ISCMProvider): string {
     // Try to get repository path from provider properties
-    if ('repositoryPath' in provider && typeof (provider as any).repositoryPath === 'string') {
+    if (
+      "repositoryPath" in provider &&
+      typeof (provider as any).repositoryPath === "string"
+    ) {
       return (provider as any).repositoryPath;
     }
-    
+
     // Fallback to workspace folder
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
     return workspaceFolder?.uri.fsPath || process.cwd();
@@ -236,13 +298,13 @@ export class SmartDiffSelector implements ISmartDiffSelector {
     reason: string
   ): Promise<void> {
     const config = this.getAutoDetectionConfig();
-    
+
     if (!config.showNotifications) {
       return;
     }
 
     let message: string;
-    let level: 'info' | 'warning' | 'error' = 'info';
+    let level: "info" | "warning" | "error" = "info";
 
     switch (target) {
       case DiffTarget.STAGED:
@@ -250,7 +312,7 @@ export class SmartDiffSelector implements ISmartDiffSelector {
           message = `🔍 分析暂存区内容 (${detectionResult.stagedFileCount} 个文件)`;
         } else {
           message = `⚠️ 暂存区为空，将分析暂存区 (可能无内容)`;
-          level = 'warning';
+          level = "warning";
         }
         break;
 
@@ -271,10 +333,10 @@ export class SmartDiffSelector implements ISmartDiffSelector {
     const fullMessage = `${message} (${reason})`;
 
     switch (level) {
-      case 'info':
+      case "info":
         await notify.info(fullMessage);
         break;
-      case 'warning':
+      case "warning":
         await notify.warn(fullMessage);
         break;
     }
@@ -286,29 +348,32 @@ export class SmartDiffSelector implements ISmartDiffSelector {
    * @param target Selected diff target
    * @returns Promise resolving to validation result
    */
-  async validateTarget(provider: ISCMProvider, target: DiffTarget): Promise<{
+  async validateTarget(
+    provider: ISCMProvider,
+    target: DiffTarget
+  ): Promise<{
     isValid: boolean;
     reason?: string;
     suggestion?: DiffTarget;
   }> {
     try {
       const result = await this.getDiffWithTarget(provider, target);
-      
-      if (!result.content || result.content.trim().length === 0) {
+
+      if (!result.content || result.content?.trim().length === 0) {
         let suggestion: DiffTarget | undefined;
         let reason: string;
 
         if (target === DiffTarget.STAGED) {
           suggestion = DiffTarget.ALL;
-          reason = '暂存区为空，建议分析所有工作区更改';
+          reason = "暂存区为空，建议分析所有工作区更改";
         } else {
-          reason = '没有检测到任何更改';
+          reason = "没有检测到任何更改";
         }
 
         return {
           isValid: false,
           reason,
-          suggestion
+          suggestion,
         };
       }
 
@@ -316,7 +381,7 @@ export class SmartDiffSelector implements ISmartDiffSelector {
     } catch (error) {
       return {
         isValid: false,
-        reason: `无法获取 ${target} 模式的差异内容: ${error}`
+        reason: `无法获取 ${target} 模式的差异内容: ${error}`,
       };
     }
   }

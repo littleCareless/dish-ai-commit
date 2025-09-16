@@ -3,10 +3,10 @@
  * Supports multi-repository workspace environments with intelligent caching and error handling
  */
 
-import * as vscode from 'vscode';
-import * as path from 'path';
-import { promisify } from 'util';
-import { exec } from 'child_process';
+import * as vscode from "vscode";
+import * as path from "path";
+import { promisify } from "util";
+import { exec } from "child_process";
 import {
   IStagedContentDetector,
   StagedDetectionResult,
@@ -14,8 +14,8 @@ import {
   DiffTarget,
   DetectionErrorType,
   StagedDetectionError,
-  DetectionCacheEntry
-} from './staged-detector-types';
+  DetectionCacheEntry,
+} from "./staged-detector-types";
 
 const execAsync = promisify(exec);
 
@@ -31,7 +31,9 @@ export class StagedContentDetector implements IStagedContentDetector {
    * @param options Detection options including repository context
    * @returns Promise resolving to detection result
    */
-  async detectStagedContent(options: DetectionOptions): Promise<StagedDetectionResult> {
+  async detectStagedContent(
+    options: DetectionOptions
+  ): Promise<StagedDetectionResult> {
     const { repository, useCache = true, timeoutMs = 10000 } = options;
     const repositoryPath = repository.repository.path;
 
@@ -47,18 +49,20 @@ export class StagedContentDetector implements IStagedContentDetector {
       // Create a timeout promise
       const timeoutPromise = new Promise<never>((_, reject) => {
         setTimeout(() => {
-          reject(new StagedDetectionError(
-            DetectionErrorType.TIMEOUT,
-            `Staged content detection timed out after ${timeoutMs}ms`,
-            repositoryPath
-          ));
+          reject(
+            new StagedDetectionError(
+              DetectionErrorType.TIMEOUT,
+              `Staged content detection timed out after ${timeoutMs}ms`,
+              repositoryPath
+            )
+          );
         }, timeoutMs);
       });
 
       // Race between detection and timeout
       const result = await Promise.race([
         this.performDetection(repositoryPath, options),
-        timeoutPromise
+        timeoutPromise,
       ]);
 
       // Cache the result
@@ -69,7 +73,7 @@ export class StagedContentDetector implements IStagedContentDetector {
       return result;
     } catch (error) {
       const detectionError = this.normalizeError(error, repositoryPath);
-      
+
       // Return a fallback result instead of throwing
       return {
         hasStagedContent: false,
@@ -77,7 +81,7 @@ export class StagedContentDetector implements IStagedContentDetector {
         stagedFiles: [],
         recommendedTarget: DiffTarget.ALL,
         repositoryPath,
-        errorMessage: detectionError.message
+        errorMessage: detectionError.message,
       };
     }
   }
@@ -104,17 +108,17 @@ export class StagedContentDetector implements IStagedContentDetector {
   async getStagedFiles(repositoryPath: string): Promise<string[]> {
     try {
       await this.validateRepository(repositoryPath);
-      
-      const { stdout } = await execAsync('git diff --cached --name-only', {
+
+      const { stdout } = await execAsync("git diff --cached --name-only", {
         cwd: repositoryPath,
-        encoding: 'utf8'
+        encoding: "utf8",
       });
 
       return stdout
-        .trim()
-        .split('\n')
-        .filter(file => file.length > 0)
-        .map(file => path.resolve(repositoryPath, file));
+        ?.trim()
+        .split("\n")
+        .filter((file) => file.length > 0)
+        .map((file) => path.resolve(repositoryPath, file));
     } catch (error) {
       throw this.normalizeError(error, repositoryPath);
     }
@@ -136,24 +140,30 @@ export class StagedContentDetector implements IStagedContentDetector {
       const files = await this.getStagedFiles(repositoryPath);
 
       // Get diff statistics
-      const { stdout: diffStat } = await execAsync('git diff --cached --numstat', {
-        cwd: repositoryPath,
-        encoding: 'utf8'
-      });
+      const { stdout: diffStat } = await execAsync(
+        "git diff --cached --numstat",
+        {
+          cwd: repositoryPath,
+          encoding: "utf8",
+        }
+      );
 
       let additions = 0;
       let deletions = 0;
 
-      if (diffStat.trim()) {
-        diffStat.trim().split('\n').forEach(line => {
-          const parts = line.split('\t');
-          if (parts.length >= 2) {
-            const add = parseInt(parts[0]) || 0;
-            const del = parseInt(parts[1]) || 0;
-            additions += add;
-            deletions += del;
-          }
-        });
+      if (diffStat?.trim()) {
+        diffStat
+          ?.trim()
+          .split("\n")
+          .forEach((line) => {
+            const parts = line.split("\t");
+            if (parts.length >= 2) {
+              const add = parseInt(parts[0]) || 0;
+              const del = parseInt(parts[1]) || 0;
+              additions += add;
+              deletions += del;
+            }
+          });
       }
 
       return {
@@ -161,8 +171,8 @@ export class StagedContentDetector implements IStagedContentDetector {
         summary: {
           additions,
           deletions,
-          files: files.length
-        }
+          files: files.length,
+        },
       };
     } catch (error) {
       throw this.normalizeError(error, repositoryPath);
@@ -195,8 +205,11 @@ export class StagedContentDetector implements IStagedContentDetector {
       recommendedTarget = DiffTarget.STAGED;
     } else {
       // Check if fallbackToAll is enabled in configuration
-      const config = vscode.workspace.getConfiguration('dish-ai-commit');
-      const fallbackToAll = config.get<boolean>('features.codeAnalysis.fallbackToAll', true);
+      const config = vscode.workspace.getConfiguration("dish-ai-commit");
+      const fallbackToAll = config.get<boolean>(
+        "features.codeAnalysis.fallbackToAll",
+        true
+      );
       recommendedTarget = fallbackToAll ? DiffTarget.ALL : DiffTarget.STAGED;
     }
 
@@ -205,7 +218,7 @@ export class StagedContentDetector implements IStagedContentDetector {
       stagedFileCount: stagedFiles.length,
       stagedFiles,
       recommendedTarget,
-      repositoryPath
+      repositoryPath,
     };
   }
 
@@ -215,9 +228,9 @@ export class StagedContentDetector implements IStagedContentDetector {
    */
   private async validateRepository(repositoryPath: string): Promise<void> {
     try {
-      await execAsync('git rev-parse --git-dir', {
+      await execAsync("git rev-parse --git-dir", {
         cwd: repositoryPath,
-        encoding: 'utf8'
+        encoding: "utf8",
       });
     } catch (error) {
       throw new StagedDetectionError(
@@ -240,19 +253,22 @@ export class StagedContentDetector implements IStagedContentDetector {
     }
 
     const now = Date.now();
-    return (now - cached.timestamp) < cached.ttl;
+    return now - cached.timestamp < cached.ttl;
   }
 
   /**
    * Cache detection result
    * @private
    */
-  private cacheResult(repositoryPath: string, result: StagedDetectionResult): void {
+  private cacheResult(
+    repositoryPath: string,
+    result: StagedDetectionResult
+  ): void {
     this.cache.set(repositoryPath, {
       result,
       timestamp: Date.now(),
       ttl: this.cacheTimeout,
-      repositoryPath
+      repositoryPath,
     });
 
     // Clean up old cache entries
@@ -266,7 +282,7 @@ export class StagedContentDetector implements IStagedContentDetector {
   private cleanupExpiredCache(): void {
     const now = Date.now();
     for (const [key, entry] of this.cache.entries()) {
-      if ((now - entry.timestamp) >= entry.ttl) {
+      if (now - entry.timestamp >= entry.ttl) {
         this.cache.delete(key);
       }
     }
@@ -276,27 +292,30 @@ export class StagedContentDetector implements IStagedContentDetector {
    * Normalize various error types into StagedDetectionError
    * @private
    */
-  private normalizeError(error: any, repositoryPath: string): StagedDetectionError {
+  private normalizeError(
+    error: any,
+    repositoryPath: string
+  ): StagedDetectionError {
     if (error instanceof StagedDetectionError) {
       return error;
     }
 
     // Determine error type based on error characteristics
     let errorType = DetectionErrorType.UNKNOWN;
-    let message = 'Unknown error occurred during staged content detection';
+    let message = "Unknown error occurred during staged content detection";
 
-    if (error?.code === 'ENOENT') {
+    if (error?.code === "ENOENT") {
       errorType = DetectionErrorType.INVALID_REPOSITORY;
-      message = 'Git executable not found or repository path invalid';
-    } else if (error?.code === 'EACCES') {
+      message = "Git executable not found or repository path invalid";
+    } else if (error?.code === "EACCES") {
       errorType = DetectionErrorType.PERMISSION_DENIED;
-      message = 'Permission denied accessing repository';
-    } else if (error?.stderr?.includes('not a git repository')) {
+      message = "Permission denied accessing repository";
+    } else if (error?.stderr?.includes("not a git repository")) {
       errorType = DetectionErrorType.INVALID_REPOSITORY;
-      message = 'Not a valid git repository';
-    } else if (error?.code === 'TIMEOUT') {
+      message = "Not a valid git repository";
+    } else if (error?.code === "TIMEOUT") {
       errorType = DetectionErrorType.TIMEOUT;
-      message = 'Operation timed out';
+      message = "Operation timed out";
     } else if (error?.stderr) {
       errorType = DetectionErrorType.GIT_COMMAND_FAILED;
       message = `Git command failed: ${error.stderr}`;
@@ -304,12 +323,7 @@ export class StagedContentDetector implements IStagedContentDetector {
       message = error.message;
     }
 
-    return new StagedDetectionError(
-      errorType,
-      message,
-      repositoryPath,
-      error
-    );
+    return new StagedDetectionError(errorType, message, repositoryPath, error);
   }
 }
 

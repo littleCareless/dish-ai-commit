@@ -1,5 +1,11 @@
 import * as vscode from "vscode";
-import { type AIModel, type AIProviders, type AIRequestParams, type AIResponse, type ModelNames } from "../types";
+import {
+  type AIModel,
+  type AIProviders,
+  type AIRequestParams,
+  type AIResponse,
+  type ModelNames,
+} from "../types";
 import { AbstractAIProvider } from "./abstract-ai-provider";
 import { getMessage } from "../../utils/i18n";
 import {
@@ -79,7 +85,7 @@ export class VSCodeProvider extends AbstractAIProvider {
       }
     }
 
-    return { content: result.trim(), jsonContent };
+    return { content: result?.trim(), jsonContent };
 
     // } catch (ex: any) {
     //   let message = ex instanceof Error ? ex.message : String(ex);
@@ -234,9 +240,7 @@ export class VSCodeProvider extends AbstractAIProvider {
    * @param params AI请求参数
    * @returns 转换后的vscode.LanguageModelChatMessage数组
    */
-  protected async buildProviderMessages(
-    params: AIRequestParams
-  ): Promise<any> {
+  protected async buildProviderMessages(params: AIRequestParams): Promise<any> {
     if (!params.messages || params.messages.length === 0) {
       const systemPrompt = await getSystemPrompt(params);
       const userPrompt = params.additionalContext || "";

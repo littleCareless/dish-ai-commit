@@ -202,7 +202,7 @@ function appendLanguageConstraint(
  * @returns 添加输出约束后的提示词
  */
 function appendOutputConstraint(prompt: string): string {
-  return `${prompt.trim()}\n\nIMPORTANT: Directly provide the result without any explanations, introductions, or comments. Do not include phrases like "I suggest" or "Based on". Just return the exact content requested.`;
+  return `${prompt?.trim()}\n\nIMPORTANT: Directly provide the result without any explanations, introductions, or comments. Do not include phrases like "I suggest" or "Based on". Just return the exact content requested.`;
 }
 
 /**

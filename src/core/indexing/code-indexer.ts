@@ -126,9 +126,9 @@ export class CodeIndexer {
       if (bodyNode) {
         const signatureText = fileContent
           .substring(node.startIndex, bodyNode.startIndex)
-          .trim();
+          ?.trim();
         return signatureText.endsWith("{")
-          ? signatureText.slice(0, -1).trim()
+          ? signatureText.slice(0, -1)?.trim()
           : signatureText;
       }
       if (node.type === "arrow_function") {
@@ -138,14 +138,14 @@ export class CodeIndexer {
         if (arrowOperator) {
           return fileContent
             .substring(node.startIndex, arrowOperator.startIndex)
-            .trim();
+            ?.trim();
         }
       }
       const firstBraceIndex = node.text.indexOf("{");
       if (firstBraceIndex !== -1) {
-        return node.text.substring(0, firstBraceIndex).trim();
+        return node.text.substring(0, firstBraceIndex)?.trim();
       }
-      return node.text.trim(); // Fallback, might include body
+      return node.text?.trim(); // Fallback, might include body
     }
     return undefined;
   }

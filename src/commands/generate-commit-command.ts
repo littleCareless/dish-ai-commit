@@ -38,7 +38,7 @@ function formatLayeredCommitMessage(
   layeredCommit: LayeredCommitMessage
 ): string {
   // 构建提交信息文本
-  let commitMessage = layeredCommit.summary.trim();
+  let commitMessage = layeredCommit.summary?.trim();
 
   // 如果有文件变更，添加详细信息部分
   if (layeredCommit.fileChanges.length > 0) {
@@ -47,7 +47,7 @@ function formatLayeredCommitMessage(
     for (const fileChange of layeredCommit.fileChanges) {
       commitMessage += `\n* **${
         fileChange.filePath
-      }**：${fileChange.description.trim()}`;
+      }**：${fileChange.description?.trim()}`;
     }
   }
 
@@ -60,13 +60,13 @@ function formatLayeredCommitMessage(
  * @returns 过滤后的提交信息
  */
 function filterCodeBlockMarkers(commitMessage: string): string {
-  let cleanedMessage = commitMessage.trim();
+  let cleanedMessage = commitMessage?.trim();
   // 移除开头的代码块标记，例如 ```json, ```text, ```
   cleanedMessage = cleanedMessage.replace(/^```[a-zA-Z]*\s*\n?/, "");
   // 移除结尾的代码块标记
   cleanedMessage = cleanedMessage.replace(/\n?```$/, "");
   // 再次 trim 以处理移除标记后可能留下的空格
-  return cleanedMessage.trim();
+  return cleanedMessage?.trim();
 }
 
 /**
@@ -83,8 +83,8 @@ function extractProcessedDiff(processedDiff: string): {
   const codeChangesMatch =
     processedDiff.match(/<code-changes>([\s\S]*?)<\/code-changes>/) || [];
 
-  const originalCode = (originalCodeMatch[1] || "").trim();
-  const codeChanges = (codeChangesMatch[1] || "").trim();
+  const originalCode = (originalCodeMatch[1] || "")?.trim();
+  const codeChanges = (codeChangesMatch[1] || "")?.trim();
 
   return { originalCode, codeChanges };
 }
@@ -689,7 +689,7 @@ ${currentInput}
     try {
       const finalMessage = summaryResponse.content;
       const filteredMessage = filterCodeBlockMarkers(finalMessage);
-      await scmProvider.startStreamingInput(filteredMessage.trim());
+      await scmProvider.startStreamingInput(filteredMessage?.trim());
     } catch (error) {
       console.error("Error applying layered commit summary:", error);
       // Fallback to showing raw details if applying fails
@@ -965,7 +965,7 @@ ${currentInput}
 
     this.throwIfCancelled(token);
 
-    const finalMessage = filterCodeBlockMarkers(aiResponse.content).trim();
+    const finalMessage = filterCodeBlockMarkers(aiResponse.content)?.trim();
     await scmProvider.startStreamingInput(finalMessage);
   }
 

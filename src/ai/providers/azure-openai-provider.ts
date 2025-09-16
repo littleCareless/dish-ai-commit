@@ -210,7 +210,11 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
    * @returns 如果API密钥已配置返回true
    */
   async isAvailable(): Promise<boolean> {
-    return !!(this.config.apiKey && this.config.baseURL && this.config.apiVersion);
+    return !!(
+      this.config.apiKey &&
+      this.config.baseURL &&
+      this.config.apiVersion
+    );
   }
 
   /**
@@ -302,7 +306,7 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
     if (params.diff) {
       userContent += "\n" + params.diff;
     }
-    if (userContent.trim()) {
+    if (userContent?.trim()) {
       messages.push({ role: "user", content: userContent });
     }
 

@@ -49,5 +49,5 @@ Your task is to analyze the provided code changes for a single file and generate
 - ONLY return the description for this single file's changes.
 `;
 
-  return template.trim();
+  return template?.trim();
 }
