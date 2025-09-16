@@ -228,19 +228,64 @@ export class GenerateBranchNameCommand extends BaseCommand {
         const createBranch = getMessage("create.branch");
         const copyToClipboard = getMessage("copy.to.clipboard");
 
-        const selection = await notify.info("branch.name.selected", undefined, {
-          buttons: [selectedBranch, createBranch, copyToClipboard],
-        });
+        // selectedBranch,
+
+        const selection = await notify.info(
+          "branch.name.selected",
+          [selectedBranch],
+          {
+            buttons: [createBranch, copyToClipboard],
+          }
+        );
 
         if (selection === createBranch) {
           try {
-            await vscode.env.clipboard.writeText(selectedBranch);
-            // 执行创建分支操作
-            await vscode.commands.executeCommand(
-              "git.checkout",
-              selectedBranch
-            );
-            notify.info("branch.created", [selectedBranch]);
+            if (scmProvider.type === "git" && scmProvider.getBranches) {
+              const branches = await withProgress(
+                getMessage("fetching.branches.list"),
+                async () => {
+                  return await scmProvider.getBranches();
+                }
+              );
+              if (branches && branches.length > 0) {
+                const selectedBaseBranch = await vscode.window.showQuickPick(
+                  branches,
+                  {
+                    placeHolder: getMessage("select.base.branch.placeholder"),
+                    ignoreFocusOut: true,
+                  }
+                );
+
+                if (selectedBaseBranch) {
+                  await vscode.commands.executeCommand(
+                    "git.branchFrom",
+                    selectedBranch,
+                    selectedBaseBranch
+                  );
+                  notify.info("branch.created.from", [
+                    selectedBranch,
+                    selectedBaseBranch,
+                  ]);
+                } else {
+                  // 用户取消选择基础分支
+                  notify.info("branch.creation.cancelled");
+                }
+              } else {
+                // 没有获取到分支列表，回退到原先的 checkout 逻辑
+                await vscode.commands.executeCommand(
+                  "git.checkout",
+                  selectedBranch
+                );
+                notify.info("branch.created", [selectedBranch]);
+              }
+            } else {
+              // 非Git或不支持getBranches，使用旧逻辑
+              await vscode.commands.executeCommand(
+                "git.checkout",
+                selectedBranch
+              );
+              notify.info("branch.created", [selectedBranch]);
+            }
           } catch (error) {
             console.error("Failed to create branch:", error);
             notify.error("branch.creation.failed");

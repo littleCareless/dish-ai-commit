@@ -161,6 +161,7 @@
   "progress.generating.pr.summary": "Generating PR summary...",
   "detecting.scm.provider": "Detecting SCM provider...",
   "fetching.branches": "Fetching branches...",
+  "fetching.branches.list": "Fetching branch list...",
   "fetching.commit.log": "Fetching commit log...",
   "validating.model": "Validating model...",
   "analyzing.commits": "Analyzing commits...",
@@ -242,5 +243,8 @@
   "embedding.ollama.requestFailed": "Ollama API request failed with status code: {0}",
   "embedding.ollama.invalidFormat": "Invalid embedding format received from Ollama API.",
   "embedding.ollama.baseUrl.missing.forSearch": "Ollama Base URL is not configured. Skipping search.",
-  "branch.name.suggestions": "Branch Name Suggestions"
+  "branch.name.suggestions": "Branch Name Suggestions",
+  "select.base.branch.placeholder": "Select a base branch to create from",
+  "branch.created.from": "Branch '{0}' created from '{1}'.",
+  "branch.creation.cancelled": "Branch creation cancelled."
 }
