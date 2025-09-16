@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { WeeklyReportGenerator } from "../services/weekly-report-generator";
 import { ModelConfigurationManager } from "../config/model-configuration-manager";
+import { showWeeklyReportSuccessNotification } from "../../utils/notification/system-notification";
 import { notify } from "../../utils/notification";
 
 export class WeeklyReportMessageHandler {
@@ -47,9 +48,14 @@ export class WeeklyReportMessageHandler {
     }
   }
 
-  private async handleGenerateTeamReportCommand(message: any, webview: vscode.Webview) { // 重命名方法
+  private async handleGenerateTeamReportCommand(
+    message: any,
+    webview: vscode.Webview
+  ) {
+    // 重命名方法
     try {
-      const report = await this.generator.generateTeamReport( // 修改调用
+      const report = await this.generator.generateTeamReport(
+        // 修改调用
         message.data.period,
         message.data.users // 传递 users
       );
@@ -61,11 +67,19 @@ export class WeeklyReportMessageHandler {
       });
       const formattedPeriod = this.formatPeriod(message.data.period);
       // 可以考虑修改通知信息，比如指明是为哪些用户生成的报告
-      notify.info("weeklyReport.teamGeneration.success", [formattedPeriod, message.data.users.join(", ")]);
+      notify.info("weeklyReport.teamGeneration.success", [
+        formattedPeriod,
+        message.data.users.join(", "),
+      ]);
+      showWeeklyReportSuccessNotification();
     } catch (error: any) {
-      notify.error("weeklyReport.teamGeneration.failed", [error.message || error], {
-        timeout: 3000,
-      });
+      notify.error(
+        "weeklyReport.teamGeneration.failed",
+        [error.message || error],
+        {
+          timeout: 3000,
+        }
+      );
     }
   }
 

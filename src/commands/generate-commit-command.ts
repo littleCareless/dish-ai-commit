@@ -4,6 +4,7 @@ import { ConfigurationManager } from "../config/configuration-manager";
 import { AbstractAIProvider } from "../ai/providers/abstract-ai-provider";
 import { ISCMProvider } from "../scm/scm-provider";
 import { notify } from "../utils/notification/notification-manager";
+import { showCommitSuccessNotification } from "../utils/notification/system-notification";
 import { getMessage, formatMessage } from "../utils/i18n";
 import { ProgressHandler } from "../utils/notification/progress-handler";
 import {
@@ -507,6 +508,8 @@ ${currentInput}
         newProvider,
         selectedModel?.id || "default",
       ]);
+
+      showCommitSuccessNotification();
     } catch (error) {
       if (error instanceof RequestTooLargeError) {
         const switchToLargerModel = getMessage("error.switch.to.larger.model");
