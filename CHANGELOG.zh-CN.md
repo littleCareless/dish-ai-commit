@@ -5,6 +5,17 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+# 0.49.0 (2025-09-16)
+
+
+### ✨ Features
+
+* **branch**: 支持从指定基础分支创建新分支 ([71dc50c](https://github.com/littleCareless/dish-ai-commit/commit/71dc50c))
+
+
+
+
+
 # 0.48.0 (2025-09-16)
 
 
