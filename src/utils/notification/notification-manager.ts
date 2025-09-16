@@ -96,10 +96,13 @@ const showNotification = async (
 
     // 处理超时
     if (options?.timeout) {
-      await Promise.all([
-        new Promise((resolve) => setTimeout(resolve, options.timeout)),
-        vscode.commands.executeCommand("closeNotification"),
-      ]);
+      const closePromise = new Promise<void>((resolve) => {
+        setTimeout(() => {
+          vscode.commands.executeCommand("workbench.action.closeMessages");
+          resolve();
+        }, options.timeout);
+      });
+      await closePromise;
     }
     return result;
   } catch (error) {
@@ -144,13 +147,28 @@ export const notify: INotify = {
     showNotification(item.type, item.messageKey, item.args, item.options),
 
   info: (messageKey: string, args?: any[], options?: NotificationOptions) =>
-    notify.add({ type: "info", messageKey, args, options }),
+    notify.add({
+      type: "info",
+      messageKey,
+      args,
+      options: { timeout: DEFAULT_TIMEOUT, ...options },
+    }),
 
   warn: (messageKey: string, args?: any[], options?: NotificationOptions) =>
-    notify.add({ type: "warn", messageKey, args, options }),
+    notify.add({
+      type: "warn",
+      messageKey,
+      args,
+      options: { timeout: DEFAULT_TIMEOUT, ...options },
+    }),
 
   error: (messageKey: string, args?: any[], options?: NotificationOptions) =>
-    notify.add({ type: "error", messageKey, args, options }),
+    notify.add({
+      type: "error",
+      messageKey,
+      args,
+      options: { timeout: DEFAULT_TIMEOUT, ...options },
+    }),
 
   // 快捷方法
   confirm: (messageKey: string, onYes: () => void, onNo?: () => void) =>
