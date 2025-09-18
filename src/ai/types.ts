@@ -437,6 +437,8 @@ export type VertexAIModels =
 
 export type XAIModels = "grok-1.5-flash" | "grok-1.5";
 
+export type LMStudioModels = string;
+
 // 所有支持的模型名称类型
 export type ModelNames =
   | OpenAIModels
@@ -456,6 +458,7 @@ export type ModelNames =
   | VertexAIModels
   | MistralAIModels
   | XAIModels
+  | LMStudioModels
   | "mixtral-8x7b-32768";
 
 export type PremAIModels = string;
@@ -483,7 +486,8 @@ export type AIProviders =
   | "cloudflare"
   | "vertexai"
   | "groq"
-  | "siliconflow";
+  | "siliconflow"
+  | "lmstudio";
 export type AnthropicAIModels =
   | "claude-3-opus-20240229"
   | "claude-3-sonnet-20240229"
@@ -532,6 +536,8 @@ export type AIModels<Provider extends AIProviders = AIProviders> =
     ? VertexAIModels
     : Provider extends "groq"
     ? "mixtral-8x7b-32768"
+    : Provider extends "lmstudio"
+    ? LMStudioModels
     : OpenAIModels;
 
 export type SupportedAIModels =

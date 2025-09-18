@@ -76,6 +76,7 @@ export const CONFIG_SCHEMA = {
         "Cloudflare",
         "GoogleAI",
         "VertexAI",
+        "LMStudio",
       ],
       description: "AI provider / AI 提供商",
     },
@@ -283,6 +284,13 @@ export const CONFIG_SCHEMA = {
         type: "string",
         default: "",
         description: "Groq API Key / Groq API 密钥",
+      },
+    },
+    lmstudio: {
+      baseUrl: {
+        type: "string",
+        default: "http://localhost:1234/v1",
+        description: "LMStudio API Base URL / LMStudio API 基础地址",
       },
     },
   },

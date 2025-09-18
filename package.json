@@ -219,7 +219,8 @@
             "Azure OpenAI",
             "Cloudflare",
             "GoogleAI",
-            "VertexAI"
+            "VertexAI",
+            "LMStudio"
           ]
         },
         "dish-ai-commit.base.model": {
@@ -383,6 +384,11 @@
           "default": "",
           "description": "Groq API Key / Groq API 密钥"
         },
+        "dish-ai-commit.providers.lmstudio.baseUrl": {
+          "type": "string",
+          "default": "http://localhost:1234/v1",
+          "description": "LMStudio API Base URL / LMStudio API 基础地址"
+        },
         "dish-ai-commit.features.suppressNonCriticalWarnings": {
           "type": "boolean",
           "default": true,
@@ -390,12 +396,23 @@
         },
         "dish-ai-commit.features.codeAnalysis.diffTarget": {
           "type": "string",
-          "default": "all",
-          "description": "Specify the target for git diff: 'staged' for staged changes, 'all' for all changes. / 指定 git diff 的目标：'staged' 表示暂存区的更改，'all' 表示所有更改。",
+          "default": "auto",
+          "description": "Specify the target for git diff: 'staged' for staged changes, 'all' for all changes, 'auto' for automatic detection. / 指定 git diff 的目标：'staged' 表示暂存区的更改，'all' 表示所有更改，'auto' 表示自动检测。",
           "enum": [
             "staged",
-            "all"
+            "all",
+            "auto"
           ]
+        },
+        "dish-ai-commit.features.codeAnalysis.autoDetectStaged": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically detect staged content and prioritize it over all changes when diffTarget is 'auto'. / 当 diffTarget 为 'auto' 时，自动检测暂存区内容并优先使用。"
+        },
+        "dish-ai-commit.features.codeAnalysis.fallbackToAll": {
+          "type": "boolean",
+          "default": true,
+          "description": "When staged area is empty, fallback to analyze all working directory changes. / 当暂存区为空时，回退到分析所有工作目录更改。"
         },
         "dish-ai-commit.features.codeAnalysis.simplifyDiff": {
           "type": "boolean",
@@ -691,7 +708,7 @@
     "inversify": "^7.5.2",
     "node-notifier": "^10.0.1",
     "ollama": "^0.5.16",
-    "openai": "^5.3.0",
+    "openai": "^5.21.0",
     "tiktoken": "^1.0.21",
     "tree-sitter-wasms": "^0.1.11",
     "vite": "^7.0.6",
@@ -738,5 +755,5 @@
       ]
     }
   },
-  "packageManager": "pnpm@10.12.1"
+  "packageManager": "pnpm@10.16.1"
 }

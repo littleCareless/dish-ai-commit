@@ -22,6 +22,7 @@ import { CloudflareWorkersAIProvider } from "./providers/cloudflare-workersai-pr
 import { VertexAIProvider } from "./providers/vertexai-provider";
 import { GroqAIProvider } from "./providers/groq-provider";
 import { BaiduQianfanProvider } from "./providers/baidu-qianfan-provider";
+import { LMStudioProvider } from "./providers/lmstudio-provider";
 
 /**
  * AI提供者工厂类，负责创建和管理不同AI服务提供者的实例
@@ -148,6 +149,8 @@ export class AIProviderFactory {
         return { ...baseConfig, ...config.providers?.mistral };
       case AIProvider.BAIDU_QIANFAN:
         return { ...baseConfig, ...config.providers?.baiduQianfan };
+      case AIProvider.LMSTUDIO:
+        return { ...baseConfig, ...config.providers?.lmstudio };
       default:
         return baseConfig;
     }
@@ -260,6 +263,9 @@ export class AIProviderFactory {
         case AIProvider.BAIDU_QIANFAN:
           provider = new BaiduQianfanProvider();
           break;
+        case AIProvider.LMSTUDIO:
+          provider = new LMStudioProvider();
+          break;
        default:
          throw new Error(formatMessage("provider.type.unknown", [type]));
      }
@@ -301,6 +307,7 @@ export class AIProviderFactory {
       new MistralAIProvider(),
       new GroqAIProvider(),
       new BaiduQianfanProvider(),
+      new LMStudioProvider(),
     ];
   }
 
