@@ -5,6 +5,22 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+# 0.50.0 (2025-09-18)
+
+
+### ♻ Code Refactoring
+
+* **ux**: 优化无文件变更处理及通知体验 ([ffe9793](https://github.com/littleCareless/dish-ai-commit/commit/ffe9793))
+
+
+### ✨ Features
+
+* **ai**: 新增对 LM Studio 作为 AI 提供商的支持 ([0903d76](https://github.com/littleCareless/dish-ai-commit/commit/0903d76))
+
+
+
+
+
 # 0.49.0 (2025-09-16)
 
 
