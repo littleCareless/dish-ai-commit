@@ -347,12 +347,13 @@ ${currentInput}
     // ===== 自动检测逻辑结束 =====
 
     if (!diffContent) {
-      notify.info(
-        formatMessage("scm.no.changes", [scmProvider.type.toUpperCase()])
-      );
-      throw new Error(
-        formatMessage("scm.no.changes", [scmProvider.type.toUpperCase()])
-      );
+      // notify.info(
+      //   formatMessage("scm.no.changes", [scmProvider.type.toUpperCase()])
+      // );
+      // throw new Error(
+      //   formatMessage("scm.no.changes", [scmProvider.type.toUpperCase()])
+      // );
+      return false;
     }
 
     progress.report({

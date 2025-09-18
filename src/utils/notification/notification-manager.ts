@@ -81,29 +81,44 @@ const showNotification = async (
     const message = formatMessage(messageKey, args);
     const notifyFn = getNotifyFunction(type);
 
-    // 直接使用字符串数组作为按钮
-    const result = await notifyFn(
+    // If buttons are present, timeout is ignored because programmatically closing notifications with buttons is not supported by the VS Code API.
+    const hasButtons = options?.buttons && options.buttons.length > 0;
+    const effectiveTimeout = hasButtons ? undefined : options?.timeout;
+
+    const notificationPromise = notifyFn(
       message,
       { modal: options?.modal },
       ...(options?.buttons || [])
     );
 
-    // 执行对应的处理函数
+    let result: string | undefined | symbol;
+    let timeoutId: NodeJS.Timeout | undefined;
+
+    if (effectiveTimeout) {
+      const timeoutMarker = Symbol("timeout");
+      const timeoutPromise = new Promise<symbol>((resolve) => {
+        timeoutId = setTimeout(() => resolve(timeoutMarker), effectiveTimeout);
+      });
+      result = await Promise.race([notificationPromise, timeoutPromise]);
+    } else {
+      result = await notificationPromise;
+    }
+
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+
+    if (typeof result === "symbol") {
+      // Timeout occurred. The notification will disappear on its own as it has no buttons.
+      return undefined;
+    }
+
+    // User interacted.
     if (result && options?.buttonHandlers) {
       const handler = options.buttonHandlers[result];
       handler?.();
     }
 
-    // 处理超时
-    if (options?.timeout) {
-      const closePromise = new Promise<void>((resolve) => {
-        setTimeout(() => {
-          vscode.commands.executeCommand("workbench.action.closeMessages");
-          resolve();
-        }, options.timeout);
-      });
-      await closePromise;
-    }
     return result;
   } catch (error) {
     console.error(`Failed to show ${type} notification:`, error);

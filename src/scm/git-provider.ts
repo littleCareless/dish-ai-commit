@@ -435,7 +435,7 @@ export class GitProvider implements ISCMProvider {
       }
 
       if (!diffOutput?.trim()) {
-        throw new Error(getMessage("diff.noChanges"));
+        // throw new Error(getMessage("diff.noChanges"));
       }
 
       // Process the diff to get structured data, including original file content.

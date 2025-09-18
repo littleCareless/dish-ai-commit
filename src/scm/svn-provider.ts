@@ -685,7 +685,7 @@ export class SvnProvider implements ISCMProvider {
       }
 
       if (!diffOutput?.trim()) {
-        throw new Error(getMessage("diff.noChanges"));
+        // throw new Error(getMessage("diff.noChanges"));
       }
 
       // 获取配置
