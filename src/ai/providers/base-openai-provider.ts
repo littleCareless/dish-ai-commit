@@ -169,23 +169,79 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       this: BaseOpenAIProvider
     ): AsyncIterable<string> {
       try {
-        console.log(
-          "Final messages for AI:",
-          JSON.stringify(filteredMessages, null, 2)
+        const systemMessage = filteredMessages.find(
+          (msg) => msg.role === "system"
         );
-        const stream = await this.openai.chat.completions.create({
+        const userMessages = filteredMessages.filter(
+          (msg) => msg.role === "user"
+        );
+
+        const instructions = (systemMessage?.content as string) || "";
+        const input = userMessages
+          .map((msg) => {
+            if (typeof msg.content === "string") {
+              return msg.content;
+            }
+            if (Array.isArray(msg.content)) {
+              return msg.content
+                .filter((part) => part.type === "text")
+                .map((part: any) => part.text)
+                .join("");
+            }
+            return "";
+          })
+          .join("\n\n");
+
+        const requestInput = {
+          instructions,
+          input,
+        };
+
+        console.log(
+          "Final input for AI:",
+          JSON.stringify(requestInput, null, 2)
+        );
+
+        // @ts-ignore - Per user instruction to construct an input object with instructions and input.
+        const stream = await this.openai.responses.create({
           model:
             (params.model && params.model.id) ||
             this.config.defaultModel ||
             "gpt-3.5-turbo",
-          messages: filteredMessages,
+          // input: requestInput as any,
+          ...requestInput,
           temperature: options?.temperature,
-          max_tokens: options?.maxTokens,
+          max_output_tokens: options?.maxTokens,
           stream: true,
+          reasoning: { effort: null },
         });
+        let inThinkBlock = false;
         for await (const chunk of stream) {
-          if (chunk.choices[0]?.delta?.content) {
-            yield chunk.choices[0].delta.content;
+          console.log("stream", stream, chunk);
+          if (chunk.type === "response.output_text.delta") {
+            // 在输出前过滤掉 <think> ... </think>
+            let text = chunk.delta;
+            // 检测到 <think> 开始
+            if (text.includes("<think>")) {
+              inThinkBlock = true;
+              text = text.replace(/<think>/g, ""); // 干掉标记
+            }
+
+            // 如果还在 <think> 区域内，就跳过
+            if (inThinkBlock) {
+              // 检测到 </think> 结束
+              if (text.includes("</think>")) {
+                inThinkBlock = false;
+                text = text.replace(/<\/think>/g, ""); // 干掉标记
+              } else {
+                continue; // 丢弃推理内容
+              }
+            }
+
+            // 输出过滤后的文本
+            if (text.trim()) {
+              yield text;
+            }
           }
         }
       } catch (error) {
