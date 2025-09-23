@@ -48,8 +48,8 @@ importers:
         specifier: ^0.5.16
         version: 0.5.16
       openai:
-        specifier: ^5.3.0
-        version: 5.3.0(ws@8.18.2)(zod@3.25.62)
+        specifier: ^5.21.0
+        version: 5.22.1(ws@8.18.2)(zod@3.25.62)
       tiktoken:
         specifier: ^1.0.21
         version: 1.0.21
@@ -3930,8 +3930,8 @@ packages:
     resolution: {integrity: sha512-cxN6aIDPz6rm8hbebcP7vrQNhvRcveZoJU72Y7vskh4oIm+BZwBECnx5nTmrlres1Qapvx27Qo1Auukpf8PKXw==}
     engines: {node: '>=18'}
 
-  openai@5.3.0:
-    resolution: {integrity: sha512-VIKmoF7y4oJCDOwP/oHXGzM69+x0dpGFmN9QmYO+uPbLFOmmnwO+x1GbsgUtI+6oraxomGZ566Y421oYVu191w==}
+  openai@5.22.1:
+    resolution: {integrity: sha512-nzjcbqcSKxMAkTzNbtqKxrAq1jrG2txRshLZEflL3uZsgzGb22nVjbJscqTOSHGxbUWlYbISKHaUudA5Z1eutg==}
     hasBin: true
     peerDependencies:
       ws: ^8.18.0
@@ -9887,7 +9887,7 @@ snapshots:
       is-inside-container: 1.0.0
       is-wsl: 3.1.0
 
-  openai@5.3.0(ws@8.18.2)(zod@3.25.62):
+  openai@5.22.1(ws@8.18.2)(zod@3.25.62):
     optionalDependencies:
       ws: 8.18.2
       zod: 3.25.62
