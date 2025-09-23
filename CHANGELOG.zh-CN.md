@@ -5,6 +5,17 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+## 0.50.2 (2025-09-23)
+
+
+### 🎫 Chores
+
+* **deps**: 更新依赖项 ([0bf0e2a](https://github.com/littleCareless/dish-ai-commit/commit/0bf0e2a))
+
+
+
+
+
 ## 0.50.1 (2025-09-23)
 
 
