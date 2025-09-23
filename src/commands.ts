@@ -50,7 +50,7 @@ export class CommandManager implements vscode.Disposable {
               await generateCommand.execute(resources);
             } catch (error) {
               // 处理commit生成失败
-              notify.error("command.generate.failed", [
+              notify.error("commit.command.failed", [
                 error instanceof Error ? error.message : String(error),
               ]);
             }
@@ -62,7 +62,7 @@ export class CommandManager implements vscode.Disposable {
             await selectModelCommand.execute();
           } catch (error) {
             // 处理模型选择失败
-            notify.error("command.select.model.failed", [
+            notify.error("model.command.failed", [
               error instanceof Error ? error.message : String(error),
             ]);
           }
@@ -75,7 +75,7 @@ export class CommandManager implements vscode.Disposable {
               await weeklyReportCommand.execute();
             } catch (error) {
               // 处理周报生成失败
-              notify.error("command.weekly.report.failed", [
+              notify.error("weeklyReport.generation.failed", [
                 error instanceof Error ? error.message : String(error),
               ]);
             }
@@ -89,7 +89,7 @@ export class CommandManager implements vscode.Disposable {
               await reviewCodeCommand.execute(resources);
             } catch (error) {
               // 处理代码审查失败
-              notify.error("command.review.code.failed", [
+              notify.error("review.failed", [
                 error instanceof Error ? error.message : String(error),
               ]);
             }
@@ -103,7 +103,7 @@ export class CommandManager implements vscode.Disposable {
               await branchNameCommand.execute(resources);
             } catch (error) {
               // 处理分支名称生成失败
-              notify.error("command.branch.name.failed", [
+              notify.error("branch.name.command.failed", [
                 error instanceof Error ? error.message : String(error),
               ]);
             }
@@ -117,7 +117,7 @@ export class CommandManager implements vscode.Disposable {
               await prSummaryCommand.execute();
             } catch (error) {
               // 处理PR摘要生成失败
-              notify.error("command.pr.summary.failed", [
+              notify.error("pr.summary.command.failed", [
                 error instanceof Error ? error.message : String(error),
               ]);
             }
@@ -131,7 +131,7 @@ export class CommandManager implements vscode.Disposable {
               await updateModelInfoCommand.execute();
             } catch (error) {
               // 处理模型信息更新失败
-              notify.error("command.update.model.info.failed", [
+              notify.error("model.command.failed", [
                 error instanceof Error ? error.message : String(error),
               ]);
             }
@@ -140,7 +140,7 @@ export class CommandManager implements vscode.Disposable {
       );
     } catch (error) {
       // 处理命令注册过程的整体失败
-      notify.error("command.register.failed", [
+      notify.error("extension.command.register.failed", [
         error instanceof Error ? error.message : String(error),
       ]);
     }

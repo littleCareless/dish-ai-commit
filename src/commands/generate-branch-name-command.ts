@@ -35,7 +35,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
 
     try {
       await withProgress(
-        getMessage("generating.branch.name"),
+        getMessage("branch.name.generating"),
         async (progress) => {
           progress.report({
             increment: 5,
@@ -86,8 +86,8 @@ export class GenerateBranchNameCommand extends BaseCommand {
             getMessage("branch.gen.mode.from.description.label")
           ) {
             const description = await vscode.window.showInputBox({
-              prompt: getMessage("enter.branch.description.prompt"),
-              placeHolder: getMessage("enter.branch.description.placeholder"),
+              prompt: getMessage("branch.description.enter.prompt"),
+              placeHolder: getMessage("branch.description.enter.placeholder"),
               ignoreFocusOut: true,
             });
 
@@ -107,12 +107,12 @@ export class GenerateBranchNameCommand extends BaseCommand {
               selectedFiles = undefined;
             }
 
-            progressMessageKeyGettingContent = "getting.file.changes";
-            progressMessageKeyAnalyzing = "analyzing.code.changes";
+            progressMessageKeyGettingContent = "workspace.getting.file.changes";
+            progressMessageKeyAnalyzing = "workspace.analyzing.code.changes";
 
             progress.report({
               increment: 5,
-              message: getMessage("detecting.scm.provider"),
+              message: formatMessage("progress.detecting", [getMessage("progress.detecting.scmProvider")]),
             });
             const result = await this.detectSCMProvider(selectedFiles);
             if (!result) {
@@ -132,14 +132,14 @@ export class GenerateBranchNameCommand extends BaseCommand {
             });
             aiInputContent = await detectedScmProvider.getDiff(selectedFiles);
             if (!aiInputContent) {
-              await notify.warn(getMessage("no.changes.found"));
+              await notify.warn(getMessage("workspace.no.changes.found"));
               return;
             }
           }
 
           if (!aiInputContent) {
             // This case should ideally not be reached if logic above is correct
-            await notify.error(getMessage("internal.error.no.ai.input")); // New i18n key
+            await notify.error(getMessage("input.error.no.ai.input")); // New i18n key
             return;
           }
 
@@ -205,7 +205,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
     // 使用QuickPick来显示多个分支名称建议
     const quickPick = vscode.window.createQuickPick();
     quickPick.title = getMessage("branch.name.suggestions");
-    quickPick.placeholder = getMessage("select.or.edit.branch.name");
+    quickPick.placeholder = getMessage("branch.create.select.or.edit.name");
 
     // 设置分支名称选项
     quickPick.items = branchSuggestions.map((branch) => ({
@@ -225,8 +225,8 @@ export class GenerateBranchNameCommand extends BaseCommand {
         quickPick.hide();
 
         // 显示操作选项
-        const createBranch = getMessage("create.branch");
-        const copyToClipboard = getMessage("copy.to.clipboard");
+        const createBranch = getMessage("button.create");
+        const copyToClipboard = getMessage("button.copy.to.clipboard");
 
         // selectedBranch,
 
@@ -242,7 +242,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
           try {
             if (scmProvider.type === "git" && scmProvider.getBranches) {
               const branches = await withProgress(
-                getMessage("fetching.branches.list"),
+                formatMessage("progress.fetching", [getMessage("progress.fetching.branchList")]),
                 async () => {
                   return await scmProvider.getBranches();
                 }
@@ -251,7 +251,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
                 const selectedBaseBranch = await vscode.window.showQuickPick(
                   branches,
                   {
-                    placeHolder: getMessage("select.base.branch.placeholder"),
+                    placeHolder: getMessage("branch.create.select.base.placeholder"),
                     ignoreFocusOut: true,
                   }
                 );
@@ -262,13 +262,13 @@ export class GenerateBranchNameCommand extends BaseCommand {
                     selectedBranch,
                     selectedBaseBranch
                   );
-                  notify.info("branch.created.from", [
+                  notify.info("branch.create.created.from", [
                     selectedBranch,
                     selectedBaseBranch,
                   ]);
                 } else {
                   // 用户取消选择基础分支
-                  notify.info("branch.creation.cancelled");
+                  notify.info("branch.create.cancelled");
                 }
               } else {
                 // 没有获取到分支列表，回退到原先的 checkout 逻辑
@@ -288,7 +288,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
             }
           } catch (error) {
             console.error("Failed to create branch:", error);
-            notify.error("branch.creation.failed");
+            notify.error("branch.create.failed");
           }
         } else if (selection === copyToClipboard) {
           try {

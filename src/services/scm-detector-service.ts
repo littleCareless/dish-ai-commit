@@ -202,7 +202,7 @@ export class SCMDetectorService {
       repositoryPath
     );
     if (!scmProvider) {
-      await notify.error(getMessage("scm.not.detected"));
+      await notify.error(getMessage("scm.provider.not.detected"));
       return;
     }
 

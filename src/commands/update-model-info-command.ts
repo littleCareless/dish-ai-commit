@@ -112,7 +112,7 @@ export class UpdateModelInfoCommand extends BaseCommand {
     await ProgressHandler.withProgress(
       "正在更新所有模型信息...",
       async (progress, token) => {
-        progress.report({ message: "开始更新模型信息" });
+        progress.report({ message: getMessage("progress.updating.modelInfo.start") });
 
         const result = await service.updateAllModels();
 

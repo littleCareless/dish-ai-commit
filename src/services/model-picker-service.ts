@@ -28,7 +28,7 @@ export class ModelPickerService {
       let errors: string[] = [];
 
       // 获取加载模型时的进度提示信息
-      const progressMsg = getMessage("ai.model.loading");
+      const progressMsg = getMessage("model.loading");
       // 使用 VS Code 的进度通知
       await vscode.window.withProgress(
         {
@@ -73,7 +73,7 @@ export class ModelPickerService {
           });
         }
         // 弹窗错误所有provider都失败
-        await notify.error("model.list.all.failed");
+        await notify.error("model.list.failed");
         return undefined;
       }
 
@@ -115,8 +115,8 @@ export class ModelPickerService {
       // 创建并配置 QuickPick 对话框
       const quickPick = vscode.window.createQuickPick();
       quickPick.items = items;
-      quickPick.title = getMessage("ai.model.picker.title");
-      quickPick.placeholder = getMessage("ai.model.picker.placeholder");
+      quickPick.title = getMessage("model.picker.title");
+      quickPick.placeholder = getMessage("model.picker.placeholder");
       quickPick.ignoreFocusOut = true;
 
       // 等待用户选择

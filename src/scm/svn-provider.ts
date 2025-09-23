@@ -245,7 +245,7 @@ export class SvnProvider implements ISCMProvider {
       };
 
       if (!Array.isArray(envConfig.path) || !envConfig.locale) {
-        throw new Error(getMessage("svn.invalid.env.config"));
+        throw new Error(formatMessage("config.invalid", [getMessage("config.svn.environment")]));
       }
 
       return {
@@ -294,7 +294,7 @@ export class SvnProvider implements ISCMProvider {
 
   private getEnvironmentConfig() {
     if (!this.config?.environmentConfig) {
-      throw new Error(getMessage("svn.invalid.env.config"));
+      throw new Error(formatMessage("config.invalid", [getMessage("config.svn.environment")]));
     }
     return {
       ...process.env,
@@ -396,7 +396,7 @@ export class SvnProvider implements ISCMProvider {
       let diffOutput = "";
 
       if (files && files.length > 0) {
-        // notify.info(formatMessage("diff.files.selected", [files.length]));
+        // notify.info(formatMessage("diff.info.selected", [files.length]));
         // 处理指定文件的差异
         for (const file of files) {
           const fileStatus = await this.getFileStatus(file);
@@ -501,7 +501,7 @@ export class SvnProvider implements ISCMProvider {
             const fileCount = addedFiles.length;
 
             if (fileCount > 0) {
-              notify.info(formatMessage("diff.staged.info", [fileCount]));
+              notify.info(formatMessage("diff.info.staged", [fileCount]));
             }
 
             // 获取已添加文件的差异
@@ -591,7 +591,7 @@ export class SvnProvider implements ISCMProvider {
             // 通知用户文件数量
             const fileCount = modifiedFiles.length;
             if (fileCount > 0) {
-              notify.info(formatMessage("diff.all.info", [fileCount]));
+              notify.info(formatMessage("diff.info.all", [fileCount]));
             }
 
             // 获取所有文件的差异
@@ -704,8 +704,8 @@ export class SvnProvider implements ISCMProvider {
       return DiffProcessor.process(diffOutput, "svn");
     } catch (error) {
       if (error instanceof Error) {
-        console.error(formatMessage("scm.diff.error", ["SVN", error])); // 添加调试日志
-        // notify.error(formatMessage("scm.diff.failed", ["SVN", error.message]));
+        console.error(formatMessage("scm.error.diff", ["SVN", error])); // 添加调试日志
+        // notify.error(formatMessage("scm.error.diff", ["SVN", error.message]));
       }
       throw error;
     }
@@ -733,7 +733,7 @@ export class SvnProvider implements ISCMProvider {
         "SVN commit failed:",
         error instanceof Error ? error.message : error
       );
-      throw new Error(formatMessage("scm.commit.failed", ["SVN", error]));
+      throw new Error(formatMessage("scm.error.commit.failed", ["SVN", error]));
     }
   }
 
@@ -749,12 +749,12 @@ export class SvnProvider implements ISCMProvider {
     } else {
       try {
         await vscode.env.clipboard.writeText(message);
-        notify.info("commit.message.copied");
+        notify.info("info.copied.to.clipboard", [getMessage("commit.message.label")]);
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
         notify.error("commit.message.copy.failed", [errorMessage]);
-        notify.info("commit.message.manual.copy", [message]);
+        notify.info("info.manual.copy", [getMessage("commit.message.label"), message]);
       }
     }
   }
@@ -786,12 +786,12 @@ export class SvnProvider implements ISCMProvider {
     } else {
       try {
         await vscode.env.clipboard.writeText(message);
-        notify.info("commit.message.copied");
+        notify.info("info.copied.to.clipboard", [getMessage("commit.message.label")]);
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
         notify.error("commit.message.copy.failed", [errorMessage]);
-        notify.info("commit.message.manual.copy", [message]);
+        notify.info("info.manual.copy", [getMessage("commit.message.label"), message]);
       }
     }
   }
@@ -891,7 +891,7 @@ export class SvnProvider implements ISCMProvider {
       Logger.log(LogLevel.Error, "SVN log failed:", error);
       if (error instanceof Error) {
         // 确保 i18n 文件中有 "svn.log.failed" 键
-        notify.error(formatMessage("scm.log.failed", ["SVN", error.message]));
+        notify.error(formatMessage("scm.error.log.failed", ["SVN", error.message]));
       }
       return []; // 类似 git-provider，在错误时返回空数组
     }
@@ -976,7 +976,7 @@ export class SvnProvider implements ISCMProvider {
   async copyToClipboard(message: string): Promise<void> {
     try {
       await vscode.env.clipboard.writeText(message);
-      notify.info("commit.message.copied");
+      notify.info("info.copied.to.clipboard", [getMessage("commit.message.label")]);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";

@@ -87,7 +87,7 @@ export class SvnUtils {
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
       Logger.log(LogLevel.Error, "Failed to initialize SVN:", message);
-      throw new Error(formatMessage("svn.initialization.failed", [message]));
+      throw new Error(formatMessage("scm.svn.initialization.failed", [message]));
     }
   }
 
@@ -107,7 +107,7 @@ export class SvnUtils {
       };
 
       if (!Array.isArray(envConfig.path) || !envConfig.locale) {
-        throw new Error(getMessage("svn.invalid.env.config"));
+        throw new Error(formatMessage("config.invalid", [getMessage("config.svn.environment")]));
       }
 
       return {
@@ -116,7 +116,7 @@ export class SvnUtils {
       };
     } catch (error) {
       Logger.log(LogLevel.Error, "Failed to load SVN config:", error);
-      throw new Error(formatMessage("svn.config.load.failed", [error]));
+      throw new Error(formatMessage("scm.svn.config.load.failed", [error]));
     }
   }
 
@@ -193,7 +193,7 @@ export class SvnUtils {
       return defaultPath;
     } catch (error) {
       Logger.log(LogLevel.Error, "Failed to determine SVN path:", error);
-      throw new Error(getMessage("svn.path.not.found"));
+      throw new Error(getMessage("scm.svn.path.not.found"));
     }
   }
 
@@ -202,7 +202,7 @@ export class SvnUtils {
    */
   private static getEnvironmentConfig() {
     if (!this.config?.environmentConfig) {
-      throw new Error(getMessage("svn.invalid.env.config"));
+      throw new Error(formatMessage("config.invalid", [getMessage("config.svn.environment")]));
     }
 
     // 根据平台使用正确的路径分隔符
@@ -474,7 +474,7 @@ export class SvnUtils {
         try {
           await this.triggerAuth(workspacePath);
         } catch (authError) {
-          throw new Error(getMessage("svn.auth.required"));
+          throw new Error(getMessage("scm.svn.auth.required"));
         }
       } else {
         throw error;
@@ -488,18 +488,18 @@ export class SvnUtils {
    */
   private static async triggerAuth(workspacePath: string): Promise<void> {
     // 显示认证提示
-    const choice = await notify.error("svn.auth.required", [], {
-      buttons: [getMessage("svn.auth.button")],
+    const choice = await notify.error("scm.svn.auth.required", [], {
+      buttons: [getMessage("scm.svn.auth.button")],
     });
 
-    if (choice === getMessage("svn.auth.button")) {
+    if (choice === getMessage("scm.svn.auth.button")) {
       // 执行svn命令触发认证对话框
       await execAsync(`"${this.svnPath}" info`, {
         cwd: workspacePath,
         env: this.getEnvironmentConfig(),
       });
     } else {
-      throw new Error(getMessage("svn.auth.cancelled"));
+      throw new Error(getMessage("scm.svn.auth.cancelled"));
     }
   }
 

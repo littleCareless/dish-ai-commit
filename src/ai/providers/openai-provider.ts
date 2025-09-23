@@ -161,11 +161,11 @@ export class OpenAIProvider extends BaseOpenAIProvider {
   async refreshModels(): Promise<string[]> {
     try {
       const models = await this.openai.models.list();
-      notify.info("openai.models.update.success");
+      notify.info("provider.models.updated", ["OpenAI"]);
       return models.data.map((model) => model.id);
     } catch (error) {
       console.error("Failed to fetch OpenAI models:", error);
-      notify.error("openai.models.fetch.failed");
+      notify.error("provider.models.fetch.failed", ["OpenAI"]);
       return [];
     }
   }

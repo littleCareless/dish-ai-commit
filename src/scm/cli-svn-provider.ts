@@ -190,7 +190,7 @@ export class CliSvnProvider implements ISCMProvider {
   async copyToClipboard(message: string): Promise<void> {
     try {
       await vscode.env.clipboard.writeText(message);
-      notify.info("commit.message.copied");
+      notify.info("info.copied.to.clipboard", [getMessage("commit.message.label")]);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";

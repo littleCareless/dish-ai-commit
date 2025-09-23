@@ -279,7 +279,7 @@ export class SettingsViewMessageHandler {
   private async handleClearIndex(webview: vscode.Webview): Promise<void> {
     if (!this._embeddingService) {
       const errorMessage = "EmbeddingService is not initialized.";
-      notify.error("embedding.service.not.initialized");
+      notify.error("embedding.error.save.failed");
       return;
     }
     try {
@@ -289,7 +289,7 @@ export class SettingsViewMessageHandler {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-      notify.error("index.clear.failed", [errorMessage]);
+      notify.error("embedding.error.clear.failed", [errorMessage]);
     }
   }
 

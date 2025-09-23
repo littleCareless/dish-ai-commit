@@ -7,7 +7,7 @@ import {
   type ModelNames,
 } from "../types";
 import { AbstractAIProvider } from "./abstract-ai-provider";
-import { getMessage } from "../../utils/i18n";
+import { getMessage, formatMessage } from "../../utils/i18n";
 import {
   getPRSummarySystemPrompt,
   getPRSummaryUserPrompt,
@@ -38,7 +38,7 @@ export class VSCodeProvider extends AbstractAIProvider {
   ): Promise<{ content: string; usage?: any; jsonContent?: any }> {
     const models = await vscode.lm.selectChatModels();
     if (!models || models.length === 0) {
-      throw new Error(getMessage("vscode.no.models.available"));
+      throw new Error(formatMessage("provider.models.empty", ["VSCode"]));
     }
 
     const chatModel =
@@ -119,7 +119,7 @@ export class VSCodeProvider extends AbstractAIProvider {
   ): Promise<AsyncIterable<string>> {
     const models = await vscode.lm.selectChatModels();
     if (!models || models.length === 0) {
-      throw new Error(getMessage("vscode.no.models.available"));
+      throw new Error(formatMessage("provider.models.empty", ["VSCode"]));
     }
 
     const chatModel =

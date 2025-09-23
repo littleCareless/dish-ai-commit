@@ -32,7 +32,7 @@ export class ContextLogger {
   private logExcludedBlocks(excludedBlockNames: string[]): void {
     if (excludedBlockNames.length > 0 && !this.suppressNonCriticalWarnings) {
       notify.warn(
-        formatMessage("context.block.removed", [excludedBlockNames.join(", ")])
+        formatMessage("context.info.block.removed", [excludedBlockNames.join(", ")])
       );
     }
   }

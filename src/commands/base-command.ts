@@ -31,7 +31,7 @@ export abstract class BaseCommand {
    */
   protected async validateConfig(): Promise<boolean> {
     if (!(await ConfigurationManager.getInstance().validateConfiguration())) {
-      await notify.error(getMessage("command.execution.failed"));
+      await notify.error(getMessage("error.command.execution.failed"));
       return false;
     }
     return true;
@@ -178,18 +178,18 @@ export abstract class BaseCommand {
     }
 
     const acceptAlways: vscode.MessageItem = {
-      title: getMessage("confirm.ai.provider.tos.accept"),
+      title: getMessage("button.accept"),
     };
     const acceptWorkspace: vscode.MessageItem = {
-      title: getMessage("confirm.ai.provider.tos.acceptWorkspace"),
+      title: getMessage("button.acceptWorkspace"),
     };
     const cancel: vscode.MessageItem = {
-      title: getMessage("confirm.ai.provider.tos.cancel"),
+      title: getMessage("button.cancel"),
       isCloseAffordance: true,
     };
 
     const result = await notify.info(
-      "confirm.ai.provider.tos.message",
+      "provider.tos.message",
       undefined,
       { 
         modal: true, 

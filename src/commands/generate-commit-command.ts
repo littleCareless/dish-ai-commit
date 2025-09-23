@@ -127,8 +127,8 @@ export class GenerateCommitCommand extends BaseCommand {
       console.log(`Working with repository: ${repositoryPath}`);
 
       await ProgressHandler.withProgress(
-        formatMessage("progress.generating.commit", [
-          scmProvider.type.toLocaleUpperCase(),
+        formatMessage("progress.generating", [
+          `${scmProvider.type.toLocaleUpperCase()} 提交信息`,
         ]),
         (progress, token) =>
           this.performStreamingGeneration(
@@ -285,7 +285,7 @@ ${currentInput}
     // ===== 新增：自动检测暂存区内容逻辑 =====
     progress.report({
       message:
-        getMessage("progress.detecting.staged.content") || "检测暂存区内容...",
+        formatMessage("progress.detecting", [getMessage("progress.detecting.stagedContent")]) || getMessage("progress.detecting.stagedContent"),
     });
 
     let diffContent: string | undefined;
@@ -357,7 +357,7 @@ ${currentInput}
     }
 
     progress.report({
-      message: getMessage("progress.updating.model.config"),
+      message: formatMessage("progress.updating", [getMessage("progress.updating.modelConfig")]),
     });
     const {
       provider: newProvider,
@@ -367,15 +367,15 @@ ${currentInput}
     } = await this.selectAndUpdateModelConfiguration(provider, model);
 
     if (!selectedModel) {
-      throw new Error(getMessage("no.model.selected"));
+      throw new Error(getMessage("model.no.selected"));
     }
 
     if (!aiProvider.generateCommitStream) {
-      notify.error("provider.does.not.support.streaming", [newProvider]);
+      notify.error("provider.unsupported.streaming", [newProvider]);
       return;
     }
 
-    progress.report({ message: getMessage("progress.preparing.request") });
+    progress.report({ message: formatMessage("progress.preparing", [getMessage("progress.preparing.aiRequest")]) });
 
     // 准备用于生成系统提示的参数
     const tempParams = {
@@ -425,9 +425,9 @@ ${currentInput}
       promptLength > maxTokens * 0.75 &&
       !configuration.features.suppressNonCriticalWarnings
     ) {
-      const useFallbackChoice = getMessage("fallback.use");
-      const continueAnyway = getMessage("prompt.large.continue");
-      const cancel = getMessage("prompt.large.cancel");
+      const useFallbackChoice = getMessage("button.fallback.use");
+      const continueAnyway = getMessage("button.fallback.continue");
+      const cancel = getMessage("button.cancel");
 
       const choice = await notify.warn(
         "prompt.large.warning.with.fallback",
@@ -446,7 +446,7 @@ ${currentInput}
         contextManager.setSystemPrompt(fallbackSystemPrompt);
         notify.info("info.using.fallback.prompt");
       } else if (choice !== continueAnyway) {
-        throw new Error(getMessage("prompt.user.cancelled"));
+        throw new Error(getMessage("user.action.cancelled.for.large.prompt"));
       }
     }
 
@@ -513,7 +513,7 @@ ${currentInput}
       showCommitSuccessNotification();
     } catch (error) {
       if (error instanceof RequestTooLargeError) {
-        const switchToLargerModel = getMessage("error.switch.to.larger.model");
+        const switchToLargerModel = getMessage("button.switch.to.larger.model");
         const choice = await notify.error(
           "error.request.too.large",
           [error.message],
@@ -542,7 +542,7 @@ ${currentInput}
     selectedModel: AIModel
   ) {
     progress.report({
-      message: getMessage("progress.generating.layered.commit"),
+      message: formatMessage("progress.generating", [getMessage("progress.generating.layeredCommitDetails")]),
     });
 
     if (!selectedFiles || selectedFiles.length === 0) {
@@ -554,9 +554,7 @@ ${currentInput}
     const fileDescriptionPromises = selectedFiles.map(async (filePath) => {
       this.throwIfCancelled(token);
       progress.report({
-        message: formatMessage("progress.generating.commit.for.file", [
-          filePath,
-        ]),
+        message: formatMessage("progress.generating", [`提交详情 for ${filePath}`]),
       });
 
       const fileDiff = await scmProvider.getDiff([filePath]);
@@ -580,7 +578,7 @@ ${currentInput}
       const messages = contextManager.buildMessages();
 
       if (!aiProvider.generateCommit) {
-        notify.warn("provider.does.not.support.non.streaming.for.layered", [
+        notify.warn("provider.unsupported.non.streaming.for.layered", [
           aiProvider.getId(),
         ]);
         return null;
@@ -622,7 +620,7 @@ ${currentInput}
         progress
       );
     } else {
-      notify.warn("warn.no.file.descriptions.generated");
+      notify.warn("commit.layered.warn.no.file.descriptions");
     }
   }
 
@@ -635,7 +633,7 @@ ${currentInput}
     progress: vscode.Progress<{ message?: string; increment?: number }>
   ) {
     progress.report({
-      message: getMessage("progress.generating.layered.summary"),
+      message: formatMessage("progress.generating", [getMessage("progress.generating.layeredCommitSummary")]),
     });
 
     const config = ConfigurationManager.getInstance().getConfiguration();
@@ -695,7 +693,7 @@ ${currentInput}
       console.error("Error applying layered commit summary:", error);
       // Fallback to showing raw details if applying fails
       await this._showLayeredCommitDetails(fileChanges, true);
-      notify.error("error.applying.layered.summary");
+      notify.error("error.parsing.layered.summary");
     }
   }
 
@@ -704,11 +702,11 @@ ${currentInput}
     isFallback = false
   ) {
     const title = isFallback
-      ? getMessage("layered.commit.fallback.title")
-      : getMessage("layered.commit.details.title");
+      ? getMessage("commit.layered.fallback.title")
+      : getMessage("commit.layered.title");
     let content = `# ${title}\n\n`;
     if (isFallback) {
-      content += `${getMessage("layered.commit.fallback.description")}\n\n`;
+      content += `${getMessage("commit.layered.fallback.description")}\n\n`;
     }
 
     for (const change of fileChanges) {
@@ -720,7 +718,7 @@ ${currentInput}
       language: "markdown",
     });
     await vscode.window.showTextDocument(document);
-    notify.info("layered.commit.details.generated");
+    notify.info("commit.layered.generated");
   }
 
   private async _buildLayeredSummaryContextManager(
@@ -910,7 +908,7 @@ ${currentInput}
   ) {
     this.throwIfCancelled(token);
     progress.report({
-      message: getMessage("progress.calling.ai.stream"),
+      message: formatMessage("progress.calling", [getMessage("progress.calling.aiService")]),
     });
 
     // 使用 contextManager 的 buildWithRetry 方法来获取流
@@ -951,7 +949,7 @@ ${currentInput}
   ) {
     this.throwIfCancelled(token);
     progress.report({
-      message: getMessage("progress.calling.ai.function"),
+      message: formatMessage("progress.calling", [getMessage("progress.calling.aiFunction")]),
     });
 
     if (!aiProvider.generateCommitWithFunctionCalling) {
@@ -977,8 +975,8 @@ ${currentInput}
    */
   throwIfCancelled(token: vscode.CancellationToken) {
     if (token.isCancellationRequested) {
-      console.log(getMessage("user.cancelled.operation.log"));
-      throw new Error(getMessage("user.cancelled.operation.error"));
+      console.log(getMessage("user.action.cancelled.log"));
+      throw new Error(getMessage("error.user.cancelled"));
     }
   }
 }

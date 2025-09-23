@@ -121,11 +121,11 @@ export class OpenRouterProvider extends BaseOpenAIProvider {
   async refreshModels(): Promise<string[]> {
     try {
       const models = await this.openai.models.list();
-      notify.info("openrouter.models.update.success");
+      notify.info("provider.models.updated", ["OpenRouter"]);
       return models.data.map((model) => model.id);
     } catch (error) {
       console.error("Failed to fetch OpenRouter models:", error);
-      notify.error("openrouter.models.fetch.failed");
+      notify.error("provider.models.fetch.failed", ["OpenRouter"]);
       return [];
     }
   }

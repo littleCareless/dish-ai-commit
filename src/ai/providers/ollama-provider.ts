@@ -97,11 +97,11 @@ export class OllamaProvider extends AbstractAIProvider {
   async refreshModels(): Promise<string[]> {
     try {
       const response = await this.ollama.list();
-      notify.info("ollama.models.updated");
+      notify.info("provider.models.updated", ["Ollama"]);
       return response.models.map((model) => model.name);
     } catch (error) {
       console.error("Failed to fetch Ollama models:", error);
-      notify.error("ollama.models.fetch.failed");
+      notify.error("provider.models.fetch.failed", ["Ollama"]);
       return [];
     }
   }
@@ -269,7 +269,7 @@ export class OllamaProvider extends AbstractAIProvider {
       );
     } catch (error) {
       console.error("Failed to fetch Ollama models:", error);
-      notify.error("ollama.models.fetch.failed");
+      notify.error("provider.models.fetch.failed", ["Ollama"]);
       return Promise.reject(error);
     }
   }

@@ -178,7 +178,7 @@ export class GitProvider implements ISCMProvider {
       }
 
       if (files && files.length > 0) {
-        // notify.info(formatMessage("diff.files.selected", [files.length]));
+        // notify.info(formatMessage("diff.info.selected", [files.length]));
         // 处理指定文件的差异
         for (const file of files) {
           const fileStatus = await this.getFileStatus(
@@ -279,7 +279,7 @@ export class GitProvider implements ISCMProvider {
               .split("\n")
               .filter(Boolean).length;
             if (fileCount > 0) {
-              notify.info(formatMessage("diff.staged.info", [fileCount]));
+              notify.info(formatMessage("diff.info.staged", [fileCount]));
             }
           } catch (error) {
             console.warn(
@@ -339,7 +339,7 @@ export class GitProvider implements ISCMProvider {
             const fileCount = allFiles.size;
 
             if (fileCount > 0) {
-              notify.info(formatMessage("diff.all.info", [fileCount]));
+              notify.info(formatMessage("diff.info.all", [fileCount]));
             }
           } catch (error) {
             console.warn(
@@ -442,8 +442,8 @@ export class GitProvider implements ISCMProvider {
       return DiffProcessor.process(diffOutput, "git");
     } catch (error) {
       if (error instanceof Error) {
-        console.error(formatMessage("scm.diff.error", ["Git", error])); // 添加调试日志
-        notify.error(formatMessage("scm.diff.failed", ["Git", error.message]));
+        console.error(formatMessage("scm.error.diff", ["Git", error])); // 添加调试日志
+        notify.error(formatMessage("scm.error.diff", ["Git", error.message]));
       }
       throw error;
     }
@@ -549,13 +549,13 @@ export class GitProvider implements ISCMProvider {
     } else {
       try {
         await vscode.env.clipboard.writeText(message);
-        notify.info("commit.message.copied");
+        notify.info("info.copied.to.clipboard", [getMessage("commit.message.label")]);
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
         notify.error("commit.message.copy.failed", [errorMessage]);
         // Fallback to showing the message in an information dialog
-        notify.info("commit.message.manual.copy", [message]);
+        notify.info("info.manual.copy", [getMessage("commit.message.label"), message]);
       }
     }
   }
@@ -589,12 +589,12 @@ export class GitProvider implements ISCMProvider {
     } else {
       try {
         await vscode.env.clipboard.writeText(message);
-        notify.info("commit.message.copied");
+        notify.info("info.copied.to.clipboard", [getMessage("commit.message.label")]);
       } catch (error) {
         const errorMessage =
           error instanceof Error ? error.message : "Unknown error";
         notify.error("commit.message.copy.failed", [errorMessage]);
-        notify.info("commit.message.manual.copy", [message]);
+        notify.info("info.manual.copy", [getMessage("commit.message.label"), message]);
       }
     }
   }
@@ -635,7 +635,7 @@ export class GitProvider implements ISCMProvider {
           baseBranch = baseBranch.replace("origin/", ""); // 更新为本地分支名
         } catch (localError) {
           console.warn(
-            formatMessage("git.base.branch.not.found", [baseBranch])
+            formatMessage("branch.base.not.found", [baseBranch])
           );
           // 尝试使用默认的 main 或者 master
           const commonBranches = ["main", "master"];
@@ -664,11 +664,11 @@ export class GitProvider implements ISCMProvider {
             }
           }
           if (!foundCommonBranch) {
-            notify.warn("git.base.branch.not.found.default", [baseBranch]);
+            notify.warn("branch.base.not.found.default", [baseBranch]);
             // 如果都找不到，可能需要用户手动指定，或者抛出错误
             // 这里我们暂时返回空数组，并在日志中记录
             console.error(
-              formatMessage("git.base.branch.not.found.error", [baseBranch])
+              formatMessage("branch.base.not.found.error", [baseBranch])
             );
             return [];
           }
@@ -689,7 +689,7 @@ export class GitProvider implements ISCMProvider {
     } catch (error) {
       if (error instanceof Error) {
         console.error("Git log error:", error);
-        notify.error(formatMessage("scm.log.failed", ["Git", error.message]));
+        notify.error(formatMessage("scm.error.log.failed", ["Git", error.message]));
       }
       // 对于获取日志失败的情况，返回空数组而不是抛出错误，让调用者处理
       return [];
@@ -733,7 +733,7 @@ export class GitProvider implements ISCMProvider {
         console.error("Git branch list error:", error);
         // 考虑添加一个新的 i18n key for this error
         notify.error(
-          formatMessage("scm.branch.list.failed", ["Git", error.message])
+          formatMessage("scm.error.branch.list.failed", ["Git", error.message])
         );
       }
       return [];
@@ -779,7 +779,7 @@ export class GitProvider implements ISCMProvider {
   async copyToClipboard(message: string): Promise<void> {
     try {
       await vscode.env.clipboard.writeText(message);
-      notify.info("commit.message.copied");
+      notify.info("info.copied.to.clipboard", [getMessage("commit.message.label")]);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";

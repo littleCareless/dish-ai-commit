@@ -38,7 +38,7 @@ export class WeeklyReportMessageHandler {
         data: { users, currentUser },
       });
     } catch (error: any) {
-      notify.error("weeklyReport.getUsers.failed", [error.message || error], {
+      notify.error("weeklyReport.get.users.failed", [error.message || error], {
         timeout: 3000,
       });
       webview.postMessage({
@@ -67,14 +67,14 @@ export class WeeklyReportMessageHandler {
       });
       const formattedPeriod = this.formatPeriod(message.data.period);
       // 可以考虑修改通知信息，比如指明是为哪些用户生成的报告
-      notify.info("weeklyReport.teamGeneration.success", [
+      notify.info("weeklyReport.generation.team.success", [
         formattedPeriod,
         message.data.users.join(", "),
       ]);
       showWeeklyReportSuccessNotification();
     } catch (error: any) {
       notify.error(
-        "weeklyReport.teamGeneration.failed",
+        "weeklyReport.generation.team.failed",
         [error.message || error],
         {
           timeout: 3000,

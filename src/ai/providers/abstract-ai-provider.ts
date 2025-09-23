@@ -173,7 +173,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       }
     } catch (error) {
       throw new Error(
-        formatMessage("codeReview.generation.failed", [
+        formatMessage("review.generation.failed", [
           error instanceof Error ? error.message : String(error),
         ])
       );
@@ -202,7 +202,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       return result;
     } catch (error) {
       throw new Error(
-        formatMessage("branchName.generation.failed", [
+        formatMessage("branch.name.generation.failed", [
           error instanceof Error ? error.message : String(error),
         ])
       );
@@ -331,7 +331,8 @@ export abstract class AbstractAIProvider implements AIProvider {
       return { summary, fileChanges };
     } catch (error) {
       throw new Error(
-        formatMessage("layeredCommit.generation.failed", [
+        formatMessage("error.generation.failed", [
+          "分层提交",
           error instanceof Error ? error.message : String(error),
         ])
       );

@@ -76,7 +76,7 @@ export class SmartTruncator {
     block.content = this.tokenCalculator.decodeTokens(truncatedTokens);
     
     if (!this.suppressNonCriticalWarnings) {
-      notify.warn(formatMessage("context.block.truncated", [block.name]));
+      notify.warn(formatMessage("context.info.block.truncated", [block.name]));
     }
     
     return true;
@@ -94,7 +94,7 @@ export class SmartTruncator {
       const [removedBlock] = this.blocks.splice(blockIndex, 1);
       
       if (!this.suppressNonCriticalWarnings) {
-        notify.warn(formatMessage("context.block.removed", [removedBlock.name]));
+        notify.warn(formatMessage("context.info.block.removed", [removedBlock.name]));
       }
       
       return true;

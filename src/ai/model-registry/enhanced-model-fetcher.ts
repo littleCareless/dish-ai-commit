@@ -1,3 +1,4 @@
+import { getMessage } from "../../utils/i18n";
 /**
  * 增强的模型信息获取器
  * 集成模型验证和智能匹配功能
@@ -195,7 +196,7 @@ export class EnhancedModelFetcher {
       const models = modelsData.data || [];
 
       if (models.length === 0) {
-        throw new Error("API返回空的模型列表");
+        throw new Error(getMessage("error.empty.model.list"));
       }
 
       // 3. 查找目标模型

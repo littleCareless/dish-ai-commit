@@ -40,13 +40,13 @@ export class ReviewCodeCommand extends BaseCommand {
         // 检查是否有选中的文件
         const selectedFiles = SCMDetectorService.getSelectedFiles(resources);
         if (!selectedFiles || selectedFiles.length === 0) {
-          await notify.warn("no.changes.selected");
+          await notify.warn("workspace.no.changes.selected");
           return;
         }
 
         progress.report({
           increment: 5,
-          message: getMessage("detecting.scm.provider"),
+          message: formatMessage("progress.generating", [getMessage("progress.detecting.scmProvider")]),
         });
         // 检测SCM提供程序
         const result = await this.detectSCMProvider(selectedFiles);
@@ -75,7 +75,7 @@ export class ReviewCodeCommand extends BaseCommand {
         const diffs = new Map<string, string>();
         // 并行收集所有差异 - 15% 进度 (5 initial + 15 = 20 total for setup)
         progress.report({
-          message: getMessage("getting.file.changes"),
+          message: getMessage("workspace.getting.file.changes"),
         });
         const diffPromises = selectedFiles.map(async (filePath) => {
           try {
@@ -95,7 +95,7 @@ export class ReviewCodeCommand extends BaseCommand {
         progress.report({ increment: 15 }); // Report progress after all diffs are collected
 
         if (diffs.size === 0) {
-          await notify.warn(getMessage("no.changes.found"));
+          await notify.warn(getMessage("workspace.no.changes.found"));
           return;
         }
 
@@ -178,7 +178,7 @@ export class ReviewCodeCommand extends BaseCommand {
       });
     } catch (error) {
       console.log("ReviewCodeCommand error", error);
-      await this.handleError(error, "code.review.failed");
+      await this.handleError(error, "review.failed");
     }
   }
 

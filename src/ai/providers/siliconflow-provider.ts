@@ -198,11 +198,11 @@ export class SiliconFlowProvider extends BaseOpenAIProvider {
   async refreshModels(): Promise<string[]> {
     try {
       const models = await this.openai.models.list();
-      notify.info("siliconflow.models.update.success");
+      notify.info("provider.models.updated", ["SiliconFlow"]);
       return models.data.map((model) => model.id);
     } catch (error) {
       console.error("Failed to fetch SiliconFlow models:", error);
-      notify.error("siliconflow.models.fetch.failed");
+      notify.error("provider.models.fetch.failed", ["SiliconFlow"]);
       return [];
     }
   }

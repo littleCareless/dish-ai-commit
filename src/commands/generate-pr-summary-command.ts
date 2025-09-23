@@ -32,18 +32,18 @@ export class GeneratePRSummaryCommand extends BaseCommand {
 
     try {
       await ProgressHandler.withProgress(
-        getMessage("progress.generating.pr.summary"),
+        formatMessage("progress.generating", [getMessage("progress.generating.prSummary")]),
         async (progress, token) => {
           if (token.isCancellationRequested) {
             return;
           }
           progress.report({
             increment: 5,
-            message: getMessage("detecting.scm.provider"),
+            message: formatMessage("progress.detecting", [getMessage("progress.detecting.scmProvider")]),
           });
           const result = await this.detectSCMProvider();
           if (!result) {
-            notify.error("scm.not.detected");
+            notify.error("scm.provider.not.detected");
             return;
           }
           const { scmProvider } = result;
@@ -87,10 +87,10 @@ export class GeneratePRSummaryCommand extends BaseCommand {
                 sortedBranches,
                 {
                   placeHolder: formatMessage(
-                    "pr.summary.select.base.branch.placeholder",
+                    "pr.summary.base.branch.placeholder",
                     [baseBranch]
                   ), // 新增 i18n key
-                  title: getMessage("pr.summary.select.base.branch.title"), // 新增 i18n key
+                  title: getMessage("pr.summary.base.branch.title"), // 新增 i18n key
                 }
               );
 
@@ -112,7 +112,7 @@ export class GeneratePRSummaryCommand extends BaseCommand {
 
           progress.report({
             increment: 15,
-            message: getMessage("fetching.commit.log"),
+            message: formatMessage("progress.fetching", [getMessage("progress.fetching.commitLog")]),
           });
           const commitMessages = await scmProvider.getCommitLog(
             baseBranch,
@@ -139,14 +139,14 @@ export class GeneratePRSummaryCommand extends BaseCommand {
           } = await this.selectAndUpdateModelConfiguration(provider, model);
 
           if (!selectedModel || !aiProvider) {
-            notify.error("no.model.selected");
+            notify.error("model.no.selected");
             return;
           }
 
           // 检查AI Provider是否支持生成PR摘要的方法
           if (!aiProvider.generatePRSummary) {
             notify.error(
-              formatMessage("provider.does.not.support.feature", [
+              formatMessage("provider.unsupported.feature", [
                 newProvider,
                 "PR Summary Generation",
               ])
@@ -173,7 +173,7 @@ export class GeneratePRSummaryCommand extends BaseCommand {
           // 确保 aiProvider.generatePRSummary 存在
           if (!aiProvider.generatePRSummary) {
             const errorMessage = formatMessage(
-              "provider.does.not.support.feature",
+              "provider.unsupported.feature",
               [newProvider, "PR Summary Generation"]
             );
             notify.error(errorMessage);
@@ -214,7 +214,7 @@ export class GeneratePRSummaryCommand extends BaseCommand {
     } catch (error) {
       console.error("Error generating PR summary:", error);
       if (error instanceof Error) {
-        notify.error("pr.summary.generation.failed.error", [error.message]);
+        notify.error("pr.summary.generation.failed", [error.message]);
       }
     }
   }

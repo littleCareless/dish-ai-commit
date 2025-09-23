@@ -64,7 +64,7 @@ export class AuthorService {
     // If both methods fail, prompt user for input
     const manualAuthor = await this.promptForAuthor();
     if (!manualAuthor) {
-      throw new Error(getMessage("author.svn.not.found"));
+      throw new Error(getMessage("scm.author.not.found"));
     }
 
     return manualAuthor;
@@ -76,8 +76,8 @@ export class AuthorService {
    */
   private async promptForAuthor(): Promise<string | undefined> {
     return vscode.window.showInputBox({
-      prompt: getMessage("author.manual.input.prompt"),
-      placeHolder: getMessage("author.manual.input.placeholder"),
+      prompt: getMessage("scm.author.manual.prompt"),
+      placeHolder: getMessage("scm.author.manual.placeholder"),
     });
   }
 

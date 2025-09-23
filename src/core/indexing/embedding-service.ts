@@ -65,7 +65,7 @@ async function generateOpenAIEmbeddings(
 
     if (!response.data || response.data.length === 0) {
       throw new EmbeddingServiceError(
-        formatMessage("embedding.openai.noEmbeddings"),
+        formatMessage("embedding.provider.openai.noEmbeddings"),
         {
           source: "openai",
           type: "invalid_response",
@@ -96,7 +96,7 @@ async function generateOpenAIEmbeddings(
     throw new EmbeddingServiceError(
       error instanceof Error
         ? error.message
-        : formatMessage("embedding.openai.unknownError"),
+        : formatMessage("embedding.provider.openai.unknownError"),
       {
         source: "openai",
         type: "unknown",
@@ -114,7 +114,7 @@ async function generateOllamaEmbeddings(
 ): Promise<number[][]> {
   if (!baseUrl) {
     throw new EmbeddingServiceError(
-      formatMessage("ollama.baseUrl.missing"),
+      formatMessage("embedding.provider.ollama.baseUrl.missing"),
       {
         source: "internal",
         type: "unknown",
@@ -143,7 +143,7 @@ async function generateOllamaEmbeddings(
           `[EmbeddingService] Ollama API request failed with status ${response.status}: ${errorBody}`
         );
         throw new EmbeddingServiceError(
-          formatMessage("embedding.ollama.requestFailed", [response.status]),
+          formatMessage("embedding.provider.ollama.requestFailed", [response.status]),
           {
             source: "ollama",
             type: "api_error",
@@ -164,7 +164,7 @@ async function generateOllamaEmbeddings(
           result
         );
         throw new EmbeddingServiceError(
-          formatMessage("embedding.ollama.invalidFormat"),
+          formatMessage("embedding.provider.ollama.invalidFormat"),
           {
             source: "ollama",
             type: "invalid_response",
@@ -443,8 +443,8 @@ export class EmbeddingService {
             `[EmbeddingService] OpenAI Compatible API Key or Model is not configured. Skipping embedding generation.`
           );
           throw new Error(
-            formatMessage("embedding.provider.apiKey.notConfigured", [
-              "OpenAI Compatible",
+            formatMessage("config.missing", [
+              "OpenAI Compatible API Key",
             ])
           );
         }
@@ -466,7 +466,7 @@ export class EmbeddingService {
             `[EmbeddingService] OpenAI API Key is not configured. Skipping embedding generation.`
           );
           throw new Error(
-            formatMessage("embedding.provider.apiKey.notConfigured", ["OpenAI"])
+            formatMessage("config.missing", ["OpenAI API Key"])
           );
         }
         embeddings = await generateOpenAIEmbeddings(
@@ -523,7 +523,7 @@ export class EmbeddingService {
         throw new EmbeddingServiceError(
           dbError instanceof Error
             ? dbError.message
-            : formatMessage("embedding.save.failed"),
+            : formatMessage("embedding.error.save.failed"),
           {
             source: "qdrant",
             type: "api_error", // Assuming any error from the store is an API error
@@ -537,7 +537,7 @@ export class EmbeddingService {
       webview.postMessage({
         command: "indexingProgress",
         data: {
-          message: formatMessage("embedding.file.indexingComplete", [filePath]),
+          message: formatMessage("embedding.indexing.complete", [filePath]),
           current: this.processedBlocks,
           total: this.totalSemanticBlocks,
         },
@@ -552,7 +552,7 @@ export class EmbeddingService {
         throw new EmbeddingServiceError(
           error instanceof Error
             ? error.message
-            : formatMessage("embedding.indexing.unknownError"),
+            : formatMessage("embedding.error.indexing.unknown"),
           {
             source: "internal",
             type: "unknown",
@@ -582,7 +582,7 @@ export class EmbeddingService {
       throw new EmbeddingServiceError(
         error instanceof Error
           ? error.message
-          : formatMessage("embedding.delete.failed"),
+          : formatMessage("embedding.error.delete.failed"),
         {
           source: "qdrant",
           type: "api_error",
@@ -610,7 +610,7 @@ export class EmbeddingService {
       throw new EmbeddingServiceError(
         error instanceof Error
           ? error.message
-          : formatMessage("embedding.clear.failed"),
+          : formatMessage("embedding.error.clear.failed"),
         {
           source: "qdrant",
           type: "api_error",
@@ -640,7 +640,7 @@ export class EmbeddingService {
     if (embeddingProvider === "Ollama") {
       if (!this.ollamaBaseUrl) {
         console.log(
-          formatMessage("embedding.ollama.baseUrl.missing.forSearch")
+          formatMessage("embedding.provider.ollama.baseUrl.missing.forSearch")
         );
         return [];
       }
@@ -692,7 +692,7 @@ export class EmbeddingService {
 
     if (!queryEmbeddings || queryEmbeddings.length === 0) {
       console.error("[EmbeddingService] Failed to generate query embedding.");
-      throw new Error(formatMessage("embedding.query.failed"));
+      throw new Error(formatMessage("embedding.error.query.failed"));
     }
     const queryEmbedding = queryEmbeddings[0];
     console.log(
@@ -723,7 +723,7 @@ export class EmbeddingService {
       throw new EmbeddingServiceError(
         error instanceof Error
           ? error.message
-          : formatMessage("embedding.search.failed"),
+          : formatMessage("embedding.error.search.failed"),
         {
           source: "qdrant",
           type: "api_error",
@@ -742,7 +742,7 @@ export class EmbeddingService {
           "[EmbeddingService] Failed to check index status or invalid response:",
           results
         );
-        throw new Error(formatMessage("embedding.vectorStore.connectFailed"));
+        throw new Error(formatMessage("embedding.error.vectorStore.connect.failed"));
       }
       return results; // 如果找到任何向量，则表示已建立索引
     } catch (error) {
@@ -754,13 +754,13 @@ export class EmbeddingService {
 
       throw new EmbeddingServiceError(
         isFetchError
-          ? formatMessage("embedding.qdrant.connectFailed", [
+          ? formatMessage("embedding.error.qdrant.connect.failed", [
               qdUrl,
               error.message,
             ])
           : error instanceof Error
           ? error.message
-          : formatMessage("embedding.vectorStore.statusCheck.unknownError"),
+          : formatMessage("embedding.error.vectorStore.statusCheck.unknown"),
         {
           source: "qdrant",
           type: "api_error",
