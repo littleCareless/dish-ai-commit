@@ -52,14 +52,66 @@ export class SettingsViewHTMLProvider {
                 </div>
                 
                 <script nonce="${nonce}">
+                    // 获取当前VSCode主题
+                    function getVSCodeTheme() {
+                        const body = document.body;
+                        if (body.classList.contains('vscode-dark')) {
+                            return 'dark';
+                        } else if (body.classList.contains('vscode-light')) {
+                            return 'light';
+                        } else if (body.classList.contains('vscode-high-contrast')) {
+                            return 'high-contrast';
+                        }
+                        return 'light'; // 默认为浅色主题
+                    }
+
+                    // 应用主题到根元素
+                    function applyTheme() {
+                        const theme = getVSCodeTheme();
+                        const root = document.documentElement;
+                        const body = document.body;
+                        
+                        // 移除所有主题类
+                        root.classList.remove('light', 'dark', 'high-contrast');
+                        // 添加当前主题类
+                        root.classList.add(theme);
+                        
+                        // 设置Arco Design主题
+                        if (theme === 'dark' || theme === 'high-contrast') {
+                            body.setAttribute('arco-theme', 'dark');
+                        } else {
+                            body.removeAttribute('arco-theme');
+                        }
+                        
+                        // 触发主题变更事件
+                        window.dispatchEvent(new CustomEvent('vscode-theme-changed', { detail: theme }));
+                    }
+
+                    // 监听主题变化
+                    const observer = new MutationObserver((mutations) => {
+                        mutations.forEach((mutation) => {
+                            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+                                applyTheme();
+                            }
+                        });
+                    });
+
+                    // 页面加载完成后初始化主题
+                    document.addEventListener('DOMContentLoaded', () => {
+                        applyTheme();
+                        // 开始监听body的class变化
+                        observer.observe(document.body, {
+                            attributes: true,
+                            attributeFilter: ['class']
+                        });
+                    });
+
                     // 向 webview-ui 传递初始数据
-                    // webview-ui/src/App.tsx 或类似入口文件应读取此数据以确定渲染内容
                     window.initialData = {
-                        viewType: 'settingsPage'
-                        // 你可以在这里传递更多初始数据给 webview UI, 例如：
-                        // vscodeTheme: document.body.className // 用于同步 VS Code 主题
+                        viewType: 'settingsPage',
+                        vscodeTheme: getVSCodeTheme()
                     };
-                    // 用于调试：在 webview 的开发者工具控制台中检查此对象
+                    
                     console.log('SettingsViewProvider: initialData set', window.initialData);
                     window.qdrantUrl = window.initialData.qdrantUrl;
                     window.qdrantCollectionName = window.initialData.qdrantCollectionName;

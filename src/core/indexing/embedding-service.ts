@@ -48,7 +48,7 @@ async function generateOpenAIEmbeddings(
 ): Promise<number[][]> {
   if (!apiKey) {
     throw new EmbeddingServiceError(
-      formatMessage("embedding.openai.apiKey.missing"),
+      formatMessage("apiKey.missing", ["OpenAI"]),
       {
         source: "internal",
         type: "unknown",
@@ -114,7 +114,7 @@ async function generateOllamaEmbeddings(
 ): Promise<number[][]> {
   if (!baseUrl) {
     throw new EmbeddingServiceError(
-      formatMessage("embedding.ollama.baseUrl.missing"),
+      formatMessage("ollama.baseUrl.missing"),
       {
         source: "internal",
         type: "unknown",
@@ -656,7 +656,7 @@ export class EmbeddingService {
     } else if (embeddingProvider === "openai-compatible") {
       if (!this.openaiCompatibleApiKey || !this.openaiCompatibleModel) {
         console.log(
-          formatMessage("embedding.provider.apiKey.missing.forSearch", [
+          formatMessage("apiKey.missing", [
             "OpenAI Compatible",
           ])
         );
@@ -672,7 +672,7 @@ export class EmbeddingService {
       // Default to OpenAI
       if (!this.openaiApiKey) {
         console.log(
-          formatMessage("embedding.provider.apiKey.missing.forSearch", [
+          formatMessage("apiKey.missing", [
             "OpenAI",
           ])
         );

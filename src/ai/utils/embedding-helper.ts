@@ -46,7 +46,7 @@ ${relatedCodeContext}
 `;
           if (
             params.additionalContext &&
-            params.additionalContext.trim().length > 0
+            params.additionalContext?.trim().length > 0
           ) {
             params.additionalContext += `\n\n${similarCodeContext}`;
           } else {

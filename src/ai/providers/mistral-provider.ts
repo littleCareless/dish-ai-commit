@@ -100,7 +100,7 @@ export class MistralAIProvider extends AbstractAIProvider {
     }
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
-    const messages = this.buildProviderMessages(params);
+    const messages = await this.buildProviderMessages(params);
 
     try {
       const response = await this.client.chat.complete({
@@ -134,7 +134,7 @@ export class MistralAIProvider extends AbstractAIProvider {
     }
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
-    const messages = this.buildProviderMessages(params);
+    const messages = await this.buildProviderMessages(params);
 
     const processStream = async function* (
       this: MistralAIProvider
@@ -234,9 +234,11 @@ export class MistralAIProvider extends AbstractAIProvider {
     return { content: response.content, usage: response.usage };
   }
 
-  protected buildProviderMessages(params: AIRequestParams): any[] {
+  protected async buildProviderMessages(
+    params: AIRequestParams
+  ): Promise<any[]> {
     if (!params.messages || params.messages.length === 0) {
-      const systemPrompt = getSystemPrompt(params);
+      const systemPrompt = await getSystemPrompt(params);
       const userPrompt = params.additionalContext || "";
       const userContent = params.diff;
 

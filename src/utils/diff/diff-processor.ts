@@ -145,7 +145,7 @@ export class DiffProcessor {
         `# FILE: ${chunk.filename}`,
         "# ORIGINAL CODE:",
         `\`\`\`${language}`,
-        originalContent.trim(),
+        originalContent?.trim(),
         "```",
       ].join("\n");
     }
@@ -155,7 +155,7 @@ export class DiffProcessor {
       `# FILE: ${chunk.filename}`,
       "# CODE CHANGES:",
       "```diff",
-      simplifiedDiff.trim(),
+      simplifiedDiff?.trim(),
       "```",
     ].join("\n");
 

@@ -1,8 +1,9 @@
 import * as vscode from "vscode";
 import { ConfigurationManager } from "../config/configuration-manager";
 import { AIProviderFactory } from "../ai/ai-provider-factory";
-import { SCMFactory } from "../scm/scm-provider";
+import { ISCMProvider } from "../scm/scm-provider";
 import { ModelPickerService } from "../services/model-picker-service";
+import { SCMDetectorService } from "../services/scm-detector-service";
 import { notify } from "../utils/notification/notification-manager";
 import { getMessage, formatMessage } from "../utils/i18n";
 import { validateAndGetModel } from "../utils/ai/model-validation";
@@ -129,54 +130,18 @@ export abstract class BaseCommand {
   }
 
   /**
-   * 获取选中的文件列表
-   * @param resourceStates - 源代码管理资源状态
-   * @returns 文件路径列表
+   * 检测并获取SCM提供程序。
+   * 此方法将所有复杂的检测逻辑委托给 SCMDetectorService。
+   * @param {vscode.SourceControlResourceState | vscode.SourceControlResourceState[] | string[] | undefined} resourcesOrFiles - 可选的资源状态、文件路径列表或字符串数组
+   * @returns SCM提供程序实例和相关信息
    */
-  protected getSelectedFiles(
-    resourceStates?:
+  protected async detectSCMProvider(
+    resourcesOrFiles?:
       | vscode.SourceControlResourceState
       | vscode.SourceControlResourceState[]
-  ): string[] | undefined {
-    if (!resourceStates) {
-      return undefined;
-    }
-
-    const states = Array.isArray(resourceStates)
-      ? resourceStates
-      : [resourceStates];
-
-
-    console.log("Number of selected files:", states?.length);
-
-    if (states.length === 0) {
-      console.warn("No files selected.");
-    }
-
-    return [
-      ...new Set(
-        states
-          .map(
-            (state) =>
-              (state as any)?._resourceUri?.fsPath || state?.resourceUri?.fsPath
-          )
-          .filter(Boolean)
-      ),
-    ];
-  }
-
-  /**
-   * 检测并获取SCM提供程序
-   * @param {string[] | undefined} selectedFiles - 可选的选定文件路径列表
-   * @returns SCM提供程序实例
-   */
-  protected async detectSCMProvider(selectedFiles?: string[]) {
-    const scmProvider = await SCMFactory.detectSCM(selectedFiles);
-    if (!scmProvider) {
-      await notify.error(getMessage("scm.not.detected"));
-      return;
-    }
-    return scmProvider;
+      | string[]
+  ) {
+    return SCMDetectorService.detectSCMProvider(resourcesOrFiles);
   }
 
   /**
@@ -223,20 +188,25 @@ export abstract class BaseCommand {
       isCloseAffordance: true,
     };
 
-    const result = await vscode.window.showInformationMessage(
-      getMessage("confirm.ai.provider.tos.message"),
-      { modal: true },
-      acceptAlways,
-      acceptWorkspace,
-      cancel
+    const result = await notify.info(
+      "confirm.ai.provider.tos.message",
+      undefined,
+      { 
+        modal: true, 
+        buttons: [
+          acceptAlways.title,
+          acceptWorkspace.title,
+          cancel.title
+        ]
+      }
     );
 
-    if (result === acceptWorkspace) {
+    if (result === acceptWorkspace.title) {
       void stateManager.setWorkspace(`confirm:dish:ai:tos`, true).catch();
       return true;
     }
 
-    if (result === acceptAlways) {
+    if (result === acceptAlways.title) {
       void stateManager.setGlobal(`confirm:dish:ai:tos`, true).catch();
       return true;
     }

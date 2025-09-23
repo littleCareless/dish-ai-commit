@@ -18,7 +18,7 @@ import { generateWithRetry, getSystemPrompt } from "../utils/generate-helper"; /
  */
 export interface OpenAIProviderConfig {
   /** OpenAI API密钥 */
-  apiKey: string;
+  apiKey?: string;
   /** API基础URL，对于非官方OpenAI端点可自定义 */
   baseURL?: string;
   /** API版本号 */
@@ -72,16 +72,16 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
    * @protected
    */
   protected createClient(): OpenAI {
+    const apiKey = this.config.apiKey ?? "local-dummy-key";
     const config: any = {
-      apiKey: this.config.apiKey,
+      apiKey: apiKey,
     };
 
     if (this.config.baseURL) {
       config.baseURL = this.config.baseURL;
-      if (this.config.apiKey) {
-        // config.defaultQuery = { "api-version": this.config.apiVersion };
-        config.defaultHeaders = { "api-key": this.config.apiKey };
-      }
+      config.defaultHeaders = {
+        "api-key": apiKey,
+      };
     }
 
     return new OpenAI(config);
@@ -99,9 +99,9 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       maxTokens?: number;
     }
   ): Promise<{ content: string; usage?: any; jsonContent?: any }> {
-    const messages = this.buildProviderMessages(
+    const messages = (await this.buildProviderMessages(
       params
-    ) as ChatCompletionMessageParam[];
+    )) as ChatCompletionMessageParam[];
 
     console.log("Final messages for AI:", JSON.stringify(messages, null, 2));
 
@@ -144,17 +144,17 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       maxTokens?: number;
     }
   ): Promise<AsyncIterable<string>> {
-    const messages = this.buildProviderMessages(
+    const messages = (await this.buildProviderMessages(
       params
-    ) as ChatCompletionMessageParam[];
+    )) as ChatCompletionMessageParam[];
 
     const filteredMessages = messages.filter((msg) => {
       if (typeof msg.content === "string") {
-        return msg.content.trim() !== "";
+        return msg.content?.trim() !== "";
       } else if (Array.isArray(msg.content)) {
         // 过滤掉 content 为空数组或者数组里全是空字符串
         const nonEmptyParts = msg.content.filter((part) => {
-          if (part.type === "text" && part.text.trim() !== "") {
+          if (part.type === "text" && part.text?.trim() !== "") {
             return true;
           }
           // 这里如果有别的类型，也可以加判断
@@ -317,9 +317,9 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
    * @param params AI请求参数
    * @returns 转换后的ChatCompletionMessageParam数组
    */
-  protected buildProviderMessages(params: AIRequestParams): any {
+  protected async buildProviderMessages(params: AIRequestParams): Promise<any> {
     if (!params.messages || params.messages.length === 0) {
-      const systemPrompt = getSystemPrompt(params);
+      const systemPrompt = await getSystemPrompt(params);
       const userPrompt = params.additionalContext || "";
       const userContent = params.diff;
 
@@ -395,4 +395,3 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
     );
   }
 }
-

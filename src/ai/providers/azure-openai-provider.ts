@@ -114,7 +114,7 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
     }
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
-    const messages = this.buildProviderMessages(params);
+    const messages = await this.buildProviderMessages(params);
 
     try {
       const completion = await this.openai!.chat.completions.create({
@@ -161,7 +161,7 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
     }
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
-    const messages = this.buildProviderMessages(params);
+    const messages = await this.buildProviderMessages(params);
 
     const processStream = async function* (
       this: AzureOpenAIProvider
@@ -210,7 +210,11 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
    * @returns 如果API密钥已配置返回true
    */
   async isAvailable(): Promise<boolean> {
-    return !!(this.config.apiKey && this.config.baseURL && this.config.apiVersion);
+    return !!(
+      this.config.apiKey &&
+      this.config.baseURL &&
+      this.config.apiVersion
+    );
   }
 
   /**
@@ -267,9 +271,9 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
     return { content: response.content, usage: response.usage };
   }
 
-  protected buildProviderMessages(
+  protected async buildProviderMessages(
     params: AIRequestParams
-  ): ChatCompletionMessageParam[] {
+  ): Promise<ChatCompletionMessageParam[]> {
     const validRoles: ChatCompletionMessageParam["role"][] = [
       "system",
       "user",
@@ -292,7 +296,7 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
     }
 
     const messages: ChatCompletionMessageParam[] = [];
-    const systemPrompt = getSystemPrompt(params);
+    const systemPrompt = await getSystemPrompt(params);
     messages.push({ role: "system", content: systemPrompt });
 
     let userContent = "";
@@ -302,7 +306,7 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
     if (params.diff) {
       userContent += "\n" + params.diff;
     }
-    if (userContent.trim()) {
+    if (userContent?.trim()) {
       messages.push({ role: "user", content: userContent });
     }
 

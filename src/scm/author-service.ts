@@ -35,7 +35,7 @@ export class AuthorService {
    */
   private async getGitAuthor(): Promise<string> {
     const { stdout } = await execAsync("git config user.name");
-    return stdout.trim();
+    return stdout?.trim();
   }
 
   /**
@@ -108,9 +108,9 @@ export class AuthorService {
       );
       const authors = stdout
         .split("\n")
-        .map((author) => author.trim())
+        .map((author) => author?.trim())
         .filter((author) => author); // 去除空行
-      return [...new Set(authors)]; // 去重
+      return Array.from(new Set(authors)); // 去重
     } catch (error) {
       console.error("Error getting all Git authors:", error);
       // 发生错误时可以返回空数组或抛出特定错误
@@ -141,7 +141,7 @@ export class AuthorService {
       let match;
       const authors = new Set<string>();
       while ((match = authorRegex.exec(stdout)) !== null) {
-        authors.add(match[1].trim());
+        authors.add(match[1]?.trim());
       }
       return Array.from(authors);
     } catch (error) {

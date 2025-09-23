@@ -111,7 +111,7 @@ export class CloudflareWorkersAIProvider extends AbstractAIProvider {
     const modelId = params.model?.id || this.config.defaultModel;
     const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/ai/run/${modelId}`;
 
-    const messages = this.buildProviderMessages(params);
+    const messages = await this.buildProviderMessages(params);
 
     const body = {
       messages,
@@ -165,7 +165,7 @@ export class CloudflareWorkersAIProvider extends AbstractAIProvider {
     const modelId = params.model?.id || this.config.defaultModel;
     const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/ai/run/${modelId}`;
 
-    const messages = this.buildProviderMessages(params);
+    const messages = await this.buildProviderMessages(params);
 
     const body = {
       messages,
@@ -199,7 +199,9 @@ export class CloudflareWorkersAIProvider extends AbstractAIProvider {
       try {
         while (true) {
           const { done, value } = await reader.read();
-          if (done) break;
+          if (done) {
+            break;
+          }
 
           const chunk = decoder.decode(value, { stream: true });
           const lines = chunk.split("\n");
@@ -207,7 +209,7 @@ export class CloudflareWorkersAIProvider extends AbstractAIProvider {
           for (const line of lines) {
             if (line.startsWith("data: ")) {
               const data = line.substring(6);
-              if (data.trim() === "[DONE]") {
+              if (data?.trim() === "[DONE]") {
                 return;
               }
               try {
@@ -229,11 +231,11 @@ export class CloudflareWorkersAIProvider extends AbstractAIProvider {
     return Promise.resolve(processStream());
   }
 
-  protected buildProviderMessages(
+  protected async buildProviderMessages(
     params: AIRequestParams
-  ): { role: string; content: string }[] {
+  ): Promise<{ role: string; content: string }[]> {
     if (!params.messages || params.messages.length === 0) {
-      const systemPrompt = getSystemPrompt(params);
+      const systemPrompt = await getSystemPrompt(params);
       const userPrompt = params.additionalContext || "";
       const userContent = params.diff;
 
@@ -242,8 +244,12 @@ export class CloudflareWorkersAIProvider extends AbstractAIProvider {
         messages.push({ role: "system", content: systemPrompt });
       }
       let combinedUserContent = "";
-      if (userContent) combinedUserContent += userContent;
-      if (userPrompt) combinedUserContent += "\n\n" + userPrompt;
+      if (userContent) {
+        combinedUserContent += userContent;
+      }
+      if (userPrompt) {
+        combinedUserContent += "\n\n" + userPrompt;
+      }
 
       if (combinedUserContent) {
         messages.push({ role: "user", content: combinedUserContent });

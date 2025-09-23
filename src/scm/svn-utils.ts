@@ -4,6 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 import { getMessage, formatMessage } from "../utils/i18n";
+import { notify } from "../utils/notification/notification-manager";
 
 const execAsync = promisify(exec);
 
@@ -42,7 +43,14 @@ interface SvnConfig {
 
 const DEFAULT_CONFIG: SvnConfig = {
   environmentConfig: {
-    path: ["/usr/local/bin", "/opt/homebrew/bin"],
+    path:
+      process.platform === "win32"
+        ? [
+            "C:\\Program Files\\TortoiseSVN\\bin",
+            "C:\\Program Files (x86)\\TortoiseSVN\\bin",
+            "C:\\Program Files\\SlikSvn\\bin",
+          ]
+        : ["/usr/local/bin", "/opt/homebrew/bin"],
     locale: "en_US.UTF-8",
   },
 };
@@ -139,16 +147,48 @@ export class SvnUtils {
         return this.config.svnPath;
       }
 
-      // 3. 自动检测
-      const { stdout } = await execAsync("which svn");
-      const detectedPath = stdout.trim();
-      if (detectedPath) {
-        Logger.log(LogLevel.Info, "Detected SVN path:", detectedPath);
-        return detectedPath;
+      // 3. 自动检测 - 平台兼容版本
+      const command = process.platform === "win32" ? "where svn" : "which svn";
+      try {
+        const { stdout } = await execAsync(command);
+        // Windows下where命令可能返回多行结果，取第一行
+        const detectedPath = stdout.toString().split("\n")[0]?.trim();
+        if (detectedPath) {
+          Logger.log(LogLevel.Info, "Detected SVN path:", detectedPath);
+          return detectedPath;
+        }
+      } catch (cmdError) {
+        Logger.log(LogLevel.Warning, `${command} failed:`, cmdError);
+        // 命令失败继续后续检测
       }
 
-      // 4. 使用默认路径
-      const defaultPath = "/opt/homebrew/bin/svn";
+      // 4. Windows平台特殊处理
+      if (process.platform === "win32") {
+        // 检查常见Windows安装路径
+        const programFiles = process.env["ProgramFiles"] || "C:\\Program Files";
+        const programFilesX86 =
+          process.env["ProgramFiles(x86)"] || "C:\\Program Files (x86)";
+
+        const commonPaths = [
+          path.join(programFiles, "TortoiseSVN", "bin", "svn.exe"),
+          path.join(programFilesX86, "TortoiseSVN", "bin", "svn.exe"),
+          path.join(programFiles, "SlikSvn", "bin", "svn.exe"),
+          path.join(programFiles, "VisualSVN Server", "bin", "svn.exe"),
+        ];
+
+        for (const svnPath of commonPaths) {
+          if (fs.existsSync(svnPath)) {
+            Logger.log(LogLevel.Info, "Found SVN in common location:", svnPath);
+            return svnPath;
+          }
+        }
+      }
+
+      // 5. 使用平台相关的默认路径
+      const defaultPath =
+        process.platform === "win32"
+          ? "C:\\Program Files\\TortoiseSVN\\bin\\svn.exe"
+          : "/opt/homebrew/bin/svn";
       Logger.log(LogLevel.Warning, "Using default SVN path:", defaultPath);
       return defaultPath;
     } catch (error) {
@@ -164,10 +204,16 @@ export class SvnUtils {
     if (!this.config?.environmentConfig) {
       throw new Error(getMessage("svn.invalid.env.config"));
     }
+
+    // 根据平台使用正确的路径分隔符
+    const pathDelimiter = process.platform === "win32" ? ";" : ":";
+
     return {
       ...process.env,
-      PATH: `${process.env.PATH}:${this.config.environmentConfig.path.join(
-        ":"
+      PATH: `${
+        process.env.PATH
+      }${pathDelimiter}${this.config.environmentConfig.path.join(
+        pathDelimiter
       )}`,
       LC_ALL: this.config.environmentConfig.locale,
     };
@@ -298,7 +344,7 @@ export class SvnUtils {
     const urlMatch = urlOutput.match(/URL: (.+)/);
 
     if (urlMatch) {
-      const repoUrl = urlMatch[1].trim();
+      const repoUrl = urlMatch[1]?.trim();
       const matchingCred = this.findMatchingCredential(credentials, repoUrl);
       if (matchingCred) {
         return matchingCred;
@@ -312,7 +358,7 @@ export class SvnUtils {
   private static parseCredentials(authOutput: string) {
     return authOutput
       .split(/\n{2,}/) // 根据两个或更多换行符分割块
-      .filter((block) => block.trim())
+      .filter((block) => block?.trim())
       .map((block) => {
         const lines = block.split("\n");
         let username = null;
@@ -323,10 +369,10 @@ export class SvnUtils {
           const realmMatch = line.match(/Authentication realm: <([^>]+)>/);
 
           if (usernameMatch) {
-            username = usernameMatch[1].trim();
+            username = usernameMatch[1]?.trim();
           }
           if (realmMatch) {
-            realm = realmMatch[1].trim();
+            realm = realmMatch[1]?.trim();
           }
         }
 
@@ -442,10 +488,9 @@ export class SvnUtils {
    */
   private static async triggerAuth(workspacePath: string): Promise<void> {
     // 显示认证提示
-    const choice = await vscode.window.showErrorMessage(
-      getMessage("svn.auth.required"),
-      getMessage("svn.auth.button")
-    );
+    const choice = await notify.error("svn.auth.required", [], {
+      buttons: [getMessage("svn.auth.button")],
+    });
 
     if (choice === getMessage("svn.auth.button")) {
       // 执行svn命令触发认证对话框

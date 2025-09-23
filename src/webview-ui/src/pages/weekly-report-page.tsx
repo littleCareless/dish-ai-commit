@@ -159,7 +159,12 @@ function WeeklyReportPage() {
         <div className="p-6 border rounded-lg bg-card">
           <h2 className="mb-4 text-xl font-semibold">Select Date Range</h2>
           <RangePicker
-            style={{ width: "100%" }}
+            style={{ 
+              width: "100%",
+              backgroundColor: "var(--color-background)",
+              color: "var(--color-foreground)",
+              borderColor: "var(--color-border)"
+            }}
             onChange={handleDateRangeChange}
             showTime={false}
             format="YYYY-MM-DD"
@@ -195,7 +200,12 @@ function WeeklyReportPage() {
           <ArcoSelect
             mode="multiple"
             placeholder="Select team members"
-            style={{ width: "100%" }}
+            style={{ 
+              width: "100%",
+              backgroundColor: "var(--color-background)",
+              color: "var(--color-foreground)",
+              borderColor: "var(--color-border)"
+            }}
             value={selectedUsers}
             onChange={setSelectedUsers}
             allowClear

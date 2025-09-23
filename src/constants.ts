@@ -40,6 +40,11 @@ export const COMMANDS = {
   PR_SUMMARY: {
     /** 生成PR摘要的命令 */
     GENERATE: packageJson.contributes.commands[5].command,
+  },
+  /** 更新模型信息相关命令 */
+  UPDATE_MODEL_INFO: {
+    /** 更新模型信息的命令 */
+    UPDATE: packageJson.contributes.commands[6].command,
   }
 } as const;
 

@@ -81,26 +81,44 @@ const showNotification = async (
     const message = formatMessage(messageKey, args);
     const notifyFn = getNotifyFunction(type);
 
-    // 直接使用字符串数组作为按钮
-    const result = await notifyFn(
+    // If buttons are present, timeout is ignored because programmatically closing notifications with buttons is not supported by the VS Code API.
+    const hasButtons = options?.buttons && options.buttons.length > 0;
+    const effectiveTimeout = hasButtons ? undefined : options?.timeout;
+
+    const notificationPromise = notifyFn(
       message,
       { modal: options?.modal },
       ...(options?.buttons || [])
     );
 
-    // 执行对应的处理函数
+    let result: string | undefined | symbol;
+    let timeoutId: NodeJS.Timeout | undefined;
+
+    if (effectiveTimeout) {
+      const timeoutMarker = Symbol("timeout");
+      const timeoutPromise = new Promise<symbol>((resolve) => {
+        timeoutId = setTimeout(() => resolve(timeoutMarker), effectiveTimeout);
+      });
+      result = await Promise.race([notificationPromise, timeoutPromise]);
+    } else {
+      result = await notificationPromise;
+    }
+
+    if (timeoutId) {
+      clearTimeout(timeoutId);
+    }
+
+    if (typeof result === "symbol") {
+      // Timeout occurred. The notification will disappear on its own as it has no buttons.
+      return undefined;
+    }
+
+    // User interacted.
     if (result && options?.buttonHandlers) {
       const handler = options.buttonHandlers[result];
       handler?.();
     }
 
-    // 处理超时
-    if (options?.timeout) {
-      await Promise.all([
-        new Promise((resolve) => setTimeout(resolve, options.timeout)),
-        vscode.commands.executeCommand("closeNotification"),
-      ]);
-    }
     return result;
   } catch (error) {
     console.error(`Failed to show ${type} notification:`, error);
@@ -144,13 +162,28 @@ export const notify: INotify = {
     showNotification(item.type, item.messageKey, item.args, item.options),
 
   info: (messageKey: string, args?: any[], options?: NotificationOptions) =>
-    notify.add({ type: "info", messageKey, args, options }),
+    notify.add({
+      type: "info",
+      messageKey,
+      args,
+      options: { timeout: DEFAULT_TIMEOUT, ...options },
+    }),
 
   warn: (messageKey: string, args?: any[], options?: NotificationOptions) =>
-    notify.add({ type: "warn", messageKey, args, options }),
+    notify.add({
+      type: "warn",
+      messageKey,
+      args,
+      options: { timeout: DEFAULT_TIMEOUT, ...options },
+    }),
 
   error: (messageKey: string, args?: any[], options?: NotificationOptions) =>
-    notify.add({ type: "error", messageKey, args, options }),
+    notify.add({
+      type: "error",
+      messageKey,
+      args,
+      options: { timeout: DEFAULT_TIMEOUT, ...options },
+    }),
 
   // 快捷方法
   confirm: (messageKey: string, onYes: () => void, onNo?: () => void) =>

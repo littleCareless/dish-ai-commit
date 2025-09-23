@@ -187,7 +187,7 @@ export class DiffSimplifier {
 
     // 压缩空格
     content = content
-      .trim() // 去除首尾空格
+      ?.trim() // 去除首尾空格
       .replace(/\s+/g, " "); // 合并连续空格
 
     // 重建行,保留最多2个缩进空格

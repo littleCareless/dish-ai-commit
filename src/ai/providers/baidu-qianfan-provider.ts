@@ -111,7 +111,7 @@ export class BaiduQianfanProvider extends AbstractAIProvider {
     }
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
-    const { messages, system } = this.buildProviderMessages(params);
+    const { messages, system } = await this.buildProviderMessages(params);
 
     console.log(
       "Final messages for AI:",
@@ -166,7 +166,7 @@ export class BaiduQianfanProvider extends AbstractAIProvider {
     }
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
-    const { messages, system } = this.buildProviderMessages(params);
+    const { messages, system } = await this.buildProviderMessages(params);
 
     const processStream = async function* (
       this: BaiduQianfanProvider
@@ -283,12 +283,12 @@ export class BaiduQianfanProvider extends AbstractAIProvider {
    * @param params - AI请求参数
    * @returns 包含 messages 和 system 的对象
    */
-  protected buildProviderMessages(params: AIRequestParams): {
+  protected async buildProviderMessages(params: AIRequestParams): Promise<{
     messages: AIMessage[];
     system?: string;
-  } {
+  }> {
     if (!params.messages || params.messages.length === 0) {
-      const systemPrompt = getSystemPrompt(params);
+      const systemPrompt = await getSystemPrompt(params);
       const userPrompt = params.additionalContext || "";
       const userContent = params.diff;
 

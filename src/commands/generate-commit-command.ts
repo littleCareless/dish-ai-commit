@@ -4,6 +4,7 @@ import { ConfigurationManager } from "../config/configuration-manager";
 import { AbstractAIProvider } from "../ai/providers/abstract-ai-provider";
 import { ISCMProvider } from "../scm/scm-provider";
 import { notify } from "../utils/notification/notification-manager";
+import { showCommitSuccessNotification } from "../utils/notification/system-notification";
 import { getMessage, formatMessage } from "../utils/i18n";
 import { ProgressHandler } from "../utils/notification/progress-handler";
 import {
@@ -22,6 +23,11 @@ import {
   TruncationStrategy,
   RequestTooLargeError,
 } from "../utils/context-manager";
+import { getAccurateTokenLimits } from "../ai/model-registry";
+import { stagedContentDetector } from "../scm/staged-content-detector";
+import { multiRepositoryContextManager } from "../scm/multi-repository-context-manager";
+import { smartDiffSelector } from "../scm/smart-diff-selector";
+import { DiffTarget } from "../scm/staged-detector-types";
 
 /**
  * 将分层提交信息格式化为结构化的提交信息文本
@@ -32,7 +38,7 @@ function formatLayeredCommitMessage(
   layeredCommit: LayeredCommitMessage
 ): string {
   // 构建提交信息文本
-  let commitMessage = layeredCommit.summary.trim();
+  let commitMessage = layeredCommit.summary?.trim();
 
   // 如果有文件变更，添加详细信息部分
   if (layeredCommit.fileChanges.length > 0) {
@@ -41,7 +47,7 @@ function formatLayeredCommitMessage(
     for (const fileChange of layeredCommit.fileChanges) {
       commitMessage += `\n* **${
         fileChange.filePath
-      }**：${fileChange.description.trim()}`;
+      }**：${fileChange.description?.trim()}`;
     }
   }
 
@@ -54,8 +60,13 @@ function formatLayeredCommitMessage(
  * @returns 过滤后的提交信息
  */
 function filterCodeBlockMarkers(commitMessage: string): string {
-  // 移除Markdown代码块标记（三个反引号）
-  return commitMessage.replace(/```/g, "");
+  let cleanedMessage = commitMessage?.trim();
+  // 移除开头的代码块标记，例如 ```json, ```text, ```
+  cleanedMessage = cleanedMessage.replace(/^```[a-zA-Z]*\s*\n?/, "");
+  // 移除结尾的代码块标记
+  cleanedMessage = cleanedMessage.replace(/\n?```$/, "");
+  // 再次 trim 以处理移除标记后可能留下的空格
+  return cleanedMessage?.trim();
 }
 
 /**
@@ -72,8 +83,8 @@ function extractProcessedDiff(processedDiff: string): {
   const codeChangesMatch =
     processedDiff.match(/<code-changes>([\s\S]*?)<\/code-changes>/) || [];
 
-  const originalCode = (originalCodeMatch[1] || "").trim();
-  const codeChanges = (codeChangesMatch[1] || "").trim();
+  const originalCode = (originalCodeMatch[1] || "")?.trim();
+  const codeChanges = (codeChangesMatch[1] || "")?.trim();
 
   return { originalCode, codeChanges };
 }
@@ -97,16 +108,23 @@ export class GenerateCommitCommand extends BaseCommand {
     const { provider, model } = configResult;
 
     try {
-      const selectedFiles = this.getSelectedFiles(resources);
-      if (!selectedFiles) {
-        // 如果没有选择文件，可以通知用户或直接返回
-        notify.info("no.files.selected");
+      const result = await this.detectSCMProvider(resources);
+      if (!result) {
         return;
       }
-      const scmProvider = await this.detectSCMProvider(selectedFiles);
-      if (!scmProvider) {
+
+      const { scmProvider, selectedFiles, repositoryPath } = result;
+
+      if (!repositoryPath) {
+        await notify.warn(
+          formatMessage("scm.repository.not.found", [
+            scmProvider.type.toUpperCase(),
+          ])
+        );
         return;
       }
+
+      console.log(`Working with repository: ${repositoryPath}`);
 
       await ProgressHandler.withProgress(
         formatMessage("progress.generating.commit", [
@@ -119,7 +137,8 @@ export class GenerateCommitCommand extends BaseCommand {
             provider,
             model,
             scmProvider,
-            selectedFiles
+            selectedFiles,
+            repositoryPath
           )
       );
     } catch (error) {
@@ -137,7 +156,8 @@ export class GenerateCommitCommand extends BaseCommand {
    * @returns 包含用户提交和仓库提交字符串的对象。
    */
   private async _getRecentCommitsContext(
-    scmProvider: ISCMProvider
+    scmProvider: ISCMProvider,
+    repositoryPath?: string
   ): Promise<{ userCommits: string; repoCommits: string }> {
     const recentMessages = await scmProvider.getRecentCommitMessages();
     let userCommits = "";
@@ -170,13 +190,13 @@ export class GenerateCommitCommand extends BaseCommand {
   ): Promise<string> {
     let currentInput = await scmProvider.getCommitInput();
     if (currentInput) {
-      currentInput = `<custom-instructions>
+      currentInput = `
 When generating the commit message, please use the following custom instructions provided by the user.
 You can ignore an instruction if it contradicts a system message.
 <instructions>
 ${currentInput}
 </instructions>
-</custom-instructions>`;
+`;
     }
     return currentInput;
   }
@@ -217,18 +237,21 @@ ${currentInput}
    * @param repoCommits - 仓库最近的提交。
    * @returns 提醒信息字符串。
    */
-  private _getReminder(userCommits: string, repoCommits: string): string {
-    if (userCommits || repoCommits) {
-      return `---
-REMINDER:
-- Now generate a commit messages that describe the CODE CHANGES.
-- DO NOT COPY commits from RECENT COMMITS, but use it as reference for the commit style.
-- ONLY return a single markdown code block, NO OTHER PROSE!`;
-    }
-    return `---
-REMINDER:
-- Now generate a commit messages that describe the CODE CHANGES.
-- ONLY return a single markdown code block, NO OTHER PROSE!`;
+  private _getReminder(
+    userCommits: string,
+    repoCommits: string,
+    language: string
+  ): string {
+    const languageReminder = `\n - The commit message MUST be in ${language}.`;
+    const recentCommitsReminder =
+      userCommits || repoCommits
+        ? "\n- DO NOT COPY commits from RECENT COMMITS, but use it as reference for the commit style."
+        : "";
+
+    return `- IMPORTANT: You will be provided with code changes from MULTIPLE files.
+ - Your primary task is to analyze ALL provided file changes under the \`<code-changes>\` block and synthesize them into a single, coherent commit message.
+ - Do NOT focus on only the first file you see. A good commits messages covers the intent of all changes.${recentCommitsReminder}${languageReminder}
+ - Now only show your message, Do not provide any explanations or details`;
   }
 
   /**
@@ -239,7 +262,8 @@ REMINDER:
    * @param provider - 当前选择的 AI 供应器名称。
    * @param model - 当前选择的 AI 模型名称。
    * @param scmProvider - SCM 供应器实例。
-   * @param selectedFiles - 用户选择的待提交文件列表。
+   * @param selectedFiles - 用户选择的待提交文件列表，可以为 undefined。
+   * @param repositoryPath - 可选的仓库路径。
    */
   private async performStreamingGeneration(
     progress: vscode.Progress<{ message?: string; increment?: number }>,
@@ -247,17 +271,89 @@ REMINDER:
     provider: string,
     model: string,
     scmProvider: ISCMProvider,
-    selectedFiles: string[]
+    selectedFiles: string[] | undefined,
+    repositoryPath?: string
   ) {
     const config = ConfigurationManager.getInstance();
     const configuration = config.getConfiguration();
 
-    progress.report({ message: getMessage("progress.getting.diff") });
-    const diffContent = await scmProvider.getDiff(selectedFiles);
+    // 在获取diff之前设置当前文件，确保使用正确的仓库
+    if (scmProvider.setCurrentFiles && selectedFiles) {
+      scmProvider.setCurrentFiles(selectedFiles);
+    }
+
+    // ===== 新增：自动检测暂存区内容逻辑 =====
+    progress.report({
+      message:
+        getMessage("progress.detecting.staged.content") || "检测暂存区内容...",
+    });
+
+    let diffContent: string | undefined;
+    const diffTargetConfig = configuration.features.codeAnalysis.diffTarget;
+
+    // 如果配置为自动检测模式
+    if (diffTargetConfig === "auto") {
+      try {
+        // 1. 识别当前仓库上下文
+        const repositoryContext =
+          await multiRepositoryContextManager.identifyRepository(
+            selectedFiles,
+            vscode.window.activeTextEditor
+          );
+
+        // 2. 检测暂存区内容
+        const detectionResult = await stagedContentDetector.detectStagedContent(
+          {
+            repository: repositoryContext,
+            includeFileDetails: true,
+            useCache: true,
+          }
+        );
+
+        // 3. 智能选择diff目标
+        const selectedTarget = await smartDiffSelector.selectDiffTarget(
+          scmProvider,
+          detectionResult,
+          DiffTarget.AUTO
+        );
+
+        // 4. 获取diff内容
+        const diffResult = await smartDiffSelector.getDiffWithTarget(
+          scmProvider,
+          selectedTarget,
+          selectedFiles
+        );
+
+        diffContent = diffResult.content;
+
+        // 记录选择的目标用于调试
+        console.log(
+          `Auto-detection selected target: ${selectedTarget}, files: ${diffResult.files.length}`
+        );
+      } catch (error) {
+        console.warn(
+          "Auto-detection failed, falling back to traditional method:",
+          error
+        );
+        // 回退到传统方法
+        progress.report({ message: getMessage("progress.getting.diff") });
+        diffContent = await scmProvider.getDiff(selectedFiles);
+      }
+    } else {
+      // 传统方法：直接获取diff
+      progress.report({ message: getMessage("progress.getting.diff") });
+      diffContent = await scmProvider.getDiff(selectedFiles);
+    }
+    // ===== 自动检测逻辑结束 =====
 
     if (!diffContent) {
-      notify.info("no.changes");
-      throw new Error(getMessage("no.changes"));
+      // notify.info(
+      //   formatMessage("scm.no.changes", [scmProvider.type.toUpperCase()])
+      // );
+      // throw new Error(
+      //   formatMessage("scm.no.changes", [scmProvider.type.toUpperCase()])
+      // );
+      return false;
     }
 
     progress.report({
@@ -288,12 +384,13 @@ REMINDER:
       ...configuration.features.codeAnalysis,
       model: selectedModel,
       scm: scmProvider.type ?? "git",
-      changeFiles: selectedFiles,
+      workspaceRoot: repositoryPath,
+      changeFiles: selectedFiles || [],
       languages: configuration.base.language,
-      diff: diffContent, // diff 仍然需要用于生成提示
+      diff: diffContent,
       additionalContext: "",
     };
-    const systemPrompt = getSystemPrompt(tempParams);
+    const systemPrompt = await getSystemPrompt(tempParams);
 
     const contextManager = await this._buildContextManager(
       selectedModel,
@@ -309,30 +406,46 @@ REMINDER:
       diff: diffContent, // 保持 diff 字段用于可能的重试逻辑
     };
 
-    const promptLength = contextManager.getEstimatedTokenCount();
-    const maxTokens = selectedModel.maxTokens?.input ?? 8192;
+    const promptLength = contextManager.getEstimatedRawTokenCount();
 
-    notify.info(
-      formatMessage("prompt.length.info", [
-        promptLength.toLocaleString(),
-        maxTokens.toLocaleString(),
-      ])
-    );
+    // 使用新的模型信息获取机制获取准确的token限制
+    const tokenLimits = await getAccurateTokenLimits(selectedModel);
+    const maxTokens = tokenLimits.input;
 
-    // 大 Prompt 警告
-    if (promptLength > maxTokens * 0.8) {
+    // if (!configuration.features.suppressNonCriticalWarnings) {
+    //   notify.info(
+    //     formatMessage("prompt.length.info", [
+    //       promptLength.toLocaleString(),
+    //       maxTokens.toLocaleString(),
+    //     ])
+    //   );
+    // }
+    // 大 Prompt 警告和备用提示词切换逻辑
+    if (
+      promptLength > maxTokens * 0.75 &&
+      !configuration.features.suppressNonCriticalWarnings
+    ) {
+      const useFallbackChoice = getMessage("fallback.use");
       const continueAnyway = getMessage("prompt.large.continue");
       const cancel = getMessage("prompt.large.cancel");
+
       const choice = await notify.warn(
-        "prompt.large.warning",
+        "prompt.large.warning.with.fallback",
         [promptLength.toLocaleString(), maxTokens.toLocaleString()],
         {
           modal: true,
-          buttons: [continueAnyway, cancel],
+          buttons: [useFallbackChoice, continueAnyway],
         }
       );
-
-      if (choice !== continueAnyway) {
+      if (choice === useFallbackChoice) {
+        const fallbackSystemPrompt = await getSystemPrompt(
+          tempParams,
+          true,
+          true
+        );
+        contextManager.setSystemPrompt(fallbackSystemPrompt);
+        notify.info("info.using.fallback.prompt");
+      } else if (choice !== continueAnyway) {
         throw new Error(getMessage("prompt.user.cancelled"));
       }
     }
@@ -358,17 +471,37 @@ REMINDER:
           { ...requestParams, messages },
           scmProvider,
           token,
-          progress
+          progress,
+          repositoryPath
         );
       } else {
-        await this.streamAndApplyMessage(
-          aiProvider as AbstractAIProvider,
-          requestParams,
-          scmProvider,
-          token,
-          progress,
-          contextManager
-        );
+        // 检查是否启用分层提交且选择了多个文件
+        const shouldUseLayeredCommit =
+          configuration.features.commitFormat.enableLayeredCommit &&
+          selectedFiles &&
+          selectedFiles.length > 1;
+
+        if (shouldUseLayeredCommit) {
+          await this.performLayeredFileCommitGeneration(
+            aiProvider,
+            requestParams,
+            scmProvider,
+            selectedFiles,
+            token,
+            progress,
+            selectedModel
+          );
+        } else {
+          await this.streamAndApplyMessage(
+            aiProvider as AbstractAIProvider,
+            requestParams,
+            scmProvider,
+            token,
+            progress,
+            contextManager,
+            repositoryPath
+          );
+        }
       }
 
       notify.info("commit.message.generated.stream", [
@@ -377,16 +510,7 @@ REMINDER:
         selectedModel?.id || "default",
       ]);
 
-      if (configuration.features.commitFormat.enableLayeredCommit) {
-        await this.performLayeredFileCommitGeneration(
-          aiProvider,
-          requestParams,
-          scmProvider,
-          selectedFiles,
-          token,
-          progress
-        );
-      }
+      showCommitSuccessNotification();
     } catch (error) {
       if (error instanceof RequestTooLargeError) {
         const switchToLargerModel = getMessage("error.switch.to.larger.model");
@@ -412,28 +536,22 @@ REMINDER:
     aiProvider: AIProvider,
     requestParams: AIRequestParams,
     scmProvider: ISCMProvider,
-    selectedFiles: string[],
+    selectedFiles: string[] | undefined,
     token: vscode.CancellationToken,
-    progress: vscode.Progress<{ message?: string; increment?: number }>
+    progress: vscode.Progress<{ message?: string; increment?: number }>,
+    selectedModel: AIModel
   ) {
     progress.report({
       message: getMessage("progress.generating.layered.commit"),
     });
 
-    const fileDescriptions: { filePath: string; description: string }[] = [];
-    const config = ConfigurationManager.getInstance();
-    const configuration = config.getConfiguration();
-    const selectedModel = requestParams.model as AIModel;
+    if (!selectedFiles || selectedFiles.length === 0) {
+      notify.warn("no.files.selected.for.layered.commit");
+      return;
+    }
 
-    // Pre-fetch global context to avoid fetching it in every loop iteration
-    const currentInput = await this._getSCMInputContext(scmProvider);
-    const { userCommits, repoCommits } = await this._getRecentCommits(
-      scmProvider,
-      configuration.features.commitMessage.useRecentCommitsAsReference
-    );
-    const reminder = this._getReminder(userCommits, repoCommits);
-
-    for (const filePath of selectedFiles) {
+    const config = ConfigurationManager.getInstance().getConfiguration();
+    const fileDescriptionPromises = selectedFiles.map(async (filePath) => {
       this.throwIfCancelled(token);
       progress.report({
         message: formatMessage("progress.generating.commit.for.file", [
@@ -443,93 +561,156 @@ REMINDER:
 
       const fileDiff = await scmProvider.getDiff([filePath]);
       if (!fileDiff) {
-        continue;
+        return null;
       }
 
-      const fileRequestParams: AIRequestParams = {
-        ...requestParams,
-        diff: fileDiff,
-        changeFiles: [filePath],
-      };
-
-      const systemPrompt = getSystemPrompt(fileRequestParams);
-
-      // Build context manager for each file to get rich context
-      const similarCodeContext = await this._getSimilarCodeContext(fileDiff);
-      const contextManager = new ContextManager(selectedModel, systemPrompt);
-      const { originalCode, codeChanges } = extractProcessedDiff(fileDiff);
-
-      contextManager.addBlock({
-        content: originalCode,
-        priority: 200,
-        strategy: TruncationStrategy.SmartTruncateDiff,
-        name: "original-code",
-      });
-      contextManager.addBlock({
-        content: codeChanges,
-        priority: 100,
-        strategy: TruncationStrategy.SmartTruncateDiff,
-        name: "code-changes",
-      });
-      contextManager.addBlock({
-        content: similarCodeContext,
-        priority: 320,
-        strategy: TruncationStrategy.TruncateTail,
-        name: "similar-code",
-      });
-      contextManager.addBlock({
-        content: userCommits,
-        priority: 300,
-        strategy: TruncationStrategy.TruncateTail,
-        name: "user-commits",
-      });
-      contextManager.addBlock({
-        content: repoCommits,
-        priority: 400,
-        strategy: TruncationStrategy.TruncateTail,
-        name: "recent-commits",
-      });
-      contextManager.addBlock({
-        content: currentInput,
-        priority: 250,
-        strategy: TruncationStrategy.TruncateTail,
-        name: "custom-instructions",
-      });
-      contextManager.addBlock({
-        content: reminder,
-        priority: 100,
-        strategy: TruncationStrategy.TruncateTail,
-        name: "reminder",
+      const systemPrompt = getLayeredCommitFilePrompt({
+        config: config.features.commitFormat,
+        language: config.base.language,
+        filePath: filePath,
       });
 
+      const contextManager = await this._buildContextManager(
+        selectedModel,
+        systemPrompt,
+        scmProvider,
+        fileDiff,
+        config
+      );
       const messages = contextManager.buildMessages();
 
       if (!aiProvider.generateCommit) {
         notify.warn("provider.does.not.support.non.streaming.for.layered", [
           aiProvider.getId(),
         ]);
-        continue;
+        return null;
       }
-      const description = await aiProvider.generateCommit({
-        ...fileRequestParams,
-        messages,
-      });
 
-      fileDescriptions.push({
-        filePath,
-        description: description.content,
-      });
-    }
+      try {
+        const description = await aiProvider.generateCommit({
+          ...requestParams, // Pass original params for model, etc.
+          messages,
+          diff: "", // Diff is now in messages, clear this
+        });
+
+        return {
+          filePath,
+          description: description.content,
+        };
+      } catch (error) {
+        notify.error(
+          formatMessage("error.generating.commit.for.file", [
+            filePath,
+            (error as Error).message,
+          ])
+        );
+        return null;
+      }
+    });
+
+    const fileDescriptions = (
+      await Promise.all(fileDescriptionPromises)
+    ).filter((d): d is { filePath: string; description: string } => d !== null);
 
     if (fileDescriptions.length > 0) {
-      await this._showLayeredCommitDetails(fileDescriptions);
+      await this._generateAndApplyLayeredSummary(
+        aiProvider,
+        requestParams,
+        scmProvider,
+        fileDescriptions,
+        token,
+        progress
+      );
+    } else {
+      notify.warn("warn.no.file.descriptions.generated");
+    }
+  }
+
+  private async _generateAndApplyLayeredSummary(
+    aiProvider: AIProvider,
+    requestParams: AIRequestParams,
+    scmProvider: ISCMProvider,
+    fileChanges: { filePath: string; description: string }[],
+    token: vscode.CancellationToken,
+    progress: vscode.Progress<{ message?: string; increment?: number }>
+  ) {
+    progress.report({
+      message: getMessage("progress.generating.layered.summary"),
+    });
+
+    const config = ConfigurationManager.getInstance().getConfiguration();
+
+    const formattedFileChanges = fileChanges
+      .map(
+        (change) =>
+          `File: ${change.filePath}\nDescription: ${change.description}`
+      )
+      .join("\n\n");
+
+    // Build a temporary params object for the system prompt, forcing merge commit behavior
+    const summaryParams = {
+      ...config.features.commitMessage,
+      ...config.features.commitFormat,
+      ...config.features.codeAnalysis,
+      model: requestParams.model,
+      scm: scmProvider.type ?? "git",
+      changeFiles: fileChanges.map((fc) => fc.filePath),
+      languages: config.base.language,
+      diff: formattedFileChanges, // Use the descriptions as the "diff" for the summary
+      additionalContext: "",
+      enableMergeCommit: true, // Force merge commit style for the summary
+    };
+
+    const summarySystemPrompt = await getSystemPrompt(summaryParams);
+
+    const summaryContextManager = await this._buildLayeredSummaryContextManager(
+      requestParams.model as AIModel,
+      summarySystemPrompt,
+      scmProvider,
+      formattedFileChanges,
+      config
+    );
+
+    const messages = summaryContextManager.buildMessages();
+
+    if (!aiProvider.generateCommit) {
+      throw new Error(
+        `Provider ${aiProvider.getId()} does not support non-streaming for layered commit summary.`
+      );
+    }
+
+    const summaryResponse = await aiProvider.generateCommit({
+      ...requestParams,
+      messages,
+      diff: "", // Not needed for summary
+    });
+
+    this.throwIfCancelled(token);
+
+    try {
+      const finalMessage = summaryResponse.content;
+      const filteredMessage = filterCodeBlockMarkers(finalMessage);
+      await scmProvider.startStreamingInput(filteredMessage?.trim());
+    } catch (error) {
+      console.error("Error applying layered commit summary:", error);
+      // Fallback to showing raw details if applying fails
+      await this._showLayeredCommitDetails(fileChanges, true);
+      notify.error("error.applying.layered.summary");
     }
   }
 
   private async _showLayeredCommitDetails(
-    fileChanges: { filePath: string; description: string }[]
+    fileChanges: { filePath: string; description: string }[],
+    isFallback = false
   ) {
-    let content = `# ${getMessage("layered.commit.details.title")}\n\n`;
+    const title = isFallback
+      ? getMessage("layered.commit.fallback.title")
+      : getMessage("layered.commit.details.title");
+    let content = `# ${title}\n\n`;
+    if (isFallback) {
+      content += `${getMessage("layered.commit.fallback.description")}\n\n`;
+    }
+
     for (const change of fileChanges) {
       content += `### ${change.filePath}\n\n${change.description}\n\n---\n\n`;
     }
@@ -540,6 +721,76 @@ REMINDER:
     });
     await vscode.window.showTextDocument(document);
     notify.info("layered.commit.details.generated");
+  }
+
+  private async _buildLayeredSummaryContextManager(
+    selectedModel: AIModel,
+    systemPrompt: string,
+    scmProvider: ISCMProvider,
+    formattedFileChanges: string,
+    configuration: any
+  ): Promise<ContextManager> {
+    // 1. 获取上下文信息（不包括需要真实 diff 的部分）
+    const currentInput = await this._getSCMInputContext(scmProvider);
+    const { userCommits, repoCommits } = await this._getRecentCommits(
+      scmProvider,
+      configuration.features.commitMessage.useRecentCommitsAsReference
+    );
+    const reminder = this._getReminder(
+      userCommits,
+      repoCommits,
+      configuration.base.language
+    );
+
+    // 2. 构建 ContextManager
+    const contextManager = new ContextManager(
+      selectedModel,
+      systemPrompt,
+      configuration.features.suppressNonCriticalWarnings
+    );
+
+    // 添加与摘要生成相关的块
+    if (userCommits) {
+      contextManager.addBlock({
+        content: userCommits,
+        priority: 700,
+        strategy: TruncationStrategy.TruncateTail,
+        name: "user-commits",
+      });
+    }
+
+    if (repoCommits) {
+      contextManager.addBlock({
+        content: repoCommits,
+        priority: 600,
+        strategy: TruncationStrategy.TruncateTail,
+        name: "recent-commits",
+      });
+    }
+
+    // 将格式化后的文件变更作为主要内容块添加
+    contextManager.addBlock({
+      content: formattedFileChanges,
+      priority: 900,
+      strategy: TruncationStrategy.TruncateTail,
+      name: "file-changes-summary",
+    });
+
+    contextManager.addBlock({
+      content: reminder,
+      priority: 900, // 优先级高
+      strategy: TruncationStrategy.TruncateTail,
+      name: "reminder",
+    });
+
+    contextManager.addBlock({
+      content: currentInput,
+      priority: 750,
+      strategy: TruncationStrategy.TruncateTail,
+      name: "custom-instructions",
+    });
+
+    return contextManager;
   }
 
   /**
@@ -558,7 +809,8 @@ REMINDER:
     systemPrompt: string,
     scmProvider: ISCMProvider,
     diffContent: string,
-    configuration: any
+    configuration: any,
+    options: { exclude?: string[] } = {}
   ): Promise<ContextManager> {
     // 1. 获取所有上下文信息
     const currentInput = await this._getSCMInputContext(scmProvider);
@@ -566,54 +818,72 @@ REMINDER:
       scmProvider,
       configuration.features.commitMessage.useRecentCommitsAsReference
     );
-    const similarCodeContext = await this._getSimilarCodeContext(diffContent);
-    const reminder = this._getReminder(userCommits, repoCommits);
+    const { exclude = [] } = options;
+    const similarCodeContext = exclude.includes("similar-code")
+      ? ""
+      : await this._getSimilarCodeContext(diffContent);
+    const reminder = this._getReminder(
+      userCommits,
+      repoCommits,
+      configuration.base.language
+    );
 
     // 2. 构建 ContextManager
-    const contextManager = new ContextManager(selectedModel, systemPrompt);
+    const contextManager = new ContextManager(
+      selectedModel,
+      systemPrompt,
+      configuration.features.suppressNonCriticalWarnings
+    );
     const { originalCode, codeChanges } = extractProcessedDiff(diffContent);
 
+    if (userCommits) {
+      contextManager.addBlock({
+        content: userCommits,
+        priority: 700,
+        strategy: TruncationStrategy.TruncateTail,
+        name: "user-commits",
+      });
+    }
+
+    if (repoCommits) {
+      contextManager.addBlock({
+        content: repoCommits,
+        priority: 600,
+        strategy: TruncationStrategy.TruncateTail,
+        name: "recent-commits",
+      });
+    }
     contextManager.addBlock({
-      content: originalCode,
-      priority: 200, // original-code: 800
-      strategy: TruncationStrategy.SmartTruncateDiff,
-      name: "original-code",
+      content: similarCodeContext,
+      priority: 320, // This priority is not specified in the user request, keeping it as is.
+      strategy: TruncationStrategy.TruncateTail,
+      name: "similar-code",
     });
+    if (!exclude.includes("original-code")) {
+      contextManager.addBlock({
+        content: originalCode,
+        priority: 800,
+        strategy: TruncationStrategy.SmartTruncateDiff,
+        name: "original-code",
+      });
+    }
     contextManager.addBlock({
       content: codeChanges,
-      priority: 100, // code-changes: 900
+      priority: 900,
       strategy: TruncationStrategy.SmartTruncateDiff,
       name: "code-changes",
     });
     contextManager.addBlock({
-      content: similarCodeContext,
-      priority: 320, // Inferred weight: 680
+      content: reminder,
+      priority: 900,
       strategy: TruncationStrategy.TruncateTail,
-      name: "similar-code",
-    });
-    contextManager.addBlock({
-      content: userCommits,
-      priority: 300, // user-commits: 700
-      strategy: TruncationStrategy.TruncateTail,
-      name: "user-commits",
-    });
-    contextManager.addBlock({
-      content: repoCommits,
-      priority: 400, // recent-commits: 600
-      strategy: TruncationStrategy.TruncateTail,
-      name: "recent-commits",
+      name: "reminder",
     });
     contextManager.addBlock({
       content: currentInput,
-      priority: 250, // custom-instructions: 750
+      priority: 750,
       strategy: TruncationStrategy.TruncateTail,
       name: "custom-instructions",
-    });
-    contextManager.addBlock({
-      content: reminder,
-      priority: 100, // reminder: 900
-      strategy: TruncationStrategy.TruncateTail,
-      name: "reminder",
     });
 
     return contextManager;
@@ -627,6 +897,7 @@ REMINDER:
    * @param token - VS Code 取消令牌。
    * @param progress - VS Code 进度报告器。
    * @param contextManager - 上下文管理器实例，用于构建带重试逻辑的请求。
+   * @param repositoryPath - 可选的仓库路径。
    */
   private async streamAndApplyMessage(
     aiProvider: AbstractAIProvider,
@@ -634,7 +905,8 @@ REMINDER:
     scmProvider: ISCMProvider,
     token: vscode.CancellationToken,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
-    contextManager: ContextManager // 接收 ContextManager 实例
+    contextManager: ContextManager, // 接收 ContextManager 实例
+    repositoryPath?: string
   ) {
     this.throwIfCancelled(token);
     progress.report({
@@ -648,13 +920,14 @@ REMINDER:
     for await (const chunk of stream) {
       this.throwIfCancelled(token);
       accumulatedMessage += chunk;
-      let filteredMessage = filterCodeBlockMarkers(accumulatedMessage);
-      filteredMessage = filteredMessage.trimStart();
-      await scmProvider.startStreamingInput(filteredMessage);
-      // 移除小的延时，让流式更新更平滑
+      // During streaming, we show the raw output from the AI.
+      await scmProvider.startStreamingInput(accumulatedMessage);
     }
+
     this.throwIfCancelled(token);
-    const finalMessage = filterCodeBlockMarkers(accumulatedMessage).trim();
+
+    // After the stream is complete, filter the final message and apply it.
+    const finalMessage = filterCodeBlockMarkers(accumulatedMessage);
     await scmProvider.startStreamingInput(finalMessage);
   }
 
@@ -666,13 +939,15 @@ REMINDER:
    * @param scmProvider - SCM 供应器实例。
    * @param token - VS Code 取消令牌。
    * @param progress - VS Code 进度报告器。
+   * @param repositoryPath - 可选的仓库路径。
    */
   private async performFunctionCallingGeneration(
     aiProvider: AIProvider,
     requestParams: AIRequestParams & { messages: AIMessage[] },
     scmProvider: ISCMProvider,
     token: vscode.CancellationToken,
-    progress: vscode.Progress<{ message?: string; increment?: number }>
+    progress: vscode.Progress<{ message?: string; increment?: number }>,
+    repositoryPath?: string
   ) {
     this.throwIfCancelled(token);
     progress.report({
@@ -691,7 +966,7 @@ REMINDER:
 
     this.throwIfCancelled(token);
 
-    const finalMessage = filterCodeBlockMarkers(aiResponse.content).trim();
+    const finalMessage = filterCodeBlockMarkers(aiResponse.content)?.trim();
     await scmProvider.startStreamingInput(finalMessage);
   }
 

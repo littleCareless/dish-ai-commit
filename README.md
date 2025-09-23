@@ -234,6 +234,12 @@ Weekly report generation supports custom templates:
 - **Dynamic Generation**: The plugin's settings interface is now dynamically generated based on configuration definitions.
 - **Flexible Configuration**: Offers more flexible and detailed configuration options.
 
+### 📢 System Notifications
+
+- **Instant Feedback**: Receive system-level notifications upon successful generation of commit messages or weekly reports.
+- **Cross-Platform**: Utilizes `node-notifier` to support native notifications on macOS, Windows, and Linux.
+- **Dependencies**: This feature relies on native system libraries. Please ensure your system has the necessary components installed for notifications to work correctly (e.g., `SnoreToast` on Windows, `terminal-notifier` on macOS).
+
 ## Configuration
 
 | Configuration                                          | Type    | Default                   | Description                                         |

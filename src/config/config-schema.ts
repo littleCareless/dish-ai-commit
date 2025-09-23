@@ -76,6 +76,7 @@ export const CONFIG_SCHEMA = {
         "Cloudflare",
         "GoogleAI",
         "VertexAI",
+        "LMStudio",
       ],
       description: "AI provider / AI 提供商",
     },
@@ -285,22 +286,43 @@ export const CONFIG_SCHEMA = {
         description: "Groq API Key / Groq API 密钥",
       },
     },
+    lmstudio: {
+      baseUrl: {
+        type: "string",
+        default: "http://localhost:1234/v1",
+        description: "LMStudio API Base URL / LMStudio API 基础地址",
+      },
+    },
   },
   features: {
+    suppressNonCriticalWarnings: {
+      type: "boolean",
+      default: true,
+      description:
+        "Suppress non-critical warning popups, such as context length warnings. / 禁用非关键性警告弹窗，例如上下文长度警告。",
+    },
     // Code analysis features
     codeAnalysis: {
       diffTarget: {
         type: "string",
-        default: "all",
-        description:
-          "Specify the target for git diff: 'staged' for staged changes, 'all' for all changes. / 指定 git diff 的目标：'staged' 表示暂存区的更改，'all' 表示所有更改。",
-        enum: ["staged", "all"],
+        default: "auto",
+        description: "Specify the target for git diff: 'staged' for staged changes, 'all' for all changes, 'auto' for automatic detection. / 指定 git diff 的目标：'staged' 表示暂存区的更改，'all' 表示所有更改，'auto' 表示自动检测。",
+        enum: ["staged", "all", "auto"],
+      },
+      autoDetectStaged: {
+        type: "boolean",
+        default: true,
+        description: "Automatically detect staged content and prioritize it over all changes when diffTarget is 'auto'. / 当 diffTarget 为 'auto' 时，自动检测暂存区内容并优先使用。",
+      },
+      fallbackToAll: {
+        type: "boolean",
+        default: true,
+        description: "When staged area is empty, fallback to analyze all working directory changes. / 当暂存区为空时，回退到分析所有工作目录更改。",
       },
       simplifyDiff: {
         type: "boolean",
         default: false,
-        description:
-          "Enable diff content simplification (Warning: Enabling this feature may result in less accurate commit messages) / 启用差异内容简化 (警告：启用此功能可能导致提交信息不够准确)",
+        description: "Enable diff content simplification (Warning: Enabling this feature may result in less accurate commit messages) / 启用差异内容简化 (警告：启用此功能可能导致提交信息不够准确)",
       },
       // useEmbedding: {
       //   type: "boolean",
@@ -428,11 +450,11 @@ export type ConfigValueTypeString = ConfigValueTypeBase & {
   enum?: readonly string[];
   enumDescriptions?: readonly string[];
   scope?:
-    | "machine"
-    | "window"
-    | "resource"
-    | "application"
-    | "language-overridable";
+  | "machine"
+  | "window"
+  | "resource"
+  | "application"
+  | "language-overridable";
 };
 
 /**

@@ -8,8 +8,29 @@ import { getMessage, formatMessage } from "../utils/i18n";
 import { DiffProcessor } from "../utils/diff/diff-processor";
 import { DiffSimplifier } from "../utils";
 import { notify } from "../utils/notification/notification-manager";
+import { ConfigurationManager } from "../config/configuration-manager";
+import { ImprovedPathUtils } from "./utils/improved-path-utils";
 
 const exec = promisify(childProcess.exec);
+
+/**
+ * SVN API接口定义
+ */
+interface SvnAPI {
+  repositories: SvnRepository[];
+  getAPI(version: number): SvnAPI;
+}
+
+/**
+ * SVN仓库接口定义
+ */
+export interface SvnRepository {
+  rootUri: vscode.Uri;
+  inputBox: {
+    value: string;
+  };
+  commitFiles(files: string[], message: string): Promise<void>;
+}
 
 // 添加日志工具类
 const enum LogLevel {
@@ -55,12 +76,13 @@ const DEFAULT_CONFIG: SvnConfig = {
 
 // 添加 SVN 路径检测
 const isValidSvnPath = async (svnPath: string): Promise<boolean> => {
-  if (!fs.existsSync(svnPath)) {
+  if (!ImprovedPathUtils.safeExists(svnPath)) {
     return false;
   }
   try {
     // The --version command is a reliable way to check if it's a valid SVN executable
-    await exec(`"${svnPath}" --version`);
+    const escapedPath = ImprovedPathUtils.escapeShellPath(svnPath);
+    await exec(`${escapedPath} --version`);
     return true;
   } catch (error) {
     Logger.log(
@@ -77,11 +99,11 @@ const findSvnExecutable = async (): Promise<string | null> => {
   const command = process.platform === "win32" ? "where svn" : "which svn";
   try {
     const { stdout } = await exec(command);
-    const lines = stdout.trim().split("\n");
+    const lines = stdout.toString()?.trim().split("\n");
     for (const line of lines) {
-      const p = line.trim();
+      const p = line?.trim();
       if (p && (await isValidSvnPath(p))) {
-        return p;
+        return ImprovedPathUtils.handleLongPath(p);
       }
     }
   } catch (error) {
@@ -117,8 +139,9 @@ const findSvnExecutable = async (): Promise<string | null> => {
   }
 
   for (const p of potentialPaths) {
-    if (await isValidSvnPath(p)) {
-      return p;
+    const normalizedPath = ImprovedPathUtils.handleLongPath(p);
+    if (await isValidSvnPath(normalizedPath)) {
+      return normalizedPath;
     }
   }
 
@@ -176,13 +199,13 @@ export class SvnProvider implements ISCMProvider {
   type = "svn" as const;
 
   /** SVN API实例 */
-  private api: any;
-
-  /** 工作区根目录路径 */
-  private workspaceRoot: string;
+  private api: SvnAPI;
 
   /** SVN仓库集合 */
-  private repositories: any;
+  private repositories: SvnRepository[];
+
+  /** 可选的仓库路径 */
+  private readonly repositoryPath?: string;
 
   /** 存储 SVN 路径 */
   private svnPath: string = "svn";
@@ -195,13 +218,14 @@ export class SvnProvider implements ISCMProvider {
    * @param svnExtension - VS Code SVN扩展实例
    * @throws {Error} 当未找到工作区时抛出错误
    */
-  constructor(private readonly svnExtension: any) {
-    this.api = svnExtension;
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
-    if (!workspaceRoot) {
+  constructor(private readonly svnExtension: any, repositoryPath?: string) {
+    this.api = svnExtension.getAPI(1);
+    this.repositories = this.api.repositories;
+    this.repositoryPath = repositoryPath;
+
+    if (!vscode.workspace.workspaceFolders?.length) {
       throw new Error(getMessage("workspace.not.found"));
     }
-    this.workspaceRoot = workspaceRoot;
 
     this.config = this.loadConfig();
 
@@ -241,9 +265,9 @@ export class SvnProvider implements ISCMProvider {
 
       // 验证SVN可执行
       const { stdout } = await exec(`"${this.svnPath}" --version`);
-      const version = stdout.split("\n")[0].trim();
+      const version = stdout.toString().split("\n")[0]?.trim();
       Logger.log(LogLevel.Info, "SVN version:", version);
-      notify.info("svn.version.detected", [version]);
+      notify.info(formatMessage("scm.version.detected", ["SVN", version]));
 
       this.initialized = true;
     } catch (error) {
@@ -256,7 +280,7 @@ export class SvnProvider implements ISCMProvider {
   private async detectSvnPath(): Promise<string | null> {
     try {
       const { stdout } = await exec("which svn");
-      const path = stdout.trim();
+      const path = stdout.toString()?.trim();
       Logger.log(LogLevel.Info, "Detected SVN path:", path);
       return path;
     } catch (error) {
@@ -274,9 +298,9 @@ export class SvnProvider implements ISCMProvider {
     }
     return {
       ...process.env,
-      PATH: `${process.env.PATH}:${this.config.environmentConfig.path.join(
-        ":"
-      )}`,
+      PATH: `${process.env.PATH}${
+        path.delimiter
+      }${this.config.environmentConfig.path.join(path.delimiter)}`,
       LC_ALL: this.config.environmentConfig.locale,
     };
   }
@@ -291,7 +315,7 @@ export class SvnProvider implements ISCMProvider {
         return false;
       }
 
-      const api = this.svnExtension.getAPI();
+      const api = this.svnExtension.getAPI(1);
       const repositories = api.repositories;
       if (repositories.length > 0) {
         this.api = api;
@@ -319,11 +343,16 @@ export class SvnProvider implements ISCMProvider {
       if (!this.initialized) {
         throw new Error(getMessage("svn.not.initialized"));
       }
+      const repoInfo = this._findRepositoryAndPath([file]);
+      if (!repoInfo) {
+        return "Unknown";
+      }
+      const { repository, repositoryPath } = repoInfo;
 
       const { stdout: status } = await exec(
         `"${this.svnPath}" status "${file}"`,
         {
-          cwd: this.workspaceRoot,
+          ...ImprovedPathUtils.createExecOptions(repositoryPath),
           env: this.getEnvironmentConfig(),
         }
       );
@@ -332,10 +361,11 @@ export class SvnProvider implements ISCMProvider {
         return "Unknown";
       }
 
-      if (status.startsWith("?")) {
+      const statusStr = status.toString();
+      if (statusStr.startsWith("?")) {
         return "New File";
       }
-      if (status.startsWith("D")) {
+      if (statusStr.startsWith("D")) {
         return "Deleted File";
       }
       return "Modified File";
@@ -357,37 +387,325 @@ export class SvnProvider implements ISCMProvider {
         throw new Error(getMessage("svn.not.initialized"));
       }
 
-      const filePaths = files?.map((f) => `"${f}"`).join(" ") || "";
-      const command = `"${this.svnPath}" diff ${filePaths}`;
+      const repoInfo = this._findRepositoryAndPath(files);
+      if (!repoInfo) {
+        throw new Error(formatMessage("scm.repository.not.found", ["SVN"]));
+      }
+      const { repository, repositoryPath } = repoInfo;
 
-      const { stdout: rawDiff } = await exec(command, {
-        cwd: this.workspaceRoot,
-        maxBuffer: 1024 * 1024 * 10,
-        env: this.getEnvironmentConfig(),
-      });
+      let diffOutput = "";
 
-      if (!rawDiff.trim()) {
-        throw new Error(getMessage("diff.noChanges"));
+      if (files && files.length > 0) {
+        notify.info(formatMessage("diff.files.selected", [files.length]));
+        // 处理指定文件的差异
+        for (const file of files) {
+          const fileStatus = await this.getFileStatus(file);
+          const escapedFile = ImprovedPathUtils.escapeShellPath(file);
+
+          // 对于删除的文件不获取diff内容
+          if (fileStatus === "Deleted File") {
+            diffOutput += `\n=== ${fileStatus}: ${file} ===\n`;
+            continue;
+          }
+
+          // 根据文件状态选择合适的diff命令
+          let stdout = "";
+          if (fileStatus === "New File") {
+            // 处理未跟踪的新文件
+            try {
+              // 使用 ImprovedPathUtils 创建临时空文件用于比较
+              const tempEmptyFile = ImprovedPathUtils.createTempFilePath(
+                "empty-file-for-diff"
+              );
+              fs.writeFileSync(tempEmptyFile, "");
+
+              const result = await exec(
+                `"${
+                  this.svnPath
+                }" diff --diff-cmd diff -x "-u" ${ImprovedPathUtils.escapeShellPath(
+                  tempEmptyFile
+                )} ${escapedFile}`,
+                ImprovedPathUtils.createExecOptions(repositoryPath)
+              );
+              stdout = result.stdout.toString();
+
+              // 清理临时文件
+              try {
+                fs.unlinkSync(tempEmptyFile);
+              } catch (e) {
+                // 忽略清理错误
+              }
+            } catch (error) {
+              // 如果外部diff命令失败，尝试使用内置diff
+              if (error instanceof Error && "stdout" in error) {
+                stdout = (error as any).stdout.toString();
+              } else {
+                // 回退到读取整个文件内容
+                const fileContent = fs.readFileSync(file, "utf8");
+                stdout = `--- /dev/null\n+++ ${file}\n@@ -0,0 +1,${
+                  fileContent.split("\n").length
+                } @@\n${fileContent
+                  .split("\n")
+                  .map((line) => `+${line}`)
+                  .join("\n")}`;
+              }
+            }
+          } else {
+            // 处理已跟踪且修改的文件
+            try {
+              const result = await exec(
+                `"${this.svnPath}" diff ${escapedFile}`,
+                {
+                  ...ImprovedPathUtils.createExecOptions(repositoryPath),
+                  env: this.getEnvironmentConfig(),
+                }
+              );
+              stdout = result.stdout.toString();
+            } catch (error) {
+              if (error instanceof Error && "stdout" in error) {
+                stdout = (error as any).stdout.toString();
+              } else {
+                throw error;
+              }
+            }
+          }
+
+          // 添加文件状态和差异信息
+          if (stdout.toString()?.trim()) {
+            diffOutput += `\n=== ${fileStatus}: ${file} ===\n${stdout.toString()}`;
+          }
+        }
+      } else {
+        const diffTarget = ConfigurationManager.getInstance().getConfig(
+          "FEATURES_CODEANALYSIS_DIFFTARGET"
+        );
+
+        if (diffTarget === "staged") {
+          // SVN没有暂存区概念，但可以获取已添加到版本控制的文件的更改
+          try {
+            // 获取已添加到版本控制但未提交的文件列表
+            const { stdout: changedFiles } = await exec(
+              `"${this.svnPath}" status --xml`,
+              {
+                ...ImprovedPathUtils.createExecOptions(repositoryPath),
+                env: this.getEnvironmentConfig(),
+              }
+            );
+
+            // 解析XML输出以获取已添加的文件
+            const changedFilesStr = changedFiles.toString();
+            const addedFiles =
+              changedFilesStr.match(
+                /<entry[^>]*>\s*<wc-status[^>]*item="added"[^>]*>[\s\S]*?<\/entry>/g
+              ) || [];
+            const fileCount = addedFiles.length;
+
+            if (fileCount > 0) {
+              notify.info(formatMessage("diff.staged.info", [fileCount]));
+            }
+
+            // 获取已添加文件的差异
+            for (const xmlEntry of addedFiles) {
+              const pathMatch = xmlEntry.match(/path="([^"]+)"/);
+              if (pathMatch && pathMatch[1]) {
+                const filePath = pathMatch[1];
+                const escapedFile = ImprovedPathUtils.escapeShellPath(filePath);
+
+                try {
+                  // 使用 ImprovedPathUtils 创建临时空文件用于比较
+                  const tempEmptyFile = ImprovedPathUtils.createTempFilePath(
+                    "empty-file-for-diff"
+                  );
+                  fs.writeFileSync(tempEmptyFile, "");
+
+                  const result = await exec(
+                    `"${
+                      this.svnPath
+                    }" diff --diff-cmd diff -x "-u" ${ImprovedPathUtils.escapeShellPath(
+                      tempEmptyFile
+                    )} ${escapedFile}`,
+                    ImprovedPathUtils.createExecOptions(repositoryPath)
+                  );
+                  diffOutput += `\n=== Added File: ${filePath} ===\n${result.stdout.toString()}`;
+
+                  // 清理临时文件
+                  try {
+                    fs.unlinkSync(tempEmptyFile);
+                  } catch (e) {
+                    // 忽略清理错误
+                  }
+                } catch (error) {
+                  if (error instanceof Error && "stdout" in error) {
+                    diffOutput += `\n=== Added File: ${filePath} ===\n${(
+                      error as any
+                    ).stdout.toString()}`;
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            console.warn(
+              "Failed to count staged files for notification:",
+              error
+            );
+          }
+        } else {
+          // 获取所有更改的差异
+          try {
+            // 获取文件列表函数
+            const getFileNames = async (
+              statusFilter: string
+            ): Promise<string[]> => {
+              let output = "";
+              try {
+                const result = await exec(
+                  `"${this.svnPath}" status ${statusFilter} --xml`,
+                  {
+                    ...ImprovedPathUtils.createExecOptions(repositoryPath),
+                    env: this.getEnvironmentConfig(),
+                  }
+                );
+                output = result.stdout.toString();
+
+                // 解析XML输出以获取文件路径
+                const fileMatches = output.match(/path="([^"]+)"/g) || [];
+                return fileMatches.map((match) =>
+                  match.replace(/path="([^"]+)"/, "$1")
+                );
+              } catch (e) {
+                if (e instanceof Error && "stdout" in e) {
+                  output = (e as any).stdout.toString();
+                  const fileMatches = output.match(/path="([^"]+)"/g) || [];
+                  return fileMatches.map((match) =>
+                    match.replace(/path="([^"]+)"/, "$1")
+                  );
+                } else {
+                  throw e;
+                }
+              }
+            };
+
+            // 获取已修改的文件
+            const modifiedFiles = await getFileNames("--no-ignore");
+
+            // 通知用户文件数量
+            const fileCount = modifiedFiles.length;
+            if (fileCount > 0) {
+              notify.info(formatMessage("diff.all.info", [fileCount]));
+            }
+
+            // 获取所有文件的差异
+            const { stdout: allChanges } = await exec(
+              `"${this.svnPath}" diff`,
+              {
+                ...ImprovedPathUtils.createExecOptions(repositoryPath),
+                env: this.getEnvironmentConfig(),
+              }
+            );
+
+            diffOutput = allChanges.toString();
+
+            // 获取未版本控制的文件列表
+            const { stdout: statusOutput } = await exec(
+              `"${this.svnPath}" status`,
+              {
+                ...ImprovedPathUtils.createExecOptions(repositoryPath),
+                env: this.getEnvironmentConfig(),
+              }
+            );
+
+            // 解析未版本控制的文件
+            const statusOutputStr = statusOutput.toString();
+            const untrackedFiles = statusOutputStr
+              .split("\n")
+              .filter((line: string) => line.startsWith("?"))
+              .map((line: string) => line.substring(1)?.trim());
+
+            // 为每个未版本控制文件获取差异
+            if (untrackedFiles.length > 0) {
+              for (const file of untrackedFiles) {
+                const escapedFile = ImprovedPathUtils.escapeShellPath(file);
+                try {
+                  // 使用 ImprovedPathUtils 创建临时空文件用于比较
+                  const tempEmptyFile = ImprovedPathUtils.createTempFilePath(
+                    "empty-file-for-diff"
+                  );
+                  fs.writeFileSync(tempEmptyFile, "");
+
+                  const result = await exec(
+                    `"${
+                      this.svnPath
+                    }" diff --diff-cmd diff -x "-u" ${ImprovedPathUtils.escapeShellPath(
+                      tempEmptyFile
+                    )} ${escapedFile}`,
+                    ImprovedPathUtils.createExecOptions(repositoryPath)
+                  );
+                  diffOutput += `\n=== New File: ${file} ===\n${result.stdout.toString()}`;
+
+                  // 清理临时文件
+                  try {
+                    fs.unlinkSync(tempEmptyFile);
+                  } catch (e) {
+                    // 忽略清理错误
+                  }
+                } catch (error) {
+                  // 如果外部diff命令失败，尝试使用内置diff
+                  if (error instanceof Error && "stdout" in error) {
+                    diffOutput += `\n=== New File: ${file} ===\n${(
+                      error as any
+                    ).stdout.toString()}`;
+                  } else {
+                    // 回退到读取整个文件内容
+                    try {
+                      const fileContent = fs.readFileSync(
+                        path.join(repositoryPath, file),
+                        "utf8"
+                      );
+                      const diffContent = `--- /dev/null\n+++ ${file}\n@@ -0,0 +1,${
+                        fileContent.split("\n").length
+                      } @@\n${fileContent
+                        .split("\n")
+                        .map((line) => `+${line}`)
+                        .join("\n")}`;
+                      diffOutput += `\n=== New File: ${file} ===\n${diffContent}`;
+                    } catch (readError) {
+                      console.error(`Failed to read file ${file}:`, readError);
+                    }
+                  }
+                }
+              }
+            }
+          } catch (error) {
+            console.warn(
+              "Failed to count all changed files for notification:",
+              error
+            );
+          }
+        }
+      }
+
+      if (!diffOutput?.trim()) {
+        // throw new Error(getMessage("diff.noChanges"));
       }
 
       // 获取配置
-      const config = vscode.workspace.getConfiguration("dish-ai-commit");
-      const enableSimplification = config.get<boolean>(
-        "features.codeAnalysis.simplifyDiff"
+      const configManager = ConfigurationManager.getInstance();
+      const enableSimplification = configManager.getConfig(
+        "FEATURES_CODEANALYSIS_SIMPLIFYDIFF"
       );
 
       // 根据配置决定是否显示警告和简化diff
       if (enableSimplification) {
         notify.warn("diff.simplification.warning");
-        return DiffSimplifier.simplify(rawDiff);
+        return DiffSimplifier.simplify(diffOutput);
       }
 
-      // 如果未启用简化，直接返回原始diff
-      return DiffProcessor.process(rawDiff, "svn");
+      // 处理diff以获取结构化数据，包括原始文件内容
+      return DiffProcessor.process(diffOutput, "svn");
     } catch (error) {
-      Logger.log(LogLevel.Error, "SVN diff failed:", error);
       if (error instanceof Error) {
-        notify.error("git.diff.failed", [error.message]);
+        console.error(formatMessage("scm.diff.error", ["SVN", error])); // 添加调试日志
+        // notify.error(formatMessage("scm.diff.failed", ["SVN", error.message]));
       }
       throw error;
     }
@@ -400,9 +718,9 @@ export class SvnProvider implements ISCMProvider {
    * @throws {Error} 当提交失败或未选择文件时抛出错误
    */
   async commit(message: string, files?: string[]): Promise<void> {
-    const repository = this.api?.repositories?.[0];
+    const repository = this.findRepository(files);
     if (!repository) {
-      throw new Error(getMessage("git.repository.not.found"));
+      throw new Error(formatMessage("scm.repository.not.found", ["SVN"]));
     }
 
     try {
@@ -415,7 +733,7 @@ export class SvnProvider implements ISCMProvider {
         "SVN commit failed:",
         error instanceof Error ? error.message : error
       );
-      throw new Error(formatMessage("svn.commit.failed", [error]));
+      throw new Error(formatMessage("scm.commit.failed", ["SVN", error]));
     }
   }
 
@@ -425,7 +743,7 @@ export class SvnProvider implements ISCMProvider {
    * @throws {Error} 当未找到仓库时抛出错误
    */
   async setCommitInput(message: string): Promise<void> {
-    const repository = this.api?.repositories?.[0];
+    const repository = this.findRepository();
     if (repository?.inputBox) {
       repository.inputBox.value = message;
     } else {
@@ -433,11 +751,10 @@ export class SvnProvider implements ISCMProvider {
         await vscode.env.clipboard.writeText(message);
         notify.info("commit.message.copied");
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
         notify.error("commit.message.copy.failed", [errorMessage]);
-        vscode.window.showInformationMessage(
-          formatMessage("commit.message.manual.copy", [message])
-        );
+        notify.info("commit.message.manual.copy", [message]);
       }
     }
   }
@@ -448,9 +765,9 @@ export class SvnProvider implements ISCMProvider {
    * @throws {Error} 当未找到仓库时抛出错误
    */
   async getCommitInput(): Promise<string> {
-    const repository = this.api?.repositories?.[0];
+    const repository = this.findRepository();
     if (!repository) {
-      throw new Error(getMessage("git.repository.not.found"));
+      throw new Error(formatMessage("scm.repository.not.found", ["SVN"]));
     }
 
     return repository.inputBox.value;
@@ -463,7 +780,7 @@ export class SvnProvider implements ISCMProvider {
    * @throws {Error} 当未找到仓库或inputBox时抛出错误
    */
   async startStreamingInput(message: string): Promise<void> {
-    const repository = this.api?.repositories?.[0];
+    const repository = this.findRepository();
     if (repository?.inputBox) {
       repository.inputBox.value = message;
     } else {
@@ -471,11 +788,10 @@ export class SvnProvider implements ISCMProvider {
         await vscode.env.clipboard.writeText(message);
         notify.info("commit.message.copied");
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : "Unknown error";
+        const errorMessage =
+          error instanceof Error ? error.message : "Unknown error";
         notify.error("commit.message.copy.failed", [errorMessage]);
-        vscode.window.showInformationMessage(
-          formatMessage("commit.message.manual.copy", [message])
-        );
+        notify.info("commit.message.manual.copy", [message]);
       }
     }
   }
@@ -493,6 +809,11 @@ export class SvnProvider implements ISCMProvider {
     if (!this.initialized) {
       throw new Error(getMessage("svn.not.initialized"));
     }
+    const repoInfo = this._findRepositoryAndPath();
+    if (!repoInfo) {
+      throw new Error(formatMessage("scm.repository.not.found", ["SVN"]));
+    }
+    const { repository, repositoryPath } = repoInfo;
 
     try {
       let commandArgs = "";
@@ -517,21 +838,21 @@ export class SvnProvider implements ISCMProvider {
         }
       }
 
-      const command = `"${this.svnPath}" log ${commandArgs} "${this.workspaceRoot}"`;
+      const command = `"${this.svnPath}" log ${commandArgs} "${repositoryPath}"`;
       Logger.log(LogLevel.Info, `Executing SVN log command: ${command}`);
 
       const { stdout } = await exec(command, {
-        cwd: this.workspaceRoot,
-        maxBuffer: 1024 * 1024 * 10, // 10MB buffer
+        ...ImprovedPathUtils.createExecOptions(repositoryPath),
         env: this.getEnvironmentConfig(),
       });
 
-      if (!stdout.trim()) {
+      const stdoutStr = stdout.toString();
+      if (!stdoutStr?.trim()) {
         return [];
       }
 
       // 解析 SVN log 输出
-      const rawLog = stdout;
+      const rawLog = stdoutStr;
       const commitMessages: string[] = [];
       // SVN 日志条目由 "------------------------------------------------------------------------" 分隔
       // 使用正则表达式确保正确分割，并处理多行情况
@@ -540,7 +861,7 @@ export class SvnProvider implements ISCMProvider {
       );
 
       for (const rawEntry of entries) {
-        const entry = rawEntry.trim();
+        const entry = rawEntry?.trim();
         if (!entry) {
           continue;
         }
@@ -553,12 +874,12 @@ export class SvnProvider implements ISCMProvider {
 
         // 确定实际提交信息的起始行
         let messageStartIndex = 1; // 假设信息在头信息之后的第一行
-        if (lines.length > 1 && lines[messageStartIndex].trim() === "") {
+        if (lines.length > 1 && lines[messageStartIndex]?.trim() === "") {
           messageStartIndex++; // 如果头信息后是空行，则跳过空行
         }
 
         if (messageStartIndex < lines.length) {
-          const message = lines.slice(messageStartIndex).join("\n").trim();
+          const message = lines.slice(messageStartIndex).join("\n")?.trim();
           if (message) {
             commitMessages.push(message);
           }
@@ -570,7 +891,7 @@ export class SvnProvider implements ISCMProvider {
       Logger.log(LogLevel.Error, "SVN log failed:", error);
       if (error instanceof Error) {
         // 确保 i18n 文件中有 "svn.log.failed" 键
-        notify.error("svn.log.failed", [error.message]);
+        notify.error(formatMessage("scm.log.failed", ["SVN", error.message]));
       }
       return []; // 类似 git-provider，在错误时返回空数组
     }
@@ -579,29 +900,35 @@ export class SvnProvider implements ISCMProvider {
   async getRecentCommitMessages() {
     const repositoryCommitMessages: string[] = [];
     const userCommitMessages: string[] = [];
+    const repoInfo = this._findRepositoryAndPath();
+    if (!repoInfo) {
+      return { repository: [], user: [] };
+    }
+    const { repository, repositoryPath } = repoInfo;
 
     try {
       // Last 5 commit messages (repository)
-      const logCommand = `"${this.svnPath}" log -l 5 "${this.workspaceRoot}"`;
+      const logCommand = `"${this.svnPath}" log -l 5 "${repositoryPath}"`;
       const { stdout: logOutput } = await exec(logCommand, {
-        cwd: this.workspaceRoot,
+        ...ImprovedPathUtils.createExecOptions(repositoryPath),
         env: this.getEnvironmentConfig(),
       });
-      repositoryCommitMessages.push(...this.parseSvnLog(logOutput));
+      repositoryCommitMessages.push(...this.parseSvnLog(logOutput.toString()));
 
       // Last 5 commit messages (user)
       const { stdout: user } = await exec(
-        `"${this.svnPath}" info --show-item last-changed-author "${this.workspaceRoot}"`
+        `"${this.svnPath}" info --show-item last-changed-author "${repositoryPath}"`,
+        ImprovedPathUtils.createExecOptions(repositoryPath)
       );
-      const author = user.trim();
+      const author = user.toString()?.trim();
 
       if (author) {
-        const userLogCommand = `"${this.svnPath}" log -l 5 -r HEAD:1 --search "${author}" "${this.workspaceRoot}"`;
+        const userLogCommand = `"${this.svnPath}" log -l 5 -r HEAD:1 --search "${author}" "${repositoryPath}"`;
         const { stdout: userLogOutput } = await exec(userLogCommand, {
-          cwd: this.workspaceRoot,
+          ...ImprovedPathUtils.createExecOptions(repositoryPath),
           env: this.getEnvironmentConfig(),
         });
-        userCommitMessages.push(...this.parseSvnLog(userLogOutput));
+        userCommitMessages.push(...this.parseSvnLog(userLogOutput.toString()));
       }
     } catch (err) {
       console.error("Failed to get recent SVN commit messages:", err);
@@ -617,7 +944,7 @@ export class SvnProvider implements ISCMProvider {
     );
 
     for (const rawEntry of entries) {
-      const entry = rawEntry.trim();
+      const entry = rawEntry?.trim();
       if (!entry) {
         continue;
       }
@@ -628,12 +955,12 @@ export class SvnProvider implements ISCMProvider {
       }
 
       let messageStartIndex = 1;
-      if (lines.length > 1 && lines[messageStartIndex].trim() === "") {
+      if (lines.length > 1 && lines[messageStartIndex]?.trim() === "") {
         messageStartIndex++;
       }
 
       if (messageStartIndex < lines.length) {
-        const message = lines.slice(messageStartIndex).join("\n").trim();
+        const message = lines.slice(messageStartIndex).join("\n")?.trim();
         if (message) {
           messages.push(message.split("\n")[0]);
         }
@@ -651,9 +978,127 @@ export class SvnProvider implements ISCMProvider {
       await vscode.env.clipboard.writeText(message);
       notify.info("commit.message.copied");
     } catch (error) {
-      const errorMessage = error instanceof Error ? error.message : "Unknown error";
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
       notify.error("commit.message.copy.failed", [errorMessage]);
     }
+  }
+
+  /**
+   * 根据文件路径或当前上下文找到最匹配的SVN仓库。
+   * @param filePaths - 可选的文件路径数组，用于精确定位仓库。
+   * @returns {SvnRepository | undefined} 匹配的SVN仓库实例。
+   * @private
+   */
+  private _getRepoFsPath(repo: SvnRepository): string | undefined {
+    return (repo as any).root;
+  }
+
+  private _findRepositoryAndPath(
+    files?: string[]
+  ): { repository: SvnRepository; repositoryPath: string } | undefined {
+    const repository = this.findRepository(files);
+    if (!repository) {
+      return undefined;
+    }
+    const repositoryPath = this._getRepoFsPath(repository);
+    if (!repositoryPath) {
+      return undefined;
+    }
+    return { repository, repositoryPath };
+  }
+
+  private findRepository(filePaths?: string[]): SvnRepository | undefined {
+    const { repositories } = this;
+
+    if (!repositories.length) {
+      return undefined;
+    }
+
+    // 1. 如果在构造时提供了特定的仓库路径，优先使用它
+    if (this.repositoryPath) {
+      const specificRepo = repositories.find((repo) => {
+        const repoFsPath = this._getRepoFsPath(repo);
+        if (!repoFsPath) {
+          return false;
+        }
+        const normalizedRepoPath = ImprovedPathUtils.normalizePath(repoFsPath);
+        const normalizedTargetPath = ImprovedPathUtils.normalizePath(
+          this.repositoryPath!
+        );
+
+        // Use the pathsEqual method which handles platform-specific path comparison
+        return ImprovedPathUtils.pathsEqual(
+          normalizedRepoPath,
+          normalizedTargetPath
+        );
+      });
+      return specificRepo;
+    }
+
+    // --- Fallback Logic ---
+    // 仅在未提供 repositoryPath 时执行以下逻辑
+
+    // 如果只有一个仓库，直接返回
+    if (repositories.length === 1) {
+      return repositories[0];
+    }
+
+    const uris = filePaths?.map((path) => vscode.Uri.file(path));
+
+    // 2. 根据提供的文件路径查找
+    if (uris && uris.length > 0) {
+      for (const uri of uris) {
+        for (const repo of repositories) {
+          const repoPath = this._getRepoFsPath(repo);
+          if (repoPath) {
+            const normalizedRepoPath =
+              ImprovedPathUtils.normalizePath(repoPath);
+            const normalizedFilePath = ImprovedPathUtils.normalizePath(
+              uri.fsPath
+            );
+
+            // Use the pathStartsWith helper for platform-aware path prefix checking
+            if (
+              ImprovedPathUtils.pathStartsWith(
+                normalizedFilePath,
+                normalizedRepoPath
+              )
+            ) {
+              return repo; // 找到第一个匹配的就返回
+            }
+          }
+        }
+      }
+    }
+
+    // 3. 根据当前打开的活动编辑器查找
+    const activeEditor = vscode.window.activeTextEditor;
+    if (activeEditor?.document.uri.scheme === "file") {
+      const activeFileUri = activeEditor.document.uri;
+      for (const repo of repositories) {
+        const repoPath = this._getRepoFsPath(repo);
+        if (repoPath) {
+          const normalizedRepoPath = ImprovedPathUtils.normalizePath(repoPath);
+          const normalizedFilePath = ImprovedPathUtils.normalizePath(
+            activeFileUri.fsPath
+          );
+
+          // Use the pathStartsWith helper for platform-aware path prefix checking
+          if (
+            ImprovedPathUtils.pathStartsWith(
+              normalizedFilePath,
+              normalizedRepoPath
+            )
+          ) {
+            return repo;
+          }
+        }
+      }
+    }
+
+    // 4. 如果上述都找不到，返回第一个仓库作为备选
+    return repositories[0];
   }
 
   // /**
@@ -664,7 +1109,7 @@ export class SvnProvider implements ISCMProvider {
   // async appendStreamingInput(chunk: string): Promise<void> {
   //   const repository = this.api?.repositories?.[0];
   //   if (!repository) {
-  //     throw new Error(getMessage("git.repository.not.found")); // 保持与现有代码一致
+  //     throw new Error(formatMessage("scm.repository.not.found", ["SVN"])); // 保持与现有代码一致
   //   }
   //   if (repository.inputBox) {
   //     repository.inputBox.value += chunk;
@@ -682,7 +1127,7 @@ export class SvnProvider implements ISCMProvider {
   // async finishStreamingInput(): Promise<void> {
   //   const repository = this.api?.repositories?.[0];
   //   if (!repository) {
-  //     throw new Error(getMessage("git.repository.not.found")); // 保持与现有代码一致
+  //     throw new Error(formatMessage("scm.repository.not.found", ["SVN"])); // 保持与现有代码一致
   //   }
   //   if (repository.inputBox && typeof repository.inputBox.enabled === 'boolean') {
   //     repository.inputBox.enabled = true;

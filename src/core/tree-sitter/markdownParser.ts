@@ -33,7 +33,7 @@ interface MockCapture {
  * @returns An array of mock captures compatible with tree-sitter captures
  */
 export function parseMarkdown(content: string): MockCapture[] {
-  if (!content || content.trim() === "") {
+  if (!content || content?.trim() === "") {
     return [];
   }
 
@@ -56,7 +56,7 @@ export function parseMarkdown(content: string): MockCapture[] {
     const atxMatch = line.match(atxHeaderRegex);
     if (atxMatch) {
       const level = atxMatch[1].length;
-      const text = atxMatch[2].trim();
+      const text = atxMatch[2]?.trim();
 
       // Create a mock node for this header
       const node: MockNode = {
@@ -84,7 +84,7 @@ export function parseMarkdown(content: string): MockCapture[] {
     if (i > 0) {
       // Check for H1 (======)
       if (setextH1Regex.test(line) && validSetextTextRegex.test(lines[i - 1])) {
-        const text = lines[i - 1].trim();
+        const text = lines[i - 1]?.trim();
 
         // Create a mock node for this header
         const node: MockNode = {
@@ -110,7 +110,7 @@ export function parseMarkdown(content: string): MockCapture[] {
 
       // Check for H2 (------)
       if (setextH2Regex.test(line) && validSetextTextRegex.test(lines[i - 1])) {
-        const text = lines[i - 1].trim();
+        const text = lines[i - 1]?.trim();
 
         // Create a mock node for this header
         const node: MockNode = {

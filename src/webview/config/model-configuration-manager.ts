@@ -43,7 +43,7 @@ export class ModelConfigurationManager {
     const selectedModel = models.find((m) => m.id === model);
 
     if (!selectedModel) {
-      throw new Error(getMessage("model.notFound"));
+      throw new Error(getMessage("model.not.found"));
     }
 
     return { aiProvider, selectedModel };

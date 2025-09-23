@@ -168,7 +168,7 @@ export class GitCommitStrategy implements CommitLogStrategy {
     const command = `git log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n" --author="${author}"`;
 
     const { stdout } = await execAsync(command, { cwd: workspacePath });
-    return stdout.split("\n").filter((line) => line.trim());
+    return stdout.split("\n").filter((line) => line?.trim());
   }
 
   /**
@@ -215,7 +215,7 @@ export class GitCommitStrategy implements CommitLogStrategy {
         cwd: workspacePath,
         maxBuffer: 1024 * 1024 * 10, // 增加缓冲区
       });
-      return stdout.split("\n").filter((line) => line.trim());
+      return stdout.split("\n").filter((line) => line?.trim());
     } catch (error) {
       // 如果正则查询失败（例如某些git版本不支持），可以回退到为每个用户查询然后合并
       console.error(
@@ -237,7 +237,7 @@ export class GitCommitStrategy implements CommitLogStrategy {
             cwd: workspacePath,
           });
           allCommits = allCommits.concat(
-            stdout.split("\n").filter((line) => line.trim())
+            stdout.split("\n").filter((line) => line?.trim())
           );
         } catch (singleError) {
           console.error(`Error getting commits for user ${user}:`, singleError);
@@ -335,7 +335,7 @@ export class SvnCommitStrategy implements CommitLogStrategy {
     // 循环提取所有匹配的提交消息
     while ((match = logEntriesRegex.exec(xmlOutput)) !== null) {
       if (match[1]?.trim()) {
-        commits.push(match[1].trim());
+        commits.push(match[1]?.trim());
       }
     }
 

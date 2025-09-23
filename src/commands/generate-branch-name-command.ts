@@ -1,5 +1,6 @@
 import * as vscode from "vscode";
 import { BaseCommand } from "./base-command";
+import { SCMDetectorService } from "../services/scm-detector-service";
 import { getMessage, formatMessage } from "../utils/i18n";
 import {
   notify,
@@ -98,7 +99,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
             // SCM provider is not detected in this mode, but we need a type for the prompt
             scmProviderForContext = { type: "git" };
           } else {
-            let selectedFiles = this.getSelectedFiles(resources);
+            let selectedFiles = SCMDetectorService.getSelectedFiles(resources);
 
             // If no files are explicitly selected (e.g., command run from palette),
             // get all changes. `getDiff` handles `undefined` by getting all changes.
@@ -113,13 +114,12 @@ export class GenerateBranchNameCommand extends BaseCommand {
               increment: 5,
               message: getMessage("detecting.scm.provider"),
             });
-            const detectedScmProvider = await this.detectSCMProvider(
-              selectedFiles
-            );
-            if (!detectedScmProvider) {
+            const result = await this.detectSCMProvider(selectedFiles);
+            if (!result) {
               // detectSCMProvider usually shows a notification if it fails
               return;
             }
+            const { scmProvider: detectedScmProvider } = result;
             if (detectedScmProvider.type !== "git") {
               await notify.warn("branch.name.git.only");
               return;
@@ -175,6 +175,9 @@ export class GenerateBranchNameCommand extends BaseCommand {
             branchNameResult.content,
             scmProviderForContext
           );
+          progress.report({
+            increment: 100,
+          });
         }
       );
     } catch (error) {
@@ -225,21 +228,64 @@ export class GenerateBranchNameCommand extends BaseCommand {
         const createBranch = getMessage("create.branch");
         const copyToClipboard = getMessage("copy.to.clipboard");
 
-        const selection = await vscode.window.showInformationMessage(
-          formatMessage("branch.name.selected", [selectedBranch]),
-          createBranch,
-          copyToClipboard
+        // selectedBranch,
+
+        const selection = await notify.info(
+          "branch.name.selected",
+          [selectedBranch],
+          {
+            buttons: [createBranch, copyToClipboard],
+          }
         );
 
         if (selection === createBranch) {
           try {
-            await vscode.env.clipboard.writeText(selectedBranch);
-            // 执行创建分支操作
-            await vscode.commands.executeCommand(
-              "git.checkout",
-              selectedBranch
-            );
-            notify.info("branch.created", [selectedBranch]);
+            if (scmProvider.type === "git" && scmProvider.getBranches) {
+              const branches = await withProgress(
+                getMessage("fetching.branches.list"),
+                async () => {
+                  return await scmProvider.getBranches();
+                }
+              );
+              if (branches && branches.length > 0) {
+                const selectedBaseBranch = await vscode.window.showQuickPick(
+                  branches,
+                  {
+                    placeHolder: getMessage("select.base.branch.placeholder"),
+                    ignoreFocusOut: true,
+                  }
+                );
+
+                if (selectedBaseBranch) {
+                  await vscode.commands.executeCommand(
+                    "git.branchFrom",
+                    selectedBranch,
+                    selectedBaseBranch
+                  );
+                  notify.info("branch.created.from", [
+                    selectedBranch,
+                    selectedBaseBranch,
+                  ]);
+                } else {
+                  // 用户取消选择基础分支
+                  notify.info("branch.creation.cancelled");
+                }
+              } else {
+                // 没有获取到分支列表，回退到原先的 checkout 逻辑
+                await vscode.commands.executeCommand(
+                  "git.checkout",
+                  selectedBranch
+                );
+                notify.info("branch.created", [selectedBranch]);
+              }
+            } else {
+              // 非Git或不支持getBranches，使用旧逻辑
+              await vscode.commands.executeCommand(
+                "git.checkout",
+                selectedBranch
+              );
+              notify.info("branch.created", [selectedBranch]);
+            }
           } catch (error) {
             console.error("Failed to create branch:", error);
             notify.error("branch.creation.failed");
@@ -318,7 +364,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
    */
   private formatBranchName(branchName: string): string {
     // 去除多余的空格
-    let formatted = branchName.trim();
+    let formatted = branchName?.trim();
 
     // 如果有冒号或类似的前缀格式，保留它
     if (
