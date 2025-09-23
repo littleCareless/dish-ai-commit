@@ -396,7 +396,7 @@ export class SvnProvider implements ISCMProvider {
       let diffOutput = "";
 
       if (files && files.length > 0) {
-        notify.info(formatMessage("diff.files.selected", [files.length]));
+        // notify.info(formatMessage("diff.files.selected", [files.length]));
         // 处理指定文件的差异
         for (const file of files) {
           const fileStatus = await this.getFileStatus(file);
