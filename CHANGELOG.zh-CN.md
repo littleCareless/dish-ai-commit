@@ -5,6 +5,17 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+## 0.50.1 (2025-09-23)
+
+
+### 🎫 Chores
+
+* **docs**: Fix incorrect directory name in installation instructions ([08fd60d](https://github.com/littleCareless/dish-ai-commit/commit/08fd60d))
+
+
+
+
+
 # 0.50.0 (2025-09-18)
 
 
