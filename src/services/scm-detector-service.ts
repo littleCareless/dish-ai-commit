@@ -124,12 +124,12 @@ export class SCMDetectorService {
     // 尝试从resourceStates直接获取
     // 基本都是 svn 的情况了，因为 git 插件 在 vscode 中是预装的
     if (resourceStates) {
-      const states = Array.isArray(resourceStates)
-        ? resourceStates
-        : [resourceStates];
+      const states = (
+        Array.isArray(resourceStates) ? resourceStates : [resourceStates]
+      ).filter(Boolean);
       for (const state of states) {
         // 尝试访问 sourceControl.rootUri，这是一个更可靠的属性
-        const sc = (state as any).resourceGroup?.sourceControl;
+        const sc = (state as any)?.resourceGroup?.sourceControl;
         if (sc?.rootUri?.fsPath) {
           return sc.rootUri.fsPath;
         }
