@@ -100,6 +100,7 @@ export class AnthropicAIProvider extends AbstractAIProvider {
         "Anthropic API client not initialized. Please check your API key."
       );
     }
+    const anthropic = this.anthropic;
 
     // 获取模型ID
     const modelId = (params.model?.id || this.config.defaultModel) as string;
@@ -121,7 +122,7 @@ export class AnthropicAIProvider extends AbstractAIProvider {
         content: content.content,
       }));
 
-      const response = await this.anthropic.messages.create({
+      const response = await anthropic.messages.create({
         model: modelId,
         messages: messages,
         max_tokens: options?.maxTokens || 4096,
@@ -161,6 +162,7 @@ export class AnthropicAIProvider extends AbstractAIProvider {
         "Anthropic API client not initialized. Please check your API key."
       );
     }
+    const anthropic = this.anthropic;
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
     const { systemInstruction, contents } = (await this.buildProviderMessages(
@@ -184,7 +186,7 @@ export class AnthropicAIProvider extends AbstractAIProvider {
           content: content.content,
         }));
 
-        const stream = await this.anthropic!.messages.create({
+        const stream = await anthropic.messages.create({
           model: modelId,
           messages: messages,
           max_tokens: options?.maxTokens || 4096,

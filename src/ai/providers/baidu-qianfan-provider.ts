@@ -109,6 +109,7 @@ export class BaiduQianfanProvider extends AbstractAIProvider {
         "Baidu Qianfan client not initialized. Please check your API key and Secret key."
       );
     }
+    const client = this.client;
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
     const { messages, system } = await this.buildProviderMessages(params);
@@ -119,7 +120,7 @@ export class BaiduQianfanProvider extends AbstractAIProvider {
     );
 
     try {
-      const response = await this.client.chat(
+      const response = await client.chat(
         {
           model: modelId,
           messages,
@@ -164,6 +165,7 @@ export class BaiduQianfanProvider extends AbstractAIProvider {
         "Baidu Qianfan client not initialized. Please check your API key and Secret key."
       );
     }
+    const client = this.client;
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
     const { messages, system } = await this.buildProviderMessages(params);
@@ -176,7 +178,7 @@ export class BaiduQianfanProvider extends AbstractAIProvider {
           "Final messages for AI:",
           JSON.stringify({ system, messages }, null, 2)
         );
-        const stream = await this.client!.chat(
+        const stream = await client.chat(
           {
             model: modelId,
             messages,

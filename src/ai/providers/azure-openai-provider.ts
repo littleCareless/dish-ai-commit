@@ -112,12 +112,13 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
         "Azure OpenAI API client not initialized. Please check your API key, endpoint, and API version."
       );
     }
+    const openai = this.openai;
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
     const messages = await this.buildProviderMessages(params);
 
     try {
-      const completion = await this.openai!.chat.completions.create({
+      const completion = await openai.chat.completions.create({
         model: modelId,
         messages,
         temperature: options?.temperature || 0.7,
@@ -159,6 +160,7 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
         "Azure OpenAI API client not initialized. Please check your API key, endpoint, and API version."
       );
     }
+    const openai = this.openai;
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
     const messages = await this.buildProviderMessages(params);
@@ -167,7 +169,7 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
       this: AzureOpenAIProvider
     ): AsyncIterable<string> {
       try {
-        const stream = await this.openai!.chat.completions.create({
+        const stream = await openai.chat.completions.create({
           model: modelId,
           messages,
           temperature: options?.temperature || 0.7,

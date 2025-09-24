@@ -8,6 +8,7 @@ import {
   getPRSummaryUserPrompt,
 } from "../../prompt/pr-summary";
 import { getSystemPrompt } from "../utils/generate-helper";
+import { ensureInitialized } from "../../utils";
 
 /**
  * Vertex AI Provider Configuration Interface
@@ -137,11 +138,7 @@ export class VertexAIProvider extends AbstractAIProvider {
       maxTokens?: number;
     }
   ): Promise<{ content: string; usage?: any; jsonContent?: any }> {
-    if (!this.vertexAI) {
-      throw new Error(
-        "Vertex AI client not initialized. Please check your Project ID and Location."
-      );
-    }
+    const vertexAI = ensureInitialized(this.vertexAI, "VertexAIClient");
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
     const { systemInstruction, contents } = (await this.buildProviderMessages(
@@ -152,7 +149,7 @@ export class VertexAIProvider extends AbstractAIProvider {
     };
 
     try {
-      const generativeModel = this.vertexAI.getGenerativeModel({
+      const generativeModel = vertexAI.getGenerativeModel({
         model: modelId,
         systemInstruction: systemInstruction,
       });
@@ -190,11 +187,7 @@ export class VertexAIProvider extends AbstractAIProvider {
       maxTokens?: number;
     }
   ): Promise<AsyncIterable<string>> {
-    if (!this.vertexAI) {
-      throw new Error(
-        "Vertex AI client not initialized. Please check your Project ID and Location."
-      );
-    }
+    const vertexAI = ensureInitialized(this.vertexAI, "VertexAIClient");
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
     const { systemInstruction, contents } = (await this.buildProviderMessages(
@@ -208,7 +201,7 @@ export class VertexAIProvider extends AbstractAIProvider {
       this: VertexAIProvider
     ): AsyncIterable<string> {
       try {
-        const generativeModel = this.vertexAI!.getGenerativeModel({
+        const generativeModel = vertexAI.getGenerativeModel({
           model: modelId,
           systemInstruction: systemInstruction,
         });

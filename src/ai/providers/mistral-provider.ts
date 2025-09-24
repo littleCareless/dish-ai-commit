@@ -98,12 +98,13 @@ export class MistralAIProvider extends AbstractAIProvider {
         "Mistral API client not initialized. Please check your API key."
       );
     }
+    const client = this.client;
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
     const messages = await this.buildProviderMessages(params);
 
     try {
-      const response = await this.client.chat.complete({
+      const response = await client.chat.complete({
         model: modelId,
         messages: messages,
         temperature: options?.temperature || 0.7,
@@ -132,6 +133,7 @@ export class MistralAIProvider extends AbstractAIProvider {
         "Mistral API client not initialized. Please check your API key."
       );
     }
+    const client = this.client;
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
     const messages = await this.buildProviderMessages(params);
@@ -140,7 +142,7 @@ export class MistralAIProvider extends AbstractAIProvider {
       this: MistralAIProvider
     ): AsyncIterable<string> {
       try {
-        const stream = await this.client!.chat.stream({
+        const stream = await client.chat.stream({
           model: modelId,
           messages: messages,
           temperature: options?.temperature || 0.7,
