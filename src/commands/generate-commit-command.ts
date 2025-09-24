@@ -99,7 +99,7 @@ export class GenerateCommitCommand extends BaseCommand {
    */
   async execute(resources: vscode.SourceControlResourceState[]): Promise<void> {
     this.logger.info("Executing GenerateCommitCommand...");
-    if (!(await this.showConfirmAIProviderToS())) {
+    if ((await this.showConfirmAIProviderToS()) === false) {
       this.logger.warn("User did not confirm AI provider ToS.");
       return;
     }
@@ -143,6 +143,7 @@ export class GenerateCommitCommand extends BaseCommand {
             model,
             scmProvider,
             selectedFiles,
+            resources,
             repositoryPath
           )
       );
@@ -277,6 +278,7 @@ ${currentInput}
     model: string,
     scmProvider: ISCMProvider,
     selectedFiles: string[] | undefined,
+    resources: vscode.SourceControlResourceState[],
     repositoryPath?: string
   ) {
     this.logger.info("Performing streaming generation...");
@@ -289,7 +291,9 @@ ${currentInput}
 
     // 在获取diff之前设置当前文件，确保使用正确的仓库
     if (scmProvider.setCurrentFiles && selectedFiles) {
-      this.logger.info(`Setting current files for SCM provider: ${selectedFiles.join(", ")}`);
+      this.logger.info(
+        `Setting current files for SCM provider: ${selectedFiles.join(", ")}`
+      );
       scmProvider.setCurrentFiles(selectedFiles);
     }
 
@@ -301,6 +305,7 @@ ${currentInput}
 
     let diffContent: string | undefined;
     const diffTargetConfig = configuration.features.codeAnalysis.diffTarget;
+    this.logger.info(`diffTargetConfig: ${diffTargetConfig}`);
 
     // 如果配置为自动检测模式
     if (diffTargetConfig === "auto") {
@@ -309,7 +314,8 @@ ${currentInput}
         const repositoryContext =
           await multiRepositoryContextManager.identifyRepository(
             selectedFiles,
-            vscode.window.activeTextEditor
+            vscode.window.activeTextEditor,
+            resources
           );
 
         // 2. 检测暂存区内容
@@ -414,7 +420,10 @@ ${currentInput}
     );
     this.logger.info("ContextManager built.");
     this.logger.info(
-      `Context blocks: ${contextManager.getBlocks().map((b: any) => b.name).join(", ")}`
+      `Context blocks: ${contextManager
+        .getBlocks()
+        .map((b: any) => b.name)
+        .join(", ")}`
     );
 
     // `messages` 将在 ContextManager 内部构建和重试

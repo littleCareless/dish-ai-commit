@@ -8,6 +8,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { promisify } from "util";
 import { exec } from "child_process";
+import { SvnUtils } from "./svn-utils";
 import {
   IMultiRepositoryContextManager,
   RepositoryInfo,
@@ -38,56 +39,56 @@ export class MultiRepositoryContextManager
    */
   async identifyRepository(
     selectedFiles?: string[],
-    activeEditor?: vscode.TextEditor
+    activeEditor?: vscode.TextEditor,
+    resourceStates?: vscode.SourceControlResourceState[] // Added for better context
   ): Promise<RepositoryContext> {
-    const repositories = await this.getAllRepositories();
+    const activeFile = activeEditor?.document?.fileName;
+    // Let getRepositoryFromResources figure out the files if not explicitly provided.
+    const filesForDetection =
+      selectedFiles || (activeFile ? [activeFile] : undefined);
 
-    if (repositories.length === 0) {
-      throw new StagedDetectionError(
-        DetectionErrorType.INVALID_REPOSITORY,
-        "No valid repositories found in workspace"
-      );
-    }
+    const repoPath = await this.getRepositoryFromResources(
+      resourceStates,
+      filesForDetection
+    );
 
     let targetRepository: RepositoryInfo;
-    let selectedFilesList: string[] = [];
-    let activeFile: string | undefined;
 
-    // Priority 1: Use selected files to determine repository
-    if (selectedFiles && selectedFiles.length > 0) {
-      selectedFilesList = selectedFiles;
-      targetRepository = this.findRepositoryForFiles(
-        selectedFiles,
-        repositories
-      );
-    }
-    // Priority 2: Use active editor file
-    else if (activeEditor?.document?.fileName) {
-      activeFile = activeEditor.document.fileName;
-      targetRepository = this.findRepositoryForFiles(
-        [activeFile],
-        repositories
-      );
-    }
-    // Priority 3: Use primary/active repository
-    else {
+    if (repoPath) {
+      const repoInfo = await this.getRepositoryInfo(repoPath);
+      targetRepository = repoInfo || this.createFallbackRepository(repoPath);
+    } else {
+      // Fallback logic remains the same
       const primary = await this.getPrimaryRepository();
-      if (!primary) {
-        // Fallback to first repository
-        targetRepository = repositories[0];
-      } else {
+      if (primary) {
         targetRepository = primary;
+      } else {
+        const allRepos = await this.getAllRepositories();
+        if (allRepos.length > 0) {
+          targetRepository = allRepos[0];
+        } else {
+          throw new StagedDetectionError(
+            DetectionErrorType.INVALID_REPOSITORY,
+            "No valid repositories found in workspace. Please open a folder with a repository."
+          );
+        }
       }
     }
+
+    // The final selected files should be what the user actually selected,
+    // or what can be inferred from the SCM view.
+    const finalSelectedFiles =
+      selectedFiles ||
+      (resourceStates ? this.getSelectedFiles(resourceStates) : []);
 
     return {
       repository: targetRepository,
       selectedFiles:
-        selectedFilesList.length > 0 ? selectedFilesList : undefined,
+        finalSelectedFiles.length > 0 ? finalSelectedFiles : undefined,
       activeFile,
       workingDirectory: this.getWorkingDirectory(
         targetRepository,
-        selectedFilesList[0] || activeFile
+        finalSelectedFiles[0] || activeFile
       ),
     };
   }
@@ -157,8 +158,8 @@ export class MultiRepositoryContextManager
     // Fallback: return first repository or one containing active file
     const activeEditor = vscode.window.activeTextEditor;
     if (activeEditor?.document?.fileName) {
-      const activeFileRepo = this.findRepositoryForFiles(
-        [activeEditor.document.fileName],
+      const activeFileRepo = this.findRepoForPath(
+        activeEditor.document.fileName,
         repositories
       );
       if (activeFileRepo) {
@@ -187,7 +188,7 @@ export class MultiRepositoryContextManager
     filePath: string
   ): Promise<RepositoryInfo | undefined> {
     const repositories = await this.getAllRepositories();
-    return this.findRepositoryForFiles([filePath], repositories);
+    return this.findRepoForPath(filePath, repositories);
   }
 
   /**
@@ -354,31 +355,188 @@ export class MultiRepositoryContextManager
   }
 
   /**
-   * Find which repository contains the given files
+   * Get repository info from a specific path
    * @private
    */
-  private findRepositoryForFiles(
-    files: string[],
-    repositories: RepositoryInfo[]
-  ): RepositoryInfo {
-    if (files.length === 0 || repositories.length === 0) {
-      return repositories[0] || this.createFallbackRepository();
+  private async getRepositoryInfo(
+    repoPath: string
+  ): Promise<RepositoryInfo | undefined> {
+    const gitRepo = await this.checkGitRepository(repoPath);
+    if (gitRepo) {
+      return gitRepo;
     }
 
-    const firstFile = files[0];
+    const svnRepo = await this.checkSvnRepository(repoPath);
+    if (svnRepo) {
+      return svnRepo;
+    }
 
+    return undefined;
+  }
+
+  /**
+   * Extracts file paths from SCM resource states.
+   * @param resourceStates - The SCM resource states.
+   * @returns An array of file paths.
+   */
+  private getSelectedFiles(
+    resourceStates:
+      | vscode.SourceControlResourceState
+      | vscode.SourceControlResourceState[]
+  ): string[] {
+    if (!resourceStates) {
+      return [];
+    }
+    const states = (
+      Array.isArray(resourceStates) ? resourceStates : [resourceStates]
+    ).filter(Boolean);
+
+    if (states.length === 0) {
+      return [];
+    }
+
+    const files = [
+      ...new Set(
+        states
+          .map(
+            (state) =>
+              (state as any)?._resourceUri?.fsPath || state?.resourceUri?.fsPath
+          )
+          .filter(Boolean)
+      ),
+    ];
+
+    return files;
+  }
+
+  /**
+   * From resources or file paths, detect the corresponding Git repository path.
+   * @param resourceStates - Source control resource status
+   * @param files - Optional list of file paths, if not provided, it will be extracted from resourceStates
+   * @returns Git repository path, if not found, returns undefined
+   */
+  private async getRepositoryFromResources(
+    resourceStates?:
+      | vscode.SourceControlResourceState
+      | vscode.SourceControlResourceState[],
+    files?: string[]
+  ): Promise<string | undefined> {
+    // If files are not provided, extract from resourceStates
+    if (!files && resourceStates) {
+      files = this.getSelectedFiles(resourceStates);
+    }
+
+    // Prioritize getting the repository path through the Git extension to ensure compatibility with Git
+    const gitExtension = vscode.extensions.getExtension("vscode.git");
+    if (gitExtension?.isActive) {
+      try {
+        const gitApi = gitExtension.exports.getAPI(1);
+        const repositories = gitApi.repositories;
+        if (repositories.length > 0) {
+          if (files && files.length > 0) {
+            for (const file of files) {
+              for (const repository of repositories) {
+                const repoPath = (repository as any).rootUri?.fsPath;
+                if (repoPath && file.startsWith(repoPath)) {
+                  return repoPath;
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.warn("Failed to get repository from Git extension:", error);
+      }
+    }
+
+    // Try to get the repository path through the SVN extension, compatible with multiple plugins
+    const svnExtensionIds = [
+      "littleCareless.svn-scm-ai",
+      "johnstoncode.svn-scm",
+    ];
+    let svnExtension: vscode.Extension<any> | undefined;
+    for (const id of svnExtensionIds) {
+      const extension = vscode.extensions.getExtension(id);
+      if (extension) {
+        svnExtension = extension;
+        break;
+      }
+    }
+    if (svnExtension?.isActive) {
+      try {
+        const svnScmApi = svnExtension.exports;
+        if (svnScmApi && typeof svnScmApi.getRepositories === "function") {
+          const repositories = await svnScmApi.getRepositories();
+          if (repositories && repositories.length > 0) {
+            if (files && files.length > 0) {
+              for (const file of files) {
+                for (const repository of repositories) {
+                  const repoPath = repository.root;
+                  if (repoPath && file.startsWith(repoPath)) {
+                    return repoPath;
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (error) {
+        console.warn("Failed to get repository from SVN extension:", error);
+      }
+    }
+
+    // Try to get it directly from resourceStates
+    // Basically, it's SVN, because the git plugin is pre-installed in vscode
+    if (resourceStates) {
+      const states = (
+        Array.isArray(resourceStates) ? resourceStates : [resourceStates]
+      ).filter(Boolean);
+      for (const state of states) {
+        // Try to access sourceControl.rootUri, which is a more reliable attribute
+        const sc = (state as any)?.resourceGroup?.sourceControl;
+        if (sc?.rootUri?.fsPath) {
+          return sc.rootUri.fsPath;
+        }
+        // Alternative, access rootUri directly
+        if ((state as any)?.rootUri?.fsPath) {
+          return (state as any)?.rootUri?.fsPath;
+        }
+        // Final backup plan: find the SVN root directory upwards from resourceUri
+        const resourceUriPath =
+          (state as any)?._resourceUri?.fsPath || state?.resourceUri?.fsPath;
+        if (resourceUriPath) {
+          // Use SvnUtils.findSvnRoot to recursively find the .svn directory upwards,
+          // This is the most reliable way to handle file or subdirectory paths.
+          const svnRoot = await SvnUtils.findSvnRoot(resourceUriPath);
+          if (svnRoot) {
+            return svnRoot;
+          }
+        }
+      }
+    }
+
+    return undefined;
+  }
+
+  /**
+   * Find which repository contains the given file path
+   * @private
+   */
+  private findRepoForPath(
+    filePath: string,
+    repositories: RepositoryInfo[]
+  ): RepositoryInfo | undefined {
     // Find repository that contains this file
     for (const repo of repositories) {
-      const relativePath = path.relative(repo.path, firstFile);
+      const relativePath = path.relative(repo.path, filePath);
 
-      // If relative path doesn't start with '../', the file is within this repository
-      if (!relativePath.startsWith("..")) {
+      // If relative path doesn't start with '..' and is not absolute, the file is within this repository
+      if (!relativePath.startsWith("..") && !path.isAbsolute(relativePath)) {
         return repo;
       }
     }
 
-    // Fallback to first repository
-    return repositories[0] || this.createFallbackRepository();
+    return undefined;
   }
 
   /**
@@ -401,9 +559,9 @@ export class MultiRepositoryContextManager
    * Create a fallback repository when none found
    * @private
    */
-  private createFallbackRepository(): RepositoryInfo {
+  private createFallbackRepository(repoPath?: string): RepositoryInfo {
     const workspaceFolder = vscode.workspace.workspaceFolders?.[0];
-    const fallbackPath = workspaceFolder?.uri.fsPath || process.cwd();
+    const fallbackPath = repoPath || workspaceFolder?.uri.fsPath || process.cwd();
 
     return {
       path: fallbackPath,
