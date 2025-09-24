@@ -23,7 +23,7 @@ export class ReviewCodeCommand extends BaseCommand {
    */
   async execute(resources?: vscode.SourceControlResourceState[]) {
     this.logger.info("Executing ReviewCodeCommand...");
-    if (!(await this.showConfirmAIProviderToS())) {
+    if ((await this.showConfirmAIProviderToS()) === false) {
       this.logger.warn("User did not confirm AI provider ToS.");
       return;
     }

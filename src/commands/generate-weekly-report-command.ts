@@ -12,7 +12,7 @@ export class GenerateWeeklyReportCommand extends BaseCommand {
    */
   async execute(): Promise<void> {
     this.logger.info("Executing GenerateWeeklyReportCommand...");
-    if (!(await this.showConfirmAIProviderToS())) {
+    if ((await this.showConfirmAIProviderToS()) === false) {
       this.logger.warn("User did not confirm AI provider ToS.");
       return;
     }

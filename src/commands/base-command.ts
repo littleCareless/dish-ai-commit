@@ -33,7 +33,7 @@ export abstract class BaseCommand {
    * @returns 配置是否有效
    */
   protected async validateConfig(): Promise<boolean> {
-    if (!(await ConfigurationManager.getInstance().validateConfiguration())) {
+    if ((await ConfigurationManager.getInstance().validateConfiguration()) === false) {
       await notify.error(getMessage("command.execution.failed"));
       return false;
     }
@@ -65,7 +65,7 @@ export abstract class BaseCommand {
     { provider: string; model: string } | undefined
   > {
     const config = ConfigurationManager.getInstance();
-    if (!(await config.validateConfiguration())) {
+    if ((await config.validateConfiguration()) === false) {
       return;
     }
 
