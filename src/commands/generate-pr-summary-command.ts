@@ -20,21 +20,28 @@ export class GeneratePRSummaryCommand extends BaseCommand {
   }
 
   async execute(): Promise<void> {
+    this.logger.info("Executing GeneratePRSummaryCommand...");
     if (!(await this.showConfirmAIProviderToS())) {
+      this.logger.warn("User did not confirm AI provider ToS.");
       return;
     }
 
     const configResult = await this.handleConfiguration();
     if (!configResult) {
+      this.logger.warn("Configuration is not valid.");
       return;
     }
     const { provider, model } = configResult;
+    this.logger.info(
+      `Configuration handled. Provider: ${provider}, Model: ${model}`
+    );
 
     try {
       await ProgressHandler.withProgress(
         getMessage("progress.generating.pr.summary"),
         async (progress, token) => {
           if (token.isCancellationRequested) {
+            this.logger.info("User cancelled PR summary generation.");
             return;
           }
           progress.report({
@@ -43,12 +50,15 @@ export class GeneratePRSummaryCommand extends BaseCommand {
           });
           const result = await this.detectSCMProvider();
           if (!result) {
+            this.logger.error("SCM provider not detected.");
             notify.error("scm.not.detected");
             return;
           }
           const { scmProvider } = result;
+          this.logger.info(`SCM provider detected: ${scmProvider.type}`);
 
           if (scmProvider.type !== "git") {
+            this.logger.error("PR summary generation is only supported for Git.");
             notify.error("pr.summary.git.only");
             return;
           }
@@ -96,12 +106,15 @@ export class GeneratePRSummaryCommand extends BaseCommand {
 
               if (selectedBranch) {
                 baseBranch = selectedBranch;
+                this.logger.info(`User selected base branch: ${baseBranch}`);
               } else {
                 // 用户取消选择，可以中止操作或使用默认值
+                this.logger.info("User cancelled base branch selection.");
                 notify.info("pr.summary.base.branch.selection.cancelled"); // 新增 i18n key
                 return; // 或者继续使用默认 baseBranch
               }
             } else {
+              this.logger.warn("No branches found to select from.");
               notify.warn("pr.summary.no.branches.found"); // 新增 i18n key
               // 即使没有获取到分支列表，也尝试使用默认配置的分支
             }
@@ -120,9 +133,15 @@ export class GeneratePRSummaryCommand extends BaseCommand {
           );
 
           if (!commitMessages || commitMessages.length === 0) {
+            this.logger.info(
+              `No commit messages found between ${baseBranch} and ${headBranch}.`
+            );
             notify.info("pr.summary.no.commits");
             return;
           }
+          this.logger.info(
+            `Found ${commitMessages.length} commit messages between ${baseBranch} and ${headBranch}.`
+          );
           if (token.isCancellationRequested) {
             return;
           }
@@ -139,12 +158,19 @@ export class GeneratePRSummaryCommand extends BaseCommand {
           } = await this.selectAndUpdateModelConfiguration(provider, model);
 
           if (!selectedModel || !aiProvider) {
+            this.logger.error("No model selected or AI provider not found.");
             notify.error("no.model.selected");
             return;
           }
+          this.logger.info(
+            `Model validated. AI Provider: ${aiProvider.getId()}, Model: ${selectedModel?.id}`
+          );
 
           // 检查AI Provider是否支持生成PR摘要的方法
           if (!aiProvider.generatePRSummary) {
+            this.logger.error(
+              `Provider ${newProvider} does not support PR Summary Generation.`
+            );
             notify.error(
               formatMessage("provider.does.not.support.feature", [
                 newProvider,
@@ -176,6 +202,7 @@ export class GeneratePRSummaryCommand extends BaseCommand {
               "provider.does.not.support.feature",
               [newProvider, "PR Summary Generation"]
             );
+            this.logger.error(errorMessage);
             notify.error(errorMessage);
             throw new Error(errorMessage);
           }
@@ -204,6 +231,7 @@ export class GeneratePRSummaryCommand extends BaseCommand {
             await vscode.window.showTextDocument(document);
             notify.info("pr.summary.generated");
           } else {
+            this.logger.error("PR summary generation failed.");
             notify.error("pr.summary.generation.failed");
           }
           progress.report({
@@ -212,7 +240,7 @@ export class GeneratePRSummaryCommand extends BaseCommand {
         }
       );
     } catch (error) {
-      console.error("Error generating PR summary:", error);
+      this.logger.error(`Error generating PR summary: ${error}`);
       if (error instanceof Error) {
         notify.error("pr.summary.generation.failed.error", [error.message]);
       }

@@ -98,18 +98,23 @@ export class GenerateCommitCommand extends BaseCommand {
    * @param resources - 源代码管理资源状态列表
    */
   async execute(resources: vscode.SourceControlResourceState[]): Promise<void> {
+    this.logger.info("Executing GenerateCommitCommand...");
     if (!(await this.showConfirmAIProviderToS())) {
+      this.logger.warn("User did not confirm AI provider ToS.");
       return;
     }
     const configResult = await this.handleConfiguration();
     if (!configResult) {
+      this.logger.warn("Configuration is not valid.");
       return;
     }
     const { provider, model } = configResult;
+    this.logger.info(`Using AI provider: ${provider}, model: ${model}`);
 
     try {
       const result = await this.detectSCMProvider(resources);
       if (!result) {
+        this.logger.warn("SCM provider not detected.");
         return;
       }
 
@@ -124,7 +129,7 @@ export class GenerateCommitCommand extends BaseCommand {
         return;
       }
 
-      console.log(`Working with repository: ${repositoryPath}`);
+      this.logger.info(`Working with repository: ${repositoryPath}`);
 
       await ProgressHandler.withProgress(
         formatMessage("progress.generating.commit", [
@@ -142,7 +147,7 @@ export class GenerateCommitCommand extends BaseCommand {
           )
       );
     } catch (error) {
-      console.log("Error in executeStream:", error);
+      this.logger.error(`Error in executeStream: ${error}`);
       if (error instanceof Error) {
         notify.error("generate.commit.failed", [error.message]);
       }
@@ -274,11 +279,17 @@ ${currentInput}
     selectedFiles: string[] | undefined,
     repositoryPath?: string
   ) {
+    this.logger.info("Performing streaming generation...");
+    this.logger.info(`Provider: ${provider}, Model: ${model}`);
+    this.logger.info(`SCM Provider: ${scmProvider.type}`);
+    this.logger.info(`Selected Files: ${selectedFiles?.join(", ")}`);
+    this.logger.info(`Repository Path: ${repositoryPath}`);
     const config = ConfigurationManager.getInstance();
     const configuration = config.getConfiguration();
 
     // 在获取diff之前设置当前文件，确保使用正确的仓库
     if (scmProvider.setCurrentFiles && selectedFiles) {
+      this.logger.info(`Setting current files for SCM provider: ${selectedFiles.join(", ")}`);
       scmProvider.setCurrentFiles(selectedFiles);
     }
 
@@ -327,13 +338,12 @@ ${currentInput}
         diffContent = diffResult.content;
 
         // 记录选择的目标用于调试
-        console.log(
+        this.logger.info(
           `Auto-detection selected target: ${selectedTarget}, files: ${diffResult.files.length}`
         );
       } catch (error) {
-        console.warn(
-          "Auto-detection failed, falling back to traditional method:",
-          error
+        this.logger.warn(
+          `Auto-detection failed, falling back to traditional method: ${error}`
         );
         // 回退到传统方法
         progress.report({ message: getMessage("progress.getting.diff") });
@@ -347,6 +357,7 @@ ${currentInput}
     // ===== 自动检测逻辑结束 =====
 
     if (!diffContent) {
+      this.logger.warn("No diff content found.");
       // notify.info(
       //   formatMessage("scm.no.changes", [scmProvider.type.toUpperCase()])
       // );
@@ -367,10 +378,12 @@ ${currentInput}
     } = await this.selectAndUpdateModelConfiguration(provider, model);
 
     if (!selectedModel) {
+      this.logger.error("No model selected.");
       throw new Error(getMessage("no.model.selected"));
     }
 
     if (!aiProvider.generateCommitStream) {
+      this.logger.error(`Provider ${newProvider} does not support streaming.`);
       notify.error("provider.does.not.support.streaming", [newProvider]);
       return;
     }
@@ -399,6 +412,10 @@ ${currentInput}
       diffContent,
       configuration
     );
+    this.logger.info("ContextManager built.");
+    this.logger.info(
+      `Context blocks: ${contextManager.getBlocks().map((b: any) => b.name).join(", ")}`
+    );
 
     // `messages` 将在 ContextManager 内部构建和重试
     const requestParams = {
@@ -407,6 +424,7 @@ ${currentInput}
     };
 
     const promptLength = contextManager.getEstimatedRawTokenCount();
+    this.logger.info(`Estimated prompt length: ${promptLength} tokens.`);
 
     // 使用新的模型信息获取机制获取准确的token限制
     const tokenLimits = await getAccurateTokenLimits(selectedModel);
@@ -459,13 +477,19 @@ ${currentInput}
         ) ?? false;
 
       if (useFunctionCalling) {
-        notify.info("info.using.function.calling");
+        this.logger.info("Using function calling generation.");
         if (!aiProvider.generateCommitWithFunctionCalling) {
+          this.logger.error(
+            `Provider ${newProvider} does not support function calling.`
+          );
           throw new Error(
             `Provider ${newProvider} does not support function calling.`
           );
         }
         const messages = contextManager.buildMessages();
+        this.logger.info(
+          `Built messages for function calling. Total messages: ${messages.length}`
+        );
         await this.performFunctionCallingGeneration(
           aiProvider,
           { ...requestParams, messages },
@@ -482,6 +506,7 @@ ${currentInput}
           selectedFiles.length > 1;
 
         if (shouldUseLayeredCommit) {
+          this.logger.info("Performing layered file commit generation.");
           await this.performLayeredFileCommitGeneration(
             aiProvider,
             requestParams,
@@ -492,6 +517,7 @@ ${currentInput}
             selectedModel
           );
         } else {
+          this.logger.info("Performing standard streaming generation.");
           await this.streamAndApplyMessage(
             aiProvider as AbstractAIProvider,
             requestParams,
@@ -526,7 +552,7 @@ ${currentInput}
           vscode.commands.executeCommand("dish.selectModel");
         }
       } else {
-        console.error("Error during commit message generation:", error);
+        this.logger.error(`Error during commit message generation: ${error}`);
         throw error;
       }
     }
@@ -977,7 +1003,7 @@ ${currentInput}
    */
   throwIfCancelled(token: vscode.CancellationToken) {
     if (token.isCancellationRequested) {
-      console.log(getMessage("user.cancelled.operation.log"));
+      this.logger.info(getMessage("user.cancelled.operation.log"));
       throw new Error(getMessage("user.cancelled.operation.error"));
     }
   }
