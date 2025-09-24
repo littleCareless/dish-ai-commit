@@ -29,7 +29,7 @@ export function generateConfiguration(
         const configValue = getConfig(newPath) ?? value.default;
 
         // Handle nested path
-        const pathParts = newPath.split(".");
+        const pathParts = newPath?.split(".");
         let current = result;
 
         // Build nested object structure

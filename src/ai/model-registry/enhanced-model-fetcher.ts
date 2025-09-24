@@ -430,7 +430,7 @@ export class EnhancedModelFetcher {
     }
 
     // 2. 前缀匹配
-    const requestedPrefix = requestedId.split("-")[0];
+    const requestedPrefix = requestedId?.split("-")[0];
     match = availableModels.find((m) => m.id.startsWith(requestedPrefix));
     if (match) {
       return match;
@@ -509,7 +509,7 @@ export class EnhancedModelFetcher {
 
     // 模糊匹配
     for (const [pattern, limits] of Object.entries(knownLimits)) {
-      if (modelId.includes(pattern.split("-")[0])) {
+      if (modelId.includes(pattern?.split("-")[0])) {
         return limits;
       }
     }
@@ -532,7 +532,8 @@ export class EnhancedModelFetcher {
 
     return supportedModels.some(
       (supported) =>
-        modelId.includes(supported) || supported.includes(modelId.split("-")[0])
+        modelId.includes(supported) ||
+        supported.includes(modelId?.split("-")[0])
     );
   }
 

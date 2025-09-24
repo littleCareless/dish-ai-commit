@@ -107,7 +107,7 @@ export class AuthorService {
         }
       );
       const authors = stdout
-        .split("\n")
+        ?.split("\n")
         .map((author) => author?.trim())
         .filter((author) => author); // 去除空行
       return Array.from(new Set(authors)); // 去重

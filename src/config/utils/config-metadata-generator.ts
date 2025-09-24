@@ -40,7 +40,7 @@ export function generateConfigMetadata(
           key: fullPath.replace(/\./g, "_").toUpperCase(),
           defaultValue: value.default,
           nested: fullPath.includes("."),
-          parent: fullPath.split(".")[0],
+          parent: fullPath?.split(".")[0],
           description: value.description,
           type: value.type,
           isSpecial: value.isSpecial,

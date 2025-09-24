@@ -21,7 +21,7 @@ const generateMenuItems = (settingsSchema: SettingItem[]) => {
   } = {};
 
   settingsSchema.forEach((item) => {
-    const parts = item.key.split(".");
+    const parts = item.key?.split(".");
     if (parts.length >= 2) {
       const topKey = parts[0];
       const childKey = parts.slice(0, 2).join(".");
@@ -42,7 +42,7 @@ const generateMenuItems = (settingsSchema: SettingItem[]) => {
           key: childKey,
           label:
             childSchema?.description ||
-            childKey.split(".").pop() ||
+            childKey?.split(".").pop() ||
             "Unknown Setting",
         });
       }
@@ -78,12 +78,12 @@ const SettingsMenu: React.FC<SettingsMenuProps> = ({
     <ArcoMenu
       selectedKeys={[selectedMenuItemKey]}
       onClickMenuItem={(key: string) => setSelectedMenuItemKey(key)}
-      style={{ 
-        width: "100%", 
+      style={{
+        width: "100%",
         height: "100%",
         backgroundColor: "var(--color-background)",
         color: "var(--color-foreground)",
-        borderColor: "var(--color-border)"
+        borderColor: "var(--color-border)",
       }}
       collapse={false}
     >

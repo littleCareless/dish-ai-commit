@@ -144,9 +144,7 @@ export class GitProvider implements ISCMProvider {
       }
       return "Modified File";
     } catch (error) {
-      this.logger.error(
-        `Failed to get file status for ${file}: ${error}`
-      );
+      this.logger.error(`Failed to get file status for ${file}: ${error}`);
       return "Unknown";
     }
   }
@@ -278,7 +276,7 @@ export class GitProvider implements ISCMProvider {
               }
             }
             const fileCount = stagedFilesOutput
-              .split("\n")
+              ?.split("\n")
               .filter(Boolean).length;
             if (fileCount > 0) {
               notify.info(formatMessage("diff.staged.info", [fileCount]));
@@ -311,7 +309,7 @@ export class GitProvider implements ISCMProvider {
                   throw e;
                 }
               }
-              return output.split("\n").filter(Boolean);
+              return output?.split("\n").filter(Boolean);
             };
 
             const trackedFiles = hasInitialCommit
@@ -329,7 +327,7 @@ export class GitProvider implements ISCMProvider {
               }
             );
             const untrackedFiles = untrackedFilesOutput
-              .split("\n")
+              ?.split("\n")
               .filter(Boolean);
 
             const allFiles = new Set([
@@ -407,7 +405,7 @@ export class GitProvider implements ISCMProvider {
           // 为每个未跟踪文件获取差异
           if (untrackedFiles?.trim()) {
             const files = untrackedFiles
-              .split("\n")
+              ?.split("\n")
               .filter((file) => file?.trim());
             for (const file of files) {
               const escapedFile = ImprovedPathUtils.escapeShellPath(file);
@@ -685,7 +683,7 @@ export class GitProvider implements ISCMProvider {
         return [];
       }
 
-      return stdout.split("\n").filter((line) => line?.trim() !== "");
+      return stdout?.split("\n").filter((line) => line?.trim() !== "");
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error(`Git log error: ${error.message}`);
@@ -721,7 +719,7 @@ export class GitProvider implements ISCMProvider {
 
       // 清理分支名称，移除可能存在的 "remotes/" 前缀，并去重
       const branches = stdout
-        .split("\n")
+        ?.split("\n")
         .map((branch) => branch?.trim())
         .filter((branch) => branch && !branch.includes("->")) // 过滤掉 HEAD 指向等特殊行
         .map((branch) => branch.replace(/^remotes\//, "")) // 移除 remotes/ 前缀，方便用户选择
@@ -752,7 +750,7 @@ export class GitProvider implements ISCMProvider {
       // Last 5 commit messages (repository)
       const commits = await repository.log({ maxEntries: 5 });
       repositoryCommitMessages.push(
-        ...commits.map((commit) => commit.message.split("\n")[0])
+        ...commits.map((commit) => commit.message?.split("\n")[0])
       );
 
       // Last 5 commit messages (user)
@@ -763,7 +761,7 @@ export class GitProvider implements ISCMProvider {
       const userCommits = await repository.log({ maxEntries: 5, author });
 
       userCommitMessages.push(
-        ...userCommits.map((commit) => commit.message.split("\n")[0])
+        ...userCommits.map((commit) => commit.message?.split("\n")[0])
       );
     } catch (err) {
       this.logger.error(`Failed to get recent commit messages: ${err}`);

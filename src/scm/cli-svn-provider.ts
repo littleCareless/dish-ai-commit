@@ -162,7 +162,7 @@ export class CliSvnProvider implements ISCMProvider {
 
   private parseSvnLog(log: string): string[] {
     const messages: string[] = [];
-    const entries = log.split(
+    const entries = log?.split(
       /^------------------------------------------------------------------------$/m
     );
 
@@ -172,7 +172,7 @@ export class CliSvnProvider implements ISCMProvider {
         continue;
       }
 
-      const lines = entry.split("\n");
+      const lines = entry?.split("\n");
       if (lines.length === 0 || !lines[0].match(/^r\d+\s+\|/)) {
         continue;
       }
@@ -185,7 +185,7 @@ export class CliSvnProvider implements ISCMProvider {
       if (messageStartIndex < lines.length) {
         const message = lines.slice(messageStartIndex).join("\n")?.trim();
         if (message) {
-          messages.push(message.split("\n")[0]);
+          messages.push(message?.split("\n")[0]);
         }
       }
     }

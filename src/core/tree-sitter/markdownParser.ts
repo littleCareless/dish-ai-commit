@@ -37,7 +37,7 @@ export function parseMarkdown(content: string): MockCapture[] {
     return [];
   }
 
-  const lines = content.split("\n");
+  const lines = content?.split("\n");
   const captures: MockCapture[] = [];
 
   // Regular expressions for different header types

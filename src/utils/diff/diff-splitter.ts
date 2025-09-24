@@ -9,7 +9,7 @@ export class DiffSplitter {
   static splitGitDiff(diff: string): DiffChunk[] {
     const chunks: DiffChunk[] = [];
     // 按 Git diff 文件头部分割
-    const files = diff.split("diff --git");
+    const files = diff?.split("diff --git");
 
     for (const file of files) {
       if (!file?.trim()) {
@@ -39,7 +39,7 @@ export class DiffSplitter {
   static splitSvnDiff(diff: string): DiffChunk[] {
     const chunks: DiffChunk[] = [];
     // 按 SVN diff 文件索引标记分割
-    const files = diff.split("Index: ");
+    const files = diff?.split("Index: ");
 
     for (const file of files) {
       if (!file?.trim()) {
@@ -47,7 +47,7 @@ export class DiffSplitter {
       }
 
       // SVN diff 中文件名在第一行
-      const lines = file.split("\n");
+      const lines = file?.split("\n");
       const filename = lines[0]?.trim();
 
       chunks.push({

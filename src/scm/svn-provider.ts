@@ -74,7 +74,7 @@ const findSvnExecutable = async (): Promise<string | null> => {
   const command = process.platform === "win32" ? "where svn" : "which svn";
   try {
     const { stdout } = await exec(command);
-    const lines = stdout.toString()?.trim().split("\n");
+    const lines = stdout.toString()?.trim()?.split("\n");
     for (const line of lines) {
       const p = line?.trim();
       if (p && (await isValidSvnPath(p))) {
@@ -241,7 +241,7 @@ export class SvnProvider implements ISCMProvider {
 
       // 验证SVN可执行
       const { stdout } = await exec(`"${this.svnPath}" --version`);
-      const version = stdout.toString().split("\n")[0]?.trim();
+      const version = stdout.toString()?.split("\n")[0]?.trim();
       this.logger.info(`SVN version: ${version}`);
       notify.info(formatMessage("scm.version.detected", ["SVN", version]));
 
@@ -416,9 +416,9 @@ export class SvnProvider implements ISCMProvider {
                 // 回退到读取整个文件内容
                 const fileContent = fs.readFileSync(file, "utf8");
                 stdout = `--- /dev/null\n+++ ${file}\n@@ -0,0 +1,${
-                  fileContent.split("\n").length
+                  fileContent?.split("\n").length
                 } @@\n${fileContent
-                  .split("\n")
+                  ?.split("\n")
                   .map((line) => `+${line}`)
                   .join("\n")}`;
               }
@@ -590,7 +590,7 @@ export class SvnProvider implements ISCMProvider {
             // 解析未版本控制的文件
             const statusOutputStr = statusOutput.toString();
             const untrackedFiles = statusOutputStr
-              .split("\n")
+              ?.split("\n")
               .filter((line: string) => line.startsWith("?"))
               .map((line: string) => line.substring(1)?.trim());
 
@@ -635,9 +635,9 @@ export class SvnProvider implements ISCMProvider {
                         "utf8"
                       );
                       const diffContent = `--- /dev/null\n+++ ${file}\n@@ -0,0 +1,${
-                        fileContent.split("\n").length
+                        fileContent?.split("\n").length
                       } @@\n${fileContent
-                        .split("\n")
+                        ?.split("\n")
                         .map((line) => `+${line}`)
                         .join("\n")}`;
                       diffOutput += `\n=== New File: ${file} ===\n${diffContent}`;
@@ -829,7 +829,7 @@ export class SvnProvider implements ISCMProvider {
       const commitMessages: string[] = [];
       // SVN 日志条目由 "------------------------------------------------------------------------" 分隔
       // 使用正则表达式确保正确分割，并处理多行情况
-      const entries = rawLog.split(
+      const entries = rawLog?.split(
         /^------------------------------------------------------------------------$/m
       );
 
@@ -839,7 +839,7 @@ export class SvnProvider implements ISCMProvider {
           continue;
         }
 
-        const lines = entry.split("\n");
+        const lines = entry?.split("\n");
         // 第一行应该是修订版本头信息 (例如: r123 | author | date | N lines)
         if (lines.length === 0 || !lines[0].match(/^r\d+\s+\|/)) {
           continue; // 不是有效的日志条目头
@@ -912,7 +912,7 @@ export class SvnProvider implements ISCMProvider {
 
   private parseSvnLog(log: string): string[] {
     const messages: string[] = [];
-    const entries = log.split(
+    const entries = log?.split(
       /^------------------------------------------------------------------------$/m
     );
 
@@ -922,7 +922,7 @@ export class SvnProvider implements ISCMProvider {
         continue;
       }
 
-      const lines = entry.split("\n");
+      const lines = entry?.split("\n");
       if (lines.length === 0 || !lines[0].match(/^r\d+\s+\|/)) {
         continue;
       }
@@ -935,7 +935,7 @@ export class SvnProvider implements ISCMProvider {
       if (messageStartIndex < lines.length) {
         const message = lines.slice(messageStartIndex).join("\n")?.trim();
         if (message) {
-          messages.push(message.split("\n")[0]);
+          messages.push(message?.split("\n")[0]);
         }
       }
     }

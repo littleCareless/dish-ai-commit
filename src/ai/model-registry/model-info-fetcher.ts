@@ -37,7 +37,7 @@ export class ModelInfoFetcher {
    */
   async getModelInfo(model: AIModel): Promise<ModelSpec> {
     const modelId = model.id;
-    
+
     // 1. 检查缓存
     const cached = this.getCachedModelInfo(modelId);
     if (cached) {
@@ -52,7 +52,10 @@ export class ModelInfoFetcher {
         return apiInfo;
       }
     } catch (error) {
-      console.warn(`Failed to fetch model info from API for ${modelId}:`, error);
+      console.warn(
+        `Failed to fetch model info from API for ${modelId}:`,
+        error
+      );
     }
 
     // 3. 使用本地规格数据库
@@ -70,8 +73,8 @@ export class ModelInfoFetcher {
       provider: model.provider,
       maxTokens: defaultLimits,
       lastUpdated: new Date().toISOString(),
-      source: 'fallback',
-      capabilities: model.capabilities
+      source: "fallback",
+      capabilities: model.capabilities,
     };
 
     this.cacheModelInfo(modelId, fallbackSpec);
@@ -103,22 +106,24 @@ export class ModelInfoFetcher {
     this.cache[modelId] = {
       spec,
       timestamp: Date.now(),
-      ttl: this.CACHE_TTL
+      ttl: this.CACHE_TTL,
     };
   }
 
   /**
    * 从API获取模型信息
    */
-  private async fetchModelInfoFromAPI(model: AIModel): Promise<ModelSpec | null | undefined> {
+  private async fetchModelInfoFromAPI(
+    model: AIModel
+  ): Promise<ModelSpec | null | undefined> {
     const providerId = model.provider.id;
 
     switch (providerId) {
-      case 'openai':
+      case "openai":
         return this.fetchOpenAIModelInfo(model);
-      case 'anthropic':
+      case "anthropic":
         return this.fetchAnthropicModelInfo(model);
-      case 'github':
+      case "github":
         return this.fetchGitHubModelInfo(model);
       default:
         return null;
@@ -128,11 +133,15 @@ export class ModelInfoFetcher {
   /**
    * 从OpenAI API获取模型信息
    */
-  private async fetchOpenAIModelInfo(model: AIModel): Promise<ModelSpec | null> {
+  private async fetchOpenAIModelInfo(
+    model: AIModel
+  ): Promise<ModelSpec | null> {
     try {
       const config = ConfigurationManager.getInstance();
       const apiKey = config.getConfig("PROVIDERS_OPENAI_APIKEY");
-      const baseURL = config.getConfig("PROVIDERS_OPENAI_BASEURL") || "https://api.openai.com/v1";
+      const baseURL =
+        config.getConfig("PROVIDERS_OPENAI_BASEURL") ||
+        "https://api.openai.com/v1";
 
       if (!apiKey) {
         return null;
@@ -140,9 +149,9 @@ export class ModelInfoFetcher {
 
       const response = await fetch(`${baseURL}/models/${model.id}`, {
         headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${apiKey}`,
+          "Content-Type": "application/json",
+        },
       });
 
       if (!response.ok) {
@@ -150,24 +159,24 @@ export class ModelInfoFetcher {
       }
 
       const modelData = await response.json();
-      
+
       // OpenAI API 通常不直接返回token限制，需要根据模型ID推断
       const tokenLimits = this.inferOpenAITokenLimits(model.id);
-      
+
       return {
         id: model.id,
         name: modelData.id || model.name,
         provider: model.provider,
         maxTokens: tokenLimits,
         lastUpdated: new Date().toISOString(),
-        source: 'api',
+        source: "api",
         capabilities: {
           streaming: true, // 大多数OpenAI模型支持流式
           functionCalling: this.supportsOpenAIFunctionCalling(model.id),
-        }
+        },
       };
     } catch (error) {
-      console.warn('Failed to fetch OpenAI model info:', error);
+      console.warn("Failed to fetch OpenAI model info:", error);
       return null;
     }
   }
@@ -175,16 +184,19 @@ export class ModelInfoFetcher {
   /**
    * 推断OpenAI模型的token限制
    */
-  private inferOpenAITokenLimits(modelId: string): { input: number; output: number } {
+  private inferOpenAITokenLimits(modelId: string): {
+    input: number;
+    output: number;
+  } {
     // 基于已知的模型规格进行推断
     const knownLimits: Record<string, { input: number; output: number }> = {
-      'o1-preview': { input: 128000, output: 32768 },
-      'o1-mini': { input: 128000, output: 65536 },
-      'gpt-4o': { input: 128000, output: 16384 },
-      'gpt-4o-mini': { input: 128000, output: 16384 },
-      'gpt-4-turbo': { input: 128000, output: 4096 },
-      'gpt-4': { input: 8192, output: 4096 },
-      'gpt-3.5-turbo': { input: 16385, output: 4096 },
+      "o1-preview": { input: 128000, output: 32768 },
+      "o1-mini": { input: 128000, output: 65536 },
+      "gpt-4o": { input: 128000, output: 16384 },
+      "gpt-4o-mini": { input: 128000, output: 16384 },
+      "gpt-4-turbo": { input: 128000, output: 4096 },
+      "gpt-4": { input: 8192, output: 4096 },
+      "gpt-3.5-turbo": { input: 16385, output: 4096 },
     };
 
     // 精确匹配
@@ -194,7 +206,10 @@ export class ModelInfoFetcher {
 
     // 模糊匹配
     for (const [pattern, limits] of Object.entries(knownLimits)) {
-      if (modelId.includes(pattern) || pattern.includes(modelId.split('-')[0])) {
+      if (
+        modelId.includes(pattern) ||
+        pattern.includes(modelId?.split("-")[0])
+      ) {
         return limits;
       }
     }
@@ -208,18 +223,26 @@ export class ModelInfoFetcher {
    */
   private supportsOpenAIFunctionCalling(modelId: string): boolean {
     const supportedModels = [
-      'gpt-4o', 'gpt-4o-mini', 'gpt-4-turbo', 'gpt-4', 'gpt-3.5-turbo'
+      "gpt-4o",
+      "gpt-4o-mini",
+      "gpt-4-turbo",
+      "gpt-4",
+      "gpt-3.5-turbo",
     ];
-    
-    return supportedModels.some(supported => 
-      modelId.includes(supported) || supported.includes(modelId.split('-')[0])
+
+    return supportedModels.some(
+      (supported) =>
+        modelId.includes(supported) ||
+        supported.includes(modelId?.split("-")[0])
     );
   }
 
   /**
    * 从Anthropic API获取模型信息
    */
-  private async fetchAnthropicModelInfo(model: AIModel): Promise<ModelSpec | undefined> {
+  private async fetchAnthropicModelInfo(
+    model: AIModel
+  ): Promise<ModelSpec | undefined> {
     // Anthropic 目前没有公开的模型列表API，使用本地规格
     return findModelSpec(model.id);
   }
@@ -227,7 +250,9 @@ export class ModelInfoFetcher {
   /**
    * 从GitHub Models API获取模型信息
    */
-  private async fetchGitHubModelInfo(model: AIModel): Promise<ModelSpec | null> {
+  private async fetchGitHubModelInfo(
+    model: AIModel
+  ): Promise<ModelSpec | null> {
     try {
       const config = ConfigurationManager.getInstance();
       const apiKey = config.getConfig("PROVIDERS_OPENAI_APIKEY"); // 暂时使用OpenAI的配置，后续需要添加GitHub配置
@@ -237,12 +262,15 @@ export class ModelInfoFetcher {
       }
 
       // GitHub Models API 端点
-      const response = await fetch(`https://models.inference.ai.azure.com/models`, {
-        headers: {
-          'Authorization': `Bearer ${apiKey}`,
-          'Content-Type': 'application/json'
+      const response = await fetch(
+        `https://models.inference.ai.azure.com/models`,
+        {
+          headers: {
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
         }
-      });
+      );
 
       if (!response.ok) {
         return null;
@@ -261,17 +289,17 @@ export class ModelInfoFetcher {
         provider: model.provider,
         maxTokens: {
           input: modelInfo.context_length || 128000,
-          output: modelInfo.max_output_tokens || 16384
+          output: modelInfo.max_output_tokens || 16384,
         },
         lastUpdated: new Date().toISOString(),
-        source: 'api',
+        source: "api",
         capabilities: {
           streaming: true,
           functionCalling: modelInfo.supports_function_calling || false,
-        }
+        },
       };
     } catch (error) {
-      console.warn('Failed to fetch GitHub model info:', error);
+      console.warn("Failed to fetch GitHub model info:", error);
       return null;
     }
   }

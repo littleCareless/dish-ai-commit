@@ -191,7 +191,7 @@ export class FileScanner {
   }
 
   private deriveModule(filePath: string): string | undefined {
-    const parts = filePath.split(path.sep).filter((p) => p && p !== ".");
+    const parts = filePath?.split(path.sep).filter((p) => p && p !== ".");
 
     // Rule 1: Explicit 'modules' directory
     const modulesIndex = parts.indexOf("modules");
@@ -274,7 +274,7 @@ export class FileScanner {
     const tags: Set<string> = new Set();
     const normalizedPath = path.normalize(filePath);
     const parts = normalizedPath
-      .split(path.sep)
+      ?.split(path.sep)
       .filter(
         (p) =>
           p &&

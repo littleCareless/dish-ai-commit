@@ -231,7 +231,7 @@ export class CodeIndexer {
       // Add more based on typical query captures for other languages (structs, enums, etc.)
       case "struct_declaration": // Go, C, etc.
       case "enum_declaration":
-        return nodeType.split("_")[0]; // 'struct', 'enum'
+        return nodeType?.split("_")[0]; // 'struct', 'enum'
       default:
         // console.warn(`Unhandled node type for semantic mapping: ${nodeType}`);
         return null;
@@ -575,7 +575,7 @@ export class CodeIndexer {
     content: string,
     modulePath: string
   ): SemanticBlock[] {
-    const lines = content.split("\n");
+    const lines = content?.split("\n");
     // For fallback, originalName, doc, signature are not applicable.
     return this._chunkTextByLines(
       lines,
@@ -600,7 +600,7 @@ export class CodeIndexer {
     fullFileContent: string, // For context if needed, though node.text is primary
     nodeStartLineInFile: number
   ): SemanticBlock[] {
-    const lines = node.text.split("\n");
+    const lines = node.text?.split("\n");
     const chunkBaseType = `${semanticType}_chunk`; // e.g., "function_chunk"
     return this._chunkTextByLines(
       lines,

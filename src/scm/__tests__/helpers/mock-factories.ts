@@ -2,7 +2,7 @@
  * Mock factory classes for VS Code API and extensions
  */
 
-import { vi } from 'vitest';
+import { vi } from "vitest";
 import {
   MockVSCodeAPI,
   MockWorkspaceFolder,
@@ -13,7 +13,7 @@ import {
   MockSvnAPI,
   MockSvnRepository,
   TestConfig,
-} from './test-interfaces';
+} from "./test-interfaces";
 
 /**
  * Factory for creating VS Code API mocks
@@ -65,10 +65,13 @@ export class MockVSCodeAPIFactory {
   /**
    * Create a workspace folder mock
    */
-  static createWorkspaceFolder(path: string, name?: string): MockWorkspaceFolder {
+  static createWorkspaceFolder(
+    path: string,
+    name?: string
+  ): MockWorkspaceFolder {
     return {
       uri: { fsPath: path, path },
-      name: name || path.split('/').pop() || 'workspace',
+      name: name || path?.split("/").pop() || "workspace",
       index: 0,
     };
   }
@@ -82,7 +85,7 @@ export class MockVSCodeAPIFactory {
   ): void {
     api.workspace.workspaceFolders = folders.map((path, index) => ({
       uri: { fsPath: path, path },
-      name: path.split('/').pop() || `workspace-${index}`,
+      name: path?.split("/").pop() || `workspace-${index}`,
       index,
     }));
   }
@@ -119,33 +122,33 @@ export class MockVSCodeAPIFactory {
    * Reset all mocks in the API
    */
   static resetMocks(api: MockVSCodeAPI): void {
-    Object.values(api.workspace).forEach(mock => {
-      if (typeof mock === 'function' && 'mockReset' in mock) {
+    Object.values(api.workspace).forEach((mock) => {
+      if (typeof mock === "function" && "mockReset" in mock) {
         mock.mockReset();
       }
     });
-    Object.values(api.window).forEach(mock => {
-      if (typeof mock === 'function' && 'mockReset' in mock) {
+    Object.values(api.window).forEach((mock) => {
+      if (typeof mock === "function" && "mockReset" in mock) {
         mock.mockReset();
       }
     });
-    Object.values(api.env.clipboard).forEach(mock => {
-      if (typeof mock === 'function' && 'mockReset' in mock) {
+    Object.values(api.env.clipboard).forEach((mock) => {
+      if (typeof mock === "function" && "mockReset" in mock) {
         mock.mockReset();
       }
     });
-    Object.values(api.extensions).forEach(mock => {
-      if (typeof mock === 'function' && 'mockReset' in mock) {
+    Object.values(api.extensions).forEach((mock) => {
+      if (typeof mock === "function" && "mockReset" in mock) {
         mock.mockReset();
       }
     });
-    Object.values(api.Uri).forEach(mock => {
-      if (typeof mock === 'function' && 'mockReset' in mock) {
+    Object.values(api.Uri).forEach((mock) => {
+      if (typeof mock === "function" && "mockReset" in mock) {
         mock.mockReset();
       }
     });
-    Object.values(api.commands).forEach(mock => {
-      if (typeof mock === 'function' && 'mockReset' in mock) {
+    Object.values(api.commands).forEach((mock) => {
+      if (typeof mock === "function" && "mockReset" in mock) {
         mock.mockReset();
       }
     });
@@ -159,18 +162,23 @@ export class MockGitExtensionFactory {
   /**
    * Create a Git extension mock
    */
-  static create(config: {
-    isActive?: boolean;
-    repositories?: Partial<MockGitRepository>[];
-  } = {}): MockGitExtension {
-    const repositories = (config.repositories || [{}]).map(repo =>
+  static create(
+    config: {
+      isActive?: boolean;
+      repositories?: Partial<MockGitRepository>[];
+    } = {}
+  ): MockGitExtension {
+    const repositories = (config.repositories || [{}]).map((repo) =>
       this.createRepository(repo)
     );
 
     const api: MockGitAPI = {
       repositories,
       getRepository: vi.fn().mockImplementation((uri: any) => {
-        return repositories.find(repo => repo.rootUri.fsPath === uri.fsPath) || null;
+        return (
+          repositories.find((repo) => repo.rootUri.fsPath === uri.fsPath) ||
+          null
+        );
       }),
     };
 
@@ -183,17 +191,19 @@ export class MockGitExtensionFactory {
   /**
    * Create a Git repository mock
    */
-  static createRepository(config: Partial<MockGitRepository> = {}): MockGitRepository {
+  static createRepository(
+    config: Partial<MockGitRepository> = {}
+  ): MockGitRepository {
     return {
-      inputBox: { value: config.inputBox?.value || '' },
+      inputBox: { value: config.inputBox?.value || "" },
       commit: vi.fn().mockResolvedValue(undefined),
       log: vi.fn().mockResolvedValue([]),
-      getConfig: vi.fn().mockResolvedValue(''),
-      getGlobalConfig: vi.fn().mockResolvedValue(''),
+      getConfig: vi.fn().mockResolvedValue(""),
+      getGlobalConfig: vi.fn().mockResolvedValue(""),
       getBranches: vi.fn().mockResolvedValue([]),
-      diff: vi.fn().mockResolvedValue(''),
-      show: vi.fn().mockResolvedValue(''),
-      rootUri: { fsPath: config.rootUri?.fsPath || '/mock/git/repo' },
+      diff: vi.fn().mockResolvedValue(""),
+      show: vi.fn().mockResolvedValue(""),
+      rootUri: { fsPath: config.rootUri?.fsPath || "/mock/git/repo" },
       ...config,
     };
   }
@@ -215,7 +225,7 @@ export class MockGitExtensionFactory {
         config.commitMessages.map((message, index) => ({
           hash: `commit-${index}`,
           message,
-          author: { name: 'Test Author', email: 'test@example.com' },
+          author: { name: "Test Author", email: "test@example.com" },
           date: new Date(),
         }))
       );
@@ -223,7 +233,7 @@ export class MockGitExtensionFactory {
 
     if (config.branches) {
       repository.getBranches.mockResolvedValue(
-        config.branches.map(name => ({ name, current: name === 'main' }))
+        config.branches.map((name) => ({ name, current: name === "main" }))
       );
     }
 
@@ -233,10 +243,10 @@ export class MockGitExtensionFactory {
 
     if (config.userConfig) {
       repository.getConfig.mockImplementation((key: string) =>
-        Promise.resolve(config.userConfig![key] || '')
+        Promise.resolve(config.userConfig![key] || "")
       );
       repository.getGlobalConfig.mockImplementation((key: string) =>
-        Promise.resolve(config.userConfig![key] || '')
+        Promise.resolve(config.userConfig![key] || "")
       );
     }
   }
@@ -256,18 +266,23 @@ export class MockSvnExtensionFactory {
   /**
    * Create an SVN extension mock
    */
-  static create(config: {
-    isActive?: boolean;
-    repositories?: Partial<MockSvnRepository>[];
-  } = {}): MockSvnExtension {
-    const repositories = (config.repositories || [{}]).map(repo =>
+  static create(
+    config: {
+      isActive?: boolean;
+      repositories?: Partial<MockSvnRepository>[];
+    } = {}
+  ): MockSvnExtension {
+    const repositories = (config.repositories || [{}]).map((repo) =>
       this.createRepository(repo)
     );
 
     const api: MockSvnAPI = {
       repositories,
       getRepository: vi.fn().mockImplementation((uri: any) => {
-        return repositories.find(repo => repo.rootUri.fsPath === uri.fsPath) || null;
+        return (
+          repositories.find((repo) => repo.rootUri.fsPath === uri.fsPath) ||
+          null
+        );
       }),
     };
 
@@ -280,14 +295,16 @@ export class MockSvnExtensionFactory {
   /**
    * Create an SVN repository mock
    */
-  static createRepository(config: Partial<MockSvnRepository> = {}): MockSvnRepository {
+  static createRepository(
+    config: Partial<MockSvnRepository> = {}
+  ): MockSvnRepository {
     return {
-      inputBox: { value: config.inputBox?.value || '' },
+      inputBox: { value: config.inputBox?.value || "" },
       commitFiles: vi.fn().mockResolvedValue(undefined),
       log: vi.fn().mockResolvedValue([]),
-      diff: vi.fn().mockResolvedValue(''),
-      info: vi.fn().mockResolvedValue(''),
-      rootUri: { fsPath: config.rootUri?.fsPath || '/mock/svn/repo' },
+      diff: vi.fn().mockResolvedValue(""),
+      info: vi.fn().mockResolvedValue(""),
+      rootUri: { fsPath: config.rootUri?.fsPath || "/mock/svn/repo" },
       ...config,
     };
   }
@@ -308,7 +325,7 @@ export class MockSvnExtensionFactory {
         config.commitMessages.map((message, index) => ({
           revision: index + 1,
           message,
-          author: 'Test Author',
+          author: "Test Author",
           date: new Date(),
         }))
       );
@@ -344,18 +361,18 @@ export class ConfigurableMockFactory {
     svnExtension?: MockSvnExtension;
   } {
     const vscode = MockVSCodeAPIFactory.create(config);
-    
+
     let gitExtension: MockGitExtension | undefined;
     let svnExtension: MockSvnExtension | undefined;
 
     // Configure extensions based on test config
-    if (config.scmType === 'git' && config.hasExtension) {
+    if (config.scmType === "git" && config.hasExtension) {
       gitExtension = MockGitExtensionFactory.create({
         repositories: [{ rootUri: { fsPath: config.mockWorkspacePath } }],
       });
     }
 
-    if (config.scmType === 'svn' && config.hasExtension) {
+    if (config.scmType === "svn" && config.hasExtension) {
       svnExtension = MockSvnExtensionFactory.create({
         repositories: [{ rootUri: { fsPath: config.mockWorkspacePath } }],
       });
@@ -364,10 +381,10 @@ export class ConfigurableMockFactory {
     // Configure extension availability in VS Code API
     const extensions: Record<string, any> = {};
     if (gitExtension) {
-      extensions['vscode.git'] = gitExtension;
+      extensions["vscode.git"] = gitExtension;
     }
     if (svnExtension) {
-      extensions['johnstoncode.svn-scm'] = svnExtension;
+      extensions["johnstoncode.svn-scm"] = svnExtension;
     }
 
     MockVSCodeAPIFactory.configureExtensions(vscode, extensions);
@@ -384,11 +401,11 @@ export class ConfigurableMockFactory {
     svnExtension?: MockSvnExtension;
   }): void {
     MockVSCodeAPIFactory.resetMocks(environment.vscode);
-    
+
     if (environment.gitExtension) {
       environment.gitExtension.getAPI.mockReset();
     }
-    
+
     if (environment.svnExtension) {
       environment.svnExtension.getAPI.mockReset();
     }
@@ -398,21 +415,24 @@ export class ConfigurableMockFactory {
    * Create a mock with specific behavior patterns
    */
   static createBehaviorMock<T extends (...args: any[]) => any>(
-    behavior: 'success' | 'failure' | 'timeout' | 'custom',
+    behavior: "success" | "failure" | "timeout" | "custom",
     customBehavior?: T
   ): ReturnType<typeof vi.fn> {
     switch (behavior) {
-      case 'success':
-        return vi.fn().mockResolvedValue('success');
-      case 'failure':
-        return vi.fn().mockRejectedValue(new Error('Mock failure'));
-      case 'timeout':
-        return vi.fn().mockImplementation(() => 
-          new Promise((_, reject) => 
-            setTimeout(() => reject(new Error('Timeout')), 1000)
-          )
-        );
-      case 'custom':
+      case "success":
+        return vi.fn().mockResolvedValue("success");
+      case "failure":
+        return vi.fn().mockRejectedValue(new Error("Mock failure"));
+      case "timeout":
+        return vi
+          .fn()
+          .mockImplementation(
+            () =>
+              new Promise((_, reject) =>
+                setTimeout(() => reject(new Error("Timeout")), 1000)
+              )
+          );
+      case "custom":
         return vi.fn(customBehavior);
       default:
         return vi.fn();

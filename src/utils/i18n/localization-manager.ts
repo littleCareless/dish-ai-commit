@@ -30,7 +30,6 @@ export function initializeLocalization(context: vscode.ExtensionContext): void {
     }
 
     messages = loadedMessages;
-
   } catch (error) {
     console.error("Failed to load localization file:", error);
     throw new Error(`Localization initialization failed: ${error}`);
@@ -44,7 +43,7 @@ export function getMessage(key: string): string {
   }
 
   // 如果完整key不存在,则尝试按点分割逐层查找
-  const parts = key.split(".");
+  const parts = key?.split(".");
   let current: MessageMap | string = messages;
 
   for (const part of parts) {

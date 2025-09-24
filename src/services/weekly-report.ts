@@ -60,9 +60,12 @@ export class WeeklyReportService {
     if (!this.scmProvider || !this.commitStrategy || !this.authorService) {
       await this.initialize();
     }
+    const authorService = this.authorService!;
+    const scmProvider = this.scmProvider!;
+    const commitStrategy = this.commitStrategy!;
 
-    const author = await this.authorService!.getAuthor(this.scmProvider!.type);
-    const commits = await this.commitStrategy!.getCommits(
+    const author = await authorService.getAuthor(scmProvider.type);
+    const commits = await commitStrategy.getCommits(
       this.getWorkspacePath(),
       period,
       author
@@ -84,7 +87,9 @@ export class WeeklyReportService {
     if (!this.scmProvider || !this.authorService) {
       await this.initialize();
     }
-    return await this.authorService!.getAuthor(this.scmProvider!.type);
+    const authorService = this.authorService!;
+    const scmProvider = this.scmProvider!;
+    return await authorService.getAuthor(scmProvider.type);
   }
 
   /**
@@ -96,6 +101,8 @@ export class WeeklyReportService {
     if (!this.scmProvider || !this.authorService) {
       await this.initialize();
     }
+    const authorService = this.authorService!;
+    const scmProvider = this.scmProvider!;
     // Assuming AuthorService will have a method to get all authors
     // This might involve parsing commit logs or using SCM specific commands
     // For now, let's assume it returns a list of unique authors from all commits.
@@ -106,7 +113,7 @@ export class WeeklyReportService {
     // However, this could be inefficient for large repositories.
     // A better approach would be to have a dedicated method in AuthorService.
     // For now, we'll delegate to a new method in AuthorService.
-    return await this.authorService!.getAllAuthors(this.scmProvider!.type);
+    return await authorService.getAllAuthors(scmProvider.type);
   }
 
   /**
@@ -120,25 +127,28 @@ export class WeeklyReportService {
     if (!this.scmProvider || !this.commitStrategy || !this.authorService) {
       await this.initialize();
     }
+    const commitStrategy = this.commitStrategy!;
 
     if (users.length === 0) {
       return []; // No users selected, return empty array
     }
 
     // Assuming CommitLogStrategy will have a method to get commits for multiple users
-    const commits = await this.commitStrategy!.getCommitsForUsers(
+    const commits = await commitStrategy.getCommitsForUsers(
       this.getWorkspacePath(),
       period,
       users
     );
 
-    return commits.map((commit): WorkItem => ({ // Explicitly type WorkItem
-      content: commit,
-      time: "", // Placeholder, might need to extract from commit
-      description: commit, // Placeholder, might need to extract from commit
-    }));
+    return commits.map(
+      (commit): WorkItem => ({
+        // Explicitly type WorkItem
+        content: commit,
+        time: "", // Placeholder, might need to extract from commit
+        description: commit, // Placeholder, might need to extract from commit
+      })
+    );
   }
-
 
   /**
    * Gets the path of the current workspace

@@ -81,7 +81,7 @@ export class SvnUtils {
 
       // 验证SVN是否可执行
       const { stdout } = await execAsync(`"${this.svnPath}" --version`);
-      Logger.log(LogLevel.Info, "SVN version:", stdout.split("\n")[0]);
+      Logger.log(LogLevel.Info, "SVN version:", stdout?.split("\n")[0]);
 
       this.initialized = true;
     } catch (error) {
@@ -152,7 +152,7 @@ export class SvnUtils {
       try {
         const { stdout } = await execAsync(command);
         // Windows下where命令可能返回多行结果，取第一行
-        const detectedPath = stdout.toString().split("\n")[0]?.trim();
+        const detectedPath = stdout.toString()?.split("\n")[0]?.trim();
         if (detectedPath) {
           Logger.log(LogLevel.Info, "Detected SVN path:", detectedPath);
           return detectedPath;
@@ -357,10 +357,10 @@ export class SvnUtils {
 
   private static parseCredentials(authOutput: string) {
     return authOutput
-      .split(/\n{2,}/) // 根据两个或更多换行符分割块
+      ?.split(/\n{2,}/) // 根据两个或更多换行符分割块
       .filter((block) => block?.trim())
       .map((block) => {
-        const lines = block.split("\n");
+        const lines = block?.split("\n");
         let username = null;
         let realm = null;
 
@@ -439,7 +439,7 @@ export class SvnUtils {
       let hostPart = url.replace(/^(svn|http|https):\/\//, "");
 
       // 获取第一个斜杠或冒号之前的部分
-      hostPart = hostPart.split(/[/:]/)[0];
+      hostPart = hostPart?.split(/[/:]/)[0];
 
       if (hostPart) {
         Logger.log(LogLevel.Info, "Extracted host:", hostPart);
