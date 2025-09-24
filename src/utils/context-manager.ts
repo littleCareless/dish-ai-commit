@@ -81,6 +81,14 @@ export class ContextManager {
   }
 
   /**
+   * 获取所有上下文区块
+   * @returns 当前所有区块的数组
+   */
+  public getBlocks(): ContextBlock[] {
+    return this.blocks;
+  }
+
+  /**
    * 设置新的系统提示
    * @param systemPrompt - 新的系统提示字符串
    */
