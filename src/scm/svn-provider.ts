@@ -10,6 +10,7 @@ import { DiffSimplifier } from "../utils";
 import { notify } from "../utils/notification/notification-manager";
 import { ConfigurationManager } from "../config/configuration-manager";
 import { ImprovedPathUtils } from "./utils/improved-path-utils";
+import { Logger } from "../utils/logger";
 
 const exec = promisify(childProcess.exec);
 
@@ -30,32 +31,6 @@ export interface SvnRepository {
     value: string;
   };
   commitFiles(files: string[], message: string): Promise<void>;
-}
-
-// 添加日志工具类
-const enum LogLevel {
-  Info,
-  Warning,
-  Error,
-}
-
-class Logger {
-  static log(level: LogLevel, message: string, ...args: any[]) {
-    switch (level) {
-      case LogLevel.Info:
-        // 可以根据环境配置是否输出info级别日志
-        if (process.env.NODE_ENV !== "production") {
-          console.log(message, ...args);
-        }
-        break;
-      case LogLevel.Warning:
-        console.warn(message, ...args);
-        break;
-      case LogLevel.Error:
-        console.error(message, ...args);
-        break;
-    }
-  }
 }
 
 interface SvnConfig {
@@ -85,10 +60,10 @@ const isValidSvnPath = async (svnPath: string): Promise<boolean> => {
     await exec(`${escapedPath} --version`);
     return true;
   } catch (error) {
-    Logger.log(
-      LogLevel.Info,
-      `Path validation failed for ${svnPath}:`,
-      error instanceof Error ? error.message : error
+    Logger.getInstance("Dish AI Commit Gen").info(
+      `Path validation failed for ${svnPath}: ${
+        error instanceof Error ? error.message : error
+      }`
     );
     return false;
   }
@@ -107,8 +82,7 @@ const findSvnExecutable = async (): Promise<string | null> => {
       }
     }
   } catch (error) {
-    Logger.log(
-      LogLevel.Info,
+    Logger.getInstance("Dish AI Commit Gen").info(
       `'${command}' command failed, checking common paths.`
     );
   }
@@ -149,18 +123,15 @@ const findSvnExecutable = async (): Promise<string | null> => {
 };
 
 const getSvnPath = async (caller?: string): Promise<string> => {
-  Logger.log(
-    LogLevel.Info,
+  Logger.getInstance("Dish AI Commit Gen").info(
     `[SVN-PATH] getSvnPath called ${caller ? `from ${caller}` : ""}`
   );
   // 1. 优先检查SVN插件配置
   const svnConfig = vscode.workspace.getConfiguration("svn");
   const svnPluginPath = svnConfig.get<string>("path");
   if (svnPluginPath && (await isValidSvnPath(svnPluginPath))) {
-    Logger.log(
-      LogLevel.Info,
-      "Using SVN path from SVN plugin config:",
-      svnPluginPath
+    Logger.getInstance("Dish AI Commit Gen").info(
+      `Using SVN path from SVN plugin config: ${svnPluginPath}`
     );
     return svnPluginPath;
   }
@@ -169,20 +140,23 @@ const getSvnPath = async (caller?: string): Promise<string> => {
   const customConfig = vscode.workspace.getConfiguration("svn-commit-gen");
   const customPath = customConfig.get<string>("svnPath");
   if (customPath && (await isValidSvnPath(customPath))) {
-    Logger.log(LogLevel.Info, "Using SVN path from custom config:", customPath);
+    Logger.getInstance("Dish AI Commit Gen").info(
+      `Using SVN path from custom config: ${customPath}`
+    );
     return customPath;
   }
 
   // 3. 自动检测
   const detectedPath = await findSvnExecutable();
   if (detectedPath) {
-    Logger.log(LogLevel.Info, "Auto-detected SVN path:", detectedPath);
+    Logger.getInstance("Dish AI Commit Gen").info(
+      `Auto-detected SVN path: ${detectedPath}`
+    );
     return detectedPath;
   }
 
   // 4. 如果未找到，则抛出错误
-  Logger.log(
-    LogLevel.Error,
+  Logger.getInstance("Dish AI Commit Gen").error(
     "SVN executable not found in system PATH or common locations."
   );
   throw new Error(
@@ -212,6 +186,7 @@ export class SvnProvider implements ISCMProvider {
 
   private config: SvnConfig;
   private initialized: boolean = false;
+  private logger: Logger;
 
   /**
    * 创建SVN提供者实例
@@ -219,6 +194,7 @@ export class SvnProvider implements ISCMProvider {
    * @throws {Error} 当未找到工作区时抛出错误
    */
   constructor(private readonly svnExtension: any, repositoryPath?: string) {
+    this.logger = Logger.getInstance("Dish AI Commit Gen");
     this.api = svnExtension.getAPI(1);
     this.repositories = this.api.repositories;
     this.repositoryPath = repositoryPath;
@@ -253,7 +229,7 @@ export class SvnProvider implements ISCMProvider {
         environmentConfig: envConfig,
       };
     } catch (error) {
-      Logger.log(LogLevel.Error, "Failed to load SVN config:", error);
+      this.logger.error(`Failed to load SVN config: ${error}`);
       throw new Error(formatMessage("svn.config.load.failed", [error]));
     }
   }
@@ -266,13 +242,13 @@ export class SvnProvider implements ISCMProvider {
       // 验证SVN可执行
       const { stdout } = await exec(`"${this.svnPath}" --version`);
       const version = stdout.toString().split("\n")[0]?.trim();
-      Logger.log(LogLevel.Info, "SVN version:", version);
+      this.logger.info(`SVN version: ${version}`);
       notify.info(formatMessage("scm.version.detected", ["SVN", version]));
 
       this.initialized = true;
     } catch (error) {
       const message = error instanceof Error ? error.message : "Unknown error";
-      Logger.log(LogLevel.Error, "Failed to initialize SVN:", message);
+      this.logger.error(`Failed to initialize SVN: ${message}`);
       throw new Error(formatMessage("svn.initialization.failed", [message]));
     }
   }
@@ -281,13 +257,10 @@ export class SvnProvider implements ISCMProvider {
     try {
       const { stdout } = await exec("which svn");
       const path = stdout.toString()?.trim();
-      Logger.log(LogLevel.Info, "Detected SVN path:", path);
+      this.logger.info(`Detected SVN path: ${path}`);
       return path;
     } catch (error) {
-      Logger.log(
-        LogLevel.Warning,
-        formatMessage("svn.path.detection.failed", [error])
-      );
+      this.logger.warn(formatMessage("svn.path.detection.failed", [error]));
       return null;
     }
   }
@@ -370,7 +343,7 @@ export class SvnProvider implements ISCMProvider {
       }
       return "Modified File";
     } catch (error) {
-      Logger.log(LogLevel.Error, "Failed to get file status:", error);
+      this.logger.error(`Failed to get file status: ${error}`);
       return "Unknown";
     }
   }
@@ -396,7 +369,7 @@ export class SvnProvider implements ISCMProvider {
       let diffOutput = "";
 
       if (files && files.length > 0) {
-        notify.info(formatMessage("diff.files.selected", [files.length]));
+        // notify.info(formatMessage("diff.files.selected", [files.length]));
         // 处理指定文件的差异
         for (const file of files) {
           const fileStatus = await this.getFileStatus(file);
@@ -839,7 +812,7 @@ export class SvnProvider implements ISCMProvider {
       }
 
       const command = `"${this.svnPath}" log ${commandArgs} "${repositoryPath}"`;
-      Logger.log(LogLevel.Info, `Executing SVN log command: ${command}`);
+      this.logger.info(`Executing SVN log command: ${command}`);
 
       const { stdout } = await exec(command, {
         ...ImprovedPathUtils.createExecOptions(repositoryPath),
@@ -888,7 +861,7 @@ export class SvnProvider implements ISCMProvider {
       // `svn log -r NEWER:OLDER` 或 `svn log -l LIMIT` 通常已经是最新优先，无需反转
       return commitMessages;
     } catch (error) {
-      Logger.log(LogLevel.Error, "SVN log failed:", error);
+      this.logger.error(`SVN log failed: ${error}`);
       if (error instanceof Error) {
         // 确保 i18n 文件中有 "svn.log.failed" 键
         notify.error(formatMessage("scm.log.failed", ["SVN", error.message]));

@@ -6,15 +6,18 @@ import { getMessage } from "../utils";
 import { DiffProcessor } from "../utils/diff/diff-processor";
 import { notify } from "../utils/notification/notification-manager";
 import { ImprovedPathUtils } from "./utils/improved-path-utils";
+import { Logger } from "../utils/logger";
 
 const execAsync = promisify(exec);
 
 export class CliSvnProvider implements ISCMProvider {
   type: "svn" = "svn";
   private workspaceRoot: string;
+  private logger: Logger;
 
   constructor(workspaceRoot: string) {
     this.workspaceRoot = ImprovedPathUtils.normalizePath(workspaceRoot);
+    this.logger = Logger.getInstance("Dish AI Commit Gen");
   }
 
   async init(): Promise<void> {
@@ -26,8 +29,10 @@ export class CliSvnProvider implements ISCMProvider {
     try {
       const options = ImprovedPathUtils.createExecOptions(this.workspaceRoot);
       await execAsync("svn --version", options);
+      this.logger.info("SVN CLI is available.");
       return true;
-    } catch {
+    } catch (error) {
+      this.logger.warn(`SVN CLI not available: ${error}`);
       return false;
     }
   }
@@ -48,15 +53,17 @@ export class CliSvnProvider implements ISCMProvider {
       const options = ImprovedPathUtils.createExecOptions(this.workspaceRoot);
       const command =
         filePaths === "." ? "svn diff ." : `svn diff ${filePaths}`;
+      this.logger.info(`Executing SVN diff command: ${command}`);
       const { stdout: rawDiff } = await execAsync(command, options);
 
       if (!rawDiff.toString()?.trim()) {
+        this.logger.info("No SVN diff found.");
         return undefined;
       }
 
       return DiffProcessor.process(rawDiff.toString(), "svn");
     } catch (error) {
-      console.error("Failed to get SVN diff:", error);
+      this.logger.error(`Failed to get SVN diff: ${error}`);
       return undefined;
     }
   }
@@ -79,7 +86,9 @@ export class CliSvnProvider implements ISCMProvider {
       filePaths === "."
         ? `svn commit -m ${escapedMessage} .`
         : `svn commit -m ${escapedMessage} ${filePaths}`;
+    this.logger.info(`Executing SVN commit command: ${commitCommand}`);
     await execAsync(commitCommand, options);
+    this.logger.info("SVN commit successful.");
   }
 
   async setCommitInput(
@@ -110,7 +119,7 @@ export class CliSvnProvider implements ISCMProvider {
     baseBranch?: string,
     headBranch?: string
   ): Promise<string[]> {
-    console.warn(
+    this.logger.warn(
       "getCommitLog is not implemented for CliSvnProvider and will return an empty array."
     );
     return [];
@@ -145,7 +154,7 @@ export class CliSvnProvider implements ISCMProvider {
         userCommitMessages.push(...this.parseSvnLog(userLogOutput.toString()));
       }
     } catch (err) {
-      console.error("Failed to get recent SVN commit messages:", err);
+      this.logger.error(`Failed to get recent SVN commit messages: ${err}`);
     }
 
     return { repository: repositoryCommitMessages, user: userCommitMessages };

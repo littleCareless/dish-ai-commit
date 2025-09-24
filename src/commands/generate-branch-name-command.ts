@@ -22,11 +22,14 @@ export class GenerateBranchNameCommand extends BaseCommand {
   async execute(
     resources?: vscode.SourceControlResourceState[]
   ): Promise<void> {
+    this.logger.info("Executing GenerateBranchNameCommand...");
     if (!(await this.showConfirmAIProviderToS())) {
+      this.logger.warn("User did not confirm AI provider ToS.");
       return;
     }
     const configResult = await this.handleConfiguration();
     if (!configResult) {
+      this.logger.warn("Configuration is not valid.");
       return;
     }
 
@@ -44,6 +47,9 @@ export class GenerateBranchNameCommand extends BaseCommand {
           const { aiProvider, selectedModel } = await validateAndGetModel(
             provider,
             model
+          );
+          this.logger.info(
+            `Model validated. AI Provider: ${aiProvider.getId()}, Model: ${selectedModel?.id}`
           );
 
           let aiInputContent: string | undefined;
@@ -78,8 +84,10 @@ export class GenerateBranchNameCommand extends BaseCommand {
           );
 
           if (!generationMode) {
+            this.logger.info("User cancelled branch name generation mode selection.");
             return; // User cancelled
           }
+          this.logger.info(`User selected generation mode: ${generationMode.label}`);
 
           if (
             generationMode.label ===
@@ -92,10 +100,12 @@ export class GenerateBranchNameCommand extends BaseCommand {
             });
 
             if (!description) {
+              this.logger.info("User cancelled entering branch description.");
               notify.info("branch.description.cancelled");
               return;
             }
             aiInputContent = description;
+            this.logger.info(`User provided description: ${description}`);
             // SCM provider is not detected in this mode, but we need a type for the prompt
             scmProviderForContext = { type: "git" };
           } else {
@@ -117,10 +127,13 @@ export class GenerateBranchNameCommand extends BaseCommand {
             const result = await this.detectSCMProvider(selectedFiles);
             if (!result) {
               // detectSCMProvider usually shows a notification if it fails
+              this.logger.warn("SCM provider not detected.");
               return;
             }
             const { scmProvider: detectedScmProvider } = result;
+            this.logger.info(`SCM provider detected: ${detectedScmProvider.type}`);
             if (detectedScmProvider.type !== "git") {
+              this.logger.warn("Branch name generation is only supported for Git.");
               await notify.warn("branch.name.git.only");
               return;
             }
@@ -132,13 +145,18 @@ export class GenerateBranchNameCommand extends BaseCommand {
             });
             aiInputContent = await detectedScmProvider.getDiff(selectedFiles);
             if (!aiInputContent) {
+              this.logger.warn("No diff content found for branch name generation.");
               await notify.warn(getMessage("no.changes.found"));
               return;
             }
+            this.logger.info(
+              `Diff content collected for branch name generation. Length: ${aiInputContent.length}`
+            );
           }
 
           if (!aiInputContent) {
             // This case should ideally not be reached if logic above is correct
+            this.logger.error("Internal error: No AI input content available.");
             await notify.error(getMessage("internal.error.no.ai.input")); // New i18n key
             return;
           }
@@ -158,9 +176,13 @@ export class GenerateBranchNameCommand extends BaseCommand {
           });
 
           if (!branchNameResult?.content) {
+            this.logger.error("AI failed to generate branch name.");
             await notify.error(getMessage("branch.name.generation.failed"));
             return;
           }
+          this.logger.info(
+            `AI generated branch name: ${branchNameResult.content}`
+          );
 
           progress.report({
             increment: 25, // Adjusted increment
@@ -181,7 +203,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
         }
       );
     } catch (error) {
-      console.log("GenerateBranchNameCommand error", error);
+      this.logger.error(`GenerateBranchNameCommand error: ${error}`);
       await this.handleError(error, "branch.name.generation.failed");
     }
   }
@@ -266,8 +288,12 @@ export class GenerateBranchNameCommand extends BaseCommand {
                     selectedBranch,
                     selectedBaseBranch,
                   ]);
+                  this.logger.info(
+                    `Branch '${selectedBranch}' created from '${selectedBaseBranch}'.`
+                  );
                 } else {
                   // 用户取消选择基础分支
+                  this.logger.info("User cancelled base branch selection.");
                   notify.info("branch.creation.cancelled");
                 }
               } else {
@@ -275,6 +301,9 @@ export class GenerateBranchNameCommand extends BaseCommand {
                 await vscode.commands.executeCommand(
                   "git.checkout",
                   selectedBranch
+                );
+                this.logger.info(
+                  `Branch '${selectedBranch}' created and checked out.`
                 );
                 notify.info("branch.created", [selectedBranch]);
               }
@@ -284,19 +313,23 @@ export class GenerateBranchNameCommand extends BaseCommand {
                 "git.checkout",
                 selectedBranch
               );
+              this.logger.info(
+                `Branch '${selectedBranch}' created and checked out (fallback).`
+              );
               notify.info("branch.created", [selectedBranch]);
             }
           } catch (error) {
-            console.error("Failed to create branch:", error);
+            this.logger.error(`Failed to create branch: ${error}`);
             notify.error("branch.creation.failed");
           }
         } else if (selection === copyToClipboard) {
           try {
             // 将分支名称复制到剪贴板
             await vscode.env.clipboard.writeText(selectedBranch);
+            this.logger.info(`Branch name '${selectedBranch}' copied to clipboard.`);
             notify.info("branch.name.copied");
           } catch (error) {
-            console.error("Failed to copy branch name:", error);
+            this.logger.error(`Failed to copy branch name: ${error}`);
             notify.error("branch.name.copy.failed");
           }
         }

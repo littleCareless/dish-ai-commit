@@ -20,18 +20,26 @@ import { getWeeklyReportPrompt } from "../../prompt/weekly-report";
 import { getCommitMessageTools } from "../../prompt/generate-commit";
 import { formatMessage } from "../../utils/i18n/localization-manager";
 import { ConfigurationManager } from "../../config/configuration-manager";
+import { Logger } from "../../utils/logger";
 
 /**
  * AI提供者的抽象基类
  * 使用模板方法模式实现通用逻辑，具体提供者只需实现特定方法
  */
 export abstract class AbstractAIProvider implements AIProvider {
+  protected logger: Logger;
+
+  constructor() {
+    this.logger = Logger.getInstance("Dish AI Commit Gen");
+  }
+
   /**
    * 生成提交信息
    * @param params - AI请求参数
    * @returns 提交信息生成结果
    */
   async generateCommit(params: AIRequestParams): Promise<AIResponse> {
+    this.logger.info(`Generating commit with provider: ${this.getId()}`);
     try {
       if (!params.messages) {
         const systemPrompt = await getSystemPrompt(params);
@@ -46,6 +54,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       });
       return result;
     } catch (error) {
+      this.logger.error(`Error in generateCommit: ${error}`);
       throw new Error(
         formatMessage("generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -62,6 +71,7 @@ export abstract class AbstractAIProvider implements AIProvider {
   async generateCommitStream(
     params: AIRequestParams
   ): Promise<AsyncIterable<string>> {
+    this.logger.info(`Generating commit stream with provider: ${this.getId()}`);
     try {
       if (!params.messages) {
         const systemPrompt = await getSystemPrompt(params);
@@ -77,7 +87,7 @@ export abstract class AbstractAIProvider implements AIProvider {
     } catch (error) {
       // 错误现在由 executeStreamWithRetry 内部处理和抛出
       // 这里只捕获最终的、不可重试的错误
-      console.log("error", error);
+      this.logger.error(`Error in generateCommitStream: ${error}`);
       throw new Error(
         formatMessage("generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -89,6 +99,9 @@ export abstract class AbstractAIProvider implements AIProvider {
   async generateCommitWithFunctionCalling(
     params: AIRequestParams
   ): Promise<AIResponse> {
+    this.logger.info(
+      `Generating commit with function calling with provider: ${this.getId()}`
+    );
     try {
       if (!params.messages) {
         const systemPrompt = await getSystemPrompt(params);
@@ -133,6 +146,7 @@ export abstract class AbstractAIProvider implements AIProvider {
         "Failed to generate commit message with function calling."
       );
     } catch (error) {
+      this.logger.error(`Error in generateCommitWithFunctionCalling: ${error}`);
       throw new Error(
         formatMessage("generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -147,6 +161,7 @@ export abstract class AbstractAIProvider implements AIProvider {
    * @returns 包含评审报告的Promise
    */
   async generateCodeReview(params: AIRequestParams): Promise<AIResponse> {
+    this.logger.info(`Generating code review with provider: ${this.getId()}`);
     try {
       if (!params.messages) {
         const systemPrompt = getCodeReviewPrompt(params);
@@ -172,6 +187,7 @@ export abstract class AbstractAIProvider implements AIProvider {
         throw new Error("Failed to parse code review result as JSON");
       }
     } catch (error) {
+      this.logger.error(`Error in generateCodeReview: ${error}`);
       throw new Error(
         formatMessage("codeReview.generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -186,6 +202,7 @@ export abstract class AbstractAIProvider implements AIProvider {
    * @returns 分支名称生成结果
    */
   async generateBranchName(params: AIRequestParams): Promise<AIResponse> {
+    this.logger.info(`Generating branch name with provider: ${this.getId()}`);
     try {
       if (!params.messages) {
         const systemPrompt = getBranchNameSystemPrompt(params);
@@ -201,6 +218,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       });
       return result;
     } catch (error) {
+      this.logger.error(`Error in generateBranchName: ${error}`);
       throw new Error(
         formatMessage("branchName.generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -224,6 +242,7 @@ export abstract class AbstractAIProvider implements AIProvider {
     model?: AIModel,
     users?: string[] // 新增可选的 users 参数
   ): Promise<AIResponse> {
+    this.logger.info(`Generating weekly report with provider: ${this.getId()}`);
     try {
       let systemPrompt = getWeeklyReportPrompt(period);
       if (users && users.length > 0) {
@@ -255,6 +274,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       );
       return result;
     } catch (error) {
+      this.logger.error(`Error in generateWeeklyReport: ${error}`);
       throw new Error(
         formatMessage("weeklyReport.generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -271,10 +291,12 @@ export abstract class AbstractAIProvider implements AIProvider {
   async generateLayeredCommit(
     params: AIRequestParams
   ): Promise<LayeredCommitMessage> {
+    this.logger.info(`Generating layered commit with provider: ${this.getId()}`);
     try {
       const modifiedFiles = extractModifiedFilePaths(params.diff);
 
       // 步骤1: 生成全局摘要
+      this.logger.info("Generating global summary for layered commit...");
       const summarySystemPrompt = await getGlobalSummaryPrompt(params);
       const summaryResult = await this.executeAIRequest(
         {
@@ -293,6 +315,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       // 步骤2: 为每个文件生成描述
       const fileChanges = [];
       for (const filePath of modifiedFiles) {
+        this.logger.info(`Generating description for file: ${filePath}`);
         // 从diff中提取特定文件的变更
         const filePattern = new RegExp(
           `diff --git a/${filePath.replace(
@@ -330,6 +353,7 @@ export abstract class AbstractAIProvider implements AIProvider {
 
       return { summary, fileChanges };
     } catch (error) {
+      this.logger.error(`Error in generateLayeredCommit: ${error}`);
       throw new Error(
         formatMessage("layeredCommit.generation.failed", [
           error instanceof Error ? error.message : String(error),

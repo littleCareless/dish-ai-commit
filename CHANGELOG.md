@@ -6,6 +6,149 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
 
+## 0.50.2 (2025-09-23)
+
+### 🎫 Chores
+
+- **deps**: Update dependencies ([0bf0e2a](https://github.com/littleCareless/dish-ai-commit/commit/0bf0e2a))
+
+## 0.50.1 (2025-09-23)
+
+### 🎫 Chores
+
+- **docs**: Fix incorrect directory name in installation instructions ([08fd60d](https://github.com/littleCareless/dish-ai-commit/commit/08fd60d))
+
+# 0.50.0 (2025-09-18)
+
+### ♻ Code Refactoring
+
+- **ux**: Optimize fileless change handling and notification experience ([ffe9793](https://github.com/littleCareless/dish-ai-commit/commit/ffe9793))
+
+### ✨ Features
+
+- **ai**: Added support for LM Studio as an AI provider ([0903d76](https://github.com/littleCareless/dish-ai-commit/commit/0903d76))
+
+# 0.49.0 (2025-09-16)
+
+### ✨ Features
+
+- **branch**: Supports creating new branches from a specified base branch ([71dc50c](https://github.com/littleCareless/dish-ai-commit/commit/71dc50c))
+
+# 0.48.0 (2025-09-16)
+
+### ♻ Code Refactoring
+
+- Unified optional chaining for string trim methods ([b827b23](https://github.com/littleCareless/dish-ai-commit/commit/b827b23))
+
+### ✨ Features
+
+- **notification**: Add native system notifications for successful operations ([2695bb6](https://github.com/littleCareless/dish-ai-commit/commit/2695bb6))
+- **notification**: Optimize the notification experience and fix the timeout close function ([7ba57e1](https://github.com/littleCareless/dish-ai-commit/commit/7ba57e1))
+
+# 0.47.0 (2025-09-09)
+
+### ♻ Code Refactoring
+
+- **ai**: Convert buildProviderMessages and getSystemPrompt to asynchronous methods ([8148332](https://github.com/littleCareless/dish-ai-commit/commit/8148332))
+
+### ✨ Features
+
+- **i18n**: Improve internationalization support for SVN and model functions ([dda11c8](https://github.com/littleCareless/dish-ai-commit/commit/dda11c8))
+- **prompt**: Support dynamic generation of commit types from commitlint configuration ([2972447](https://github.com/littleCareless/dish-ai-commit/commit/2972447))
+
+### 🎫 Chores
+
+- **github**: Add issue templates ([d7c3dc0](https://github.com/littleCareless/dish-ai-commit/commit/d7c3dc0))
+
+### 🐛 Bug Fixes
+
+- **scm**: Fix handling of code block markers in AI responses ([e6d365f](https://github.com/littleCareless/dish-ai-commit/commit/e6d365f))
+
+# 0.46.0 (2025-09-09)
+
+### ♻ Code Refactoring
+
+- **scm**: Refactor repository detection logic to enhance SVN support ([f338931](https://github.com/littleCareless/dish-ai-commit/commit/f338931))
+
+### ⚡ Performance Improvements
+
+- **ci**: Use tsc-files Improved type checking for staged files ([0aa72fe](https://github.com/littleCareless/dish-ai-commit/commit/0aa72fe))
+
+### ✨ Features
+
+- **ai**: Enhanced model validation logic and unified coding style ([1f7c779](https://github.com/littleCareless/dish-ai-commit/commit/1f7c779))
+
+### 🎫 Chores
+
+- **project**: Removed obsolete and unused project files ([fdcb2a4](https://github.com/littleCareless/dish-ai-commit/commit/fdcb2a4))
+- **scripts**: Removed redundant SCM test scripts ([1ce46fd](https://github.com/littleCareless/dish-ai-commit/commit/1ce46fd))
+
+### 🐛 Bug Fixes
+
+- **tsconfig**: Corrected the schema address in tsconfig.json ([92f4b9b](https://github.com/littleCareless/dish-ai-commit/commit/92f4b9b))
+
+## 0.45.1 (2025-08-28)
+
+### ✅ Tests
+
+- Improved test reliability and simulation ([aa85a22](https://github.com/littleCareless/dish-ai-commit/commit/aa85a22))
+
+### 🎫 Chores
+
+- Enhanced lint-staged configuration ([ba81db1](https://github.com/littleCareless/dish-ai-commit/commit/ba81db1))
+
+# 0.45.0 (2025-08-28)
+
+### ♻ Code Refactoring
+
+- **config**: Optimize the CodeAnalysis diff detection configuration structure ([feb8b4d](https://github.com/littleCareless/dish-ai-commit/commit/feb8b4d))
+- **prompt**: Refactor the hierarchical commit prompt template to support configuration options ([ce95d59](https://github.com/littleCareless/dish-ai-commit/commit/ce95d59))
+- **scm**: Improve cross-platform path handling ([ea60595](https://github.com/littleCareless/dish-ai-commit/commit/ea60595))
+
+### ✨ Features
+
+- **commit-generation**: Implement automatic detection of staging area contents and optimize layered commits ([f68c52a](https://github.com/littleCareless/dish-ai-commit/commit/f68c52a))
+- **scm**: Add staging area content detection and related components ([ade8655](https://github.com/littleCareless/dish-ai-commit/commit/ade8655))
+
+### 🐛 Bug Fixes
+
+- **svn**: Fix SVN path detection and environment configuration issues on Windows ([86f4a3d](https://github.com/littleCareless/dish-ai-commit/commit/86f4a3d))
+
+### 📝 Documentation
+
+- **i18n**: Add missing internationalization strings ([ff3a2a0](https://github.com/littleCareless/dish-ai-commit/commit/ff3a2a0))
+
+## 0.43.2 (2025-08-06)
+
+### 🎫 Chores
+
+- **release**: 0.43.2 ([512e809](https://github.com/littleCareless/dish-ai-commit/commit/512e809))
+
+# 0.44.0 (2025-08-13)
+
+### ♻ Code Refactoring
+
+- **setting**: Added explicit type definitions for settings page components ([c17f8f6](https://github.com/littleCareless/dish-ai-commit/commit/c17f8f6))
+
+### ✅ Tests
+
+- **scm**: Added unit tests for ImprovedPathUtils ([42b67c8](https://github.com/littleCareless/dish-ai-commit/commit/42b67c8))
+
+### ✨ Features
+
+- **scm**: Added improved cross-platform path handling utility class ([6e07e4a](https://github.com/littleCareless/dish-ai-commit/commit/6e07e4a))
+
+### 🐛 Bug Fixes
+
+- **scm**: Fixed path handling and command injection issues in the SVN provider ([9da13a2](https://github.com/littleCareless/dish-ai-commit/commit/9da13a2))
+- **scm**: Fixed an issue where diffs for deleted files were not correctly generated ([16f1fad](https://github.com/littleCareless/dish-ai-commit/commit/16f1fad))
+
+## 0.43.1 (2025-08-06)
+
+### 🔧 Continuous Integration
+
+- **github**: Added the release-please automated release process ([328ef21](https://github.com/littleCareless/dish-ai-commit/commit/328ef21))
+
 # 0.43.0 (2025-08-06)
 
 ### ♻ Code Refactoring
