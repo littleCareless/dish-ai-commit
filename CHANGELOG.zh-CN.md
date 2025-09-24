@@ -1,10 +1,39 @@
-# Changelog
+# Changelog 
 
-[English](CHANGELOG.md) | [简体中文](CHANGELOG.zh-CN.md)
+[English](CHANGELOG.md) | [简体中文](CHANGELOG.zh-CN.md) 
 
-All notable changes to this project will be documented in this file.
+All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+# 0.51.0 (2025-09-24)
+
+
+### ♻ Code Refactoring
+
+* **commands**: 重构所有命令以集成结构化日志系统 ([946a78f](https://github.com/littleCareless/dish-ai-commit/commit/946a78f))
+* **provider**: 在抽象 AI 提供者中添加结构化日志 ([bdc8e8d](https://github.com/littleCareless/dish-ai-commit/commit/bdc8e8d))
+* **scm**: 移除生成差异时不必要的文件数量通知 ([ee994d8](https://github.com/littleCareless/dish-ai-commit/commit/ee994d8))
+* **scm**: 重构 SCM 提供程序以使用结构化日志 ([dec05ad](https://github.com/littleCareless/dish-ai-commit/commit/dec05ad))
+
+
+### ✨ Features
+
+* **context-manager**: 添加 getBlocks 方法以获取上下文区块 ([79cb4a1](https://github.com/littleCareless/dish-ai-commit/commit/79cb4a1))
+* **log**: 引入结构化日志系统以增强调试能力 ([c62829a](https://github.com/littleCareless/dish-ai-commit/commit/c62829a))
+
+
+### 🐛 Bug Fixes
+
+* **scm**: 修复获取仓库路径时潜在的空指针错误 ([f108049](https://github.com/littleCareless/dish-ai-commit/commit/f108049))
+
+
+### 📝 Documentation
+
+* **changelog**: 更新变更日志至 v0.50.2 ([591b325](https://github.com/littleCareless/dish-ai-commit/commit/591b325))
+
+
+
+
 
 ## 0.50.2 (2025-09-23)
 
