@@ -7,6 +7,7 @@ import { DiffProcessor } from "../utils/diff/diff-processor";
 import { notify } from "../utils/notification/notification-manager";
 import { ConfigurationManager } from "../config/configuration-manager";
 import { ImprovedPathUtils } from "./utils/improved-path-utils";
+import { Logger } from "../utils/logger";
 
 const exec = promisify(childProcess.exec);
 
@@ -65,6 +66,7 @@ export class GitProvider implements ISCMProvider {
   /** Git API实例 */
   private readonly api: GitAPI;
   private readonly repositoryPath?: string;
+  private logger: Logger;
 
   /**
    * 创建Git提供者实例
@@ -75,6 +77,7 @@ export class GitProvider implements ISCMProvider {
   constructor(private readonly gitExtension: any, repositoryPath?: string) {
     this.api = gitExtension.getAPI(1);
     this.repositoryPath = repositoryPath;
+    this.logger = Logger.getInstance("Dish AI Commit Gen");
 
     if (!vscode.workspace.workspaceFolders?.length) {
       throw new Error(getMessage("workspace.not.found"));
@@ -88,10 +91,10 @@ export class GitProvider implements ISCMProvider {
     try {
       const { stdout } = await exec("git --version");
       const version = stdout?.trim();
+      this.logger.info(`Git version: ${version}`);
       notify.info(formatMessage("scm.version.detected", ["Git", version]));
     } catch (error) {
-      // 在初始化阶段，即使获取版本失败也不应阻塞，仅记录警告
-      console.warn("Failed to get git version:", error);
+      this.logger.warn(`Failed to get git version: ${error}`);
     }
   }
 
@@ -141,9 +144,8 @@ export class GitProvider implements ISCMProvider {
       }
       return "Modified File";
     } catch (error) {
-      console.error(
-        "Failed to get file status:",
-        error instanceof Error ? error.message : error
+      this.logger.error(
+        `Failed to get file status for ${file}: ${error}`
       );
       return "Unknown";
     }
@@ -282,9 +284,8 @@ export class GitProvider implements ISCMProvider {
               notify.info(formatMessage("diff.staged.info", [fileCount]));
             }
           } catch (error) {
-            console.warn(
-              "Failed to count staged files for notification:",
-              error
+            this.logger.warn(
+              `Failed to count staged files for notification: ${error}`
             );
           }
           // 只获取暂存区的更改
@@ -342,9 +343,8 @@ export class GitProvider implements ISCMProvider {
               notify.info(formatMessage("diff.all.info", [fileCount]));
             }
           } catch (error) {
-            console.warn(
-              "Failed to count all changed files for notification:",
-              error
+            this.logger.warn(
+              `Failed to count all changed files for notification: ${error}`
             );
           }
 
@@ -442,7 +442,7 @@ export class GitProvider implements ISCMProvider {
       return DiffProcessor.process(diffOutput, "git");
     } catch (error) {
       if (error instanceof Error) {
-        console.error(formatMessage("scm.diff.error", ["Git", error])); // 添加调试日志
+        this.logger.error(`Failed to get Git diff: ${error.message}`);
         notify.error(formatMessage("scm.diff.failed", ["Git", error.message]));
       }
       throw error;
@@ -634,8 +634,8 @@ export class GitProvider implements ISCMProvider {
           );
           baseBranch = baseBranch.replace("origin/", ""); // 更新为本地分支名
         } catch (localError) {
-          console.warn(
-            formatMessage("git.base.branch.not.found", [baseBranch])
+          this.logger.warn(
+            `Base branch ${baseBranch} not found, trying defaults.`
           );
           // 尝试使用默认的 main 或者 master
           const commonBranches = ["main", "master"];
@@ -667,8 +667,8 @@ export class GitProvider implements ISCMProvider {
             notify.warn("git.base.branch.not.found.default", [baseBranch]);
             // 如果都找不到，可能需要用户手动指定，或者抛出错误
             // 这里我们暂时返回空数组，并在日志中记录
-            console.error(
-              formatMessage("git.base.branch.not.found.error", [baseBranch])
+            this.logger.error(
+              `Base branch ${baseBranch} not found, and default branches (main, master) also not found.`
             );
             return [];
           }
@@ -688,7 +688,7 @@ export class GitProvider implements ISCMProvider {
       return stdout.split("\n").filter((line) => line?.trim() !== "");
     } catch (error) {
       if (error instanceof Error) {
-        console.error("Git log error:", error);
+        this.logger.error(`Git log error: ${error.message}`);
         notify.error(formatMessage("scm.log.failed", ["Git", error.message]));
       }
       // 对于获取日志失败的情况，返回空数组而不是抛出错误，让调用者处理
@@ -730,7 +730,7 @@ export class GitProvider implements ISCMProvider {
       return branches.sort(); // 排序方便查找
     } catch (error) {
       if (error instanceof Error) {
-        console.error("Git branch list error:", error);
+        this.logger.error(`Git branch list error: ${error.message}`);
         // 考虑添加一个新的 i18n key for this error
         notify.error(
           formatMessage("scm.branch.list.failed", ["Git", error.message])
@@ -766,7 +766,7 @@ export class GitProvider implements ISCMProvider {
         ...userCommits.map((commit) => commit.message.split("\n")[0])
       );
     } catch (err) {
-      console.error("Failed to get recent commit messages:", err);
+      this.logger.error(`Failed to get recent commit messages: ${err}`);
     }
 
     return { repository: repositoryCommitMessages, user: userCommitMessages };
