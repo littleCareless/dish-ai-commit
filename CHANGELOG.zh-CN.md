@@ -5,6 +5,20 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+## 0.51.1 (2025-09-24)
+
+
+### ♻ Code Refactoring
+
+* **commands**: 改进确认逻辑以增强代码健壮性 ([ac91759](https://github.com/littleCareless/dish-ai-commit/commit/ac91759))
+* **core**: 为字符串分割操作添加空值安全检查 ([4942160](https://github.com/littleCareless/dish-ai-commit/commit/4942160))
+* **provider**: 重构 AI 提供程序以移除不安全的非空断言 ([567b1da](https://github.com/littleCareless/dish-ai-commit/commit/567b1da))
+* **scm**: 增强多仓库环境下的仓库上下文识别 ([d542e8e](https://github.com/littleCareless/dish-ai-commit/commit/d542e8e))
+
+
+
+
+
 # 0.51.0 (2025-09-24)
 
 
