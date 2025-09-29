@@ -199,19 +199,9 @@ export class SmartDiffSelector implements ISmartDiffSelector {
     const originalTarget = config.get("features.codeAnalysis.diffTarget");
 
     try {
-      await config.update(
-        "features.codeAnalysis.diffTarget",
-        "staged",
-        vscode.ConfigurationTarget.Workspace
-      );
       return (await provider.getDiff(files)) || "";
     } finally {
       // Restore original target
-      await config.update(
-        "features.codeAnalysis.diffTarget",
-        originalTarget,
-        vscode.ConfigurationTarget.Workspace
-      );
     }
   }
 
@@ -228,19 +218,9 @@ export class SmartDiffSelector implements ISmartDiffSelector {
     const originalTarget = config.get("features.codeAnalysis.diffTarget");
 
     try {
-      await config.update(
-        "features.codeAnalysis.diffTarget",
-        "all",
-        vscode.ConfigurationTarget.Workspace
-      );
       return (await provider.getDiff(files)) || "";
     } finally {
       // Restore original target
-      await config.update(
-        "features.codeAnalysis.diffTarget",
-        originalTarget,
-        vscode.ConfigurationTarget.Workspace
-      );
     }
   }
 
