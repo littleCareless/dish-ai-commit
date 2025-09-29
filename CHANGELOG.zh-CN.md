@@ -5,6 +5,17 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+## 0.51.2 (2025-09-29)
+
+
+### ♻ Code Refactoring
+
+* **scm**: 简化差异获取逻辑，移除临时配置修改 ([04bf7d3](https://github.com/littleCareless/dish-ai-commit/commit/04bf7d3))
+
+
+
+
+
 ## 0.51.1 (2025-09-24)
 
 
