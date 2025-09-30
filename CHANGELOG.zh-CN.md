@@ -5,6 +5,22 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+## 0.51.5 (2025-09-30)
+
+
+### 🎫 Chores
+
+* **deps**: 调整依赖版本以解决兼容性问题 ([0f9eb83](https://github.com/littleCareless/dish-ai-commit/commit/0f9eb83))
+
+
+### 🔧 Continuous Integration
+
+* **pre-push**: 增加 VS Code 扩展打包验证 ([642cb9f](https://github.com/littleCareless/dish-ai-commit/commit/642cb9f))
+
+
+
+
+
 ## 0.51.4 (2025-09-30)
 
 
