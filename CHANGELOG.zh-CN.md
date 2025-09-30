@@ -5,6 +5,18 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+## 0.51.3 (2025-09-30)
+
+
+### ♻ Code Refactoring
+
+* **logger**: 迁移至 LogOutputChannel 以利用原生日志功能 ([da5e63b](https://github.com/littleCareless/dish-ai-commit/commit/da5e63b))
+* **logging**: 统一错误日志记录方式以显示完整堆栈跟踪 ([b721f7f](https://github.com/littleCareless/dish-ai-commit/commit/b721f7f))
+
+
+
+
+
 ## 0.51.2 (2025-09-29)
 
 
