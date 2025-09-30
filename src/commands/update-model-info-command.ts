@@ -109,7 +109,7 @@ export class UpdateModelInfoCommand extends BaseCommand {
           break;
       }
     } catch (error) {
-      this.logger.error(`Error updating model info: ${error}`);
+      this.logger.error(error as Error);
       notify.error("model.update.command.failed", [
         error instanceof Error ? error.message : String(error),
       ]);

@@ -144,7 +144,7 @@ export class GitProvider implements ISCMProvider {
       }
       return "Modified File";
     } catch (error) {
-      this.logger.error(`Failed to get file status for ${file}: ${error}`);
+      this.logger.error(error as Error);
       return "Unknown";
     }
   }
@@ -764,7 +764,7 @@ export class GitProvider implements ISCMProvider {
         ...userCommits.map((commit) => commit.message?.split("\n")[0])
       );
     } catch (err) {
-      this.logger.error(`Failed to get recent commit messages: ${err}`);
+      this.logger.error(err as Error);
     }
 
     return { repository: repositoryCommitMessages, user: userCommitMessages };

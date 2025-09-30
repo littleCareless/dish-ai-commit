@@ -215,7 +215,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
         }
       );
     } catch (error) {
-      this.logger.error(`GenerateBranchNameCommand error: ${error}`);
+      this.logger.error("GenerateBranchNameCommand error");
       await this.handleError(error, "branch.name.generation.failed");
     }
   }
@@ -331,7 +331,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
               notify.info("branch.created", [selectedBranch]);
             }
           } catch (error) {
-            this.logger.error(`Failed to create branch: ${error}`);
+            this.logger.error(error as Error);
             notify.error("branch.creation.failed");
           }
         } else if (selection === copyToClipboard) {
@@ -343,7 +343,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
             );
             notify.info("branch.name.copied");
           } catch (error) {
-            this.logger.error(`Failed to copy branch name: ${error}`);
+            this.logger.error(error as Error);
             notify.error("branch.name.copy.failed");
           }
         }

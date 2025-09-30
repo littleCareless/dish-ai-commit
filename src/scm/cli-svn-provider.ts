@@ -63,7 +63,7 @@ export class CliSvnProvider implements ISCMProvider {
 
       return DiffProcessor.process(rawDiff.toString(), "svn");
     } catch (error) {
-      this.logger.error(`Failed to get SVN diff: ${error}`);
+      this.logger.error(error as Error);
       return undefined;
     }
   }
@@ -154,7 +154,7 @@ export class CliSvnProvider implements ISCMProvider {
         userCommitMessages.push(...this.parseSvnLog(userLogOutput.toString()));
       }
     } catch (err) {
-      this.logger.error(`Failed to get recent SVN commit messages: ${err}`);
+      this.logger.error(err as Error);
     }
 
     return { repository: repositoryCommitMessages, user: userCommitMessages };

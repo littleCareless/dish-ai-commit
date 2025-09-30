@@ -54,7 +54,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       });
       return result;
     } catch (error) {
-      this.logger.error(`Error in generateCommit: ${error}`);
+      this.logger.error(error as Error);
       throw new Error(
         formatMessage("generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -87,7 +87,7 @@ export abstract class AbstractAIProvider implements AIProvider {
     } catch (error) {
       // 错误现在由 executeStreamWithRetry 内部处理和抛出
       // 这里只捕获最终的、不可重试的错误
-      this.logger.error(`Error in generateCommitStream: ${error}`);
+      this.logger.error(error as Error);
       throw new Error(
         formatMessage("generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -146,7 +146,7 @@ export abstract class AbstractAIProvider implements AIProvider {
         "Failed to generate commit message with function calling."
       );
     } catch (error) {
-      this.logger.error(`Error in generateCommitWithFunctionCalling: ${error}`);
+      this.logger.error(error as Error);
       throw new Error(
         formatMessage("generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -187,7 +187,7 @@ export abstract class AbstractAIProvider implements AIProvider {
         throw new Error("Failed to parse code review result as JSON");
       }
     } catch (error) {
-      this.logger.error(`Error in generateCodeReview: ${error}`);
+      this.logger.error(error as Error);
       throw new Error(
         formatMessage("codeReview.generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -218,7 +218,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       });
       return result;
     } catch (error) {
-      this.logger.error(`Error in generateBranchName: ${error}`);
+      this.logger.error(error as Error);
       throw new Error(
         formatMessage("branchName.generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -274,7 +274,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       );
       return result;
     } catch (error) {
-      this.logger.error(`Error in generateWeeklyReport: ${error}`);
+      this.logger.error(error as Error);
       throw new Error(
         formatMessage("weeklyReport.generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -353,7 +353,7 @@ export abstract class AbstractAIProvider implements AIProvider {
 
       return { summary, fileChanges };
     } catch (error) {
-      this.logger.error(`Error in generateLayeredCommit: ${error}`);
+      this.logger.error(error as Error);
       throw new Error(
         formatMessage("layeredCommit.generation.failed", [
           error instanceof Error ? error.message : String(error),

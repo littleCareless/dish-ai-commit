@@ -229,7 +229,7 @@ export class SvnProvider implements ISCMProvider {
         environmentConfig: envConfig,
       };
     } catch (error) {
-      this.logger.error(`Failed to load SVN config: ${error}`);
+      this.logger.error(error as Error);
       throw new Error(formatMessage("svn.config.load.failed", [error]));
     }
   }
@@ -343,7 +343,7 @@ export class SvnProvider implements ISCMProvider {
       }
       return "Modified File";
     } catch (error) {
-      this.logger.error(`Failed to get file status: ${error}`);
+      this.logger.error(error as Error);
       return "Unknown";
     }
   }
@@ -861,7 +861,7 @@ export class SvnProvider implements ISCMProvider {
       // `svn log -r NEWER:OLDER` 或 `svn log -l LIMIT` 通常已经是最新优先，无需反转
       return commitMessages;
     } catch (error) {
-      this.logger.error(`SVN log failed: ${error}`);
+      this.logger.error(error as Error);
       if (error instanceof Error) {
         // 确保 i18n 文件中有 "svn.log.failed" 键
         notify.error(formatMessage("scm.log.failed", ["SVN", error.message]));

@@ -49,11 +49,13 @@ export abstract class BaseCommand {
     error: unknown,
     errorMessage: string
   ): Promise<void> {
-    this.logger.error(
-      `${errorMessage}: ${error instanceof Error ? error.message : String(error)}`
-    );
+    const message = `${errorMessage}: ${error instanceof Error ? error.message : String(error)}`;
     if (error instanceof Error) {
+      this.logger.error(error);
       await notify.error(errorMessage, [error.message]);
+    } else {
+      this.logger.error(message);
+      await notify.error(errorMessage);
     }
   }
 

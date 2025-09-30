@@ -102,7 +102,7 @@ export class ReviewCodeCommand extends BaseCommand {
             // Individual progress for each file diff is small, overall progress updated after Promise.all
             return { success: true };
           } catch (error) {
-            this.logger.error(`Failed to get diff for ${filePath}: ${error}`);
+            this.logger.error(error as Error);
             return { success: false };
           }
         });
@@ -160,7 +160,7 @@ export class ReviewCodeCommand extends BaseCommand {
               await notify.warn(
                 formatMessage("review.file.failed", [path.basename(filePath)])
               );
-              this.logger.error(`Failed to review ${filePath}: ${error}`);
+              this.logger.error(error as Error);
               progress.report({
                 // Still report increment even if failed to keep progress accurate
                 increment: progressPerFile,
@@ -199,7 +199,7 @@ export class ReviewCodeCommand extends BaseCommand {
         });
       });
     } catch (error) {
-      this.logger.error(`ReviewCodeCommand error: ${error}`);
+      this.logger.error("ReviewCodeCommand error");
       await this.handleError(error, "code.review.failed");
     }
   }

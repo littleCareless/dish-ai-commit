@@ -148,7 +148,7 @@ export class GenerateCommitCommand extends BaseCommand {
           )
       );
     } catch (error) {
-      this.logger.error(`Error in executeStream: ${error}`);
+      this.logger.error(error as Error);
       if (error instanceof Error) {
         notify.error("generate.commit.failed", [error.message]);
       }
@@ -561,7 +561,7 @@ ${currentInput}
           vscode.commands.executeCommand("dish.selectModel");
         }
       } else {
-        this.logger.error(`Error during commit message generation: ${error}`);
+        this.logger.error(error as Error);
         throw error;
       }
     }
