@@ -5,6 +5,17 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+## 0.51.4 (2025-09-30)
+
+
+### 🎫 Chores
+
+* **deps**: 升级项目依赖并优化 pnpm 配置 ([27997fd](https://github.com/littleCareless/dish-ai-commit/commit/27997fd))
+
+
+
+
+
 ## 0.51.3 (2025-09-30)
 
 
