@@ -10,3 +10,8 @@ echo "✅ TypeScript编译验证通过"
 echo "🔨 正在进行构建验证..."
 npm run compile:esbuild || (echo "❌ 构建失败，请修复错误后再提交" && exit 1)
 echo "✅ 构建验证通过"
+
+# 运行 VS Code 扩展打包校验
+echo "📦 正在进行 VS Code 扩展打包验证..."
+npm run package || (echo "❌ VS Code 扩展打包失败，请修复错误后再提交" && exit 1)
+echo "✅ VS Code 扩展打包验证通过"
