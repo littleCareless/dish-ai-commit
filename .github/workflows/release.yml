@@ -173,34 +173,3 @@ jobs:
           prerelease: ${{ steps.determine_prerelease.outputs.is_prerelease }}
           name: Release ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
-
-      # =================================================================
-      # 6. 发布后通知 (Post-Release Notification)
-      # =================================================================
-      - name: Send Slack Notification on Success
-        if: success()
-        continue-on-error: true
-        uses: slackapi/slack-github-action@v1.26.0
-        with:
-          payload: |
-            {
-              "blocks": [
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "🚀 *New Release Published!* 🚀\n*Project:* `${{ github.repository }}`\n*Version:* `${{ github.ref_name }}`"
-                  }
-                },
-                {
-                  "type": "section",
-                  "text": {
-                    "type": "mrkdwn",
-                    "text": "View the release details here:\n<${{ steps.create_release.outputs.html_url }}|Release ${{ github.ref_name }}>"
-                  }
-                }
-              ]
-            }
-        env:
-          SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
-          SLACK_WEBHOOK_TYPE: INCOMING_WEBHOOK
