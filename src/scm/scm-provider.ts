@@ -68,6 +68,18 @@ export interface ISCMProvider {
    * @param files 文件路径列表
    */
   setCurrentFiles?(files?: string[]): void;
+
+  /**
+   * Get list of staged files from provider
+   * @param files Optional file list to limit scope
+   */
+  getStagedFiles?(files?: string[]): Promise<string[]>;
+
+  /**
+   * Get list of all changed files from provider
+   * @param files Optional file list to limit scope
+   */
+  getAllChangedFiles?(files?: string[]): Promise<string[]>;
 }
 
 /**

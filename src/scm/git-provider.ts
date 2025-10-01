@@ -155,7 +155,10 @@ export class GitProvider implements ISCMProvider {
    * @returns {Promise<string | undefined>} 返回差异文本
    * @throws {Error} 当执行diff命令失败时抛出错误
    */
-  async getDiff(files?: string[]): Promise<string | undefined> {
+  async getDiff(
+    files?: string[],
+    target?: "staged" | "all"
+  ): Promise<string | undefined> {
     try {
       const repository = this.findRepository(files);
       if (!repository) {
@@ -256,9 +259,11 @@ export class GitProvider implements ISCMProvider {
           }
         }
       } else {
-        const diffTarget = ConfigurationManager.getInstance().getConfig(
-          "FEATURES_CODEANALYSIS_DIFFTARGET"
-        );
+        const diffTarget =
+          target ||
+          ConfigurationManager.getInstance().getConfig(
+            "FEATURES_CODEANALYSIS_DIFFTARGET"
+          );
 
         if (diffTarget === "staged") {
           try {
@@ -782,6 +787,65 @@ export class GitProvider implements ISCMProvider {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       notify.error("commit.message.copy.failed", [errorMessage]);
+    }
+  }
+
+  /**
+   * Get list of staged files
+   * @returns {Promise<string[]>} A list of staged files
+   */
+  async getStagedFiles(): Promise<string[]> {
+    const repository = this.findRepository();
+    if (!repository) {
+      return [];
+    }
+    const currentWorkspaceRoot = repository.rootUri.fsPath;
+    try {
+      const { stdout } = await exec("git diff --cached --name-only", {
+        cwd: currentWorkspaceRoot,
+      });
+      return stdout.split("\n").filter(Boolean);
+    } catch (error) {
+      this.logger.error(`Failed to get staged files: ${error}`);
+      return [];
+    }
+  }
+
+  /**
+   * Get list of all changed files (staged, unstaged, untracked)
+   * @returns {Promise<string[]>} A list of all changed files
+   */
+  async getAllChangedFiles(): Promise<string[]> {
+    const repository = this.findRepository();
+    if (!repository) {
+      return [];
+    }
+    const currentWorkspaceRoot = repository.rootUri.fsPath;
+    try {
+      const getFileNames = async (command: string) => {
+        try {
+          const { stdout } = await exec(command, { cwd: currentWorkspaceRoot });
+          return stdout.split("\n").filter(Boolean);
+        } catch (e) {
+          if (e instanceof Error && "stdout" in e) {
+            return (e as any).stdout.split("\n").filter(Boolean);
+          }
+          throw e;
+        }
+      };
+
+      const unstagedFiles = await getFileNames("git diff --name-only");
+      const stagedFiles = await getFileNames("git diff --cached --name-only");
+      const untrackedFiles = await getFileNames(
+        "git ls-files --others --exclude-standard"
+      );
+
+      return [
+        ...new Set([...unstagedFiles, ...stagedFiles, ...untrackedFiles]),
+      ];
+    } catch (error) {
+      this.logger.error(`Failed to get all changed files: ${error}`);
+      return [];
     }
   }
 }
