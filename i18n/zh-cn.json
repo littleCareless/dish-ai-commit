@@ -252,5 +252,9 @@
   "branch.name.suggestions": "分支名称建议",
   "select.base.branch.placeholder": "请选择一个基础分支用于创建新分支",
   "branch.created.from": "已从 '{1}' 创建分支 '{0}'。",
-  "branch.creation.cancelled": "已取消创建分支。"
+  "branch.creation.cancelled": "已取消创建分支。",
+  "branch.name.conflicts": "无法创建分支 '{0}'，因为它与现有的分支或标签 '{1}' 冲突。请选择一个不同的名称。",
+  "branch.name.conflicts.generic": "由于与现有分支名称冲突，无法创建分支。请尝试使用其他名称。",
+  "select.source.for.new.branch.title": "为新分支选择源",
+  "branch.creation.failed.raw": "分支创建失败 (原始命令): {0}"
 }

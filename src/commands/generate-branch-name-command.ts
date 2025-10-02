@@ -7,6 +7,46 @@ import {
   withProgress,
 } from "../utils/notification/notification-manager";
 import { validateAndGetModel } from "../utils/ai/model-validation";
+import { API, GitExtension, Ref, Repository } from "../types/git";
+import { Logger } from "../utils/logger";
+
+interface RefQuickPickItem extends vscode.QuickPickItem {
+  ref: Ref;
+}
+
+/**
+ * 获取 VS Code 内置的 Git 扩展 API
+ * @returns {Promise<API | undefined>}
+ */
+async function getGitApi(): Promise<API | undefined> {
+  const logger = Logger.getInstance("Dish AI Commit Gen");
+  try {
+    logger.info("Getting Git API...");
+    const extension =
+      vscode.extensions.getExtension<GitExtension>("vscode.git");
+    if (!extension) {
+      logger.warn("Git extension not found.");
+      notify.warn(getMessage("git.extension.not.found"));
+      return undefined;
+    }
+    if (!extension.isActive) {
+      logger.info("Git extension is not active, activating...");
+      await extension.activate();
+      logger.info("Git extension activated.");
+    }
+    const api = extension.exports.getAPI(1);
+    if (api) {
+      logger.info("Git API successfully retrieved.");
+    } else {
+      logger.warn("Failed to get Git API from extension exports.");
+    }
+    return api;
+  } catch (error) {
+    logger.error(`Failed to get Git API: ${error}`);
+    notify.error(getMessage("git.api.failed.to.get"));
+    return undefined;
+  }
+}
 
 /**
  * 分支名称生成命令类
@@ -230,6 +270,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
     branchName: string,
     scmProvider: any
   ): Promise<void> {
+    this.logger.info("Showing branch name suggestion QuickPick...");
     // 处理生成的分支名称：去除空格、特殊字符等
     const formattedBranchName = this.formatBranchName(branchName);
 
@@ -256,6 +297,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
       quickPick.onDidAccept(async () => {
         const selectedBranch =
           quickPick.selectedItems[0]?.label || quickPick.value;
+        this.logger.info(`User selected or entered branch name: ${selectedBranch}`);
         quickPick.hide();
 
         // 显示操作选项
@@ -273,68 +315,12 @@ export class GenerateBranchNameCommand extends BaseCommand {
         );
 
         if (selection === createBranch) {
-          try {
-            if (scmProvider.type === "git" && scmProvider.getBranches) {
-              const branches = await withProgress(
-                getMessage("fetching.branches.list"),
-                async () => {
-                  return await scmProvider.getBranches();
-                }
-              );
-              if (branches && branches.length > 0) {
-                const selectedBaseBranch = await vscode.window.showQuickPick(
-                  branches,
-                  {
-                    placeHolder: getMessage("select.base.branch.placeholder"),
-                    ignoreFocusOut: true,
-                  }
-                );
-
-                if (selectedBaseBranch) {
-                  await vscode.commands.executeCommand(
-                    "git.branchFrom",
-                    selectedBranch,
-                    selectedBaseBranch
-                  );
-                  notify.info("branch.created.from", [
-                    selectedBranch,
-                    selectedBaseBranch,
-                  ]);
-                  this.logger.info(
-                    `Branch '${selectedBranch}' created from '${selectedBaseBranch}'.`
-                  );
-                } else {
-                  // 用户取消选择基础分支
-                  this.logger.info("User cancelled base branch selection.");
-                  notify.info("branch.creation.cancelled");
-                }
-              } else {
-                // 没有获取到分支列表，回退到原先的 checkout 逻辑
-                await vscode.commands.executeCommand(
-                  "git.checkout",
-                  selectedBranch
-                );
-                this.logger.info(
-                  `Branch '${selectedBranch}' created and checked out.`
-                );
-                notify.info("branch.created", [selectedBranch]);
-              }
-            } else {
-              // 非Git或不支持getBranches，使用旧逻辑
-              await vscode.commands.executeCommand(
-                "git.checkout",
-                selectedBranch
-              );
-              this.logger.info(
-                `Branch '${selectedBranch}' created and checked out (fallback).`
-              );
-              notify.info("branch.created", [selectedBranch]);
-            }
-          } catch (error) {
-            this.logger.error(error as Error);
-            notify.error("branch.creation.failed");
-          }
+          this.logger.info(`User chose to create branch: ${selectedBranch}`);
+          // 将分支名称复制到剪贴板
+          await vscode.env.clipboard.writeText(selectedBranch);
+          await createBranchFromGeneratedName(selectedBranch);
         } else if (selection === copyToClipboard) {
+          this.logger.info(`User chose to copy branch name: ${selectedBranch}`);
           try {
             // 将分支名称复制到剪贴板
             await vscode.env.clipboard.writeText(selectedBranch);
@@ -343,9 +329,13 @@ export class GenerateBranchNameCommand extends BaseCommand {
             );
             notify.info("branch.name.copied");
           } catch (error) {
-            this.logger.error(error as Error);
+            this.logger.error(
+              `Failed to copy branch name to clipboard: ${error}`
+            );
             notify.error("branch.name.copy.failed");
           }
+        } else {
+          this.logger.info("User dismissed the branch action notification.");
         }
 
         resolve();
@@ -353,6 +343,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
 
       // 处理用户取消
       quickPick.onDidHide(() => {
+        this.logger.info("Branch name suggestion QuickPick was hidden/cancelled.");
         resolve();
       });
 
@@ -366,6 +357,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
    * @returns {string[]} 分支名变体数组
    */
   private generateBranchVariants(baseBranchName: string): string[] {
+    this.logger.info(`Generating branch variants for base name: ${baseBranchName}`);
     const variants: string[] = [];
 
     // 检查是否已有类型前缀
@@ -400,8 +392,9 @@ export class GenerateBranchNameCommand extends BaseCommand {
         variants.push(`${prefix}${camelCase}`);
       }
     }
-
-    return [...new Set(variants)]; // 去除可能的重复项
+    const finalVariants = [...new Set(variants)];
+    this.logger.info(`Generated variants: ${finalVariants.join(", ")}`);
+    return finalVariants; // 去除可能的重复项
   }
 
   /**
@@ -410,6 +403,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
    * @returns {string} 格式化后的分支名称
    */
   private formatBranchName(branchName: string): string {
+    this.logger.info(`Formatting branch name: '${branchName}'`);
     // 去除多余的空格
     let formatted = branchName?.trim();
 
@@ -459,7 +453,221 @@ export class GenerateBranchNameCommand extends BaseCommand {
 
     // 去除开头和结尾的连字符
     formatted = formatted.replace(/^-+|-+$/g, "");
-
+    this.logger.info(`Formatted branch name is: '${formatted}'`);
     return formatted;
+  }
+}
+
+/**
+ * Creates a new branch from a generated name, following a prioritized hierarchy of approaches.
+ *
+ * @param {string} generatedBranchName - The desired name for the new branch.
+ * @returns {Promise<void>}
+ */
+async function createBranchFromGeneratedName(
+  generatedBranchName: string
+): Promise<void> {
+  const logger = Logger.getInstance("Dish AI Commit Gen");
+  logger.info(
+    `Attempting to create branch: '${generatedBranchName}'`
+  );
+
+  const gitApi = await getGitApi();
+  if (!gitApi) {
+    logger.error("Cannot create branch: Git API not found.");
+    notify.error("git.api.not.found");
+    return;
+  }
+
+  if (gitApi.repositories.length === 0) {
+    logger.error("Cannot create branch: No Git repositories found.");
+    notify.error("git.repo.not.found");
+    return;
+  }
+
+  // For simplicity, we'll use the first repository.
+  // In a multi-repo workspace, you might need to let the user choose.
+  const repository = gitApi.repositories[0];
+  logger.info(`Using repository: ${repository.rootUri.fsPath}`);
+
+  // =================================================================================
+  // 1. Primary Approach: Programmatically invoke `git.branchFrom` with a pre-filled name.
+  // Rationale: This provides the best UX by using the native VS Code UI.
+  // The user can see the pre-filled name, edit it, and select the source ref
+  // from a familiar QuickPick menu that includes all branches and tags.
+  // Note: As of VS Code 1.90, there's no documented way to pre-fill the name
+  // for the `git.branchFrom` command's input box directly. We attempt a common
+  // pattern, but expect it may not work, leading to the fallback.
+  // The command itself will handle the rest of the flow (picking source, creating).
+  // =================================================================================
+  // try {
+  //   logger.info("Trying primary approach: executeCommand('git.branchFrom')");
+  //   // We execute `git.branchFrom` and pass the generated name as the first argument.
+  //   // This is an attempt to pre-populate the input field. If the command doesn't
+  //   // support this, it might ignore it or throw an error.
+  //   await vscode.commands.executeCommand("git.branchFrom", generatedBranchName);
+  //   // If the command executes without error, we assume it has taken control.
+  //   // The user will complete the process in the VS Code UI.
+  //   // We can't be certain it worked as intended (pre-filling), but we've handed off control.
+  //   logger.info("Handed off control to 'git.branchFrom' command.");
+  //   notify.info("branch.creation.initiated", [generatedBranchName]);
+  //   return; // Hand-off complete.
+  // } catch (error) {
+  //   logger.warn(
+  //     "Primary approach (`git.branchFrom` with pre-filled name) failed. Falling back.",
+  //     error
+  //   );
+  //   // Fall through to the secondary approach if the primary one fails.
+  // }
+
+  // =================================================================================
+  // 2. Secondary (Fallback) Approach: Use the core VS Code Git API.
+  // Rationale: If the native command can't be pre-filled, this is the next best
+  // thing. It gives us full programmatic control. We manually fetch all
+  // references, show a QuickPick for the user to select a source, and then
+  // create and check out the branch.
+  // =================================================================================
+  logger.info("Trying secondary approach: Git API");
+  try {
+    const refs = await repository.getRefs({});
+    if (refs.length === 0) {
+      logger.error("Cannot create branch: No refs found in the repository.");
+      notify.error("git.no.refs.found");
+      return;
+    }
+    logger.info(`Found ${refs.length} refs. Showing QuickPick for source ref.`);
+
+    // Filter and map refs for the QuickPick menu
+    const quickPickItems: RefQuickPickItem[] = refs
+      .filter((ref: Ref) => ref.name) // Ensure ref has a name
+      .map(
+        (ref: Ref): RefQuickPickItem => ({
+          label: ref.name || getMessage("git.unnamed.ref"),
+          description: `${
+            ref.type === 1
+              ? getMessage("git.ref.type.branch")
+              : ref.type === 2
+              ? getMessage("git.ref.type.tag")
+              : getMessage("git.ref.type.remote")
+          }`,
+          detail: ` $(git-commit) ${ref.commit?.slice(0, 7)}`,
+          ref,
+        })
+      );
+
+    const selectedItem = await vscode.window.showQuickPick<RefQuickPickItem>(
+      quickPickItems,
+      {
+        placeHolder: getMessage("select.base.branch.placeholder"),
+        ignoreFocusOut: true,
+        title: getMessage("select.source.for.new.branch.title"),
+      }
+    );
+
+    if (!selectedItem) {
+      logger.info("User cancelled branch creation at source ref selection.");
+      notify.info("branch.creation.cancelled");
+      return; // User cancelled
+    }
+
+    const sourceRef = selectedItem.ref;
+    logger.info(`User selected source ref: ${sourceRef.name}`);
+
+    // Check for existing refs that could conflict
+    const conflictingRef = refs.find((ref) => {
+      if (!ref.name) {
+        return false;
+      }
+      // Check if the generated name is a parent path of an existing ref,
+      // or if an existing ref is a parent path of the generated name.
+      return (
+        ref.name.startsWith(`${generatedBranchName}/`) ||
+        generatedBranchName.startsWith(`${ref.name}/`)
+      );
+    });
+
+    if (conflictingRef) {
+      const errorMessage = formatMessage("branch.name.conflicts", [
+        generatedBranchName,
+        conflictingRef.name,
+      ]);
+      logger.error(errorMessage);
+      notify.error(errorMessage);
+      return;
+    }
+    //
+    //
+    logger.info(
+      `Creating branch '${generatedBranchName}' from '${sourceRef.name}' (${sourceRef.commit})`
+    );
+    await repository.createBranch(generatedBranchName, true, sourceRef.commit);
+    logger.info("Branch created successfully via Git API.");
+    notify.info("branch.created.from", [generatedBranchName, sourceRef.name]);
+    return;
+  } catch (error: any) {
+    logger.error(`Secondary approach (Git API) failed: ${error}`);
+    if (error.gitErrorCode === "CantLockRef") {
+      notify.error("branch.name.conflicts.generic");
+    } else {
+      notify.error("branch.creation.failed");
+    }
+    // Fall through to the tertiary approach if the API method fails.
+  }
+
+  // =================================================================================
+  // 3. Tertiary (Last Resort) Approach: Execute a raw Git command.
+  // Rationale: This is the least ideal method as it bypasses the VS Code API
+  // and its safety checks. It's a fallback in case the API is unavailable or
+  // fails for an unexpected reason. It requires Node.js's `child_process`.
+  // =================================================================================
+  logger.info("Trying tertiary approach: raw git command (child_process)");
+  try {
+    const { exec } = await import("child_process");
+    const workspaceRoot = vscode.workspace.workspaceFolders?.[0].uri.fsPath;
+    if (!workspaceRoot) {
+      logger.error("Cannot execute raw command: workspace not found.");
+      notify.error("workspace.not.found");
+      return;
+    }
+
+    // We still need to ask the user for a source ref
+    const refs = await repository.getRefs({});
+    const refNames = refs
+      .map((ref: Ref) => ref.name)
+      .filter(Boolean) as string[];
+    const selectedSourceRef = await vscode.window.showQuickPick(refNames, {
+      placeHolder: getMessage("select.source.ref.for.checkout.command"),
+    });
+
+    if (!selectedSourceRef) {
+      logger.info("User cancelled branch creation at raw command source ref selection.");
+      notify.info("branch.creation.cancelled");
+      return;
+    }
+    logger.info(`User selected source ref for raw command: ${selectedSourceRef}`);
+
+    const command = `git checkout -b "${generatedBranchName}" "${selectedSourceRef}"`;
+    logger.info(`Executing raw command: ${command}`);
+
+    await new Promise<void>((resolve, reject) => {
+      exec(command, { cwd: workspaceRoot }, (err, stdout, stderr) => {
+        if (err) {
+          logger.error(`Raw git command failed: ${stderr}`);
+          reject(new Error(stderr));
+          return;
+        }
+        logger.info(`Raw git command stdout: ${stdout}`);
+        resolve();
+      });
+    });
+
+    logger.info("Branch created successfully via raw command.");
+    notify.info("branch.created.from", [
+      generatedBranchName,
+      selectedSourceRef,
+    ]);
+  } catch (error) {
+    logger.error(`Tertiary approach (child_process) failed: ${error}`);
+    notify.error("branch.creation.failed.raw", [(error as Error).message]);
   }
 }

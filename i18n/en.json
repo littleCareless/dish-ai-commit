@@ -246,5 +246,9 @@
   "branch.name.suggestions": "Branch Name Suggestions",
   "select.base.branch.placeholder": "Select a base branch to create from",
   "branch.created.from": "Branch '{0}' created from '{1}'.",
-  "branch.creation.cancelled": "Branch creation cancelled."
+  "branch.creation.cancelled": "Branch creation cancelled.",
+  "branch.name.conflicts": "Cannot create branch '{0}' because it conflicts with an existing branch or tag: '{1}'. Please choose a different name.",
+  "branch.name.conflicts.generic": "Cannot create branch due to a conflict with an existing branch name. Please try a different name.",
+  "select.source.for.new.branch.title": "Select Source for New Branch",
+  "branch.creation.failed.raw": "Branch creation failed (raw command): {0}"
 }
