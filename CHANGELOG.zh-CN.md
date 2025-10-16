@@ -5,6 +5,42 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+# 0.52.0 (2025-10-16)
+
+
+### ♻ Code Refactoring
+
+* **scm**: 移除因重构而废弃的单元测试 ([97ab187](https://github.com/littleCareless/dish-ai-commit/commit/97ab187))
+* **scm**: 重构 SCM 模块以增强多仓库支持 ([df765c9](https://github.com/littleCareless/dish-ai-commit/commit/df765c9))
+* **svn**: 重构 SVN 提供者以提升模块化和可维护性 ([5bffb7b](https://github.com/littleCareless/dish-ai-commit/commit/5bffb7b))
+
+
+### ✨ Features
+
+* **git**: 重构 GitProvider 以支持新的提供者模式和增强功能 ([8723e3c](https://github.com/littleCareless/dish-ai-commit/commit/8723e3c))
+* **git**: 重构创建分支功能以集成 VS Code Git API ([1d9bdcd](https://github.com/littleCareless/dish-ai-commit/commit/1d9bdcd))
+* **scm**: 增强 SCM 提供程序以支持精细化 diff 范围 ([6f4d96d](https://github.com/littleCareless/dish-ai-commit/commit/6f4d96d))
+* **scm**: 支持跨多个仓库生成提交信息 ([66507ff](https://github.com/littleCareless/dish-ai-commit/commit/66507ff))
+* **scm**: 支持文件重命名操作的差异检测与消息生成 ([9498700](https://github.com/littleCareless/dish-ai-commit/commit/9498700))
+* **svn**: 新增对 SVN 版本控制系统的支持 ([18bd54d](https://github.com/littleCareless/dish-ai-commit/commit/18bd54d))
+* **svn**: 新增对 SVN 的全面支持及优雅降级机制 ([87178c3](https://github.com/littleCareless/dish-ai-commit/commit/87178c3))
+* **token**: 实现 Token 使用量统计与管理功能 ([f13c6a2](https://github.com/littleCareless/dish-ai-commit/commit/f13c6a2))
+
+
+### 🎫 Chores
+
+* **i18n**: 为多仓库生成功能添加本地化文本 ([0944ec8](https://github.com/littleCareless/dish-ai-commit/commit/0944ec8))
+* **scm**: 删除过时的 SCM 测试文档和任务计划 ([494d4c9](https://github.com/littleCareless/dish-ai-commit/commit/494d4c9))
+
+
+### 🔧 Continuous Integration
+
+* **release**: 移除发布成功后的 Slack 通知 ([f7fbd9a](https://github.com/littleCareless/dish-ai-commit/commit/f7fbd9a))
+
+
+
+
+
 ## 0.51.5 (2025-09-30)
 
 
