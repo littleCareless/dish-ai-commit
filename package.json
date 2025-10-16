@@ -144,6 +144,18 @@
           "dark": "images/dark/brain.svg"
         },
         "description": "更新 AI 模型信息"
+      },
+      {
+        "command": "dish-ai-commit.showTokenStats",
+        "title": "[Dish] Show Token Usage Statistics",
+        "category": "[Dish AI Commit]",
+        "description": "查看 Token 使用统计"
+      },
+      {
+        "command": "dish-ai-commit.resetTokenStats",
+        "title": "[Dish] Reset Token Usage Statistics",
+        "category": "[Dish AI Commit]",
+        "description": "清除所有 Token 统计"
       }
     ],
     "configuration": {

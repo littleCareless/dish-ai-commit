@@ -250,5 +250,11 @@
   "branch.name.conflicts": "Cannot create branch '{0}' because it conflicts with an existing branch or tag: '{1}'. Please choose a different name.",
   "branch.name.conflicts.generic": "Cannot create branch due to a conflict with an existing branch name. Please try a different name.",
   "select.source.for.new.branch.title": "Select Source for New Branch",
-  "branch.creation.failed.raw": "Branch creation failed (raw command): {0}"
+  "branch.creation.failed.raw": "Branch creation failed (raw command): {0}",
+  "token.stats.totalTokens": "Total tokens used: {0}",
+  "token.stats.showError": "Failed to show token statistics",
+  "token.stats.resetSuccess": "Token statistics have been reset",
+  "token.stats.resetError": "Failed to reset token statistics",
+  "command.token.stats.show.failed": "Failed to show token statistics: {0}",
+  "command.token.stats.reset.failed": "Failed to reset token statistics: {0}"
 }

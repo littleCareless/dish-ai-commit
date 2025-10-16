@@ -12,6 +12,7 @@ import {
 } from "./utils/notification/notification-manager";
 import { stateManager } from "./utils/state/state-manager";
 import { EmbeddingServiceManager } from "./core/indexing/embedding-service-manager";
+import { TokenStatsService } from "./services/token-stats-service";
 
 import { SettingsViewProvider } from "./webview/settings-view-provider"; // 确保路径正确
 
@@ -45,6 +46,10 @@ export async function activate(context: vscode.ExtensionContext) {
     // 初始化 EmbeddingServiceManager
     logger.info("Initializing embedding service...");
     const embeddingService = EmbeddingServiceManager.getInstance().initialize();
+
+    // 初始化 TokenStatsService
+    logger.info("Initializing token stats service...");
+    TokenStatsService.initialize(context);
 
     // 注册所有命令到VS Code
     logger.info("Registering commands...");

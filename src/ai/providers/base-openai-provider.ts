@@ -11,6 +11,8 @@ import {
   type AIProviders,
 } from "../types";
 import { AbstractAIProvider } from "./abstract-ai-provider";
+import { TokenStatsService } from "../../services/token-stats-service";
+import { tokenizerService } from "../../utils/tokenizer";
 import { generateWithRetry, getSystemPrompt } from "../utils/generate-helper"; // Import getSystemPrompt
 
 /**
@@ -121,6 +123,11 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       totalTokens: completion.usage?.total_tokens,
     };
 
+    if (usage.totalTokens) {
+      const tokenStatsService = TokenStatsService.getInstance();
+      await tokenStatsService.addTokens(usage.totalTokens);
+    }
+
     let jsonContent;
     if (options?.parseAsJSON) {
       try {
@@ -183,10 +190,29 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
           max_tokens: options?.maxTokens,
           stream: true,
         });
+        let completionContent = "";
         for await (const chunk of stream) {
           if (chunk.choices[0]?.delta?.content) {
-            yield chunk.choices[0].delta.content;
+            const content = chunk.choices[0].delta.content;
+            completionContent += content;
+            yield content;
           }
+        }
+
+        const model = params.model || this.getDefaultModel();
+        const promptTokens = tokenizerService.countTokens(
+          JSON.stringify(filteredMessages),
+          model
+        );
+        const completionTokens = tokenizerService.countTokens(
+          completionContent,
+          model
+        );
+        const totalTokens = promptTokens + completionTokens;
+
+        if (totalTokens > 0) {
+          const tokenStatsService = TokenStatsService.getInstance();
+          await tokenStatsService.addTokens(totalTokens);
         }
       } catch (error) {
         this.handleContextLengthError(

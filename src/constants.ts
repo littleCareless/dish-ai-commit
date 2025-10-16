@@ -45,7 +45,14 @@ export const COMMANDS = {
   UPDATE_MODEL_INFO: {
     /** 更新模型信息的命令 */
     UPDATE: packageJson.contributes.commands[6].command,
-  }
+  },
+  /** Token统计相关命令 */
+  TOKEN_STATS: {
+    /** 显示Token使用统计的命令 */
+    SHOW: packageJson.contributes.commands[7].command,
+    /** 重置Token使用统计的命令 */
+    RESET: packageJson.contributes.commands[8].command,
+  },
 } as const;
 
 /** COMMANDS常量的TypeScript类型 */
