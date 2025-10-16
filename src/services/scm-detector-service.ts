@@ -2,7 +2,7 @@ import * as vscode from "vscode";
 import { SCMFactory, ISCMProvider } from "../scm/scm-provider";
 import { notify } from "../utils/notification/notification-manager";
 import { getMessage } from "../utils/i18n";
-import { SvnUtils } from "../scm/svn-utils";
+import { SvnUtilsHelper } from "../scm/svn/helpers/svn-utils-helper";
 
 /**
  * SCM检测器服务
@@ -141,9 +141,9 @@ export class SCMDetectorService {
         const resourceUriPath =
           (state as any)?._resourceUri?.fsPath || state?.resourceUri?.fsPath;
         if (resourceUriPath) {
-          // 使用 SvnUtils.findSvnRoot 向上递归查找 .svn 目录，
+          // 使用 SvnUtilsHelper.findSvnRoot 向上递归查找 .svn 目录，
           // 这是处理文件或子目录路径时最可靠的方法。
-          const svnRoot = await SvnUtils.findSvnRoot(resourceUriPath);
+          const svnRoot = await SvnUtilsHelper.findSvnRoot(resourceUriPath);
           if (svnRoot) {
             return svnRoot;
           }

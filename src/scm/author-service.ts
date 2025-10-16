@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import { promisify } from "util";
 import { exec } from "child_process";
-import { SvnUtils } from "./svn-utils";
+import { SvnUtilsHelper } from "./svn/helpers/svn-utils-helper";
 import { getMessage } from "../utils/i18n";
 
 const execAsync = promisify(exec);
@@ -46,7 +46,7 @@ export class AuthorService {
    */
   private async getSvnAuthor(): Promise<string> {
     // Try getting author from auth cache first
-    const authorFromAuth = await SvnUtils.getSvnAuthorFromAuth(
+    const authorFromAuth = await SvnUtilsHelper.getSvnAuthorFromAuth(
       this.workspacePath
     );
     if (authorFromAuth) {
@@ -54,7 +54,7 @@ export class AuthorService {
     }
 
     // If auth cache empty, try getting from svn info
-    const authorFromInfo = await SvnUtils.getSvnAuthorFromInfo(
+    const authorFromInfo = await SvnUtilsHelper.getSvnAuthorFromInfo(
       this.workspacePath
     );
     if (authorFromInfo) {

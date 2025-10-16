@@ -8,7 +8,7 @@ import * as path from "path";
 import * as fs from "fs";
 import { promisify } from "util";
 import { exec } from "child_process";
-import { SvnUtils } from "./svn-utils";
+import { SvnUtilsHelper } from "./svn/helpers/svn-utils-helper";
 import {
   IMultiRepositoryContextManager,
   RepositoryInfo,
@@ -505,9 +505,9 @@ export class MultiRepositoryContextManager
         const resourceUriPath =
           (state as any)?._resourceUri?.fsPath || state?.resourceUri?.fsPath;
         if (resourceUriPath) {
-          // Use SvnUtils.findSvnRoot to recursively find the .svn directory upwards,
+          // Use SvnUtilsHelper.findSvnRoot to recursively find the .svn directory upwards,
           // This is the most reliable way to handle file or subdirectory paths.
-          const svnRoot = await SvnUtils.findSvnRoot(resourceUriPath);
+          const svnRoot = await SvnUtilsHelper.findSvnRoot(resourceUriPath);
           if (svnRoot) {
             return svnRoot;
           }

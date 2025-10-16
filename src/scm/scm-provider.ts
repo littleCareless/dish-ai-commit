@@ -4,7 +4,6 @@ import * as path from "path";
 import { exec } from "child_process";
 import { GitProvider } from "./git-provider";
 import { SvnProvider } from "./svn-provider";
-import { CliSvnProvider } from "./cli-svn-provider";
 import { ImprovedPathUtils } from "./utils/improved-path-utils";
 
 /**
@@ -440,9 +439,13 @@ export class SCMFactory {
       if (scmType === "svn") {
         // 先尝试使用SVN插件
         try {
-          const svn = svnExtension?.exports
-            ? new SvnProvider(svnExtension.exports, normalizedWorkspaceRoot)
-            : undefined;
+          // const svn = svnExtension?.exports
+          //   ? new SvnProvider(svnExtension.exports, normalizedWorkspaceRoot)
+          //   : undefined;
+          const svn = new SvnProvider(
+            svnExtension?.exports,
+            normalizedWorkspaceRoot
+          );
           if (svn) {
             await this.withTimeout(svn.init());
             if (await this.withTimeout(svn.isAvailable())) {
@@ -454,20 +457,20 @@ export class SCMFactory {
           // Continue to try CLI SVN
         }
 
-        // 如果没有插件但系统有SVN命令,使用命令行方式
-        if (!provider) {
-          try {
-            if (await this.withTimeout(this.checkSCMCommand("svn"))) {
-              const cliSvn = new CliSvnProvider(normalizedWorkspaceRoot);
-              await this.withTimeout(cliSvn.init());
-              if (await this.withTimeout(cliSvn.isAvailable())) {
-                provider = cliSvn;
-              }
-            }
-          } catch (error) {
-            console.error("CLI SVN provider initialization failed:", error);
-          }
-        }
+        // // 如果没有插件但系统有SVN命令,使用命令行方式
+        // if (!provider) {
+        //   try {
+        //     if (await this.withTimeout(this.checkSCMCommand("svn"))) {
+        //       const cliSvn = new CliSvnProvider(normalizedWorkspaceRoot);
+        //       await this.withTimeout(cliSvn.init());
+        //       if (await this.withTimeout(cliSvn.isAvailable())) {
+        //         provider = cliSvn;
+        //       }
+        //     }
+        //   } catch (error) {
+        //     console.error("CLI SVN provider initialization failed:", error);
+        //   }
+        // }
       }
 
       if (provider) {
