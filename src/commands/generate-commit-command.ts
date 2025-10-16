@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import * as path from "path";
 import { BaseCommand } from "./base-command";
 import { ConfigurationManager } from "../config/configuration-manager";
 import { AbstractAIProvider } from "../ai/providers/abstract-ai-provider";
@@ -28,6 +29,7 @@ import { stagedContentDetector } from "../scm/staged-content-detector";
 import { multiRepositoryContextManager } from "../scm/multi-repository-context-manager";
 import { smartDiffSelector } from "../scm/smart-diff-selector";
 import { DiffTarget } from "../scm/staged-detector-types";
+import { SCMFactory } from "../scm/scm-provider";
 
 /**
  * 将分层提交信息格式化为结构化的提交信息文本
@@ -95,10 +97,35 @@ function extractProcessedDiff(processedDiff: string): {
 export class GenerateCommitCommand extends BaseCommand {
   /**
    * 以流式方式执行提交信息生成命令，并更新SCM输入框
-   * @param resources - 源代码管理资源状态列表
+   * @param arg - 参数可以是:
+   *   - vscode.SourceControlResourceState[]: 来自scm/resourceState/context或scm/resourceFolder/context
+   *   - sourceControl对象: 来自scm/title,包含{id, rootUri, ...}
+   *   - undefined: 无参数情况
    */
-  async execute(resources: vscode.SourceControlResourceState[]): Promise<void> {
+  async execute(arg?: any): Promise<void> {
     this.logger.info("Executing GenerateCommitCommand...");
+    
+    
+    // 参数类型判断和解析
+    let resourceStates: vscode.SourceControlResourceState[] | undefined;
+    let repositoryPath: string | undefined;
+    let scmType: 'git' | 'svn' | undefined;
+    
+    if (Array.isArray(arg)) {
+      // 来自 scm/resourceState/context 或 scm/resourceFolder/context
+      resourceStates = arg;
+      this.logger.info(`Received resourceStates array with ${arg.length} items`);
+    } else if (arg?.rootUri) {
+      // 来自 scm/title,是 sourceControl 对象
+      repositoryPath = arg.rootUri.fsPath;
+      scmType = arg.id; // 'git' 或 'svn'
+      this.logger.info(`Received sourceControl object: ${scmType} at ${repositoryPath}`);
+      // 不需要 resourceStates,处理整个仓库的变更
+    } else {
+      // 其他情况或无参数
+      resourceStates = undefined;
+      this.logger.info("No valid arguments provided, will use fallback logic");
+    }
     if ((await this.showConfirmAIProviderToS()) === false) {
       this.logger.warn("User did not confirm AI provider ToS.");
       return;
@@ -112,47 +139,260 @@ export class GenerateCommitCommand extends BaseCommand {
     this.logger.info(`Using AI provider: ${provider}, model: ${model}`);
 
     try {
-      const result = await this.detectSCMProvider(resources);
-      if (!result) {
-        this.logger.warn("SCM provider not detected.");
-        return;
+      // 根据参数类型调用不同的检测逻辑
+      let result: any;
+      
+      if (repositoryPath && scmType) {
+        // 来自scm/title的情况,直接使用已知的仓库信息
+        this.logger.info(`Using provided repository info: ${scmType} at ${repositoryPath}`);
+        
+        // 直接创建SCM Provider
+        const scmProvider = await SCMFactory.detectSCM(undefined, repositoryPath);
+        if (!scmProvider) {
+          await notify.error(getMessage("scm.not.detected"));
+          return;
+        }
+        
+        result = {
+          scmProvider,
+          selectedFiles: undefined, // 处理整个仓库的变更
+          repositoryPath
+        };
+      } else {
+        // 传统方式: 通过resourceStates检测
+        if (resourceStates && resourceStates.length > 0) {
+          // 检查是否为跨仓库场景
+          const filesByRepository = await multiRepositoryContextManager.groupFilesByRepository(resourceStates);
+          
+          if (filesByRepository.size > 1) {
+            // 跨仓库场景: 为每个仓库独立处理
+            await this.handleCrossRepositoryCommit(
+              filesByRepository,
+              provider,
+              model
+            );
+            return;
+          } else {
+            // 单仓库场景: 使用原有逻辑
+            result = await this.detectSCMProvider(resourceStates);
+            if (!result) {
+              this.logger.warn("SCM provider not detected.");
+              return;
+            }
+          }
+        } else {
+          // 无resourceStates的情况
+          result = await this.detectSCMProvider(resourceStates);
+          if (!result) {
+            this.logger.warn("SCM provider not detected.");
+            return;
+          }
+        }
       }
 
-      const { scmProvider, selectedFiles, repositoryPath } = result;
+      // 单仓库处理逻辑
+      if (result) {
+        const { scmProvider, selectedFiles, repositoryPath: finalRepoPath } = result;
 
-      if (!repositoryPath) {
-        await notify.warn(
-          formatMessage("scm.repository.not.found", [
-            scmProvider.type.toUpperCase(),
-          ])
+        if (!finalRepoPath) {
+          await notify.warn(
+            formatMessage("scm.repository.not.found", [
+              scmProvider.type.toUpperCase(),
+            ])
+          );
+          return;
+        }
+
+        this.logger.info(`Working with repository: ${finalRepoPath}`);
+
+        await ProgressHandler.withProgress(
+          formatMessage("progress.generating.commit", [
+            scmProvider.type.toLocaleUpperCase(),
+          ]),
+          (progress, token) =>
+            this.performStreamingGeneration(
+              progress,
+              token,
+              provider,
+              model,
+              scmProvider,
+              selectedFiles,
+              resourceStates || [],
+              finalRepoPath
+            )
         );
-        return;
       }
-
-      this.logger.info(`Working with repository: ${repositoryPath}`);
-
-      await ProgressHandler.withProgress(
-        formatMessage("progress.generating.commit", [
-          scmProvider.type.toLocaleUpperCase(),
-        ]),
-        (progress, token) =>
-          this.performStreamingGeneration(
-            progress,
-            token,
-            provider,
-            model,
-            scmProvider,
-            selectedFiles,
-            resources,
-            repositoryPath
-          )
-      );
     } catch (error) {
       this.logger.error(error as Error);
       if (error instanceof Error) {
         notify.error("generate.commit.failed", [error.message]);
       }
     }
+  }
+
+  /**
+   * Handle cross-repository commit message generation
+   * @param filesByRepository - Map of repository path to file paths
+   * @param provider - AI provider instance
+   * @param model - AI model name
+   */
+  private async handleCrossRepositoryCommit(
+    filesByRepository: Map<string, string[]>,
+    provider: string,
+    model: string
+  ): Promise<void> {
+    const repositoryCount = filesByRepository.size;
+    this.logger.info(`=== Cross-Repository Commit Generation Started ===`);
+    this.logger.info(`Repository count: ${repositoryCount}`);
+    this.logger.info(`AI Provider: ${provider}, Model: ${model}`);
+    
+    // 记录每个仓库的详细信息
+    for (const [repoPath, files] of filesByRepository.entries()) {
+      this.logger.info(`Repository: ${repoPath}`);
+      this.logger.info(`  - Files count: ${files.length}`);
+      this.logger.info(`  - Files: ${files.slice(0, 5).join(", ")}${files.length > 5 ? "..." : ""}`);
+    }
+    
+    // 显示开始提示
+    await notify.info("generate.commit.cross.repository.start", [repositoryCount]);
+    
+    const results: Array<{ repoPath: string; success: boolean; error?: string }> = [];
+    
+    try {
+      await ProgressHandler.withProgress(
+        `正在为 ${repositoryCount} 个仓库生成提交信息...`,
+        async (progress, token) => {
+          let processedCount = 0;
+          
+          for (const [repoPath, files] of filesByRepository.entries()) {
+            // 检查是否取消
+            if (token.isCancellationRequested) {
+              this.logger.info("User cancelled cross-repository processing");
+              break;
+            }
+            
+            processedCount++;
+            const repoName = path.basename(repoPath);
+            progress.report({
+              message: `仓库 ${processedCount}/${repositoryCount}: ${repoName}`,
+              increment: (100 / repositoryCount) * (processedCount - 1)
+            });
+            
+            const startTime = Date.now();
+            this.logger.info(`=== Processing Repository ${processedCount}/${repositoryCount} ===`);
+            this.logger.info(`Repository: ${repoPath}`);
+            this.logger.info(`Files count: ${files.length}`);
+            this.logger.info(`Files: ${files.slice(0, 3).join(", ")}${files.length > 3 ? "..." : ""}`);
+            
+            try {
+              // 为每个仓库独立处理
+              await this.processSingleRepository(
+                repoPath,
+                files,
+                provider,
+                model,
+                token
+              );
+              
+              const duration = Date.now() - startTime;
+              results.push({ repoPath, success: true });
+              this.logger.info(`✓ Successfully processed repository: ${repoPath} (${duration}ms)`);
+              
+            } catch (error) {
+              const errorMessage = error instanceof Error ? error.message : String(error);
+              this.logger.error(`Failed to process repository ${repoPath}: ${errorMessage}`);
+              results.push({ repoPath, success: false, error: errorMessage });
+              
+              // 继续处理下一个仓库，不中断
+              await notify.warn("generate.commit.repository.failed", [repoName, errorMessage]);
+            }
+          }
+          
+          // 最终进度报告
+          progress.report({ message: "完成", increment: 100 });
+        }
+      );
+      
+      // 报告最终结果
+      const successCount = results.filter(r => r.success).length;
+      const failureCount = results.filter(r => !r.success).length;
+      
+      this.logger.info(`=== Cross-Repository Processing Summary ===`);
+      this.logger.info(`Total repositories: ${repositoryCount}`);
+      this.logger.info(`Successfully processed: ${successCount}`);
+      this.logger.info(`Failed: ${failureCount}`);
+      
+      if (failureCount > 0) {
+        this.logger.warn(`Failed repositories:`);
+        results.filter(r => !r.success).forEach(result => {
+          this.logger.warn(`  - ${result.repoPath}: ${result.error}`);
+        });
+      }
+      
+      if (failureCount === 0) {
+        await notify.info("generate.commit.cross.repository.success", [successCount]);
+      } else {
+        await notify.warn("generate.commit.cross.repository.partial", [successCount, failureCount]);
+      }
+      
+    } catch (error) {
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      this.logger.error(`Cross-repository processing failed: ${errorMsg}`);
+      await notify.error("generate.commit.cross.repository.error", [errorMsg]);
+    }
+  }
+
+  /**
+   * Process a single repository for commit message generation
+   * @param repoPath - Repository path
+   * @param files - Files in this repository
+   * @param provider - AI provider
+   * @param model - AI model
+   * @param token - Cancellation token
+   */
+  private async processSingleRepository(
+    repoPath: string,
+    files: string[],
+    provider: string,
+    model: string,
+    token: vscode.CancellationToken
+  ): Promise<void> {
+    this.logger.info(`--- Processing Single Repository ---`);
+    this.logger.info(`Repository path: ${repoPath}`);
+    this.logger.info(`Files: ${files.join(", ")}`);
+    
+    // 创建SCM Provider
+    this.logger.info(`Detecting SCM type for repository: ${repoPath}`);
+    const scmProvider = await SCMFactory.detectSCM(files, repoPath);
+    if (!scmProvider) {
+      const errorMsg = `无法检测到仓库的SCM类型: ${repoPath}`;
+      this.logger.error(errorMsg);
+      throw new Error(errorMsg);
+    }
+    
+    this.logger.info(`Detected SCM type: ${scmProvider.type}`);
+    this.logger.info(`SCM Provider created successfully for: ${repoPath}`);
+    
+    // 创建resourceStates数组用于后续处理
+    const resourceStates: vscode.SourceControlResourceState[] = [];
+    
+    this.logger.info(`Starting commit message generation for repository: ${repoPath}`);
+    const startTime = Date.now();
+    
+    // 调用performStreamingGeneration进行实际的commit message生成
+    await this.performStreamingGeneration(
+      { report: () => {} }, // 空progress reporter，外层已处理
+      token,
+      provider,
+      model,
+      scmProvider,
+      files,
+      resourceStates,
+      repoPath
+    );
+    
+    const duration = Date.now() - startTime;
+    this.logger.info(`Commit message generation completed for: ${repoPath} (${duration}ms)`);
   }
 
   /**
