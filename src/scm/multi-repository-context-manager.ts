@@ -9,6 +9,7 @@ import * as fs from "fs";
 import { promisify } from "util";
 import { exec } from "child_process";
 import { SvnUtilsHelper } from "./svn/helpers/svn-utils-helper";
+import { ImprovedPathUtils } from "./utils/improved-path-utils";
 import {
   IMultiRepositoryContextManager,
   RepositoryInfo,
@@ -30,6 +31,43 @@ export class MultiRepositoryContextManager
   private repositoryCache = new Map<string, RepositoryInfo>();
   private cacheTimestamp = 0;
   private readonly cacheTimeout = 30000; // 30 seconds cache
+
+  /**
+   * 规范化仓库路径，解决不同来源路径格式不一致的问题
+   * @param repoPath 原始仓库路径
+   * @returns 规范化后的仓库路径
+   */
+  private static normalizeRepositoryPath(repoPath: string): string {
+    if (!repoPath || typeof repoPath !== "string") {
+      return repoPath || "";
+    }
+
+    try {
+      // 1. 使用ImprovedPathUtils进行基础规范化
+      let normalized = ImprovedPathUtils.normalizePath(repoPath);
+      
+      // 2. 移除末尾斜杠（除了根目录）
+      if (normalized.length > 1 && (normalized.endsWith('/') || normalized.endsWith('\\'))) {
+        normalized = normalized.slice(0, -1);
+      }
+      
+      // 3. 解析符号链接（可选）
+      try {
+        const realPath = fs.realpathSync(normalized);
+        normalized = realPath;
+      } catch (error) {
+        // 如果解析符号链接失败，使用原路径
+        // 这通常发生在路径不存在或权限不足的情况下
+        console.warn(`Failed to resolve symbolic links for path: ${normalized}`, error);
+      }
+      
+      return normalized;
+    } catch (error) {
+      // 如果规范化过程失败，返回原路径
+      console.warn(`Failed to normalize repository path: ${repoPath}`, error);
+      return repoPath;
+    }
+  }
 
   /**
    * Identify the current repository context based on user selection or active editor
@@ -136,7 +174,7 @@ export class MultiRepositoryContextManager
         const gitApi = gitExtension.exports.getAPI(1);
         if (gitApi.repositories.length > 0) {
           const activeRepo = gitApi.repositories[0]; // First repo is typically active
-          const repoPath = activeRepo.rootUri.fsPath;
+          const repoPath = MultiRepositoryContextManager.normalizeRepositoryPath(activeRepo.rootUri.fsPath);
 
           // Find matching repository info
           const matchingRepo = repositories.find(
@@ -375,6 +413,17 @@ export class MultiRepositoryContextManager
   }
 
   /**
+   * 提取文件路径，优先使用 renameResourceUri（重命名后的文件）
+   */
+  private extractFilePath(state: vscode.SourceControlResourceState): string | undefined {
+    const renamedPath = (state as any)?.renameResourceUri?.fsPath;
+    if (renamedPath) {
+      return renamedPath;
+    }
+    return (state as any)?._resourceUri?.fsPath || state?.resourceUri?.fsPath;
+  }
+
+  /**
    * Extracts file paths from SCM resource states.
    * @param resourceStates - The SCM resource states.
    * @returns An array of file paths.
@@ -398,11 +447,8 @@ export class MultiRepositoryContextManager
     const files = [
       ...new Set(
         states
-          .map(
-            (state) =>
-              (state as any)?._resourceUri?.fsPath || state?.resourceUri?.fsPath
-          )
-          .filter(Boolean)
+          .map((state) => this.extractFilePath(state))
+          .filter((path): path is string => Boolean(path))
       ),
     ];
 
@@ -410,34 +456,87 @@ export class MultiRepositoryContextManager
   }
 
   /**
-   * From resources or file paths, detect the corresponding Git repository path.
+   * Group files by repository for cross-repository scenarios
+   * @param resourceStates - Source control resource states
+   * @returns Map of repository path to file paths
+   */
+  public async groupFilesByRepository(
+    resourceStates: vscode.SourceControlResourceState[]
+  ): Promise<Map<string, string[]>> {
+    const filesByRepo = new Map<string, string[]>();
+    
+    console.log(`[MultiRepositoryContextManager] Grouping ${resourceStates.length} files by repository`);
+    
+    for (const state of resourceStates) {
+      const filePath = this.extractFilePath(state);
+      if (!filePath) {
+        console.warn(`[MultiRepositoryContextManager] Skipping state without file path:`, state);
+        continue;
+      }
+      
+      // 识别文件所属仓库
+      const repoPath = await this.getRepositoryFromResources([state]);
+      if (!repoPath) {
+        console.warn(`[MultiRepositoryContextManager] Could not identify repository for file: ${filePath}`);
+        continue;
+      }
+      
+      // 添加到对应仓库的文件列表
+      if (!filesByRepo.has(repoPath)) {
+        filesByRepo.set(repoPath, []);
+        console.log(`[MultiRepositoryContextManager] Found new repository: ${repoPath}`);
+      }
+      filesByRepo.get(repoPath)!.push(filePath);
+    }
+    
+    console.log(`[MultiRepositoryContextManager] Grouping completed:`);
+    for (const [repoPath, files] of filesByRepo.entries()) {
+      console.log(`  - Repository: ${repoPath} (${files.length} files)`);
+    }
+    
+    return filesByRepo;
+  }
+
+  /**
+   * From resources or file paths, detect the corresponding repository path.
    * @param resourceStates - Source control resource status
    * @param files - Optional list of file paths, if not provided, it will be extracted from resourceStates
-   * @returns Git repository path, if not found, returns undefined
+   * @returns Repository path, if not found, returns undefined
    */
-  private async getRepositoryFromResources(
+  public async getRepositoryFromResources(
     resourceStates?:
       | vscode.SourceControlResourceState
       | vscode.SourceControlResourceState[],
     files?: string[]
   ): Promise<string | undefined> {
+    console.log(`[MultiRepositoryContextManager] Starting repository detection`);
+    console.log(`[MultiRepositoryContextManager] ResourceStates provided: ${!!resourceStates}`);
+    console.log(`[MultiRepositoryContextManager] Files provided: ${!!files}`);
+    
     // If files are not provided, extract from resourceStates
     if (!files && resourceStates) {
       files = this.getSelectedFiles(resourceStates);
+      console.log(`[MultiRepositoryContextManager] Extracted ${files?.length || 0} files from resourceStates`);
     }
 
     // Prioritize getting the repository path through the Git extension to ensure compatibility with Git
     const gitExtension = vscode.extensions.getExtension("vscode.git");
     if (gitExtension?.isActive) {
+      console.log(`[MultiRepositoryContextManager] Git extension is active, attempting to detect repository`);
       try {
         const gitApi = gitExtension.exports.getAPI(1);
         const repositories = gitApi.repositories;
+        console.log(`[MultiRepositoryContextManager] Found ${repositories.length} Git repositories`);
+        
         if (repositories.length > 0) {
           if (files && files.length > 0) {
             for (const file of files) {
+              console.log(`[MultiRepositoryContextManager] Checking file: ${file}`);
               for (const repository of repositories) {
-                const repoPath = (repository as any).rootUri?.fsPath;
+                const repoPath = MultiRepositoryContextManager.normalizeRepositoryPath((repository as any).rootUri?.fsPath);
+                console.log(`[MultiRepositoryContextManager] Checking repository: ${repoPath}`);
                 if (repoPath && file.startsWith(repoPath)) {
+                  console.log(`[MultiRepositoryContextManager] ✓ Found matching Git repository: ${repoPath}`);
                   return repoPath;
                 }
               }
@@ -445,8 +544,10 @@ export class MultiRepositoryContextManager
           }
         }
       } catch (error) {
-        console.warn("Failed to get repository from Git extension:", error);
+        console.warn("[MultiRepositoryContextManager] Failed to get repository from Git extension:", error);
       }
+    } else {
+      console.log(`[MultiRepositoryContextManager] Git extension is not active`);
     }
 
     // Try to get the repository path through the SVN extension, compatible with multiple plugins
@@ -459,20 +560,28 @@ export class MultiRepositoryContextManager
       const extension = vscode.extensions.getExtension(id);
       if (extension) {
         svnExtension = extension;
+        console.log(`[MultiRepositoryContextManager] Found SVN extension: ${id}`);
         break;
       }
     }
+    
     if (svnExtension?.isActive) {
+      console.log(`[MultiRepositoryContextManager] SVN extension is active, attempting to detect repository`);
       try {
         const svnScmApi = svnExtension.exports;
         if (svnScmApi && typeof svnScmApi.getRepositories === "function") {
           const repositories = await svnScmApi.getRepositories();
+          console.log(`[MultiRepositoryContextManager] Found ${repositories?.length || 0} SVN repositories`);
+          
           if (repositories && repositories.length > 0) {
             if (files && files.length > 0) {
               for (const file of files) {
+                console.log(`[MultiRepositoryContextManager] Checking file against SVN repositories: ${file}`);
                 for (const repository of repositories) {
-                  const repoPath = repository.root;
+                  const repoPath = MultiRepositoryContextManager.normalizeRepositoryPath(repository.root);
+                  console.log(`[MultiRepositoryContextManager] Checking SVN repository: ${repoPath}`);
                   if (repoPath && file.startsWith(repoPath)) {
+                    console.log(`[MultiRepositoryContextManager] ✓ Found matching SVN repository: ${repoPath}`);
                     return repoPath;
                   }
                 }
@@ -481,8 +590,10 @@ export class MultiRepositoryContextManager
           }
         }
       } catch (error) {
-        console.warn("Failed to get repository from SVN extension:", error);
+        console.warn("[MultiRepositoryContextManager] Failed to get repository from SVN extension:", error);
       }
+    } else {
+      console.log(`[MultiRepositoryContextManager] SVN extension is not active`);
     }
 
     // Try to get it directly from resourceStates
@@ -495,21 +606,20 @@ export class MultiRepositoryContextManager
         // Try to access sourceControl.rootUri, which is a more reliable attribute
         const sc = (state as any)?.resourceGroup?.sourceControl;
         if (sc?.rootUri?.fsPath) {
-          return sc.rootUri.fsPath;
+          return MultiRepositoryContextManager.normalizeRepositoryPath(sc.rootUri.fsPath);
         }
         // Alternative, access rootUri directly
         if ((state as any)?.rootUri?.fsPath) {
-          return (state as any)?.rootUri?.fsPath;
+          return MultiRepositoryContextManager.normalizeRepositoryPath((state as any)?.rootUri?.fsPath);
         }
         // Final backup plan: find the SVN root directory upwards from resourceUri
-        const resourceUriPath =
-          (state as any)?._resourceUri?.fsPath || state?.resourceUri?.fsPath;
+        const resourceUriPath = this.extractFilePath(state);
         if (resourceUriPath) {
           // Use SvnUtilsHelper.findSvnRoot to recursively find the .svn directory upwards,
           // This is the most reliable way to handle file or subdirectory paths.
           const svnRoot = await SvnUtilsHelper.findSvnRoot(resourceUriPath);
           if (svnRoot) {
-            return svnRoot;
+            return MultiRepositoryContextManager.normalizeRepositoryPath(svnRoot);
           }
         }
       }

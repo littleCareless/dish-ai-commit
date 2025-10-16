@@ -138,8 +138,41 @@ export class SvnProvider implements ISCMProvider {
    * @param {string} message - 要设置的提交信息
    */
   async setCommitInput(message: string): Promise<void> {
-    await this.ensureInitialized();
-    return this.svnProvider?.setCommitInput(message);
+    try {
+      // 如果提供了repositoryPath,直接定位到对应的仓库
+      if (this.repositoryPath && this.svnExtension) {
+        try {
+          const svnScmApi = this.svnExtension.exports;
+          if (svnScmApi && typeof svnScmApi.getRepositories === "function") {
+            const repositories = await svnScmApi.getRepositories();
+            if (repositories && repositories.length > 0) {
+              // 根据repositoryPath找到对应的repository对象
+              const targetRepo = repositories.find(
+                (repo: any) => repo.root === this.repositoryPath
+              );
+              
+              if (targetRepo && targetRepo.inputBox) {
+                targetRepo.inputBox.value = message;
+                this.logger.info(`Successfully set commit message for SVN repository: ${this.repositoryPath}`);
+                return;
+              } else {
+                throw new Error(`SVN repository not found: ${this.repositoryPath}`);
+              }
+            }
+          }
+        } catch (error) {
+          this.logger.warn(`Failed to set commit message via SVN extension API: ${error}`);
+          // 继续尝试原有逻辑
+        }
+      }
+      
+      // 回退到原有逻辑
+      await this.ensureInitialized();
+      return this.svnProvider?.setCommitInput(message);
+    } catch (error) {
+      this.logger.error(`Failed to set commit input: ${error}`);
+      throw error;
+    }
   }
 
   /**

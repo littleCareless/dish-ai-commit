@@ -27,7 +27,7 @@ export class GitProvider implements ISCMProvider {
    * @param repositoryPath - 可选的仓库路径
    * @throws {Error} 当未找到工作区时抛出错误
    */
-  constructor(private readonly gitExtension: any, repositoryPath?: string) {
+  constructor(private readonly gitExtension: any, private readonly repositoryPath?: string) {
     this.logger = Logger.getInstance("Dish AI Commit Gen");
     this.factory = GitProviderFactory.getInstance();
 
@@ -44,11 +44,20 @@ export class GitProvider implements ISCMProvider {
       // 初始化仓库管理器
       await this.factory.initRepositoryManager(this.gitExtension);
       
-      // 创建默认提供者实例（每次创建新的实例，不使用缓存）
-      this.gitProvider = await this.factory.createProviderForCurrentRepository(
-        GitProviderType.API, 
-        this.gitExtension
-      );
+      // 直接使用repositoryPath创建提供者实例（每次创建新的实例，不使用缓存）
+      if (this.repositoryPath) {
+        this.gitProvider = await this.factory.createProviderForRepository(
+          this.repositoryPath,
+          GitProviderType.API, 
+          this.gitExtension
+        );
+      } else {
+        // 回退到原有的当前仓库逻辑（兼容性处理）
+        this.gitProvider = await this.factory.createProviderForCurrentRepository(
+          GitProviderType.API, 
+          this.gitExtension
+        );
+      }
       
       if (!this.gitProvider) {
         throw new Error(formatMessage("scm.repository.not.found", ["Git"]));
@@ -135,10 +144,33 @@ export class GitProvider implements ISCMProvider {
    * @param {string} message - 要设置的提交信息
    */
   async setCommitInput(message: string): Promise<void> {
-    // 每次重新初始化提供者
-    await this.init();
-    
-    return this.gitProvider?.setCommitInput(message);
+    try {
+      // 如果提供了repositoryPath,直接定位到对应的仓库
+      if (this.repositoryPath) {
+        const gitApi = this.gitExtension.getAPI(1);
+        if (gitApi && gitApi.repositories) {
+          // 根据repositoryPath找到对应的repository对象
+          const targetRepo = gitApi.repositories.find(
+            (repo: any) => repo.rootUri?.fsPath === this.repositoryPath
+          );
+          
+          if (targetRepo) {
+            targetRepo.inputBox.value = message;
+            this.logger.info(`Successfully set commit message for repository: ${this.repositoryPath}`);
+            return;
+          } else {
+            throw new Error(`Repository not found: ${this.repositoryPath}`);
+          }
+        }
+      }
+      
+      // 回退到原有逻辑
+      await this.init();
+      return this.gitProvider?.setCommitInput(message);
+    } catch (error) {
+      this.logger.error(`Failed to set commit input: ${error}`);
+      throw error;
+    }
   }
 
   /**
