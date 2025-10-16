@@ -35,6 +35,45 @@ export class GitDiffHelper {
     repositoryPath: string
   ): Promise<string> {
     try {
+      // 首先检查完整的 git status 来识别 rename 操作
+      const { stdout: fullStatus } = await exec(
+        `git status --porcelain`,
+        {
+          ...ImprovedPathUtils.createExecOptions(repositoryPath),
+          encoding: "utf8",
+        }
+      );
+
+      if (fullStatus) {
+        const fullStatusStr = fullStatus.toString();
+        this.logger.info(`[DEBUG] Full git status: ${fullStatusStr}`);
+        this.logger.info(`[DEBUG] Checking file: ${file}`);
+        
+        // 检查是否有包含当前文件的 rename 操作
+        // Git rename 格式: R  old-file -> new-file
+        const renameMatch = fullStatusStr.match(/^R\s+(.+?)\s+->\s+(.+)$/m);
+        if (renameMatch) {
+          const oldFile = renameMatch[1].trim();
+          const newFile = renameMatch[2].trim();
+          
+          this.logger.info(`[DEBUG] Found rename: ${oldFile} -> ${newFile}`);
+          
+          // 获取文件的基本名称（不包含路径）进行匹配
+          const fileBaseName = file.includes('/') ? file.split('/').pop() : file;
+          const oldFileBaseName = oldFile.includes('/') ? oldFile.split('/').pop() : oldFile;
+          const newFileBaseName = newFile.includes('/') ? newFile.split('/').pop() : newFile;
+          
+          this.logger.info(`[DEBUG] File base name: ${fileBaseName}, New file base name: ${newFileBaseName}`);
+          
+          // 如果当前文件是 rename 操作中的新文件或旧文件
+          if (fileBaseName === newFileBaseName || fileBaseName === oldFileBaseName) {
+            this.logger.info(`[DEBUG] ✓ Detected as Renamed File`);
+            return "Renamed File";
+          }
+        }
+      }
+
+      // 如果没有找到 rename，使用原来的逻辑
       const escapedFile = ImprovedPathUtils.escapeShellPath(file);
       const { stdout: status } = await exec(
         `git status --porcelain ${escapedFile}`,
@@ -48,7 +87,8 @@ export class GitDiffHelper {
         return "Unknown";
       }
 
-      const statusStr = status.toString();
+      const statusStr = status.toString().trim();
+      
       if (statusStr.startsWith("??")) {
         return "New File";
       }
@@ -111,7 +151,42 @@ export class GitDiffHelper {
 
           // 根据文件状态选择合适的diff命令
           let stdout = "";
-          if (fileStatus === "New File") {
+          
+          if (fileStatus === "Renamed File") {
+            this.logger.info(`[DEBUG] Processing rename file: ${file}`);
+            // ===== 新增：处理 rename 文件 =====
+            // 对于 rename，不能指定文件名，需要从完整 diff 中提取
+            const { stdout: fullDiff } = await exec(`git diff --cached`, {
+              ...ImprovedPathUtils.createExecOptions(currentWorkspaceRoot),
+              encoding: "utf8",
+            });
+            
+            this.logger.info(`[DEBUG] Full diff length: ${fullDiff.toString().length}`);
+            
+            // 从完整 diff 中提取这个文件的 rename 信息
+            stdout = this.extractRenameDiffForFile(fullDiff.toString(), file);
+            
+            this.logger.info(`[DEBUG] Extracted diff length: ${stdout.length}`);
+            
+            // 如果提取成功，添加特殊标记
+            if (stdout) {
+              // 解析出原文件名和新文件名
+              const renameInfo = this.parseRenameInfo(stdout, file);
+              if (renameInfo) {
+                this.logger.info(`[DEBUG] Parsed rename info: ${renameInfo.oldPath} -> ${renameInfo.newPath}`);
+                diffOutput += `\n### RENAME OPERATION ###\n`;
+                diffOutput += `# File renamed from: ${renameInfo.oldPath}\n`;
+                diffOutput += `# File renamed to: ${renameInfo.newPath}\n`;
+                diffOutput += `${stdout}`;
+                diffOutput += `\n### END RENAME ###\n`;
+                continue; // 跳过后续处理
+              } else {
+                this.logger.warn(`[DEBUG] Failed to parse rename info for file: ${file}`);
+              }
+            } else {
+              this.logger.warn(`[DEBUG] Failed to extract rename diff for file: ${file}`);
+            }
+          } else if (fileStatus === "New File") {
             // 处理未跟踪的新文件
             try {
               const result = await exec(
@@ -427,5 +502,90 @@ export class GitDiffHelper {
       this.logger.error(`Failed to get all changed files: ${error}`);
       return [];
     }
+  }
+
+  /**
+   * 从完整的 diff 中提取特定文件的 rename diff
+   * @param fullDiff 完整的 git diff 输出
+   * @param targetFile 目标文件路径（新文件名或旧文件名）
+   * @returns 提取的 rename diff，如果未找到返回空字符串
+   */
+  private extractRenameDiffForFile(
+    fullDiff: string,
+    targetFile: string
+  ): string {
+    const lines = fullDiff.split('\n');
+    let extractedLines: string[] = [];
+    let inTargetDiff = false;
+    
+    // 获取文件的基本名称（不包含路径）
+    const fileBaseName = targetFile.includes('/') ? targetFile.split('/').pop() : targetFile;
+    
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      
+      // Git rename diff 开始标记: diff --git a/oldfile b/newfile
+      if (line.startsWith('diff --git') && line.includes(fileBaseName!)) {
+        inTargetDiff = true;
+        extractedLines = [line];
+        continue;
+      }
+      
+      if (inTargetDiff) {
+        // 检测下一个 diff 的开始
+        if (line.startsWith('diff --git')) {
+          break;
+        }
+        extractedLines.push(line);
+      }
+    }
+    
+    return extractedLines.join('\n');
+  }
+
+  /**
+   * 从 rename diff 中解析出原文件名和新文件名
+   * @param renameDiff rename 的 diff 内容
+   * @param currentFile 当前文件路径
+   * @returns {oldPath, newPath} 或 null
+   */
+  private parseRenameInfo(
+    renameDiff: string,
+    currentFile: string
+  ): { oldPath: string; newPath: string } | null {
+    // Git rename diff 格式示例：
+    // diff --git a/old.txt b/new.txt
+    // similarity index 100%
+    // rename from old.txt
+    // rename to new.txt
+    
+    const lines = renameDiff.split('\n');
+    let oldPath = '';
+    let newPath = '';
+    
+    for (const line of lines) {
+      const renameFromMatch = line.match(/^rename from (.+)$/);
+      if (renameFromMatch) {
+        oldPath = renameFromMatch[1].trim();
+      }
+      
+      const renameToMatch = line.match(/^rename to (.+)$/);
+      if (renameToMatch) {
+        newPath = renameToMatch[1].trim();
+      }
+      
+      // 也可以从第一行的 diff --git 中提取
+      const diffGitMatch = line.match(/^diff --git a\/(.+) b\/(.+)$/);
+      if (diffGitMatch && !oldPath && !newPath) {
+        oldPath = diffGitMatch[1];
+        newPath = diffGitMatch[2];
+      }
+    }
+    
+    if (oldPath && newPath) {
+      return { oldPath, newPath };
+    }
+    
+    return null;
   }
 }
