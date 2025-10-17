@@ -51,22 +51,19 @@ export class GitDiffHelper {
         
         // 检查是否有包含当前文件的 rename 操作
         // Git rename 格式: R  old-file -> new-file
-        const renameMatch = fullStatusStr.match(/^R\s+(.+?)\s+->\s+(.+)$/m);
-        if (renameMatch) {
-          const oldFile = renameMatch[1].trim();
-          const newFile = renameMatch[2].trim();
+        const renameMatches = fullStatusStr.matchAll(/^R\s+(.+?)\s+->\s+(.+)$/gm);
+        for (const match of renameMatches) {
+          const oldFile = match[1].trim();
+          const newFile = match[2].trim();
           
           this.logger.info(`[DEBUG] Found rename: ${oldFile} -> ${newFile}`);
           
-          // 获取文件的基本名称（不包含路径）进行匹配
-          const fileBaseName = file.includes('/') ? file.split('/').pop() : file;
-          const oldFileBaseName = oldFile.includes('/') ? oldFile.split('/').pop() : oldFile;
-          const newFileBaseName = newFile.includes('/') ? newFile.split('/').pop() : newFile;
+          // 获取文件的相对路径进行比较
+          const normalizedRepoPath = repositoryPath.replace(/\\/g, '/');
+          const normalizedFilePath = file.replace(/\\/g, '/');
+          const fileRelativePath = normalizedFilePath.replace(normalizedRepoPath + '/', '');
           
-          this.logger.info(`[DEBUG] File base name: ${fileBaseName}, New file base name: ${newFileBaseName}`);
-          
-          // 如果当前文件是 rename 操作中的新文件或旧文件
-          if (fileBaseName === newFileBaseName || fileBaseName === oldFileBaseName) {
+          if (fileRelativePath === newFile || fileRelativePath === oldFile) {
             this.logger.info(`[DEBUG] ✓ Detected as Renamed File`);
             return "Renamed File";
           }
@@ -93,6 +90,24 @@ export class GitDiffHelper {
         return "New File";
       }
       if (statusStr.startsWith("A ")) {
+        // 对于 Added File，需要再次检查是否实际上是 rename 操作
+        // 因为 rename 文件在新文件这边显示为 Added
+        const fullStatusCheck = await exec(`git status --porcelain`, {
+          ...ImprovedPathUtils.createExecOptions(repositoryPath),
+          encoding: "utf8",
+        });
+        
+        if (fullStatusCheck.stdout) {
+          const fullStatusStr = fullStatusCheck.stdout.toString();
+          const renameMatches = fullStatusStr.matchAll(/^R\s+(.+?)\s+->\s+(.+)$/gm);
+          for (const match of renameMatches) {
+            const newFile = match[2].trim();
+            if (file === newFile) {
+              this.logger.info(`[DEBUG] ✓ File ${file} is actually a rename target`);
+              return "Renamed File";
+            }
+          }
+        }
         return "Added File"; // 已暂存的新文件
       }
       if (statusStr.startsWith(" D") || statusStr.startsWith("D ")) {
@@ -164,9 +179,10 @@ export class GitDiffHelper {
             this.logger.info(`[DEBUG] Full diff length: ${fullDiff.toString().length}`);
             
             // 从完整 diff 中提取这个文件的 rename 信息
-            stdout = this.extractRenameDiffForFile(fullDiff.toString(), file);
+            stdout = this.extractRenameDiffForFile(fullDiff.toString(), file, currentWorkspaceRoot);
             
             this.logger.info(`[DEBUG] Extracted diff length: ${stdout.length}`);
+            this.logger.info(`[DEBUG] Extracted diff content: ${stdout}`);
             
             // 如果提取成功，添加特殊标记
             if (stdout) {
@@ -508,34 +524,50 @@ export class GitDiffHelper {
    * 从完整的 diff 中提取特定文件的 rename diff
    * @param fullDiff 完整的 git diff 输出
    * @param targetFile 目标文件路径（新文件名或旧文件名）
+   * @param repositoryPath 仓库路径，用于路径比较
    * @returns 提取的 rename diff，如果未找到返回空字符串
    */
   private extractRenameDiffForFile(
     fullDiff: string,
-    targetFile: string
+    targetFile: string,
+    repositoryPath: string
   ): string {
     const lines = fullDiff.split('\n');
     let extractedLines: string[] = [];
     let inTargetDiff = false;
     
-    // 获取文件的基本名称（不包含路径）
-    const fileBaseName = targetFile.includes('/') ? targetFile.split('/').pop() : targetFile;
-    
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
       
       // Git rename diff 开始标记: diff --git a/oldfile b/newfile
-      if (line.startsWith('diff --git') && line.includes(fileBaseName!)) {
-        inTargetDiff = true;
-        extractedLines = [line];
-        continue;
+      if (line.startsWith('diff --git')) {
+        // 提取 diff 行中的文件路径
+        const match = line.match(/diff --git a\/(.+?) b\/(.+?)$/);
+        if (match) {
+          const oldFile = match[1];
+          const newFile = match[2];
+          
+          // 获取目标文件的相对路径进行比较
+          const normalizedRepoPath = repositoryPath.replace(/\\/g, '/');
+          const normalizedFilePath = targetFile.replace(/\\/g, '/');
+          const fileRelativePath = normalizedFilePath.replace(normalizedRepoPath + '/', '');
+          
+          // 检查目标文件是否匹配旧文件或新文件
+          if (fileRelativePath === oldFile || fileRelativePath === newFile) {
+            inTargetDiff = true;
+            extractedLines = [line];
+            // 继续处理这个diff块的其他行
+            continue;
+          }
+        }
+        
+        // 如果开始了一个新的diff但不是目标文件，结束当前提取
+        if (inTargetDiff) {
+          break;
+        }
       }
       
       if (inTargetDiff) {
-        // 检测下一个 diff 的开始
-        if (line.startsWith('diff --git')) {
-          break;
-        }
         extractedLines.push(line);
       }
     }
