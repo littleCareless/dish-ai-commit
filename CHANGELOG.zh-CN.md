@@ -5,6 +5,40 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+# 0.53.0 (2025-10-17)
+
+
+### ♻ Code Refactoring
+
+* **generate-branch-name**: 重构分支名生成命令与注册逻辑 ([3dc4b20](https://github.com/littleCareless/dish-ai-commit/commit/3dc4b20))
+* **generate-commit**: 移除旧的 GenerateCommitCommand 实现并新增重构文档 ([6f441f8](https://github.com/littleCareless/dish-ai-commit/commit/6f441f8))
+
+
+### ✨ Features
+
+* **generate-branch-name**: 新增分支建议、格式化与创建服务 ([9ae1f14](https://github.com/littleCareless/dish-ai-commit/commit/9ae1f14))
+* **generate-branch-name**: 新增基于变更与描述的分支名生成处理器 ([e92dd25](https://github.com/littleCareless/dish-ai-commit/commit/e92dd25))
+* **generate-commit**: 新增 GenerateCommitCommand 命令入口与流程编排 ([65e4d72](https://github.com/littleCareless/dish-ai-commit/commit/65e4d72))
+* **generate-commit**: 新增流式、分层与跨仓库提交生成处理器 ([b15cfa6](https://github.com/littleCareless/dish-ai-commit/commit/b15cfa6))
+* **generate-commit**: 新增生成提交的上下文与流式辅助工具 ([5d9207c](https://github.com/littleCareless/dish-ai-commit/commit/5d9207c))
+* **generate-commit**: 新增提交上下文与消息构建器 ([368d865](https://github.com/littleCareless/dish-ai-commit/commit/368d865))
+* **git**: 新增 Git API 工具模块 ([036bedb](https://github.com/littleCareless/dish-ai-commit/commit/036bedb))
+
+
+### 🐛 Bug Fixes
+
+* **git**: 修复重命名文件检测不准确的问题 ([8a9e660](https://github.com/littleCareless/dish-ai-commit/commit/8a9e660))
+
+
+### 📝 Documentation
+
+* **cursor**: 添加基础编码审视规则与建议 ([c48af23](https://github.com/littleCareless/dish-ai-commit/commit/c48af23))
+* **generate-branch-name**: 添加 generate-branch-name 模块重构文档 ([4373792](https://github.com/littleCareless/dish-ai-commit/commit/4373792))
+
+
+
+
+
 # 0.52.0 (2025-10-16)
 
 
