@@ -4,7 +4,7 @@ import { GenerateCommitCommand } from "./commands/generate-commit/generate-commi
 import { SelectModelCommand } from "./commands/select-model-command";
 import { GenerateWeeklyReportCommand } from "./commands/generate-weekly-report-command";
 import { ReviewCodeCommand } from "./commands/review-code-command";
-import { GenerateBranchNameCommand } from "./commands/generate-branch-name-command";
+import { GenerateBranchNameCommand } from "./commands/generate-branch-name/generate-branch-name-command";
 import { GeneratePRSummaryCommand } from "./commands/generate-pr-summary-command";
 import { UpdateModelInfoCommand } from "./commands/update-model-info-command";
 import { ShowTokenStatsCommand } from "./commands/show-token-stats-command";
@@ -142,18 +142,15 @@ export class CommandManager implements vscode.Disposable {
           }
         ),
         // 注册显示 token 统计命令
-        vscode.commands.registerCommand(
-          COMMANDS.TOKEN_STATS.SHOW,
-          async () => {
-            try {
-              await showTokenStatsCommand.execute();
-            } catch (error) {
-              notify.error("command.token.stats.show.failed", [
-                error instanceof Error ? error.message : String(error),
-              ]);
-            }
+        vscode.commands.registerCommand(COMMANDS.TOKEN_STATS.SHOW, async () => {
+          try {
+            await showTokenStatsCommand.execute();
+          } catch (error) {
+            notify.error("command.token.stats.show.failed", [
+              error instanceof Error ? error.message : String(error),
+            ]);
           }
-        ),
+        }),
         // 注册重置 token 统计命令
         vscode.commands.registerCommand(
           COMMANDS.TOKEN_STATS.RESET,
