@@ -61,7 +61,7 @@ export class CommitContextBuilder {
     if (userCommits) {
       contextManager.addBlock({
         content: userCommits,
-        priority: 700,
+        priority: 950, // 用户主动开启，给予最高优先级
         strategy: TruncationStrategy.TruncateTail,
         name: "user-commits",
       });
@@ -70,7 +70,7 @@ export class CommitContextBuilder {
     if (repoCommits) {
       contextManager.addBlock({
         content: repoCommits,
-        priority: 600,
+        priority: 950, // 用户主动开启，给予最高优先级
         strategy: TruncationStrategy.TruncateTail,
         name: "recent-commits",
       });
@@ -91,21 +91,21 @@ export class CommitContextBuilder {
     }
     contextManager.addBlock({
       content: codeChanges,
-      priority: 900,
+      priority: 100, // 最高优先级：AI 分析的主要对象
       strategy: TruncationStrategy.SmartTruncateDiff,
       name: "code-changes",
+    });
+    contextManager.addBlock({
+      content: currentInput,
+      priority: 950,
+      strategy: TruncationStrategy.TruncateTail,
+      name: "custom-instructions",
     });
     contextManager.addBlock({
       content: reminder,
       priority: 900,
       strategy: TruncationStrategy.TruncateTail,
       name: "reminder",
-    });
-    contextManager.addBlock({
-      content: currentInput,
-      priority: 750,
-      strategy: TruncationStrategy.TruncateTail,
-      name: "custom-instructions",
     });
 
     return contextManager;
@@ -150,7 +150,7 @@ export class CommitContextBuilder {
     if (userCommits) {
       contextManager.addBlock({
         content: userCommits,
-        priority: 700,
+        priority: 950, // 用户主动开启，给予最高优先级
         strategy: TruncationStrategy.TruncateTail,
         name: "user-commits",
       });
@@ -159,7 +159,7 @@ export class CommitContextBuilder {
     if (repoCommits) {
       contextManager.addBlock({
         content: repoCommits,
-        priority: 600,
+        priority: 950, // 用户主动开启，给予最高优先级
         strategy: TruncationStrategy.TruncateTail,
         name: "recent-commits",
       });
@@ -168,9 +168,16 @@ export class CommitContextBuilder {
     // 将格式化后的文件变更作为主要内容块添加
     contextManager.addBlock({
       content: formattedFileChanges,
-      priority: 900,
+      priority: 100, // 最高优先级：AI 分析的主要对象
       strategy: TruncationStrategy.TruncateTail,
       name: "file-changes-summary",
+    });
+
+    contextManager.addBlock({
+      content: currentInput,
+      priority: 950, // 最高优先级，用户强制要求
+      strategy: TruncationStrategy.TruncateTail,
+      name: "custom-instructions",
     });
 
     contextManager.addBlock({
@@ -178,13 +185,6 @@ export class CommitContextBuilder {
       priority: 900, // 优先级高
       strategy: TruncationStrategy.TruncateTail,
       name: "reminder",
-    });
-
-    contextManager.addBlock({
-      content: currentInput,
-      priority: 750,
-      strategy: TruncationStrategy.TruncateTail,
-      name: "custom-instructions",
     });
 
     return contextManager;
