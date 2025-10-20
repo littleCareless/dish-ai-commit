@@ -91,7 +91,7 @@ export class SvnCommandProvider implements ISvnProvider {
         environmentConfig: envConfig,
       };
     } catch (error) {
-      this.logger.error(error as Error);
+      this.logger.logError(error as Error, "加载SVN配置失败");
       throw new Error(formatMessage("svn.config.load.failed", [error]));
     }
   }

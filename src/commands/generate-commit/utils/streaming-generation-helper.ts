@@ -445,7 +445,7 @@ export class StreamingGenerationHelper {
         vscode.commands.executeCommand("dish.selectModel");
       }
     } else {
-      this.logger.error(error as Error);
+      this.logger.logError(error as Error, "流式生成失败");
       throw error;
     }
   }

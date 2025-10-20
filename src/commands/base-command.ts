@@ -51,7 +51,7 @@ export abstract class BaseCommand {
   ): Promise<void> {
     const message = `${errorMessage}: ${error instanceof Error ? error.message : String(error)}`;
     if (error instanceof Error) {
-      this.logger.error(error);
+      this.logger.logError(error, errorMessage);
       await notify.error(errorMessage, [error.message]);
     } else {
       this.logger.error(message);

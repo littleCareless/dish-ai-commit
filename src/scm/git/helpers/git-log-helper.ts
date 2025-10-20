@@ -180,7 +180,7 @@ export class GitLogHelper {
         ...userCommits.map((commit) => commit.message?.split("\n")[0])
       );
     } catch (err) {
-      this.logger.error(err as Error);
+      this.logger.logError(err as Error, "获取Git日志失败");
     }
 
     return { repository: repositoryCommitMessages, user: userCommitMessages };

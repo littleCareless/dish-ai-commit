@@ -77,7 +77,7 @@ export class SvnLogHelper {
       const rawLog = stdoutStr;
       return this.parseSvnLog(rawLog);
     } catch (error) {
-      this.logger.error(error as Error);
+      this.logger.logError(error as Error, "获取SVN日志失败");
       if (error instanceof Error) {
         notify.error(formatMessage("scm.log.failed", ["SVN", error.message]));
       }

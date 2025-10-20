@@ -54,7 +54,9 @@ export abstract class AbstractAIProvider implements AIProvider {
       });
       return result;
     } catch (error) {
-      this.logger.error(error as Error);
+      this.logger.logError(error as Error, formatMessage("generation.failed", [
+        error instanceof Error ? error.message : String(error),
+      ]));
       throw new Error(
         formatMessage("generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -87,7 +89,9 @@ export abstract class AbstractAIProvider implements AIProvider {
     } catch (error) {
       // 错误现在由 executeStreamWithRetry 内部处理和抛出
       // 这里只捕获最终的、不可重试的错误
-      this.logger.error(error as Error);
+      this.logger.logError(error as Error, formatMessage("generation.failed", [
+        error instanceof Error ? error.message : String(error),
+      ]));
       throw new Error(
         formatMessage("generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -146,7 +150,9 @@ export abstract class AbstractAIProvider implements AIProvider {
         "Failed to generate commit message with function calling."
       );
     } catch (error) {
-      this.logger.error(error as Error);
+      this.logger.logError(error as Error, formatMessage("generation.failed", [
+        error instanceof Error ? error.message : String(error),
+      ]));
       throw new Error(
         formatMessage("generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -187,7 +193,9 @@ export abstract class AbstractAIProvider implements AIProvider {
         throw new Error("Failed to parse code review result as JSON");
       }
     } catch (error) {
-      this.logger.error(error as Error);
+      this.logger.logError(error as Error, formatMessage("codeReview.generation.failed", [
+        error instanceof Error ? error.message : String(error),
+      ]));
       throw new Error(
         formatMessage("codeReview.generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -218,7 +226,9 @@ export abstract class AbstractAIProvider implements AIProvider {
       });
       return result;
     } catch (error) {
-      this.logger.error(error as Error);
+      this.logger.logError(error as Error, formatMessage("branchName.generation.failed", [
+        error instanceof Error ? error.message : String(error),
+      ]));
       throw new Error(
         formatMessage("branchName.generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -274,7 +284,9 @@ export abstract class AbstractAIProvider implements AIProvider {
       );
       return result;
     } catch (error) {
-      this.logger.error(error as Error);
+      this.logger.logError(error as Error, formatMessage("weeklyReport.generation.failed", [
+        error instanceof Error ? error.message : String(error),
+      ]));
       throw new Error(
         formatMessage("weeklyReport.generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -353,7 +365,9 @@ export abstract class AbstractAIProvider implements AIProvider {
 
       return { summary, fileChanges };
     } catch (error) {
-      this.logger.error(error as Error);
+      this.logger.logError(error as Error, formatMessage("layeredCommit.generation.failed", [
+        error instanceof Error ? error.message : String(error),
+      ]));
       throw new Error(
         formatMessage("layeredCommit.generation.failed", [
           error instanceof Error ? error.message : String(error),

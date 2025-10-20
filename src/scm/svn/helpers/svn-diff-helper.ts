@@ -62,7 +62,7 @@ export class SvnDiffHelper {
       }
       return "Modified File";
     } catch (error) {
-      this.logger.error(error as Error);
+      this.logger.logError(error as Error, "获取SVN文件状态失败");
       return "Unknown";
     }
   }

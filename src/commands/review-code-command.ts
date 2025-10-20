@@ -102,7 +102,7 @@ export class ReviewCodeCommand extends BaseCommand {
             // Individual progress for each file diff is small, overall progress updated after Promise.all
             return { success: true };
           } catch (error) {
-            this.logger.error(error as Error);
+            this.logger.logError(error as Error, "获取文件差异失败");
             return { success: false };
           }
         });
@@ -160,7 +160,7 @@ export class ReviewCodeCommand extends BaseCommand {
               await notify.warn(
                 formatMessage("review.file.failed", [path.basename(filePath)])
               );
-              this.logger.error(error as Error);
+              this.logger.logError(error as Error, `评审文件失败: ${path.basename(filePath)}`);
               progress.report({
                 // Still report increment even if failed to keep progress accurate
                 increment: progressPerFile,

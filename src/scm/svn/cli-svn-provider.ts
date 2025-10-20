@@ -92,7 +92,7 @@ export class CliSvnProvider implements ISvnProvider {
 
       return DiffProcessor.process(rawDiff.toString(), "svn");
     } catch (error) {
-      this.logger.error(error as Error);
+      this.logger.logError(error as Error, "获取SVN差异失败");
       return undefined;
     }
   }
@@ -216,7 +216,7 @@ export class CliSvnProvider implements ISvnProvider {
         userCommitMessages.push(...this.parseSvnLog(userLogOutput.toString()));
       }
     } catch (err) {
-      this.logger.error(err as Error);
+      this.logger.logError(err as Error, "获取SVN日志失败");
     }
 
     return { repository: repositoryCommitMessages, user: userCommitMessages };

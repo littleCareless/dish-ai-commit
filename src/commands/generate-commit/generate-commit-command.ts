@@ -55,7 +55,7 @@ export class GenerateCommitCommand extends BaseCommand {
     try {
       await this.executeCommitGeneration(arg, provider, model);
     } catch (error) {
-      this.logger.error(error as Error);
+      this.logger.logError(error as Error, "生成提交信息失败");
       if (error instanceof Error) {
         notify.error("generate.commit.failed", [error.message]);
       }

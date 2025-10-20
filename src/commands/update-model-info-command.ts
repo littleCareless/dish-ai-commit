@@ -109,7 +109,7 @@ export class UpdateModelInfoCommand extends BaseCommand {
           break;
       }
     } catch (error) {
-      this.logger.error(error as Error);
+      this.logger.logError(error as Error, "更新模型信息失败");
       notify.error("model.update.command.failed", [
         error instanceof Error ? error.message : String(error),
       ]);

@@ -240,7 +240,7 @@ export class GeneratePRSummaryCommand extends BaseCommand {
         }
       );
     } catch (error) {
-      this.logger.error(error as Error);
+      this.logger.logError(error as Error, "生成PR摘要失败");
       if (error instanceof Error) {
         notify.error("pr.summary.generation.failed.error", [error.message]);
       }
