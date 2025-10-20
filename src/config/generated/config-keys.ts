@@ -70,6 +70,7 @@ export const CONFIG_KEYS = {
   "FEATURES_COMMITFORMAT_ENABLEMERGECOMMIT": "dish-ai-commit.features.commitFormat.enableMergeCommit",
   "FEATURES_COMMITFORMAT_ENABLEBODY": "dish-ai-commit.features.commitFormat.enableBody",
   "FEATURES_COMMITFORMAT_ENABLELAYEREDCOMMIT": "dish-ai-commit.features.commitFormat.enableLayeredCommit",
+  "FEATURES_COMMITFORMAT_ENABLEGLOBALCONTEXT": "dish-ai-commit.features.commitFormat.enableGlobalContext",
   "FEATURES_COMMITMESSAGE": "dish-ai-commit.features.commitMessage",
   "FEATURES_COMMITMESSAGE_SYSTEMPROMPT": "dish-ai-commit.features.commitMessage.systemPrompt",
   "FEATURES_COMMITMESSAGE_USERECENTCOMMITSASREFERENCE": "dish-ai-commit.features.commitMessage.useRecentCommitsAsReference",

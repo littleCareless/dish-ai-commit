@@ -224,6 +224,7 @@
   "diff.selected.info": "已选择 {0} 个文件进行分析。",
   "checking.selected.files": "正在检查选定的文件...",
   "progress.generating.layered.commit": "正在生成分层提交详情...",
+  "progress.extracting.global.context": "正在提取全局上下文以增强文件关联性...",
   "progress.generating.commit.for.file": "正在为 {0} 生成详情...",
   "provider.does.not.support.non.streaming.for.layered": "提供商 {0} 不支持分层提交所需的非流式生成。",
   "layered.commit.details.title": "分层提交详情",

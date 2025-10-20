@@ -32,7 +32,10 @@ export class CommitContextBuilder {
     scmProvider: ISCMProvider,
     diffContent: string,
     configuration: any,
-    options: { exclude?: string[] } = {}
+    options: { 
+      exclude?: string[];
+      globalContext?: string; // ✅ 新增
+    } = {}
   ): Promise<ContextManager> {
     // 1. 获取所有上下文信息
     const currentInput = await this.contextCollector.getSCMInputContext(scmProvider);
@@ -40,7 +43,7 @@ export class CommitContextBuilder {
       scmProvider,
       configuration.features.commitMessage.useRecentCommitsAsReference
     );
-    const { exclude = [] } = options;
+    const { exclude = [], globalContext } = options;
     const similarCodeContext = exclude.includes("similar-code")
       ? ""
       : await this.contextCollector.getSimilarCodeContext(diffContent);
@@ -107,6 +110,16 @@ export class CommitContextBuilder {
       strategy: TruncationStrategy.TruncateTail,
       name: "reminder",
     });
+
+    // 🔥 新增: 全局上下文block (高优先级)
+    if (globalContext) {
+      contextManager.addBlock({
+        content: globalContext,
+        priority: 850, // 仅次于custom-instructions和user-commits
+        strategy: TruncationStrategy.TruncateTail,
+        name: "global-context",
+      });
+    }
 
     return contextManager;
   }

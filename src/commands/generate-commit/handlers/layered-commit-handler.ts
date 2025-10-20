@@ -10,6 +10,7 @@ import { CommitMessageBuilder } from "../builders/message-builder";
 import { filterCodeBlockMarkers } from "../utils/commit-formatter";
 import { Logger } from "../../../utils/logger";
 import { getSystemPrompt } from "../../../ai/utils/generate-helper";
+import { GlobalContextExtractor } from "../services/global-context-extractor";
 
 /**
  * 分层提交处理器类，负责处理分层提交信息生成
@@ -18,11 +19,13 @@ export class LayeredCommitHandler {
   private logger: Logger;
   private contextBuilder: CommitContextBuilder;
   private messageBuilder: CommitMessageBuilder;
+  private globalContextExtractor: GlobalContextExtractor;
 
   constructor(logger: Logger) {
     this.logger = logger;
     this.contextBuilder = new CommitContextBuilder();
     this.messageBuilder = new CommitMessageBuilder();
+    this.globalContextExtractor = new GlobalContextExtractor();
   }
 
   /**
@@ -54,6 +57,17 @@ export class LayeredCommitHandler {
     }
 
     const config = ConfigurationManager.getInstance().getConfiguration();
+    
+    // === 新增: 阶段0 - 全局上下文提取 ===
+    progress.report({ message: getMessage("progress.extracting.global.context") });
+    const globalContext = await this.globalContextExtractor.extractGlobalContext(
+      selectedFiles,
+      scmProvider,
+      selectedModel,
+      aiProvider
+    );
+    
+    // === 增强: 阶段1 - 为每个文件生成描述 (带全局上下文) ===
     const fileDescriptionPromises = selectedFiles.map(async (filePath) => {
       this.throwIfCancelled(token);
       progress.report({
@@ -67,10 +81,13 @@ export class LayeredCommitHandler {
         return null;
       }
 
+      // 🔥 关键改动: 构建增强prompt
       const systemPrompt = getLayeredCommitFilePrompt({
         config: config.features.commitFormat,
         language: config.base.language,
         filePath: filePath,
+        globalContext: globalContext, // ✅ 新增参数
+        otherFiles: selectedFiles.filter(f => f !== filePath) // ✅ 新增参数
       });
 
       const contextManager = await this.contextBuilder.buildContextManager(
@@ -78,7 +95,11 @@ export class LayeredCommitHandler {
         systemPrompt,
         scmProvider,
         fileDiff,
-        config
+        config,
+        { 
+          exclude: ["similar-code"], // 降低token压力
+          globalContext: globalContext // 作为高优先级block添加
+        }
       );
       const messages = contextManager.buildMessages();
 

@@ -213,6 +213,7 @@
   "diff.selected.info": "Selected {0} files for analysis.",
   "checking.selected.files": "Checking selected files...",
   "progress.generating.layered.commit": "Generating layered commit details...",
+  "progress.extracting.global.context": "Extracting global context for file correlation...",
   "progress.generating.commit.for.file": "Generating details for {0}...",
   "provider.does.not.support.non.streaming.for.layered": "Provider {0} does not support non-streaming generation required for layered commits.",
   "layered.commit.details.title": "Layered Commit Details",
