@@ -16,6 +16,7 @@ import {
 import { IconCheckCircle, IconCloseCircle } from "@arco-design/web-react/icon";
 
 import { AIModel } from "./types";
+import CommitChatView from "@/components/commit-chat/CommitChatView";
 
 interface SettingsContentProps {
   selectedMenuItemKey: string;
@@ -152,11 +153,32 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
 
   if (
     displayedSettings.length === 0 &&
-    selectedMenuItemKey !== "experimental.codeIndex"
+    selectedMenuItemKey !== "experimental.codeIndex" &&
+    selectedMenuItemKey !== "commit.chat"
   ) {
     return (
       <div className="text-center text-muted-foreground mt-10">
         <p>No settings found for "{selectedMenuItemKey}".</p>
+      </div>
+    );
+  }
+
+  // 渲染聊天界面
+  if (selectedMenuItemKey === "commit.chat") {
+    return (
+      <div className="h-full">
+        <CommitChatView
+          className="h-full"
+          onCommitMessageGenerated={(message) => {
+            console.log('Generated commit message:', message);
+            // 这里可以处理生成的 commit message
+          }}
+          onConfigurationChanged={(config) => {
+            console.log('Configuration changed:', config);
+            // 这里可以处理配置变更
+            setHasChanges(true);
+          }}
+        />
       </div>
     );
   }
