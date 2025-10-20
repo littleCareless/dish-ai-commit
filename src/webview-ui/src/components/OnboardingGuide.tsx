@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { CheckCircle, Circle, ArrowRight, ArrowLeft, X, Star, Lightbulb, Settings, Zap } from 'lucide-react';
+import { CheckCircle, ArrowRight, ArrowLeft, X, Lightbulb, Settings } from 'lucide-react';
 
 /**
  * 引导步骤接口
@@ -493,8 +493,6 @@ export const OnboardingGuide: React.FC = () => {
   const currentStepData = steps[currentStep];
   const isFirstStep = currentStep === 0;
   const isLastStep = currentStep === steps.length - 1;
-  const isStepCompleted = progress.completedSteps.includes(currentStepData.id);
-  const isStepSkipped = progress.skippedSteps.includes(currentStepData.id);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Search, AlertTriangle, CheckCircle, XCircle, RefreshCw, Lightbulb, ExternalLink } from 'lucide-react';
+import { Search, AlertTriangle, CheckCircle, XCircle, RefreshCw, Lightbulb, ExternalLink, ArrowRight, ArrowLeft } from 'lucide-react';
 
 /**
  * 故障排除步骤接口
@@ -638,7 +638,7 @@ export const TroubleshootingWizard: React.FC = () => {
       {/* 步骤指示器 */}
       <div className="px-6 py-3 bg-gray-100 border-t border-gray-200">
         <div className="flex items-center justify-center gap-2">
-          {session.path.map((stepId, index) => (
+          {session.path.map((_, index) => (
             <div
               key={index}
               className={`w-2 h-2 rounded-full transition-colors ${
