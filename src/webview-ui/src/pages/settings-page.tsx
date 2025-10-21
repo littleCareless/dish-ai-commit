@@ -13,7 +13,11 @@ import SettingsContent from "./setting/SettingsContent";
 import { useMessageHandler } from "./setting/useMessageHandler";
 import { ConfigValueType, SettingItem } from "./setting/types";
 
-const SettingsPage: React.FC = () => {
+interface SettingsPageProps {
+  onBack?: () => void;
+}
+
+const SettingsPage: React.FC<SettingsPageProps> = ({ onBack }) => {
   const {
     settingsSchema,
     setSettingsSchema,
@@ -170,6 +174,14 @@ const SettingsPage: React.FC = () => {
                   content="有未保存的更改"
                   style={{ marginRight: 8, backgroundColor: "var(--color-muted)", color: "var(--color-foreground)" }}
                 />
+              )}
+              {onBack && (
+                <ArcoButton
+                  style={{ marginRight: 8 }}
+                  onClick={onBack}
+                >
+                  返回聊天
+                </ArcoButton>
               )}
               <ArcoButton
                 type="primary"

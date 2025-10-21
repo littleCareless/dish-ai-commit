@@ -108,7 +108,7 @@ export class SettingsViewHTMLProvider {
 
                     // 向 webview-ui 传递初始数据
                     window.initialData = {
-                        viewType: 'settingsPage',
+                        viewType: 'commitChatPage',
                         vscodeTheme: getVSCodeTheme()
                     };
                     
