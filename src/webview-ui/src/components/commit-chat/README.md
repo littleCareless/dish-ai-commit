@@ -9,6 +9,7 @@
 - **实时预览**: 实时显示生成的 commit message 效果
 - **智能提示**: 基于上下文和用户偏好的智能建议
 - **快捷命令**: 支持 `/help`, `/template`, `/style` 等快捷命令
+- **文件拖拽**: 支持从 SCM 资源管理器拖拽文件到输入框，自动分析文件变更
 
 ### 🧠 智能特性
 - **学习用户偏好**: 根据用户的使用习惯学习并适应
@@ -70,6 +71,29 @@ function MyComponent() {
 }
 ```
 
+### 文件拖拽功能
+
+```tsx
+import CommitTextArea from '@/components/commit-chat/CommitTextArea';
+
+function ChatInput() {
+  const handleFilesDropped = (filePaths: string[]) => {
+    console.log('Files dropped:', filePaths);
+    // 处理拖拽的文件路径
+  };
+
+  return (
+    <CommitTextArea
+      value={inputValue}
+      onChange={setInputValue}
+      onSend={handleSend}
+      onFilesDropped={handleFilesDropped}
+      placeholder="拖拽文件到输入框..."
+    />
+  );
+}
+```
+
 ### 高级配置
 
 ```tsx
@@ -120,6 +144,26 @@ function AdvancedChatComponent() {
 | `/history` | 显示提交历史 | `/history 5` |
 | `/clear` | 清空对话 | `/clear` |
 | `/export` | 导出对话 | `/export` |
+
+## 文件拖拽功能
+
+### 支持的文件类型
+- **代码文件**: `.ts`, `.tsx`, `.js`, `.jsx`, `.py`, `.java`, `.cpp`, `.c`, `.cs`, `.php`, `.rb`, `.go`, `.rs`, `.swift`, `.kt`, `.scala`
+- **Web 文件**: `.html`, `.css`, `.scss`, `.less`, `.vue`, `.svelte`
+- **配置文件**: `.json`, `.xml`, `.yaml`, `.yml`
+- **文档文件**: `.md`, `.txt`
+
+### 拖拽操作
+1. **从 SCM 资源管理器拖拽**: 直接拖拽文件到输入框
+2. **视觉反馈**: 拖拽时显示高亮边框和提示信息
+3. **文件过滤**: 自动过滤不支持的文件类型
+4. **文件显示**: 显示拖拽的文件列表，包含文件图标和名称
+5. **清除功能**: 可以一键清除所有拖拽的文件
+
+### 使用场景
+- **批量文件提交**: 拖拽多个相关文件，AI 会分析文件关系生成合适的 commit message
+- **代码审查**: 拖拽修改的文件，AI 会基于文件变更生成描述性 commit message
+- **功能开发**: 拖拽新功能相关的文件，AI 会生成功能性的 commit message
 
 ## 配置选项
 
@@ -237,6 +281,11 @@ suggestionEngine.updateUserPreferences({
 3. **配置不同步**
    - 检查本地存储权限
    - 确认全局配置服务正常
+
+4. **拖拽功能不工作**
+   - 请参阅 [拖拽功能故障排除指南](./DRAG_DROP_TROUBLESHOOT.md)
+   - 打开调试面板查看实时日志
+   - 确认拖拽的是支持的文件类型
 
 ### 调试模式
 

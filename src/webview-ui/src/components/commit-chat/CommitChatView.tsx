@@ -1,10 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Send, Bot, User, Loader2 } from 'lucide-react';
+import { Bot, User, Loader2 } from 'lucide-react';
 import { vscode } from '@/lib/vscode';
+import CommitTextArea from './CommitTextArea';
+import { DragDropDebugPanel } from './DragDropDebug';
+import { CommitChatConfig } from '@/hooks/useCommitChatState';
 
 export interface ChatMessage {
   id: string;
@@ -24,12 +25,13 @@ export interface CommitChatState {
   isTyping: boolean;
   selectedImages: string[];
   draftMessage: string;
+  droppedFiles: string[];
 }
 
 interface CommitChatViewProps {
   className?: string;
   onCommitMessageGenerated?: (message: string) => void;
-  onConfigurationChanged?: (config: Record<string, any>) => void;
+  onConfigurationChanged?: (config: Partial<CommitChatConfig>) => void;
 }
 
 const CommitChatView: React.FC<CommitChatViewProps> = ({
@@ -43,10 +45,10 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
     isTyping: false,
     selectedImages: [],
     draftMessage: '',
+    droppedFiles: [],
   });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // 自动滚动到底部
   const scrollToBottom = () => {
@@ -86,6 +88,7 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
             context: {
               messages: state.messages,
               selectedImages: state.selectedImages,
+              droppedFiles: state.droppedFiles,
             },
           },
         });
@@ -99,19 +102,19 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
     }
   };
 
-  // 处理键盘事件
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
   // 处理输入变化
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleInputChange = (value: string) => {
     setState(prev => ({
       ...prev,
-      inputValue: e.target.value,
+      inputValue: value,
+    }));
+  };
+
+  // 处理文件拖拽
+  const handleFilesDropped = (filePaths: string[]) => {
+    setState(prev => ({
+      ...prev,
+      droppedFiles: filePaths,
     }));
   };
 
@@ -254,27 +257,18 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
 
         {/* 输入区域 */}
         <div className="flex-shrink-0 p-4 border-t">
-          <div className="flex space-x-2">
-            <Textarea
-              ref={textareaRef}
-              value={state.inputValue}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder="描述你的代码变更，或者告诉我你想要的 commit message 风格..."
-              className="flex-1 min-h-[60px] max-h-[120px] resize-none"
-              disabled={state.isTyping}
-            />
-            <Button
-              onClick={handleSendMessage}
-              disabled={!state.inputValue.trim() || state.isTyping}
-              size="icon"
-              className="self-end"
-            >
-              <Send size={16} />
-            </Button>
-          </div>
+          <CommitTextArea
+            value={state.inputValue}
+            onChange={handleInputChange}
+            onSend={handleSendMessage}
+            onFilesDropped={handleFilesDropped}
+            placeholder="描述你的代码变更，或者告诉我你想要的 commit message 风格..."
+            disabled={state.isTyping}
+            isLoading={state.isTyping}
+          />
         </div>
       </CardContent>
+      <DragDropDebugPanel />
     </Card>
   );
 };

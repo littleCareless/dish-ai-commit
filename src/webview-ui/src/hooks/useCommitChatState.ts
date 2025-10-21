@@ -27,6 +27,7 @@ export const useCommitChatState = (config: Partial<CommitChatConfig> = {}) => {
     isTyping: false,
     selectedImages: [],
     draftMessage: '',
+    droppedFiles: [],
   });
 
   // 保存草稿
