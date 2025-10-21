@@ -1,7 +1,6 @@
 import React from 'react';
 import { Bot, Copy, ThumbsUp, ThumbsDown, RefreshCw } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
 import { ChatMessage } from './CommitChatView';
 
 interface AIMessageProps {
