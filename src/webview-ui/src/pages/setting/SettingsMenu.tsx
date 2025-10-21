@@ -20,6 +20,12 @@ const generateMenuItems = (settingsSchema: SettingItem[]) => {
     };
   } = {};
 
+  // 添加聊天界面菜单项
+  menuStructure['commit.chat'] = {
+    label: 'Commit 聊天助手',
+    children: [],
+  };
+
   settingsSchema.forEach((item) => {
     const parts = item.key?.split(".");
     if (parts.length >= 2) {
