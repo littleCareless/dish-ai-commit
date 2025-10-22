@@ -384,17 +384,38 @@ const CommitTextArea: React.FC<CommitTextAreaProps> = ({
         return;
       }
 
-      const updated = Array.from(new Set([...normalisedFiles, ...normalised]));
+      const selectionStart = textareaRef.current?.selectionStart ?? value.length;
+      const selectionEnd = textareaRef.current?.selectionEnd ?? value.length;
 
-      if (updated.length === normalisedFiles.length) {
-        DragDropDebugger.log("info", "拖拽的文件均已存在", { count: updated.length });
+      const before = value.slice(0, selectionStart);
+      const after = value.slice(selectionEnd);
+      const needsSpaceBefore = before.length > 0 && !/\s$/.test(before);
+      const needsSpaceAfter = after.length > 0 && !/^\s/.test(after);
+      const updatedValue = `${before}${needsSpaceBefore ? " " : ""}${needsSpaceAfter ? " " : ""}${after}`
+        .replace(/\s{2,}/g, " ")
+        .replace(/^\s+/, '')
+        .replace(/\s+$/, '');
+
+      const updatedTags = Array.from(new Set([...normalisedFiles, ...normalised]));
+
+      if (updatedTags.length === normalisedFiles.length) {
+        DragDropDebugger.log("info", "拖拽的文件均已存在", { count: updatedTags.length });
         return;
       }
 
-      emitFilesChange(updated);
-      requestAnimationFrame(() => textareaRef.current?.focus());
+      emitFilesChange(updatedTags);
+      onChange(updatedValue);
+
+      requestAnimationFrame(() => {
+        if (textareaRef.current) {
+          const insertionIndex = before.length + (needsSpaceBefore ? 1 : 0);
+          textareaRef.current.focus();
+          textareaRef.current.selectionStart = insertionIndex;
+          textareaRef.current.selectionEnd = insertionIndex;
+        }
+      });
     },
-    [disabled, emitFilesChange, extractPathsFromDataTransfer, normalisedFiles]
+    [disabled, emitFilesChange, extractPathsFromDataTransfer, normalisedFiles, onChange, value]
   );
 
   const handleDragEnter = useCallback((event: React.DragEvent<HTMLDivElement>) => {
