@@ -391,7 +391,9 @@ const CommitTextArea: React.FC<CommitTextAreaProps> = ({
       const after = value.slice(selectionEnd);
       const needsSpaceBefore = before.length > 0 && !/\s$/.test(before);
       const needsSpaceAfter = after.length > 0 && !/^\s/.test(after);
-      const updatedValue = `${before}${needsSpaceBefore ? " " : ""}${needsSpaceAfter ? " " : ""}${after}`
+
+      const updatedValue = `${before}${needsSpaceBefore ? " " : ""}${after}`
+        .replace(/\s{2,}/g, " ")
         .replace(/\s{2,}/g, " ")
         .replace(/^\s+/, '')
         .replace(/\s+$/, '');
