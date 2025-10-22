@@ -33,6 +33,11 @@ interface CommitTextAreaProps {
   className?: string;
 }
 
+interface DroppedFileEntry {
+  originalPath: string;
+  tag: string;
+}
+
 const SUPPORTED_FILE_EXTENSIONS: readonly string[] = [
   ".ts",
   ".tsx",
@@ -95,7 +100,88 @@ const FILE_ICON_MAP: Record<string, string> = {
   md: "📝",
 };
 
-const getFileIcon = (extension: string): string => FILE_ICON_MAP[extension] ?? "📄";
+const escapeRegExp = (value: string): string => value.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+
+const normaliseOriginalPath = (path: string): string => {
+  const trimmed = path.replace(/\r|\n/g, "").trim();
+  if (!trimmed) {
+    return "";
+  }
+
+  if (trimmed.startsWith("file://")) {
+    try {
+      return decodeURIComponent(trimmed.replace(/^file:\/\//, ""));
+    } catch {
+      return trimmed.replace(/^file:\/\//, "");
+    }
+  }
+
+  return trimmed;
+};
+
+const createFileTag = (path: string): string => {
+  const normalised = normaliseOriginalPath(path).replace(/\\/g, "/");
+  const segments = normalised.split("/").filter(Boolean);
+  if (segments.length === 0) {
+    return "@/file";
+  }
+
+  const tagSegments = segments.slice(-Math.min(segments.length, 2));
+  const tagPath = tagSegments.join("/") || segments[segments.length - 1];
+  return `@/${tagPath}`;
+};
+
+const getFileIcon = (path: string): string => {
+  const normalised = normaliseOriginalPath(path).replace(/\\/g, "/");
+  const fileName = normalised.split("/").pop() ?? normalised;
+  const extension = fileName.includes(".") ? fileName.split(".").pop() ?? "" : "";
+  return FILE_ICON_MAP[extension.toLowerCase()] ?? "📄";
+};
+
+const appendTagsToValue = (current: string, tags: readonly string[]): string => {
+  if (tags.length === 0) {
+    return current;
+  }
+
+  const trimmed = current.replace(/\s+$/u, "");
+  const prefix = trimmed.length === 0 ? "" : `${trimmed} `;
+  return `${prefix}${tags.join(" ")}`;
+};
+
+const containsTag = (value: string, tag: string): boolean => {
+  const regex = new RegExp(`(^|\\s)${escapeRegExp(tag)}(?=\\s|$)`);
+  return regex.test(value);
+};
+
+const removeTagsFromValue = (value: string, tags: readonly string[]): string => {
+  if (tags.length === 0) {
+    return value;
+  }
+
+  let updated = value;
+  tags.forEach(tag => {
+    const regex = new RegExp(`(^|\\s)${escapeRegExp(tag)}(?=\\s|$)`, "g");
+    updated = updated.replace(regex, " ");
+  });
+
+  return updated.replace(/\s{2,}/g, " ").trim();
+};
+
+const filterSupportedFiles = (files: readonly File[]): string[] => {
+  const validFiles = files.filter(file => {
+    const fileName = file.name.toLowerCase();
+    return SUPPORTED_FILE_EXTENSIONS.some(ext => fileName.endsWith(ext)) || !fileName.includes(".");
+  });
+
+  if (validFiles.length === 0) {
+    return [];
+  }
+
+  return validFiles.map(file => {
+    const fileWithPath = file as File & { path?: string; webkitRelativePath?: string };
+    return fileWithPath.path || fileWithPath.webkitRelativePath || file.name;
+  });
+};
 
 const CommitTextArea: React.FC<CommitTextAreaProps> = ({
   value,
@@ -115,9 +201,10 @@ const CommitTextArea: React.FC<CommitTextAreaProps> = ({
   const [showCommands, setShowCommands] = useState(false);
   const [commandInput, setCommandInput] = useState("");
   const [isDragOver, setIsDragOver] = useState(false);
-  const [droppedFiles, setDroppedFiles] = useState<string[]>([]);
+  const [droppedFiles, setDroppedFiles] = useState<DroppedFileEntry[]>([]);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const suggestionTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const pendingTagsRef = useRef<string[]>([]);
 
   const handleInputChange = useCallback((event: React.ChangeEvent<HTMLTextAreaElement>) => {
     const newValue = event.target.value;
@@ -175,9 +262,12 @@ const CommitTextArea: React.FC<CommitTextAreaProps> = ({
   const handleDragOver = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.stopPropagation();
+    if (disabled) {
+      return;
+    }
     setIsDragOver(true);
     DragDropDebugger.log("info", "拖拽进入");
-  }, []);
+  }, [disabled]);
 
   const handleDragLeave = useCallback((event: React.DragEvent) => {
     event.preventDefault();
@@ -189,23 +279,23 @@ const CommitTextArea: React.FC<CommitTextAreaProps> = ({
   const extractFilePathsFromDataTransfer = useCallback((event: React.DragEvent): string[] => {
     const collectedPaths: string[] = [];
 
-    DATA_TRANSFER_TYPES.forEach(dataType => {
+    DATA_TRANSFER_TYPES.forEach(type => {
       if (collectedPaths.length > 0) {
         return;
       }
 
       try {
-        const data = event.dataTransfer.getData(dataType);
+        const data = event.dataTransfer.getData(type);
         if (!data || data.trim().length === 0) {
           return;
         }
 
-        DragDropDebugger.log("info", `获取到 ${dataType} 数据`, {
+        DragDropDebugger.log("info", `获取到 ${type} 数据`, {
           dataLength: data.length,
           preview: data.substring(0, 200),
         });
 
-        if (dataType === "text/uri-list" || dataType === "text/html") {
+        if (type === "text/uri-list" || type === "text/html") {
           const paths = data
             .split("\n")
             .map(line => line.trim())
@@ -213,7 +303,7 @@ const CommitTextArea: React.FC<CommitTextAreaProps> = ({
             .map(line => {
               try {
                 if (line.startsWith("file://")) {
-                  return decodeURIComponent(line.replace(/^file:\/\//, ""));
+                  return normaliseOriginalPath(line);
                 }
 
                 if (line.includes("://")) {
@@ -242,7 +332,7 @@ const CommitTextArea: React.FC<CommitTextAreaProps> = ({
           }
         }
       } catch (error) {
-        DragDropDebugger.log("warn", `读取 ${dataType} 失败`, {
+        DragDropDebugger.log("warn", `读取 ${type} 失败`, {
           error: error instanceof Error ? error.message : String(error),
         });
       }
@@ -251,29 +341,24 @@ const CommitTextArea: React.FC<CommitTextAreaProps> = ({
     return collectedPaths;
   }, []);
 
-  const getSupportedLocalFiles = useCallback((files: readonly File[]): string[] => {
-    const validFiles = files.filter(file => {
-      const fileName = file.name.toLowerCase();
-      return SUPPORTED_FILE_EXTENSIONS.some(ext => fileName.endsWith(ext)) || !fileName.includes(".");
-    });
+  const normalisePaths = useCallback((paths: readonly string[]): string[] => {
+    const cleaned = paths
+      .map(item => normaliseOriginalPath(item).replace(/\\/g, "/"))
+      .map(item => item.replace(/\s+/g, " ").trim())
+      .filter(item => item.length > 0);
 
-    if (validFiles.length === 0) {
-      return [];
-    }
-
-    const resolvedPaths = validFiles.map(file => {
-      const fileWithPath = file as File & { path?: string; webkitRelativePath?: string };
-      return fileWithPath.path || fileWithPath.webkitRelativePath || file.name;
-    });
-
-    DragDropDebugger.log("success", "本地文件路径", { paths: resolvedPaths });
-    return resolvedPaths;
+    return Array.from(new Set(cleaned));
   }, []);
 
   const handleDrop = useCallback((event: React.DragEvent) => {
     event.preventDefault();
     event.stopPropagation();
     setIsDragOver(false);
+
+    if (disabled) {
+      DragDropDebugger.log("warn", "当前输入已禁用，忽略拖拽");
+      return;
+    }
 
     DragDropDebugger.log("info", "开始处理拖拽", {
       types: Array.from(event.dataTransfer.types),
@@ -285,60 +370,76 @@ const CommitTextArea: React.FC<CommitTextAreaProps> = ({
     const localFiles = Array.from(event.dataTransfer.files);
     DragDropDebugger.log("info", `获取到 ${localFiles.length} 个本地文件`);
 
-    let filePaths: string[] = [];
+    const supportedLocalPaths = filterSupportedFiles(localFiles);
+    let candidatePaths = supportedLocalPaths;
 
-    if (localFiles.length > 0) {
-      filePaths = getSupportedLocalFiles(localFiles);
+    if (candidatePaths.length === 0) {
+      candidatePaths = extractFilePathsFromDataTransfer(event);
     }
 
-    if (filePaths.length === 0) {
-      filePaths = extractFilePathsFromDataTransfer(event);
+    const normalisedPaths = normalisePaths(candidatePaths);
 
-      if (filePaths.length > 0) {
-        DragDropDebugger.log("success", "解析得到的文件路径", {
-          count: filePaths.length,
-          paths: filePaths.slice(0, 5),
-        });
-      }
-    }
-
-    if (filePaths.length > 0) {
-      const uniqueFilePaths = Array.from(new Set(filePaths));
-      setDroppedFiles(uniqueFilePaths);
-
-      const fileList = uniqueFilePaths.map(path => `- ${path}`).join("\n");
-      const newValue = value
-        ? `${value}\n\n拖拽的文件:\n${fileList}`
-        : `拖拽的文件:\n${fileList}`;
-      onChange(newValue);
-
-      DragDropDebugger.log("success", "已添加文件到输入框", {
-        count: uniqueFilePaths.length,
-      });
-
-      if (onFilesDropped) {
-        onFilesDropped(uniqueFilePaths);
-      }
-    } else {
+    if (normalisedPaths.length === 0) {
       DragDropDebugger.log("error", "未能识别的拖拽数据，请从 SCM 资源管理器拖拽文件");
+      return;
     }
-  }, [extractFilePathsFromDataTransfer, getSupportedLocalFiles, onChange, onFilesDropped, value]);
+
+    const existingEntries = new Map(droppedFiles.map(entry => [entry.originalPath, entry]));
+    const newEntries: DroppedFileEntry[] = [];
+
+    normalisedPaths.forEach(path => {
+      if (!existingEntries.has(path)) {
+        const entry: DroppedFileEntry = {
+          originalPath: path,
+          tag: createFileTag(path),
+        };
+        existingEntries.set(path, entry);
+        newEntries.push(entry);
+      }
+    });
+
+    if (newEntries.length === 0) {
+      DragDropDebugger.log("info", "拖拽的文件均已存在", { count: existingEntries.size });
+      onFilesDropped?.(Array.from(existingEntries.values()).map(item => item.originalPath));
+      return;
+    }
+
+    const updatedEntries = Array.from(existingEntries.values());
+    setDroppedFiles(updatedEntries);
+
+    const newTags = newEntries
+      .map(entry => entry.tag)
+      .filter(tag => !containsTag(value, tag));
+
+    if (newTags.length > 0) {
+      const updatedValue = appendTagsToValue(value, newTags);
+      pendingTagsRef.current = newTags;
+      onChange(updatedValue);
+      DragDropDebugger.log("success", "已将文件标签添加到输入框", {
+        count: newTags.length,
+        tags: newTags,
+      });
+    }
+
+    onFilesDropped?.(updatedEntries.map(entry => entry.originalPath));
+  }, [disabled, droppedFiles, extractFilePathsFromDataTransfer, normalisePaths, onChange, onFilesDropped, value]);
 
   const clearDroppedFiles = useCallback(() => {
+    if (droppedFiles.length === 0) {
+      return;
+    }
+
+    const tags = droppedFiles.map(entry => entry.tag);
+    const updatedValue = removeTagsFromValue(value, tags);
+
+    if (updatedValue !== value) {
+      onChange(updatedValue);
+    }
+
+    pendingTagsRef.current = [];
     setDroppedFiles([]);
-
-    const lines = value.split("\n");
-    const fileListStartIndex = lines.findIndex(line => line.includes("拖拽的文件:"));
-
-    if (fileListStartIndex !== -1) {
-      const newLines = lines.slice(0, fileListStartIndex);
-      onChange(newLines.join("\n").trim());
-    }
-
-    if (onFilesDropped) {
-      onFilesDropped([]);
-    }
-  }, [onChange, onFilesDropped, value]);
+    onFilesDropped?.([]);
+  }, [droppedFiles, onChange, onFilesDropped, value]);
 
   useEffect(() => {
     if (textareaRef.current) {
@@ -346,6 +447,29 @@ const CommitTextArea: React.FC<CommitTextAreaProps> = ({
       textareaRef.current.style.height = `${Math.min(textareaRef.current.scrollHeight, 120)}px`;
     }
   }, [value]);
+
+  useEffect(() => {
+    if (pendingTagsRef.current.length > 0) {
+      const unresolved = pendingTagsRef.current.filter(tag => !containsTag(value, tag));
+      if (unresolved.length === 0) {
+        pendingTagsRef.current = [];
+      }
+      return;
+    }
+
+    if (droppedFiles.length === 0) {
+      return;
+    }
+
+    const remainingEntries = droppedFiles.filter(entry => containsTag(value, entry.tag));
+
+    if (remainingEntries.length === droppedFiles.length) {
+      return;
+    }
+
+    setDroppedFiles(remainingEntries);
+    onFilesDropped?.(remainingEntries.map(entry => entry.originalPath));
+  }, [droppedFiles, onFilesDropped, value]);
 
   useEffect(() => () => {
     if (suggestionTimeoutRef.current) {
@@ -445,22 +569,17 @@ const CommitTextArea: React.FC<CommitTextAreaProps> = ({
             </Button>
           </div>
           <div className="space-y-1 max-h-20 overflow-y-auto">
-            {droppedFiles.map((file, index) => {
-              const fileName = file.split("/").pop() || file;
-              const fileExtension = fileName.split(".").pop()?.toLowerCase() ?? "";
-
-              return (
-                <div
-                  key={file + index}
-                  className="flex items-center space-x-2 text-xs text-muted-foreground"
-                >
-                  <span className="text-sm">{getFileIcon(fileExtension)}</span>
-                  <span className="font-mono flex-1 truncate" title={file}>
-                    {fileName}
-                  </span>
-                </div>
-              );
-            })}
+            {droppedFiles.map(entry => (
+              <div
+                key={entry.originalPath}
+                className="flex items-center space-x-2 text-xs text-muted-foreground"
+              >
+                <span className="text-sm">{getFileIcon(entry.originalPath)}</span>
+                <span className="font-mono flex-1 truncate" title={entry.originalPath}>
+                  {entry.tag}
+                </span>
+              </div>
+            ))}
           </div>
         </div>
       )}
