@@ -23,7 +23,7 @@ const CommitChatPage: React.FC<CommitChatPageProps> = ({ onOpenSettings }) => (
     </div>
 
     <div className="flex-1 p-4 overflow-hidden">
-      <CommitChatView className="h-full" />
+      <CommitChatView className="h-full" showHeader={false} />
     </div>
   </div>
 );

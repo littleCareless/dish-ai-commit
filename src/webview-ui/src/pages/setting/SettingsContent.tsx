@@ -169,6 +169,7 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
       <div className="h-full">
         <CommitChatView
           className="h-full"
+          showHeader={false}
           onCommitMessageGenerated={(message) => {
             console.log('Generated commit message:', message);
             // 这里可以处理生成的 commit message

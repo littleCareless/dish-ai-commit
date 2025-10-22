@@ -29,12 +29,14 @@ interface CommitChatViewProps {
   className?: string;
   onCommitMessageGenerated?: (message: string) => void;
   onConfigurationChanged?: (config: Record<string, unknown>) => void;
+  showHeader?: boolean;
 }
 
 const CommitChatView: React.FC<CommitChatViewProps> = ({
   className = '',
   onCommitMessageGenerated,
   onConfigurationChanged,
+  showHeader = true,
 }) => {
   const [state, setState] = useState<CommitChatState>({
     messages: [],
@@ -108,10 +110,19 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
     }));
   }, []);
 
-  const handleFilesDropped = useCallback((files: readonly string[]) => {
+  const handleFilesChange = useCallback((files: readonly string[]) => {
+    const unique = Array.from(
+      new Set(
+        files
+          .map(file => file.replace(/\r|\n/g, '').trim())
+          .filter(Boolean)
+          .map(file => file.replace(/\\/g, '/'))
+      )
+    );
+
     setState(prev => ({
       ...prev,
-      selectedImages: files.length > 0 ? Array.from(new Set(files)) : [],
+      selectedImages: unique,
     }));
   }, []);
 
@@ -212,12 +223,14 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
 
   return (
     <Card className={`h-full flex flex-col ${className}`}>
-      <CardHeader className="flex-shrink-0">
-        <CardTitle className="flex items-center space-x-2">
-          <Bot size={20} />
-          <span>Commit Message 聊天助手</span>
-        </CardTitle>
-      </CardHeader>
+      {showHeader && (
+        <CardHeader className="flex-shrink-0">
+          <CardTitle className="flex items-center space-x-2">
+            <Bot size={20} />
+            <span>Commit Message 聊天助手</span>
+          </CardTitle>
+        </CardHeader>
+      )}
       <CardContent className="flex-1 flex flex-col p-0">
         {/* 消息列表 */}
         <ScrollArea className="flex-1 p-4">
@@ -260,7 +273,8 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
             onSend={handleSendMessage}
             disabled={state.isTyping}
             isLoading={state.isTyping}
-            onFilesDropped={handleFilesDropped}
+            files={state.selectedImages}
+            onFilesChange={handleFilesChange}
             className="w-full"
           />
         </div>
