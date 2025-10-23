@@ -1,4 +1,8 @@
 import { ChatMessage } from '@/components/commit-chat/CommitChatView';
+import { AIProviderFactory } from '../../ai/ai-provider-factory';
+import { ConfigurationManager } from '../../config/configuration-manager';
+import type { AIMessage, AIModel, AIRequestParams } from '../../ai/types';
+import { Logger } from '../../utils/logger';
 import { CommandParser, CommandContext, CommandResult } from './command-parser';
 import { SuggestionEngine, UserPreference, ProjectContext } from './suggestion-engine';
 
@@ -50,6 +54,7 @@ export class CommitChatService {
   private conversationHistory: ChatMessage[] = [];
   private userPreferences: UserPreference;
   private projectContext: ProjectContext;
+  private logger: Logger;
 
   constructor(
     config: Partial<CommitChatConfig> = {},
@@ -74,6 +79,7 @@ export class CommitChatService {
 
     this.commandParser = new CommandParser();
     this.suggestionEngine = new SuggestionEngine(this.userPreferences, this.projectContext);
+    this.logger = Logger.getInstance('CommitChatService');
   }
 
   // 处理聊天消息
@@ -175,17 +181,36 @@ export class CommitChatService {
     message: string,
     context: CommitChatRequest['context']
   ): Promise<CommitChatResponse> {
-    // 生成 AI 响应
-    const aiResponse = await this.generateAIResponse(message, context);
+    const baseHistory = context.messages && context.messages.length > 0
+      ? [...context.messages]
+      : [...this.conversationHistory];
 
-    // 生成建议
+    const userChatMessage: ChatMessage = {
+      id: `user-${Date.now()}`,
+      type: 'user',
+      content: message,
+      timestamp: new Date(),
+    };
+
+    const chatHistory = [...baseHistory, userChatMessage];
+
+    const aiResponse = await this.generateAIResponse(chatHistory, context);
+
+    const aiChatMessage: ChatMessage = {
+      id: `ai-${Date.now()}`,
+      type: 'ai',
+      content: aiResponse,
+      timestamp: new Date(),
+    };
+
+    this.conversationHistory = [...chatHistory, aiChatMessage].slice(-20);
+
     let suggestions: string[] = [];
     if (this.config.enableSuggestions) {
       const suggestionObjects = this.suggestionEngine.generateSuggestions(message);
       suggestions = suggestionObjects.map(s => s.text);
     }
 
-    // 生成 commit message
     const commitMessage = await this.generateCommitMessage(message, context);
 
     return {
@@ -200,57 +225,169 @@ export class CommitChatService {
 
   // 生成 AI 响应
   private async generateAIResponse(
-    message: string,
+    chatHistory: ChatMessage[],
     context: CommitChatRequest['context']
   ): Promise<string> {
-    // 构建提示词
-    const prompt = this.buildPrompt(message, context);
+    const lastUserMessage = [...chatHistory]
+      .reverse()
+      .find(msg => msg.type === 'user');
 
     try {
-      // 这里应该调用实际的 AI 服务
-      // 暂时返回模拟响应
-      return this.generateMockResponse(message, context);
+      const { provider, selectedModel, config } = await this.resolveProvider();
+
+      const isAvailable = await provider
+        .isAvailable()
+        .catch(() => false);
+      if (!isAvailable) {
+        throw new Error('AI provider unavailable');
+      }
+
+      const systemPrompt = this.buildSystemPrompt(context);
+      const aiMessages = this.buildAIMessages(systemPrompt, chatHistory);
+      const diffContent = this.buildConversationSummary(chatHistory);
+      const additionalContext = this.buildAdditionalContext(context);
+
+      const params: AIRequestParams = {
+        diff: diffContent,
+        additionalContext,
+        messages: aiMessages,
+        model: selectedModel,
+        language: config.base?.language ?? this.userPreferences.language,
+        changeFiles: context.selectedImages ?? [],
+      };
+
+      const response = await provider.generateCommit(params);
+      if (!response?.content) {
+        throw new Error('Empty response from AI provider');
+      }
+
+      return response.content.trim();
     } catch (error) {
-      console.error('AI 响应生成失败:', error);
-      return '抱歉，我暂时无法处理您的请求。请稍后再试。';
+      this.logger.error('生成 Commit Chat 响应失败', {
+        error: error instanceof Error ? error : undefined,
+        data: { historySize: chatHistory.length },
+      });
+
+      const fallbackMessage = lastUserMessage?.content ?? '';
+      return this.generateMockResponse(fallbackMessage, context);
     }
   }
 
-  // 构建提示词
-  private buildPrompt(message: string, context: CommitChatRequest['context']): string {
-    const systemPrompt = `你是一个专业的 Git commit message 助手。你的任务是帮助用户生成清晰、准确、符合规范的 commit message。
+  private buildSystemPrompt(context: CommitChatRequest['context']): string {
+    const languageLabel = this.userPreferences.language === 'zh' ? 'Chinese' : 'English';
+    const projectDetails = [
+      `Primary language: ${this.projectContext.language}`,
+      `Framework: ${this.projectContext.framework || 'Unknown'}`,
+    ];
 
-用户偏好:
-- 风格: ${this.userPreferences.style}
-- 语言: ${this.userPreferences.language}
-- 最大长度: ${this.userPreferences.maxLength}
+    if (this.projectContext.conventions?.length) {
+      projectDetails.push(`Project conventions: ${this.projectContext.conventions.join(', ')}`);
+    }
 
-项目上下文:
-- 语言: ${this.projectContext.language}
-- 框架: ${this.projectContext.framework || '未知'}
+    if (context.selectedImages?.length) {
+      projectDetails.push(`Relevant files: ${context.selectedImages.join(', ')}`);
+    }
 
-请根据用户的描述生成合适的 commit message，并提供有用的建议。`;
+    return [
+      'You are Commit Chat, an experienced Git assistant who collaborates with developers to craft high quality commit messages and reason about code changes.',
+      `Always respond in ${languageLabel}.`,
+      'Ask clarifying questions when necessary, highlight missing context, and gently guide the user towards complete and conventional commit messages.',
+      'When appropriate, summarise the change, propose commit message options, and provide actionable suggestions.',
+      'Keep responses concise, practical, and focused on Git workflows.',
+      '',
+      'Context:',
+      ...projectDetails,
+    ].join('\n');
+  }
 
-    const conversationContext = context.messages
-      .slice(-5) // 只取最近5条消息作为上下文
-      .map(msg => `${msg.type === 'user' ? '用户' : '助手'}: ${msg.content}`)
+  private buildAIMessages(systemPrompt: string, chatHistory: ChatMessage[]): AIMessage[] {
+    const trimmedHistory = chatHistory.slice(-10);
+    const conversationMessages: AIMessage[] = trimmedHistory.map(msg => ({
+      role: msg.type === 'user' ? 'user' : 'assistant',
+      content: msg.content,
+    }));
+
+    return [{ role: 'system', content: systemPrompt }, ...conversationMessages];
+  }
+
+  private buildConversationSummary(chatHistory: ChatMessage[]): string {
+    const relevantHistory = chatHistory.slice(-10);
+    return relevantHistory
+      .map(msg => `${msg.type === 'user' ? 'User' : 'Assistant'}: ${msg.content}`)
       .join('\n');
+  }
 
-    return `${systemPrompt}
+  private buildAdditionalContext(context: CommitChatRequest['context']): string {
+    const segments: string[] = [];
 
-对话历史:
-${conversationContext}
+    if (context.selectedImages?.length) {
+      segments.push(`Files referenced:\n${context.selectedImages.join('\n')}`);
+    }
 
-用户当前输入: ${message}
+    if (this.projectContext.recentCommits?.length) {
+      const recent = this.projectContext.recentCommits.slice(0, 5);
+      segments.push(`Recent commits:\n${recent.join('\n')}`);
+    }
 
-请生成回复:`;
+    segments.push(
+      `User preferences:\n- Style: ${this.userPreferences.style}\n- Language: ${this.userPreferences.language}\n- Max length: ${this.userPreferences.maxLength}`
+    );
+
+    if (this.userPreferences.customTemplates?.length) {
+      segments.push(
+        `Custom templates available: ${this.userPreferences.customTemplates
+          .map(template => template.name)
+          .join(', ')}`
+      );
+    }
+
+    if (context.projectContext?.teamPreferences) {
+      segments.push(
+        `Team preferences:\n- Style: ${context.projectContext.teamPreferences.style}\n- Max length: ${context.projectContext.teamPreferences.maxLength}`
+      );
+    }
+
+    return segments.join('\n\n');
+  }
+
+  private async resolveProvider(): Promise<{
+    provider: ReturnType<typeof AIProviderFactory.getProvider>;
+    selectedModel?: AIModel;
+    config: ReturnType<ConfigurationManager['getConfiguration']>;
+  }> {
+    const configurationManager = ConfigurationManager.getInstance();
+    const config = configurationManager.getConfiguration(true);
+    const providerId = config.base?.provider || 'openai';
+    const provider = AIProviderFactory.getProvider(providerId);
+
+    let selectedModel: AIModel | undefined;
+    const preferredModel = config.base?.model;
+
+    if (preferredModel) {
+      try {
+        const models = await provider.getModels();
+        if (models && models.length > 0) {
+          selectedModel =
+            models.find(model => model.id === preferredModel) ||
+            models.find(model => model.default) ||
+            models[0];
+        }
+      } catch (error) {
+        this.logger.warn('获取模型信息失败，使用默认模型', {
+          error: error instanceof Error ? error : undefined,
+        });
+      }
+    }
+
+    return { provider, selectedModel, config };
   }
 
   // 生成模拟响应（用于测试）
   private generateMockResponse(message: string, context: CommitChatRequest['context']): string {
+    const topic = message?.trim() || '改进当前提交';
     const responses = [
-      `我理解您想要 ${message}。让我为您生成一个合适的 commit message。`,
-      `根据您的描述 "${message}"，我建议使用以下格式的 commit message。`,
+      `我理解您想要 ${topic}。让我为您生成一个合适的 commit message。`,
+      `根据您的描述 "${topic}"，我建议使用以下格式的 commit message。`,
       `好的，我来帮您优化这个 commit message。基于您的输入，我推荐以下方案。`,
       `我明白您的需求。让我分析一下并为您提供最佳的 commit message 建议。`,
     ];

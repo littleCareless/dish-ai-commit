@@ -16,7 +16,7 @@ import {
 import { IconCheckCircle, IconCloseCircle } from "@arco-design/web-react/icon";
 
 import { AIModel } from "./types";
-import CommitChatView from "@/components/commit-chat/CommitChatView";
+
 
 interface SettingsContentProps {
   selectedMenuItemKey: string;
@@ -166,19 +166,11 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
   // 渲染聊天界面
   if (selectedMenuItemKey === "commit.chat") {
     return (
-      <div className="h-full">
-        <CommitChatView
-          className="h-full"
-          onCommitMessageGenerated={(message) => {
-            console.log('Generated commit message:', message);
-            // 这里可以处理生成的 commit message
-          }}
-          onConfigurationChanged={(config) => {
-            console.log('Configuration changed:', config);
-            // 这里可以处理配置变更
-            setHasChanges(true);
-          }}
-        />
+      <div className="flex h-full items-center justify-center border border-dashed border-border bg-muted/40 p-8 text-center text-sm text-muted-foreground">
+        <div className="space-y-2 max-w-md">
+          <p>Commit Chat 设置已迁移到独立视图。</p>
+          <p>请从扩展视图或命令面板打开 “Commit Chat” 面板以继续使用聊天功能。</p>
+        </div>
       </div>
     );
   }

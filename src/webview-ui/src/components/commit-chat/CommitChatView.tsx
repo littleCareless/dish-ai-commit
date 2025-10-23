@@ -1,10 +1,9 @@
-import React, { useState, useRef, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Send, Bot, User, Loader2 } from 'lucide-react';
+import { Bot, User, Loader2 } from 'lucide-react';
 import { vscode } from '@/lib/vscode';
+import CommitTextArea from './CommitTextArea';
 
 export interface ChatMessage {
   id: string;
@@ -29,13 +28,15 @@ export interface CommitChatState {
 interface CommitChatViewProps {
   className?: string;
   onCommitMessageGenerated?: (message: string) => void;
-  onConfigurationChanged?: (config: Record<string, any>) => void;
+  onConfigurationChanged?: (config: Record<string, unknown>) => void;
+  showHeader?: boolean;
 }
 
 const CommitChatView: React.FC<CommitChatViewProps> = ({
   className = '',
   onCommitMessageGenerated,
   onConfigurationChanged,
+  showHeader = true,
 }) => {
   const [state, setState] = useState<CommitChatState>({
     messages: [],
@@ -46,7 +47,6 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
   });
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // 自动滚动到底部
   const scrollToBottom = () => {
@@ -58,9 +58,12 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
   }, [state.messages]);
 
   // 处理消息发送
-  const handleSendMessage = async () => {
-    if (!state.inputValue.trim() || state.isTyping) return;
+  const handleSendMessage = useCallback(() => {
+    if (!state.inputValue.trim() || state.isTyping) {
+      return;
+    }
 
+    const attachments = state.selectedImages;
     const userMessage: ChatMessage = {
       id: `user-${Date.now()}`,
       type: 'user',
@@ -68,24 +71,25 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
       timestamp: new Date(),
     };
 
-    // 添加用户消息
+    const updatedMessages = [...state.messages, userMessage];
+
     setState(prev => ({
       ...prev,
       messages: [...prev.messages, userMessage],
       inputValue: '',
       isTyping: true,
+      selectedImages: [],
     }));
 
     try {
-      // 发送消息到后端处理
       if (vscode) {
         vscode.postMessage({
           command: 'commitChatMessage',
           data: {
             message: userMessage.content,
             context: {
-              messages: state.messages,
-              selectedImages: state.selectedImages,
+              messages: updatedMessages,
+              selectedImages: attachments,
             },
           },
         });
@@ -97,23 +101,30 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
         isTyping: false,
       }));
     }
-  };
+  }, [state.inputValue, state.isTyping, state.messages, state.selectedImages]);
 
-  // 处理键盘事件
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
-
-  // 处理输入变化
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleInputChange = useCallback((value: string) => {
     setState(prev => ({
       ...prev,
-      inputValue: e.target.value,
+      inputValue: value,
     }));
-  };
+  }, []);
+
+  const handleFilesChange = useCallback((files: readonly string[]) => {
+    const unique = Array.from(
+      new Set(
+        files
+          .map(file => file.replace(/\r|\n/g, '').trim())
+          .filter(Boolean)
+          .map(file => file.replace(/\\/g, '/'))
+      )
+    );
+
+    setState(prev => ({
+      ...prev,
+      selectedImages: unique,
+    }));
+  }, []);
 
   // 监听来自后端的消息
   useEffect(() => {
@@ -212,12 +223,14 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
 
   return (
     <Card className={`h-full flex flex-col ${className}`}>
-      <CardHeader className="flex-shrink-0">
-        <CardTitle className="flex items-center space-x-2">
-          <Bot size={20} />
-          <span>Commit Message 聊天助手</span>
-        </CardTitle>
-      </CardHeader>
+      {showHeader && (
+        <CardHeader className="flex-shrink-0">
+          <CardTitle className="flex items-center space-x-2">
+            <Bot size={20} />
+            <span>Commit Message 聊天助手</span>
+          </CardTitle>
+        </CardHeader>
+      )}
       <CardContent className="flex-1 flex flex-col p-0">
         {/* 消息列表 */}
         <ScrollArea className="flex-1 p-4">
@@ -254,25 +267,16 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
 
         {/* 输入区域 */}
         <div className="flex-shrink-0 p-4 border-t">
-          <div className="flex space-x-2">
-            <Textarea
-              ref={textareaRef}
-              value={state.inputValue}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder="描述你的代码变更，或者告诉我你想要的 commit message 风格..."
-              className="flex-1 min-h-[60px] max-h-[120px] resize-none"
-              disabled={state.isTyping}
-            />
-            <Button
-              onClick={handleSendMessage}
-              disabled={!state.inputValue.trim() || state.isTyping}
-              size="icon"
-              className="self-end"
-            >
-              <Send size={16} />
-            </Button>
-          </div>
+          <CommitTextArea
+            value={state.inputValue}
+            onChange={handleInputChange}
+            onSend={handleSendMessage}
+            disabled={state.isTyping}
+            isLoading={state.isTyping}
+            files={state.selectedImages}
+            onFilesChange={handleFilesChange}
+            className="w-full"
+          />
         </div>
       </CardContent>
     </Card>

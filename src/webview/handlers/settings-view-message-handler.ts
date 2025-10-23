@@ -14,9 +14,11 @@ import {
 import { CONFIG_SCHEMA } from "../../config/config-schema";
 import { isConfigValue } from "../../config/utils/config-validation";
 import { notify } from "../../utils/notification/notification-manager";
+import { CommitChatService, CommitChatRequest } from "../../services/commit-chat/commit-chat-service";
 
 export class SettingsViewMessageHandler {
   private readonly _extensionId: string;
+  private _commitChatService: CommitChatService;
 
   constructor(
     extensionId: string,
@@ -24,6 +26,7 @@ export class SettingsViewMessageHandler {
     private readonly _extensionContext: vscode.ExtensionContext // Receive // extensionContext here
   ) {
     this._extensionId = extensionId;
+    this._commitChatService = new CommitChatService();
   }
 
   public async handleMessage(
@@ -31,6 +34,17 @@ export class SettingsViewMessageHandler {
     webview: vscode.Webview
   ): Promise<void> {
     switch (message.command) {
+      case "commitChatMessage": {
+        try {
+          const req = message.data as CommitChatRequest;
+          const res = await this._commitChatService.processMessage(req);
+          webview.postMessage({ command: "commitChatResponse", data: res });
+        } catch (error) {
+          console.error("[SettingsViewMessageHandler] commitChatMessage failed:", error);
+          webview.postMessage({ command: "commitChatResponse", data: { response: "抱歉，处理您的请求时发生错误。", metadata: {} } });
+        }
+        break;
+      }
       case "testConnection": {
         const { service, url, key } = message.data;
         await this.handleTestConnection(service, url, key, webview);

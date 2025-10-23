@@ -29,6 +29,9 @@ export class WeeklyReportViewProvider {
         </head>
         <body>
           <div id="root"></div>
+          <script nonce="${nonce}">
+            window.initialData = { viewType: 'weeklyReportPage' };
+          </script>
           <script nonce="${nonce}" src="${scriptUri}"></script>
         </body>
       </html>

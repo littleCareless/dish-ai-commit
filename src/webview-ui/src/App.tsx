@@ -4,6 +4,7 @@ import "@arco-design/web-react/dist/css/arco.css";
 
 import SettingsPage from "./pages/settings-page";
 import WeeklyReportPage from "./pages/weekly-report-page";
+import CommitChatPage from "./pages/commit-chat-page";
 
 interface InitialData {
   viewType?: string;
@@ -32,9 +33,8 @@ const App: React.FC = () => {
     if (initialData && initialData.viewType) {
       setViewType(initialData.viewType);
     } else {
-      // Default to weekly report if no specific viewType is provided
-      // This could happen if the webview is opened for the weekly report directly
-      setViewType("weeklyReportPage"); // Or handle as an error/unknown state
+      // Default to commit chat if no specific viewType is provided
+      setViewType("commitChatPage");
     }
     
     // 设置初始主题
@@ -69,10 +69,15 @@ const App: React.FC = () => {
   }
 
   if (viewType === "settingsPage") {
-    return <SettingsPage />;
+    return <SettingsPage onBack={() => setViewType("commitChatPage")} />;
   }
-  // Default to WeeklyReportPage or handle other view types
-  return <WeeklyReportPage />;
+
+  if (viewType === "weeklyReportPage") {
+    return <WeeklyReportPage />;
+  }
+
+  // Default to CommitChatPage
+  return <CommitChatPage onOpenSettings={() => setViewType("settingsPage")} />;
 };
 
 export default App;
