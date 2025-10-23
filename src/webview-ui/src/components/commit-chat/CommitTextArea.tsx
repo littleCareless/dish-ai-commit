@@ -385,18 +385,6 @@ const CommitTextArea: React.FC<CommitTextAreaProps> = ({
       }
 
       const selectionStart = textareaRef.current?.selectionStart ?? value.length;
-      const selectionEnd = textareaRef.current?.selectionEnd ?? value.length;
-
-      const before = value.slice(0, selectionStart);
-      const after = value.slice(selectionEnd);
-      const needsSpaceBefore = before.length > 0 && !/\s$/.test(before);
-      const needsSpaceAfter = after.length > 0 && !/^\s/.test(after);
-
-      const updatedValue = `${before}${needsSpaceBefore ? " " : ""}${after}`
-        .replace(/\s{2,}/g, " ")
-        .replace(/\s{2,}/g, " ")
-        .replace(/^\s+/, '')
-        .replace(/\s+$/, '');
 
       const updatedTags = Array.from(new Set([...normalisedFiles, ...normalised]));
 
@@ -406,18 +394,16 @@ const CommitTextArea: React.FC<CommitTextAreaProps> = ({
       }
 
       emitFilesChange(updatedTags);
-      onChange(updatedValue);
 
       requestAnimationFrame(() => {
         if (textareaRef.current) {
-          const insertionIndex = before.length + (needsSpaceBefore ? 1 : 0);
           textareaRef.current.focus();
-          textareaRef.current.selectionStart = insertionIndex;
-          textareaRef.current.selectionEnd = insertionIndex;
+          textareaRef.current.selectionStart = selectionStart;
+          textareaRef.current.selectionEnd = selectionStart;
         }
       });
     },
-    [disabled, emitFilesChange, extractPathsFromDataTransfer, normalisedFiles, onChange, value]
+    [disabled, emitFilesChange, extractPathsFromDataTransfer, normalisedFiles, value]
   );
 
   const handleDragEnter = useCallback((event: React.DragEvent<HTMLDivElement>) => {
