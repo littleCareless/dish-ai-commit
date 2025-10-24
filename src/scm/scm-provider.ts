@@ -4,7 +4,6 @@ import * as path from "path";
 import { exec } from "child_process";
 import { GitProvider } from "./git-provider";
 import { SvnProvider } from "./svn-provider";
-import { CliSvnProvider } from "./cli-svn-provider";
 import { ImprovedPathUtils } from "./utils/improved-path-utils";
 
 /**
@@ -68,6 +67,18 @@ export interface ISCMProvider {
    * @param files 文件路径列表
    */
   setCurrentFiles?(files?: string[]): void;
+
+  /**
+   * Get list of staged files from provider
+   * @param files Optional file list to limit scope
+   */
+  getStagedFiles?(files?: string[]): Promise<string[]>;
+
+  /**
+   * Get list of all changed files from provider
+   * @param files Optional file list to limit scope
+   */
+  getAllChangedFiles?(files?: string[]): Promise<string[]>;
 }
 
 /**
@@ -77,13 +88,6 @@ export interface ISCMProvider {
 export class SCMFactory {
   /** 当前激活的SCM提供者实例 */
   private static currentProvider: ISCMProvider | undefined;
-  /** 缓存的SCM提供者实例，按工作区路径索引 */
-  private static providerCache: Map<string, ISCMProvider> = new Map();
-  /** 正在进行的检测操作，用于防止并发问题 */
-  private static pendingDetections: Map<
-    string,
-    Promise<ISCMProvider | undefined>
-  > = new Map();
 
   /**
    * 根据选中的文件确定工作区根目录
@@ -306,50 +310,21 @@ export class SCMFactory {
         return undefined;
       }
 
-      // 规范化工作区根目录路径，用作缓存键
+      // 规范化工作区根目录路径
       const normalizedWorkspaceRoot =
         ImprovedPathUtils.normalizePath(workspaceRoot);
 
-      // 检查是否已有正在进行的检测操作
-      const pendingDetection = this.pendingDetections.get(
-        normalizedWorkspaceRoot
-      );
-      if (pendingDetection) {
-        return pendingDetection;
-      }
-
-      // 检查缓存中是否已有该工作区的提供者
-      const cachedProvider = this.providerCache.get(normalizedWorkspaceRoot);
-      if (cachedProvider) {
-        // 验证缓存的提供者是否仍然可用
-        try {
-          if (await this.withTimeout(cachedProvider.isAvailable())) {
-            this.currentProvider = cachedProvider;
-            return cachedProvider;
-          } else {
-            // 如果不可用，从缓存中移除
-            this.providerCache.delete(normalizedWorkspaceRoot);
-          }
-        } catch (error) {
-          // 如果检查可用性时出错，从缓存中移除
-          this.providerCache.delete(normalizedWorkspaceRoot);
-        }
-      }
-
-      // 创建新的检测操作
-      const detectionPromise = this.performDetection(
+      // 直接执行检测，每次都创建新的Provider实例
+      const provider = await this.performDetection(
         normalizedWorkspaceRoot,
         selectedFiles
       );
-      this.pendingDetections.set(normalizedWorkspaceRoot, detectionPromise);
 
-      try {
-        const result = await detectionPromise;
-        return result;
-      } finally {
-        // 清理pending状态
-        this.pendingDetections.delete(normalizedWorkspaceRoot);
+      if (provider) {
+        this.currentProvider = provider;
       }
+
+      return provider;
     } catch (error) {
       console.error(
         "SCM detection failed:",
@@ -428,9 +403,13 @@ export class SCMFactory {
       if (scmType === "svn") {
         // 先尝试使用SVN插件
         try {
-          const svn = svnExtension?.exports
-            ? new SvnProvider(svnExtension.exports, normalizedWorkspaceRoot)
-            : undefined;
+          // const svn = svnExtension?.exports
+          //   ? new SvnProvider(svnExtension.exports, normalizedWorkspaceRoot)
+          //   : undefined;
+          const svn = new SvnProvider(
+            svnExtension?.exports,
+            normalizedWorkspaceRoot
+          );
           if (svn) {
             await this.withTimeout(svn.init());
             if (await this.withTimeout(svn.isAvailable())) {
@@ -442,26 +421,24 @@ export class SCMFactory {
           // Continue to try CLI SVN
         }
 
-        // 如果没有插件但系统有SVN命令,使用命令行方式
-        if (!provider) {
-          try {
-            if (await this.withTimeout(this.checkSCMCommand("svn"))) {
-              const cliSvn = new CliSvnProvider(normalizedWorkspaceRoot);
-              await this.withTimeout(cliSvn.init());
-              if (await this.withTimeout(cliSvn.isAvailable())) {
-                provider = cliSvn;
-              }
-            }
-          } catch (error) {
-            console.error("CLI SVN provider initialization failed:", error);
-          }
-        }
+        // // 如果没有插件但系统有SVN命令,使用命令行方式
+        // if (!provider) {
+        //   try {
+        //     if (await this.withTimeout(this.checkSCMCommand("svn"))) {
+        //       const cliSvn = new CliSvnProvider(normalizedWorkspaceRoot);
+        //       await this.withTimeout(cliSvn.init());
+        //       if (await this.withTimeout(cliSvn.isAvailable())) {
+        //         provider = cliSvn;
+        //       }
+        //     }
+        //   } catch (error) {
+        //     console.error("CLI SVN provider initialization failed:", error);
+        //   }
+        // }
       }
 
       if (provider) {
-        // 缓存提供者实例（使用规范化的路径作为键）
-        this.providerCache.set(normalizedWorkspaceRoot, provider);
-        this.currentProvider = provider;
+        // 直接返回新创建的Provider实例，不进行缓存
         return provider;
       }
 

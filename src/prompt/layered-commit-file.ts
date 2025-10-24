@@ -5,25 +5,41 @@ interface LayeredCommitFileParams {
   config: ExtensionConfiguration["features"]["commitFormat"];
   language: string;
   filePath: string;
+  globalContext?: string; // ✅ 新增
+  otherFiles?: string[];  // ✅ 新增
 }
 
 export function getLayeredCommitFilePrompt(
   params: LayeredCommitFileParams
 ): string {
-  const { config, language, filePath } = params;
+  const { config, language, filePath, globalContext, otherFiles } = params;
 
   const bodyInstruction = config.enableBody
     ? `- Explain the "what" and "why" of the change.
 - Use bullet points with "-" to list individual changes within the file.`
     : `- Provide only a single, concise sentence summarizing the change.`;
 
+  // 🔥 新增上下文提示部分
+  const contextSection = globalContext ? `
+**GLOBAL CONTEXT:**
+This file is part of a larger change set:
+${globalContext}
+
+Other files being modified in this commit:
+${otherFiles?.map(f => `- ${f}`).join('\n')}
+
+When describing this file's changes, briefly mention how it relates to the overall goal above.
+` : '';
+
   const template = `
 You are an expert programmer responsible for writing a detailed, file-specific commit description.
 Your task is to analyze the provided code changes for a single file and generate a concise, informative description of what was changed and why.
 
+${contextSection}
+
 **CRITICAL INSTRUCTIONS:**
 1.  **LANGUAGE:** Your entire output MUST be in **${language}**.
-2.  **FOCUS:** Your description must ONLY be about the changes in the file: **${filePath}**.
+2.  **FOCUS:** Describe changes in **${filePath}**, but mention its role in the global context if provided.
 3.  **OUTPUT:** You MUST ONLY return the description text. Do NOT include a commit subject line (e.g., "feat(scope): ..."), markdown code blocks, or any other formatting.
 
 **ANALYSIS AND WRITING RULES:**

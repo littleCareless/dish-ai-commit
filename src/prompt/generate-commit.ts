@@ -254,6 +254,22 @@ When generating commit messages, always consider both the file status and the co
 - Then, choose the most appropriate commit type (type) from the TYPE REFERENCE list based on the actual intent of the change, not just the file extension or filename.
 - The commit type must reflect the **real purpose** of the change.
 
+### Special Case: Rename Operations
+
+When you see markers like:
+\`\`\`
+### RENAME OPERATION ###
+# File renamed from: old-file.js
+# File renamed to: new-file.js
+rename from old-file.js
+rename to new-file.js
+\`\`\`
+
+This indicates a file rename operation. For rename:
+- Use appropriate type (usually \`refactor\`, \`chore\`, or \`style\`)
+- Mention both old and new filenames clearly
+- Example: \`refactor(core): rename old-file to new-file for better clarity\`
+
 ## TYPE REFERENCE
 
 ${

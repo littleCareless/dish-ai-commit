@@ -13,7 +13,7 @@ jobs:
   release-please:
     runs-on: ubuntu-latest
     steps:
-      - uses: google-github-actions/release-please-action@v4
+      - uses: googleapis/release-please-action@v4
         id: release
         with:
           # (推荐) 使用个人访问令牌 (PAT) 而非默认的 GITHUB_TOKEN

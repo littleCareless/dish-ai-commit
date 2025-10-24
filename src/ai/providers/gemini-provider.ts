@@ -252,6 +252,7 @@ export class GeminiAIProvider extends AbstractAIProvider {
         "Gemini API client not initialized. Please check your API key."
       );
     }
+    const genAI = this.genAI;
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
     const { systemInstruction, contents } = (await this.buildProviderMessages(
@@ -269,7 +270,7 @@ export class GeminiAIProvider extends AbstractAIProvider {
           "Final messages for AI:",
           JSON.stringify({ systemInstruction, contents }, null, 2)
         );
-        const streamResult = await this.genAI!.models.generateContentStream({
+        const streamResult = await genAI.models.generateContentStream({
           model: modelId,
           contents: contents,
           config: {

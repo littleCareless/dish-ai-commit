@@ -80,6 +80,9 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
           endpoint: this.config.baseURL,
           apiVersion: this.config.apiVersion,
           organization: this.config.organization,
+          defaultHeaders: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
+          },
         });
       } else {
         const credential = new DefaultAzureCredential();
@@ -90,6 +93,9 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
           apiVersion: this.config.apiVersion,
           azureADTokenProvider,
           organization: this.config.organization,
+          defaultHeaders: {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
+          },
         });
       }
     }
@@ -112,12 +118,13 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
         "Azure OpenAI API client not initialized. Please check your API key, endpoint, and API version."
       );
     }
+    const openai = this.openai;
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
     const messages = await this.buildProviderMessages(params);
 
     try {
-      const completion = await this.openai!.chat.completions.create({
+      const completion = await openai.chat.completions.create({
         model: modelId,
         messages,
         temperature: options?.temperature || 0.7,
@@ -159,6 +166,7 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
         "Azure OpenAI API client not initialized. Please check your API key, endpoint, and API version."
       );
     }
+    const openai = this.openai;
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
     const messages = await this.buildProviderMessages(params);
@@ -167,7 +175,7 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
       this: AzureOpenAIProvider
     ): AsyncIterable<string> {
       try {
-        const stream = await this.openai!.chat.completions.create({
+        const stream = await openai.chat.completions.create({
           model: modelId,
           messages,
           temperature: options?.temperature || 0.7,

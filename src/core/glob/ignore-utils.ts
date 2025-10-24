@@ -10,7 +10,7 @@ import { DIRS_TO_IGNORE } from "./constants";
 export function isPathInIgnoredDirectory(filePath: string): boolean {
   // Normalize path separators
   const normalizedPath = filePath.replace(/\\/g, "/");
-  const pathParts = normalizedPath.split("/");
+  const pathParts = normalizedPath?.split("/");
 
   // Check each directory in the path against DIRS_TO_IGNORE
   for (const part of pathParts) {

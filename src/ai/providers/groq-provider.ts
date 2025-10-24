@@ -72,6 +72,7 @@ export class GroqAIProvider extends AbstractAIProvider {
         "Groq API client not initialized. Please check your API key."
       );
     }
+    const groq = this.groq;
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
     const { systemInstruction, contents } = await this.buildProviderMessages(
@@ -84,7 +85,7 @@ export class GroqAIProvider extends AbstractAIProvider {
     );
 
     try {
-      const chatCompletion = await this.groq.chat.completions.create(
+      const chatCompletion = await groq.chat.completions.create(
         {
           model: modelId,
           messages: contents,
@@ -127,6 +128,7 @@ export class GroqAIProvider extends AbstractAIProvider {
         "Groq API client not initialized. Please check your API key."
       );
     }
+    const groq = this.groq;
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
     const { systemInstruction, contents } = await this.buildProviderMessages(
@@ -142,7 +144,7 @@ export class GroqAIProvider extends AbstractAIProvider {
           JSON.stringify({ systemInstruction, contents }, null, 2)
         );
 
-        const stream = await this.groq!.chat.completions.create(
+        const stream = await groq.chat.completions.create(
           {
             model: modelId,
             messages: contents,

@@ -1,12 +1,14 @@
 import * as vscode from "vscode";
 import { COMMANDS } from "./constants";
-import { GenerateCommitCommand } from "./commands/generate-commit-command";
+import { GenerateCommitCommand } from "./commands/generate-commit/generate-commit-command";
 import { SelectModelCommand } from "./commands/select-model-command";
 import { GenerateWeeklyReportCommand } from "./commands/generate-weekly-report-command";
 import { ReviewCodeCommand } from "./commands/review-code-command";
-import { GenerateBranchNameCommand } from "./commands/generate-branch-name-command";
+import { GenerateBranchNameCommand } from "./commands/generate-branch-name/generate-branch-name-command";
 import { GeneratePRSummaryCommand } from "./commands/generate-pr-summary-command";
 import { UpdateModelInfoCommand } from "./commands/update-model-info-command";
+import { ShowTokenStatsCommand } from "./commands/show-token-stats-command";
+import { ResetTokenStatsCommand } from "./commands/reset-token-stats-command";
 import { notify } from "./utils";
 
 /**
@@ -40,6 +42,8 @@ export class CommandManager implements vscode.Disposable {
       const branchNameCommand = new GenerateBranchNameCommand(this.context);
       const prSummaryCommand = new GeneratePRSummaryCommand(this.context);
       const updateModelInfoCommand = new UpdateModelInfoCommand(this.context);
+      const showTokenStatsCommand = new ShowTokenStatsCommand(this.context);
+      const resetTokenStatsCommand = new ResetTokenStatsCommand(this.context);
 
       this.disposables.push(
         // 注册生成commit信息命令
@@ -132,6 +136,29 @@ export class CommandManager implements vscode.Disposable {
             } catch (error) {
               // 处理模型信息更新失败
               notify.error("command.update.model.info.failed", [
+                error instanceof Error ? error.message : String(error),
+              ]);
+            }
+          }
+        ),
+        // 注册显示 token 统计命令
+        vscode.commands.registerCommand(COMMANDS.TOKEN_STATS.SHOW, async () => {
+          try {
+            await showTokenStatsCommand.execute();
+          } catch (error) {
+            notify.error("command.token.stats.show.failed", [
+              error instanceof Error ? error.message : String(error),
+            ]);
+          }
+        }),
+        // 注册重置 token 统计命令
+        vscode.commands.registerCommand(
+          COMMANDS.TOKEN_STATS.RESET,
+          async () => {
+            try {
+              await resetTokenStatsCommand.execute();
+            } catch (error) {
+              notify.error("command.token.stats.reset.failed", [
                 error instanceof Error ? error.message : String(error),
               ]);
             }

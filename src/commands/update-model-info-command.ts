@@ -26,11 +26,14 @@ export class UpdateModelInfoCommand extends BaseCommand {
    * 执行模型信息更新命令
    */
   async execute(): Promise<void> {
+    this.logger.info("Executing UpdateModelInfoCommand...");
     try {
       // 首先检查是否需要更新
+      this.logger.info("Checking for model updates...");
       const updateCheck = await checkModelUpdates();
 
       if (!updateCheck.needsUpdate) {
+        this.logger.info("Model info is up to date.");
         const forceUpdate = await vscode.window.showInformationMessage(
           "模型信息都是最新的，是否仍要强制更新？",
           { modal: false },
@@ -39,8 +42,10 @@ export class UpdateModelInfoCommand extends BaseCommand {
         );
 
         if (forceUpdate !== "强制更新") {
+          this.logger.info("User cancelled forced update.");
           return;
         }
+        this.logger.info("User chose to force update.");
       } else {
         // 显示需要更新的信息
         const updateMessage = [
@@ -48,6 +53,9 @@ export class UpdateModelInfoCommand extends BaseCommand {
           ...updateCheck.recommendations,
         ].join("\n");
 
+        this.logger.info(
+          `Model updates available: ${updateCheck.recommendations.join(", ")}`
+        );
         const proceed = await vscode.window.showWarningMessage(
           updateMessage,
           { modal: true },
@@ -56,6 +64,7 @@ export class UpdateModelInfoCommand extends BaseCommand {
         );
 
         if (proceed !== "立即更新") {
+          this.logger.info("User cancelled model update.");
           return;
         }
       }
@@ -75,8 +84,10 @@ export class UpdateModelInfoCommand extends BaseCommand {
       });
 
       if (!selectedOption) {
+        this.logger.info("User cancelled model update option selection.");
         return;
       }
+      this.logger.info(`User selected option: ${selectedOption}`);
 
       const service = ModelUpdateService.getInstance();
 
@@ -98,7 +109,7 @@ export class UpdateModelInfoCommand extends BaseCommand {
           break;
       }
     } catch (error) {
-      console.error("更新模型信息时出错:", error);
+      this.logger.logError(error as Error, "更新模型信息失败");
       notify.error("model.update.command.failed", [
         error instanceof Error ? error.message : String(error),
       ]);
@@ -113,8 +124,12 @@ export class UpdateModelInfoCommand extends BaseCommand {
       "正在更新所有模型信息...",
       async (progress, token) => {
         progress.report({ message: "开始更新模型信息" });
+        this.logger.info("Updating all models...");
 
         const result = await service.updateAllModels();
+        this.logger.info(
+          `Update all models result: ${result.updatedModels.length} updated, ${result.failedModels.length} failed.`
+        );
 
         if (result.success) {
           progress.report({
@@ -145,8 +160,12 @@ export class UpdateModelInfoCommand extends BaseCommand {
       `正在更新 ${providerId.toUpperCase()} 模型信息...`,
       async (progress, token) => {
         progress.report({ message: `开始更新 ${providerId} 模型信息` });
+        this.logger.info(`Updating models for provider: ${providerId}...`);
 
         const result = await service.updateProviderModels(providerId);
+        this.logger.info(
+          `Update models for ${providerId} result: ${result.updatedModels.length} updated, ${result.failedModels.length} failed.`
+        );
 
         if (result.success) {
           progress.report({
@@ -170,7 +189,9 @@ export class UpdateModelInfoCommand extends BaseCommand {
    * 显示模型统计信息
    */
   private async showModelStats(service: ModelUpdateService): Promise<void> {
+    this.logger.info("Showing model stats...");
     const stats = service.getModelStats();
+    this.logger.info(`Model stats: ${JSON.stringify(stats)}`);
 
     const statsMessage = [
       "=== 模型信息统计 ===",

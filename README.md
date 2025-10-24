@@ -2,7 +2,7 @@
 
 <h1>Dish AI Commit Gen</h1>
 
-A VSCode extension for generating standardized Git/SVN commit messages using AI
+A powerful VSCode extension that uses AI technology to generate standardized Git/SVN commit messages. Supports multiple AI providers with intelligent code analysis and semantic indexing capabilities.
 
 [Report Bug][github-issues-link] · [Request Feature][github-issues-link]
 
@@ -34,12 +34,44 @@ A VSCode extension for generating standardized Git/SVN commit messages using AI
 [Русский](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=ru) |
 [中文](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=zh)
 
-A VSCode extension that uses AI to generate standardized Git/SVN commit messages. Supports OpenAI, Ollama, VSCode built-in AI service, Zhipu AI, DashScope, Gemini AI, Doubao AI, Deepseek AI, SiliconFlow and OpenRouter.
 
-### 🆓 Free AI model support
 
-- **Zhipu AI (GLM-4-Flash)** - Fixed monthly free quota ([Get API Key](https://open.bigmodel.cn/usercenter/apikeys))
-- **Gemini AI** - 1,500 free requests per day ([Get API Key](https://makersuite.google.com/app/apikey))
+> 💡 **Why Choose Us?** Compared to other AI commit tools, we provide the most comprehensive AI provider support, pioneering semantic code analysis, and multi-dimensional intelligent generation features, making us the best choice for developers.
+
+## 🚀 Core Features Overview
+
+- **AI-Powered Commit Generation**: Intelligent commit message creation from code changes with context-aware analysis
+- **Multi-VCS Support**: Works with both Git and SVN version control systems
+- **20+ AI Providers**: OpenAI, Ollama, GitHub Copilot, Zhipu AI, DashScope, Gemini, Anthropic Claude, Mistral AI, and more (including free options, local deployment with Ollama, and enterprise solutions like Azure OpenAI, Vertex AI, Cloudflare Workers AI)
+- **Semantic Code Analysis**: Tree-sitter + Qdrant vector database to provide precise context for commit message generation
+- **Multi-language Support**: 19 languages including English and Chinese
+- **Standardized Commit Format**: Follows Conventional Commits specification with intelligent emoji matching
+- **PR Summary Generation**: Auto-generate PR titles and descriptions from commit history
+- **Branch Name Generation**: Smart branch naming based on requirements or code changes
+- **Weekly Report Generation**: AI-powered work summaries and progress tracking
+- **Code Review**: AI-assisted code review with detailed feedback
+- **Interactive Chat Interface**: Real-time commit generation through natural language
+- **Dynamic Settings UI**: Auto-generated configuration interface based on schema
+- **Cross-repository Support**: Handle multiple repositories in single workspace
+
+## 🎯 Unique Advantages Over Competitors
+
+### 1. **Most Comprehensive AI Provider Support**
+- Support for 10+ mainstream AI services, including free options
+- One-click switching between different AI models to meet various scenario needs
+
+### 2. **Intelligent Semantic Analysis**
+- Pioneering code semantic indexing based on tree-sitter
+- Provides more accurate code change understanding and contextual analysis
+
+### 3. **Multi-dimensional Intelligent Generation**
+- Not only generates commit messages, but also supports PR summaries, branch names, and weekly reports
+- One-stop solution for developer documentation needs
+
+### 4. **Enterprise-grade Features**
+- Support for both SVN and Git version control systems
+- Dynamic configuration interface suitable for team collaboration
+- Comprehensive error handling and user feedback mechanisms
 
 ## ✨ What's New
 
@@ -50,39 +82,76 @@ A VSCode extension that uses AI to generate standardized Git/SVN commit messages
 
 ## Features
 
-### 🤖 Multi-platform AI support
+### 🤖 Comprehensive AI Provider Support
 
-| AI provider        | Features                                                                         | Applicable scenarios                                         |
-| ------------------ | -------------------------------------------------------------------------------- | ------------------------------------------------------------ |
-| OpenAI API         | High-quality generated results, support GPT-3.5/GPT-4                            | Scenarios that require high-quality output, charged by usage |
-| Ollama             | Local deployment, support for multiple open source models                        | Scenarios with high data privacy requirements                |
-| VSCode built-in AI | Using GitHub Copilot                                                             | Users with GitHub Copilot subscription                       |
-| Zhipu AI (GLM-4)   | Excellent Chinese processing capabilities, fixed monthly free quota              | Chinese users, Chinese processing                            |
-| DashScope          | Provided by Alibaba Cloud, supports Tongyi Qianwen series models                 | Enterprise-level applications                                |
-| Gemini AI          | Daily free quota of 1,500 requests                                               | Individual developers                                        |
-| Deepseek AI        | High-quality open source large model, Chinese and English bilingual optimization | Multi-language support requirements                          |
-| SiliconFlow        | High-performance AI reasoning platform                                           | Scenarios that require multi-model support                   |
-| OpenRouter         | Open source AI routing service, multi-model support                              | Flexible model selection requirements                        |
+Our extension supports 20+ AI providers, making it the most comprehensive AI-powered commit message generator available:
+
+| Category | Providers | Key Features | Best For |
+|----------|-----------|--------------|----------|
+| **Premium AI** | OpenAI (GPT-3.5, GPT-4, GPT-4o, o1-preview, o1-mini) | Highest quality, latest models | Production use, high-quality requirements |
+| **Local Deployment** | Ollama, LM Studio | 100+ open-source models, complete privacy | Data-sensitive environments, offline use |
+| **VSCode Integration** | GitHub Copilot | Built-in VSCode AI service | Copilot subscribers |
+| **Chinese AI Services** | Zhipu AI (GLM-4), DashScope (Alibaba), Doubao (ByteDance), Deepseek, Baidu Qianfan | Excellent Chinese processing, enterprise support | Chinese users, enterprise applications |
+| **International Services** | Gemini AI, Anthropic Claude, Mistral AI, SiliconFlow, OpenRouter | Global reach, diverse model options | International teams, model flexibility |
+| **Enterprise Solutions** | Azure OpenAI, Vertex AI, Cloudflare Workers AI | Enterprise-grade security and compliance | Large organizations, compliance requirements |
+| **Open Source** | Together AI, X.AI (Grok), Groq, Prem AI | Cost-effective, community-driven | Budget-conscious users, open-source projects |
+
+#### 🆓 Free AI Models
+
+- **Zhipu AI (GLM-4-Flash)**: Fixed monthly free quota ([Get API Key](https://open.bigmodel.cn/usercenter/apikeys))
+- **Gemini AI**: 1,500 free requests per day ([Get API Key](https://makersuite.google.com/app/apikey))
+- **Ollama**: Completely free local deployment with 100+ models
+- **LM Studio**: Free local model hosting and management
 
 ### 📝 Version Control System Support
 
-- SVN
-- Git
+- **Git**: Full support for Git repositories with advanced features
+- **SVN**: Complete SVN integration with commit message generation
+- **Cross-repository**: Handle multiple repositories in single workspace
+- **Mixed Environments**: Seamlessly work with both Git and SVN projects
 
 ### 📊 Weekly Report Generation
 
-- AI-powered weekly report generation
-- Automatically summarize your work progress
-- Customizable report templates
-- Support multiple AI providers for report generation
+- **AI-Powered Summaries**: Automatically generate comprehensive weekly work reports
+- **Progress Tracking**: Analyze commit history and code changes to summarize progress
+- **Customizable Templates**: Create personalized report formats and structures
+- **Multi-Provider Support**: Use any supported AI provider for report generation
+- **Export Options**: Generate reports in various formats for sharing
 
-### 🌿 Branch name generation
+### 🌿 Branch Name Generation
 
-- Automatically generate Git branch names that meet specifications
-- Intelligently create branch names based on requirements or function descriptions
-- Support multiple branch naming conventions and formats
-- Seamless integration with all AI providers
-- Improve team branch naming consistency
+- **Smart Branch Naming**: Automatically generate standardized branch names based on requirements
+- **Multiple Input Modes**: Generate from feature descriptions or code changes
+- **Naming Conventions**: Support various branch naming patterns and formats
+- **AI Integration**: Seamless integration with all supported AI providers
+- **Team Consistency**: Ensure consistent branch naming across development teams
+
+### 🧠 Advanced Code Analysis & Semantic Indexing
+
+- **Tree-sitter Integration**: Deep code parsing and analysis for 30+ programming languages
+- **Vector Database**: Qdrant-powered semantic code indexing for intelligent context understanding
+- **Semantic Block Extraction**: Identify and extract functions, classes, interfaces, and methods
+- **Intelligent Context Collection**: Automatic code change analysis and context building
+- **Multi-embedding Support**: OpenAI, Ollama, and OpenAI-compatible embedding services
+- **Incremental Indexing**: Smart updates only for changed files, improving performance
+
+### 🎨 Modern WebView Interface
+
+- **Interactive Chat Interface**: Real-time commit message generation through natural language conversation
+- **Dynamic Settings UI**: Auto-generated configuration interface based on schema definitions
+- **Theme Support**: Light/dark theme switching with VS Code integration
+- **Responsive Design**: Modern React-based UI with Tailwind CSS styling
+- **Real-time Preview**: Live commit message preview and editing capabilities
+- **Command Palette Integration**: Quick access to all features through VSCode command palette
+
+### ⚙️ Enterprise-Grade Configuration
+
+- **Dynamic Configuration**: Schema-driven settings with automatic validation
+- **Model Selection**: Quick AI provider and model switching with real-time updates
+- **Token Statistics**: Comprehensive usage tracking and cost monitoring
+- **Custom Prompts**: Personalized system prompts for different scenarios and use cases
+- **Workspace Integration**: Project-specific configuration management and inheritance
+- **Configuration Validation**: Automatic validation of settings and API keys
 
 ### 🌍 Multi-language Commit Message Generation
 

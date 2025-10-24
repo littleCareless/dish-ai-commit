@@ -70,7 +70,7 @@ export class DiffProcessor {
     let diffContent = chunk.content;
 
     if (config.enabled) {
-      const lines = chunk.content.split("\n");
+      const lines = chunk.content?.split("\n");
       const contextLines = config.contextLines;
       const importantLines = new Set<number>();
 
@@ -112,7 +112,7 @@ export class DiffProcessor {
     }
 
     const simplifiedDiff = DiffSimplifier.simplify(diffContent);
-    const language = chunk.filename.split(".").pop() || "";
+    const language = chunk.filename?.split(".").pop() || "";
 
     // Generate # ORIGINAL CODE: block
     const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;

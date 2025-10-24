@@ -22,14 +22,20 @@ export class ReviewCodeCommand extends BaseCommand {
    * @returns {Promise<void>}
    */
   async execute(resources?: vscode.SourceControlResourceState[]) {
-    if (!(await this.showConfirmAIProviderToS())) {
+    this.logger.info("Executing ReviewCodeCommand...");
+    if ((await this.showConfirmAIProviderToS()) === false) {
+      this.logger.warn("User did not confirm AI provider ToS.");
       return;
     }
     // 处理配置
     const configResult = await this.handleConfiguration();
     if (!configResult) {
+      this.logger.warn("Configuration is not valid.");
       return;
     }
+    this.logger.info(
+      `Configuration handled. Provider: ${configResult.provider}, Model: ${configResult.model}`
+    );
 
     try {
       await withProgress(getMessage("reviewing.code"), async (progress) => {
@@ -40,9 +46,11 @@ export class ReviewCodeCommand extends BaseCommand {
         // 检查是否有选中的文件
         const selectedFiles = SCMDetectorService.getSelectedFiles(resources);
         if (!selectedFiles || selectedFiles.length === 0) {
+          this.logger.warn("No files selected for review.");
           await notify.warn("no.changes.selected");
           return;
         }
+        this.logger.info(`Selected files for review: ${selectedFiles.join(", ")}`);
 
         progress.report({
           increment: 5,
@@ -51,11 +59,16 @@ export class ReviewCodeCommand extends BaseCommand {
         // 检测SCM提供程序
         const result = await this.detectSCMProvider(selectedFiles);
         if (!result) {
+          this.logger.warn("SCM provider not detected.");
           return;
         }
         const { scmProvider } = result;
+        this.logger.info(`SCM provider detected: ${scmProvider.type}`);
 
         const currentInput = await scmProvider.getCommitInput();
+        if (currentInput) {
+          this.logger.info("Custom instructions found in SCM input.");
+        }
 
         // 获取配置信息
         const { config, configuration } = this.getExtConfig();
@@ -68,6 +81,9 @@ export class ReviewCodeCommand extends BaseCommand {
         const { aiProvider, selectedModel } = await validateAndGetModel(
           provider,
           model
+        );
+        this.logger.info(
+          `Model validated. AI Provider: ${aiProvider.getId()}, Model: ${selectedModel?.id}`
         );
 
         // 获取所有选中文件的差异
@@ -86,7 +102,7 @@ export class ReviewCodeCommand extends BaseCommand {
             // Individual progress for each file diff is small, overall progress updated after Promise.all
             return { success: true };
           } catch (error) {
-            console.error(`Failed to get diff for ${filePath}:`, error);
+            this.logger.logError(error as Error, "获取文件差异失败");
             return { success: false };
           }
         });
@@ -95,9 +111,11 @@ export class ReviewCodeCommand extends BaseCommand {
         progress.report({ increment: 15 }); // Report progress after all diffs are collected
 
         if (diffs.size === 0) {
+          this.logger.warn("No diffs found for selected files.");
           await notify.warn(getMessage("no.changes.found"));
           return;
         }
+        this.logger.info(`Collected diffs for ${diffs.size} files.`);
 
         // 并行审查每个文件 - 70% 进度平均分配 (20 setup + 70 review = 90)
         const progressPerFile = 70 / diffs.size;
@@ -142,7 +160,7 @@ export class ReviewCodeCommand extends BaseCommand {
               await notify.warn(
                 formatMessage("review.file.failed", [path.basename(filePath)])
               );
-              console.error(`Failed to review ${filePath}:`, error);
+              this.logger.logError(error as Error, `评审文件失败: ${path.basename(filePath)}`);
               progress.report({
                 // Still report increment even if failed to keep progress accurate
                 increment: progressPerFile,
@@ -161,10 +179,14 @@ export class ReviewCodeCommand extends BaseCommand {
         });
 
         if (fileReviews.size === 0) {
+          this.logger.error("All file reviews failed.");
           await notify.error(getMessage("review.all.failed"));
           return;
         }
 
+        this.logger.info(
+          `Successfully reviewed ${fileReviews.size} files. Showing results.`
+        );
         this.showReviewResults(fileReviews);
 
         await notify.info(
@@ -177,7 +199,7 @@ export class ReviewCodeCommand extends BaseCommand {
         });
       });
     } catch (error) {
-      console.log("ReviewCodeCommand error", error);
+      this.logger.error("ReviewCodeCommand error");
       await this.handleError(error, "code.review.failed");
     }
   }

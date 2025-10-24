@@ -356,6 +356,12 @@ export const CONFIG_SCHEMA = {
         description:
           "Generate layered commit messages with global summary and per-file details / 生成分层提交信息，包含全局摘要和每个文件的详细描述",
       },
+      enableGlobalContext: { // ✅ 新增
+        type: "boolean",
+        default: true,
+        description:
+          "Extract global context to enhance file descriptions correlation (only effective when enableLayeredCommit is true) / 提取全局上下文以增强文件描述的关联性(仅在enableLayeredCommit为true时生效)",
+      },
     },
     // Generate commit message features
     commitMessage: {

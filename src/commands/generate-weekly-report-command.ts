@@ -11,9 +11,12 @@ export class GenerateWeeklyReportCommand extends BaseCommand {
    * 打开周报生成WebView面板
    */
   async execute(): Promise<void> {
-    if (!(await this.showConfirmAIProviderToS())) {
+    this.logger.info("Executing GenerateWeeklyReportCommand...");
+    if ((await this.showConfirmAIProviderToS()) === false) {
+      this.logger.warn("User did not confirm AI provider ToS.");
       return;
     }
+    this.logger.info("Showing Weekly Report Panel.");
     WeeklyReportPanel.createOrShow(this.context.extensionUri, this.context);
   }
 }

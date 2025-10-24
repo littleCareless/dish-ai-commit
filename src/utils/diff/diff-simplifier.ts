@@ -47,7 +47,7 @@ export class DiffSimplifier {
       return diff;
     }
 
-    const lines = diff.split("\n");
+    const lines = diff?.split("\n");
     let simplified: string[] = [];
 
     // 处理上下文行数限制

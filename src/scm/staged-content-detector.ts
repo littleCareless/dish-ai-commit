@@ -116,7 +116,7 @@ export class StagedContentDetector implements IStagedContentDetector {
 
       return stdout
         ?.trim()
-        .split("\n")
+        ?.split("\n")
         .filter((file) => file.length > 0)
         .map((file) => path.resolve(repositoryPath, file));
     } catch (error) {
@@ -154,9 +154,9 @@ export class StagedContentDetector implements IStagedContentDetector {
       if (diffStat?.trim()) {
         diffStat
           ?.trim()
-          .split("\n")
+          ?.split("\n")
           .forEach((line) => {
-            const parts = line.split("\t");
+            const parts = line?.split("\t");
             if (parts.length >= 2) {
               const add = parseInt(parts[0]) || 0;
               const del = parseInt(parts[1]) || 0;
@@ -197,6 +197,7 @@ export class StagedContentDetector implements IStagedContentDetector {
     await this.validateRepository(repositoryPath);
 
     const stagedFiles = await this.getStagedFiles(repositoryPath);
+    console.log("stagedFiles", stagedFiles);
     const hasStagedContent = stagedFiles.length > 0;
 
     // Determine recommended target based on configuration and detection result

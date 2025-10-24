@@ -3,7 +3,7 @@
  * This file is run before all tests to configure the testing environment
  */
 
-import { vi } from 'vitest';
+import { vi } from "vitest";
 
 // Mock VS Code API globally
 const mockVSCode = {
@@ -36,18 +36,18 @@ const mockVSCode = {
 };
 
 // Mock the vscode module
-vi.mock('vscode', () => mockVSCode);
+vi.mock("vscode", () => mockVSCode);
 
 // Mock child_process for command execution
-import { MockCommandExecutor } from './helpers/mock-command-executor';
+import { MockCommandExecutor } from "./helpers/mock-command-executor";
 
-vi.mock('child_process', () => ({
+vi.mock("child_process", () => ({
   exec: MockCommandExecutor.getExecMock(),
   spawn: vi.fn(),
 }));
 
 // Mock fs/promises for file system operations
-vi.mock('fs/promises', () => ({
+vi.mock("fs/promises", () => ({
   access: vi.fn(),
   readFile: vi.fn(),
   writeFile: vi.fn(),
@@ -58,14 +58,14 @@ vi.mock('fs/promises', () => ({
 }));
 
 // Mock path module
-vi.mock('path', async () => {
-  const actual = await vi.importActual('path');
+vi.mock("path", async () => {
+  const actual = await vi.importActual("path");
   return {
     ...actual,
-    join: vi.fn((...args: string[]) => args.join('/')),
-    resolve: vi.fn((...args: string[]) => args.join('/')),
-    dirname: vi.fn((path: string) => path.split('/').slice(0, -1).join('/')),
-    basename: vi.fn((path: string) => path.split('/').pop() || ''),
+    join: vi.fn((...args: string[]) => args.join("/")),
+    resolve: vi.fn((...args: string[]) => args.join("/")),
+    dirname: vi.fn((path: string) => path?.split("/").slice(0, -1).join("/")),
+    basename: vi.fn((path: string) => path?.split("/").pop() || ""),
   };
 });
 
@@ -89,6 +89,6 @@ afterEach(() => {
 });
 
 // Global error handler for unhandled promise rejections
-process.on('unhandledRejection', (reason, promise) => {
-  console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("Unhandled Rejection at:", promise, "reason:", reason);
 });

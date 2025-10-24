@@ -68,7 +68,7 @@ export class ContentTruncator {
    */
   private parseDiffHunks(diff: string): HunkInfo[] {
     return diff
-      .split(/^diff --git/m)
+      ?.split(/^diff --git/m)
       .filter(Boolean)
       .map((h) => `diff --git${h}`)
       .map((hunk) => ({
@@ -102,7 +102,7 @@ export class ContentTruncator {
     const firstHunk = hunks.shift()!;
     const lastHunk = hunks.pop();
     let middleHunks = hunks;
-    
+
     let currentTokens = firstHunk.tokens + (lastHunk?.tokens ?? 0);
     middleHunks.forEach((h) => (currentTokens += h.tokens));
 

@@ -89,7 +89,7 @@ export class ConfigGenerator {
 
     // Generate config key based on nesting level
     const configKey = config.key.includes(".")
-      ? `${config.key.split(".")[0]}: { ${config.key.split(".")[1]}: ${
+      ? `${config.key?.split(".")[0]}: { ${config.key?.split(".")[1]}: ${
           config.type
         }; }`
       : `${config.key}: ${config.type};`;
@@ -138,7 +138,7 @@ export class ConfigGenerator {
     content: string,
     config: ConfigDefinition
   ): string {
-    const parts = config.key.split(".");
+    const parts = config.key?.split(".");
 
     // Handle different nesting levels
     if (parts.length > 2) {

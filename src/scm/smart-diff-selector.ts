@@ -194,25 +194,14 @@ export class SmartDiffSelector implements ISmartDiffSelector {
     provider: ISCMProvider,
     files?: string[]
   ): Promise<string> {
-    // Temporarily set diffTarget to 'staged' for this call
-    const config = vscode.workspace.getConfiguration("dish-ai-commit");
-    const originalTarget = config.get("features.codeAnalysis.diffTarget");
-
-    try {
-      await config.update(
-        "features.codeAnalysis.diffTarget",
-        "staged",
-        vscode.ConfigurationTarget.Workspace
-      );
-      return (await provider.getDiff(files)) || "";
-    } finally {
-      // Restore original target
-      await config.update(
-        "features.codeAnalysis.diffTarget",
-        originalTarget,
-        vscode.ConfigurationTarget.Workspace
-      );
+    const targetFiles = files || (await this.getStagedFilesList(provider));
+    if (
+      "getDiff" in provider &&
+      typeof (provider as any).getDiff === "function"
+    ) {
+      return (await (provider as any).getDiff(targetFiles, "staged")) || "";
     }
+    return (await provider.getDiff(targetFiles)) || "";
   }
 
   /**
@@ -223,25 +212,14 @@ export class SmartDiffSelector implements ISmartDiffSelector {
     provider: ISCMProvider,
     files?: string[]
   ): Promise<string> {
-    // Temporarily set diffTarget to 'all' for this call
-    const config = vscode.workspace.getConfiguration("dish-ai-commit");
-    const originalTarget = config.get("features.codeAnalysis.diffTarget");
-
-    try {
-      await config.update(
-        "features.codeAnalysis.diffTarget",
-        "all",
-        vscode.ConfigurationTarget.Workspace
-      );
-      return (await provider.getDiff(files)) || "";
-    } finally {
-      // Restore original target
-      await config.update(
-        "features.codeAnalysis.diffTarget",
-        originalTarget,
-        vscode.ConfigurationTarget.Workspace
-      );
+    const targetFiles = files || (await this.getAllChangedFilesList(provider));
+    if (
+      "getDiff" in provider &&
+      typeof (provider as any).getDiff === "function"
+    ) {
+      return (await (provider as any).getDiff(targetFiles, "all")) || "";
     }
+    return (await provider.getDiff(targetFiles)) || "";
   }
 
   /**
@@ -252,8 +230,12 @@ export class SmartDiffSelector implements ISmartDiffSelector {
     provider: ISCMProvider,
     files?: string[]
   ): Promise<string[]> {
-    // This would typically call git diff --cached --name-only
-    // For now, return the files parameter or empty array
+    if (
+      "getStagedFiles" in provider &&
+      typeof provider.getStagedFiles === "function"
+    ) {
+      return (await provider.getStagedFiles(files)) || [];
+    }
     return files || [];
   }
 
@@ -265,8 +247,12 @@ export class SmartDiffSelector implements ISmartDiffSelector {
     provider: ISCMProvider,
     files?: string[]
   ): Promise<string[]> {
-    // This would typically call git diff --name-only (unstaged) + git diff --cached --name-only (staged)
-    // For now, return the files parameter or empty array
+    if (
+      "getAllChangedFiles" in provider &&
+      typeof provider.getAllChangedFiles === "function"
+    ) {
+      return (await provider.getAllChangedFiles(files)) || [];
+    }
     return files || [];
   }
 

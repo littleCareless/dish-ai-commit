@@ -9,6 +9,7 @@ import { getMessage, formatMessage } from "../utils/i18n";
 import { validateAndGetModel } from "../utils/ai/model-validation";
 import { AIProvider, AIModel, AIProviders } from "../ai/types";
 import { stateManager } from "../utils/state/state-manager";
+import { Logger } from "../utils/logger";
 
 /**
  * 基础命令类,提供通用的命令执行功能
@@ -16,6 +17,7 @@ import { stateManager } from "../utils/state/state-manager";
 export abstract class BaseCommand {
   /** VSCode扩展上下文 */
   protected context: vscode.ExtensionContext;
+  protected logger: Logger;
 
   /**
    * 创建命令实例
@@ -23,6 +25,7 @@ export abstract class BaseCommand {
    */
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
+    this.logger = Logger.getInstance("Dish AI Commit Gen");
   }
 
   /**
@@ -30,7 +33,7 @@ export abstract class BaseCommand {
    * @returns 配置是否有效
    */
   protected async validateConfig(): Promise<boolean> {
-    if (!(await ConfigurationManager.getInstance().validateConfiguration())) {
+    if ((await ConfigurationManager.getInstance().validateConfiguration()) === false) {
       await notify.error(getMessage("command.execution.failed"));
       return false;
     }
@@ -46,9 +49,13 @@ export abstract class BaseCommand {
     error: unknown,
     errorMessage: string
   ): Promise<void> {
-    console.error(errorMessage, error);
+    const message = `${errorMessage}: ${error instanceof Error ? error.message : String(error)}`;
     if (error instanceof Error) {
+      this.logger.logError(error, errorMessage);
       await notify.error(errorMessage, [error.message]);
+    } else {
+      this.logger.error(message);
+      await notify.error(errorMessage);
     }
   }
 
@@ -60,7 +67,7 @@ export abstract class BaseCommand {
     { provider: string; model: string } | undefined
   > {
     const config = ConfigurationManager.getInstance();
-    if (!(await config.validateConfiguration())) {
+    if ((await config.validateConfiguration()) === false) {
       return;
     }
 
