@@ -449,7 +449,7 @@ Alternatively, you can clone the repository and run the following command for lo
 
 ```bash
 $ git clone https://github.com/littleCareless/dish-ai-commit
-$ cd ai-commit
+$ cd dish-ai-commit
 $ npm install
 ```
 
