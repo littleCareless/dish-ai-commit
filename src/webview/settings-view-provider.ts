@@ -2,6 +2,8 @@ import * as vscode from "vscode";
 import { EmbeddingService } from "../core/indexing/embedding-service";
 import { SettingsViewHTMLProvider } from "./providers/settings-view-html-provider";
 import { SettingsViewMessageHandler } from "./handlers/settings-view-message-handler";
+import { stateManager } from "../utils/state/state-manager";
+import { WORKSPACE_CONFIG_PATHS } from "../config/workspace-config-schema";
 
 export class SettingsViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "dish-ai-commit.settingsView"; // 必须与 package.json 中的 id 匹配
@@ -39,12 +41,23 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.options = {
       enableScripts: true,
       localResourceRoots: [
-        vscode.Uri.joinPath(this._extensionUri, "webview-ui-dist/assets"),
+        vscode.Uri.joinPath(this._extensionUri, "webview-ui-dist"),
       ],
     };
 
+    const qdrantUrl = stateManager.getWorkspace<string>(
+      WORKSPACE_CONFIG_PATHS.experimental.codeIndex.qdrantUrl
+    );
+    const qdrantCollectionName = stateManager.getWorkspace<string>(
+      WORKSPACE_CONFIG_PATHS.experimental.codeIndex.qdrantCollectionName
+    );
+
     webviewView.webview.html = this._htmlContentProvider.getWebviewContent(
-      webviewView.webview
+      webviewView.webview,
+      {
+        qdrantUrl,
+        qdrantCollectionName,
+      }
     );
 
     webviewView.webview.onDidReceiveMessage(

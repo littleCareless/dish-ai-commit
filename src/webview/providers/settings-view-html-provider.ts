@@ -1,4 +1,4 @@
-import * as vscode from "vscode";
+import * as vscode from "vscode"
 
 export class SettingsViewHTMLProvider {
   private readonly _extensionUri: vscode.Uri;
@@ -17,7 +17,10 @@ export class SettingsViewHTMLProvider {
     return text;
   }
 
-  public getWebviewContent(webview: vscode.Webview): string {
+  public getWebviewContent(
+    webview: vscode.Webview,
+    initialData: { qdrantUrl?: string; qdrantCollectionName?: string }
+  ): string {
     const scriptUri = webview.asWebviewUri(
       vscode.Uri.joinPath(
         this._extensionUri,
@@ -117,12 +120,12 @@ export class SettingsViewHTMLProvider {
                     // 向 webview-ui 传递初始数据
                     window.initialData = {
                         viewType: 'settingsPage',
-                        vscodeTheme: getVSCodeTheme()
+                        vscodeTheme: getVSCodeTheme(),
+                        qdrantUrl: "${initialData.qdrantUrl || ""}",
+                        qdrantCollectionName: "${initialData.qdrantCollectionName || ""}"
                     };
                     
                     console.log('SettingsViewProvider: initialData set', window.initialData);
-                    window.qdrantUrl = window.initialData.qdrantUrl;
-                    window.qdrantCollectionName = window.initialData.qdrantCollectionName;
                 </script>
                 <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
             </body>

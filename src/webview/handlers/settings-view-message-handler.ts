@@ -394,30 +394,6 @@ export class SettingsViewMessageHandler {
         break;
       }
 
-      case "testConnection": {
-        try {
-          const { providerId, config } = message.data;
-          // TODO: Implement actual connection testing with AIProviderFactory
-          // For now, we'll simulate the test
-          const success = true; // This would be the actual test result
-          webview.postMessage({
-            command: "connectionTestResult",
-            data: { success, timestamp: new Date() },
-          });
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
-          webview.postMessage({
-            command: "connectionTestResult",
-            data: {
-              success: false,
-              error: errorMessage,
-              timestamp: new Date(),
-            },
-          });
-        }
-        break;
-      }
 
       case "getModels": {
         try {

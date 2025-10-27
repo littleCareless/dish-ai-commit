@@ -5,10 +5,10 @@ export class WeeklyReportViewProvider {
 
   public getWebviewContent(webview: vscode.Webview): string {
     const scriptUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.extensionUri, "webview-ui-dist", "index.js")
+      vscode.Uri.joinPath(this.extensionUri, "webview-ui-dist/assets", "index.js")
     );
     const styleUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(this.extensionUri, "webview-ui-dist", "index.css")
+      vscode.Uri.joinPath(this.extensionUri, "webview-ui-dist/assets", "index.css")
     );
 
     const nonce = this.getNonce();
