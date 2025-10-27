@@ -1,0 +1,754 @@
+{
+  "name": "dish-ai-commit",
+  "displayName": "Dish AI Commit Message Gen",
+  "description": "🤖 AI-Powered VSCode extension for generating standardized Git/SVN commit messages. ✨ Supports 20+ AI services: OpenAI, Ollama, VS Code AI, Zhipu AI, DashScope, Doubao AI, Gemini, Deepseek, Anthropic, Mistral, Azure OpenAI, VertexAI, LMStudio and more. 🌍 19 languages supported. 📊 Features: AI commit generation, code review, weekly reports, branch naming, PR summaries, token statistics.",
+  "version": "0.54.0",
+  "engines": {
+    "node": ">= 18.20.8",
+    "pnpm": ">= 10.0.0",
+    "vscode": "^1.90.0"
+  },
+  "publisher": "littleCareless",
+  "repository": "https://github.com/littleCareless/dish-ai-commit",
+  "icon": "images/logo.png",
+  "categories": [
+    "SCM Providers",
+    "Machine Learning",
+    "Snippets",
+    "Formatters",
+    "AI",
+    "Other"
+  ],
+  "keywords": [
+    "OpenAI",
+    "ChatGPT",
+    "Ollama",
+    "Vscode",
+    "GitEmoji",
+    "SvnEmoji",
+    "Git Commit",
+    "Svn Commit",
+    "Conventional Commits",
+    "Commitizen",
+    "Commit Message",
+    "Commit Message Generator",
+    "AI Commit",
+    "Auto Commit",
+    "SCM Providers",
+    "SCM",
+    "Dish Ai Commit",
+    "Zhipu AI",
+    "DashScope",
+    "Doubao AI",
+    "Gemini",
+    "Deepseek",
+    "siliconflow"
+  ],
+  "extensionDependencies": [
+    "vscode.git"
+  ],
+  "main": "./dist/extension.js",
+  "activationEvents": [
+    "onStartupFinished",
+    "onCommand:dish-ai-commit",
+    "onView:dish-ai-commit.settingsView"
+  ],
+  "contributes": {
+    "viewsContainers": {
+      "activitybar": [
+        {
+          "id": "dish-ai-commitActivityBar",
+          "title": "Dish Ai Commit Message",
+          "icon": "/images/menu-icon.svg"
+        }
+      ]
+    },
+    "views": {
+      "dish-ai-commitActivityBar": [
+        {
+          "id": "dish-ai-commit.settingsView",
+          "name": "Plugin Settings",
+          "type": "webview",
+          "contextualTitle": "Dish Ai Commit Message Settings",
+          "icon": "/images/menu-icon.svg"
+        }
+      ]
+    },
+    "commands": [
+      {
+        "command": "dish-ai-commit.generateCommitMessage",
+        "title": "%extension.contributes.commands.dish-ai-commit.generateCommitMessage.title%",
+        "category": "%extension.contributes.commands.dish-ai-commit.generateCommitMessage.category%",
+        "icon": {
+          "light": "images/icon.svg",
+          "dark": "images/icon.svg"
+        },
+        "description": "%extension.contributes.commands.dish-ai-commit.generateCommitMessage.description%"
+      },
+      {
+        "command": "dish-ai-commit.selectModel",
+        "title": "%extension.contributes.commands.dish-ai-commit.selectModel.title%",
+        "category": "%extension.contributes.commands.dish-ai-commit.selectModel.category%",
+        "icon": {
+          "light": "images/light/brain.svg",
+          "dark": "images/dark/brain.svg"
+        },
+        "description": "%extension.contributes.commands.dish-ai-commit.selectModel.description%"
+      },
+      {
+        "command": "dish-ai-commit.generateWeeklyReport",
+        "title": "%extension.contributes.commands.dish-ai-commit.generateWeeklyReport.title%",
+        "category": "%extension.contributes.commands.dish-ai-commit.generateWeeklyReport.category%",
+        "icon": {
+          "light": "images/light/chart-bar.svg",
+          "dark": "images/dark/chart-bar.svg"
+        },
+        "description": "%extension.contributes.commands.dish-ai-commit.generateWeeklyReport.description%"
+      },
+      {
+        "command": "dish-ai-commit.reviewCode",
+        "title": "%extension.contributes.commands.dish-ai-commit.reviewCode.title%",
+        "category": "%extension.contributes.commands.dish-ai-commit.reviewCode.category%",
+        "icon": {
+          "light": "images/light/clipboard-check.svg",
+          "dark": "images/dark/clipboard-check.svg"
+        },
+        "description": "%extension.contributes.commands.dish-ai-commit.reviewCode.description%"
+      },
+      {
+        "command": "dish-ai-commit.generateBranchName",
+        "title": "%extension.contributes.commands.dish-ai-commit.generateBranchName.title%",
+        "category": "%extension.contributes.commands.dish-ai-commit.generateBranchName.category%",
+        "icon": {
+          "light": "images/light/git-branch.svg",
+          "dark": "images/dark/git-branch.svg"
+        },
+        "description": "%extension.contributes.commands.dish-ai-commit.generateBranchName.description%"
+      },
+      {
+        "command": "dish-ai-commit.generatePRSummary",
+        "title": "%extension.contributes.commands.dish-ai-commit.generatePRSummary.title%",
+        "category": "%extension.contributes.commands.dish-ai-commit.generatePRSummary.category%",
+        "icon": {
+          "light": "images/light/git-pull-request.svg",
+          "dark": "images/dark/git-pull-request.svg"
+        },
+        "description": "%extension.contributes.commands.dish-ai-commit.generatePRSummary.description%"
+      },
+      {
+        "command": "dish-ai-commit.updateModelInfo",
+        "title": "%extension.contributes.commands.dish-ai-commit.updateModelInfo.title%",
+        "category": "%extension.contributes.commands.dish-ai-commit.updateModelInfo.category%",
+        "icon": {
+          "light": "images/light/brain.svg",
+          "dark": "images/dark/brain.svg"
+        },
+        "description": "%extension.contributes.commands.dish-ai-commit.updateModelInfo.description%"
+      },
+      {
+        "command": "dish-ai-commit.showTokenStats",
+        "title": "%extension.contributes.commands.dish-ai-commit.showTokenStats.title%",
+        "category": "%extension.contributes.commands.dish-ai-commit.showTokenStats.category%",
+        "description": "%extension.contributes.commands.dish-ai-commit.showTokenStats.description%"
+      },
+      {
+        "command": "dish-ai-commit.resetTokenStats",
+        "title": "%extension.contributes.commands.dish-ai-commit.resetTokenStats.title%",
+        "category": "%extension.contributes.commands.dish-ai-commit.resetTokenStats.category%",
+        "description": "%extension.contributes.commands.dish-ai-commit.resetTokenStats.description%"
+      }
+    ],
+    "configuration": {
+      "title": "%extension.contributes.configuration.title%",
+      "properties": {
+        "dish-ai-commit.base.language": {
+          "type": "string",
+          "default": "Simplified Chinese",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.base.language.description%",
+          "enum": [
+            "Simplified Chinese",
+            "Traditional Chinese",
+            "Japanese",
+            "Korean",
+            "Czech",
+            "German",
+            "French",
+            "Italian",
+            "Dutch",
+            "Portuguese",
+            "Vietnamese",
+            "English",
+            "Spanish",
+            "Swedish",
+            "Russian",
+            "Bahasa",
+            "Polish",
+            "Turkish",
+            "Thai"
+          ],
+          "enumDescriptions": "%extension.contributes.configuration.properties.dish-ai-commit.base.language.enumDescriptions%"
+        },
+        "dish-ai-commit.base.provider": {
+          "type": "string",
+          "default": "OpenAI",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.base.provider.description%",
+          "enum": [
+            "OpenAI",
+            "Ollama",
+            "VS Code Provided",
+            "Zhipu",
+            "DashScope",
+            "Doubao",
+            "Gemini",
+            "Deepseek",
+            "Siliconflow",
+            "OpenRouter",
+            "PremAI",
+            "Together",
+            "Anthropic",
+            "Mistral",
+            "Baidu Qianfan",
+            "Azure OpenAI",
+            "Cloudflare",
+            "GoogleAI",
+            "VertexAI",
+            "LMStudio"
+          ]
+        },
+        "dish-ai-commit.base.model": {
+          "type": "string",
+          "default": "gpt-3.5-turbo",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.base.model.description%",
+          "scope": "machine"
+        },
+        "dish-ai-commit.providers.openai.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.openai.apiKey.description%"
+        },
+        "dish-ai-commit.providers.openai.baseUrl": {
+          "type": "string",
+          "default": "https://api.openai.com/v1",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.openai.baseUrl.description%"
+        },
+        "dish-ai-commit.providers.zhipu.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.zhipu.apiKey.description%"
+        },
+        "dish-ai-commit.providers.dashscope.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.dashscope.apiKey.description%"
+        },
+        "dish-ai-commit.providers.doubao.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.doubao.apiKey.description%"
+        },
+        "dish-ai-commit.providers.ollama.baseUrl": {
+          "type": "string",
+          "default": "http://localhost:11434",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.ollama.baseUrl.description%"
+        },
+        "dish-ai-commit.providers.gemini.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.gemini.apiKey.description%"
+        },
+        "dish-ai-commit.providers.baiduQianfan.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.baiduQianfan.apiKey.description%"
+        },
+        "dish-ai-commit.providers.baiduQianfan.secretKey": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.baiduQianfan.secretKey.description%"
+        },
+        "dish-ai-commit.providers.deepseek.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.deepseek.apiKey.description%"
+        },
+        "dish-ai-commit.providers.siliconflow.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.siliconflow.apiKey.description%"
+        },
+        "dish-ai-commit.providers.openrouter.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.openrouter.apiKey.description%"
+        },
+        "dish-ai-commit.providers.perplexity.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.perplexity.apiKey.description%"
+        },
+        "dish-ai-commit.providers.premai.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.premai.apiKey.description%"
+        },
+        "dish-ai-commit.providers.premai.baseUrl": {
+          "type": "string",
+          "default": "https://api.premai.com/",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.premai.baseUrl.description%"
+        },
+        "dish-ai-commit.providers.together.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.together.apiKey.description%"
+        },
+        "dish-ai-commit.providers.together.baseUrl": {
+          "type": "string",
+          "default": "https://api.together.xyz/",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.together.baseUrl.description%"
+        },
+        "dish-ai-commit.providers.xai.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.xai.apiKey.description%"
+        },
+        "dish-ai-commit.providers.anthropic.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.anthropic.apiKey.description%"
+        },
+        "dish-ai-commit.providers.mistral.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.mistral.apiKey.description%"
+        },
+        "dish-ai-commit.providers.azureOpenai.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.azureOpenai.apiKey.description%"
+        },
+        "dish-ai-commit.providers.azureOpenai.endpoint": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.azureOpenai.endpoint.description%"
+        },
+        "dish-ai-commit.providers.azureOpenai.apiVersion": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.azureOpenai.apiVersion.description%"
+        },
+        "dish-ai-commit.providers.azureOpenai.orgId": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.azureOpenai.orgId.description%"
+        },
+        "dish-ai-commit.providers.cloudflare.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.cloudflare.apiKey.description%"
+        },
+        "dish-ai-commit.providers.cloudflare.accountId": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.cloudflare.accountId.description%"
+        },
+        "dish-ai-commit.providers.vertexai.projectId": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.vertexai.projectId.description%"
+        },
+        "dish-ai-commit.providers.vertexai.location": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.vertexai.location.description%"
+        },
+        "dish-ai-commit.providers.vertexai.apiEndpoint": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.vertexai.apiEndpoint.description%"
+        },
+        "dish-ai-commit.providers.vertexai.googleAuthOptions": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.vertexai.googleAuthOptions.description%"
+        },
+        "dish-ai-commit.providers.groq.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.groq.apiKey.description%"
+        },
+        "dish-ai-commit.providers.lmstudio.baseUrl": {
+          "type": "string",
+          "default": "http://localhost:1234/v1",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.lmstudio.baseUrl.description%"
+        },
+        "dish-ai-commit.features.suppressNonCriticalWarnings": {
+          "type": "boolean",
+          "default": true,
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.suppressNonCriticalWarnings.description%"
+        },
+        "dish-ai-commit.features.codeAnalysis.diffTarget": {
+          "type": "string",
+          "default": "auto",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.codeAnalysis.diffTarget.description%",
+          "enum": [
+            "staged",
+            "all",
+            "auto"
+          ]
+        },
+        "dish-ai-commit.features.codeAnalysis.autoDetectStaged": {
+          "type": "boolean",
+          "default": true,
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.codeAnalysis.autoDetectStaged.description%"
+        },
+        "dish-ai-commit.features.codeAnalysis.fallbackToAll": {
+          "type": "boolean",
+          "default": true,
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.codeAnalysis.fallbackToAll.description%"
+        },
+        "dish-ai-commit.features.codeAnalysis.simplifyDiff": {
+          "type": "boolean",
+          "default": false,
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.codeAnalysis.simplifyDiff.description%"
+        },
+        "dish-ai-commit.features.commitFormat.enableEmoji": {
+          "type": "boolean",
+          "default": true,
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitFormat.enableEmoji.description%"
+        },
+        "dish-ai-commit.features.commitFormat.enableMergeCommit": {
+          "type": "boolean",
+          "default": false,
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitFormat.enableMergeCommit.description%"
+        },
+        "dish-ai-commit.features.commitFormat.enableBody": {
+          "type": "boolean",
+          "default": true,
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitFormat.enableBody.description%"
+        },
+        "dish-ai-commit.features.commitFormat.enableLayeredCommit": {
+          "type": "boolean",
+          "default": false,
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitFormat.enableLayeredCommit.description%"
+        },
+        "dish-ai-commit.features.commitFormat.enableGlobalContext": {
+          "type": "boolean",
+          "default": true,
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitFormat.enableGlobalContext.description%"
+        },
+        "dish-ai-commit.features.commitMessage.systemPrompt": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitMessage.systemPrompt.description%"
+        },
+        "dish-ai-commit.features.commitMessage.useRecentCommitsAsReference": {
+          "type": "boolean",
+          "default": false,
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitMessage.useRecentCommitsAsReference.description%"
+        },
+        "dish-ai-commit.features.weeklyReport.systemPrompt": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.weeklyReport.systemPrompt.description%"
+        },
+        "dish-ai-commit.features.codeReview.systemPrompt": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.codeReview.systemPrompt.description%"
+        },
+        "dish-ai-commit.features.branchName.systemPrompt": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.branchName.systemPrompt.description%"
+        },
+        "dish-ai-commit.features.prSummary.baseBranch": {
+          "type": "string",
+          "default": "origin/main",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.prSummary.baseBranch.description%"
+        },
+        "dish-ai-commit.features.prSummary.headBranch": {
+          "type": "string",
+          "default": "HEAD",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.prSummary.headBranch.description%"
+        },
+        "dish-ai-commit.features.prSummary.systemPrompt": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.prSummary.systemPrompt.description%"
+        },
+        "dish-ai-commit.features.prSummary.commitLogLimit": {
+          "type": "number",
+          "default": 20,
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.prSummary.commitLogLimit.description%"
+        }
+      }
+    },
+    "menus": {
+      "scm/title": [
+        {
+          "command": "dish-ai-commit.generateCommitMessage",
+          "when": "scmProvider =~ /(git|svn)/",
+          "group": "navigation@-3"
+        },
+        {
+          "command": "dish-ai-commit.generateCommitMessage",
+          "when": "scmProvider =~ /(git|svn)/",
+          "group": "2_z_dish@1"
+        },
+        {
+          "command": "dish-ai-commit.generateWeeklyReport",
+          "when": "scmProvider =~ /(git|svn)/",
+          "group": "2_z_dish@2"
+        },
+        {
+          "command": "dish-ai-commit.reviewCode",
+          "when": "scmProvider =~ /(git|svn)/",
+          "group": "2_z_dish@3"
+        },
+        {
+          "command": "dish-ai-commit.generateBranchName",
+          "when": "scmProvider == git",
+          "group": "2_z_dish@4"
+        },
+        {
+          "command": "dish-ai-commit.generatePRSummary",
+          "when": "scmProvider == git",
+          "group": "2_z_dish@6"
+        },
+        {
+          "command": "dish-ai-commit.selectModel",
+          "when": "scmProvider =~ /(git|svn)/",
+          "group": "2_z_dish@5"
+        },
+        {
+          "command": "dish-ai-commit.updateModelInfo",
+          "when": "scmProvider =~ /(git|svn)/",
+          "group": "2_z_dish@7"
+        }
+      ],
+      "scm/resourceState/context": [
+        {
+          "command": "dish-ai-commit.generateCommitMessage",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "2_z_dish@1"
+        },
+        {
+          "command": "dish-ai-commit.reviewCode",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "2_z_dish@2"
+        },
+        {
+          "command": "dish-ai-commit.generateWeeklyReport",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "2_z_dish@3"
+        },
+        {
+          "command": "dish-ai-commit.generateBranchName",
+          "when": "config.git.enabled && scmProvider == git && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "2_z_dish@4"
+        },
+        {
+          "command": "dish-ai-commit.generatePRSummary",
+          "when": "config.git.enabled && scmProvider == git && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "2_z_dish@6"
+        },
+        {
+          "command": "dish-ai-commit.selectModel",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "2_z_dish@5"
+        },
+        {
+          "command": "dish-ai-commit.updateModelInfo",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "2_z_dish@7"
+        }
+      ],
+      "scm/resourceFolder/context": [
+        {
+          "command": "dish-ai-commit.generateCommitMessage",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "inline"
+        },
+        {
+          "command": "dish-ai-commit.reviewCode",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "inline"
+        },
+        {
+          "command": "dish-ai-commit.generateWeeklyReport",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "inline"
+        },
+        {
+          "command": "dish-ai-commit.generateBranchName",
+          "when": "config.git.enabled && scmProvider == git && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "inline"
+        },
+        {
+          "command": "dish-ai-commit.generatePRSummary",
+          "when": "config.git.enabled && scmProvider == git && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "inline"
+        },
+        {
+          "command": "dish-ai-commit.selectModel",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "inline"
+        },
+        {
+          "command": "dish-ai-commit.updateModelInfo",
+          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
+          "group": "inline"
+        }
+      ],
+      "commandPalette": [
+        {
+          "command": "dish-ai-commit.selectModel"
+        },
+        {
+          "command": "dish-ai-commit.generateWeeklyReport"
+        },
+        {
+          "command": "dish-ai-commit.generateCommitMessage"
+        },
+        {
+          "command": "dish-ai-commit.generateBranchName"
+        },
+        {
+          "command": "dish-ai-commit.generatePRSummary"
+        },
+        {
+          "command": "dish-ai-commit.reviewCode"
+        },
+        {
+          "command": "dish-ai-commit.updateModelInfo"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "build": "node esbuild.mjs",
+    "compile": "tsc -p ./",
+    "compile:esbuild": "npm run check-types && node esbuild.mjs",
+    "watch:esbuild-tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "watch:bundle": "node esbuild.mjs --watch",
+    "lint": "eslint .",
+    "check-types": "tsc --noEmit",
+    "check-types:staged": "tsc-files --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
+    "coverage:check": "node scripts/check-coverage-thresholds.js",
+    "coverage:detailed": "node scripts/check-coverage-thresholds.js --detailed",
+    "quality-gate": "npm run test:coverage && npm run coverage:check",
+    "format": "prettier --write .",
+    "clean": "rimraf out dist",
+    "package": "vsce package",
+    "vsix": "vsce package",
+    "publish": "vsce publish && npx ovsx publish -p $OVSX_PAT",
+    "publish:pre": "vsce publish --pre-release && npx ovsx publish --pre-release -p $OVSX_PAT",
+    "vscode:prepublish": "npm run vscode:prepublish:esbuild",
+    "vscode:prepublish:esbuild": "npm run compile:esbuild",
+    "prepare": "husky",
+    "commit": "git add . && git-cz",
+    "release": "standard-version --preset gitmoji-config -i CHANGELOG.zh-CN.md",
+    "changelog": "conventional-changelog -i CHANGELOG.md -s -r 0",
+    "update-config": "ts-node ./scripts/update-config.ts"
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.0.0",
+    "@commitlint/config-conventional": "^20.0.0",
+    "@commitlint/types": "^20.0.0",
+    "@stylistic/eslint-plugin": "^5.4.0",
+    "@types/jest": "^30.0.0",
+    "@types/mocha": "^10.0.10",
+    "@types/node": "~24.6.0",
+    "@types/uuid": "^11.0.0",
+    "@types/vscode": "^1.90.0",
+    "@typescript-eslint/eslint-plugin": "^8.45.0",
+    "@typescript-eslint/parser": "^8.45.0",
+    "@typescript/native-preview": "7.0.0-dev.20250929.1",
+    "@vitest/coverage-v8": "3.2.4",
+    "@vscode/test-cli": "^0.0.11",
+    "@vscode/test-electron": "^2.5.2",
+    "@vscode/vsce": "~3.6.2",
+    "c8": "^10.1.3",
+    "commitizen": "^4.3.1",
+    "commitlint-config-gitmoji": "^2.3.1",
+    "conventional-changelog-gitmoji-config": "^1.5.2",
+    "cz-conventional-changelog": "^3.3.0",
+    "cz-customizable": "^7.5.1",
+    "esbuild": "^0.25.10",
+    "eslint": "^9.36.0",
+    "husky": "^9.1.7",
+    "jest": "^30.2.0",
+    "lint-staged": "^16.2.3",
+    "npm-run-all": "^4.1.5",
+    "standard-version": "^9.5.0",
+    "ts-jest": "^29.4.4",
+    "ts-node": "^10.9.2",
+    "tsc-files": "^1.1.4",
+    "typescript": "^5.9.2",
+    "vite": "^7.1.7",
+    "vite-tsconfig-paths": "^5.1.4",
+    "vitest": "^3.2.4"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.65.0",
+    "@baiducloud/qianfan": "^0.2.3",
+    "@google-cloud/aiplatform": "^5.7.0",
+    "@google-cloud/vertexai": "^1.10.0",
+    "@google/genai": "^1.21.0",
+    "@mistralai/mistralai": "^1.10.0",
+    "@qdrant/js-client-rest": "^1.15.1",
+    "@types/node-notifier": "^8.0.5",
+    "groq-sdk": "^0.33.0",
+    "inversify": "^7.10.1",
+    "node-notifier": "^10.0.1",
+    "ollama": "^0.6.0",
+    "openai": "^5.23.1",
+    "tiktoken": "^1.0.22",
+    "tree-sitter-wasms": "^0.1.12",
+    "uuid": "^13.0.0",
+    "web-tree-sitter": "^0.22.6"
+  },
+  "overrides": {
+    "glob": "10.3.10",
+    "brace-expansion": "2.0.1"
+  },
+  "bundleDependencies": [
+    "inversify",
+    "ollama",
+    "openai"
+  ],
+  "license": "MIT",
+  "config": {
+    "commitizen": {
+      "path": "node_modules/cz-customizable"
+    }
+  },
+  "lint-staged": {
+    "src/**/*.ts": [
+      "npm run lint",
+      "npm run check-types:staged",
+      "npm run compile:esbuild"
+    ]
+  },
+  "commitlint": {
+    "extends": [
+      "gitmoji"
+    ],
+    "rules": {
+      "header-max-length": [
+        2,
+        "always",
+        108
+      ],
+      "type-empty": [
+        2,
+        "never"
+      ]
+    }
+  },
+  "packageManager": "pnpm@10.17.1"
+}
