@@ -1,31 +1,61 @@
-import * as React from 'react';
-import * as PopoverPrimitive from '@radix-ui/react-popover';
+import React from "react";
+import "@vscode/webview-ui-toolkit/dist/toolkit";
 
-import { cn } from '@/lib/utils';
+interface PopoverProps extends React.HTMLAttributes<HTMLElement> {
+  children: React.ReactNode;
+  open?: boolean;
+  onOpenChange?: (open: boolean) => void;
+}
 
-const Popover = PopoverPrimitive.Root;
+interface PopoverTriggerProps extends React.HTMLAttributes<HTMLElement> {
+  children: React.ReactNode;
+  asChild?: boolean;
+}
 
-const PopoverTrigger = PopoverPrimitive.Trigger;
+interface PopoverContentProps extends React.HTMLAttributes<HTMLElement> {
+  children: React.ReactNode;
+  align?: 'start' | 'center' | 'end';
+  sideOffset?: number;
+}
 
-const PopoverAnchor = PopoverPrimitive.Anchor;
+const Popover: React.FC<PopoverProps> = ({ children, open, onOpenChange, ...props }) => {
+  return (
+    <div className="popover" {...props}>
+      {children}
+    </div>
+  );
+};
 
-const PopoverContent = React.forwardRef<
-  React.ElementRef<typeof PopoverPrimitive.Content>,
-  React.ComponentPropsWithoutRef<typeof PopoverPrimitive.Content>
->(({ className, align = 'center', sideOffset = 4, ...props }, ref) => (
-  <PopoverPrimitive.Portal>
-    <PopoverPrimitive.Content
-      ref={ref}
-      align={align}
-      sideOffset={sideOffset}
-      className={cn(
-        'z-50 w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-md outline-hidden data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
-        className
-      )}
+const PopoverTrigger: React.FC<PopoverTriggerProps> = ({ 
+  children, 
+  asChild = false,
+  ...props 
+}) => {
+  if (asChild) {
+    return <>{children}</>;
+  }
+
+  return (
+    <button {...props}>
+      {children}
+    </button>
+  );
+};
+
+const PopoverContent: React.FC<PopoverContentProps> = ({ 
+  children, 
+  align = "center",
+  sideOffset = 4,
+  ...props 
+}) => {
+  return (
+    <div 
+      className="z-50 w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-md"
       {...props}
-    />
-  </PopoverPrimitive.Portal>
-));
-PopoverContent.displayName = PopoverPrimitive.Content.displayName;
+    >
+      {children}
+    </div>
+  );
+};
 
-export { Popover, PopoverTrigger, PopoverContent, PopoverAnchor };
+export { Popover, PopoverTrigger, PopoverContent };

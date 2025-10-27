@@ -1,24 +1,47 @@
-import * as React from 'react';
+import React from "react";
+import { VSCodeTextArea } from "@vscode/webview-ui-toolkit/react";
 
-import { cn } from '@/lib/utils';
+interface TextareaProps {
+  id?: string;
+  value?: string;
+  placeholder?: string;
+  disabled?: boolean;
+  readonly?: boolean;
+  rows?: number;
+  onChange?: (event: CustomEvent) => void;
+  onKeyDown?: (event: React.KeyboardEvent) => void;
+  className?: string;
+  ref?: React.Ref<HTMLTextAreaElement>;
+}
 
-export interface TextareaProps
-  extends React.TextareaHTMLAttributes<HTMLTextAreaElement> {}
-
-const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
-  ({ className, ...props }, ref) => {
-    return (
-      <textarea
-        className={cn(
-          'flex min-h-[60px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50',
-          className
-        )}
-        ref={ref}
-        {...props}
-      />
-    );
-  }
-);
-Textarea.displayName = 'Textarea';
+const Textarea: React.FC<TextareaProps> = ({ 
+  id,
+  value,
+  placeholder,
+  disabled = false,
+  readonly = false,
+  rows = 4,
+  onChange,
+  onKeyDown,
+  className,
+  ref,
+  ...props 
+}) => {
+  return (
+    <VSCodeTextArea
+      id={id}
+      value={value}
+      placeholder={placeholder}
+      disabled={disabled}
+      readonly={readonly}
+      rows={rows}
+      onInput={onChange}
+      onKeyDown={onKeyDown}
+      className={className}
+      ref={ref}
+      {...props}
+    />
+  );
+};
 
 export { Textarea };

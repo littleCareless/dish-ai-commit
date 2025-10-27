@@ -51,8 +51,8 @@ const CommitTextArea: React.FC<CommitTextAreaProps> = ({
   const suggestionTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // 处理输入变化
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newValue = e.target.value;
+  const handleInputChange = (e: CustomEvent) => {
+    const newValue = (e.target as HTMLTextAreaElement)?.value || '';
     onChange(newValue);
 
     // 检查是否是命令输入

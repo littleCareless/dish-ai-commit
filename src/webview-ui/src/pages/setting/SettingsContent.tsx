@@ -81,7 +81,7 @@ const SettingsContent: React.FC<SettingsContentProps> = ({
       : "";
     if (service) {
       setConnectionStatus((prev) => ({ ...prev, [key]: "testing" }));
-      vscode.postMessage({
+      vscode?.postMessage({
         command: "testConnection",
         data: { service, url: value, key },
       });

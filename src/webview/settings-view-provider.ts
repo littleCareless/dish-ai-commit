@@ -34,13 +34,12 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
     context: vscode.WebviewViewResolveContext,
     _token: vscode.CancellationToken
   ) {
-
     this._view = webviewView;
 
     webviewView.webview.options = {
       enableScripts: true,
       localResourceRoots: [
-        vscode.Uri.joinPath(this._extensionUri, "webview-ui-dist"),
+        vscode.Uri.joinPath(this._extensionUri, "webview-ui-dist/assets"),
       ],
     };
 

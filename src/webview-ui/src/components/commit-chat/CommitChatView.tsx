@@ -108,10 +108,10 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
   };
 
   // 处理输入变化
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+  const handleInputChange = (e: CustomEvent) => {
     setState(prev => ({
       ...prev,
-      inputValue: e.target.value,
+      inputValue: (e.target as HTMLTextAreaElement)?.value || '',
     }));
   };
 

@@ -2,19 +2,54 @@
   "version": "0.2.0",
   "configurations": [
     {
+      "name": "Run Extension",
       "type": "extensionHost",
       "request": "launch",
-      "name": "启动扩展",
-      "outFiles": ["${workspaceFolder}/dist/**/*.js"],
-      "args": [
-        // "--disable-extensions",
-        "--enable-extension=littleCareless.svn-scm-ai",
-        "--enable-extension=vscode.git",
-        "--enable-extension=GitHub.copilot",
-        "--enable-extension=GitHub.copilot-chat",
-        "--extensionDevelopmentPath=${workspaceFolder}"
+      "runtimeExecutable": "${execPath}",
+      "args": ["--extensionDevelopmentPath=${workspaceFolder}/src"],
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/src/dist/**/*.js"],
+      "preLaunchTask": "${defaultBuildTask}",
+      "env": {
+        "NODE_ENV": "development",
+        "VSCODE_DEBUG_MODE": "true"
+      },
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
       ],
-      "preLaunchTask": "${defaultBuildTask}"
+      "presentation": {
+        "hidden": false,
+        "group": "tasks",
+        "order": 1
+      }
+    },
+    {
+      "name": "Run Extension (Debug Mode)",
+      "type": "extensionHost",
+      "request": "launch",
+      "runtimeExecutable": "${execPath}",
+      "args": [
+        "--extensionDevelopmentPath=${workspaceFolder}/src",
+        "--disable-extensions",
+        "--enable-extension=vscode.git"
+      ],
+      "sourceMaps": true,
+      "outFiles": ["${workspaceFolder}/src/dist/**/*.js"],
+      "preLaunchTask": "${defaultBuildTask}",
+      "env": {
+        "NODE_ENV": "development",
+        "VSCODE_DEBUG_MODE": "true"
+      },
+      "resolveSourceMapLocations": [
+        "${workspaceFolder}/**",
+        "!**/node_modules/**"
+      ],
+      "presentation": {
+        "hidden": false,
+        "group": "tasks",
+        "order": 2
+      }
     }
   ]
 }

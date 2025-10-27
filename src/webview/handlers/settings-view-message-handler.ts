@@ -14,9 +14,12 @@ import {
 import { CONFIG_SCHEMA } from "../../config/config-schema";
 import { isConfigValue } from "../../config/utils/config-validation";
 import { notify } from "../../utils/notification/notification-manager";
+import { ProfileManagerService } from "../../services/profile-manager-service";
+import { Profile, ProviderConfig } from "../../types/settings";
 
 export class SettingsViewMessageHandler {
   private readonly _extensionId: string;
+  private _profileManager: ProfileManagerService;
 
   constructor(
     extensionId: string,
@@ -24,6 +27,7 @@ export class SettingsViewMessageHandler {
     private readonly _extensionContext: vscode.ExtensionContext // Receive // extensionContext here
   ) {
     this._extensionId = extensionId;
+    this._profileManager = ProfileManagerService.getInstance(_extensionContext);
   }
 
   public async handleMessage(
@@ -269,6 +273,205 @@ export class SettingsViewMessageHandler {
           webview.postMessage({
             command: "getModelsForProviderError",
             data: { modelSettingKey, error: errorMessage },
+          });
+        }
+        break;
+      }
+
+      // New Profile Management Commands
+      case "loadProfiles": {
+        try {
+          const profiles = await this._profileManager.getAllProfiles();
+          const activeProfileId =
+            await this._profileManager.getActiveProfileId();
+          webview.postMessage({
+            command: "profilesLoaded",
+            data: { profiles, activeProfileId },
+          });
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "error",
+            data: { message: `Failed to load profiles: ${errorMessage}` },
+          });
+        }
+        break;
+      }
+
+      case "saveProfile": {
+        try {
+          const { profile } = message.data;
+          await this._profileManager.saveProfile(profile);
+          webview.postMessage({
+            command: "profileSaved",
+            data: { success: true },
+          });
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "profileSaved",
+            data: { success: false, error: errorMessage },
+          });
+        }
+        break;
+      }
+
+      case "deleteProfile": {
+        try {
+          const { profileId } = message.data;
+          await this._profileManager.deleteProfile(profileId);
+          webview.postMessage({
+            command: "profileDeleted",
+            data: { success: true },
+          });
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "profileDeleted",
+            data: { success: false, error: errorMessage },
+          });
+        }
+        break;
+      }
+
+      case "setActiveProfile": {
+        try {
+          const { profileId } = message.data;
+          await this._profileManager.setActiveProfile(profileId);
+          webview.postMessage({
+            command: "activeProfileChanged",
+            data: { profileId },
+          });
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "error",
+            data: { message: `Failed to set active profile: ${errorMessage}` },
+          });
+        }
+        break;
+      }
+
+      case "exportProfile": {
+        try {
+          const { profileId } = message.data;
+          const jsonData = await this._profileManager.exportProfile(profileId);
+          webview.postMessage({
+            command: "profileExported",
+            data: { json: jsonData },
+          });
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "error",
+            data: { message: `Failed to export profile: ${errorMessage}` },
+          });
+        }
+        break;
+      }
+
+      case "importProfile": {
+        try {
+          const { jsonData } = message.data;
+          const profile = await this._profileManager.importProfile(jsonData);
+          webview.postMessage({
+            command: "profileImported",
+            data: { profile, success: true },
+          });
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "profileImported",
+            data: { success: false, error: errorMessage },
+          });
+        }
+        break;
+      }
+
+      case "testConnection": {
+        try {
+          const { providerId, config } = message.data;
+          // TODO: Implement actual connection testing with AIProviderFactory
+          // For now, we'll simulate the test
+          const success = true; // This would be the actual test result
+          webview.postMessage({
+            command: "connectionTestResult",
+            data: { success, timestamp: new Date() },
+          });
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "connectionTestResult",
+            data: {
+              success: false,
+              error: errorMessage,
+              timestamp: new Date(),
+            },
+          });
+        }
+        break;
+      }
+
+      case "getModels": {
+        try {
+          const { providerId } = message.data;
+          // TODO: Implement actual model loading with AIProviderFactory
+          // For now, we'll return an empty list
+          const models = [];
+          webview.postMessage({
+            command: "modelsLoaded",
+            data: { modes: [] },
+          });
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "error",
+            data: { message: `Failed to load models: ${errorMessage}` },
+          });
+        }
+        break;
+      }
+
+      case "migrateSettings": {
+        try {
+          const migratedProfile =
+            await this._profileManager.migrateFromPackageJson();
+          webview.postMessage({
+            command: "settingsMigrated",
+            data: { success: true, migratedProfile },
+          });
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "settingsMigrated",
+            data: { success: false, error: errorMessage },
+          });
+        }
+        break;
+      }
+
+      case "resetToDefaults": {
+        try {
+          await this._profileManager.resetToDefaults();
+          webview.postMessage({
+            command: "defaultsReset",
+            data: { success: true },
+          });
+        } catch (error) {
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "defaultsReset",
+            data: { success: false, error: errorMessage },
           });
         }
         break;
