@@ -10,7 +10,7 @@ vsc-extension-quickstart.md
 **/*.ts
 **/.vscode-test.*
 
-node_modules
+**/node_modules
 
 # 额外排除的文件和目录
 .github/**
@@ -25,6 +25,12 @@ README.zh-CN.md
 README.cursor.md
 
 out/
+webview-ui/
+openspec/
+.roo/
+.cursor/
+.claude/
+
 
 # 保留 changelog.md 和 readme.md 作为主要文档
 images/demo.gif
