@@ -1,4 +1,4 @@
-import { ChatMessage } from '@/components/commit-chat/CommitChatView';
+import { ChatMessage } from '../../types/messages';
 import { CommandParser, CommandContext, CommandResult } from './command-parser';
 import { SuggestionEngine, UserPreference, ProjectContext } from './suggestion-engine';
 
