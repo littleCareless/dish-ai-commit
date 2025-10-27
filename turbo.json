@@ -1,0 +1,61 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "globalDependencies": ["**/.env.*local"],
+  "tasks": {
+    "build": {
+      "dependsOn": ["^build"],
+      "outputs": ["dist/**", "out/**", "webview-ui-dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
+    },
+    "watch": {
+      "cache": false,
+      "persistent": true
+    },
+    "watch:tsc": {
+      "cache": false,
+      "persistent": true
+    },
+    "watch:bundle": {
+      "cache": false,
+      "persistent": true
+    },
+    "lint": {
+      "dependsOn": ["^build"]
+    },
+    "check-types": {
+      "dependsOn": ["^build"]
+    },
+    "test": {
+      "dependsOn": ["^build"]
+    },
+    "format": {},
+    "clean": {
+      "cache": false
+    },
+    "compile": {
+      "dependsOn": ["^build"],
+      "outputs": ["out/**", "dist/**"]
+    },
+    "compile:webview": {
+      "dependsOn": ["^build"],
+      "outputs": ["webview-ui-dist/**"]
+    },
+    "package": {
+      "dependsOn": ["build", "compile:webview"],
+      "outputs": ["*.vsix"]
+    },
+    "vsix": {
+      "dependsOn": ["build", "compile:webview"],
+      "outputs": ["*.vsix"]
+    },
+    "publish": {
+      "dependsOn": ["package"]
+    },
+    "quality-gate": {
+      "dependsOn": ["test", "lint", "check-types"]
+    }
+  }
+}
