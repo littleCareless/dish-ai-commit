@@ -1,0 +1,71 @@
+{
+  "$schema": "https://turbo.build/schema.json",
+  "extends": [
+    "//"
+  ],
+  "tasks": {
+    "build": {
+      "dependsOn": [
+        "^build",
+        "@dish-ai-commit/webview-ui#build"
+      ],
+      "outputs": [
+        "dist/**",
+        "webview-ui-dist/**"
+      ]
+    },
+    "bundle": {
+      "dependsOn": [
+        "^build",
+        "@dish-ai-commit/webview-ui#build"
+      ],
+      "outputs": [
+        "dist/**"
+      ]
+    },
+    "package": {
+      "dependsOn": [
+        "build",
+        "@dish-ai-commit/webview-ui#compile:webview"
+      ],
+      "outputs": [
+        "*.vsix"
+      ]
+    },
+    "vsix": {
+      "dependsOn": [
+        "build",
+        "@dish-ai-commit/webview-ui#compile:webview"
+      ],
+      "outputs": [
+        "*.vsix"
+      ]
+    },
+    "watch:bundle": {
+      "dependsOn": [
+        "@dish-ai-commit/webview-ui#build"
+      ],
+      "cache": false,
+      "persistent": true
+    },
+    "compile:esbuild": {
+      "dependsOn": [
+        "check-types"
+      ],
+      "outputs": [
+        "dist/**",
+        "webview-ui-dist/**"
+      ]
+    },
+    "vscode:prepublish": {
+      "dependsOn": [
+        "compile:esbuild"
+      ]
+    },
+    "vscode:prepublish:esbuild": {
+      "dependsOn": [
+        "compile:esbuild"
+      ]
+    }
+  }
+}
