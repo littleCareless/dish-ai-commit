@@ -1,120 +1,266 @@
-import React from "react";
-import { NavLink, useLocation } from "react-router-dom";
 import {
-  Settings,
-  BarChart3,
+  Bell,
+  BookText,
+  Database,
+  FlaskConical,
+  Globe,
+  Info,
   MessageSquare,
-  HelpCircle,
-  Play,
-  BookOpen,
-  Wrench,
-  Home,
+  Settings,
 } from "lucide-react";
-import { routes } from "../../router/routes";
+import React, { useEffect, useRef } from "react";
+import { NavLink } from "react-router-dom";
+import { useExtensionState } from "../../context/ExtensionStateContext";
+import { useAppTranslation } from "../../i18n/translation-context";
 import { cn } from "../../lib/utils";
-
-const navigationItems = [
-  {
-    path: routes.settings,
-    label: "设置",
-    icon: Settings,
-    description: "配置 AI 提供商和偏好设置",
-  },
-  {
-    path: routes.commitChat,
-    label: "提交聊天",
-    icon: MessageSquare,
-    description: "与 AI 对话生成提交信息",
-  },
-  {
-    path: routes.weeklyReport,
-    label: "周报",
-    icon: BarChart3,
-    description: "生成周报和项目统计",
-  },
-  {
-    path: routes.help,
-    label: "帮助",
-    icon: HelpCircle,
-    description: "查看帮助文档和指南",
-  },
-  {
-    path: routes.operationGuide,
-    label: "操作指导",
-    icon: BookOpen,
-    description: "分步操作指导",
-  },
-  {
-    path: routes.troubleshooting,
-    label: "故障排除",
-    icon: Wrench,
-    description: "问题诊断和解决方案",
-  },
-  {
-    path: routes.vscodeTest,
-    label: "组件测试",
-    icon: Play,
-    description: "VSCode 组件测试页面",
-  },
-];
+import { routes } from "../../router/routes";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "../ui/dropdown-menu";
 
 export const Navigation: React.FC = () => {
-  const location = useLocation();
+  console.log("[Navigation] rendered");
+  // 使用 TranslationContext 的 t 函数，它应该能正确响应语言变化
+  const { t, i18n } = useAppTranslation();
+  const { setLanguage, language: extensionLanguage } = useExtensionState();
+
+  // 检查 i18n 的资源加载情况
+  const resources = i18n.options.resources || {};
+  const currentLangResources = resources[i18n.language] as
+    | Record<string, unknown>
+    | undefined;
+
+  // 检查翻译资源内容
+  const translationResource = currentLangResources?.translation as
+    | { nav?: { settings?: string; notifications?: string; language?: string } }
+    | undefined;
+  const navResource = translationResource?.nav;
+
+  // 使用 getResourceBundle 直接获取资源
+  const directResource = i18n.getResourceBundle(
+    i18n.language,
+    "translation",
+  ) as { nav?: { settings?: string } } | undefined;
+  const directNavSettings = directResource?.nav?.settings;
+
+  console.log("[Navigation] useAppTranslation result:", {
+    i18nLanguage: i18n.language,
+    tFunctionType: typeof t,
+    testTranslation: t("nav.settings"),
+    availableLanguages: Object.keys(resources),
+    currentLanguageResources: currentLangResources
+      ? Object.keys(currentLangResources)
+      : "NOT FOUND",
+    translationNamespace: translationResource ? "EXISTS" : "NOT FOUND",
+    navResource: navResource ? "EXISTS" : "NOT FOUND",
+    navSettingsDirect: navResource?.settings || "NOT FOUND",
+    directTranslation: i18n.t("nav.settings", { lng: i18n.language }),
+    directTranslationNoOpts: i18n.t("nav.settings"),
+    directResourceBundle: directNavSettings || "NOT FOUND",
+    // 检查资源内容的实际值
+    translationResourceSample: translationResource
+      ? JSON.stringify(translationResource).substring(0, 200)
+      : "NO RESOURCE",
+  });
+
+  // 追踪之前的语言和翻译值
+  const prevLanguageRef = useRef<string | null>(null);
+  const prevTranslationsRef = useRef<Record<string, string>>({});
+
+  useEffect(() => {
+    const currentTranslations = {
+      settings: t("nav.settings"),
+      notifications: t("nav.notifications"),
+      language: t("nav.language"),
+    };
+
+    console.log("[Navigation] useEffect triggered:", {
+      i18nLanguage: i18n.language,
+      extensionLanguage,
+      prevLanguage: prevLanguageRef.current,
+      translationKeys: currentTranslations,
+      prevTranslations: prevTranslationsRef.current,
+    });
+
+    // 检查翻译值是否变化
+    const translationsChanged =
+      prevTranslationsRef.current.settings !== currentTranslations.settings ||
+      prevTranslationsRef.current.notifications !==
+        currentTranslations.notifications ||
+      prevTranslationsRef.current.language !== currentTranslations.language;
+
+    if (translationsChanged) {
+      console.log("[Navigation] Translations changed:", {
+        prev: prevTranslationsRef.current,
+        current: currentTranslations,
+      });
+      prevTranslationsRef.current = currentTranslations;
+    }
+
+    if (i18n.language !== prevLanguageRef.current) {
+      console.log(
+        "[Navigation] i18n.language changed from",
+        prevLanguageRef.current,
+        "to",
+        i18n.language,
+      );
+      prevLanguageRef.current = i18n.language || null;
+    }
+  }, [t, i18n.language, extensionLanguage]);
+
+  // 使用 useMemo 确保语言变化时重新计算
+  // 现在使用 TranslationContext 的 t 函数，它应该能正确响应语言变化
+  const navigationItems = React.useMemo(() => {
+    const items = [
+      {
+        path: routes.settings,
+        label: t("nav.settings"),
+        icon: Settings,
+        description: t("nav.settings_description"),
+      },
+      {
+        path: routes.notifications,
+        label: t("nav.notifications"),
+        icon: Bell,
+        description: t("nav.notifications_description"),
+      },
+      {
+        path: routes.context,
+        label: t("nav.context"),
+        icon: BookText,
+        description: t("nav.context_description"),
+      },
+      {
+        path: routes.prompts,
+        label: t("nav.prompts"),
+        icon: MessageSquare,
+        description: t("nav.prompts_description"),
+      },
+      {
+        path: routes.experimental,
+        label: t("nav.experimental"),
+        icon: FlaskConical,
+        description: t("nav.experimental_description"),
+      },
+      {
+        path: routes.indexing,
+        label: t("nav.indexing"),
+        icon: Database,
+        description: t("nav.indexing_description"),
+      },
+      {
+        path: routes.about,
+        label: t("nav.about"),
+        icon: Info,
+        description: t("nav.about_description"),
+      },
+    ];
+
+    console.log(
+      "[Navigation] navigationItems computed with language:",
+      i18n.language,
+      "Labels:",
+      items.map((item) => ({ path: item.path, label: item.label })),
+    );
+
+    return items;
+  }, [t, i18n.language]);
+
+  console.log(
+    "[Navigation] Current navigation items labels:",
+    navigationItems.map((item) => ({ path: item.path, label: item.label })),
+  );
+
+  const handleLanguageChange = (lang: string) => {
+    console.log("[Navigation] Language change requested:", lang);
+    console.log(
+      "[Navigation] Before change - i18n.language:",
+      i18n.language,
+      "extensionLanguage:",
+      extensionLanguage,
+    );
+    setLanguage(lang);
+    console.log("[Navigation] After setLanguage call");
+  };
 
   return (
-    <nav className="w-64 bg-card border-r border-border flex flex-col">
-      {/* 导航头部 */}
-      <div className="p-4 border-b border-border">
-        <div className="flex items-center gap-2">
-          <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-            <Home className="w-4 h-4 text-primary-foreground" />
-          </div>
-          <div>
-            <h2 className="font-semibold text-foreground">Dish AI</h2>
-            <p className="text-xs text-muted-foreground">Commit Gen</p>
-          </div>
-        </div>
-      </div>
-
+    <nav className="h-full flex flex-col">
       {/* 导航菜单 */}
-      <div className="flex-1 p-4">
-        <div className="space-y-1">
+      <div className="flex-1 p-4 overflow-y-auto">
+        <div className="space-y-2">
           {navigationItems.map((item) => {
             const Icon = item.icon;
-            const isActive = location.pathname === item.path;
 
             return (
               <NavLink
                 key={item.path}
                 to={item.path}
-                className={({ isActive: navIsActive }: { isActive: boolean }) =>
+                className={({ isActive }: { isActive: boolean }) =>
                   cn(
-                    "flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors",
-                    "hover:bg-accent hover:text-accent-foreground",
-                    (isActive || navIsActive) &&
-                      "bg-accent text-accent-foreground",
+                    "group flex items-center gap-2 px-2 py-2 rounded-xl text-sm transition-all duration-200 border border-transparent",
+                    "hover:bg-accent hover:text-accent-foreground hover:shadow-sm",
+                    isActive &&
+                      "bg-accent text-accent-foreground shadow-sm border-accent-foreground/20",
                   )
                 }
               >
-                <Icon className="w-4 h-4 flex-shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="font-medium">{item.label}</div>
-                  <div className="text-xs text-muted-foreground truncate">
-                    {item.description}
-                  </div>
-                </div>
+                {({ isActive }: { isActive: boolean }) => (
+                  <>
+                    <div
+                      className={cn(
+                        "w-7 h-7 rounded-lg flex items-center justify-center transition-colors",
+                        isActive
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary",
+                      )}
+                    >
+                      <Icon className="w-4 h-4" />
+                    </div>
+                    <div className="flex-1">
+                      <div className="font-medium">{item.label}</div>
+                    </div>
+                  </>
+                )}
               </NavLink>
             );
           })}
         </div>
       </div>
-
-      {/* 导航底部 */}
+      {/* 语言切换器 */}
       <div className="p-4 border-t border-border">
-        <div className="text-xs text-muted-foreground text-center">
-          <p>Dish AI Commit Gen</p>
-          <p>v1.0.0</p>
-        </div>
+        <DropdownMenu>
+          <DropdownMenuTrigger className="w-full">
+            <div className="group flex items-center gap-2 px-2 py-2 rounded-xl text-sm transition-all duration-200 border border-transparent hover:bg-accent hover:text-accent-foreground hover:shadow-sm">
+              <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                <Globe className="w-4 h-4" />
+              </div>
+              <div className="flex-1">
+                <div className="font-medium">{t("nav.language")}</div>
+              </div>
+            </div>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent align="end" side="right" className="w-40">
+            <DropdownMenuItem
+              onSelect={() => {
+                // 只通过 setLanguage 更新状态，让 TranslationProvider 统一处理语言切换
+                handleLanguageChange("en");
+              }}
+            >
+              English
+            </DropdownMenuItem>
+            <DropdownMenuItem
+              onSelect={() => {
+                // 只通过 setLanguage 更新状态，让 TranslationProvider 统一处理语言切换
+                handleLanguageChange("zh-cn");
+              }}
+            >
+              简体中文
+            </DropdownMenuItem>
+          </DropdownMenuContent>
+        </DropdownMenu>
       </div>
     </nav>
   );
