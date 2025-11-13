@@ -1,16 +1,7 @@
+// 注意：以下组件已被新的元数据驱动架构替代
+// 所有提供商配置现在通过 ProviderConfigForm + DynamicFieldRenderer 动态渲染
+
 export { ProviderBase } from "./ProviderBase";
-export {
-  ProviderFactory,
-  ProviderRegistry,
-  getProviderComponent,
-  getProviderMetadata,
-} from "./ProviderFactory";
-export { AnthropicProvider } from "./AnthropicProvider";
-export { OpenAIProvider } from "./OpenAIProvider";
-export { OllamaProvider } from "./OllamaProvider";
-export { OpenRouterProvider } from "./OpenRouterProvider";
-export { GeminiProvider } from "./GeminiProvider";
-export { LMStudioProvider } from "./LMStudioProvider";
-export { BedrockProvider } from "./BedrockProvider";
-export { VertexProvider } from "./VertexProvider";
-export { OpenAICompatibleProvider } from "./OpenAICompatibleProvider";
+
+// 所有其他组件已废弃，使用动态表单替代
+// 如需特殊功能，请在 provider-registry.ts 中使用 CUSTOM 字段类型
