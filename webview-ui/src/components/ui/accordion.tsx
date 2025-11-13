@@ -13,6 +13,7 @@ const AccordionItem = React.forwardRef<
   <AccordionPrimitive.Item
     ref={ref}
     className={cn("border-b", className)}
+    style={{ borderColor: "var(--vscode-divider-background)" }}
     {...props}
   />
 ));
@@ -32,7 +33,10 @@ const AccordionTrigger = React.forwardRef<
       {...props}
     >
       {children}
-      <ChevronDownIcon className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200" />
+      <ChevronDownIcon
+        className="h-4 w-4 shrink-0 text-muted-foreground transition-transform duration-200"
+        style={{ color: "var(--vscode-descriptionForeground)" }}
+      />
     </AccordionPrimitive.Trigger>
   </AccordionPrimitive.Header>
 ));

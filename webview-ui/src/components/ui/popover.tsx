@@ -18,12 +18,7 @@ interface PopoverContentProps extends React.HTMLAttributes<HTMLElement> {
   sideOffset?: number;
 }
 
-const Popover: React.FC<PopoverProps> = ({
-  children,
-  open,
-  onOpenChange,
-  ...props
-}) => {
+const Popover: React.FC<PopoverProps> = ({ children, ...props }) => {
   return (
     <div className="popover" {...props}>
       {children}
@@ -45,13 +40,17 @@ const PopoverTrigger: React.FC<PopoverTriggerProps> = ({
 
 const PopoverContent: React.FC<PopoverContentProps> = ({
   children,
-  align = "center",
-  sideOffset = 4,
   ...props
 }) => {
   return (
     <div
-      className="z-50 w-72 rounded-md border bg-popover p-4 text-popover-foreground shadow-md"
+      className="z-50 w-72 rounded-md border p-4 shadow-md"
+      style={{
+        borderColor: "var(--vscode-panel-border)",
+        backgroundColor: "var(--vscode-editor-background)",
+        color: "var(--vscode-foreground)",
+        boxShadow: "var(--vscode-widget-shadow)",
+      }}
       {...props}
     >
       {children}

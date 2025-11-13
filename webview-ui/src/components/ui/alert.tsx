@@ -19,15 +19,24 @@ const Alert: React.FC<AlertProps> = ({
   variant = "default",
   ...props
 }) => {
-  const variantClasses = {
-    default: "bg-background text-foreground",
-    destructive: "border-destructive/50 text-destructive bg-destructive/10",
-  };
+  const variantStyles: React.CSSProperties =
+    variant === "destructive"
+      ? {
+          borderColor: "var(--vscode-inputValidation-errorBorder)",
+          backgroundColor: "var(--vscode-inputValidation-errorBackground)",
+          color: "var(--vscode-errorForeground)",
+        }
+      : {
+          backgroundColor: "var(--vscode-editor-background)",
+          color: "var(--vscode-foreground)",
+          borderColor: "var(--vscode-panel-border)",
+        };
 
   return (
     <div
       role="alert"
-      className={`relative w-full rounded-lg border p-4 ${variantClasses[variant]}`}
+      className="relative w-full rounded-lg border p-4"
+      style={variantStyles}
       {...props}
     >
       {children}

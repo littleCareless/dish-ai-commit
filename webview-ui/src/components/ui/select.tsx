@@ -1,14 +1,13 @@
-import React from "react";
 import { VSCodeDropdown, VSCodeOption } from "@vscode/webview-ui-toolkit/react";
+import React from "react";
 
 interface SelectProps {
   value?: string;
-  onChange?: (event: CustomEvent) => void;
+  onChange?: (event: React.FormEvent<HTMLElement>) => void;
   onValueChange?: (value: string) => void;
   disabled?: boolean;
   children: React.ReactNode;
   className?: string;
-  placeholder?: string;
 }
 
 interface SelectOptionProps {
@@ -23,10 +22,9 @@ const Select: React.FC<SelectProps> = ({
   disabled = false,
   children,
   className,
-  placeholder,
   ...props
 }) => {
-  const handleInput = (event: CustomEvent) => {
+  const handleInput = (event: React.FormEvent<HTMLElement>) => {
     if (onChange) {
       onChange(event);
     }
@@ -41,7 +39,6 @@ const Select: React.FC<SelectProps> = ({
       onInput={handleInput}
       disabled={disabled}
       className={className}
-      placeholder={placeholder}
       {...props}
     >
       {children}
@@ -53,10 +50,11 @@ const SelectOption: React.FC<SelectOptionProps> = ({ value, children }) => {
   return <VSCodeOption value={value}>{children}</VSCodeOption>;
 };
 
-export { Select, SelectOption };
 export {
-  Select as SelectTrigger,
+  Select,
   Select as SelectContent,
   SelectOption as SelectItem,
+  SelectOption,
+  Select as SelectTrigger,
   Select as SelectValue,
 };

@@ -1,5 +1,5 @@
-import React from "react";
 import "@vscode/webview-ui-toolkit/dist/toolkit";
+import React from "react";
 
 interface DialogProps extends React.HTMLAttributes<HTMLElement> {
   open?: boolean;
@@ -30,12 +30,13 @@ interface DialogDescriptionProps extends React.HTMLAttributes<HTMLElement> {
 
 const Dialog: React.FC<DialogProps> = ({
   open = false,
-  onOpenChange,
   children,
   ...props
 }) => {
+  if (!open) return null;
+
   return (
-    <div className={`dialog ${open ? "open" : "closed"}`} {...props}>
+    <div className="dialog" {...props}>
       {children}
     </div>
   );
@@ -44,17 +45,40 @@ const Dialog: React.FC<DialogProps> = ({
 const DialogContent: React.FC<DialogContentProps> = ({
   children,
   onClose,
+  className = "",
   ...props
 }) => {
   return (
     <div
-      className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center"
+      className="fixed inset-0 z-50 flex items-center justify-center"
+      style={{
+        backgroundColor: "var(--vscode-scrim-background, rgba(0, 0, 0, 0.5))",
+      }}
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose?.();
+        }
+      }}
       {...props}
     >
-      <div className="bg-background border rounded-lg shadow-lg p-6 max-w-lg w-full mx-4">
+      <div
+        className={`rounded-lg p-6 max-w-lg w-full mx-4 relative ${className}`}
+        style={{
+          backgroundColor: "var(--vscode-editor-background)",
+          border: "1px solid var(--vscode-panel-border)",
+          boxShadow: "var(--vscode-widget-shadow)",
+        }}
+      >
         <button
-          className="absolute right-4 top-4 text-muted-foreground hover:text-foreground"
+          className="absolute right-4 top-4 text-xl leading-none w-6 h-6 flex items-center justify-center"
+          style={{
+            color: "var(--vscode-foreground)",
+            border: "none",
+            background: "none",
+            cursor: "pointer",
+          }}
           onClick={onClose}
+          aria-label="Close dialog"
         >
           ×
         </button>
@@ -93,7 +117,11 @@ const DialogDescription: React.FC<DialogDescriptionProps> = ({
   ...props
 }) => {
   return (
-    <p className="text-sm text-muted-foreground" {...props}>
+    <p
+      className="text-sm"
+      style={{ color: "var(--vscode-descriptionForeground)" }}
+      {...props}
+    >
       {children}
     </p>
   );
@@ -102,8 +130,8 @@ const DialogDescription: React.FC<DialogDescriptionProps> = ({
 export {
   Dialog,
   DialogContent,
-  DialogHeader,
-  DialogFooter,
-  DialogTitle,
   DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
 };

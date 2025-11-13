@@ -1,5 +1,12 @@
-import React, { useState } from "react";
 import "@vscode/webview-ui-toolkit/dist/toolkit";
+import React, { createContext, useContext, useState } from "react";
+
+interface TabsContextType {
+  activeTab: string;
+  onTabChange: (value: string) => void;
+}
+
+const TabsContext = createContext<TabsContextType | undefined>(undefined);
 
 interface TabsProps extends React.HTMLAttributes<HTMLElement> {
   defaultValue?: string;
@@ -10,19 +17,17 @@ interface TabsProps extends React.HTMLAttributes<HTMLElement> {
 
 interface TabsListProps extends React.HTMLAttributes<HTMLElement> {
   children: React.ReactNode;
+  orientation?: "horizontal" | "vertical";
 }
 
 interface TabsTriggerProps extends React.HTMLAttributes<HTMLElement> {
   value: string;
   children: React.ReactNode;
-  activeTab?: string;
-  onTabChange?: (value: string) => void;
 }
 
 interface TabsContentProps extends React.HTMLAttributes<HTMLElement> {
   value: string;
   children: React.ReactNode;
-  activeTab?: string;
 }
 
 const Tabs: React.FC<TabsProps> = ({
@@ -40,23 +45,34 @@ const Tabs: React.FC<TabsProps> = ({
   };
 
   return (
-    <div className="tabs" {...props}>
-      {React.Children.map(children, (child) => {
-        if (React.isValidElement(child)) {
-          return React.cloneElement(child as React.ReactElement<any>, {
-            activeTab,
-            onTabChange: handleTabChange,
-          });
-        }
-        return child;
-      })}
-    </div>
+    <TabsContext.Provider value={{ activeTab, onTabChange: handleTabChange }}>
+      <div className="tabs" {...props}>
+        {children}
+      </div>
+    </TabsContext.Provider>
   );
 };
 
-const TabsList: React.FC<TabsListProps> = ({ children, ...props }) => {
+const TabsList: React.FC<TabsListProps> = ({
+  children,
+  orientation = "horizontal",
+  className = "",
+  ...props
+}) => {
+  const baseClasses =
+    orientation === "horizontal" ? "flex" : "flex flex-col space-y-1";
+
   return (
-    <div className="flex border-b" {...props}>
+    <div
+      className={`${baseClasses} ${className}`}
+      style={{
+        borderBottom:
+          orientation === "horizontal"
+            ? "1px solid var(--vscode-panel-border)"
+            : "none",
+      }}
+      {...props}
+    >
       {children}
     </div>
   );
@@ -65,20 +81,44 @@ const TabsList: React.FC<TabsListProps> = ({ children, ...props }) => {
 const TabsTrigger: React.FC<TabsTriggerProps> = ({
   value,
   children,
-  activeTab,
-  onTabChange,
+  className = "",
   ...props
 }) => {
+  const context = useContext(TabsContext);
+  if (!context) {
+    throw new Error("TabsTrigger must be used within a Tabs component");
+  }
+
+  const { activeTab, onTabChange } = context;
   const isActive = activeTab === value;
+
+  const baseClasses = "px-4 py-2 text-sm font-medium transition-colors";
+  const activeClasses = isActive
+    ? "border-b-2"
+    : "border-transparent border-b-2";
 
   return (
     <button
-      className={`px-4 py-2 text-sm font-medium border-b-2 ${
-        isActive
-          ? "border-primary text-primary"
-          : "border-transparent text-muted-foreground hover:text-foreground"
-      }`}
-      onClick={() => onTabChange?.(value)}
+      className={`${baseClasses} ${activeClasses} ${className}`}
+      style={{
+        borderColor: isActive
+          ? "var(--vscode-tab-activeBorder)"
+          : "transparent",
+        color: isActive
+          ? "var(--vscode-tab-activeForeground)"
+          : "var(--vscode-tab-inactiveForeground)",
+      }}
+      onMouseEnter={(e) => {
+        if (!isActive) {
+          e.currentTarget.style.color = "var(--vscode-tab-hoverForeground)";
+        }
+      }}
+      onMouseLeave={(e) => {
+        if (!isActive) {
+          e.currentTarget.style.color = "var(--vscode-tab-inactiveForeground)";
+        }
+      }}
+      onClick={() => onTabChange(value)}
       {...props}
     >
       {children}
@@ -89,16 +129,23 @@ const TabsTrigger: React.FC<TabsTriggerProps> = ({
 const TabsContent: React.FC<TabsContentProps> = ({
   value,
   children,
-  activeTab,
+  className = "",
   ...props
 }) => {
+  const context = useContext(TabsContext);
+  if (!context) {
+    throw new Error("TabsContent must be used within a Tabs component");
+  }
+
+  const { activeTab } = context;
+
   if (activeTab !== value) return null;
 
   return (
-    <div className="mt-4" {...props}>
+    <div className={`mt-4 ${className}`} {...props}>
       {children}
     </div>
   );
 };
 
-export { Tabs, TabsList, TabsTrigger, TabsContent };
+export { Tabs, TabsContent, TabsList, TabsTrigger };

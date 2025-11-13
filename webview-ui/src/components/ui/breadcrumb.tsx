@@ -19,9 +19,10 @@ const BreadcrumbList = React.forwardRef<
   <ol
     ref={ref}
     className={cn(
-      "flex flex-wrap items-center gap-1.5 break-words text-sm text-muted-foreground sm:gap-2.5",
+      "flex flex-wrap items-center gap-1.5 break-words text-sm sm:gap-2.5",
       className,
     )}
+    style={{ color: "var(--vscode-descriptionForeground)" }}
     {...props}
   />
 ));
@@ -50,7 +51,12 @@ const BreadcrumbLink = React.forwardRef<
   return (
     <Comp
       ref={ref}
-      className={cn("transition-colors hover:text-foreground", className)}
+      className={cn("transition-colors", className)}
+      onMouseOver={(e) =>
+        (e.currentTarget.style.color =
+          "var(--vscode-textLink-activeForeground)")
+      }
+      onMouseOut={(e) => (e.currentTarget.style.color = "")}
       {...props}
     />
   );
@@ -66,7 +72,8 @@ const BreadcrumbPage = React.forwardRef<
     role="link"
     aria-disabled="true"
     aria-current="page"
-    className={cn("font-normal text-foreground", className)}
+    className={cn("font-normal", className)}
+    style={{ color: "var(--vscode-foreground)" }}
     {...props}
   />
 ));

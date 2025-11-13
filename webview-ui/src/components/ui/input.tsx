@@ -1,15 +1,16 @@
-import React from "react";
 import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react";
+import React from "react";
 
 interface InputProps {
   id?: string;
   value?: string;
   placeholder?: string;
   disabled?: boolean;
-  readonly?: boolean;
-  type?: "text" | "password" | "email" | "number" | "url";
-  onChange?: (event: CustomEvent) => void;
+  readOnly?: boolean;
+  type?: "text" | "password" | "email" | "url" | "tel";
+  onChange?: (event: React.FormEvent<HTMLElement>) => void;
   maxLength?: number;
+  className?: string;
 }
 
 const Input: React.FC<InputProps> = ({
@@ -17,13 +18,13 @@ const Input: React.FC<InputProps> = ({
   value,
   placeholder,
   disabled = false,
-  readonly = false,
+  readOnly = false,
   type = "text",
   onChange,
   maxLength,
   ...props
 }) => {
-  const handleInput = (event: CustomEvent) => {
+  const handleInput = (event: React.FormEvent<HTMLElement>) => {
     if (onChange) {
       onChange(event);
     }
@@ -35,10 +36,10 @@ const Input: React.FC<InputProps> = ({
       value={value}
       placeholder={placeholder}
       disabled={disabled}
-      readonly={readonly}
+      readOnly={readOnly}
       type={type}
       onInput={handleInput}
-      maxLength={maxLength}
+      maxlength={maxLength}
       {...props}
     />
   );

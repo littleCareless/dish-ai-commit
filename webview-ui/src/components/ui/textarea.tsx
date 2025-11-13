@@ -1,17 +1,17 @@
-import React from "react";
 import { VSCodeTextArea } from "@vscode/webview-ui-toolkit/react";
+import React from "react";
 
 interface TextareaProps {
   id?: string;
   value?: string;
   placeholder?: string;
   disabled?: boolean;
-  readonly?: boolean;
+  readOnly?: boolean;
   rows?: number;
-  onChange?: (event: CustomEvent) => void;
+  onChange?: (event: any) => void;
   onKeyDown?: (event: React.KeyboardEvent) => void;
   className?: string;
-  ref?: React.Ref<HTMLTextAreaElement>;
+  ref?: React.Ref<any>;
 }
 
 const Textarea: React.FC<TextareaProps> = ({
@@ -19,7 +19,7 @@ const Textarea: React.FC<TextareaProps> = ({
   value,
   placeholder,
   disabled = false,
-  readonly = false,
+  readOnly = false,
   rows = 4,
   onChange,
   onKeyDown,
@@ -33,7 +33,7 @@ const Textarea: React.FC<TextareaProps> = ({
       value={value}
       placeholder={placeholder}
       disabled={disabled}
-      readonly={readonly}
+      readOnly={readOnly}
       rows={rows}
       onInput={onChange}
       onKeyDown={onKeyDown}

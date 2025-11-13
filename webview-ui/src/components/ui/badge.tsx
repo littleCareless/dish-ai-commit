@@ -11,16 +11,35 @@ const Badge: React.FC<BadgeProps> = ({
   variant = "default",
   ...props
 }) => {
-  const variantClasses = {
-    default: "bg-primary text-primary-foreground",
-    secondary: "bg-secondary text-secondary-foreground",
-    destructive: "bg-destructive text-destructive-foreground",
-    outline: "border border-input text-foreground",
-  };
+  const variantStyles: React.CSSProperties =
+    variant === "destructive"
+      ? {
+          backgroundColor: "var(--vscode-errorForeground)",
+          color: "var(--vscode-button-foreground)",
+          border: "1px solid transparent",
+        }
+      : variant === "secondary"
+        ? {
+            backgroundColor: "var(--vscode-button-secondaryBackground)",
+            color: "var(--vscode-button-secondaryForeground)",
+            border: "1px solid transparent",
+          }
+        : variant === "outline"
+          ? {
+              backgroundColor: "transparent",
+              color: "var(--vscode-foreground)",
+              border: "1px solid var(--vscode-input-border)",
+            }
+          : {
+              backgroundColor: "var(--vscode-button-background)",
+              color: "var(--vscode-button-foreground)",
+              border: "1px solid transparent",
+            };
 
   return (
     <span
-      className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold ${variantClasses[variant]}`}
+      className="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-semibold"
+      style={variantStyles}
       {...props}
     >
       {children}

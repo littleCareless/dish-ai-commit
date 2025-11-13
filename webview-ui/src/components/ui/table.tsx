@@ -20,7 +20,12 @@ const TableHeader = React.forwardRef<
   HTMLTableSectionElement,
   React.HTMLAttributes<HTMLTableSectionElement>
 >(({ className, ...props }, ref) => (
-  <thead ref={ref} className={cn("[&_tr]:border-b", className)} {...props} />
+  <thead
+    ref={ref}
+    className={cn("[&_tr]:border-b", className)}
+    style={{ borderColor: "var(--vscode-panel-border)" }}
+    {...props}
+  />
 ));
 TableHeader.displayName = "TableHeader";
 
@@ -42,10 +47,12 @@ const TableFooter = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <tfoot
     ref={ref}
-    className={cn(
-      "border-t bg-muted/50 font-medium last:[&>tr]:border-b-0",
-      className,
-    )}
+    className={cn("border-t font-medium last:[&>tr]:border-b-0", className)}
+    style={{
+      borderColor: "var(--vscode-panel-border)",
+      backgroundColor: "rgba(var(--vscode-editor-background-rgb), 0.5)",
+      color: "var(--vscode-foreground)",
+    }}
     {...props}
   />
 ));
@@ -58,9 +65,12 @@ const TableRow = React.forwardRef<
   <tr
     ref={ref}
     className={cn(
-      "border-b transition-colors hover:bg-muted/50 data-[state=selected]:bg-muted",
+      "border-b transition-colors",
+      "hover:bg-[var(--vscode-list-hoverBackground)]",
+      "data-[state=selected]:bg-[var(--vscode-list-activeSelectionBackground)]",
       className,
     )}
+    style={{ borderColor: "var(--vscode-panel-border)" }}
     {...props}
   />
 ));
@@ -73,9 +83,10 @@ const TableHead = React.forwardRef<
   <th
     ref={ref}
     className={cn(
-      "h-10 px-2 text-left align-middle font-medium text-muted-foreground [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
+      "h-10 px-2 text-left align-middle font-medium [&:has([role=checkbox])]:pr-0 [&>[role=checkbox]]:translate-y-[2px]",
       className,
     )}
+    style={{ color: "var(--vscode-descriptionForeground)" }}
     {...props}
   />
 ));
@@ -102,7 +113,8 @@ const TableCaption = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <caption
     ref={ref}
-    className={cn("mt-4 text-sm text-muted-foreground", className)}
+    className={cn("mt-4 text-sm", className)}
+    style={{ color: "var(--vscode-descriptionForeground)" }}
     {...props}
   />
 ));

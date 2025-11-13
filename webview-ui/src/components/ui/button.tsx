@@ -1,11 +1,11 @@
-import React from "react";
 import { VSCodeButton } from "@vscode/webview-ui-toolkit/react";
-import { cn } from "@/lib/utils";
+import React from "react";
 
 interface ButtonProps {
   children: React.ReactNode;
   disabled?: boolean;
   appearance?: "primary" | "secondary" | "icon";
+  type?: "button" | "submit" | "reset";
   onClick?: () => void;
   size?: "small" | "medium" | "large" | "sm" | "icon";
   variant?:
@@ -35,28 +35,76 @@ const buttonVariants = ({
   variant = "default",
   size = "default",
 }: ButtonVariantsProps = {}) => {
-  const baseClasses =
-    "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50";
-
-  const variantClasses = {
-    default: "bg-primary text-primary-foreground hover:bg-primary/90",
-    destructive:
-      "bg-destructive text-destructive-foreground hover:bg-destructive/90",
-    outline:
-      "border border-input bg-background hover:bg-accent hover:text-accent-foreground",
-    secondary: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
-    ghost: "hover:bg-accent hover:text-accent-foreground",
-    link: "text-primary underline-offset-4 hover:underline",
+  const baseStyles: React.CSSProperties = {
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    whiteSpace: "nowrap",
+    borderRadius: "var(--vscode-button-border-radius, 2px)",
+    fontSize: "var(--vscode-font-size, 13px)",
+    fontWeight: "var(--vscode-font-weight, normal)",
+    transition: "colors 0.2s",
+    outline: "none",
   };
 
-  const sizeClasses = {
-    default: "h-10 px-4 py-2",
-    sm: "h-9 rounded-md px-3",
-    lg: "h-11 rounded-md px-8",
-    icon: "h-10 w-10",
+  const variantStyles: { [key: string]: React.CSSProperties } = {
+    default: {
+      backgroundColor: "var(--vscode-button-background)",
+      color: "var(--vscode-button-foreground)",
+      border: "1px solid var(--vscode-button-border, transparent)",
+    },
+    destructive: {
+      backgroundColor: "var(--vscode-errorForeground)",
+      color: "var(--vscode-button-foreground)",
+      border: "1px solid transparent",
+    },
+    outline: {
+      borderColor: "var(--vscode-input-border)",
+      backgroundColor: "var(--vscode-editor-background)",
+      color: "var(--vscode-foreground)",
+    },
+    secondary: {
+      backgroundColor: "var(--vscode-button-secondaryBackground)",
+      color: "var(--vscode-button-secondaryForeground)",
+      border: "1px solid var(--vscode-button-secondaryBorder, transparent)",
+    },
+    ghost: {
+      backgroundColor: "transparent",
+      color: "var(--vscode-foreground)",
+      border: "1px solid transparent",
+    },
+    link: {
+      color: "var(--vscode-textLink-foreground)",
+      textDecoration: "underline",
+      backgroundColor: "transparent",
+      border: "none",
+    },
   };
 
-  return cn(baseClasses, variantClasses[variant], sizeClasses[size]);
+  const sizeStyles: { [key: string]: React.CSSProperties } = {
+    default: {
+      height: "32px",
+      padding: "0 12px",
+    },
+    sm: {
+      height: "28px",
+      padding: "0 10px",
+    },
+    lg: {
+      height: "36px",
+      padding: "0 16px",
+    },
+    icon: {
+      height: "32px",
+      width: "32px",
+    },
+  };
+
+  return {
+    ...baseStyles,
+    ...variantStyles[variant],
+    ...sizeStyles[size],
+  };
 };
 
 const Button: React.FC<ButtonProps> = ({
@@ -64,6 +112,8 @@ const Button: React.FC<ButtonProps> = ({
   disabled = false,
   appearance = "primary",
   onClick,
+  type,
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   size,
   variant,
   className,
@@ -93,6 +143,7 @@ const Button: React.FC<ButtonProps> = ({
       appearance={finalAppearance}
       disabled={disabled}
       onClick={onClick}
+      type={type}
       className={className}
       title={title}
       ref={ref}

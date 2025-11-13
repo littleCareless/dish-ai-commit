@@ -1,7 +1,7 @@
-import * as React from "react";
 import { Cross2Icon } from "@radix-ui/react-icons";
 import * as ToastPrimitives from "@radix-ui/react-toast";
 import { cva, type VariantProps } from "class-variance-authority";
+import * as React from "react";
 
 import { cn } from "@/lib/utils";
 
@@ -23,13 +23,14 @@ const ToastViewport = React.forwardRef<
 ToastViewport.displayName = ToastPrimitives.Viewport.displayName;
 
 const toastVariants = cva(
-  "group pointer-events-auto relative flex w-full items-center justify-between space-x-2 overflow-hidden rounded-md border p-4 pr-6 shadow-lg transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full sm:data-[state=open]:slide-in-from-bottom-full",
+  "group pointer-events-auto relative flex w-full items-center justify-between space-x-2 overflow-hidden rounded-md border p-4 pr-6 shadow-[var(--vscode-widget-shadow)] transition-all data-[swipe=cancel]:translate-x-0 data-[swipe=end]:translate-x-[var(--radix-toast-swipe-end-x)] data-[swipe=move]:translate-x-[var(--radix-toast-swipe-move-x)] data-[swipe=move]:transition-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[swipe=end]:animate-out data-[state=closed]:fade-out-80 data-[state=closed]:slide-out-to-right-full data-[state=open]:slide-in-from-top-full sm:data-[state=open]:slide-in-from-bottom-full",
   {
     variants: {
       variant: {
-        default: "border bg-background text-foreground",
+        default:
+          "bg-[var(--vscode-notification-background)] text-[var(--vscode-notification-foreground)] border-[var(--vscode-notification-border)]",
         destructive:
-          "destructive group border-destructive bg-destructive text-destructive-foreground",
+          "destructive group bg-[var(--vscode-inputValidation-errorBackground)] text-[var(--vscode-errorForeground)] border-[var(--vscode-inputValidation-errorBorder)]",
       },
     },
     defaultVariants: {
@@ -60,7 +61,8 @@ const ToastAction = React.forwardRef<
   <ToastPrimitives.Action
     ref={ref}
     className={cn(
-      "inline-flex h-8 shrink-0 items-center justify-center rounded-md border bg-transparent px-3 text-sm font-medium transition-colors hover:bg-secondary focus:outline-hidden focus:ring-1 focus:ring-ring disabled:pointer-events-none disabled:opacity-50 group-[.destructive]:border-muted/40 hover:group-[.destructive]:border-destructive/30 hover:group-[.destructive]:bg-destructive hover:group-[.destructive]:text-destructive-foreground focus:group-[.destructive]:ring-destructive",
+      "inline-flex h-8 shrink-0 items-center justify-center rounded-md border border-[var(--vscode-panel-border)] bg-transparent px-3 text-sm font-medium transition-colors hover:bg-[var(--vscode-button-secondaryHoverBackground)] focus:outline-none focus:ring-1 focus:ring-[var(--vscode-focusBorder)] disabled:pointer-events-none disabled:opacity-50",
+      "group-[.destructive]:border-[var(--vscode-inputValidation-errorBorder)] hover:group-[.destructive]:border-[var(--vscode-inputValidation-errorBorder)] hover:group-[.destructive]:bg-[var(--vscode-inputValidation-errorBackground)] hover:group-[.destructive]:text-[var(--vscode-errorForeground)] focus:group-[.destructive]:ring-[var(--vscode-inputValidation-errorBorder)]",
       className,
     )}
     {...props}
@@ -75,7 +77,8 @@ const ToastClose = React.forwardRef<
   <ToastPrimitives.Close
     ref={ref}
     className={cn(
-      "absolute right-1 top-1 rounded-md p-1 text-foreground/50 opacity-0 transition-opacity hover:text-foreground focus:opacity-100 focus:outline-hidden focus:ring-1 group-hover:opacity-100 group-[.destructive]:text-red-300 hover:group-[.destructive]:text-red-50 focus:group-[.destructive]:ring-red-400 focus:group-[.destructive]:ring-offset-red-600",
+      "absolute right-1 top-1 rounded-md p-1 text-[var(--vscode-descriptionForeground)] opacity-0 transition-opacity hover:text-[var(--vscode-foreground)] focus:opacity-100 focus:outline-none focus:ring-1 focus:ring-[var(--vscode-focusBorder)] group-hover:opacity-100",
+      "group-[.destructive]:text-[var(--vscode-errorForeground)] hover:group-[.destructive]:text-[var(--vscode-errorForeground)] focus:group-[.destructive]:ring-[var(--vscode-inputValidation-errorBorder)] focus:group-[.destructive]:ring-offset-2",
       className,
     )}
     toast-close=""
@@ -92,7 +95,10 @@ const ToastTitle = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Title
     ref={ref}
-    className={cn("text-sm font-semibold [&+div]:text-xs", className)}
+    className={cn(
+      "text-sm font-semibold text-[var(--vscode-foreground)]",
+      className,
+    )}
     {...props}
   />
 ));
@@ -104,7 +110,10 @@ const ToastDescription = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ToastPrimitives.Description
     ref={ref}
-    className={cn("text-sm opacity-90", className)}
+    className={cn(
+      "text-sm text-[var(--vscode-descriptionForeground)]",
+      className,
+    )}
     {...props}
   />
 ));
@@ -115,13 +124,13 @@ type ToastProps = React.ComponentPropsWithoutRef<typeof Toast>;
 type ToastActionElement = React.ReactElement<typeof ToastAction>;
 
 export {
-  type ToastProps,
-  type ToastActionElement,
-  ToastProvider,
-  ToastViewport,
   Toast,
-  ToastTitle,
-  ToastDescription,
-  ToastClose,
   ToastAction,
+  ToastClose,
+  ToastDescription,
+  ToastProvider,
+  ToastTitle,
+  ToastViewport,
+  type ToastActionElement,
+  type ToastProps,
 };

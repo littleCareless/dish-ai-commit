@@ -7,7 +7,14 @@ interface CardProps extends React.HTMLAttributes<HTMLElement> {
 
 const Card: React.FC<CardProps> = ({ children, ...props }) => {
   return (
-    <div className="p-4 border rounded-lg bg-card" {...props}>
+    <div
+      className="p-4 border rounded-lg"
+      style={{
+        borderColor: "var(--vscode-panel-border)",
+        backgroundColor: "var(--vscode-editor-background)",
+      }}
+      {...props}
+    >
       {children}
     </div>
   );
@@ -31,7 +38,11 @@ const CardTitle: React.FC<CardProps> = ({ children, ...props }) => {
 
 const CardDescription: React.FC<CardProps> = ({ children, ...props }) => {
   return (
-    <p className="text-sm text-muted-foreground" {...props}>
+    <p
+      className="text-sm"
+      style={{ color: "var(--vscode-descriptionForeground)" }}
+      {...props}
+    >
       {children}
     </p>
   );
