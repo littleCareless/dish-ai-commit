@@ -1,25 +1,75 @@
-import React, { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
 import {
-  Settings,
-  Code,
-  MessageSquare,
   BarChart3,
+  ClipboardCheck,
+  Code,
+  GitBranch,
   GitCommit,
+  GitPullRequest,
 } from "lucide-react";
+import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
+
+interface FeatureSwitchProps {
+  id: string;
+  label: string;
+  description: string;
+  checked: boolean;
+  onCheckedChange: (enabled: boolean) => void;
+  icon?: React.ReactNode;
+}
+
+const FeatureSwitch: React.FC<FeatureSwitchProps> = ({
+  id,
+  label,
+  description,
+  checked,
+  onCheckedChange,
+  icon,
+}) => (
+  <div className="flex items-center justify-between py-2">
+    <div className="flex items-center gap-3">
+      {icon && <div className="text-muted-foreground">{icon}</div>}
+      <div className="flex flex-col">
+        <Label htmlFor={id}>{label}</Label>
+        {description && (
+          <p className="text-sm text-muted-foreground">{description}</p>
+        )}
+      </div>
+    </div>
+    <Switch checked={checked} onCheckedChange={onCheckedChange} />
+  </div>
+);
 
 export const FeaturesSettings: React.FC = () => {
+  const { t } = useTranslation("features-settings");
   const [features, setFeatures] = useState({
-    codeIndexing: true,
-    commitChat: true,
-    weeklyReport: false,
-    autoCommit: false,
+    // Commit Message Generation
+    enableEmoji: true,
+    enableMergeCommit: false,
+    enableBody: true,
+    enableLayeredCommit: false,
+    enableGlobalContext: true,
+    useRecentCommitsAsReference: false,
+
+    // Code Analysis
+    simplifyDiff: false,
+    autoDetectStaged: true,
+    fallbackToAll: true,
+
+    // Other Features
+    weeklyReport: true,
+    codeReview: true,
+    generateBranchName: true,
+    generatePRSummary: true,
   });
 
-  const handleFeatureToggle = (feature: string, enabled: boolean) => {
+  const handleFeatureToggle = (
+    feature: keyof typeof features,
+    enabled: boolean,
+  ) => {
     setFeatures((prev) => ({
       ...prev,
       [feature]: enabled,
@@ -29,215 +79,177 @@ export const FeaturesSettings: React.FC = () => {
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold mb-4">Feature Settings</h2>
-        <p className="text-muted-foreground mb-4">
-          Enable or disable various features of the extension.
-        </p>
+        <h2 className="text-xl font-semibold mb-4">{t("title")}</h2>
+        <p className="text-muted-foreground mb-4">{t("description")}</p>
       </div>
 
       <div className="grid gap-4">
-        {/* Code Indexing */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Code className="w-5 h-5" />
-              Code Indexing
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <Label htmlFor="code-indexing">Enable Code Indexing</Label>
-                <p className="text-sm text-muted-foreground">
-                  Index your codebase for better AI suggestions and context
-                  awareness.
-                </p>
-              </div>
-              <Switch
-                checked={features.codeIndexing}
-                onCheckedChange={(enabled: boolean) =>
-                  handleFeatureToggle("codeIndexing", enabled)
-                }
-              />
-            </div>
-            {features.codeIndexing && (
-              <div className="pl-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm">Index file types:</Label>
-                  <Badge variant="outline">JavaScript</Badge>
-                  <Badge variant="outline">TypeScript</Badge>
-                  <Badge variant="outline">Python</Badge>
-                  <Badge variant="outline">Go</Badge>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Automatically index common programming languages in your
-                  workspace.
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Commit Chat */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <MessageSquare className="w-5 h-5" />
-              Commit Chat
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <Label htmlFor="commit-chat">Enable Commit Chat</Label>
-                <p className="text-sm text-muted-foreground">
-                  Chat with AI about your commits and get suggestions for
-                  improvements.
-                </p>
-              </div>
-              <Switch
-                checked={features.commitChat}
-                onCheckedChange={(enabled: boolean) =>
-                  handleFeatureToggle("commitChat", enabled)
-                }
-              />
-            </div>
-            {features.commitChat && (
-              <div className="pl-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm">Chat features:</Label>
-                  <Badge variant="outline">Commit Analysis</Badge>
-                  <Badge variant="outline">Code Review</Badge>
-                  <Badge variant="outline">Suggestions</Badge>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Get AI-powered insights about your commits and code changes.
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Weekly Report */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <BarChart3 className="w-5 h-5" />
-              Weekly Report
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <Label htmlFor="weekly-report">Enable Weekly Report</Label>
-                <p className="text-sm text-muted-foreground">
-                  Generate weekly reports about your coding activity and
-                  productivity.
-                </p>
-              </div>
-              <Switch
-                checked={features.weeklyReport}
-                onCheckedChange={(enabled: boolean) =>
-                  handleFeatureToggle("weeklyReport", enabled)
-                }
-              />
-            </div>
-            {features.weeklyReport && (
-              <div className="pl-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm">Report includes:</Label>
-                  <Badge variant="outline">Commit Stats</Badge>
-                  <Badge variant="outline">Code Metrics</Badge>
-                  <Badge variant="outline">Productivity</Badge>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Receive weekly summaries of your coding activity and
-                  achievements.
-                </p>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Auto Commit */}
+        {/* Commit Message Generation */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <GitCommit className="w-5 h-5" />
-              Auto Commit
+              {t("commitMessageGeneration.title")}
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex flex-col">
-                <Label htmlFor="auto-commit">Enable Auto Commit</Label>
-                <p className="text-sm text-muted-foreground">
-                  Automatically generate and apply commit messages for your
-                  changes.
-                </p>
-              </div>
-              <Switch
-                checked={features.autoCommit}
-                onCheckedChange={(enabled: boolean) =>
-                  handleFeatureToggle("autoCommit", enabled)
-                }
-              />
-            </div>
-            {features.autoCommit && (
-              <div className="pl-4 space-y-2">
-                <div className="flex items-center gap-2">
-                  <Label className="text-sm">Auto commit features:</Label>
-                  <Badge variant="outline">Smart Messages</Badge>
-                  <Badge variant="outline">Change Detection</Badge>
-                  <Badge variant="outline">Batch Commits</Badge>
-                </div>
-                <p className="text-xs text-muted-foreground">
-                  Automatically generate meaningful commit messages based on
-                  your changes.
-                </p>
-              </div>
-            )}
+          <CardContent className="space-y-1 divide-y">
+            <FeatureSwitch
+              id="enable-emoji"
+              label={t("commitMessageGeneration.enableEmoji.label")}
+              description={t("commitMessageGeneration.enableEmoji.description")}
+              checked={features.enableEmoji}
+              onCheckedChange={(enabled) =>
+                handleFeatureToggle("enableEmoji", enabled)
+              }
+            />
+            <FeatureSwitch
+              id="enable-merge-commit"
+              label={t("commitMessageGeneration.enableMergeCommit.label")}
+              description={t(
+                "commitMessageGeneration.enableMergeCommit.description",
+              )}
+              checked={features.enableMergeCommit}
+              onCheckedChange={(enabled) =>
+                handleFeatureToggle("enableMergeCommit", enabled)
+              }
+            />
+            <FeatureSwitch
+              id="enable-body"
+              label={t("commitMessageGeneration.enableBody.label")}
+              description={t("commitMessageGeneration.enableBody.description")}
+              checked={features.enableBody}
+              onCheckedChange={(enabled) =>
+                handleFeatureToggle("enableBody", enabled)
+              }
+            />
+            <FeatureSwitch
+              id="enable-layered-commit"
+              label={t("commitMessageGeneration.enableLayeredCommit.label")}
+              description={t(
+                "commitMessageGeneration.enableLayeredCommit.description",
+              )}
+              checked={features.enableLayeredCommit}
+              onCheckedChange={(enabled) =>
+                handleFeatureToggle("enableLayeredCommit", enabled)
+              }
+            />
+            <FeatureSwitch
+              id="enable-global-context"
+              label={t("commitMessageGeneration.enableGlobalContext.label")}
+              description={t(
+                "commitMessageGeneration.enableGlobalContext.description",
+              )}
+              checked={features.enableGlobalContext}
+              onCheckedChange={(enabled) =>
+                handleFeatureToggle("enableGlobalContext", enabled)
+              }
+            />
+            <FeatureSwitch
+              id="use-recent-commits"
+              label={t(
+                "commitMessageGeneration.useRecentCommitsAsReference.label",
+              )}
+              description={t(
+                "commitMessageGeneration.useRecentCommitsAsReference.description",
+              )}
+              checked={features.useRecentCommitsAsReference}
+              onCheckedChange={(enabled) =>
+                handleFeatureToggle("useRecentCommitsAsReference", enabled)
+              }
+            />
+          </CardContent>
+        </Card>
+
+        {/* Code Analysis */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Code className="w-5 h-5" />
+              {t("codeAnalysis.title")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1 divide-y">
+            <FeatureSwitch
+              id="simplify-diff"
+              label={t("codeAnalysis.simplifyDiff.label")}
+              description={t("codeAnalysis.simplifyDiff.description")}
+              checked={features.simplifyDiff}
+              onCheckedChange={(enabled) =>
+                handleFeatureToggle("simplifyDiff", enabled)
+              }
+            />
+            <FeatureSwitch
+              id="auto-detect-staged"
+              label={t("codeAnalysis.autoDetectStaged.label")}
+              description={t("codeAnalysis.autoDetectStaged.description")}
+              checked={features.autoDetectStaged}
+              onCheckedChange={(enabled) =>
+                handleFeatureToggle("autoDetectStaged", enabled)
+              }
+            />
+            <FeatureSwitch
+              id="fallback-to-all"
+              label={t("codeAnalysis.fallbackToAll.label")}
+              description={t("codeAnalysis.fallbackToAll.description")}
+              checked={features.fallbackToAll}
+              onCheckedChange={(enabled) =>
+                handleFeatureToggle("fallbackToAll", enabled)
+              }
+            />
+          </CardContent>
+        </Card>
+
+        {/* Other Features */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              {t("otherFeatures.title")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1 divide-y">
+            <FeatureSwitch
+              id="weekly-report"
+              label={t("otherFeatures.weeklyReport.label")}
+              description={t("otherFeatures.weeklyReport.description")}
+              checked={features.weeklyReport}
+              onCheckedChange={(enabled) =>
+                handleFeatureToggle("weeklyReport", enabled)
+              }
+              icon={<BarChart3 className="w-5 h-5" />}
+            />
+            <FeatureSwitch
+              id="code-review"
+              label={t("otherFeatures.codeReview.label")}
+              description={t("otherFeatures.codeReview.description")}
+              checked={features.codeReview}
+              onCheckedChange={(enabled) =>
+                handleFeatureToggle("codeReview", enabled)
+              }
+              icon={<ClipboardCheck className="w-5 h-5" />}
+            />
+            <FeatureSwitch
+              id="generate-branch-name"
+              label={t("otherFeatures.generateBranchName.label")}
+              description={t("otherFeatures.generateBranchName.description")}
+              checked={features.generateBranchName}
+              onCheckedChange={(enabled) =>
+                handleFeatureToggle("generateBranchName", enabled)
+              }
+              icon={<GitBranch className="w-5 h-5" />}
+            />
+            <FeatureSwitch
+              id="generate-pr-summary"
+              label={t("otherFeatures.generatePRSummary.label")}
+              description={t("otherFeatures.generatePRSummary.description")}
+              checked={features.generatePRSummary}
+              onCheckedChange={(enabled) =>
+                handleFeatureToggle("generatePRSummary", enabled)
+              }
+              icon={<GitPullRequest className="w-5 h-5" />}
+            />
           </CardContent>
         </Card>
       </div>
-
-      {/* Feature Status */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Settings className="w-5 h-5" />
-            Feature Status
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Code Indexing</span>
-              <Badge variant={features.codeIndexing ? "default" : "secondary"}>
-                {features.codeIndexing ? "Enabled" : "Disabled"}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Commit Chat</span>
-              <Badge variant={features.commitChat ? "default" : "secondary"}>
-                {features.commitChat ? "Enabled" : "Disabled"}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Weekly Report</span>
-              <Badge variant={features.weeklyReport ? "default" : "secondary"}>
-                {features.weeklyReport ? "Enabled" : "Disabled"}
-              </Badge>
-            </div>
-            <div className="flex items-center justify-between">
-              <span className="text-sm">Auto Commit</span>
-              <Badge variant={features.autoCommit ? "default" : "secondary"}>
-                {features.autoCommit ? "Enabled" : "Disabled"}
-              </Badge>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
     </div>
   );
 };

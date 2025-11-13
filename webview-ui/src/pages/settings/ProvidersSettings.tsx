@@ -1,289 +1,398 @@
-import React, { useState } from "react";
+import { Skeleton } from "@/components/ui/skeleton";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { ProfileForm } from "../../components/settings/ProfileForm";
+import { ProviderConfigForm } from "../../components/settings/ProviderConfigForm";
+import { ProviderRegistry } from "../../config/provider-registry";
+import { secureStorage } from "../../services/secure-storage";
+import { ExtendedProviderConfig } from "../../types/provider-metadata";
 import { Profile, ProviderConfig } from "../../types/settings";
-import {
-  ProviderFactory,
-  getProviderMetadata,
-} from "../../components/settings/providers";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { getFieldDefaultValue } from "../../utils/validation-helpers";
+
+// UI Components
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
-import { Plus, Trash2, Settings } from "lucide-react";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { VSCodeDropdown, VSCodeOption } from "@vscode/webview-ui-toolkit/react";
 
 interface ProvidersSettingsProps {
   profile: Profile | null;
+  activeProfile: Profile | null;
+  allProfiles: Profile[];
+  isLoading?: boolean;
+
   onChange: (profile: Profile) => void;
+  onProfileSelect: (profileId: string) => void;
+  onProfileCreate: () => void;
+  onProfileEdit: (profileId: string) => void;
+  onProfileDelete: (profileId: string) => void;
 }
 
+const ProvidersSettingsSkeleton: React.FC = () => {
+  return (
+    <div className="space-y-6">
+      {/* Skeleton for ProfileForm */}
+      <div>
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Skeleton className="h-6 w-1/4" />
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="flex items-center gap-2">
+            <Skeleton className="h-10 flex-grow" />
+            <Skeleton className="h-10 w-10" />
+            <Skeleton className="h-10 w-10" />
+            <Skeleton className="h-10 w-24" />
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Skeleton for Provider Selection */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-8 w-48" />
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Skeleton className="h-10 w-full" />
+        </CardContent>
+      </Card>
+
+      {/* Skeleton for Provider Config Form */}
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              <Skeleton className="h-6 w-40" />
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-1/4" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-1/4" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-1/4" />
+              <Skeleton className="h-10 w-full" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </div>
+  );
+};
+
 export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
-  profile,
+  profile: editingProfile,
+  activeProfile,
+  allProfiles,
+  isLoading,
   onChange,
+  onProfileSelect,
+  onProfileCreate,
+  onProfileEdit,
+  onProfileDelete,
 }) => {
+  const { t } = useTranslation("providers-settings");
   const [selectedProvider, setSelectedProvider] = useState<string>("");
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
+  const [profileToDelete, setProfileToDelete] = useState<string | null>(null);
 
-  const availableProviders = [
-    { id: "anthropic", name: "Anthropic", type: "first-party" },
-    { id: "openai", name: "OpenAI", type: "first-party" },
-    { id: "gemini", name: "Google Gemini", type: "first-party" },
-    { id: "openrouter", name: "OpenRouter", type: "aggregator" },
-    { id: "ollama", name: "Ollama", type: "local" },
-    { id: "lmstudio", name: "LM Studio", type: "local" },
-    { id: "bedrock", name: "AWS Bedrock", type: "cloud" },
-    { id: "vertex", name: "Google Vertex AI", type: "cloud" },
-    {
-      id: "openai-compatible",
-      name: "OpenAI Compatible",
-      type: "openai-compatible",
-    },
-  ];
+  const currentProviderMetadata = ProviderRegistry[selectedProvider];
 
-  const createDefaultProviderConfig = (providerId: string): ProviderConfig => {
-    const metadata = getProviderMetadata(providerId);
-    const now = new Date();
+  const currentProviderConfig = useMemo(() => {
+    const storedConfig = editingProfile?.providers?.[selectedProvider];
+    if (storedConfig) return storedConfig as unknown as ExtendedProviderConfig;
 
-    return {
-      id: providerId,
-      name: metadata.name,
-      type: metadata.type as any,
+    const config: Record<string, unknown> = {
+      id: selectedProvider,
+      name: currentProviderMetadata?.name || selectedProvider,
+      type: currentProviderMetadata?.type || "openai-compatible",
+      isActive: true,
       models: [],
-      isActive: false,
-      createdAt: now,
-      updatedAt: now,
-    };
-  };
-
-  const handleProviderConfigChange = (
-    providerId: string,
-    config: ProviderConfig,
-  ) => {
-    if (!profile) return;
-
-    const updatedProfile = {
-      ...profile,
-      providers: {
-        ...profile.providers,
-        [providerId]: config,
-      },
     };
 
-    onChange(updatedProfile);
+    if (currentProviderMetadata?.fields) {
+      currentProviderMetadata.fields.forEach((field) => {
+        if (!(field.key in config)) {
+          config[field.key] = field.defaultValue ?? getFieldDefaultValue(field);
+        }
+      });
+    }
+    return config as unknown as ExtendedProviderConfig;
+  }, [editingProfile, selectedProvider, currentProviderMetadata]);
+
+  const handleConfigChange = useCallback(
+    async (providerId: string, newConfig: Record<string, unknown>) => {
+      if (!editingProfile) return;
+
+      const updatedConfig = {
+        ...currentProviderConfig,
+        ...newConfig,
+      } as ExtendedProviderConfig;
+
+      const providerConfig: ProviderConfig = {
+        ...updatedConfig,
+        models: updatedConfig.models.map(
+          (model: {
+            id: string;
+            name: string;
+            contextWindow: number;
+            maxOutputTokens: number;
+            deprecated?: boolean;
+            capabilities: string[];
+            pricing?: { input: number; output: number };
+          }) => ({
+            id: model.id,
+            name: model.name,
+            provider: providerId,
+            maxTokens: {
+              input: model.contextWindow,
+              output: model.maxOutputTokens,
+            },
+            deprecated: model.deprecated,
+            capabilities: {
+              streaming: model.capabilities.includes("streaming"),
+              functionCalling: model.capabilities.includes("function-calling"),
+            },
+            cost: model.pricing
+              ? { input: model.pricing.input, output: model.pricing.output }
+              : undefined,
+          }),
+        ),
+      };
+
+      const updatedProfile: Profile = {
+        ...editingProfile,
+        providers: {
+          ...editingProfile.providers,
+          [providerId]: providerConfig,
+        },
+      };
+      onChange(updatedProfile);
+    },
+    [currentProviderConfig, editingProfile, onChange],
+  );
+
+  const addProviderToProfile = useCallback(
+    (providerId: string) => {
+      if (!editingProfile) return;
+
+      const providerMetadata = ProviderRegistry[providerId];
+      if (!providerMetadata) return;
+
+      const defaultConfig = {
+        id: providerId,
+        name: providerMetadata.name,
+        type: providerMetadata.type,
+        isActive: true,
+        models: [],
+        ...providerMetadata.fields.reduce(
+          (acc, field) => {
+            acc[field.key] = field.defaultValue ?? getFieldDefaultValue(field);
+            return acc;
+          },
+          {} as Record<string, unknown>,
+        ),
+      } as ProviderConfig;
+
+      const updatedProfile: Profile = {
+        ...editingProfile,
+        providers: {
+          ...editingProfile.providers,
+          [providerId]: defaultConfig,
+        },
+      };
+      onChange(updatedProfile);
+    },
+    [editingProfile, onChange],
+  );
+
+  const handleProviderSelect = useCallback(
+    (providerId: string) => {
+      if (!editingProfile) return;
+      setSelectedProvider(providerId);
+      secureStorage.saveLastSelectedProvider(editingProfile.id, providerId);
+    },
+    [editingProfile],
+  );
+
+  const handleProviderChange = useCallback(
+    (providerId: string) => {
+      if (!editingProfile) return;
+
+      handleProviderSelect(providerId);
+
+      if (providerId && !editingProfile.providers?.[providerId]) {
+        addProviderToProfile(providerId);
+      }
+    },
+    [editingProfile, addProviderToProfile, handleProviderSelect],
+  );
+
+  const handleDeleteProfileClick = (profileId: string) => {
+    setProfileToDelete(profileId);
+    setShowDeleteConfirm(true);
   };
 
-  const handleAddProvider = () => {
-    if (!selectedProvider) return;
-
-    const config = createDefaultProviderConfig(selectedProvider);
-    handleProviderConfigChange(selectedProvider, config);
-    setSelectedProvider("");
-  };
-
-  const handleRemoveProvider = (providerId: string) => {
-    if (!profile) return;
-
-    const { [providerId]: removed, ...remainingProviders } = profile.providers;
-
-    const updatedProfile = {
-      ...profile,
-      providers: remainingProviders,
-    };
-
-    onChange(updatedProfile);
-  };
-
-  const handleTestConnection = async (providerId: string) => {
-    // This would typically call the backend to test the connection
-    // For now, we'll just simulate the test
-    try {
-      // TODO: Implement actual connection testing
-      console.log(`Testing connection for ${providerId}`);
-      return true;
-    } catch (error) {
-      console.error(`Connection test failed for ${providerId}:`, error);
-      return false;
+  const confirmDeleteProfile = () => {
+    if (profileToDelete) {
+      onProfileDelete(profileToDelete);
+      setShowDeleteConfirm(false);
+      setProfileToDelete(null);
     }
   };
 
-  const getProviderTypeColor = (type: string) => {
-    switch (type) {
-      case "first-party":
-        return "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-200";
-      case "aggregator":
-        return "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-200";
-      case "local":
-        return "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-200";
-      case "cloud":
-        return "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-200";
-      case "openai-compatible":
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
-      default:
-        return "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-200";
+  useEffect(() => {
+    if (!editingProfile) {
+      if (selectedProvider !== "") {
+        // Defer state update to avoid warning during unmount/re-render
+        setTimeout(() => setSelectedProvider(""), 0);
+      }
+      return;
     }
-  };
+
+    const providerIdsInProfile = Object.keys(editingProfile.providers || {});
+
+    // Step 1: If the profile has no providers, add the first one and stop.
+    // The effect will re-run on the next render to handle selection.
+    if (providerIdsInProfile.length === 0) {
+      const firstProviderId = Object.keys(ProviderRegistry)[0];
+      if (firstProviderId) {
+        // Defer this parent state update to avoid cascading render warnings.
+        setTimeout(() => addProviderToProfile(firstProviderId), 0);
+      }
+      return;
+    }
+
+    // Step 2: Providers exist. Ensure one is selected.
+    const isSelectionValid =
+      selectedProvider && providerIdsInProfile.includes(selectedProvider);
+    if (!isSelectionValid) {
+      secureStorage
+        .loadLastSelectedProvider(editingProfile.id)
+        .then((lastSelected) => {
+          const providerToSelect =
+            lastSelected && providerIdsInProfile.includes(lastSelected)
+              ? lastSelected
+              : providerIdsInProfile[0];
+          handleProviderSelect(providerToSelect);
+        })
+        .catch(() => {
+          handleProviderSelect(providerIdsInProfile[0]);
+        });
+    }
+  }, [
+    editingProfile,
+    selectedProvider,
+    addProviderToProfile,
+    handleProviderSelect,
+  ]);
+
+  if (isLoading) {
+    return <ProvidersSettingsSkeleton />;
+  }
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-xl font-semibold mb-4">Configure Providers</h2>
-        <p className="text-muted-foreground mb-4">
-          Add and configure AI providers for your profile. Each provider can be
-          configured with different models and settings.
-        </p>
+        <ProfileForm
+          profiles={allProfiles}
+          selectedProfile={editingProfile?.id ?? ""}
+          activeProfile={activeProfile}
+          isLoading={isLoading}
+          onProfileChange={onProfileSelect}
+          onCreateProfile={onProfileCreate}
+          onEditProfile={onProfileEdit}
+          onDeleteProfile={handleDeleteProfileClick}
+        />
       </div>
 
-      {/* Add New Provider */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Plus className="w-5 h-5" />
-            Add Provider
+          <CardTitle className="flex items-center justify-between">
+            <label className="text-sm font-medium">{t("apiProviders")}</label>
+            {currentProviderMetadata?.website && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() =>
+                  window.open(currentProviderMetadata.website, "_blank")
+                }
+                className="text-blue-600 hover:text-blue-800"
+              >
+                {t("providerDocs", { name: currentProviderMetadata.name })}
+              </Button>
+            )}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex gap-2">
-            <Select
+          <div className="flex flex-col space-y-2">
+            <VSCodeDropdown
               value={selectedProvider}
-              onValueChange={setSelectedProvider}
-            >
-              <SelectTrigger className="flex-1">
-                <SelectValue placeholder="Select a provider to add...">
-                  {selectedProvider
-                    ? availableProviders.find((p) => p.id === selectedProvider)
-                        ?.name
-                    : "Select a provider to add..."}
-                </SelectValue>
-              </SelectTrigger>
-              <SelectContent>
-                {availableProviders.map((provider) => (
-                  <SelectItem key={provider.id} value={provider.id}>
-                    <div className="flex items-center justify-between w-full">
-                      <span>{provider.name}</span>
-                      <Badge
-                        className={getProviderTypeColor(provider.type)}
-                        variant="secondary"
-                      >
-                        {provider.type.replace("-", " ")}
-                      </Badge>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              onClick={handleAddProvider}
-              disabled={
-                !selectedProvider ||
-                (profile &&
-                  profile.providers[selectedProvider] !== undefined) ||
-                false
+              onChange={(e: Event) =>
+                handleProviderChange((e.target as HTMLSelectElement).value)
               }
             >
-              Add Provider
-            </Button>
+              {Object.values(ProviderRegistry).map((provider) => (
+                <VSCodeOption key={provider.id} value={provider.id}>
+                  {provider.icon} {provider.name}
+                </VSCodeOption>
+              ))}
+            </VSCodeDropdown>
           </div>
-          {selectedProvider &&
-            profile &&
-            profile.providers[selectedProvider] && (
-              <p className="text-sm text-muted-foreground">
-                This provider is already configured in this profile.
-              </p>
-            )}
         </CardContent>
       </Card>
 
-      {/* Configure Selected Provider */}
-      {selectedProvider && profile && profile.providers[selectedProvider] && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Settings className="w-5 h-5" />
-              Configure{" "}
-              {availableProviders.find((p) => p.id === selectedProvider)?.name}
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ProviderFactory
-              providerId={selectedProvider}
-              config={profile.providers[selectedProvider]}
-              onChange={(config) =>
-                handleProviderConfigChange(selectedProvider, config)
-              }
-              onTest={() => handleTestConnection(selectedProvider)}
-            />
-          </CardContent>
-        </Card>
+      {currentProviderMetadata && (
+        <ProviderConfigForm
+          provider={
+            currentProviderMetadata as unknown as ExtendedProviderConfig
+          }
+          config={currentProviderConfig}
+          onConfigChange={handleConfigChange}
+          onTestProvider={() => {}}
+          onOpenSettings={() => {}}
+        />
       )}
 
-      {/* Configured Providers List */}
-      <div>
-        <h3 className="text-lg font-medium mb-4">Configured Providers</h3>
-        {profile && Object.keys(profile.providers).length > 0 ? (
-          <div className="space-y-3">
-            {Object.entries(profile.providers).map(([id, config]) => (
-              <Card key={id}>
-                <CardContent className="p-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <div className="flex flex-col">
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium">{config.name}</span>
-                          <Badge
-                            className={getProviderTypeColor(config.type)}
-                            variant="secondary"
-                          >
-                            {config.type.replace("-", " ")}
-                          </Badge>
-                          {config.isActive && (
-                            <Badge variant="default">Active</Badge>
-                          )}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          {config.models.length} models available
-                          {config.defaultModel &&
-                            ` • Default: ${config.defaultModel}`}
-                        </div>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => setSelectedProvider(id)}
-                      >
-                        <Settings className="w-4 h-4 mr-2" />
-                        Configure
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleRemoveProvider(id)}
-                        className="text-red-600 hover:text-red-700"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t("dialogs.confirmDelete.title")}</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <p className="text-sm text-muted-foreground">
+              {t("dialogs.confirmDelete.description", {
+                name: allProfiles.find((p) => p.id === profileToDelete)?.name,
+              })}
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button
+                variant="outline"
+                onClick={() => setShowDeleteConfirm(false)}
+              >
+                {t("dialogs.confirmDelete.cancel")}
+              </Button>
+              <Button variant="destructive" onClick={confirmDeleteProfile}>
+                {t("dialogs.confirmDelete.delete")}
+              </Button>
+            </div>
           </div>
-        ) : (
-          <Card>
-            <CardContent className="p-8 text-center">
-              <div className="text-muted-foreground">
-                <Settings className="w-12 h-12 mx-auto mb-4 opacity-50" />
-                <p>No providers configured yet.</p>
-                <p className="text-sm">Add a provider above to get started.</p>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-      </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
