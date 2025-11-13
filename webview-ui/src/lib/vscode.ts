@@ -1,8 +1,2 @@
-declare const acquireVsCodeApi: () => {
-  postMessage: (message: any) => void;
-  setState: (state: any) => void;
-  getState: () => any;
-};
-
-export const vscode =
-  typeof acquireVsCodeApi !== "undefined" ? acquireVsCodeApi() : null;
+// This file is intentionally left blank.
+// The VS Code API is handled via a global window.vscode object as per project conventions.
