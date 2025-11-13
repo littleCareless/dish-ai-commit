@@ -1,0 +1,15 @@
+{
+  "title": "Prompt Management",
+  "resetAll": "Reset All",
+  "createNew": "+ New Prompt",
+  "custom": "Custom",
+  "modified": "Modified",
+  "workspace": "Workspace",
+  "global": "Global",
+  "saveTo": "Save to",
+  "save": "Save",
+  "reset": "Reset",
+  "noPromptSelected": "Please select a prompt from the left to edit, or create a new one.",
+  "deleteConfirm": "Are you sure you want to delete the prompt \"{{key}}\"?",
+  "renamePrompt": "Enter a new name for \"{{oldKey}}\":"
+}

@@ -1,0 +1,29 @@
+{
+  "title": "周报生成器",
+  "selectDateRange": "选择日期范围",
+  "shortcuts": {
+    "thisWeek": "本周",
+    "lastWeek": "上周",
+    "lastTwoWeeks": "上两周"
+  },
+  "selectTeamMembers": "选择团队成员",
+  "selectTeamMembersPlaceholder": "选择团队成员",
+  "teamMembersDescription": "默认选择的用户是当前的本地用户。请使用特定于团队的提示以获得最佳结果。",
+  "reportContent": "报告内容",
+  "generate": "生成",
+  "save": "保存",
+  "export": "导出",
+  "toast": {
+    "saveSuccessTitle": "报告已保存",
+    "saveSuccessDescription": "您的报告已成功保存。",
+    "exportSuccessTitle": "报告已导出",
+    "exportSuccessDescription": "您的报告已成功导出。",
+    "error": "错误",
+    "selectDateRange": "请先选择日期范围",
+    "selectTeamMember": "请至少选择一名团队成员。",
+    "teamReportGenerationTitle": "团队报告生成",
+    "teamReportGenerationDescription": "请确保您使用的提示适用于团队报告。",
+    "generatingTitle": "正在生成报告",
+    "generatingDescription": "您的报告正在生成中..."
+  }
+}

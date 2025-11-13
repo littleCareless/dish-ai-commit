@@ -1,0 +1,65 @@
+{
+  "title": "功能设置",
+  "description": "启用或禁用扩展的各种功能。这些设置对应于您的 `settings.json` 中的配置。",
+  "commitMessageGeneration": {
+    "title": "提交信息生成",
+    "enableEmoji": {
+      "label": "启用表情符号",
+      "description": "在提交信息主题中包含一个表情符号。"
+    },
+    "enableMergeCommit": {
+      "label": "启用合并提交",
+      "description": "处理合并提交。"
+    },
+    "enableBody": {
+      "label": "启用提交正文",
+      "description": "生成详细的提交信息正文。"
+    },
+    "enableLayeredCommit": {
+      "label": "启用分层提交",
+      "description": "为复杂更改分层生成提交信息。"
+    },
+    "enableGlobalContext": {
+      "label": "启用全局上下文",
+      "description": "使用代码库中的全局上下文以获得更好的消息。"
+    },
+    "useRecentCommitsAsReference": {
+      "label": "使用最近的提交作为参考",
+      "description": "从最近的提交中学习以匹配项目的风格。"
+    }
+  },
+  "codeAnalysis": {
+    "title": "代码分析",
+    "simplifyDiff": {
+      "label": "简化差异",
+      "description": "使用简化的差异进行分析。"
+    },
+    "autoDetectStaged": {
+      "label": "自动检测暂存的更改",
+      "description": "如果可用，自动使用暂存的更改。"
+    },
+    "fallbackToAll": {
+      "label": "回退到所有更改",
+      "description": "如果没有暂存的更改，则回退到存储库中的所有更改。"
+    }
+  },
+  "otherFeatures": {
+    "title": "其他功能",
+    "weeklyReport": {
+      "label": "周报",
+      "description": "启用“生成周报”命令。"
+    },
+    "codeReview": {
+      "label": "代码审查",
+      "description": "启用“审查代码”命令。"
+    },
+    "generateBranchName": {
+      "label": "分支名称生成",
+      "description": "启用“生成分支名称”命令。"
+    },
+    "generatePRSummary": {
+      "label": "PR 摘要生成",
+      "description": "启用“生成 PR 摘要”命令。"
+    }
+  }
+}

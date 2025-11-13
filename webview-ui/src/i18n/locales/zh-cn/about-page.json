@@ -1,0 +1,10 @@
+{
+  "errorTitle": "错误",
+  "loading": "加载中...",
+  "version": "版本号",
+  "license": "开源许可协议",
+  "author": "作者",
+  "repository": "Github",
+  "viewOnGithub": "点击查看",
+  "dependencies": "生产环境依赖"
+}

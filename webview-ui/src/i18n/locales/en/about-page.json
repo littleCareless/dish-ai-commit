@@ -1,0 +1,10 @@
+{
+  "errorTitle": "Error",
+  "loading": "Loading...",
+  "version": "Version",
+  "license": "License",
+  "author": "Author",
+  "repository": "Github",
+  "viewOnGithub": "View on Github",
+  "dependencies": "Dependencies"
+}

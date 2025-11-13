@@ -1,0 +1,49 @@
+{
+  "ollama": {
+    "modelName": "Model Name",
+    "modelPlaceholder": "e.g. nomic-embed-text"
+  },
+  "qdrant": {
+    "title": "Qdrant Settings",
+    "url": "Qdrant URL",
+    "urlPlaceholder": "http://localhost:6333",
+    "apiKey": "Qdrant API Key"
+  },
+  "advanced": {
+    "title": "Advanced Configuration",
+    "searchScoreThreshold": "Search Score Threshold",
+    "searchScoreThresholdPlaceholder": "0.40",
+    "maxSearchResults": "Max Search Results",
+    "maxSearchResultsPlaceholder": "50"
+  },
+  "gemini": {
+    "apiKey": "Gemini API Key",
+    "model": "Model"
+  },
+  "mistral": {
+    "apiKey": "Mistral API Key",
+    "model": "Model"
+  },
+  "openaiCompatible": {
+    "baseUrl": "Base URL",
+    "apiKey": "API Key",
+    "model": "Model",
+    "modelDimensions": "Model Dimensions"
+  },
+  "openai": {
+    "apiKey": "OpenAI API Key",
+    "model": "Model"
+  },
+  "providers": {
+    "openai": "OpenAI",
+    "ollama": "Ollama",
+    "openaiCompatible": "OpenAI Compatible",
+    "gemini": "Gemini",
+    "mistral": "Mistral",
+    "vercelAIGateway": "Vercel AI Gateway"
+  },
+  "vercelAIGateway": {
+    "apiKey": "Vercel AI Gateway API Key",
+    "model": "Model"
+  }
+}

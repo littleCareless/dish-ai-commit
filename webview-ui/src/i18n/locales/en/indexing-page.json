@@ -1,0 +1,13 @@
+{
+  "title": "Codebase Indexing",
+  "description": "Configure codebase indexing settings to enable semantic search for your project.",
+  "learnMore": "Learn more",
+  "enableIndexing": "Enable Codebase Indexing",
+  "status": {
+    "title": "Status",
+    "indexed": "Indexed - Index up-to-date. File queue empty."
+  },
+  "embeddingProvider": "Embedding Provider",
+  "clearIndex": "Clear Index",
+  "save": "Save"
+}

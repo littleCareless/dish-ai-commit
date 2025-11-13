@@ -1,0 +1,41 @@
+{
+  "title": "设置",
+  "unsavedChanges": "未保存的更改",
+  "done": "完成",
+  "defaultProfileName": "默认",
+  "defaultProfileDescription": "默认配置文件",
+  "tabs": {
+    "apiProviders": "API 提供商",
+    "preferences": "偏好设置",
+    "features": "功能",
+    "advanced": "高级"
+  },
+  "messages": {
+    "profileDeleted": "配置文件 “{{name}}” 已删除。",
+    "profileSaved": "配置文件 “{{name}}” 已保存。",
+    "switchedToProfile": "已切换到配置文件 “{{name}}”。"
+  },
+  "errors": {
+    "failedToLoadSettings": "加载设置失败",
+    "cannotDeleteDefaultProfile": "无法删除默认配置文件。",
+    "failedToDelete": "删除失败: {{message}}",
+    "failedToSave": "保存失败: {{message}}",
+    "failedToApplySettings": "应用设置失败: {{message}}",
+    "unknownError": "未知错误",
+    "error": "错误"
+  },
+  "dialogs": {
+    "unsavedChanges": {
+      "title": "未保存的更改",
+      "description": "在切换之前，您想保存对 “{{name}}” 的更改吗？",
+      "dontSave": "不保存",
+      "save": "保存"
+    },
+    "confirmDeletion": {
+      "title": "确认删除",
+      "description": "您确定要删除配置文件 “{{name}}” 吗？此操作无法撤销。",
+      "cancel": "取消",
+      "delete": "删除"
+    }
+  }
+}

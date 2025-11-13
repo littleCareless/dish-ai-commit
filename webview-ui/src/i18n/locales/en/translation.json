@@ -1,0 +1,19 @@
+{
+  "nav": {
+    "settings": "Settings",
+    "settings_description": "Configure AI providers and preferences",
+    "notifications": "Notifications",
+    "notifications_description": "View recent notifications",
+    "context": "Context",
+    "context_description": "Manage context information",
+    "prompts": "Prompts",
+    "prompts_description": "Manage and use prompts",
+    "experimental": "Experimental",
+    "experimental_description": "Try experimental features",
+    "indexing": "Code Indexing",
+    "indexing_description": "Configure codebase indexing",
+    "about": "About",
+    "about_description": "Learn about the application",
+    "language": "Language"
+  }
+}

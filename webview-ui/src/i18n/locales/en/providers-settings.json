@@ -1,0 +1,12 @@
+{
+  "apiProviders": "API Providers",
+  "providerDocs": "{{name}} Docs",
+  "dialogs": {
+    "confirmDelete": {
+      "title": "Confirm Delete Profile",
+      "description": "Are you sure you want to delete the profile \"{{name}}\"? This action cannot be undone.",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    }
+  }
+}

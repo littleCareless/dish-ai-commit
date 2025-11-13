@@ -1,0 +1,29 @@
+{
+  "title": "Weekly Report Generator",
+  "selectDateRange": "Select Date Range",
+  "shortcuts": {
+    "thisWeek": "This Week",
+    "lastWeek": "Last Week",
+    "lastTwoWeeks": "Last Two Weeks"
+  },
+  "selectTeamMembers": "Select Team Members",
+  "selectTeamMembersPlaceholder": "Select team members",
+  "teamMembersDescription": "Default selected user is the current local user. Please use a team-specific prompt for best results.",
+  "reportContent": "Report Content",
+  "generate": "Generate",
+  "save": "Save",
+  "export": "Export",
+  "toast": {
+    "saveSuccessTitle": "Report saved",
+    "saveSuccessDescription": "Your report has been saved successfully.",
+    "exportSuccessTitle": "Report exported",
+    "exportSuccessDescription": "Your report has been exported successfully.",
+    "error": "Error",
+    "selectDateRange": "Please select a date range first",
+    "selectTeamMember": "Please select at least one team member.",
+    "teamReportGenerationTitle": "Team Report Generation",
+    "teamReportGenerationDescription": "Please ensure you are using a prompt suitable for team reports.",
+    "generatingTitle": "Generating report",
+    "generatingDescription": "Your report is being generated..."
+  }
+}

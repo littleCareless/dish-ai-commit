@@ -1,0 +1,14 @@
+{
+  "title": "代码库索引",
+  "description": "配置代码库索引设置以启用项目的语义搜索。",
+  "learnMore": "了解更多",
+  "enableIndexing": "启用代码库索引",
+  "status": {
+    "title": "状态",
+    "indexed": "已索引 - 索引是\"",
+    "upToDate": "最新的。文件队列为空。"
+  },
+  "embeddingProvider": "嵌入式提供商",
+  "clearIndex": "清除索引",
+  "save": "保存"
+}

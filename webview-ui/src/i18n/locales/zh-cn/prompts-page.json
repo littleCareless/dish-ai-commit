@@ -1,0 +1,15 @@
+{
+  "title": "提示词管理",
+  "resetAll": "重置所有",
+  "createNew": "+ 新建提示词",
+  "custom": "自定义",
+  "modified": "已修改",
+  "workspace": "工作区",
+  "global": "全局",
+  "saveTo": "保存到",
+  "save": "保存",
+  "reset": "重置",
+  "noPromptSelected": "请从左侧选择一个提示词进行编辑，或新建一个提示词。",
+  "deleteConfirm": "确定要删除提示词 \"{{key}}\" 吗？",
+  "renamePrompt": "为 \"{{oldKey}}\" 输入新的名称:"
+}

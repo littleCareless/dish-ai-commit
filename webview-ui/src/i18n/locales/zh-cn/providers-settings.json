@@ -1,0 +1,12 @@
+{
+  "apiProviders": "API 提供商",
+  "providerDocs": "{{name}} 文档",
+  "dialogs": {
+    "confirmDelete": {
+      "title": "确认删除配置文件",
+      "description": "确定要删除配置文件 “{{name}}” 吗？此操作无法撤销。",
+      "cancel": "取消",
+      "delete": "删除"
+    }
+  }
+}

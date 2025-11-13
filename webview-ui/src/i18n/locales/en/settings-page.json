@@ -1,0 +1,41 @@
+{
+  "title": "Settings",
+  "unsavedChanges": "Unsaved Changes",
+  "done": "Done",
+  "defaultProfileName": "Default",
+  "defaultProfileDescription": "Default profile",
+  "tabs": {
+    "apiProviders": "API Providers",
+    "preferences": "Preferences",
+    "features": "Features",
+    "advanced": "Advanced"
+  },
+  "messages": {
+    "profileDeleted": "Profile \"{{name}}\" deleted.",
+    "profileSaved": "Profile \"{{name}}\" saved.",
+    "switchedToProfile": "Switched to profile \"{{name}}\"."
+  },
+  "errors": {
+    "failedToLoadSettings": "Failed to load settings",
+    "cannotDeleteDefaultProfile": "Cannot delete the default profile.",
+    "failedToDelete": "Failed to delete: {{message}}",
+    "failedToSave": "Failed to save: {{message}}",
+    "failedToApplySettings": "Failed to apply settings: {{message}}",
+    "unknownError": "Unknown error",
+    "error": "Error"
+  },
+  "dialogs": {
+    "unsavedChanges": {
+      "title": "Unsaved Changes",
+      "description": "Do you want to save the changes to \"{{name}}\" before switching?",
+      "dontSave": "Don't Save",
+      "save": "Save"
+    },
+    "confirmDeletion": {
+      "title": "Confirm Deletion",
+      "description": "Are you sure you want to delete the profile \"{{name}}\"? This action cannot be undone.",
+      "cancel": "Cancel",
+      "delete": "Delete"
+    }
+  }
+}
