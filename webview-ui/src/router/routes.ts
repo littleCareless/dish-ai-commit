@@ -1,13 +1,13 @@
 // 路由配置
 export const routes = {
+  welcome: "/",
   settings: "/settings",
-  weeklyReport: "/weekly-report",
-  vscodeTest: "/vscode-test",
-  commitChat: "/commit-chat",
-  help: "/help",
-  onboarding: "/onboarding",
-  operationGuide: "/operation-guide",
-  troubleshooting: "/troubleshooting",
+  notifications: "/notifications",
+  context: "/context",
+  prompts: "/prompts",
+  experimental: "/experimental",
+  about: "/about",
+  indexing: "/indexing",
 } as const;
 
 // 路由类型

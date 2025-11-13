@@ -1,22 +1,22 @@
 import React from "react";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { useTheme } from "../hooks/useTheme";
+import { MemoryRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useVSCodeContext } from "../contexts/VSCodeContext";
+import { useTheme } from "../hooks/useTheme";
 
 // 页面组件
-import { SettingsPageNew } from "../pages/settings/SettingsPageNew";
-import WeeklyReportPage from "../pages/weekly-report-page";
-import { VSCodeComponentsTest } from "../pages/VSCodeComponentsTest";
-import { CommitChatPage } from "../pages/CommitChatPage";
-import { HelpPage } from "../pages/HelpPage";
-import { OnboardingPage } from "../pages/OnboardingPage";
-import { OperationGuidePage } from "../pages/OperationGuidePage";
-import { TroubleshootingPage } from "../pages/TroubleshootingPage";
+import { AboutPage } from "../pages/about-page";
+import { ContextPage } from "../pages/context-page";
+import { ExperimentalPage } from "../pages/experimental-page";
+import { IndexingPage } from "../pages/indexing-page";
+import { NotificationsPage } from "../pages/notifications-page";
+import { PromptsPage } from "../pages/prompts-page";
+import { SettingsPage } from "../pages/settings/SettingsPage";
+import WelcomePage from "../pages/welcome-page";
 
 // 布局组件
-import { Layout } from "../components/layout/Layout";
-import { LoadingPage } from "../components/common/LoadingPage";
 import { ErrorBoundary } from "../components/common/ErrorBoundary";
+import { LoadingPage } from "../components/common/LoadingPage";
+import { Layout } from "../components/layout/Layout";
 
 import { routes } from "./routes";
 
@@ -40,99 +40,67 @@ export const AppRouter: React.FC = () => {
     document.documentElement.className = theme;
   }, [theme]);
 
+  const initialEntries = [
+    (window as Window & { initialRoute?: string }).initialRoute || "/",
+  ];
+
   return (
     <ErrorBoundary>
-      <BrowserRouter>
+      <MemoryRouter initialEntries={initialEntries}>
         <RouteGuard>
-          <Layout>
-            <Routes>
-              {/* 默认重定向到设置页面 */}
-              <Route
-                path="/"
-                element={<Navigate to={routes.settings} replace />}
-              />
+          <Routes>
+            <Route
+              path="/*"
+              element={
+                <Layout>
+                  <Routes>
+                    {/* 欢迎页面 */}
+                    <Route path={routes.welcome} element={<WelcomePage />} />
 
-              {/* 设置页面 */}
-              <Route path={routes.settings} element={<SettingsPageNew />} />
+                    {/* 设置页面 */}
+                    <Route path={routes.settings} element={<SettingsPage />} />
 
-              {/* 周报页面 */}
-              <Route
-                path={routes.weeklyReport}
-                element={<WeeklyReportPage />}
-              />
+                    {/* 通知页面 */}
+                    <Route
+                      path={routes.notifications}
+                      element={<NotificationsPage />}
+                    />
 
-              {/* VSCode 组件测试页面 */}
-              <Route
-                path={routes.vscodeTest}
-                element={<VSCodeComponentsTest />}
-              />
+                    {/* 上下文页面 */}
+                    <Route path={routes.context} element={<ContextPage />} />
 
-              {/* 提交聊天页面 */}
-              <Route path={routes.commitChat} element={<CommitChatPage />} />
+                    {/* 提示词页面 */}
+                    <Route path={routes.prompts} element={<PromptsPage />} />
 
-              {/* 帮助页面 */}
-              <Route path={routes.help} element={<HelpPage />} />
+                    {/* 实验性页面 */}
+                    <Route
+                      path={routes.experimental}
+                      element={<ExperimentalPage />}
+                    />
 
-              {/* 新用户引导页面 */}
-              <Route path={routes.onboarding} element={<OnboardingPage />} />
+                    {/* 关于页面 */}
+                    <Route path={routes.about} element={<AboutPage />} />
 
-              {/* 操作指导页面 */}
-              <Route
-                path={routes.operationGuide}
-                element={<OperationGuidePage />}
-              />
+                    {/* 索引页面 */}
+                    <Route path={routes.indexing} element={<IndexingPage />} />
 
-              {/* 故障排除页面 */}
-              <Route
-                path={routes.troubleshooting}
-                element={<TroubleshootingPage />}
-              />
-
-              {/* 404 页面 */}
-              <Route
-                path="*"
-                element={<Navigate to={routes.settings} replace />}
-              />
-            </Routes>
-          </Layout>
+                    {/* 404 页面 */}
+                    <Route
+                      path="*"
+                      element={<Navigate to={routes.welcome} replace />}
+                    />
+                  </Routes>
+                </Layout>
+              }
+            />
+          </Routes>
         </RouteGuard>
-      </BrowserRouter>
+      </MemoryRouter>
     </ErrorBoundary>
   );
 };
 
-// 路由工具函数
-export const useNavigation = () => {
-  const navigate = (path: string) => {
-    window.history.pushState({}, "", path);
-    window.dispatchEvent(new PopStateEvent("popstate"));
-  };
-
-  const goBack = () => {
-    window.history.back();
-  };
-
-  const goForward = () => {
-    window.history.forward();
-  };
-
-  return { navigate, goBack, goForward };
-};
-
-// 路由状态管理
-export const useRouteState = () => {
-  const [currentPath, setCurrentPath] = React.useState(
-    window.location.pathname,
-  );
-
-  React.useEffect(() => {
-    const handlePopState = () => {
-      setCurrentPath(window.location.pathname);
-    };
-
-    window.addEventListener("popstate", handlePopState);
-    return () => window.removeEventListener("popstate", handlePopState);
-  }, []);
-
-  return { currentPath };
-};
+// 注意：使用 React Router 的内置钩子替代自定义导航逻辑
+// - useNavigate() 用于编程式导航
+// - useLocation() 用于获取当前位置
+// - useParams() 用于获取路由参数
