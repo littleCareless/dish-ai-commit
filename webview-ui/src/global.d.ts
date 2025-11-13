@@ -7,3 +7,13 @@ declare namespace JSX {
     // 其他你需要的 vscode-* 元素
   }
 }
+
+interface Window {
+  initialData: {
+    language?: string;
+    localesBaseUri?: string;
+    qdrantUrl?: string;
+    qdrantCollectionName?: string;
+  };
+  initialRoute?: string;
+}
