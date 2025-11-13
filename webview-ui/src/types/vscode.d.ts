@@ -1,5 +1,10 @@
-declare interface Window {
-  vscode?: {
-    postMessage: (message: any) => void;
-  };
+import type { WebviewApi } from "vscode-webview";
+
+declare global {
+  interface Window {
+    /**
+     * The global VS Code API instance provided by the webview.
+     */
+    vscode: WebviewApi<unknown>;
+  }
 }

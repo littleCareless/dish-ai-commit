@@ -37,6 +37,23 @@ export interface ProviderConfig {
   isActive?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
+
+  // 新增字段支持
+  cliPath?: string;
+  maxOutputTokens?: number;
+  useCustomUrl?: boolean;
+  apiVersion?: string;
+  secretKey?: string;
+  accountId?: string;
+
+  // 动态字段存储
+  customFields?: Record<string, any>;
+
+  // 高级设置
+  timeout?: number;
+  retries?: number;
+  temperature?: number;
+  maxTokens?: number;
 }
 
 export interface UserPreferences {
@@ -44,7 +61,7 @@ export interface UserPreferences {
   verbosity: number;
   rateLimitSeconds: number;
   consecutiveMistakeLimit: number;
-  language: "zh" | "en";
+  language: string;
   maxTokens?: number;
   timeout?: number;
   retryAttempts?: number;
@@ -122,7 +139,7 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   verbosity: 0,
   rateLimitSeconds: 5,
   consecutiveMistakeLimit: 3,
-  language: "zh",
+  language: "Simplified Chinese",
   maxTokens: 4000,
   timeout: 30000,
   retryAttempts: 3,
