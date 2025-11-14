@@ -1,5 +1,4 @@
-import React from "react";
-import { ModelConfig } from "../../types/settings";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectContent,
@@ -7,7 +6,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
+import React from "react";
+import { ModelConfig } from "../../types/settings";
 
 interface ModelSelectProps {
   models: ModelConfig[];
@@ -36,7 +36,7 @@ export const ModelSelect: React.FC<ModelSelectProps> = ({
   return (
     <Select value={value} onValueChange={onChange}>
       <SelectTrigger className={className}>
-        <SelectValue placeholder={placeholder}>
+        <SelectValue>
           {value
             ? models.find((m) => m.id === value)?.name || value
             : placeholder}

@@ -1,31 +1,86 @@
-import React from "react";
-import { UserPreferences } from "../../types/settings";
+import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import { Input } from "@/components/ui/input";
-import { Select, SelectOption } from "@/components/ui/select";
-import { Badge } from "@/components/ui/badge";
-import { Info } from "lucide-react";
+import React from "react";
+import { UserPreferences } from "../../types/settings";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface AdvancedSettingsProps {
   preferences: UserPreferences;
   onChange: (preferences: UserPreferences) => void;
   className?: string;
+  isLoading?: boolean;
 }
+
+const AdvancedSettingsSkeleton: React.FC = () => {
+  const renderSliderCard = (titleWidth: string) => (
+    <Card>
+      <CardHeader>
+        <CardTitle>
+          <Skeleton className={`h-6 ${titleWidth}`} />
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <Skeleton className="h-5 w-32" />
+            <Skeleton className="h-6 w-40" />
+          </div>
+          <Skeleton className="h-5 w-full" />
+          <Skeleton className="h-4 w-full" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+
+  return (
+    <div className="space-y-6">
+      {renderSliderCard("w-32")}
+      {renderSliderCard("w-40")}
+      {renderSliderCard("w-36")}
+
+      {/* Skeleton for Advanced Configuration */}
+      <Card>
+        <CardHeader>
+          <CardTitle>
+            <Skeleton className="h-6 w-48" />
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-4 w-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-4 w-full" />
+            </div>
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-28" />
+              <Skeleton className="h-10 w-full" />
+              <Skeleton className="h-4 w-full" />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
+  );
+};
 
 export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
   preferences,
   onChange,
   className = "",
+  isLoading,
 }) => {
-  const handleTemperatureChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const value = parseFloat(event.target.value || "0");
-    onChange({ ...preferences, temperature: value });
-  };
-
+  if (isLoading) {
+    return <AdvancedSettingsSkeleton />;
+  }
   const handleVerbosityChange = (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -47,7 +102,7 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
     onChange({ ...preferences, consecutiveMistakeLimit: value });
   };
 
-  const handleMaxTokensChange = (event: CustomEvent) => {
+  const handleMaxTokensChange = (event: React.FormEvent<HTMLElement>) => {
     const value = (event.target as HTMLInputElement)?.value || "";
     const numValue = parseInt(value, 10);
     if (!isNaN(numValue) && numValue > 0) {
@@ -55,7 +110,7 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
     }
   };
 
-  const handleTimeoutChange = (event: CustomEvent) => {
+  const handleTimeoutChange = (event: React.FormEvent<HTMLElement>) => {
     const value = (event.target as HTMLInputElement)?.value || "";
     const numValue = parseInt(value, 10);
     if (!isNaN(numValue) && numValue > 0) {
@@ -63,25 +118,12 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
     }
   };
 
-  const handleRetryAttemptsChange = (event: CustomEvent) => {
+  const handleRetryAttemptsChange = (event: React.FormEvent<HTMLElement>) => {
     const value = (event.target as HTMLInputElement)?.value || "";
     const numValue = parseInt(value, 10);
     if (!isNaN(numValue) && numValue > 0) {
       onChange({ ...preferences, retryAttempts: numValue });
     }
-  };
-
-  const handleLanguageChange = (event: CustomEvent) => {
-    const value = (event.target as HTMLSelectElement)?.value || "";
-    onChange({ ...preferences, language: value as "zh" | "en" });
-  };
-
-  const getTemperatureDescription = (value: number) => {
-    if (value === 0) return "Deterministic (most focused)";
-    if (value <= 0.5) return "Low creativity";
-    if (value <= 1.0) return "Balanced";
-    if (value <= 1.5) return "High creativity";
-    return "Maximum creativity";
   };
 
   const getVerbosityDescription = (value: number) => {
@@ -99,38 +141,6 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
 
   return (
     <div className={`space-y-6 ${className}`}>
-      {/* Temperature Control */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Info className="w-4 h-4" />
-            Response Creativity
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>Temperature: {preferences.temperature}</Label>
-              <Badge variant="outline">
-                {getTemperatureDescription(preferences.temperature)}
-              </Badge>
-            </div>
-            <Slider
-              min={0}
-              max={2}
-              step={0.1}
-              value={preferences.temperature}
-              onChange={handleTemperatureChange}
-              className="w-full"
-            />
-            <p className="text-sm text-muted-foreground">
-              Controls randomness in responses. Lower values make responses more
-              focused and deterministic.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
       {/* Verbosity Control */}
       <Card>
         <CardHeader>
@@ -220,7 +230,7 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
             <div className="space-y-2">
               <Label htmlFor="max-tokens">Max Tokens</Label>
               <Input
-                type="number"
+                type="text"
                 value={preferences.maxTokens?.toString() || "4000"}
                 onChange={handleMaxTokensChange}
                 placeholder="4000"
@@ -234,7 +244,7 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
             <div className="space-y-2">
               <Label htmlFor="timeout">Timeout (ms)</Label>
               <Input
-                type="number"
+                type="text"
                 value={preferences.timeout?.toString() || "30000"}
                 onChange={handleTimeoutChange}
                 placeholder="30000"
@@ -248,28 +258,13 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
             <div className="space-y-2">
               <Label htmlFor="retry-attempts">Retry Attempts</Label>
               <Input
-                type="number"
+                type="text"
                 value={preferences.retryAttempts?.toString() || "3"}
                 onChange={handleRetryAttemptsChange}
                 placeholder="3"
               />
               <p className="text-sm text-muted-foreground">
                 Number of retry attempts for failed requests.
-              </p>
-            </div>
-
-            {/* Language */}
-            <div className="space-y-2">
-              <Label htmlFor="language">Language</Label>
-              <Select
-                value={preferences.language}
-                onChange={handleLanguageChange}
-              >
-                <SelectOption value="zh">中文</SelectOption>
-                <SelectOption value="en">English</SelectOption>
-              </Select>
-              <p className="text-sm text-muted-foreground">
-                Interface language preference.
               </p>
             </div>
           </div>
