@@ -2,6 +2,7 @@ import * as fs from "fs/promises";
 import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
+import { z, ZodError } from "zod";
 import { AIProviderFactory } from "../../ai/ai-provider-factory";
 import { AIProvider } from "../../ai/types";
 import {
@@ -9,22 +10,22 @@ import {
   EmbeddingServiceError,
 } from "../../core/indexing/embedding-service";
 import { EmbeddingServiceManager } from "../../core/indexing/embedding-service-manager";
-import {
-  exportProfile,
-  importProfileWithFeedback,
-} from "../../services/profile-import-export-service";
 import { ProfileManagerService } from "../../services/profile-manager-service";
+import { ProviderStore } from "../../services/profile-manager/provider-store";
 import { PromptManagerService } from "../../services/prompt-manager-service";
 import { MessageType } from "../../types/messages";
+import { formatMessage as t } from "../../utils/i18n/localization-manager";
 import { notify } from "../../utils/notification/notification-manager";
 import { NotificationSettingsManager } from "../../utils/notification/notification-settings-manager";
 import { SoundPlayerService } from "../../utils/notification/sound-player";
-import { TextToSpeechService } from "../../utils/notification/text-to-speech";
 import { systemNotifier } from "../../utils/notification/system-notification-service";
+import { TextToSpeechService } from "../../utils/notification/text-to-speech";
+import { safeWriteJson } from "../../utils/safe-write-json";
 
 export class SettingsViewMessageHandler {
   private readonly _extensionId: string;
   private _profileManager: ProfileManagerService;
+  private _providerStore: ProviderStore;
 
   private _promptManager: PromptManagerService;
 
@@ -36,6 +37,7 @@ export class SettingsViewMessageHandler {
     console.log("[SettingsViewMessageHandler] Initializing...");
     this._extensionId = extensionId;
     this._profileManager = ProfileManagerService.getInstance();
+    this._providerStore = ProviderStore.getInstance(_extensionContext);
     this._promptManager = PromptManagerService.getInstance();
   }
 
@@ -844,21 +846,100 @@ export class SettingsViewMessageHandler {
         console.log(
           `[SettingsViewMessageHandler] Handling exportProfile for profileId: ${profileId}`
         );
-        const result = await exportProfile(profileId, this._profileManager);
-        if (!result.success) {
-          console.error(
-            `[SettingsViewMessageHandler] Failed to export profile ${profileId}: ${result.error}`
+        const uri = await vscode.window.showSaveDialog({
+          filters: { JSON: ["json"] },
+          defaultUri: vscode.Uri.file(
+            path.join(os.homedir(), "Documents", "dish-ai-commit-profile.json")
+          ),
+          title: t("profile.export.title"),
+        });
+
+        if (!uri) {
+          break;
+        }
+
+        try {
+          const profiles = await this._providerStore.export();
+          const packageInfo = JSON.parse(
+            await fs.readFile(
+              path.join(this._extensionContext.extensionPath, "package.json"),
+              "utf-8"
+            )
           );
-          vscode.window.showErrorMessage(
-            `Failed to export profile: ${result.error}`
-          );
+          const exportData = {
+            version: "2.0",
+            profile: profiles,
+            metadata: {
+              exportedAt: new Date().toISOString(),
+              exportedBy: "dish-ai-commit",
+              extensionVersion: packageInfo.version,
+            },
+          };
+          await safeWriteJson(uri.fsPath, exportData);
+          vscode.window.showInformationMessage(t("profile.export.success"));
+        } catch (e) {
+          const error = e instanceof Error ? e.message : "Unknown error";
+          vscode.window.showErrorMessage(`Failed to export profile: ${error}`);
         }
         break;
       }
 
       case "importProfile": {
         console.log("[SettingsViewMessageHandler] Handling importProfile");
-        await importProfileWithFeedback(this._profileManager, webview);
+        const uris = await vscode.window.showOpenDialog({
+          filters: { JSON: ["json"] },
+          canSelectMany: false,
+          title: t("profile.import.title"),
+        });
+
+        if (!uris || uris.length === 0) {
+          break;
+        }
+
+        try {
+          const filePath = uris[0].fsPath;
+          const fileContent = await fs.readFile(filePath, "utf-8");
+          const jsonData = JSON.parse(fileContent);
+
+          // The schema should validate the entire ProviderProfiles structure
+          const importFileSchema = z.object({
+            version: z.string(),
+            profile: z.any(), // We'll have to trust the structure for now
+            metadata: z.object({
+              exportedAt: z.string().datetime(),
+              exportedBy: z.string(),
+              extensionVersion: z.string(),
+            }),
+          });
+
+          const parsedData = importFileSchema.parse(jsonData);
+
+          await this._providerStore.importProfile(parsedData.profile);
+
+          // Since importProfile is void, we can't get the imported profile directly.
+          // We'll just notify success and let the UI reload profiles.
+          webview.postMessage({
+            command: "profileImported",
+            data: { success: true },
+          });
+          vscode.window.showInformationMessage(
+            t("profile.import.success.general")
+          );
+        } catch (e) {
+          let error = "Unknown error";
+          if (e instanceof ZodError) {
+            error = e.issues
+              .map((issue) => `[${issue.path.join(".")}]: ${issue.message}`)
+              .join("\n");
+          } else if (e instanceof Error) {
+            error = e.message;
+          }
+          webview.postMessage({
+            command: "profileImported",
+            data: { success: false, error: error },
+          });
+          vscode.window.showErrorMessage(t("profile.import.failed", [error]));
+        }
         break;
       }
 
