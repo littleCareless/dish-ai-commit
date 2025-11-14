@@ -1,3 +1,16 @@
+export enum MessageType {
+  // From Webview
+  GetAllPrompts = "getAllPrompts",
+  UpdatePrompt = "updatePrompt",
+  ResetPrompt = "resetPrompt",
+  ResetAllPrompts = "resetAllPrompts",
+  CreatePrompt = "createPrompt",
+  DeletePrompt = "deletePrompt",
+  RenamePrompt = "renamePrompt",
+
+  // From Extension
+  AllPrompts = "allPrompts",
+}
 export interface ChatMessage {
   id: string;
   type: 'user' | 'ai';

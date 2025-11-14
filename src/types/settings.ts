@@ -1,66 +1,85 @@
-// Provider 类型定义
-export type ProviderType = 
-  | 'first-party'      // Anthropic, OpenAI, Gemini
-  | 'aggregator'       // OpenRouter, Glama, Unbound
-  | 'local'            // Ollama, LMStudio
-  | 'cloud'            // Bedrock, Vertex
-  | 'openai-compatible'; // 通用 OpenAI 兼容
+import { z } from "zod";
 
-export interface ModelConfig {
-  id: string;
-  name: string;
-  provider: string;
-  maxTokens: { input: number; output: number };
-  deprecated?: boolean;
-  capabilities?: {
-    streaming?: boolean;
-    functionCalling?: boolean;
-  };
-  cost?: {
-    input: number;
-    output: number;
-  };
-}
+// Zod Schema for ProviderType
+export const providerTypeSchema = z.enum([
+  "first-party",
+  "aggregator",
+  "local",
+  "cloud",
+  "openai-compatible",
+]);
+export type ProviderType = z.infer<typeof providerTypeSchema>;
 
-export interface ProviderConfig {
-  id: string;
-  name: string;
-  type: ProviderType;
-  apiKey?: string;
-  baseURL?: string;
-  region?: string;
-  projectId?: string;
-  customHeaders?: Record<string, string>;
-  models: ModelConfig[];
-  defaultModel?: string;
-  organization?: string;
-  isActive?: boolean;
-  createdAt?: Date;
-  updatedAt?: Date;
-}
+// Zod Schema for ModelConfig
+export const modelConfigSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  provider: z.string(),
+  maxTokens: z.object({
+    input: z.number(),
+    output: z.number(),
+  }),
+  deprecated: z.boolean().optional(),
+  capabilities: z
+    .object({
+      streaming: z.boolean().optional(),
+      functionCalling: z.boolean().optional(),
+    })
+    .optional(),
+  cost: z
+    .object({
+      input: z.number(),
+      output: z.number(),
+    })
+    .optional(),
+});
+export type ModelConfig = z.infer<typeof modelConfigSchema>;
 
-export interface UserPreferences {
-  temperature: number;
-  verbosity: number;
-  rateLimitSeconds: number;
-  consecutiveMistakeLimit: number;
-  language: 'zh' | 'en';
-  maxTokens?: number;
-  timeout?: number;
-  retryAttempts?: number;
-}
+// Zod Schema for ProviderConfig
+export const providerConfigSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  type: providerTypeSchema,
+  apiKey: z.string().optional(),
+  baseURL: z.string().optional(),
+  region: z.string().optional(),
+  projectId: z.string().optional(),
+  customHeaders: z.record(z.string(), z.string()).optional(),
+  models: z.array(modelConfigSchema),
+  defaultModel: z.string().optional(),
+  organization: z.string().optional(),
+  isActive: z.boolean().optional(),
+  createdAt: z.date().or(z.string().datetime()).optional(),
+  updatedAt: z.date().or(z.string().datetime()).optional(),
+});
+export type ProviderConfig = z.infer<typeof providerConfigSchema>;
 
-export interface Profile {
-  id: string;
-  name: string;
-  description?: string;
-  isDefault: boolean;
-  providers: Record<string, ProviderConfig>;
-  preferences: UserPreferences;
-  createdAt: Date;
-  updatedAt: Date;
-  version: string;
-}
+// Zod Schema for UserPreferences
+export const userPreferencesSchema = z.object({
+  temperature: z.number(),
+  verbosity: z.number(),
+  rateLimitSeconds: z.number(),
+  consecutiveMistakeLimit: z.number(),
+  language: z.enum(["zh", "en"]),
+  maxTokens: z.number().optional(),
+  timeout: z.number().optional(),
+  retryAttempts: z.number().optional(),
+});
+export type UserPreferences = z.infer<typeof userPreferencesSchema>;
+
+// Zod Schema for Profile
+export const profileSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  isDefault: z.boolean(),
+  providers: z.record(z.string(), providerConfigSchema),
+  preferences: userPreferencesSchema,
+  createdAt: z.date().or(z.string().datetime()),
+  updatedAt: z.date().or(z.string().datetime()),
+  version: z.string(),
+});
+export type Profile = z.infer<typeof profileSchema>;
 
 // 扩展配置接口
 export interface ExtensionConfig {
