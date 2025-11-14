@@ -83,3 +83,7 @@ jspm_packages/
 
 # TernJS port file
 .tern-port
+src/webview-ui-dist/index.html
+src/webview-ui-dist/assets/index.css
+src/webview-ui-dist/assets/index.js
+src/webview-ui-dist/assets/index.js.map
