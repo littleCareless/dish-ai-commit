@@ -173,7 +173,7 @@ interface CommitChatConfig {
 import { CommandParser } from "@/services/commit-chat/command-parser";
 
 const customCommand = {
-  command: "mycommand",
+  type: "mycommand",
   description: "我的自定义命令",
   usage: "/mycommand [args]",
   examples: ["/mycommand test"],

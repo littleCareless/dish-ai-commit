@@ -1,9 +1,9 @@
-import React, { useState, useRef, useEffect } from "react";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Send, Loader2, Sparkles } from "lucide-react";
-import type { CommitSuggestion, CommitCommand } from "@src/types/messages";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import type { CommitCommand, CommitSuggestion } from "@src/types/messages";
+import { Loader2, Send, Sparkles } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
 
 interface CommitTextAreaProps {
   value: string;
@@ -39,7 +39,7 @@ const CommitTextArea: React.FC<CommitTextAreaProps> = ({
   const suggestionTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
 
   // 处理输入变化
-  const handleInputChange = (e: CustomEvent) => {
+  const handleInputChange = (e: React.FormEvent<HTMLElement>) => {
     const newValue = (e.target as HTMLTextAreaElement)?.value || "";
     onChange(newValue);
 
