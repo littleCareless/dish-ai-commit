@@ -1,3 +1,4 @@
+import { PROVIDER_DEFINITIONS } from "../config/provider-definitions";
 import type { AIGenerationErrorType } from "./utils/generate-helper";
 
 /**
@@ -117,7 +118,7 @@ export class ContextLengthExceededError extends Error {
  */
 export interface AIModel<
   Provider extends AIProviders = AIProviders,
-  Model extends AIModels<Provider> = AIModels<Provider>
+  Model extends AIModels<Provider> | string = string,
 > {
   /** 模型唯一标识符 */
   readonly id: Model;
@@ -213,13 +214,14 @@ export interface AIProvider {
   /** 刷新可用模型列表 */
   refreshModels(): Promise<string[]>;
   /** 获取支持的模型列表 */
-  getModels(): Promise<AIModel[]>;
+  getModels(): Promise<AIModel<any, any>[]>;
   /** 获取支持的嵌入式模型列表 */
-  getEmbeddingModels?(): Promise<AIModel[]>;
+  getEmbeddingModels?(): Promise<AIModel<any, any>[]>;
   /** 获取提供者名称 */
   getName(): string;
   /** 获取提供者ID */
   getId(): string;
+  getConfig(): any;
   /**
    * 计算文本的token数量
    * @param params - AI请求参数，主要使用其中的消息内容
@@ -464,30 +466,12 @@ export type ModelNames =
 export type PremAIModels = string;
 export type PremAIModelID = PremAIModels;
 
-export type AIProviders =
-  | "anthropic"
-  | "github"
-  | "openai"
-  | "perplexity"
-  | "vscode"
-  | "zhipu"
-  | "dashscope"
-  | "doubao"
-  | "deepseek"
-  | "gemini"
-  | "google-ai"
-  | "openrouter"
-  | "premai"
-  | "together" // Add Together AI
-  | "xai"
-  | "mistral"
-  | "baidu-qianfan"
-  | "azure-openai"
-  | "cloudflare"
-  | "vertexai"
-  | "groq"
-  | "siliconflow"
-  | "lmstudio";
+/**
+ * 从中心化定义生成 AIProviders 类型
+ * 这确保类型定义与实际提供商列表同步
+ */
+export type AIProviders = keyof typeof PROVIDER_DEFINITIONS;
+
 export type AnthropicAIModels =
   | "claude-3-opus-20240229"
   | "claude-3-sonnet-20240229"
@@ -497,48 +481,48 @@ export type AIModels<Provider extends AIProviders = AIProviders> =
   Provider extends "github"
     ? GitHubModels
     : Provider extends "openai"
-    ? OpenAIModels
-    : Provider extends "vscode"
-    ? VSCodeAIModels
-    : Provider extends "zhipu"
-    ? ZhipuAIModels
-    : Provider extends "dashscope"
-    ? DashScopeModels
-    : Provider extends "doubao"
-    ? DoubaoModels
-    : Provider extends "deepseek"
-    ? DeepseekModels
-    : Provider extends "gemini"
-    ? GeminiAIModels
-    : Provider extends "google-ai"
-    ? GoogleAIModels
-    : Provider extends "baidu-qianfan"
-    ? BaiduQianfanModels
-    : Provider extends "siliconflow"
-    ? SiliconFlowModels
-    : Provider extends "openrouter"
-    ? OpenRouterModels
-    : Provider extends "perplexity"
-    ? PerplexityAIModels
-    : Provider extends "premai"
-    ? PremAIModels
-    : Provider extends "together"
-    ? TogetherAIModels
-    : Provider extends "xai"
-    ? XAIModels
-    : Provider extends "anthropic"
-    ? AnthropicAIModels
-    : Provider extends "mistral"
-    ? MistralAIModels
-    : Provider extends "cloudflare"
-    ? CloudflareWorkersAIModels
-    : Provider extends "vertexai"
-    ? VertexAIModels
-    : Provider extends "groq"
-    ? "mixtral-8x7b-32768"
-    : Provider extends "lmstudio"
-    ? LMStudioModels
-    : OpenAIModels;
+      ? OpenAIModels
+      : Provider extends "vscode"
+        ? VSCodeAIModels
+        : Provider extends "zhipu"
+          ? ZhipuAIModels
+          : Provider extends "dashscope"
+            ? DashScopeModels
+            : Provider extends "doubao"
+              ? DoubaoModels
+              : Provider extends "deepseek"
+                ? DeepseekModels
+                : Provider extends "gemini"
+                  ? GeminiAIModels
+                  : Provider extends "google-ai"
+                    ? GoogleAIModels
+                    : Provider extends "baidu-qianfan"
+                      ? BaiduQianfanModels
+                      : Provider extends "siliconflow"
+                        ? SiliconFlowModels
+                        : Provider extends "openrouter"
+                          ? OpenRouterModels
+                          : Provider extends "perplexity"
+                            ? PerplexityAIModels
+                            : Provider extends "premai"
+                              ? PremAIModels
+                              : Provider extends "together"
+                                ? TogetherAIModels
+                                : Provider extends "xai"
+                                  ? XAIModels
+                                  : Provider extends "anthropic"
+                                    ? AnthropicAIModels
+                                    : Provider extends "mistral"
+                                      ? MistralAIModels
+                                      : Provider extends "cloudflare"
+                                        ? CloudflareWorkersAIModels
+                                        : Provider extends "vertexai"
+                                          ? VertexAIModels
+                                          : Provider extends "groq"
+                                            ? "mixtral-8x7b-32768"
+                                            : Provider extends "lmstudio"
+                                              ? LMStudioModels
+                                              : OpenAIModels;
 
 export type SupportedAIModels =
   | `github:${AIModels<"github">}`

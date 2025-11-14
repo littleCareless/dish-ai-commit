@@ -1,15 +1,15 @@
-import { notify } from "../../utils/notification/notification-manager";
-import { generateCommitMessageSystemPrompt } from "../../prompt/generate-commit";
-import { generateFallbackCommitMessageSystemPrompt } from "../../prompt/generate-commit-fallback";
-import { loadCommitlintConfig } from "../../utils/commitlint";
+import { ConfigurationManager } from "../../config/configuration-manager";
 import {
   generateBranchNameSystemPrompt,
   generateBranchNameUserPrompt,
 } from "../../prompt/branch-name";
-import { AIRequestParams } from "../types";
-import { ConfigurationManager } from "../../config/configuration-manager";
 import { getCodeReviewPrompt as getCodeReviewPrompts } from "../../prompt/code-review";
-import { getMessage, formatMessage } from "../../utils/i18n";
+import { generateCommitMessageSystemPrompt } from "../../prompt/generate-commit";
+import { generateFallbackCommitMessageSystemPrompt } from "../../prompt/generate-commit-fallback";
+import { loadCommitlintConfig } from "../../utils/commitlint";
+import { getMessage } from "../../utils/i18n";
+import { notify } from "../../utils/notification/notification-manager";
+import { AIRequestParams } from "../types";
 
 /**
  * AI 生成过程中可能遇到的错误类型枚举

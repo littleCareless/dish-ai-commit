@@ -1,28 +1,32 @@
-import { AIProvider as AIProviderInterface, AIModel } from "./types";
-import { OpenAIProvider } from "./providers/openai-provider";
-import { AnthropicAIProvider } from "./providers/anthropic-provider";
-import { OllamaProvider } from "./providers/ollama-provider";
-import { AIProvider, ConfigKeys } from "../config/types";
-import { ConfigurationManager } from "../config/configuration-manager";
-import { VSCodeProvider } from "./providers/vscode-provider";
-import { ZhipuAIProvider } from "./providers/zhipu-provider";
-import { DashScopeProvider } from "./providers/dashscope-provider";
-import { DoubaoProvider } from "./providers/doubao-provider";
-import { GeminiAIProvider } from "./providers/gemini-provider";
-import { formatMessage } from "../utils/i18n/localization-manager";
-import { DeepseekAIProvider } from "./providers/deepseek-provider";
-import { SiliconFlowProvider } from "./providers/siliconflow-provider";
-import { OpenRouterProvider } from "./providers/openrouter-provider";
-import { PremAIProvider } from "./providers/premai-provider";
+import { ConfigurationManager } from "../config/configuration-manager"
+import {
+  getProviderByEnumKey,
+  normalizeProviderType
+} from "../config/provider-definitions"
+import { AIProvider } from "../config/types"
+import { formatMessage } from "../utils/i18n/localization-manager"
+import { AnthropicAIProvider } from "./providers/anthropic-provider"
+import { AzureOpenAIProvider } from "./providers/azure-openai-provider"
+import { BaiduQianfanProvider } from "./providers/baidu-qianfan-provider"
+import { CloudflareWorkersAIProvider } from "./providers/cloudflare-workersai-provider"
+import { DashScopeProvider } from "./providers/dashscope-provider"
+import { DeepseekAIProvider } from "./providers/deepseek-provider"
+import { DoubaoProvider } from "./providers/doubao-provider"
+import { GeminiAIProvider } from "./providers/gemini-provider"
+import { GroqAIProvider } from "./providers/groq-provider"
+import { LMStudioProvider } from "./providers/lmstudio-provider"
+import { MistralAIProvider } from "./providers/mistral-provider"
+import { OllamaProvider } from "./providers/ollama-provider"
+import { OpenAIProvider } from "./providers/openai-provider"
+import { OpenRouterProvider } from "./providers/openrouter-provider"
+import { PremAIProvider } from "./providers/premai-provider"
+import { SiliconFlowProvider } from "./providers/siliconflow-provider"
 import { TogetherAIProvider } from "./providers/together-provider"; // Import TogetherAIProvider
-import { XAIProvider } from "./providers/xai-provider";
-import { MistralAIProvider } from "./providers/mistral-provider";
-import { AzureOpenAIProvider } from "./providers/azure-openai-provider";
-import { CloudflareWorkersAIProvider } from "./providers/cloudflare-workersai-provider";
-import { VertexAIProvider } from "./providers/vertexai-provider";
-import { GroqAIProvider } from "./providers/groq-provider";
-import { BaiduQianfanProvider } from "./providers/baidu-qianfan-provider";
-import { LMStudioProvider } from "./providers/lmstudio-provider";
+import { VertexAIProvider } from "./providers/vertexai-provider"
+import { VSCodeProvider } from "./providers/vscode-provider"
+import { XAIProvider } from "./providers/xai-provider"
+import { ZhipuAIProvider } from "./providers/zhipu-provider"
+import { AIModel, AIProvider as AIProviderInterface } from "./types"
 
 /**
  * AI提供者工厂类，负责创建和管理不同AI服务提供者的实例
@@ -41,7 +45,7 @@ import { LMStudioProvider } from "./providers/lmstudio-provider";
 export class AIProviderFactory {
   /**
    * 存储AI提供者实例的映射
-   * - key: 提供者类型标识符
+   * - key: 提供者类型标识符（规范化格式）
    * - value: 提供者实例
    * @private
    */
@@ -70,6 +74,13 @@ export class AIProviderFactory {
    * @private
    */
   private static providerConfigHashes: Map<string, string> = new Map();
+
+  /**
+   * 缓存过期时间（毫秒）：30分钟
+   * 超过此时间的缓存将被自动清除
+   * @private
+   */
+  private static readonly CACHE_EXPIRATION_TIME = 30 * 60 * 1000;
 
   /**
    * 清理过期的提供者实例
@@ -178,7 +189,7 @@ export class AIProviderFactory {
   }
 
   /**
-   * 获取指定类型的AI提供者实例
+   * 创建并返回指定类型的AI提供者实例
    * 优先从缓存中获取，如果不存在或已过期则创建新实例
    * 当配置发生变化时会自动清除对应的缓存实例
    *
@@ -193,86 +204,98 @@ export class AIProviderFactory {
       ConfigurationManager.getInstance().getConfig("BASE_PROVIDER") ||
       AIProvider.OPENAI;
 
+    // 规范化提供商类型返回大写下划线格式（如 VS_CODE_PROVIDED）
+    const normalizedEnumKey = normalizeProviderType(providerType);
+    
+    // 获取对应的提供商定义以得到小写 ID（如 vscode）
+    const providerDef = getProviderByEnumKey(normalizedEnumKey);
+    if (!providerDef) {
+      throw new Error(formatMessage("provider.type.unknown", [providerType]));
+    }
+    
+    const providerId = providerDef.id;
+
     // 检查是否需要强制重新创建实例（配置可能已变更）
-    const shouldForceRecreate = this.shouldForceRecreateProvider(providerType);
+    const shouldForceRecreate = this.shouldForceRecreateProvider(providerId);
     if (shouldForceRecreate) {
-      this.clearProvider(providerType);
+      this.clearProvider(providerId);
     }
 
-    let provider = this.providers.get(providerType);
+    let provider = this.providers.get(providerId);
 
     if (!provider) {
-      switch (providerType.toLowerCase()) {
-        case AIProvider.ANTHROPIC:
+      switch (providerId) {
+        case 'anthropic':
           provider = new AnthropicAIProvider();
           break;
-        case AIProvider.OPENAI:
+        case 'openai':
           provider = new OpenAIProvider();
           break;
-        case AIProvider.OLLAMA:
+        case 'ollama':
           provider = new OllamaProvider();
           break;
-        case AIProvider.VS_CODE_PROVIDED:
+        case 'vscode':
           provider = new VSCodeProvider();
           break;
-        case AIProvider.ZHIPU:
+        case 'zhipu':
           provider = new ZhipuAIProvider();
           break;
-        case AIProvider.DASHSCOPE:
+        case 'dashscope':
           provider = new DashScopeProvider();
           break;
-        case AIProvider.DOUBAO:
+        case 'doubao':
           provider = new DoubaoProvider();
           break;
-        case AIProvider.GEMINI:
+        case 'gemini':
           provider = new GeminiAIProvider();
           break;
-        case AIProvider.DEEPSEEK:
+        case 'deepseek':
           provider = new DeepseekAIProvider();
           break;
-        case AIProvider.SILICONFLOW:
+        case 'siliconflow':
           provider = new SiliconFlowProvider();
           break;
-        case AIProvider.OPENROUTER:
+        case 'openrouter':
           provider = new OpenRouterProvider();
           break;
-        case AIProvider.PREMAI:
+        case 'premai':
           provider = new PremAIProvider();
           break;
-        case AIProvider.TOGETHER:
+        case 'together':
           provider = new TogetherAIProvider();
           break;
-        case AIProvider.XAI:
+        case 'xai':
           provider = new XAIProvider();
           break;
-        case AIProvider.AZURE_OPENAI:
+        case 'azure-openai':
           provider = new AzureOpenAIProvider();
           break;
-        case AIProvider.CLOUDFLARE:
+        case 'cloudflare':
           provider = new CloudflareWorkersAIProvider();
           break;
-        case AIProvider.VERTEXAI:
+        case 'vertexai':
           provider = new VertexAIProvider();
           break;
-        case AIProvider.GROQ:
+        case 'groq':
           provider = new GroqAIProvider();
           break;
-        case AIProvider.MISTRAL:
+        case 'mistral':
           provider = new MistralAIProvider();
-         break;
-        case AIProvider.BAIDU_QIANFAN:
+          break;
+        case 'baidu-qianfan':
           provider = new BaiduQianfanProvider();
           break;
-        case AIProvider.LMSTUDIO:
+        case 'lmstudio':
           provider = new LMStudioProvider();
           break;
-       default:
-         throw new Error(formatMessage("provider.type.unknown", [type]));
-     }
+        default:
+          throw new Error(formatMessage("provider.type.unknown", [providerType]));
+      }
+      
       if (provider) {
-        this.providers.set(providerType, provider);
-        this.providerTimestamps.set(providerType, Date.now());
-        this.providerConfigHashes.set(providerType, this.getProviderConfigHash(providerType));
+        this.providers.set(providerId, provider);
+        this.providerTimestamps.set(providerId, Date.now());
+        this.providerConfigHashes.set(providerId, this.getProviderConfigHash(providerId));
       }
     }
 
@@ -319,12 +342,20 @@ export class AIProviderFactory {
    * @param providerId - 需要重初始化的提供者ID
    */
   public static reinitializeProvider(providerId: string): void {
-    const provider = this.providers.get(providerId);
+    // 规范化提供商类型以确保一致性
+    const normalizedEnumKey = normalizeProviderType(providerId);
+    const providerDef = getProviderByEnumKey(normalizedEnumKey);
+    if (!providerDef) {
+      return; // 提供者定义不存在，直接返回
+    }
+    
+    const normalizedId = providerDef.id;
+    const provider = this.providers.get(normalizedId);
     if (provider && "reinitialize" in provider) {
       (provider as any).reinitialize();
     }
     // 清除缓存以确保下次获取时使用新配置
-    this.clearProvider(providerId);
+    this.clearProvider(normalizedId);
   }
 
   /**
@@ -334,7 +365,15 @@ export class AIProviderFactory {
    * @param providerType - 提供者类型标识符
    */
   public static clearProviderCache(providerType: string): void {
-    this.clearProvider(providerType);
+    // 规范化提供商类型以确保一致性
+    const normalizedEnumKey = normalizeProviderType(providerType);
+    const providerDef = getProviderByEnumKey(normalizedEnumKey);
+    if (!providerDef) {
+      return; // 提供者定义不存在，直接返回
+    }
+    
+    const normalizedId = providerDef.id;
+    this.clearProvider(normalizedId);
   }
 
   /**
