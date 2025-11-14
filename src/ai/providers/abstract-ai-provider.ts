@@ -28,6 +28,7 @@ import { Logger } from "../../utils/logger";
  */
 export abstract class AbstractAIProvider implements AIProvider {
   protected logger: Logger;
+  protected config: any;
 
   constructor() {
     this.logger = Logger.getInstance("Dish AI Commit Gen");
@@ -450,6 +451,10 @@ export abstract class AbstractAIProvider implements AIProvider {
   abstract isAvailable(): Promise<boolean>;
   abstract getName(): string;
   abstract getId(): string;
+
+  public getConfig(): any {
+    return this.config;
+  }
 
   /**
    * 计算文本的token数量。
