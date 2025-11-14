@@ -2,24 +2,45 @@ import * as vscode from "vscode";
 import * as notifier from "node-notifier";
 import * as path from "path";
 import { getMessage } from "../i18n";
+import { NotificationSettingsManager } from "./notification-settings-manager";
 
 /**
  * Sends a system-level notification.
  * @param title The title of the notification.
  * @param message The message body of the notification.
+ * @param options Optional notification options
  */
-export function showSystemNotification(title: string, message: string): void {
+export function showSystemNotification(
+  title: string,
+  message: string,
+  options?: {
+    sound?: boolean;
+    wait?: boolean;
+    timeout?: number;
+  }
+): void {
   try {
+    // 检查是否启用了系统通知
+    const settingsManager = NotificationSettingsManager.getInstance();
+    if (!settingsManager.isSystemNotificationsEnabled()) {
+      // 如果未启用，只显示 VS Code 内部通知
+      vscode.window.showInformationMessage(`${title}: ${message}`);
+      return;
+    }
+
     // VSCode extensions run from the 'dist' directory, so we need to go up one level.
     const iconPath = path.join(__dirname, "..", "images", "logo.png");
+
+    // 检查是否启用了声音通知
+    const playSound = options?.sound !== false && settingsManager.isSoundNotificationsEnabled();
 
     notifier.notify({
       title: title,
       message: message,
       icon: iconPath,
-      sound: true, // Play a sound
-      wait: false, // Do not wait for user action
-      timeout: 5, // Set a timeout of 5 seconds
+      sound: playSound,
+      wait: options?.wait ?? false,
+      timeout: options?.timeout ?? 5,
     });
   } catch (error) {
     console.error("Failed to send system notification:", error);
