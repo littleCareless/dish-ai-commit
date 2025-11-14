@@ -67,19 +67,6 @@ export const userPreferencesSchema = z.object({
 });
 export type UserPreferences = z.infer<typeof userPreferencesSchema>;
 
-// Zod Schema for Profile
-export const profileSchema = z.object({
-  id: z.string(),
-  name: z.string(),
-  description: z.string().optional(),
-  isDefault: z.boolean(),
-  providers: z.record(z.string(), providerConfigSchema),
-  preferences: userPreferencesSchema,
-  createdAt: z.date().or(z.string().datetime()),
-  updatedAt: z.date().or(z.string().datetime()),
-  version: z.string(),
-});
-export type Profile = z.infer<typeof profileSchema>;
 
 // 扩展配置接口
 export interface ExtensionConfig {
@@ -117,15 +104,6 @@ export interface ConfigValidationResult {
 }
 
 // 导出/导入格式
-export interface ProfileExport {
-  version: string;
-  profile: Profile;
-  metadata: {
-    exportedAt: Date;
-    exportedBy: string;
-    extensionVersion: string;
-  };
-}
 
 // 设置变更事件
 export interface SettingsChangeEvent {
@@ -155,11 +133,8 @@ export const DEFAULT_PROVIDER_CONFIG: Omit<ProviderConfig, 'id' | 'name' | 'type
 };
 
 // 工具函数类型
-export type ProfileValidator = (profile: Profile) => ConfigValidationResult;
 export type ProviderValidator = (provider: ProviderConfig) => ConfigValidationResult;
-export type ConfigMigrator = (oldConfig: any) => Profile;
 
 // 事件回调类型
-export type ProfileChangeCallback = (profile: Profile) => void;
 export type ProviderChangeCallback = (providerId: string, provider: ProviderConfig) => void;
 export type SettingsChangeCallback = (event: SettingsChangeEvent) => void;
