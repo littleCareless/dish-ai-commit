@@ -3,6 +3,8 @@
  * Contains categories: base, providers, and features
  * @const {Object}
  */
+import { getAllProviderDisplayNames } from "./provider-definitions"
+
 export const CONFIG_SCHEMA = {
   base: {
     // Basic configuration
@@ -56,28 +58,7 @@ export const CONFIG_SCHEMA = {
     provider: {
       type: "string",
       default: "OpenAI",
-      enum: [
-        "OpenAI",
-        "Ollama",
-        "VS Code Provided",
-        "Zhipu",
-        "DashScope",
-        "Doubao",
-        "Gemini",
-        "Deepseek",
-        "Siliconflow",
-        "OpenRouter",
-        "PremAI",
-        "Together",
-        "Anthropic",
-        "Mistral",
-        "Baidu Qianfan",
-        "Azure OpenAI",
-        "Cloudflare",
-        "GoogleAI",
-        "VertexAI",
-        "LMStudio",
-      ],
+      enum: getAllProviderDisplayNames(),
       description: "AI provider / AI 提供商",
     },
     model: {
@@ -587,14 +568,15 @@ export type ConfigPath = string; // e.g., "providers.openai.apiKey"
 
 
 // Re-export utility functions from new modules
-export { generateConfigKeys } from "./utils/config-keys-generator";
-export {
-  generateConfigMetadata,
-  type ConfigMetadataItem,
-} from "./utils/config-metadata-generator";
-export { isConfigValue } from "./utils/config-validation";
 export {
   generateConfiguration,
   getAllConfigPaths,
-  getCategoryConfigPaths,
-} from "./utils/config-builder";
+  getCategoryConfigPaths
+} from "./utils/config-builder"
+export { generateConfigKeys } from "./utils/config-keys-generator"
+export {
+  generateConfigMetadata,
+  type ConfigMetadataItem
+} from "./utils/config-metadata-generator"
+export { isConfigValue } from "./utils/config-validation"
+
