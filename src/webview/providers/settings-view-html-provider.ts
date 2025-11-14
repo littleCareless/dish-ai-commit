@@ -17,118 +17,128 @@ export class SettingsViewHTMLProvider {
     return text;
   }
 
-  public getWebviewContent(
+  public async getWebviewContent(
     webview: vscode.Webview,
-    initialData: { qdrantUrl?: string; qdrantCollectionName?: string }
-  ): string {
+    initialData: {
+      viewType: string;
+      initialRoute: string;
+      qdrantUrl?: string;
+      qdrantCollectionName?: string;
+      language?: string;
+    }
+  ): Promise<string> {
+    const webviewUiDistPath = vscode.Uri.joinPath(
+      this._extensionUri,
+      "..",
+      "webview-ui-dist"
+    );
+    const htmlPath = vscode.Uri.joinPath(webviewUiDistPath, "index.html");
+
+    const uint8Array = await vscode.workspace.fs.readFile(htmlPath);
+    const htmlContent = new TextDecoder().decode(uint8Array);
+
     const scriptUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(
-        this._extensionUri,
-        "webview-ui-dist/assets",
-        "index.js"
-      )
+      vscode.Uri.joinPath(webviewUiDistPath, "assets", "index.js")
     );
     const styleUri = webview.asWebviewUri(
-      vscode.Uri.joinPath(
-        this._extensionUri,
-        "webview-ui-dist/assets",
-        "index.css"
-      )
+      vscode.Uri.joinPath(webviewUiDistPath, "assets", "index.css")
     );
+
+    const localesBaseUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(webviewUiDistPath, "locales")
+    );
+
     const nonce = this.getNonce();
 
-    // 定义 CSP 策略
-    // 参考: https://code.visualstudio.com/api/extension-guides/webview#content-security-policy
     const csp = [
-      `default-src 'none'`, // 默认情况下，不允许任何内容
-      `style-src ${webview.cspSource} 'unsafe-inline'`, // 允许来自扩展的 CSS 文件和内联样式 (例如 <style> 标签或 style 属性)
-      `script-src 'nonce-${nonce}'`, // 只允许带有特定 nonce 的脚本执行 (包括内联脚本和 <script src="..."> 标签)
-      `img-src ${webview.cspSource} data:`, // 允许来自扩展的图片和 base64 编码的图片 (data: URIs)
-      `font-src ${webview.cspSource}`, // 允许来自扩展的字体文件
+      `default-src 'none'`,
+      `style-src ${webview.cspSource} 'unsafe-inline'`,
+      `script-src 'nonce-${nonce}'`,
+      `img-src ${webview.cspSource} data:`,
+      `font-src ${webview.cspSource}`,
+      `connect-src ${webview.cspSource}`,
     ].join("; ");
 
-    return `<!DOCTYPE html>
-            <html lang="zh-CN">
-            <head>
-                <meta charset="UTF-8">
-                <meta name="viewport" content="width=device-width, initial-scale=1.0">
-                <meta http-equiv="Content-Security-Policy" content="${csp}">
-                <link href="${styleUri}" rel="stylesheet">
-                <title>插件设置</title>
-            </head>
-            <body>
-                <div id="root">
-                    <!-- webview-ui (例如 React/Vue/Svelte 应用) 将会挂载到这里 -->
-                    <!-- 确保 webview-ui 应用能够找到并使用这个 div -->
-                </div>
-                
-                <script nonce="${nonce}">
-                    // 获取当前VSCode主题
-                    function getVSCodeTheme() {
-                        const body = document.body;
-                        if (body.classList.contains('vscode-dark')) {
-                            return 'dark';
-                        } else if (body.classList.contains('vscode-light')) {
-                            return 'light';
-                        } else if (body.classList.contains('vscode-high-contrast')) {
-                            return 'high-contrast';
-                        }
-                        return 'light'; // 默认为浅色主题
-                    }
+    return htmlContent
+      .replace(/<title>.*?<\/title>/, "<title>插件设置</title>")
+      .replace(
+        "</head>",
+        `<meta http-equiv="Content-Security-Policy" content="${csp}">
+<script nonce="${nonce}">
+  // 获取当前VSCode主题
+  function getVSCodeTheme() {
+      const body = document.body;
+      if (body.classList.contains('vscode-dark')) {
+          return 'dark';
+      } else if (body.classList.contains('vscode-light')) {
+          return 'light';
+      } else if (body.classList.contains('vscode-high-contrast')) {
+          return 'high-contrast';
+      }
+      return 'light'; // 默认为浅色主题
+  }
 
-                    // 应用主题到根元素
-                    function applyTheme() {
-                        const theme = getVSCodeTheme();
-                        const root = document.documentElement;
-                        const body = document.body;
-                        
-                        // 移除所有主题类
-                        root.classList.remove('light', 'dark', 'high-contrast');
-                        // 添加当前主题类
-                        root.classList.add(theme);
-                        
-                        // 设置Arco Design主题
-                        if (theme === 'dark' || theme === 'high-contrast') {
-                            body.setAttribute('arco-theme', 'dark');
-                        } else {
-                            body.removeAttribute('arco-theme');
-                        }
-                        
-                        // 触发主题变更事件
-                        window.dispatchEvent(new CustomEvent('vscode-theme-changed', { detail: theme }));
-                    }
+  // 应用主题到根元素
+  function applyTheme() {
+      const theme = getVSCodeTheme();
+      const root = document.documentElement;
+      const body = document.body;
+      
+      // 移除所有主题类
+      root.classList.remove('light', 'dark', 'high-contrast');
+      // 添加当前主题类
+      root.classList.add(theme);
+      
+      // 设置Arco Design主题
+      if (theme === 'dark' || theme === 'high-contrast') {
+          body.setAttribute('arco-theme', 'dark');
+      } else {
+          body.removeAttribute('arco-theme');
+      }
+      
+      // 触发主题变更事件
+      window.dispatchEvent(new CustomEvent('vscode-theme-changed', { detail: theme }));
+  }
 
-                    // 监听主题变化
-                    const observer = new MutationObserver((mutations) => {
-                        mutations.forEach((mutation) => {
-                            if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
-                                applyTheme();
-                            }
-                        });
-                    });
+  // 监听主题变化
+  const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+          if (mutation.type === 'attributes' && mutation.attributeName === 'class') {
+              applyTheme();
+          }
+      });
+  });
 
-                    // 页面加载完成后初始化主题
-                    document.addEventListener('DOMContentLoaded', () => {
-                        applyTheme();
-                        // 开始监听body的class变化
-                        observer.observe(document.body, {
-                            attributes: true,
-                            attributeFilter: ['class']
-                        });
-                    });
+  // 页面加载完成后初始化主题
+  document.addEventListener('DOMContentLoaded', () => {
+      applyTheme();
+      // 开始监听body的class变化
+      observer.observe(document.body, {
+          attributes: true,
+          attributeFilter: ['class']
+      });
 
-                    // 向 webview-ui 传递初始数据
-                    window.initialData = {
-                        viewType: 'settingsPage',
-                        vscodeTheme: getVSCodeTheme(),
-                        qdrantUrl: "${initialData.qdrantUrl || ""}",
-                        qdrantCollectionName: "${initialData.qdrantCollectionName || ""}"
-                    };
-                    
-                    console.log('SettingsViewProvider: initialData set', window.initialData);
-                </script>
-                <script type="module" nonce="${nonce}" src="${scriptUri}"></script>
-            </body>
-            </html>`;
+      // 向 webview-ui 传递初始数据
+      window.initialData = {
+          viewType: "${initialData.viewType}",
+          vscodeTheme: getVSCodeTheme(),
+          qdrantUrl: "${initialData.qdrantUrl || ""}",
+          qdrantCollectionName: "${initialData.qdrantCollectionName || ""}",
+          language: "${initialData.language || "en"}",
+          localesBaseUri: "${localesBaseUri.toString()}"
+      };
+      window.initialRoute = "${initialData.initialRoute}";
+      
+      console.log('SettingsViewProvider: initialData set', window.initialData);
+      window.dispatchEvent(new CustomEvent('initial-data-ready'));
+  });
+</script>
+</head>`
+      )
+      .replace('href="/assets/index.css"', `href="${styleUri}"`)
+      .replace(
+        'src="/assets/index.js"',
+        `src="${scriptUri}" nonce="${nonce}"`
+      );
   }
 }

@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
-import { EmbeddingService } from "../core/indexing/embedding-service";
-import { SettingsViewHTMLProvider } from "./providers/settings-view-html-provider";
-import { SettingsViewMessageHandler } from "./handlers/settings-view-message-handler";
-import { stateManager } from "../utils/state/state-manager";
 import { WORKSPACE_CONFIG_PATHS } from "../config/workspace-config-schema";
+import { EmbeddingService } from "../core/indexing/embedding-service";
+import { stateManager } from "../utils/state/state-manager";
+import { SettingsViewMessageHandler } from "./handlers/settings-view-message-handler";
+import { SettingsViewHTMLProvider } from "./providers/settings-view-html-provider";
 
 export class SettingsViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "dish-ai-commit.settingsView"; // 必须与 package.json 中的 id 匹配
@@ -41,7 +41,7 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.options = {
       enableScripts: true,
       localResourceRoots: [
-        vscode.Uri.joinPath(this._extensionUri, "webview-ui-dist"),
+        vscode.Uri.joinPath(this._extensionUri, "..", "webview-ui-dist"),
       ],
     };
 
@@ -52,13 +52,14 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
       WORKSPACE_CONFIG_PATHS.experimental.codeIndex.qdrantCollectionName
     );
 
-    webviewView.webview.html = this._htmlContentProvider.getWebviewContent(
-      webviewView.webview,
-      {
+    webviewView.webview.html =
+      await this._htmlContentProvider.getWebviewContent(webviewView.webview, {
+        viewType: "settingsPage",
+        initialRoute: "/settings",
         qdrantUrl,
         qdrantCollectionName,
-      }
-    );
+        language: vscode.env.language,
+      });
 
     webviewView.webview.onDidReceiveMessage(
       async (message) => {

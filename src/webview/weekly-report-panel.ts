@@ -1,20 +1,20 @@
 import * as vscode from "vscode";
-import { WeeklyReportViewProvider } from "./providers/weekly-report-view-provider";
-import { WeeklyReportMessageHandler } from "./handlers/weekly-report-message-handler";
 import { getMessage } from "../utils/i18n";
+import { WeeklyReportMessageHandler } from "./handlers/weekly-report-message-handler";
+import { SettingsViewHTMLProvider } from "./providers/settings-view-html-provider";
 
 export class WeeklyReportPanel {
   public static readonly viewType = "weeklyReport.view";
   public static currentPanel: WeeklyReportPanel | undefined;
 
   private readonly _panel: vscode.WebviewPanel;
-  private readonly _viewProvider: WeeklyReportViewProvider;
+  private readonly _viewProvider: SettingsViewHTMLProvider;
   private readonly _messageHandler: WeeklyReportMessageHandler;
   private _disposables: vscode.Disposable[] = [];
 
   private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
     this._panel = panel;
-    this._viewProvider = new WeeklyReportViewProvider(extensionUri);
+    this._viewProvider = new SettingsViewHTMLProvider(extensionUri);
     this._messageHandler = new WeeklyReportMessageHandler();
 
     this._panel.webview.options = {
@@ -24,12 +24,10 @@ export class WeeklyReportPanel {
       ],
     };
 
-    this._panel.webview.html = this._viewProvider.getWebviewContent(
-      this._panel.webview
-    );
+    this._updateWebviewContent();
 
     this._panel.webview.onDidReceiveMessage(
-      async (message) => {
+      async (message: { command: string; payload: unknown }) => {
         await this._messageHandler.handleMessage(message, this._panel.webview);
       },
       null,
@@ -37,6 +35,17 @@ export class WeeklyReportPanel {
     );
 
     this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
+  }
+
+  private async _updateWebviewContent() {
+    this._panel.webview.html = await this._viewProvider.getWebviewContent(
+      this._panel.webview,
+      {
+        viewType: "weeklyReport",
+        initialRoute: "/weekly-report",
+        language: vscode.env.language,
+      }
+    );
   }
 
   public static async createOrShow(
@@ -60,7 +69,7 @@ export class WeeklyReportPanel {
         enableScripts: true,
         retainContextWhenHidden: true,
         localResourceRoots: [
-          vscode.Uri.joinPath(extensionUri, "webview-ui-dist"),
+          vscode.Uri.joinPath(extensionUri, "..", "webview-ui-dist"),
         ],
       }
     );

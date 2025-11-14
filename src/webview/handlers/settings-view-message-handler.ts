@@ -1,41 +1,369 @@
+import * as fs from "fs/promises";
+import * as os from "os";
+import * as path from "path";
 import * as vscode from "vscode";
+import { AIProviderFactory } from "../../ai/ai-provider-factory";
+import { AIProvider } from "../../ai/types";
 import {
   EmbeddingService,
   EmbeddingServiceError,
 } from "../../core/indexing/embedding-service";
 import { EmbeddingServiceManager } from "../../core/indexing/embedding-service-manager";
-import { AIProvider } from "../../ai/types";
-import { AIProviderFactory } from "../../ai/ai-provider-factory";
-import { stateManager } from "../../utils/state/state-manager";
 import {
-  WORKSPACE_CONFIG_SCHEMA,
-  WORKSPACE_CONFIG_PATHS,
-} from "../../config/workspace-config-schema";
-import { CONFIG_SCHEMA } from "../../config/config-schema";
-import { isConfigValue } from "../../config/utils/config-validation";
-import { notify } from "../../utils/notification/notification-manager";
+  exportProfile,
+  importProfileWithFeedback,
+} from "../../services/profile-import-export-service";
 import { ProfileManagerService } from "../../services/profile-manager-service";
-import { Profile, ProviderConfig } from "../../types/settings";
+import { PromptManagerService } from "../../services/prompt-manager-service";
+import { MessageType } from "../../types/messages";
+import { notify } from "../../utils/notification/notification-manager";
+import { NotificationSettingsManager } from "../../utils/notification/notification-settings-manager";
+import { SoundPlayerService } from "../../utils/notification/sound-player";
+import { TextToSpeechService } from "../../utils/notification/text-to-speech";
+import { systemNotifier } from "../../utils/notification/system-notification-service";
 
 export class SettingsViewMessageHandler {
   private readonly _extensionId: string;
   private _profileManager: ProfileManagerService;
+
+  private _promptManager: PromptManagerService;
 
   constructor(
     extensionId: string,
     private _embeddingService: EmbeddingService | null,
     private readonly _extensionContext: vscode.ExtensionContext // Receive // extensionContext here
   ) {
+    console.log("[SettingsViewMessageHandler] Initializing...");
     this._extensionId = extensionId;
-    this._profileManager = ProfileManagerService.getInstance(_extensionContext);
+    this._profileManager = ProfileManagerService.getInstance();
+    this._promptManager = PromptManagerService.getInstance();
   }
 
   public async handleMessage(
     message: any,
     webview: vscode.Webview
   ): Promise<void> {
+    console.log(
+      `[SettingsViewMessageHandler] Received message: ${JSON.stringify(
+        message,
+        null,
+        2
+      )}`
+    );
     switch (message.command) {
+      case "showInformationMessage": {
+        console.log(
+          "[SettingsViewMessageHandler] Handling showInformationMessage"
+        );
+        const { message: msg, options, callbackId } = message.data;
+        vscode.window
+          .showInformationMessage(msg, ...options)
+          .then((selection) => {
+            webview.postMessage({
+              command: "showInformationMessageResponse",
+              data: { callbackId, selection },
+            });
+          });
+        break;
+      }
+      case "getPackageInfo": {
+        console.log("[SettingsViewMessageHandler] Handling getPackageInfo");
+        try {
+          const packageJsonPath = path.join(
+            this._extensionContext.extensionPath,
+            "package.json"
+          );
+          const packageJsonContent = await fs.readFile(
+            packageJsonPath,
+            "utf-8"
+          );
+          const packageInfo = JSON.parse(packageJsonContent);
+          webview.postMessage({
+            command: "packageInfoLoaded",
+            data: packageInfo,
+          });
+        } catch (error) {
+          console.error(
+            "[SettingsViewMessageHandler] Error in getPackageInfo:",
+            error
+          );
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "error",
+            data: { message: `Failed to load package.json: ${errorMessage}` },
+          });
+        }
+        break;
+      }
+      // === 使用 globalState 进行持久化存储（替代旧的 workspace.getConfiguration） ===
+      case "setGlobalState": {
+        console.log(
+          `[SettingsViewMessageHandler] Handling setGlobalState for key: ${message.key}`
+        );
+        try {
+          const { key, value } = message;
+          // 使用 globalState 进行持久化存储，不会写入 settings.json
+          await this._extensionContext.globalState.update(key, value);
+          webview.postMessage({
+            command: "setGlobalStateResponse",
+            key,
+            success: true,
+          });
+        } catch (error) {
+          console.error(
+            `[SettingsViewMessageHandler] Error in setGlobalState for key: ${message.key}:`,
+            error
+          );
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "setGlobalStateResponse",
+            key: message?.key,
+            success: false,
+            error: errorMessage,
+          });
+        }
+        break;
+      }
+
+      case "getGlobalState": {
+        console.log(
+          `[SettingsViewMessageHandler] Handling getGlobalState for key: ${message.key}`
+        );
+        try {
+          const { key } = message;
+          const value = this._extensionContext.globalState.get(key);
+          webview.postMessage({
+            command: "getGlobalStateResponse",
+            key,
+            value,
+          });
+        } catch (error) {
+          console.error(
+            `[SettingsViewMessageHandler] Error in getGlobalState for key: ${message.key}:`,
+            error
+          );
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "getGlobalStateResponse",
+            key: message?.key,
+            value: null,
+            error: errorMessage,
+          });
+        }
+        break;
+      }
+
+      // === 使用 secrets API 进行敏感信息存储 ===
+      case "setSecret": {
+        console.log(
+          `[SettingsViewMessageHandler] Handling setSecret for key: ${message.key}`
+        );
+        try {
+          const { key, value } = message;
+          await this._extensionContext.secrets.store(key, String(value ?? ""));
+          webview.postMessage({
+            command: "setSecretResponse",
+            key,
+            success: true,
+          });
+        } catch (error) {
+          console.error(
+            `[SettingsViewMessageHandler] Error in setSecret for key: ${message.key}:`,
+            error
+          );
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "setSecretResponse",
+            key: message?.key,
+            success: false,
+            error: errorMessage,
+          });
+        }
+        break;
+      }
+
+      case "getSecret": {
+        console.log(
+          `[SettingsViewMessageHandler] Handling getSecret for key: ${message.key}`
+        );
+        try {
+          const { key } = message;
+          const value = await this._extensionContext.secrets.get(key);
+          webview.postMessage({
+            command: "getSecretResponse",
+            key,
+            value: value ?? null,
+          });
+        } catch (error) {
+          console.error(
+            `[SettingsViewMessageHandler] Error in getSecret for key: ${message.key}:`,
+            error
+          );
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "getSecretResponse",
+            key: message?.key,
+            value: null,
+            error: errorMessage,
+          });
+        }
+        break;
+      }
+
+      case "deleteSecret": {
+        console.log(
+          `[SettingsViewMessageHandler] Handling deleteSecret for key: ${message.key}`
+        );
+        try {
+          const { key } = message;
+          await this._extensionContext.secrets.delete(key);
+          // 可选：通知删除结果
+          webview.postMessage({
+            command: "deleteSecretResponse",
+            key,
+            success: true,
+          });
+        } catch (error) {
+          console.error(
+            `[SettingsViewMessageHandler] Error in deleteSecret for key: ${message.key}:`,
+            error
+          );
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "deleteSecretResponse",
+            key: message?.key,
+            success: false,
+            error: errorMessage,
+          });
+        }
+        break;
+      }
+
+      case "getNotificationSettings": {
+        console.log(
+          "[SettingsViewMessageHandler] Handling getNotificationSettings"
+        );
+        try {
+          const settingsManager = NotificationSettingsManager.getInstance();
+          await settingsManager.loadSettings();
+          const settings = settingsManager.getSettings();
+          webview.postMessage({
+            command: "getNotificationSettingsResponse",
+            data: {
+              success: true,
+              settings,
+            },
+          });
+        } catch (error) {
+          console.error(
+            "[SettingsViewMessageHandler] Error in getNotificationSettings:",
+            error
+          );
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "getNotificationSettingsResponse",
+            data: {
+              success: false,
+              error: errorMessage,
+              settings: null,
+            },
+          });
+        }
+        break;
+      }
+
+      case "setNotificationSettings": {
+        console.log(
+          "[SettingsViewMessageHandler] Handling setNotificationSettings"
+        );
+        try {
+          const { settings } = message.data;
+          const settingsManager = NotificationSettingsManager.getInstance();
+          await settingsManager.saveSettings(settings);
+
+          // 更新 TTS 和音效服务的状态
+          const ttsService = TextToSpeechService.getInstance();
+          ttsService.setEnabled(settings.textToSpeech);
+
+          const soundService = SoundPlayerService.getInstance();
+          soundService.setEnabled(settings.soundNotifications);
+
+          webview.postMessage({
+            command: "setNotificationSettingsResponse",
+            data: {
+              success: true,
+            },
+          });
+        } catch (error) {
+          console.error(
+            "[SettingsViewMessageHandler] Error in setNotificationSettings:",
+            error
+          );
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "setNotificationSettingsResponse",
+            data: {
+              success: false,
+              error: errorMessage,
+            },
+          });
+        }
+        break;
+      }
+
+      case "testSystemNotification": {
+        console.log(
+          "[SettingsViewMessageHandler] Handling testSystemNotification"
+        );
+        try {
+          const { title, message: notificationMessage } = message.data;
+          systemNotifier.notify({ title, message: notificationMessage });
+        } catch (error) {
+          console.error(
+            "[SettingsViewMessageHandler] Error in testSystemNotification:",
+            error
+          );
+        }
+        break;
+      }
+
+      case "getOS": {
+        console.log("[SettingsViewMessageHandler] Handling getOS");
+        try {
+          const osPlatform = os.platform();
+          webview.postMessage({
+            command: "getOSResponse",
+            data: {
+              os: osPlatform,
+            },
+          });
+        } catch (error) {
+          console.error("[SettingsViewMessageHandler] Error in getOS:", error);
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "getOSResponse",
+            data: {
+              os: null,
+              error: errorMessage,
+            },
+          });
+        }
+        break;
+      }
+
       case "testConnection": {
+        console.log(
+          `[SettingsViewMessageHandler] Handling testConnection for service: ${message.data.service}`
+        );
         const { service, url, key } = message.data;
         await this.handleTestConnection(service, url, key, webview);
         break;
@@ -49,165 +377,201 @@ export class SettingsViewMessageHandler {
         break;
       }
       case "clearIndex": {
+        console.log("[SettingsViewMessageHandler] Handling clearIndex");
         await this.handleClearIndex(webview);
         break;
       }
       case "getSettings": {
-        const config = vscode.workspace.getConfiguration("dish-ai-commit");
-        const detailedSettings: any[] = [];
-        const processConfig = (schema: any, path: string, settings: any[]) => {
-          for (const key in schema) {
-            if (Object.prototype.hasOwnProperty.call(schema, key)) {
-              const prop = schema[key];
+        console.log("[SettingsViewMessageHandler] Handling getSettings");
+        try {
+          const detailedSettings: any[] = [];
+
+          // 从 globalState 读取应用级配置
+          const globalStateConfig =
+            this._extensionContext.globalState.get("config") || {};
+
+          // 将 globalState 中的配置转换为 settings 数组格式
+          const processGlobalConfig = (
+            obj: any,
+            path: string,
+            settings: any[]
+          ) => {
+            for (const [key, value] of Object.entries(obj)) {
               const currentPath = path ? `${path}.${key}` : key;
-
-              if (isConfigValue(prop)) {
-                const value = config.get(currentPath);
-
-                const setting: any = {
+              if (
+                typeof value === "object" &&
+                value !== null &&
+                !Array.isArray(value)
+              ) {
+                processGlobalConfig(value, currentPath, settings);
+              } else {
+                settings.push({
                   key: currentPath,
-                  type: prop.type,
-                  default: prop.default,
-                  description: prop.description || "",
                   value: value,
-                  fromPackageJSON: true, // This indicates it's a global setting
-                  // feature: prop.feature,
-                };
-
-                if ("enum" in prop) {
-                  setting.enum = prop.enum;
-                }
-
-                settings.push(setting);
-              } else if (typeof prop === "object" && prop !== null) {
-                // If it's an object and not a config value, recurse into it
-                processConfig(prop, currentPath, settings);
+                  fromPackageJSON: true, // globalState 对应全局配置
+                  type: typeof value,
+                });
               }
             }
-          }
-        };
+          };
 
-        processConfig(CONFIG_SCHEMA, "", detailedSettings);
+          processGlobalConfig(globalStateConfig, "", detailedSettings);
 
-        // Load settings from workspace state
-        const workspaceSettings: any[] = [];
-        const processWorkspaceConfig = (
-          schema: any,
-          path: string,
-          settings: any[]
-        ) => {
-          for (const key in schema) {
-            if (Object.prototype.hasOwnProperty.call(schema, key)) {
-              const prop = schema[key];
+          // 从 workspaceState 读取工作区配置
+          const workspaceSettings: any[] = [];
+          const workspaceStateConfig =
+            this._extensionContext.globalState.get("workspaceConfig") || {};
+
+          const processWorkspaceConfig = (
+            obj: any,
+            path: string,
+            settings: any[]
+          ) => {
+            for (const [key, value] of Object.entries(obj)) {
               const currentPath = path ? `${path}.${key}` : key;
-
-              if (isConfigValue(prop)) {
-                const value = stateManager.getWorkspace<any>(
-                  currentPath,
-                  prop.default
-                );
-
-                const setting: any = {
+              if (
+                typeof value === "object" &&
+                value !== null &&
+                !Array.isArray(value)
+              ) {
+                processWorkspaceConfig(value, currentPath, settings);
+              } else {
+                settings.push({
                   key: currentPath,
-                  type: prop.type,
-                  default: prop.default,
-                  description: prop.description || "",
                   value: value,
-                  fromPackageJSON: false,
-                  // feature: prop.feature,
-                };
-
-                if ("enum" in prop) {
-                  setting.enum = prop.enum;
-                }
-
-                settings.push(setting);
-              } else if (typeof prop === "object" && prop !== null) {
-                // If it's an object and not a config value, recurse into it
-                processWorkspaceConfig(prop, currentPath, settings);
+                  fromPackageJSON: false, // 工作区特定配置
+                  type: typeof value,
+                });
               }
             }
-          }
-        };
+          };
 
-        processWorkspaceConfig(WORKSPACE_CONFIG_SCHEMA, "", workspaceSettings);
+          processWorkspaceConfig(workspaceStateConfig, "", workspaceSettings);
 
-        // 获取索引状态
-        let isIndexed = 0;
-        let indexStatusError: string | null = null;
-        if (this._embeddingService) {
-          try {
-            isIndexed = await this._embeddingService.isIndexed();
-          } catch (error) {
-            if (error instanceof EmbeddingServiceError) {
-              indexStatusError = `${error.message}\n来源：${
-                error.context?.source ?? "未知"
-              }，错误类型：${error.context?.type ?? "未知"}`;
-            } else if (error instanceof Error) {
-              indexStatusError = error.message;
-            } else {
-              indexStatusError = "无法获取索引状态（未知错误）";
+          // 获取索引状态
+          let isIndexed = 0;
+          let indexStatusError: string | null = null;
+          if (this._embeddingService) {
+            try {
+              isIndexed = await this._embeddingService.isIndexed();
+            } catch (error) {
+              if (error instanceof EmbeddingServiceError) {
+                indexStatusError = `${error.message}\n来源：${
+                  error.context?.source ?? "未知"
+                }，错误类型：${error.context?.type ?? "未知"}`;
+              } else if (error instanceof Error) {
+                indexStatusError = error.message;
+              } else {
+                indexStatusError = "无法获取索引状态（未知错误）";
+              }
+              webview.postMessage({
+                command: "indexingStatusError",
+                error: indexStatusError,
+              });
             }
-            // We can still send this for toast notifications, but the main logic will use the one in loadSettings
-            webview.postMessage({
-              command: "indexingStatusError",
-              error: indexStatusError,
-            });
           }
+
+          // 异步加载模型，避免阻塞
+          webview.postMessage({
+            command: "loadSettings",
+            data: {
+              schema: [...detailedSettings, ...workspaceSettings],
+              isIndexed: isIndexed,
+              indexStatusError: indexStatusError,
+              embeddingModels: [], // Initially send an empty array
+            },
+          });
+        } catch (error) {
+          console.error(
+            "[SettingsViewMessageHandler] Error in getSettings:",
+            error
+          );
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "indexingStatusError",
+            error: `获取设置失败: ${errorMessage}`,
+          });
         }
-
-        const embeddingModels = await AIProviderFactory.getAllEmbeddingModels();
-
-        webview.postMessage({
-          command: "loadSettings",
-          data: {
-            schema: [...detailedSettings, ...workspaceSettings], // Merge settings from both sources
-            isIndexed: isIndexed, // 将索引状态添加到消息中
-            indexStatusError: indexStatusError,
-            embeddingModels: embeddingModels, // 添加嵌入式模型
-          },
-        });
         break;
       }
 
       case "saveSettings": {
-        const newSettings = message.data;
-        const config = vscode.workspace.getConfiguration("dish-ai-commit");
+        console.log(
+          `[SettingsViewMessageHandler] Handling saveSettings with data: ${JSON.stringify(
+            message.data,
+            null,
+            2
+          )}`
+        );
         try {
-          const promises = newSettings.map(async (setting: any) => {
+          const newSettings = message.data;
+          const globalConfig: any =
+            this._extensionContext.globalState.get("config") || {};
+          const workspaceConfig: any =
+            this._extensionContext.globalState.get("workspaceConfig") || {};
+
+          // 遍历所有设置并根据 fromPackageJSON 标志分类保存
+          for (const setting of newSettings) {
             if (setting.key && setting.value !== undefined) {
-              const oldValue = stateManager.getWorkspace<any>(setting.key);
-              const settingFromPackageJSON = newSettings.find(
-                (s: any) => s.key === setting.key
-              )?.fromPackageJSON;
+              const keys = setting.key.split(".");
 
-              if (settingFromPackageJSON) {
-                await config.update(
-                  setting.key,
-                  setting.value,
-                  vscode.ConfigurationTarget.Global
-                );
+              if (setting.fromPackageJSON) {
+                // 保存到全局配置
+                let current = globalConfig;
+                for (let i = 0; i < keys.length - 1; i++) {
+                  if (!current[keys[i]]) {
+                    current[keys[i]] = {};
+                  }
+                  current = current[keys[i]];
+                }
+                current[keys[keys.length - 1]] = setting.value;
               } else {
-                await stateManager.setWorkspace(setting.key, setting.value);
-              }
+                // 保存到工作区配置
+                let current = workspaceConfig;
+                for (let i = 0; i < keys.length - 1; i++) {
+                  if (!current[keys[i]]) {
+                    current[keys[i]] = {};
+                  }
+                  current = current[keys[i]];
+                }
+                current[keys[keys.length - 1]] = setting.value;
 
-              if (
-                setting.key ===
-                  WORKSPACE_CONFIG_PATHS.experimental.codeIndex.qdrantUrl &&
-                setting.value !== oldValue
-              ) {
-                console.log(
-                  `Qdrant URL changed from "${oldValue}" to "${setting.value}". Reinitializing EmbeddingService.`
-                );
-                this._embeddingService =
-                  EmbeddingServiceManager.getInstance().reinitialize() || null;
+                // 特殊处理：如果是 Qdrant URL 变化，重新初始化 EmbeddingService
+                if (setting.key === "experimental.codeIndex.qdrantUrl") {
+                  const oldValue = this._extensionContext.globalState.get(
+                    "workspaceConfig.experimental.codeIndex.qdrantUrl"
+                  );
+                  if (setting.value !== oldValue) {
+                    console.log(
+                      `Qdrant URL changed from "${oldValue}" to "${setting.value}". Reinitializing EmbeddingService.`
+                    );
+                    this._embeddingService =
+                      EmbeddingServiceManager.getInstance().reinitialize() ||
+                      null;
+                  }
+                }
               }
             }
-          });
-          await Promise.all(promises);
+          }
+
+          // 一次性保存所有配置
+          await this._extensionContext.globalState.update(
+            "config",
+            globalConfig
+          );
+          await this._extensionContext.globalState.update(
+            "workspaceConfig",
+            workspaceConfig
+          );
+
           webview.postMessage({ command: "settingsSaved" });
           notify.info("settings.save.success");
         } catch (error) {
+          console.error(
+            "[SettingsViewMessageHandler] Error in saveSettings:",
+            error
+          );
           const errorMessage =
             error instanceof Error ? error.message : String(error);
           notify.error("settings.save.failed", [errorMessage]);
@@ -219,9 +583,15 @@ export class SettingsViewMessageHandler {
         break;
       }
       case "getModelsForProvider": {
+        console.log(
+          `[SettingsViewMessageHandler] Handling getModelsForProvider for provider: ${message.data.providerId}`
+        );
         const { providerId, modelSettingKey, providerContextKey } =
           message.data;
         if (!providerId || !modelSettingKey || !providerContextKey) {
+          console.error(
+            "[SettingsViewMessageHandler] getModelsForProvider: Missing required parameters."
+          );
           webview.postMessage({
             command: "getModelsForProviderError",
             data: {
@@ -234,16 +604,11 @@ export class SettingsViewMessageHandler {
         }
 
         try {
-          // console.log(`[SettingsViewProvider] Received getModelsForProvider for providerId: ${providerId}, context: ${providerContextKey}`);
-
-          // 获取特定 provider 的配置，因为 getModels 可能需要 API key 等
-          // providerContextKey 应该是类似 "providers.openai" 这样的键
-          const config = vscode.workspace.getConfiguration("dish-ai-commit");
-          const providerSettings = config.get(providerContextKey);
+          // 直接从 AIProviderFactory 获取提供商实例，不需要读取配置
 
           let providerInstance: AIProvider | undefined;
 
-          providerInstance = AIProviderFactory.getProvider(providerId); // 只传递 providerId
+          providerInstance = AIProviderFactory.getProvider(providerId);
 
           if (!providerInstance) {
             throw new Error(
@@ -252,7 +617,6 @@ export class SettingsViewMessageHandler {
           }
 
           if (typeof providerInstance.getModels !== "function") {
-            // console.warn(`[SettingsViewProvider] Provider ${providerId} does not implement getModels(). Sending empty list.`);
             webview.postMessage({
               command: "modelsForProviderLoaded",
               data: { modelSettingKey, models: [] },
@@ -260,16 +624,18 @@ export class SettingsViewMessageHandler {
             return;
           }
 
-          const models = await providerInstance.getModels(); // 移除参数
-          // console.log(`[SettingsViewProvider] Models for ${providerId} (${modelSettingKey}):`, models);
+          const models = await providerInstance.getModels();
           webview.postMessage({
             command: "modelsForProviderLoaded",
             data: { modelSettingKey, models: models || [] },
           });
         } catch (error) {
+          console.error(
+            `[SettingsViewMessageHandler] Error in getModelsForProvider for provider ${providerId}:`,
+            error
+          );
           const errorMessage =
             error instanceof Error ? error.message : String(error);
-          // console.error(`[SettingsViewProvider] Error getting models for ${providerId} (${modelSettingKey}):`, errorMessage);
           webview.postMessage({
             command: "getModelsForProviderError",
             data: { modelSettingKey, error: errorMessage },
@@ -278,126 +644,230 @@ export class SettingsViewMessageHandler {
         break;
       }
 
-      // New Profile Management Commands
-      case "loadProfiles": {
+      // 动态获取模型列表（用户输入 API Key/Base URL 后触发）
+      case "fetchProviderModels": {
+        console.log(
+          `[SettingsViewMessageHandler] Handling fetchProviderModels for provider: ${message.data.providerId}`
+        );
         try {
-          const profiles = await this._profileManager.getAllProfiles();
-          const activeProfileId =
-            await this._profileManager.getActiveProfileId();
+          const { providerId, apiKey, baseUrl } = message.data;
+
+          if (!providerId) {
+            throw new Error("providerId is required");
+          }
+
+          // 所有提供商都需要保存配置
+          const providerContextKey = `providers.${providerId}`;
+          const currentSettings =
+            this._extensionContext.globalState.get<any>(providerContextKey) ||
+            {};
+
+          // 如果提供了 API Key 或 Base URL，则更新
+          if (apiKey) {
+            currentSettings.apiKey = apiKey;
+          }
+          if (baseUrl) {
+            currentSettings.baseUrl = baseUrl;
+          }
+
+          // 使用 globalState 保存配置
+          await this._extensionContext.globalState.update(
+            providerContextKey,
+            currentSettings
+          );
+
+          // 清理提供者缓存，强制重新初始化
+          AIProviderFactory.reinitializeProvider(providerId);
+
+          // 获取更新后的提供者实例
+          let providerInstance: AIProvider | undefined;
+          providerInstance = AIProviderFactory.getProvider(providerId);
+
+          if (!providerInstance) {
+            throw new Error(
+              `Unsupported or unknown provider ID: ${providerId}`
+            );
+          }
+
+          if (typeof providerInstance.getModels !== "function") {
+            webview.postMessage({
+              command: "providerModelsFetched",
+              data: { providerId, models: [], success: true },
+            });
+            return;
+          }
+
+          // 获取模型列表
+          const models = await providerInstance.getModels();
+
           webview.postMessage({
-            command: "profilesLoaded",
-            data: { profiles, activeProfileId },
+            command: "providerModelsFetched",
+            data: { providerId, models: models || [], success: true },
           });
         } catch (error) {
           const errorMessage =
             error instanceof Error ? error.message : String(error);
+          console.error(
+            `[SettingsViewMessageHandler] Error fetching models:`,
+            errorMessage
+          );
           webview.postMessage({
-            command: "error",
-            data: { message: `Failed to load profiles: ${errorMessage}` },
+            command: "providerModelsFetched",
+            data: {
+              providerId: message.data?.providerId,
+              success: false,
+              error: errorMessage,
+              models: [],
+            },
+          });
+        }
+        break;
+      }
+
+      // New Profile Management Commands
+      case "loadProfiles": {
+        console.log("[SettingsViewMessageHandler] Handling loadProfiles");
+        const { requestId } = message.data;
+        try {
+          const profiles = await this._profileManager.getAllProfiles();
+          const activeProfileId =
+            await this._profileManager.getActiveProfileId();
+          console.log("profiles", profiles);
+          console.log("activeProfileId", activeProfileId);
+          webview.postMessage({
+            command: "loadProfilesResponse",
+            requestId,
+            payload: { profiles, activeProfileId },
+          });
+        } catch (error) {
+          console.error(
+            "[SettingsViewMessageHandler] Error in loadProfiles:",
+            error
+          );
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "loadProfilesResponse",
+            requestId,
+            error: `Failed to load profiles: ${errorMessage}`,
           });
         }
         break;
       }
 
       case "saveProfile": {
+        const { requestId, profile } = message.data;
+        console.log(
+          `[SettingsViewMessageHandler] Handling saveProfile for profile: ${profile?.id}`
+        );
         try {
-          const { profile } = message.data;
           await this._profileManager.saveProfile(profile);
           webview.postMessage({
-            command: "profileSaved",
-            data: { success: true },
+            command: "saveProfileResponse",
+            requestId,
+            payload: { success: true },
           });
         } catch (error) {
+          console.error(
+            `[SettingsViewMessageHandler] Error in saveProfile for profile ${profile?.id}:`,
+            error
+          );
           const errorMessage =
             error instanceof Error ? error.message : String(error);
           webview.postMessage({
-            command: "profileSaved",
-            data: { success: false, error: errorMessage },
+            command: "saveProfileResponse",
+            requestId,
+            error: errorMessage,
           });
         }
         break;
       }
 
       case "deleteProfile": {
+        const { requestId, profileId } = message.data;
+        console.log(
+          `[SettingsViewMessageHandler] Handling deleteProfile for profileId: ${profileId}`
+        );
         try {
-          const { profileId } = message.data;
           await this._profileManager.deleteProfile(profileId);
           webview.postMessage({
-            command: "profileDeleted",
-            data: { success: true },
+            command: "deleteProfileResponse",
+            requestId,
+            payload: { success: true },
           });
         } catch (error) {
+          console.error(
+            `[SettingsViewMessageHandler] Error in deleteProfile for profileId ${profileId}:`,
+            error
+          );
           const errorMessage =
             error instanceof Error ? error.message : String(error);
           webview.postMessage({
-            command: "profileDeleted",
-            data: { success: false, error: errorMessage },
+            command: "deleteProfileResponse",
+            requestId,
+            error: errorMessage,
           });
         }
         break;
       }
 
       case "setActiveProfile": {
+        const { requestId, profileId } = message.data;
+        console.log(
+          `[SettingsViewMessageHandler] Handling setActiveProfile for profileId: ${profileId}`
+        );
         try {
-          const { profileId } = message.data;
           await this._profileManager.setActiveProfile(profileId);
           webview.postMessage({
-            command: "activeProfileChanged",
-            data: { profileId },
+            command: "setActiveProfileResponse",
+            requestId,
+            payload: { profileId },
           });
         } catch (error) {
+          console.error(
+            `[SettingsViewMessageHandler] Error in setActiveProfile for profileId ${profileId}:`,
+            error
+          );
           const errorMessage =
             error instanceof Error ? error.message : String(error);
           webview.postMessage({
-            command: "error",
-            data: { message: `Failed to set active profile: ${errorMessage}` },
+            command: "setActiveProfileResponse",
+            requestId,
+            error: `Failed to set active profile: ${errorMessage}`,
           });
         }
         break;
       }
 
       case "exportProfile": {
-        try {
-          const { profileId } = message.data;
-          const jsonData = await this._profileManager.exportProfile(profileId);
-          webview.postMessage({
-            command: "profileExported",
-            data: { json: jsonData },
-          });
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
-          webview.postMessage({
-            command: "error",
-            data: { message: `Failed to export profile: ${errorMessage}` },
-          });
+        const { profileId } = message.data;
+        console.log(
+          `[SettingsViewMessageHandler] Handling exportProfile for profileId: ${profileId}`
+        );
+        const result = await exportProfile(profileId, this._profileManager);
+        if (!result.success) {
+          console.error(
+            `[SettingsViewMessageHandler] Failed to export profile ${profileId}: ${result.error}`
+          );
+          vscode.window.showErrorMessage(
+            `Failed to export profile: ${result.error}`
+          );
         }
         break;
       }
 
       case "importProfile": {
-        try {
-          const { jsonData } = message.data;
-          const profile = await this._profileManager.importProfile(jsonData);
-          webview.postMessage({
-            command: "profileImported",
-            data: { profile, success: true },
-          });
-        } catch (error) {
-          const errorMessage =
-            error instanceof Error ? error.message : String(error);
-          webview.postMessage({
-            command: "profileImported",
-            data: { success: false, error: errorMessage },
-          });
-        }
+        console.log("[SettingsViewMessageHandler] Handling importProfile");
+        await importProfileWithFeedback(this._profileManager, webview);
         break;
       }
 
-
       case "getModels": {
+        const { providerId } = message.data;
+        console.log(
+          `[SettingsViewMessageHandler] Handling getModels for provider: ${providerId}`
+        );
         try {
-          const { providerId } = message.data;
           // TODO: Implement actual model loading with AIProviderFactory
           // For now, we'll return an empty list
           const models = [];
@@ -406,6 +876,10 @@ export class SettingsViewMessageHandler {
             data: { modes: [] },
           });
         } catch (error) {
+          console.error(
+            `[SettingsViewMessageHandler] Error in getModels for provider ${providerId}:`,
+            error
+          );
           const errorMessage =
             error instanceof Error ? error.message : String(error);
           webview.postMessage({
@@ -417,37 +891,246 @@ export class SettingsViewMessageHandler {
       }
 
       case "migrateSettings": {
+        console.log("[SettingsViewMessageHandler] Handling migrateSettings");
+        const { requestId } = message.data;
         try {
           const migratedProfile =
             await this._profileManager.migrateFromPackageJson();
           webview.postMessage({
-            command: "settingsMigrated",
-            data: { success: true, migratedProfile },
+            command: "migrateSettingsResponse",
+            requestId,
+            payload: { success: true, migratedProfile },
           });
         } catch (error) {
+          console.error(
+            "[SettingsViewMessageHandler] Error in migrateSettings:",
+            error
+          );
           const errorMessage =
             error instanceof Error ? error.message : String(error);
           webview.postMessage({
-            command: "settingsMigrated",
-            data: { success: false, error: errorMessage },
+            command: "migrateSettingsResponse",
+            requestId,
+            error: errorMessage,
           });
         }
         break;
       }
 
       case "resetToDefaults": {
+        console.log("[SettingsViewMessageHandler] Handling resetToDefaults");
+        const { requestId } = message.data;
         try {
           await this._profileManager.resetToDefaults();
           webview.postMessage({
-            command: "defaultsReset",
-            data: { success: true },
+            command: "resetToDefaultsResponse",
+            requestId,
+            payload: { success: true },
           });
         } catch (error) {
+          console.error(
+            "[SettingsViewMessageHandler] Error in resetToDefaults:",
+            error
+          );
           const errorMessage =
             error instanceof Error ? error.message : String(error);
           webview.postMessage({
-            command: "defaultsReset",
-            data: { success: false, error: errorMessage },
+            command: "resetToDefaultsResponse",
+            requestId,
+            error: errorMessage,
+          });
+        }
+        break;
+      }
+
+      case "getAllProviders": {
+        console.log("[SettingsViewMessageHandler] Handling getAllProviders");
+        const { requestId } = message.data;
+        try {
+          const providers = await this._profileManager.getAllProviders();
+          console.log("providers", providers);
+          webview.postMessage({
+            command: "getAllProvidersResponse",
+            requestId,
+            payload: providers,
+          });
+        } catch (error) {
+          console.error(
+            "[SettingsViewMessageHandler] Error in getAllProviders:",
+            error
+          );
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "getAllProvidersResponse",
+            requestId,
+            error: `Failed to get all providers: ${errorMessage}`,
+          });
+        }
+        break;
+      }
+      case MessageType.GetAllPrompts: {
+        console.log("[SettingsViewMessageHandler] Handling GetAllPrompts");
+        try {
+          const prompts = await this._promptManager.getAllPrompts();
+          console.log("prompts", prompts);
+          webview.postMessage({
+            command: MessageType.AllPrompts,
+            payload: prompts,
+          });
+        } catch (error) {
+          console.error(
+            "[SettingsViewMessageHandler] Error in GetAllPrompts:",
+            error
+          );
+        }
+        break;
+      }
+
+      case MessageType.UpdatePrompt: {
+        console.log("[SettingsViewMessageHandler] Handling UpdatePrompt");
+        const { key, content, target } = message.payload;
+        try {
+          await this._promptManager.updatePrompt(key, content, target);
+          notify.info(`Prompt ${key} updated.`);
+        } catch (error) {
+          console.error(
+            `[SettingsViewMessageHandler] Error in UpdatePrompt for key ${key}:`,
+            error
+          );
+          notify.error(`Failed to update prompt ${key}.`);
+        }
+        break;
+      }
+
+      case MessageType.ResetPrompt: {
+        console.log("[SettingsViewMessageHandler] Handling ResetPrompt");
+        const { key, target } = message.payload;
+        try {
+          await this._promptManager.resetPrompt(key, target);
+          notify.info(`Prompt ${key} has been reset.`);
+        } catch (error) {
+          console.error(
+            `[SettingsViewMessageHandler] Error in ResetPrompt for key ${key}:`,
+            error
+          );
+          notify.error(`Failed to reset prompt ${key}.`);
+        }
+        break;
+      }
+
+      case MessageType.ResetAllPrompts: {
+        console.log("[SettingsViewMessageHandler] Handling ResetAllPrompts");
+        const { target } = message.payload;
+        try {
+          await this._promptManager.resetAllPrompts(target);
+          notify.info("All prompts have been reset.");
+        } catch (error) {
+          console.error(
+            `[SettingsViewMessageHandler] Error in ResetAllPrompts:`,
+            error
+          );
+          notify.error("Failed to reset all prompts.");
+        }
+        break;
+      }
+      case MessageType.CreatePrompt: {
+        console.log("[SettingsViewMessageHandler] Handling CreatePrompt");
+        const { key, content, target } = message.payload;
+        try {
+          await this._promptManager.updatePrompt(key, content, target);
+          notify.info(`Prompt ${key} created.`);
+          // Refresh the prompts in the webview
+          const prompts = await this._promptManager.getAllPrompts();
+          webview.postMessage({
+            command: MessageType.AllPrompts,
+            payload: prompts,
+          });
+        } catch (error) {
+          console.error(
+            `[SettingsViewMessageHandler] Error in CreatePrompt for key ${key}:`,
+            error
+          );
+          notify.error(`Failed to create prompt ${key}.`);
+        }
+        break;
+      }
+
+      case MessageType.DeletePrompt: {
+        console.log("[SettingsViewMessageHandler] Handling DeletePrompt");
+        const { key, target } = message.payload;
+        try {
+          await this._promptManager.deletePrompt(key, target);
+          notify.info(`Prompt ${key} has been deleted.`);
+          // Refresh the prompts in the webview
+          const prompts = await this._promptManager.getAllPrompts();
+          webview.postMessage({
+            command: MessageType.AllPrompts,
+            payload: prompts,
+          });
+        } catch (error) {
+          console.error(
+            `[SettingsViewMessageHandler] Error in DeletePrompt for key ${key}:`,
+            error
+          );
+          notify.error(`Failed to delete prompt ${key}.`);
+        }
+        break;
+      }
+
+      case MessageType.RenamePrompt: {
+        console.log("[SettingsViewMessageHandler] Handling RenamePrompt");
+        const { oldKey, newKey, target } = message.payload;
+        try {
+          const promptDetail = this._promptManager.getPromptDetail(oldKey);
+          await this._promptManager.updatePrompt(
+            newKey,
+            promptDetail.content,
+            target
+          );
+          await this._promptManager.deletePrompt(oldKey, target);
+          notify.info(`Prompt ${oldKey} has been renamed to ${newKey}.`);
+          // Refresh the prompts in the webview
+          const prompts = await this._promptManager.getAllPrompts();
+          webview.postMessage({
+            command: MessageType.AllPrompts,
+            payload: prompts,
+          });
+        } catch (error) {
+          console.error(
+            `[SettingsViewMessageHandler] Error in RenamePrompt for key ${oldKey}:`,
+            error
+          );
+          notify.error(`Failed to rename prompt ${oldKey}.`);
+        }
+        break;
+      }
+      case "fetchEmbeddingModels": {
+        console.log(
+          "[SettingsViewMessageHandler] Handling fetchEmbeddingModels"
+        );
+        try {
+          const embeddingModels =
+            await AIProviderFactory.getAllEmbeddingModels();
+          webview.postMessage({
+            command: "embeddingModelsLoaded",
+            data: {
+              embeddingModels: embeddingModels,
+            },
+          });
+        } catch (error) {
+          console.error(
+            "[SettingsViewMessageHandler] Error in fetchEmbeddingModels:",
+            error
+          );
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: "embeddingModelsLoaded",
+            data: {
+              embeddingModels: [],
+              error: `Failed to load embedding models: ${errorMessage}`,
+            },
           });
         }
         break;
@@ -456,16 +1139,24 @@ export class SettingsViewMessageHandler {
   }
 
   private async handleClearIndex(webview: vscode.Webview): Promise<void> {
+    console.log("[SettingsViewMessageHandler] handleClearIndex called.");
     if (!this._embeddingService) {
       const errorMessage = "EmbeddingService is not initialized.";
+      console.error(`[SettingsViewMessageHandler] ${errorMessage}`);
       notify.error("embedding.service.not.initialized");
       return;
     }
     try {
+      console.log("[SettingsViewMessageHandler] Clearing index...");
       await this._embeddingService.clearIndex();
+      console.log("[SettingsViewMessageHandler] Index cleared successfully.");
       notify.info("index.clear.success");
       webview.postMessage({ command: "indexCleared", data: { isIndexed: 0 } });
     } catch (error) {
+      console.error(
+        "[SettingsViewMessageHandler] Error during handleClearIndex:",
+        error
+      );
       const errorMessage =
         error instanceof Error ? error.message : String(error);
       notify.error("index.clear.failed", [errorMessage]);
@@ -478,6 +1169,9 @@ export class SettingsViewMessageHandler {
     key: string,
     webview: vscode.Webview
   ): Promise<void> {
+    console.log(
+      `[SettingsViewMessageHandler] Testing connection for service: ${service}, URL: ${url}`
+    );
     try {
       let testUrl = url;
       if (service === "ollama") {
@@ -487,6 +1181,7 @@ export class SettingsViewMessageHandler {
         // For Qdrant, we can check the root endpoint which usually returns version info
         testUrl = new URL("/", url).toString();
       }
+      console.log(`[SettingsViewMessageHandler] Using test URL: ${testUrl}`);
       const controller = new AbortController();
       const timeout = setTimeout(() => controller.abort(), 5000);
       const response = await fetch(testUrl, {
@@ -495,19 +1190,26 @@ export class SettingsViewMessageHandler {
       clearTimeout(timeout);
 
       if (response.ok) {
+        console.log(
+          `[SettingsViewMessageHandler] Connection test successful for service: ${service}`
+        );
         webview.postMessage({
           command: "testConnectionResult",
           data: { success: true, service, key },
         });
       } else {
-        console.log("error", response);
+        console.error(
+          `[SettingsViewMessageHandler] Connection test failed for service: ${service}. Status: ${response.status}`
+        );
         throw new Error(`Server returned status ${response.status}`);
       }
     } catch (error) {
+      console.error(
+        `[SettingsViewMessageHandler] Error during connection test for service ${service}:`,
+        error
+      );
       const errorMessage =
         error instanceof Error ? error.message : String(error);
-
-      console.log("error", error);
       webview.postMessage({
         command: "testConnectionResult",
         data: { success: false, error: errorMessage, service, key },
@@ -520,6 +1222,9 @@ export class SettingsViewMessageHandler {
     webview: vscode.Webview,
     clearIndex: boolean = false
   ): Promise<void> {
+    console.log(
+      `[SettingsViewMessageHandler] startIndexing called with startIndex: ${startIndex}, clearIndex: ${clearIndex}`
+    );
     // 检查 EmbeddingService 是否存在
     if (!this._embeddingService) {
       const errorMessage = "EmbeddingService 未初始化，无法执行索引操作。";
@@ -557,8 +1262,12 @@ export class SettingsViewMessageHandler {
 
     // 调用 EmbeddingService 的方法，并将 startIndex 传递给它
     try {
+      console.log("[SettingsViewMessageHandler] Starting file scan...");
       await this._embeddingService.scanProjectFiles(startIndex, webview);
       const isIndexed = await this._embeddingService.isIndexed();
+      console.log(
+        `[SettingsViewMessageHandler] Indexing finished. isIndexed: ${isIndexed}`
+      );
       webview.postMessage({
         command: "indexingFinished",
         data: { message: "索引完成!", isIndexed },
