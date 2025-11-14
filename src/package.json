@@ -626,7 +626,7 @@
     }
   },
   "scripts": {
-    "build": "node esbuild.mjs",
+    "build": "npm run build --prefix ../webview-ui && node esbuild.mjs && rimraf ../webview-ui-dist",
     "compile": "tsc -p ./",
     "compile:esbuild": "npm run check-types && node esbuild.mjs",
     "watch:esbuild-tsc": "tsc --noEmit --watch --project tsconfig.json",
@@ -702,6 +702,8 @@
     "@mistralai/mistralai": "^1.10.0",
     "@qdrant/js-client-rest": "^1.15.1",
     "@types/node-notifier": "^8.0.5",
+    "cosmiconfig": "^9.0.0",
+    "google-auth-library": "^10.5.0",
     "groq-sdk": "^0.33.0",
     "inversify": "^7.10.1",
     "node-notifier": "^10.0.1",

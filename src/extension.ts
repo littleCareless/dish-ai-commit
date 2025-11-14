@@ -3,6 +3,7 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import { ConfigurationManager } from "./config/configuration-manager";
+import { ProfileManagerService } from "./services/profile-manager-service";
 import { registerCommands } from "./commands";
 import { Logger } from "./utils/logger";
 import { initializeLocalization } from "./utils/i18n";
@@ -15,6 +16,7 @@ import { EmbeddingServiceManager } from "./core/indexing/embedding-service-manag
 import { TokenStatsService } from "./services/token-stats-service";
 
 import { SettingsViewProvider } from "./webview/settings-view-provider"; // 确保路径正确
+import { NotificationSettingsManager } from "./utils/notification/notification-settings-manager";
 
 /**
  * 在首次执行命令时激活扩展
@@ -43,6 +45,10 @@ export async function activate(context: vscode.ExtensionContext) {
     logger.info("Initializing configuration manager...");
     context.subscriptions.push(ConfigurationManager.getInstance());
 
+    // 初始化 ProfileManagerService
+    logger.info("Initializing profile manager service...");
+    await ProfileManagerService.create(context);
+
     // 初始化 EmbeddingServiceManager
     logger.info("Initializing embedding service...");
     const embeddingService = EmbeddingServiceManager.getInstance().initialize();
@@ -50,6 +56,11 @@ export async function activate(context: vscode.ExtensionContext) {
     // 初始化 TokenStatsService
     logger.info("Initializing token stats service...");
     TokenStatsService.initialize(context);
+
+    // 初始化通知设置管理器
+    logger.info("Initializing notification settings manager...");
+    const notificationSettingsManager = NotificationSettingsManager.getInstance();
+    await notificationSettingsManager.initialize(context);
 
     // 注册所有命令到VS Code
     logger.info("Registering commands...");

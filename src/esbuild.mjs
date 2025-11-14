@@ -52,6 +52,7 @@ async function main() {
 							["src/license", "LICENSE", { optional: true }],
 							["SECURITY.md", "SECURITY.md", { optional: true }],
 							["webview-ui-dist", "webview-ui-dist"],
+							["src/prompt", "dist/prompt"],
 						],
 						srcDir,
 						buildDir,
