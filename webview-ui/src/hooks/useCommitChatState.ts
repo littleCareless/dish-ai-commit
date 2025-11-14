@@ -1,5 +1,5 @@
-import { useState, useCallback, useRef, useEffect } from "react";
 import type { ChatMessage, CommitChatState } from "@src/types/messages";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface CommitChatConfig {
   maxMessages: number;
