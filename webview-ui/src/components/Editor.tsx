@@ -1,19 +1,20 @@
-import { useCallback, useEffect, useRef, useState } from "react"; // Added useState
+import { Separator } from "@/components/ui/separator";
+import { Toggle } from "@/components/ui/toggle";
+import { getMessageType } from "@/constants";
+import { cn } from "@/lib/utils";
+import { postMessage, useMessageHandler } from "@/utils/vscode";
 import {
   Bold,
-  Italic,
-  Underline,
-  List,
-  ListOrdered,
   Code,
-  Table,
   Heading1,
   Heading2,
+  Italic,
+  List,
+  ListOrdered,
+  Table,
+  Underline,
 } from "lucide-react";
-import { Toggle } from "@/components/ui/toggle";
-import { Separator } from "@/components/ui/separator";
-import { cn } from "@/lib/utils";
-import { getMessageType } from "@/constants";
+import { useCallback, useEffect, useRef, useState } from "react"; // Added useState
 
 interface EditorProps {
   content: string;
@@ -82,7 +83,8 @@ export function Editor({ content, onChange }: EditorProps) {
         selection.addRange(savedRange);
       }
       // After content update, re-check active formats
-      updateActiveFormats();
+      // 使用 setTimeout 避免在 effect 中同步更新状态
+      setTimeout(() => updateActiveFormats(), 0);
     }
   }, [content, updateActiveFormats]);
 
@@ -128,36 +130,29 @@ export function Editor({ content, onChange }: EditorProps) {
     [content, onChange, updateActiveFormats],
   );
 
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      const message = event.data;
-      if (!message || !message.type) return;
+  useMessageHandler(
+    useCallback(
+      (event: MessageEvent) => {
+        const message = event.data;
+        if (!message || !message.command) return;
 
-      switch (message.type) {
-        case getMessageType("updateContent"):
-        case getMessageType("loadContent"): {
-          if (message.content !== undefined && message.content !== content) {
-            // This will trigger the main useEffect([content])
-            onChange(message.content);
+        switch (message.command) {
+          case getMessageType("updateContent"):
+          case getMessageType("loadContent"): {
+            if (message.content !== undefined && message.content !== content) {
+              onChange(message.content);
+            }
+            break;
           }
-          break;
         }
-      }
-    };
-    window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
-  }, [onChange, content]); // Added content to dependencies
+      },
+      [onChange, content],
+    ),
+  );
 
   const sendToVSCode = useCallback(
     (type: string, data: { content: string }) => {
-      if (window.vscode && typeof window.vscode.postMessage === "function") {
-        window.vscode.postMessage({
-          type: getMessageType(type),
-          data,
-        });
-      } else {
-        // console.warn("VSCode API not available for sendToVSCode");
-      }
+      postMessage(getMessageType(type), data);
     },
     [],
   );
@@ -184,7 +179,8 @@ export function Editor({ content, onChange }: EditorProps) {
 
     // Initial check
     if (document.activeElement && editorNode.contains(document.activeElement)) {
-      updateActiveFormats();
+      // 使用 setTimeout 避免在 effect 中同步更新状态
+      setTimeout(() => updateActiveFormats(), 0);
     }
 
     return () => {
