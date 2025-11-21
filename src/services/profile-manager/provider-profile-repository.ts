@@ -9,7 +9,7 @@ import {
 } from "./types";
 
 export class ProviderProfileRepository {
-  private static readonly SCOPE_PREFIX = "roo_cline_config_";
+  private static readonly SCOPE_PREFIX = "dish_config_";
   private readonly context: ExtensionContext;
   private readonly defaultProviderProfiles: ProviderProfiles;
 
@@ -36,6 +36,7 @@ export class ProviderProfileRepository {
 
   public async load(): Promise<ProviderProfiles> {
     try {
+      console.log("this.secretsKey", this.secretsKey);
       const content = await this.context.secrets.get(this.secretsKey);
 
       if (!content) {
