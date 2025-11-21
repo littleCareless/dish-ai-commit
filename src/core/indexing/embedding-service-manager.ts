@@ -1,23 +1,40 @@
-import * as vscode from "vscode";
-import * as path from "path";
-import { EmbeddingService } from "./embedding-service";
-import { stateManager } from "../../utils/state/state-manager";
-import { VectorStore } from "./vector-store";
 import { createHash } from "crypto";
-import { getWorkspacePath } from "../utils/path";
+import * as path from "path";
+import * as vscode from "vscode";
 import {
-  WorkspaceConfigPath,
   WORKSPACE_CONFIG_PATHS,
+  WorkspaceConfigPath,
 } from "../../config/workspace-config-schema";
+import { stateManager } from "../../utils/state/state-manager";
+import { getWorkspacePath } from "../utils/path";
 import { EMBEDDING_MODEL_PROFILES } from "./embedding-model-profiles";
+import { EmbeddingService } from "./embedding-service";
+import { VectorStore } from "./vector-store";
 
 /**
  * 管理 EmbeddingService 的单例实例
  * 确保在整个扩展中只有一个 EmbeddingService 实例
  */
 export class EmbeddingServiceManager {
-  private static instance: EmbeddingServiceManager;
-  private _embeddingService: EmbeddingService | undefined;
+  private static _instance: EmbeddingServiceManager | null = null;
+  private _embeddingService: EmbeddingService | null = null;
+
+  /**
+   * Helper to retrieve a value from the global state config object using a dot-notation path.
+   */
+  private getGlobalConfig(path: string): any {
+    const config: any = stateManager.getGlobal("config") || {};
+    const keys = path.split('.');
+    let current = config;
+    for (const key of keys) {
+      if (current && typeof current === 'object' && key in current) {
+        current = current[key];
+      } else {
+        return undefined;
+      }
+    }
+    return current;
+  }
 
   private constructor() {
     // 私有构造函数，确保单例模式
@@ -28,10 +45,10 @@ export class EmbeddingServiceManager {
    * @returns EmbeddingServiceManager 单例实例
    */
   public static getInstance(): EmbeddingServiceManager {
-    if (!EmbeddingServiceManager.instance) {
-      EmbeddingServiceManager.instance = new EmbeddingServiceManager();
+    if (!EmbeddingServiceManager._instance) {
+      EmbeddingServiceManager._instance = new EmbeddingServiceManager();
     }
-    return EmbeddingServiceManager.instance;
+    return EmbeddingServiceManager._instance;
   }
 
   /**
@@ -61,38 +78,37 @@ export class EmbeddingServiceManager {
       const hash = createHash("sha256").update(workspacePath).digest("hex");
       const qdrantCollectionName = `dish-${hash.substring(0, 16)}`;
 
-      const embeddingProvider =
-        stateManager.getWorkspace<"OpenAI" | "Ollama" | "openai-compatible">(
-          WORKSPACE_CONFIG_PATHS.experimental.codeIndex
-            .embeddingProvider as WorkspaceConfigPath
-        ) || "OpenAI"; // Default to OpenAI
+      const embeddingProvider = this.getGlobalConfig(
+        "experimental.codeIndex.embeddingProvider"
+      ) as "openai" | "ollama" | "openai-compatible" || "openai"; // Default to openai
+
+      console.log("[EmbeddingServiceManager] Embedding Provider:", embeddingProvider);
 
       let embeddingModel: string;
       let vectorSize: number;
 
       if (embeddingProvider === "openai-compatible") {
-        embeddingModel =
-          stateManager.getWorkspace<string>(
-            WORKSPACE_CONFIG_PATHS.experimental.codeIndex.openaiCompatible
-              .model as WorkspaceConfigPath
-          ) || "";
-        vectorSize =
-          stateManager.getWorkspace<number>(
-            WORKSPACE_CONFIG_PATHS.experimental.codeIndex.openaiCompatible
-              .dimension as WorkspaceConfigPath
-          ) || 1536;
+        embeddingModel = this.getGlobalConfig(
+          "experimental.codeIndex.openaiCompatible.model"
+        ) || "";
+        vectorSize = this.getGlobalConfig(
+          "experimental.codeIndex.openaiCompatible.modelDimensions"
+        ) || 1536;
       } else {
-        embeddingModel =
-          stateManager.getWorkspace<string>(
-            WORKSPACE_CONFIG_PATHS.experimental.codeIndex
-              .embeddingModel as WorkspaceConfigPath
-          ) || "text-embedding-3-small"; // Default model for others
+        embeddingModel = this.getGlobalConfig(
+          "experimental.codeIndex.embeddingModel"
+        ) || "text-embedding-3-small"; // Default model for others
+
+        console.log("[EmbeddingServiceManager] Embedding Model:", embeddingModel);
 
         const modelProfile =
           EMBEDDING_MODEL_PROFILES[embeddingProvider.toLowerCase()]?.[
-            embeddingModel
+          embeddingModel
           ];
         vectorSize = modelProfile?.dimension || 1536; // Default to 1536 if not found
+
+        console.log("[EmbeddingServiceManager] Model Profile:", modelProfile);
+        console.log("[EmbeddingServiceManager] Vector Size:", vectorSize);
 
         if (!modelProfile) {
           console.warn(
@@ -131,7 +147,7 @@ export class EmbeddingServiceManager {
    */
   public reinitialize(): EmbeddingService | undefined {
     console.log("[EmbeddingServiceManager] Reinitializing EmbeddingService...");
-    this._embeddingService = undefined; // 清除旧实例
+    this._embeddingService = null; // 清除旧实例
     return this.initialize();
   }
 

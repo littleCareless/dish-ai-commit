@@ -1,19 +1,18 @@
-import * as vscode from "vscode";
-import * as fs from "fs/promises";
-import * as path from "path";
-import { CodeIndexer, SemanticBlock } from "./code-indexer";
-import { VectorStore, QdrantPoint } from "./vector-store";
-import { FileScanner, FileNode } from "./file-scanner";
-import { v4 as uuidv4 } from "uuid";
+import * as crypto from "crypto";
 import OpenAI from "openai";
+import * as path from "path";
+import util from "util";
+import { v5 as uuidv5 } from "uuid";
+import * as vscode from "vscode";
 import { ConfigurationManager } from "../../config/configuration-manager";
 import { ConfigKey } from "../../config/types"; // Assuming ConfigKey is exported from types
-import { stateManager } from "../../utils/state/state-manager";
-import {
-  WorkspaceConfigPath,
-  WORKSPACE_CONFIG_PATHS,
-} from "../../config/workspace-config-schema";
 import { formatMessage } from "../../utils/i18n/localization-manager";
+import { stateManager } from "../../utils/state/state-manager";
+import { CodeIndexer } from "./code-indexer";
+import { FileNode, FileScanner } from "./file-scanner";
+import { QdrantPoint, VectorStore } from "./vector-store";
+
+const NAMESPACE = "5b4d94f6-fb6b-4a4e-b053-6d9c8f8e8c72"; // Fixed namespace for deterministic IDs
 
 interface EmbeddingServiceErrorContext {
   source: "openai" | "ollama" | "qdrant" | "internal" | "openai-compatible";
@@ -52,7 +51,7 @@ async function generateOpenAIEmbeddings(
       {
         source: "internal",
         type: "unknown",
-      },
+      }
     );
   }
   const openai = new OpenAI({ apiKey, baseURL: baseUrl });
@@ -71,7 +70,7 @@ async function generateOpenAIEmbeddings(
           type: "invalid_response",
           model,
           rawResult: response,
-        },
+        }
       );
     }
 
@@ -113,20 +112,22 @@ async function generateOllamaEmbeddings(
   model: string = "nomic-embed-text"
 ): Promise<number[][]> {
   if (!baseUrl) {
-    throw new EmbeddingServiceError(
-      formatMessage("ollama.baseUrl.missing"),
-      {
-        source: "internal",
-        type: "unknown",
-      },
-    );
+    throw new EmbeddingServiceError(formatMessage("ollama.baseUrl.missing"), {
+      source: "internal",
+      type: "unknown",
+    });
   }
+
+  // Normalize baseUrl: remove trailing slash to avoid double slashes
+  const normalizedBaseUrl = baseUrl.endsWith("/")
+    ? baseUrl.slice(0, -1)
+    : baseUrl;
 
   const embeddings: number[][] = [];
   for (const text of texts) {
     try {
       // Assuming 'fetch' is available in the environment (e.g., Node.js 18+ or with a polyfill)
-      const response = await fetch(`${baseUrl}/api/embeddings`, {
+      const response = await fetch(`${normalizedBaseUrl}/api/embeddings`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -228,29 +229,56 @@ export class EmbeddingService {
 
     const configManager = ConfigurationManager.getInstance();
     // Explicitly type cast the config keys
-    this.openaiApiKey = configManager.getConfig(
-      "PROVIDERS_OPENAI_APIKEY" as ConfigKey
-    );
+
+    // Try to get OpenAI API Key from Global State Config first, then VS Code Config
+    this.openaiApiKey =
+      this.getGlobalConfig("providers.openai.apiKey") ||
+      configManager.getConfig("PROVIDERS_OPENAI_APIKEY" as ConfigKey);
+
+    // Try to get OpenAI Base URL from Global State Config first, then VS Code Config
     this.openaiBaseUrl =
+      this.getGlobalConfig("providers.openai.baseUrl") ||
       configManager.getConfig("PROVIDERS_OPENAI_BASEURL" as ConfigKey) ||
       undefined;
 
+    // Try to get Ollama Base URL from Global State Config first, then VS Code Config
     this.ollamaBaseUrl =
+      this.getGlobalConfig("providers.ollama.baseUrl") ||
       configManager.getConfig("PROVIDERS_OLLAMA_BASEURL" as ConfigKey) ||
       undefined;
 
-    // Load OpenAI Compatible settings
-    this.openaiCompatibleBaseUrl = stateManager.getWorkspace(
-      WORKSPACE_CONFIG_PATHS.experimental.codeIndex.openaiCompatible
-        .baseUrl as WorkspaceConfigPath
+    // Load OpenAI Compatible settings from Global State Config
+    this.openaiCompatibleBaseUrl = this.getGlobalConfig(
+      "experimental.codeIndex.openaiCompatible.baseUrl"
     );
-    this.openaiCompatibleApiKey = stateManager.getWorkspace(
-      WORKSPACE_CONFIG_PATHS.experimental.codeIndex.openaiCompatible
-        .apiKey as WorkspaceConfigPath
+    this.openaiCompatibleApiKey = this.getGlobalConfig(
+      "experimental.codeIndex.openaiCompatible.apiKey"
     );
-    this.openaiCompatibleModel = stateManager.getWorkspace(
-      WORKSPACE_CONFIG_PATHS.experimental.codeIndex.openaiCompatible
-        .model as WorkspaceConfigPath
+    this.openaiCompatibleModel = this.getGlobalConfig(
+      "experimental.codeIndex.openaiCompatible.model"
+    );
+
+    // Debug: Log loaded configuration
+    console.log(
+      "[EmbeddingService] Configuration loaded from globalState.config:"
+    );
+    console.log(
+      "  OpenAI API Key:",
+      this.openaiApiKey ? "***SET***" : "NOT SET"
+    );
+    console.log("  OpenAI Base URL:", this.openaiBaseUrl || "NOT SET");
+    console.log("  Ollama Base URL:", this.ollamaBaseUrl || "NOT SET");
+    console.log(
+      "  OpenAI Compatible Base URL:",
+      this.openaiCompatibleBaseUrl || "NOT SET"
+    );
+    console.log(
+      "  OpenAI Compatible API Key:",
+      this.openaiCompatibleApiKey ? "***SET***" : "NOT SET"
+    );
+    console.log(
+      "  OpenAI Compatible Model:",
+      this.openaiCompatibleModel || "NOT SET"
     );
   }
 
@@ -259,8 +287,17 @@ export class EmbeddingService {
     webview: vscode.Webview
   ): Promise<FileNode | null> {
     console.log(
-      `[EmbeddingService] Starting file scan for project: ${this.projectName} at root: ${this.projectRoot} from startIndex: ${startIndex}`
+      `[EmbeddingService] Starting project file scan for ${this.projectName}`
     );
+
+    // Track indexing statistics
+    const stats = {
+      total: 0,
+      succeeded: 0,
+      failed: 0,
+      skipped: 0,
+      failedFiles: [] as Array<{ path: string; error: string }>,
+    };
 
     // Reset counters for a new scan
     this.processedBlocks = 0;
@@ -269,33 +306,48 @@ export class EmbeddingService {
     try {
       const fileTree = await this.fileScanner.scanProject();
       if (fileTree) {
-        console.log(
-          `[EmbeddingService] Successfully scanned project. Root node: ${
-            fileTree.name
-          }, Children: ${fileTree.children?.length || 0}`
-        );
-        // Start indexing all files within the scanned project
-        console.log(
-          `[EmbeddingService] Starting indexing for all files in project: ${this.projectName}`
-        );
         // Calculate total semantic blocks before indexing
-        const totalSemanticBlocks = await this.calculateTotalSemanticBlocks(
-          fileTree
-        );
+        const totalSemanticBlocks =
+          await this.calculateTotalSemanticBlocks(fileTree);
         this.totalSemanticBlocks = totalSemanticBlocks;
         console.log(
           `[EmbeddingService] Total semantic blocks in project: ${this.projectName}: ${totalSemanticBlocks}`
         );
 
-        await this._indexFileNodeRecursive(fileTree, webview);
+        // Index files recursively starting from startIndex
+        if (fileTree) {
+          await this._indexFileNodeRecursive(fileTree, webview, stats);
+        }
+
         console.log(
-          `[EmbeddingService] Finished indexing all files in project: ${this.projectName}`
+          `[EmbeddingService] Project file scan completed for ${this.projectName}`
         );
+
+        // Send final summary with failed files
+        if (stats.failed > 0) {
+          webview.postMessage({
+            command: "indexingFinished",
+            data: {
+              isIndexed: await this.isIndexed(),
+              stats,
+              warning: `索引完成，但有 ${stats.failed} 个文件失败`,
+            },
+          });
+        } else {
+          webview.postMessage({
+            command: "indexingFinished",
+            data: {
+              isIndexed: await this.isIndexed(),
+              stats,
+            },
+          });
+        }
       } else {
         console.log(
           "[EmbeddingService] Project scan did not return a file tree."
         );
       }
+
       return fileTree;
     } catch (error) {
       console.error(`[EmbeddingService] Error scanning project files:`, error);
@@ -322,11 +374,23 @@ export class EmbeddingService {
               node.fileType === "document" ||
               node.language)
           ) {
-            const fileContent = await fs.readFile(absoluteFilePath, "utf-8");
-            const semanticBlocks = await this.codeIndexer.parseFile(node.path, {
-              content: fileContent,
-            });
-            count += semanticBlocks.length;
+            // Check if file is already indexed
+            const fs = await import("fs/promises");
+            const fileStats = await fs.stat(absoluteFilePath);
+            const lastModified = fileStats.mtime.getTime();
+            const isIndexed = await this.vectorStore.checkFileIndexed(
+              node.path,
+              this.projectName,
+              lastModified
+            );
+
+            if (!isIndexed) {
+              const fileContent = await fs.readFile(absoluteFilePath, "utf-8");
+              const semanticBlocks = await this.codeIndexer.parseFile(node.path, {
+                content: fileContent,
+              });
+              count += semanticBlocks.length;
+            }
           }
         } catch (error) {
           console.error(
@@ -347,14 +411,20 @@ export class EmbeddingService {
 
   private async _indexFileNodeRecursive(
     node: FileNode,
-    webview: vscode.Webview
+    webview: vscode.Webview,
+    stats: {
+      total: number;
+      succeeded: number;
+      failed: number;
+      skipped: number;
+      failedFiles: Array<{ path: string; error: string }>;
+    }
   ): Promise<void> {
     if (node.type === "file") {
       // Construct absolute file path to read the file
       const absoluteFilePath = path.join(this.projectRoot, node.path);
       try {
-        // Check if file is not empty and is of a type we want to index (e.g., 'code', 'document')
-        // This check can be more sophisticated based on FileNode properties like 'language' or 'fileType'
+        // Check if file is not empty and is of a type we want to index
         if (
           node.size &&
           node.size > 0 &&
@@ -362,27 +432,65 @@ export class EmbeddingService {
             node.fileType === "document" ||
             node.language)
         ) {
+          stats.total++;
+
+          // Check if file is already indexed (resumability)
+          const fs = await import("fs/promises");
+          const fileStats = await fs.stat(absoluteFilePath);
+          const lastModified = fileStats.mtime.getTime();
+
+          const isIndexed = await this.vectorStore.checkFileIndexed(
+            node.path,
+            this.projectName,
+            lastModified
+          );
+
+          if (isIndexed) {
+            stats.skipped++;
+            console.log(
+              `[EmbeddingService] Skipping already indexed file: ${node.path}`
+            );
+            webview.postMessage({
+              command: "indexingProgress",
+              data: {
+                message: `Skipping ${node.path} (already indexed)`,
+                current: this.processedBlocks,
+                total: this.totalSemanticBlocks,
+              },
+            });
+            return;
+          }
+
           console.log(
             `[EmbeddingService] Reading file for indexing: ${absoluteFilePath}`
           );
           const fileContent = await fs.readFile(absoluteFilePath, "utf-8");
-          await this.indexFile(node.path, fileContent, webview); // node.path is relative
+          await this.indexFile(node.path, fileContent, webview);
+          stats.succeeded++;
         } else {
+          stats.skipped++;
           console.log(
             `[EmbeddingService] Skipping file (empty, unsupported type, or no language): ${node.path}`
           );
         }
       } catch (error) {
+        stats.failed++;
+        const errorMessage =
+          error instanceof Error ? error.message : String(error);
+        stats.failedFiles.push({
+          path: node.path,
+          error: errorMessage,
+        });
         console.error(
-          `[EmbeddingService] Error reading or indexing file ${absoluteFilePath}:`,
+          `[EmbeddingService] Error indexing file ${absoluteFilePath}:`,
           error
         );
-        // Optionally, decide if one error should stop the whole process or just skip the file
-        throw error;
+        // Continue with next file instead of throwing
+        console.log(`[EmbeddingService] Continuing with next file...`);
       }
     } else if (node.type === "directory" && node.children) {
       for (const child of node.children) {
-        await this._indexFileNodeRecursive(child, webview);
+        await this._indexFileNodeRecursive(child, webview, stats);
       }
     }
   }
@@ -409,29 +517,39 @@ export class EmbeddingService {
       console.log(
         `[EmbeddingService] Extracted ${semanticBlocks.length} semantic blocks from ${filePath}.`
       );
+
+      // Get file stats for lastModified
+      const fs = await import("fs/promises");
+      const path = await import("path");
+      const absolutePath = path.join(this.projectRoot, filePath);
+      const fileStats = await fs.stat(absolutePath);
+      const lastModified = fileStats.mtime.getTime();
       const totalBlocks = semanticBlocks.length;
       // 2. Generate embeddings
       const textsToEmbed = semanticBlocks.map((block) => {
         // Construct a meaningful string from the block for embedding
         // Example: combine name, signature, and documentation
-        return `${block.name}\n${block.signature || ""}\n${
-          block.doc || ""
-        }\n${block.code.substring(0, 500)}`; // Truncate code for embedding
+        return `${block.name}\n${block.signature || ""}\n${block.doc || ""
+          }\n${block.code.substring(0, 500)}`; // Truncate code for embedding
       });
 
-      const embeddingProvider = stateManager.getWorkspace<
-        "OpenAI" | "Ollama" | "openai-compatible"
-      >(
-        "experimental.codeIndex.embeddingProvider" as WorkspaceConfigPath,
-        "OpenAI"
+      const embeddingProvider =
+        (this.getGlobalConfig("experimental.codeIndex.embeddingProvider") as
+          | "openai"
+          | "ollama"
+          | "openai-compatible") || "openai";
+
+      console.log(
+        "[EmbeddingService] getEmbeddings - embeddingProvider:",
+        embeddingProvider
       );
+
       let embeddings: number[][];
       let embeddingModelName: string;
-      if (embeddingProvider === "Ollama") {
-        embeddingModelName = stateManager.getWorkspace(
-          "experimental.codeIndex.embeddingModel" as WorkspaceConfigPath,
-          "nomic-embed-text"
-        );
+      if (embeddingProvider === "ollama") {
+        embeddingModelName =
+          this.getGlobalConfig("experimental.codeIndex.embeddingModel") ||
+          "nomic-embed-text";
         embeddings = await generateOllamaEmbeddings(
           textsToEmbed,
           this.ollamaBaseUrl,
@@ -457,10 +575,9 @@ export class EmbeddingService {
         );
       } else {
         // Default to OpenAI
-        embeddingModelName = stateManager.getWorkspace(
-          "experimental.codeIndex.embeddingModel" as WorkspaceConfigPath,
-          "text-embedding-3-small"
-        );
+        embeddingModelName =
+          this.getGlobalConfig("experimental.codeIndex.embeddingModel") ||
+          "text-embedding-3-small";
         if (!this.openaiApiKey) {
           console.error(
             `[EmbeddingService] OpenAI API Key is not configured. Skipping embedding generation.`
@@ -482,7 +599,13 @@ export class EmbeddingService {
       );
       // 3. Prepare points for VectorStore
       const points: QdrantPoint[] = semanticBlocks.map((block, index) => {
-        const chunkId = uuidv4(); // Unique ID for this specific code chunk
+        // Use a hash of the block's content for a stable, deterministic ID
+        const blockHash = crypto
+          .createHash("sha256")
+          .update(block.code)
+          .digest("hex");
+        const chunkSeed = `${this.projectName}:${filePath}:${blockHash}`;
+        const chunkId = uuidv5(chunkSeed, NAMESPACE);
         this.processedBlocks++;
         webview.postMessage({
           command: "indexingProgress",
@@ -498,7 +621,7 @@ export class EmbeddingService {
           payload: {
             type: block.type,
             name: block.name,
-            file: block.file,
+            file: filePath,
             startLine: block.startLine,
             endLine: block.endLine,
             signature: block.signature,
@@ -507,11 +630,11 @@ export class EmbeddingService {
             modulePath: block.modulePath,
             chunk_id: chunkId,
             project: this.projectName,
+            lastModified: lastModified, // Add lastModified for resumability
           },
         };
       });
 
-      // 4. Upsert points to VectorStore
       // 4. Upsert points to VectorStore
       try {
         await this.vectorStore.upsertPoints(points);
@@ -519,6 +642,11 @@ export class EmbeddingService {
         console.error(
           `[EmbeddingService] Error upserting points to vector store for file ${filePath}:`,
           dbError
+        );
+
+        console.error(
+          `[EmbeddingService] Error upserting points:`,
+          util.inspect(dbError, { depth: 10, colors: true })
         );
         throw new EmbeddingServiceError(
           dbError instanceof Error
@@ -625,29 +753,27 @@ export class EmbeddingService {
     queryText: string,
     limit: number = 5
   ): Promise<any[]> {
-    const embeddingProvider = stateManager.getWorkspace<
-      "OpenAI" | "Ollama" | "openai-compatible"
-    >(
-      "experimental.codeIndex.embeddingProvider" as WorkspaceConfigPath,
-      "OpenAI"
-    );
+    const embeddingProvider =
+      (this.getGlobalConfig("experimental.codeIndex.embeddingProvider") as
+        | "openai"
+        | "ollama"
+        | "openai-compatible") || "openai";
 
     console.log(
       `[EmbeddingService] Searching for code similar to: "${queryText}"`
     );
 
     let queryEmbeddings: number[][];
-    if (embeddingProvider === "Ollama") {
+    if (embeddingProvider === "ollama") {
       if (!this.ollamaBaseUrl) {
         console.log(
           formatMessage("embedding.ollama.baseUrl.missing.forSearch")
         );
         return [];
       }
-      const embeddingModelName = stateManager.getWorkspace(
-        "experimental.codeIndex.embeddingModel" as WorkspaceConfigPath,
-        "nomic-embed-text"
-      );
+      const embeddingModelName =
+        this.getGlobalConfig("experimental.codeIndex.embeddingModel") ||
+        "nomic-embed-text";
       queryEmbeddings = await generateOllamaEmbeddings(
         [queryText],
         this.ollamaBaseUrl,
@@ -655,11 +781,7 @@ export class EmbeddingService {
       );
     } else if (embeddingProvider === "openai-compatible") {
       if (!this.openaiCompatibleApiKey || !this.openaiCompatibleModel) {
-        console.log(
-          formatMessage("apiKey.missing", [
-            "OpenAI Compatible",
-          ])
-        );
+        console.log(formatMessage("apiKey.missing", ["OpenAI Compatible"]));
         return [];
       }
       queryEmbeddings = await generateOpenAIEmbeddings(
@@ -671,17 +793,12 @@ export class EmbeddingService {
     } else {
       // Default to OpenAI
       if (!this.openaiApiKey) {
-        console.log(
-          formatMessage("apiKey.missing", [
-            "OpenAI",
-          ])
-        );
+        console.log(formatMessage("apiKey.missing", ["OpenAI"]));
         return [];
       }
-      const embeddingModelName = stateManager.getWorkspace(
-        "experimental.codeIndex.embeddingModel" as WorkspaceConfigPath,
-        "text-embedding-3-small"
-      );
+      const embeddingModelName =
+        this.getGlobalConfig("experimental.codeIndex.embeddingModel") ||
+        "text-embedding-3-small";
       queryEmbeddings = await generateOpenAIEmbeddings(
         [queryText],
         this.openaiApiKey,
@@ -755,12 +872,12 @@ export class EmbeddingService {
       throw new EmbeddingServiceError(
         isFetchError
           ? formatMessage("embedding.qdrant.connectFailed", [
-              qdUrl,
-              error.message,
-            ])
+            qdUrl,
+            error.message,
+          ])
           : error instanceof Error
-          ? error.message
-          : formatMessage("embedding.vectorStore.statusCheck.unknownError"),
+            ? error.message
+            : formatMessage("embedding.vectorStore.statusCheck.unknownError"),
         {
           source: "qdrant",
           type: "api_error",
@@ -768,5 +885,23 @@ export class EmbeddingService {
         }
       );
     }
+  }
+  /**
+   * Helper to retrieve a value from the global state config object using a dot-notation path.
+   * @param path The dot-notation path to the setting (e.g., "experimental.codeIndex.enabled").
+   * @returns The value of the setting, or undefined if not found.
+   */
+  private getGlobalConfig(path: string): any {
+    const config: any = stateManager.getGlobal("config") || {};
+    const keys = path.split(".");
+    let current = config;
+    for (const key of keys) {
+      if (current && typeof current === "object" && key in current) {
+        current = current[key];
+      } else {
+        return undefined;
+      }
+    }
+    return current;
   }
 }
