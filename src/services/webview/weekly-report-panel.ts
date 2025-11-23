@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { getMessage } from "../utils/i18n";
+import { getMessage } from "../../utils/i18n";
 import { WeeklyReportMessageHandler } from "./handlers/weekly-report-message-handler";
 import { SettingsViewHTMLProvider } from "./providers/settings-view-html-provider";
 

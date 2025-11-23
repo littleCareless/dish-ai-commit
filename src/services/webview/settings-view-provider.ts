@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
-import { WORKSPACE_CONFIG_PATHS } from "../config/workspace-config-schema";
-import { EmbeddingService } from "../core/indexing/embedding-service";
-import { stateManager } from "../utils/state/state-manager";
+import { WORKSPACE_CONFIG_PATHS } from "../../config/workspace-config-schema";
+import { EmbeddingService } from "../../core/indexing/embedding-service";
+import { stateManager } from "../../utils/state/state-manager";
 import { SettingsViewMessageHandler } from "./handlers/settings-view-message-handler";
 import { SettingsViewHTMLProvider } from "./providers/settings-view-html-provider";
 

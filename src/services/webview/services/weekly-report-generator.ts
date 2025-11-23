@@ -1,8 +1,10 @@
-import { WeeklyReportService, type Period } from "../../services/weekly-report";
-import { AIProviderFactory } from "../../ai/ai-provider-factory";
+import { getMessage } from "../../../utils/i18n";
+import { ProgressHandler } from "../../../utils/notification";
+import {
+  WeeklyReportService,
+  type Period,
+} from "../../reporting/weekly-report";
 import { ModelConfigurationManager } from "../config/model-configuration-manager";
-import { ProgressHandler } from "../../utils/notification";
-import { getMessage } from "../../utils/i18n";
 
 export class WeeklyReportGenerator {
   private readonly weeklyReportService: WeeklyReportService;
@@ -24,7 +26,6 @@ export class WeeklyReportGenerator {
         );
         const { aiProvider, selectedModel } =
           await this.configManager.getModelAndProvider();
-
 
         const response = await aiProvider.generateWeeklyReport(
           workItems.map((item) => item.content),
@@ -51,7 +52,10 @@ export class WeeklyReportGenerator {
     return await this.weeklyReportService.getAllAuthors(); // 假设 WeeklyReportService 中有此方法
   }
 
-  public async generateTeamReport(period: Period, users: string[]): Promise<string> {
+  public async generateTeamReport(
+    period: Period,
+    users: string[]
+  ): Promise<string> {
     await this.weeklyReportService.initialize();
 
     return await ProgressHandler.withProgress(
@@ -67,8 +71,9 @@ export class WeeklyReportGenerator {
 
         // aiProvider.generateWeeklyReport 需要 string[] 类型的 commits
         // workItems已经是 WorkItem[] 类型，我们需要提取其 content 属性
-        const commitMessages = workItems.map((item: { content: string }) => item.content);
-
+        const commitMessages = workItems.map(
+          (item: { content: string }) => item.content
+        );
 
         const response = await aiProvider.generateWeeklyReport(
           commitMessages, // 传递 commit messages 字符串数组

@@ -1,4 +1,4 @@
-import * as vscode from "vscode"
+import * as vscode from "vscode";
 
 export class SettingsViewHTMLProvider {
   private readonly _extensionUri: vscode.Uri;
@@ -65,6 +65,17 @@ export class SettingsViewHTMLProvider {
         "</head>",
         `<meta http-equiv="Content-Security-Policy" content="${csp}">
 <script nonce="${nonce}">
+  // 关键：在所有脚本加载之前，同步设置好初始数据
+  window.initialData = {
+    viewType: "${initialData.viewType}",
+    qdrantUrl: "${initialData.qdrantUrl || ""}",
+    qdrantCollectionName: "${initialData.qdrantCollectionName || ""}",
+    language: "${initialData.language?.toLowerCase() || "en"}",
+    localesBaseUri: "${localesBaseUri.toString()}"
+  };
+  window.initialRoute = "${initialData.initialRoute}";
+  console.log('SettingsViewProvider: initialData synchronously set', window.initialData);
+
   // 获取当前VSCode主题
   function getVSCodeTheme() {
       const body = document.body;
@@ -109,7 +120,7 @@ export class SettingsViewHTMLProvider {
       });
   });
 
-  // 页面加载完成后初始化主题
+  // 页面加载完成后初始化主题和补充数据
   document.addEventListener('DOMContentLoaded', () => {
       applyTheme();
       // 开始监听body的class变化
@@ -118,27 +129,18 @@ export class SettingsViewHTMLProvider {
           attributeFilter: ['class']
       });
 
-      // 向 webview-ui 传递初始数据
-      window.initialData = {
-          viewType: "${initialData.viewType}",
-          vscodeTheme: getVSCodeTheme(),
-          qdrantUrl: "${initialData.qdrantUrl || ""}",
-          qdrantCollectionName: "${initialData.qdrantCollectionName || ""}",
-          language: "${initialData.language || "en"}",
-          localesBaseUri: "${localesBaseUri.toString()}"
-      };
-      window.initialRoute = "${initialData.initialRoute}";
+      // 向 webview-ui 补充 vscodeTheme
+      if (window.initialData) {
+        window.initialData.vscodeTheme = getVSCodeTheme();
+      }
       
-      console.log('SettingsViewProvider: initialData set', window.initialData);
+      console.log('SettingsViewProvider: DOMContentLoaded, full initialData:', window.initialData);
       window.dispatchEvent(new CustomEvent('initial-data-ready'));
   });
 </script>
 </head>`
       )
       .replace('href="/assets/index.css"', `href="${styleUri}"`)
-      .replace(
-        'src="/assets/index.js"',
-        `src="${scriptUri}" nonce="${nonce}"`
-      );
+      .replace('src="/assets/index.js"', `src="${scriptUri}" nonce="${nonce}"`);
   }
 }

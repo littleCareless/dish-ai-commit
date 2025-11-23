@@ -1,7 +1,7 @@
-import { AIProviderFactory } from "../../ai/ai-provider-factory";
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { getMessage } from "../../utils/i18n";
-import { ModelPickerService } from "../../services/model-picker-service";
+import { AIProviderFactory } from "../../../ai/ai-provider-factory";
+import { ConfigurationManager } from "../../../config/configuration-manager";
+import { getMessage } from "../../../utils/i18n";
+import { ModelPickerService } from "../../core/model-picker-service";
 
 export class ModelConfigurationManager {
   private readonly configManager = ConfigurationManager.getInstance();
