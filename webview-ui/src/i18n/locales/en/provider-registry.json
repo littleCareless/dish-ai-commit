@@ -1,0 +1,508 @@
+{
+  "openai": {
+    "description": "GPT models developed by OpenAI",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "sk-...",
+        "helpText": "API key obtained from the OpenAI platform",
+        "validation": {
+          "required": "API Key is required",
+          "pattern": "OpenAI API Key should start with sk-"
+        }
+      },
+      "useCustomUrl": {
+        "label": "Use Custom Base URL",
+        "helpText": "For proxies or private deployments"
+      },
+      "baseURL": {
+        "label": "Custom Base URL",
+        "placeholder": "https://api.openai.com/v1",
+        "validation": {
+          "pattern": "Please enter a valid URL"
+        }
+      }
+    }
+  },
+  "deepseek": {
+    "description": "DeepSeek models",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "sk-...",
+        "helpText": "DeepSeek API key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      }
+    }
+  },
+  "togetherai": {
+    "description": "Open-source model hosting platform",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "Together AI API key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      }
+    }
+  },
+  "xai": {
+    "description": "xAI Grok models",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "xAI API key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      }
+    }
+  },
+  "google-vertex": {
+    "description": "Google Cloud Vertex AI",
+    "fields": {
+      "apiKey": {
+        "label": "Project ID : Location",
+        "placeholder": "my-project:us-central1",
+        "helpText": "Format: PROJECT_ID:LOCATION (e.g., my-project:us-central1)",
+        "validation": {
+          "required": "Project ID : Location is required",
+          "pattern": "Format must be PROJECT_ID:LOCATION"
+        }
+      }
+    }
+  },
+  "azure": {
+    "description": "OpenAI models hosted on Azure",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "API key for the Azure OpenAI resource",
+        "validation": {
+          "required": "API Key is required"
+        }
+      },
+      "baseURL": {
+        "label": "Resource Name",
+        "placeholder": "my-resource-name",
+        "helpText": "Azure resource name (not the full URL)",
+        "validation": {
+          "required": "Resource Name is required"
+        }
+      }
+    }
+  },
+  "mistral": {
+    "description": "Mistral open-source and commercial models",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "Mistral API key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      }
+    }
+  },
+  "groq": {
+    "description": "Ultra-fast inference API",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "gsk_...",
+        "helpText": "Groq API key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      }
+    }
+  },
+  "anthropic": {
+    "description": "Claude models developed by Anthropic",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "sk-ant-...",
+        "helpText": "API key obtained from the Anthropic console",
+        "validation": {
+          "required": "API Key is required",
+          "pattern": "Anthropic API Key should start with sk-ant-"
+        }
+      }
+    }
+  },
+  "gemini": {
+    "description": "Gemini models developed by Google",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "AI...",
+        "helpText": "API key obtained from Google AI Studio",
+        "validation": {
+          "required": "API Key is required"
+        }
+      }
+    }
+  },
+  "azure-openai": {
+    "description": "OpenAI service on Azure",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "API key for the Azure OpenAI service",
+        "validation": {
+          "required": "API Key is required"
+        }
+      },
+      "baseURL": {
+        "label": "Endpoint URL",
+        "placeholder": "https://your-resource.openai.azure.com/",
+        "helpText": "Endpoint URL for the Azure OpenAI service",
+        "validation": {
+          "required": "Endpoint URL is required",
+          "pattern": "Please enter a valid Azure OpenAI endpoint"
+        }
+      },
+      "apiVersion": {
+        "label": "API Version"
+      }
+    }
+  },
+  "vertexai": {
+    "description": "AI services on Google Cloud",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "Google Cloud service account key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      },
+      "projectId": {
+        "label": "Project ID",
+        "placeholder": "your-project-id",
+        "helpText": "Google Cloud project ID",
+        "validation": {
+          "required": "Project ID is required"
+        }
+      },
+      "region": {
+        "label": "Region"
+      }
+    }
+  },
+  "baidu-qianfan": {
+    "description": "Baidu Smart Cloud Qianfan large model platform",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "Qianfan platform API Key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      },
+      "secretKey": {
+        "label": "Secret Key",
+        "helpText": "Qianfan platform Secret Key",
+        "validation": {
+          "required": "Secret Key is required"
+        }
+      }
+    }
+  },
+  "cloudflare-workersai": {
+    "description": "Cloudflare's edge AI service",
+    "fields": {
+      "apiKey": {
+        "label": "API Token",
+        "helpText": "Cloudflare API Token",
+        "validation": {
+          "required": "API Token is required"
+        }
+      },
+      "accountId": {
+        "label": "Account ID",
+        "placeholder": "your-account-id",
+        "helpText": "Cloudflare account ID",
+        "validation": {
+          "required": "Account ID is required"
+        }
+      }
+    }
+  },
+  "openrouter": {
+    "description": "Aggregator service for accessing multiple AI models",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "OpenRouter API key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      }
+    }
+  },
+  "perplexity": {
+    "description": "AI models enhanced with real-time search",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "Perplexity API key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      }
+    }
+  },
+  "dashscope": {
+    "description": "Alibaba Cloud Tongyi Qianwen large model",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "Tongyi Qianwen API Key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      }
+    }
+  },
+  "doubao": {
+    "description": "ByteDance Doubao large model",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "Doubao API key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      }
+    }
+  },
+  "zhipu": {
+    "description": "Zhipu Qingyan large model",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "Zhipu AI API key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      }
+    }
+  },
+  "siliconflow": {
+    "description": "SiliconFlow AI model service",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "SiliconFlow API key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      }
+    }
+  },
+  "together": {
+    "description": "Together AI model service",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "Together AI API key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      }
+    }
+  },
+  "premai": {
+    "description": "PremAI model service",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "PremAI API key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      }
+    }
+  },
+  "bedrock": {
+    "description": "AWS's fully managed foundational model service",
+    "fields": {
+      "apiKey": {
+        "label": "AWS Credentials",
+        "placeholder": "ACCESS_KEY_ID:SECRET_ACCESS_KEY",
+        "helpText": "Format: ACCESS_KEY_ID:SECRET_ACCESS_KEY",
+        "validation": {
+          "required": "AWS Credentials are required",
+          "pattern": "Format should be ACCESS_KEY_ID:SECRET_ACCESS_KEY"
+        }
+      },
+      "baseURL": {
+        "label": "AWS Region",
+        "placeholder": "us-east-1",
+        "helpText": "AWS region code (e.g., us-east-1, us-west-2)",
+        "validation": {
+          "required": "AWS Region is required"
+        }
+      }
+    }
+  },
+  "cohere": {
+    "description": "Enterprise-grade AI models",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "Cohere API Key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      }
+    }
+  },
+  "fireworks": {
+    "description": "Fast and cost-effective inference platform",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "Fireworks API Key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      }
+    }
+  },
+  "deepinfra": {
+    "description": "Low-cost AI inference",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "DeepInfra API Key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      }
+    }
+  },
+  "cerebras": {
+    "description": "Ultra-fast AI inference",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "Cerebras API Key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      }
+    }
+  },
+  "ollama": {
+    "description": "Local AI model runtime environment",
+    "fields": {
+      "baseURL": {
+        "label": "Ollama Server URL",
+        "placeholder": "http://localhost:11434",
+        "helpText": "Address of the Ollama server",
+        "validation": {
+          "required": "Server URL is required",
+          "pattern": "Please enter a valid URL"
+        }
+      }
+    }
+  },
+  "lmstudio": {
+    "description": "Local AI model management tool",
+    "fields": {
+      "baseURL": {
+        "label": "LM Studio Server URL",
+        "placeholder": "http://localhost:1234",
+        "helpText": "Address of the LM Studio server",
+        "validation": {
+          "required": "Server URL is required",
+          "pattern": "Please enter a valid URL"
+        }
+      }
+    }
+  },
+  "vscode": {
+    "description": "Built-in AI functionality in VSCode"
+  },
+  "openai-compatible": {
+    "description": "Any OpenAI-compatible API endpoint",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "Key for the compatible API",
+        "validation": {
+          "required": "API Key is required"
+        }
+      },
+      "baseURL": {
+        "label": "API Endpoint URL",
+        "placeholder": "https://api.example.com/v1",
+        "helpText": "OpenAI-compatible API endpoint",
+        "validation": {
+          "required": "API Endpoint URL is required",
+          "pattern": "Please enter a valid URL"
+        }
+      },
+      "organization": {
+        "label": "Organization ID",
+        "placeholder": "org-...",
+        "helpText": "Optional OpenAI organization ID"
+      },
+      "useAzure": {
+        "label": "Use Azure Service",
+        "helpText": "Enable Azure OpenAI service configuration"
+      },
+      "azureApiVersion": {
+        "label": "Azure API Version"
+      },
+      "useCustomHeaders": {
+        "label": "Custom Headers",
+        "helpText": "Add custom HTTP request headers"
+      },
+      "customHeaders": {
+        "label": "Custom Headers (JSON)",
+        "placeholder": "{\"Authorization\": \"Bearer token\", \"X-API-Key\": \"key\"}",
+        "helpText": "Custom request headers in JSON format",
+        "validation": {
+          "custom": "Please enter a valid JSON format"
+        }
+      },
+      "enableR1Models": {
+        "label": "Enable R1 Model Parameters",
+        "helpText": "Must be enabled when using R1 series models like QWQ to avoid 400 errors"
+      },
+      "useLegacyFormat": {
+        "label": "Use Legacy OpenAI API Format",
+        "helpText": "Enable for streaming"
+      },
+      "includeMaxTokens": {
+        "label": "Include Max Output Tokens",
+        "helpText": "Send max output tokens parameter in API requests. Some providers may not support this."
+      }
+    }
+  },
+  "unsupportedProvider": "Unsupported Provider",
+  "fetchModelsFailed": "Failed to fetch model list",
+  "fetchModelsTimeout": "Fetching model list timed out",
+  "modelSelection": "Model Selection",
+  "loading": "Loading",
+  "modelSelectionStatus": "Model Selection Status",
+  "configured": "Configured",
+  "notConfigured": "Not Configured",
+  "modelField": "Model Field",
+  "defaultModelField": "DefaultModel Field",
+  "notSet": "Not Set",
+  "debugInfo": "This information is for debugging only and can be removed in the final version",
+  "enterApiKeyOrBaseUrl": "Please enter API Key or Base URL first",
+  "selectModel": "Select a model"
+}

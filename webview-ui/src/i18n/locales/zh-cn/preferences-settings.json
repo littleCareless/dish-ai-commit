@@ -1,0 +1,36 @@
+{
+  "responseCreativity": "响应创造力",
+  "temperature": "温度: {{temperature}}",
+  "temperatureDescription": "控制响应的随机性。较低的值会使响应更加专注和确定。",
+  "temperatureLevels": {
+    "deterministic": "确定性（最专注）",
+    "low": "低创造力",
+    "balanced": "平衡",
+    "high": "高创造力",
+    "max": "最大创造力"
+  },
+  "language": "语言",
+  "generatedContentLanguage": "生成内容语言",
+  "generatedContentLanguageDescription": "选择生成内容所使用的语言。",
+  "languages": {
+    "simplifiedChinese": "简体中文",
+    "traditionalChinese": "繁体中文",
+    "japanese": "日语",
+    "korean": "韩语",
+    "czech": "捷克语",
+    "german": "德语",
+    "french": "法语",
+    "italian": "意大利语",
+    "dutch": "荷兰语",
+    "portuguese": "葡萄牙语",
+    "vietnamese": "越南语",
+    "english": "英语",
+    "spanish": "西班牙语",
+    "swedish": "瑞典语",
+    "russian": "俄语",
+    "bahasa": "印尼语",
+    "polish": "波兰语",
+    "turkish": "土耳其语",
+    "thai": "泰语"
+  }
+}

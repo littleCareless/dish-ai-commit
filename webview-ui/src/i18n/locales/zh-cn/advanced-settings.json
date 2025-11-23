@@ -1,0 +1,39 @@
+{
+  "loggingLevel": {
+    "title": "日志级别",
+    "verbosity": "详细程度: {{value}}",
+    "minimal": "最少日志",
+    "standard": "标准日志",
+    "verbose": "详细日志",
+    "unknown": "未知",
+    "description": "控制日志和调试信息的详细程度。"
+  },
+  "rateLimiting": {
+    "title": "速率限制",
+    "delay": "请求间隔: {{value}}秒",
+    "description": "API 请求之间的最小延迟，以避免速率限制。"
+  },
+  "errorHandling": {
+    "title": "错误处理",
+    "maxRetries": "最大重试次数: {{value}}",
+    "description": "在放弃之前连续重试的最大次数。"
+  },
+  "advancedConfiguration": {
+    "title": "高级配置",
+    "maxTokens": {
+      "label": "最大令牌数",
+      "placeholder": "4000",
+      "description": "AI 响应的最大令牌数。"
+    },
+    "timeout": {
+      "label": "超时 (毫秒)",
+      "placeholder": "30000",
+      "description": "请求超时时间（毫秒）。"
+    },
+    "retryAttempts": {
+      "label": "重试次数",
+      "placeholder": "3",
+      "description": "失败请求的重试次数。"
+    }
+  }
+}

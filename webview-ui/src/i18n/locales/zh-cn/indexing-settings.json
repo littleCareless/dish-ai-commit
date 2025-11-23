@@ -1,6 +1,8 @@
 {
   "ollama": {
     "modelName": "模型名称",
+    "baseUrl": "基础 URL",
+    "modelDimensions": "模型维度",
     "modelPlaceholder": "例如 nomic-embed-text"
   },
   "qdrant": {

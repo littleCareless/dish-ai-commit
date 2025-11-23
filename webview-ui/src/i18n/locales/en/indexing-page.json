@@ -4,10 +4,30 @@
   "learnMore": "Learn more",
   "enableIndexing": "Enable Codebase Indexing",
   "status": {
-    "title": "Status",
-    "indexed": "Indexed - Index up-to-date. File queue empty."
+    "title": "Indexing Status",
+    "current": "Current Status",
+    "upToDate": "Index is up-to-date",
+    "settingsSaved": "Settings saved",
+    "indexingComplete": "Indexing complete",
+    "indexingFailed": "Indexing failed",
+    "indexCleared": "Index cleared"
   },
-  "embeddingProvider": "Embedding Provider",
+  "stats": {
+    "succeeded": "Succeeded",
+    "failed": "Failed",
+    "viewFailureDetails": "View failure details"
+  },
+  "buttons": {
+    "updateIndex": "Update Index",
+    "startIndexing": "Start Indexing",
+    "viewDetails": "View Details"
+  },
+  "dialog": {
+    "failedFilesTitle": "Failed to Index Files ({{count}})",
+    "errorLabel": "Error",
+    "noFailedFiles": "No failed files recorded"
+  },
+  "embeddingProvider": "Embedding Model Provider",
   "clearIndex": "Clear Index",
-  "save": "Save"
+  "save": "Save Settings"
 }

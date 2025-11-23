@@ -1,0 +1,508 @@
+{
+  "openai": {
+    "description": "GPT 模型，由 OpenAI 开发",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "sk-...",
+        "helpText": "从 OpenAI 平台获取的 API 密钥",
+        "validation": {
+          "required": "API Key 是必需的",
+          "pattern": "OpenAI API Key 应以 sk- 开头"
+        }
+      },
+      "useCustomUrl": {
+        "label": "使用自定义基础 URL",
+        "helpText": "用于代理或私有部署"
+      },
+      "baseURL": {
+        "label": "自定义基础 URL",
+        "placeholder": "https://api.openai.com/v1",
+        "validation": {
+          "pattern": "请输入有效的 URL"
+        }
+      }
+    }
+  },
+  "deepseek": {
+    "description": "深度求索 (DeepSeek) 模型",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "sk-...",
+        "helpText": "DeepSeek API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      }
+    }
+  },
+  "togetherai": {
+    "description": "开源模型托管平台",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "Together AI API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      }
+    }
+  },
+  "xai": {
+    "description": "xAI Grok 模型",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "xAI API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      }
+    }
+  },
+  "google-vertex": {
+    "description": "Google Cloud Vertex AI",
+    "fields": {
+      "apiKey": {
+        "label": "Project ID : Location",
+        "placeholder": "my-project:us-central1",
+        "helpText": "格式: PROJECT_ID:LOCATION (例如 my-project:us-central1)",
+        "validation": {
+          "required": "Project ID : Location 是必需的",
+          "pattern": "格式必须为 PROJECT_ID:LOCATION"
+        }
+      }
+    }
+  },
+  "azure": {
+    "description": "Azure 托管的 OpenAI 模型",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "Azure OpenAI 资源的 API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      },
+      "baseURL": {
+        "label": "Resource Name",
+        "placeholder": "my-resource-name",
+        "helpText": "Azure 资源名称 (不是完整的 URL)",
+        "validation": {
+          "required": "Resource Name 是必需的"
+        }
+      }
+    }
+  },
+  "mistral": {
+    "description": "Mistral 开源及商业模型",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "Mistral API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      }
+    }
+  },
+  "groq": {
+    "description": "超高速推理 API",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "gsk_...",
+        "helpText": "Groq API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      }
+    }
+  },
+  "anthropic": {
+    "description": "Claude 模型，由 Anthropic 开发",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "sk-ant-...",
+        "helpText": "从 Anthropic 控制台获取的 API 密钥",
+        "validation": {
+          "required": "API Key 是必需的",
+          "pattern": "Anthropic API Key 应以 sk-ant- 开头"
+        }
+      }
+    }
+  },
+  "gemini": {
+    "description": "Gemini 模型，由 Google 开发",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "AI...",
+        "helpText": "从 Google AI Studio 获取的 API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      }
+    }
+  },
+  "azure-openai": {
+    "description": "Azure 上的 OpenAI 服务",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "Azure OpenAI 服务的 API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      },
+      "baseURL": {
+        "label": "Endpoint URL",
+        "placeholder": "https://your-resource.openai.azure.com/",
+        "helpText": "Azure OpenAI 服务的端点 URL",
+        "validation": {
+          "required": "Endpoint URL 是必需的",
+          "pattern": "请输入有效的 Azure OpenAI 端点"
+        }
+      },
+      "apiVersion": {
+        "label": "API 版本"
+      }
+    }
+  },
+  "vertexai": {
+    "description": "Google Cloud 上的 AI 服务",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "Google Cloud 服务账号密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      },
+      "projectId": {
+        "label": "Project ID",
+        "placeholder": "your-project-id",
+        "helpText": "Google Cloud 项目 ID",
+        "validation": {
+          "required": "Project ID 是必需的"
+        }
+      },
+      "region": {
+        "label": "区域"
+      }
+    }
+  },
+  "baidu-qianfan": {
+    "description": "百度智能云千帆大模型平台",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "千帆平台的 API Key",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      },
+      "secretKey": {
+        "label": "Secret Key",
+        "helpText": "千帆平台的 Secret Key",
+        "validation": {
+          "required": "Secret Key 是必需的"
+        }
+      }
+    }
+  },
+  "cloudflare-workersai": {
+    "description": "Cloudflare 的边缘 AI 服务",
+    "fields": {
+      "apiKey": {
+        "label": "API Token",
+        "helpText": "Cloudflare API Token",
+        "validation": {
+          "required": "API Token 是必需的"
+        }
+      },
+      "accountId": {
+        "label": "Account ID",
+        "placeholder": "your-account-id",
+        "helpText": "Cloudflare 账户 ID",
+        "validation": {
+          "required": "Account ID 是必需的"
+        }
+      }
+    }
+  },
+  "openrouter": {
+    "description": "访问多个 AI 模型的聚合服务",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "OpenRouter API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      }
+    }
+  },
+  "perplexity": {
+    "description": "实时搜索增强的 AI 模型",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "Perplexity API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      }
+    }
+  },
+  "dashscope": {
+    "description": "阿里云通义千问大模型",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "通义千问 API Key",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      }
+    }
+  },
+  "doubao": {
+    "description": "字节跳动豆包大模型",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "豆包 API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      }
+    }
+  },
+  "zhipu": {
+    "description": "智谱清言大模型",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "智谱 AI API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      }
+    }
+  },
+  "siliconflow": {
+    "description": "硅流 AI 模型服务",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "SiliconFlow API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      }
+    }
+  },
+  "together": {
+    "description": "Together AI 模型服务",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "Together AI API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      }
+    }
+  },
+  "premai": {
+    "description": "PremAI 模型服务",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "PremAI API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      }
+    }
+  },
+  "bedrock": {
+    "description": "AWS 的完全托管基础模型服务",
+    "fields": {
+      "apiKey": {
+        "label": "AWS Credentials",
+        "placeholder": "ACCESS_KEY_ID:SECRET_ACCESS_KEY",
+        "helpText": "格式：ACCESS_KEY_ID:SECRET_ACCESS_KEY",
+        "validation": {
+          "required": "AWS Credentials 是必需的",
+          "pattern": "格式应为 ACCESS_KEY_ID:SECRET_ACCESS_KEY"
+        }
+      },
+      "baseURL": {
+        "label": "AWS Region",
+        "placeholder": "us-east-1",
+        "helpText": "AWS 区域代码 (例如 us-east-1, us-west-2)",
+        "validation": {
+          "required": "AWS Region 是必需的"
+        }
+      }
+    }
+  },
+  "cohere": {
+    "description": "企业级 AI 模型",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "Cohere API Key",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      }
+    }
+  },
+  "fireworks": {
+    "description": "快速且经济高效的推理平台",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "Fireworks API Key",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      }
+    }
+  },
+  "deepinfra": {
+    "description": "低成本 AI 推理",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "DeepInfra API Key",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      }
+    }
+  },
+  "cerebras": {
+    "description": "超高速 AI 推理",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "Cerebras API Key",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      }
+    }
+  },
+  "ollama": {
+    "description": "本地 AI 模型运行环境",
+    "fields": {
+      "baseURL": {
+        "label": "Ollama 服务器 URL",
+        "placeholder": "http://localhost:11434",
+        "helpText": "Ollama 服务器的地址",
+        "validation": {
+          "required": "服务器 URL 是必需的",
+          "pattern": "请输入有效的 URL"
+        }
+      }
+    }
+  },
+  "lmstudio": {
+    "description": "本地 AI 模型管理工具",
+    "fields": {
+      "baseURL": {
+        "label": "LM Studio 服务器 URL",
+        "placeholder": "http://localhost:1234",
+        "helpText": "LM Studio 服务器的地址",
+        "validation": {
+          "required": "服务器 URL 是必需的",
+          "pattern": "请输入有效的 URL"
+        }
+      }
+    }
+  },
+  "vscode": {
+    "description": "VSCode 内置的 AI 功能"
+  },
+  "openai-compatible": {
+    "description": "任何 OpenAI 兼容的 API 端点",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "helpText": "兼容 API 的密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      },
+      "baseURL": {
+        "label": "API 端点 URL",
+        "placeholder": "https://api.example.com/v1",
+        "helpText": "OpenAI 兼容的 API 端点",
+        "validation": {
+          "required": "API 端点 URL 是必需的",
+          "pattern": "请输入有效的 URL"
+        }
+      },
+      "organization": {
+        "label": "Organization ID",
+        "placeholder": "org-...",
+        "helpText": "可选的 OpenAI 组织 ID"
+      },
+      "useAzure": {
+        "label": "使用 Azure 服务",
+        "helpText": "启用 Azure OpenAI 服务配置"
+      },
+      "azureApiVersion": {
+        "label": "Azure API 版本"
+      },
+      "useCustomHeaders": {
+        "label": "自定义请求头",
+        "helpText": "添加自定义 HTTP 请求头"
+      },
+      "customHeaders": {
+        "label": "自定义请求头 (JSON)",
+        "placeholder": "{\"Authorization\": \"Bearer token\", \"X-API-Key\": \"key\"}",
+        "helpText": "JSON 格式的自定义请求头",
+        "validation": {
+          "custom": "请输入有效的 JSON 格式"
+        }
+      },
+      "enableR1Models": {
+        "label": "启用 R1 模型参数",
+        "helpText": "使用 QWQ 等 R1 系列模型时必须启用，避免出现 400 错误"
+      },
+      "useLegacyFormat": {
+        "label": "使用传统 OpenAI API 格式",
+        "helpText": "启用流式传输"
+      },
+      "includeMaxTokens": {
+        "label": "包含最大输出 Token 数",
+        "helpText": "在 API 请求中发送最大输出 Token 参数。某些提供商可能不支持此功能。"
+      }
+    }
+  },
+  "unsupportedProvider": "不支持的提供商",
+  "fetchModelsFailed": "获取模型列表失败",
+  "fetchModelsTimeout": "获取模型列表超时",
+  "modelSelection": "模型选择",
+  "loading": "加载中",
+  "modelSelectionStatus": "模型选择状态",
+  "configured": "已配置",
+  "notConfigured": "未配置",
+  "modelField": "Model 字段",
+  "defaultModelField": "DefaultModel 字段",
+  "notSet": "未设置",
+  "debugInfo": "此信息仅用于调试，可在正式版中移除",
+  "enterApiKeyOrBaseUrl": "请先输入 API Key 或 Base URL",
+  "selectModel": "选择模型"
+}

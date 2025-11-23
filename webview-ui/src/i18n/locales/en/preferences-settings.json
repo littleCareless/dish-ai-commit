@@ -1,0 +1,36 @@
+{
+  "responseCreativity": "Response Creativity",
+  "temperature": "Temperature: {{temperature}}",
+  "temperatureDescription": "Controls randomness in responses. Lower values make responses more focused and deterministic.",
+  "temperatureLevels": {
+    "deterministic": "Deterministic (most focused)",
+    "low": "Low creativity",
+    "balanced": "Balanced",
+    "high": "High creativity",
+    "max": "Maximum creativity"
+  },
+  "language": "Language",
+  "generatedContentLanguage": "Generated Content Language",
+  "generatedContentLanguageDescription": "Choose the language for the generated content.",
+  "languages": {
+    "simplifiedChinese": "Simplified Chinese",
+    "traditionalChinese": "Traditional Chinese",
+    "japanese": "Japanese",
+    "korean": "Korean",
+    "czech": "Czech",
+    "german": "German",
+    "french": "French",
+    "italian": "Italian",
+    "dutch": "Dutch",
+    "portuguese": "Portuguese",
+    "vietnamese": "Vietnamese",
+    "english": "English",
+    "spanish": "Spanish",
+    "swedish": "Swedish",
+    "russian": "Russian",
+    "bahasa": "Bahasa",
+    "polish": "Polish",
+    "turkish": "Turkish",
+    "thai": "Thai"
+  }
+}

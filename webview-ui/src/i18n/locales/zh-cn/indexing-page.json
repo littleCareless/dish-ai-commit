@@ -4,11 +4,30 @@
   "learnMore": "了解更多",
   "enableIndexing": "启用代码库索引",
   "status": {
-    "title": "状态",
-    "indexed": "已索引 - 索引是\"",
-    "upToDate": "最新的。文件队列为空。"
+    "title": "索引状态",
+    "current": "当前状态",
+    "upToDate": "索引已是最新",
+    "settingsSaved": "设置已保存",
+    "indexingComplete": "索引完成",
+    "indexingFailed": "索引失败",
+    "indexCleared": "索引已清除"
   },
-  "embeddingProvider": "嵌入式提供商",
+  "stats": {
+    "succeeded": "成功",
+    "failed": "失败",
+    "viewFailureDetails": "查看失败详情原因"
+  },
+  "buttons": {
+    "updateIndex": "更新索引",
+    "startIndexing": "开始索引",
+    "viewDetails": "查看详情"
+  },
+  "dialog": {
+    "failedFilesTitle": "索引失败文件列表 ({{count}})",
+    "errorLabel": "错误",
+    "noFailedFiles": "无失败文件记录"
+  },
+  "embeddingProvider": "嵌入模型提供商",
   "clearIndex": "清除索引",
-  "save": "保存"
+  "save": "保存设置"
 }

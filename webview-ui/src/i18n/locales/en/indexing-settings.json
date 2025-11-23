@@ -1,6 +1,8 @@
 {
   "ollama": {
     "modelName": "Model Name",
+    "baseUrl": "Base URL",
+    "modelDimensions": "Model Dimensions",
     "modelPlaceholder": "e.g. nomic-embed-text"
   },
   "qdrant": {

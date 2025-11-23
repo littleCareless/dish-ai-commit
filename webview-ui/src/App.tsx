@@ -1,6 +1,7 @@
 import { ConfigProvider } from "@arco-design/web-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React, { useCallback, useEffect } from "react";
+import { I18nextProvider } from "react-i18next";
 import { useEvent } from "react-use";
 import { ErrorBoundary } from "./components/common/ErrorBoundary";
 import { Toaster } from "./components/ui/sonner";
@@ -8,7 +9,8 @@ import { TooltipProvider } from "./components/ui/tooltip";
 import { ExtensionStateContextProvider } from "./context/ExtensionStateContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
 import { VSCodeProvider, useVSCodeContext } from "./contexts/VSCodeContext";
-import TranslationProvider from "./i18n/translation-context";
+import i18n from "./i18n/setup";
+import { I18nProvider } from "./i18n/provider";
 import { AppRouter } from "./router";
 import { postMessage } from "./utils/vscode";
 
@@ -48,19 +50,21 @@ const queryClient = new QueryClient();
 const AppWithProviders = () => (
   <ConfigProvider>
     <ErrorBoundary>
-      <VSCodeProvider>
-        <SettingsProvider>
-          <ExtensionStateContextProvider>
-            <TranslationProvider>
-              <QueryClientProvider client={queryClient}>
-                <TooltipProvider delayDuration={STANDARD_TOOLTIP_DELAY}>
-                  <App />
-                </TooltipProvider>
-              </QueryClientProvider>
-            </TranslationProvider>
-          </ExtensionStateContextProvider>
-        </SettingsProvider>
-      </VSCodeProvider>
+      <I18nextProvider i18n={i18n}>
+        <VSCodeProvider>
+          <SettingsProvider>
+            <ExtensionStateContextProvider>
+              <I18nProvider>
+                <QueryClientProvider client={queryClient}>
+                  <TooltipProvider delayDuration={STANDARD_TOOLTIP_DELAY}>
+                    <App />
+                  </TooltipProvider>
+                </QueryClientProvider>
+              </I18nProvider>
+            </ExtensionStateContextProvider>
+          </SettingsProvider>
+        </VSCodeProvider>
+      </I18nextProvider>
     </ErrorBoundary>
   </ConfigProvider>
 );
