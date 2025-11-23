@@ -1,11 +1,20 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Slider } from "@/components/ui/slider";
-import React from "react";
+import React, { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { UserPreferences } from "../../types/settings";
-import { Skeleton } from "@/components/ui/skeleton";
 
 interface AdvancedSettingsProps {
   preferences: UserPreferences;
@@ -14,262 +23,273 @@ interface AdvancedSettingsProps {
   isLoading?: boolean;
 }
 
-const AdvancedSettingsSkeleton: React.FC = () => {
-  const renderSliderCard = (titleWidth: string) => (
-    <Card>
-      <CardHeader>
-        <CardTitle>
-          <Skeleton className={`h-6 ${titleWidth}`} />
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="space-y-2">
-          <div className="flex items-center justify-between">
-            <Skeleton className="h-5 w-32" />
-            <Skeleton className="h-6 w-40" />
-          </div>
-          <Skeleton className="h-5 w-full" />
-          <Skeleton className="h-4 w-full" />
-        </div>
-      </CardContent>
-    </Card>
-  );
-
-  return (
-    <div className="space-y-6">
-      {renderSliderCard("w-32")}
-      {renderSliderCard("w-40")}
-      {renderSliderCard("w-36")}
-
-      {/* Skeleton for Advanced Configuration */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <Skeleton className="h-6 w-48" />
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-4 w-full" />
-            </div>
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-4 w-full" />
-            </div>
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-28" />
-              <Skeleton className="h-10 w-full" />
-              <Skeleton className="h-4 w-full" />
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
-
 export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
   preferences,
   onChange,
   className = "",
-  isLoading,
 }) => {
-  if (isLoading) {
-    return <AdvancedSettingsSkeleton />;
-  }
-  const handleVerbosityChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const value = parseInt(event.target.value || "0");
-    onChange({ ...preferences, verbosity: value });
-  };
+  const { t } = useTranslation("advanced-settings");
+  const form = useForm<UserPreferences>({
+    defaultValues: preferences,
+  });
 
-  const handleRateLimitChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const value = parseInt(event.target.value || "0");
-    onChange({ ...preferences, rateLimitSeconds: value });
-  };
+  // 当 preferences prop 变化时同步表单值
+  useEffect(() => {
+    form.reset(preferences);
+  }, [preferences, form]);
 
-  const handleMistakeLimitChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const value = parseInt(event.target.value || "0");
-    onChange({ ...preferences, consecutiveMistakeLimit: value });
-  };
-
-  const handleMaxTokensChange = (event: React.FormEvent<HTMLElement>) => {
-    const value = (event.target as HTMLInputElement)?.value || "";
-    const numValue = parseInt(value, 10);
-    if (!isNaN(numValue) && numValue > 0) {
-      onChange({ ...preferences, maxTokens: numValue });
-    }
-  };
-
-  const handleTimeoutChange = (event: React.FormEvent<HTMLElement>) => {
-    const value = (event.target as HTMLInputElement)?.value || "";
-    const numValue = parseInt(value, 10);
-    if (!isNaN(numValue) && numValue > 0) {
-      onChange({ ...preferences, timeout: numValue });
-    }
-  };
-
-  const handleRetryAttemptsChange = (event: React.FormEvent<HTMLElement>) => {
-    const value = (event.target as HTMLInputElement)?.value || "";
-    const numValue = parseInt(value, 10);
-    if (!isNaN(numValue) && numValue > 0) {
-      onChange({ ...preferences, retryAttempts: numValue });
-    }
-  };
+  // 监听表单值变化并触发 onChange
+  useEffect(() => {
+    const subscription = form.watch((value) => {
+      onChange(value as UserPreferences);
+    });
+    return () => subscription.unsubscribe();
+  }, [form, onChange]);
 
   const getVerbosityDescription = (value: number) => {
     switch (value) {
       case 0:
-        return "Minimal logging";
+        return t("loggingLevel.minimal");
       case 1:
-        return "Standard logging";
+        return t("loggingLevel.standard");
       case 2:
-        return "Verbose logging";
+        return t("loggingLevel.verbose");
       default:
-        return "Unknown";
+        return t("loggingLevel.unknown");
     }
   };
 
   return (
-    <div className={`space-y-6 ${className}`}>
-      {/* Verbosity Control */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Logging Level</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>Verbosity: {preferences.verbosity}</Label>
-              <Badge variant="outline">
-                {getVerbosityDescription(preferences.verbosity)}
-              </Badge>
-            </div>
-            <Slider
-              min={0}
-              max={2}
-              step={1}
-              value={preferences.verbosity}
-              onChange={handleVerbosityChange}
-              className="w-full"
+    <Form {...form}>
+      <div className={`space-y-6 ${className}`}>
+        {/* Verbosity Control */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("loggingLevel.title")}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="verbosity"
+              render={({ field }) => (
+                <FormItem>
+                  <div className="flex items-center justify-between">
+                    <FormLabel>
+                      {t("loggingLevel.verbosity", { value: field.value })}
+                    </FormLabel>
+                    <Badge variant="outline">
+                      {getVerbosityDescription(field.value)}
+                    </Badge>
+                  </div>
+                  <FormControl>
+                    <Slider
+                      min={0}
+                      max={2}
+                      step={1}
+                      value={[field.value]}
+                      onValueChange={(value: number[]) => {
+                        field.onChange(value[0]);
+                      }}
+                      className="w-full"
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {t("loggingLevel.description")}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <p className="text-sm text-muted-foreground">
-              Controls the detail level of logging and debug information.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Rate Limiting */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Rate Limiting</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>
-              Delay Between Requests: {preferences.rateLimitSeconds}s
-            </Label>
-            <Slider
-              min={0}
-              max={60}
-              step={1}
-              value={preferences.rateLimitSeconds}
-              onChange={handleRateLimitChange}
-              className="w-full"
+        {/* Rate Limiting */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("rateLimiting.title")}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="rateLimitSeconds"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    {t("rateLimiting.delay", { value: field.value })}
+                  </FormLabel>
+                  <FormControl>
+                    <Slider
+                      min={0}
+                      max={60}
+                      step={1}
+                      value={[field.value]}
+                      onValueChange={(value: number[]) => {
+                        field.onChange(value[0]);
+                      }}
+                      className="w-full"
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {t("rateLimiting.description")}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <p className="text-sm text-muted-foreground">
-              Minimum delay between API requests to avoid rate limiting.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Retry Configuration */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Error Handling</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>
-              Max Retry Attempts: {preferences.consecutiveMistakeLimit}
-            </Label>
-            <Slider
-              min={1}
-              max={10}
-              step={1}
-              value={preferences.consecutiveMistakeLimit}
-              onChange={handleMistakeLimitChange}
-              className="w-full"
+        {/* Retry Configuration */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("errorHandling.title")}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <FormField
+              control={form.control}
+              name="consecutiveMistakeLimit"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>
+                    {t("errorHandling.maxRetries", { value: field.value })}
+                  </FormLabel>
+                  <FormControl>
+                    <Slider
+                      min={1}
+                      max={10}
+                      step={1}
+                      value={[field.value]}
+                      onValueChange={(value: number[]) => {
+                        field.onChange(value[0]);
+                      }}
+                      className="w-full"
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {t("errorHandling.description")}
+                  </FormDescription>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-            <p className="text-sm text-muted-foreground">
-              Maximum number of consecutive retry attempts before giving up.
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
 
-      {/* Advanced Configuration */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Advanced Configuration</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {/* Max Tokens */}
-            <div className="space-y-2">
-              <Label htmlFor="max-tokens">Max Tokens</Label>
-              <Input
-                type="text"
-                value={preferences.maxTokens?.toString() || "4000"}
-                onChange={handleMaxTokensChange}
-                placeholder="4000"
+        {/* Advanced Configuration */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("advancedConfiguration.title")}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="maxTokens"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("advancedConfiguration.maxTokens.label")}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder={t(
+                          "advancedConfiguration.maxTokens.placeholder",
+                        )}
+                        {...field}
+                        value={field.value?.toString() || ""}
+                        onChange={(e) => {
+                          const target = e.target as HTMLInputElement;
+                          const numValue = parseInt(target.value, 10);
+                          if (!isNaN(numValue) && numValue > 0) {
+                            field.onChange(numValue);
+                          } else if (target.value === "") {
+                            field.onChange(undefined);
+                          }
+                        }}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t("advancedConfiguration.maxTokens.description")}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <p className="text-sm text-muted-foreground">
-                Maximum tokens for AI responses.
-              </p>
-            </div>
 
-            {/* Timeout */}
-            <div className="space-y-2">
-              <Label htmlFor="timeout">Timeout (ms)</Label>
-              <Input
-                type="text"
-                value={preferences.timeout?.toString() || "30000"}
-                onChange={handleTimeoutChange}
-                placeholder="30000"
+              <FormField
+                control={form.control}
+                name="timeout"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("advancedConfiguration.timeout.label")}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder={t(
+                          "advancedConfiguration.timeout.placeholder",
+                        )}
+                        {...field}
+                        value={field.value?.toString() || ""}
+                        onChange={(e) => {
+                          const target = e.target as HTMLInputElement;
+                          const numValue = parseInt(target.value, 10);
+                          if (!isNaN(numValue) && numValue > 0) {
+                            field.onChange(numValue);
+                          } else if (target.value === "") {
+                            field.onChange(undefined);
+                          }
+                        }}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t("advancedConfiguration.timeout.description")}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <p className="text-sm text-muted-foreground">
-                Request timeout in milliseconds.
-              </p>
-            </div>
 
-            {/* Retry Attempts */}
-            <div className="space-y-2">
-              <Label htmlFor="retry-attempts">Retry Attempts</Label>
-              <Input
-                type="text"
-                value={preferences.retryAttempts?.toString() || "3"}
-                onChange={handleRetryAttemptsChange}
-                placeholder="3"
+              <FormField
+                control={form.control}
+                name="retryAttempts"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>
+                      {t("advancedConfiguration.retryAttempts.label")}
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        type="text"
+                        placeholder={t(
+                          "advancedConfiguration.retryAttempts.placeholder",
+                        )}
+                        {...field}
+                        value={field.value?.toString() || ""}
+                        onChange={(e) => {
+                          const target = e.target as HTMLInputElement;
+                          const numValue = parseInt(target.value, 10);
+                          if (!isNaN(numValue) && numValue > 0) {
+                            field.onChange(numValue);
+                          } else if (target.value === "") {
+                            field.onChange(undefined);
+                          }
+                        }}
+                      />
+                    </FormControl>
+                    <FormDescription>
+                      {t("advancedConfiguration.retryAttempts.description")}
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-              <p className="text-sm text-muted-foreground">
-                Number of retry attempts for failed requests.
-              </p>
             </div>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+          </CardContent>
+        </Card>
+      </div>
+    </Form>
   );
 };

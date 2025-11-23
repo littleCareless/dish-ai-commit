@@ -1,6 +1,4 @@
-import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +9,6 @@ import {
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
@@ -20,7 +17,6 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { AlertCircle } from "lucide-react";
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -40,7 +36,6 @@ const profileSchema = z.object({
     .max(200, "Description must be less than 200 characters")
     .optional()
     .or(z.literal("")),
-  isDefault: z.boolean(),
 });
 
 type ProfileFormData = z.infer<typeof profileSchema>;
@@ -63,7 +58,6 @@ export const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
     defaultValues: {
       name: "",
       description: "",
-      isDefault: false,
     },
   });
 
@@ -72,13 +66,11 @@ export const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
       form.reset({
         name: profile.name,
         description: profile.description || "",
-        isDefault: profile.isDefault,
       });
     } else {
       form.reset({
         name: "",
         description: "",
-        isDefault: false,
       });
     }
   }, [profile, open, form]);
@@ -95,7 +87,6 @@ export const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
         id: isEditing ? profile!.id : createNewProfileId(),
         name: data.name,
         description: data.description || "",
-        isDefault: data.isDefault,
         providers: profile?.providers || {},
         preferences: profile?.preferences || {
           temperature: 0.0,
@@ -157,46 +148,6 @@ export const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
                       rows={3}
                     />
                   </FormControl>
-                  <FormDescription>
-                    Optional description for this profile
-                  </FormDescription>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-
-            <FormField
-              name="isDefault"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>
-                    Set as default profile
-                    {!profile && (
-                      <span className="text-xs text-muted-foreground ml-1">
-                        (First profile will be default)
-                      </span>
-                    )}
-                  </FormLabel>
-                  <div className="flex items-center space-x-2">
-                    <Checkbox
-                      checked={field.value}
-                      onCheckedChange={field.onChange}
-                      disabled={!profile}
-                    />
-                    <span className="text-sm text-muted-foreground">
-                      Use this profile by default when the extension starts
-                    </span>
-                  </div>
-                  {field.value && (
-                    <Alert>
-                      <AlertCircle className="h-4 w-4" />
-                      <AlertDescription>
-                        This profile will be used as the default when the
-                        extension starts. Other profiles will be set to
-                        non-default.
-                      </AlertDescription>
-                    </Alert>
-                  )}
                   <FormMessage />
                 </FormItem>
               )}

@@ -10,7 +10,7 @@ import {
   FormMessage,
 } from "../../ui/form";
 import { Input } from "../../ui/input";
-import { Select, SelectItem } from "../../ui/select";
+import { Select, SelectOption } from "../../ui/select";
 
 const models = [
   { value: "codestral-embed-2505", label: "codestral-embed-2505 (1536)" },
@@ -28,13 +28,17 @@ export const MistralSettings: React.FC<MistralSettingsProps> = ({
     <div className="space-y-4">
       <FormField
         control={control}
-        name="mistralApiKey"
+        name="providers.mistral.apiKey"
         render={({ field }) => (
           <FormItem>
             <FormLabel>{t("mistral.apiKey")}</FormLabel>
             <FormControl>
               <Input
                 type="password"
+                placeholder={t(
+                  "mistral.apiKeyPlaceholder",
+                  "Your Mistral API Key",
+                )}
                 {...field}
                 value={String(field.value ?? "")}
               />
@@ -45,7 +49,7 @@ export const MistralSettings: React.FC<MistralSettingsProps> = ({
       />
       <FormField
         control={control}
-        name="mistralModel"
+        name="providers.mistral.model"
         render={({ field }) => (
           <FormItem>
             <FormLabel>{t("mistral.model")}</FormLabel>
@@ -56,9 +60,9 @@ export const MistralSettings: React.FC<MistralSettingsProps> = ({
                 value={field.value as string}
               >
                 {models.map((model) => (
-                  <SelectItem key={model.value} value={model.value}>
+                  <SelectOption key={model.value} value={model.value}>
                     {model.label}
-                  </SelectItem>
+                  </SelectOption>
                 ))}
               </Select>
             </FormControl>

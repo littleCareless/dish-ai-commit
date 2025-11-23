@@ -1,6 +1,10 @@
 import React from "react";
 import { Control } from "react-hook-form";
 import { useTranslation } from "react-i18next";
+import {
+  EMBEDDING_MODEL_PROFILES,
+  getModelDimension,
+} from "../../../lib/embedding-models";
 import { IndexingFormValues } from "../../../pages/indexing-page";
 import {
   FormControl,
@@ -10,13 +14,7 @@ import {
   FormMessage,
 } from "../../ui/form";
 import { Input } from "../../ui/input";
-import { Select, SelectItem } from "../../ui/select";
-
-const models = [
-  { value: "text-embedding-3-small", label: "text-embedding-3-small (1536)" },
-  { value: "text-embedding-3-large", label: "text-embedding-3-large (3072)" },
-  { value: "text-embedding-ada-002", label: "text-embedding-ada-002 (1536)" },
-];
+import { Select, SelectOption } from "../../ui/select";
 
 interface OpenAISettingsProps {
   control: Control<IndexingFormValues>;
@@ -24,16 +22,30 @@ interface OpenAISettingsProps {
 
 export const OpenAISettings: React.FC<OpenAISettingsProps> = ({ control }) => {
   const { t } = useTranslation("indexing-settings");
+  const models = Object.keys(EMBEDDING_MODEL_PROFILES.openai ?? {}).map(
+    (modelId) => {
+      const dimension = getModelDimension("openai", modelId);
+      return {
+        value: modelId,
+        label: dimension ? `${modelId} (${dimension})` : modelId,
+      };
+    },
+  );
   return (
     <div className="space-y-4">
       <FormField
         control={control}
-        name="openaiApiKey"
+        name="providers.openai.apiKey"
         render={({ field }) => (
           <FormItem>
             <FormLabel>{t("openai.apiKey")}</FormLabel>
             <FormControl>
-              <Input type="password" {...field} value={field.value ?? ""} />
+              <Input
+                type="password"
+                placeholder={t("openai.apiKeyPlaceholder", "sk-...")}
+                {...field}
+                value={field.value ?? ""}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -41,7 +53,7 @@ export const OpenAISettings: React.FC<OpenAISettingsProps> = ({ control }) => {
       />
       <FormField
         control={control}
-        name="openaiModel"
+        name="providers.openai.model"
         render={({ field }) => (
           <FormItem>
             <FormLabel>{t("openai.model")}</FormLabel>
@@ -52,9 +64,9 @@ export const OpenAISettings: React.FC<OpenAISettingsProps> = ({ control }) => {
                 value={field.value as string}
               >
                 {models.map((model) => (
-                  <SelectItem key={model.value} value={model.value}>
+                  <SelectOption key={model.value} value={model.value}>
                     {model.label}
-                  </SelectItem>
+                  </SelectOption>
                 ))}
               </Select>
             </FormControl>

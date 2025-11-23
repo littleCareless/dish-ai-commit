@@ -8,6 +8,7 @@ import {
   VSCodeOption,
   VSCodeTextField,
 } from "@vscode/webview-ui-toolkit/react";
+import { TFunction } from "i18next";
 import { AlertCircle, Loader } from "lucide-react";
 import React, { useMemo } from "react";
 import { FieldConfig, FieldType } from "../../types/provider-metadata";
@@ -33,6 +34,7 @@ interface DynamicFieldRendererProps {
   formValues?: Record<string, FieldValue>;
   disabled?: boolean;
   className?: string;
+  t: TFunction;
 }
 
 const fieldPropsEqual = (
@@ -52,247 +54,263 @@ const fieldPropsEqual = (
 };
 
 export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
-  React.memo(({ field, value, onChange, formValues = {}, className = "" }) => {
-    // ✅ 仅在开发环境且配置了条件时输出日志
-    if (process.env.NODE_ENV === "development" && field.conditional) {
+  React.memo(
+    ({ field, value, onChange, formValues = {}, className = "", t }) => {
+      // ✅ 仅在开发环境且配置了条件时输出日志
+      if (process.env.NODE_ENV === "development" && field.conditional) {
+        const shouldShow = shouldShowField(field, formValues);
+        if (!shouldShow) {
+          console.debug(
+            `[DynamicFieldRenderer] Skipping hidden field: ${field.key} (conditional check failed)`,
+          );
+          return null;
+        }
+      }
+
+      // 检查条件显示
       const shouldShow = shouldShowField(field, formValues);
+
       if (!shouldShow) {
-        console.debug(
-          `[DynamicFieldRenderer] Skipping hidden field: ${field.key} (conditional check failed)`,
-        );
         return null;
       }
-    }
 
-    // 检查条件显示
-    const shouldShow = shouldShowField(field, formValues);
+      // 验证字段值
+      const validation = validateFieldValue(field, value);
+      const hasError = !validation.isValid;
 
-    if (!shouldShow) {
-      return null;
-    }
+      // 渲染字段标签
+      const renderLabel = () => (
+        <FormLabel className="flex items-center gap-1">
+          {t(field.label)}
+          {field.required && <span className="text-red-500">*</span>}
+        </FormLabel>
+      );
 
-    // 验证字段值
-    const validation = validateFieldValue(field, value);
-    const hasError = !validation.isValid;
+      // 渲染帮助文本
+      const renderHelpText = () => {
+        if (field.helpText) {
+          return <FormDescription>{t(field.helpText)}</FormDescription>;
+        }
+        return null;
+      };
 
-    // 渲染字段标签
-    const renderLabel = () => (
-      <FormLabel className="flex items-center gap-1">
-        {field.label}
-        {field.required && <span className="text-red-500">*</span>}
-      </FormLabel>
-    );
-
-    // 渲染帮助文本
-    const renderHelpText = () => {
-      if (field.helpText) {
-        return <FormDescription>{field.helpText}</FormDescription>;
-      }
-      return null;
-    };
-
-    // 渲染错误信息
-    const renderError = () => {
-      if (hasError && validation.error) {
-        return (
-          <div className="flex items-start gap-2 p-2 bg-red-50 dark:bg-red-950 rounded text-xs text-red-600 dark:text-red-400">
-            <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
-            <span>{validation.error}</span>
-          </div>
-        );
-      }
-      return null;
-    };
-
-    // 渲染字段控件
-    const renderFieldControl = () => {
-      // 只使用字段本身的 disabled 属性，忽略父组件的 disabled 状态
-      // 因为提供商是通过配置文件切换来控制的，不需要运行时启用/禁用
-      const isFieldDisabled = field.disabled || false;
-
-      switch (field.type) {
-        case FieldType.PASSWORD:
+      // 渲染错误信息
+      const renderError = () => {
+        if (hasError && validation.error) {
           return (
-            <VSCodeTextField
-              value={value || ""}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                onChange(e.target.value)
-              }
-              placeholder={field.placeholder || `输入 ${field.label}`}
-              type="password"
-              disabled={isFieldDisabled}
-            />
-          );
-
-        case FieldType.TEXT:
-          return (
-            <VSCodeTextField
-              value={value || ""}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                onChange(e.target.value)
-              }
-              placeholder={field.placeholder || `输入 ${field.label}`}
-              disabled={isFieldDisabled}
-            />
-          );
-
-        case FieldType.URL:
-          return (
-            <VSCodeTextField
-              value={value || ""}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                onChange(e.target.value)
-              }
-              placeholder={field.placeholder || "https://api.example.com"}
-              disabled={isFieldDisabled}
-            />
-          );
-
-        case FieldType.NUMBER:
-          return (
-            <VSCodeTextField
-              value={value?.toString() || ""}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
-                const numValue = parseFloat(e.target.value) || 0;
-                onChange(numValue);
-              }}
-              placeholder={field.placeholder || "0"}
-              disabled={isFieldDisabled}
-            />
-          );
-
-        case FieldType.SELECT:
-          return (
-            <VSCodeDropdown
-              value={value || ""}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                onChange(e.target.value)
-              }
-              disabled={isFieldDisabled}
-            >
-              <VSCodeOption value="">
-                {field.placeholder || "请选择"}
-              </VSCodeOption>
-              {field.options?.map((option) => (
-                <VSCodeOption key={option.value} value={option.value}>
-                  {option.label}
-                </VSCodeOption>
-              ))}
-            </VSCodeDropdown>
-          );
-
-        case FieldType.CHECKBOX: {
-          const checkboxValue = value || false;
-          const isCheckboxDisabled = field.disabled || false;
-
-          return (
-            <div className="flex items-center gap-3">
-              <FormControl>
-                <Switch
-                  checked={!!checkboxValue}
-                  onCheckedChange={(newValue) => {
-                    console.log(
-                      `🔥 [CHECKBOX onChange] ${field.key} changed from ${checkboxValue} to ${newValue}`,
-                    );
-                    onChange(newValue);
-                    console.log(
-                      `🔥 [CHECKBOX onChange] called onChange callback`,
-                    );
-                  }}
-                  disabled={isCheckboxDisabled}
-                />
-              </FormControl>
-              <div className="flex flex-col gap-1">
-                <FormLabel className="text-sm font-medium mb-0">
-                  {field.label}
-                  {field.required && <span className="text-red-500">*</span>}
-                </FormLabel>
-                {field.helpText && (
-                  <FormDescription className="text-xs">
-                    {field.helpText}
-                  </FormDescription>
-                )}
-              </div>
+            <div className="flex items-start gap-2 p-2 bg-red-50 dark:bg-red-950 rounded text-xs text-red-600 dark:text-red-400">
+              <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
+              <span>{t(validation.error)}</span>
             </div>
           );
         }
+        return null;
+      };
 
-        case FieldType.SLIDER: {
-          const min = field.validation?.find((r) => r.type === "min")?.min || 0;
-          const max =
-            field.validation?.find((r) => r.type === "max")?.max || 100;
-          const step = field.step || 1;
+      // 渲染字段控件
+      const renderFieldControl = () => {
+        // 只使用字段本身的 disabled 属性，忽略父组件的 disabled 状态
+        // 因为提供商是通过配置文件切换来控制的，不需要运行时启用/禁用
+        const isFieldDisabled = field.disabled || false;
 
-          return (
-            <div className="space-y-2">
-              <input
-                type="range"
-                min={min}
-                max={max}
-                step={step}
-                value={String(value || min)}
-                onChange={(e) => onChange(parseFloat(e.target.value))}
+        switch (field.type) {
+          case FieldType.PASSWORD:
+            return (
+              <VSCodeTextField
+                value={value || ""}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  onChange(e.target.value)
+                }
+                placeholder={
+                  field.placeholder ? t(field.placeholder) : `${t(field.label)}`
+                }
+                type="password"
                 disabled={isFieldDisabled}
-                className="w-full"
               />
-              <div className="text-sm text-muted-foreground text-center">
-                {value || min}
+            );
+
+          case FieldType.TEXT:
+            return (
+              <VSCodeTextField
+                value={value || ""}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  onChange(e.target.value)
+                }
+                placeholder={
+                  field.placeholder ? t(field.placeholder) : `${t(field.label)}`
+                }
+                disabled={isFieldDisabled}
+              />
+            );
+
+          case FieldType.URL:
+            return (
+              <VSCodeTextField
+                value={value || ""}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  onChange(e.target.value)
+                }
+                placeholder={
+                  field.placeholder
+                    ? t(field.placeholder)
+                    : "https://api.example.com"
+                }
+                disabled={isFieldDisabled}
+              />
+            );
+
+          case FieldType.NUMBER:
+            return (
+              <VSCodeTextField
+                value={value?.toString() || ""}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                  const numValue = parseFloat(e.target.value) || 0;
+                  onChange(numValue);
+                }}
+                placeholder={field.placeholder ? t(field.placeholder) : "0"}
+                disabled={isFieldDisabled}
+              />
+            );
+
+          case FieldType.SELECT:
+            return (
+              <VSCodeDropdown
+                value={value || ""}
+                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                  onChange(e.target.value)
+                }
+                disabled={isFieldDisabled}
+              >
+                <VSCodeOption value="">
+                  {field.placeholder ? t(field.placeholder) : "请选择"}
+                </VSCodeOption>
+                {field.options?.map((option) => (
+                  <VSCodeOption key={option.value} value={option.value}>
+                    {t(option.label)}
+                  </VSCodeOption>
+                ))}
+              </VSCodeDropdown>
+            );
+
+          case FieldType.CHECKBOX: {
+            const checkboxValue = value || false;
+            const isCheckboxDisabled = field.disabled || false;
+
+            return (
+              <div className="flex items-center gap-3">
+                <FormControl>
+                  <Switch
+                    checked={!!checkboxValue}
+                    onCheckedChange={(newValue) => {
+                      console.log(
+                        `🔥 [CHECKBOX onChange] ${field.key} changed from ${checkboxValue} to ${newValue}`,
+                      );
+                      onChange(newValue);
+                      console.log(
+                        `🔥 [CHECKBOX onChange] called onChange callback`,
+                      );
+                    }}
+                    disabled={isCheckboxDisabled}
+                  />
+                </FormControl>
+                <div className="flex flex-col gap-1">
+                  <FormLabel className="text-sm font-medium mb-0">
+                    {t(field.label)}
+                    {field.required && <span className="text-red-500">*</span>}
+                  </FormLabel>
+                  {field.helpText && (
+                    <FormDescription className="text-xs">
+                      {t(field.helpText)}
+                    </FormDescription>
+                  )}
+                </div>
               </div>
-            </div>
-          );
-        }
-
-        case FieldType.TEXTAREA:
-          return (
-            <textarea
-              value={String(value || "")}
-              onChange={(e) => onChange(e.target.value)}
-              placeholder={field.placeholder || `输入 ${field.label}`}
-              disabled={isFieldDisabled}
-              rows={field.rows || 3}
-              className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
-            />
-          );
-
-        case FieldType.CUSTOM:
-          if (field.customRenderer) {
-            return field.customRenderer({
-              value,
-              onChange,
-              disabled: isFieldDisabled,
-              field,
-            });
+            );
           }
-          return (
-            <div className="text-sm text-muted-foreground">
-              自定义字段渲染器未定义
-            </div>
-          );
 
-        default:
-          return (
-            <VSCodeTextField
-              value={value || ""}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                onChange(e.target.value)
-              }
-              placeholder={field.placeholder || `输入 ${field.label}`}
-              disabled={isFieldDisabled}
-            />
-          );
-      }
-    };
+          case FieldType.SLIDER: {
+            const min =
+              field.validation?.find((r) => r.type === "min")?.min || 0;
+            const max =
+              field.validation?.find((r) => r.type === "max")?.max || 100;
+            const step = field.step || 1;
 
-    return (
-      <FormItem className={className}>
-        {field.type !== FieldType.CHECKBOX && renderLabel()}
-        <FormControl>{renderFieldControl()}</FormControl>
-        {field.type !== FieldType.CHECKBOX && renderHelpText()}
-        {renderError()}
-        <FormMessage />
-      </FormItem>
-    );
-  }, fieldPropsEqual);
+            return (
+              <div className="space-y-2">
+                <input
+                  type="range"
+                  min={min}
+                  max={max}
+                  step={step}
+                  value={String(value || min)}
+                  onChange={(e) => onChange(parseFloat(e.target.value))}
+                  disabled={isFieldDisabled}
+                  className="w-full"
+                />
+                <div className="text-sm text-muted-foreground text-center">
+                  {value || min}
+                </div>
+              </div>
+            );
+          }
+
+          case FieldType.TEXTAREA:
+            return (
+              <textarea
+                value={String(value || "")}
+                onChange={(e) => onChange(e.target.value)}
+                placeholder={
+                  field.placeholder ? t(field.placeholder) : `${t(field.label)}`
+                }
+                disabled={isFieldDisabled}
+                rows={field.rows || 3}
+                className="w-full px-3 py-2 border border-input bg-background rounded-md text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
+              />
+            );
+
+          case FieldType.CUSTOM:
+            if (field.customRenderer) {
+              return field.customRenderer({
+                value,
+                onChange,
+                disabled: isFieldDisabled,
+                field,
+              });
+            }
+            return (
+              <div className="text-sm text-muted-foreground">
+                自定义字段渲染器未定义
+              </div>
+            );
+
+          default:
+            return (
+              <VSCodeTextField
+                value={value || ""}
+                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                  onChange(e.target.value)
+                }
+                placeholder={
+                  field.placeholder ? t(field.placeholder) : `${t(field.label)}`
+                }
+                disabled={isFieldDisabled}
+              />
+            );
+        }
+      };
+
+      return (
+        <FormItem className={className}>
+          {field.type !== FieldType.CHECKBOX && renderLabel()}
+          <FormControl>{renderFieldControl()}</FormControl>
+          {field.type !== FieldType.CHECKBOX && renderHelpText()}
+          {renderError()}
+          <FormMessage />
+        </FormItem>
+      );
+    },
+    fieldPropsEqual,
+  );
 
 /**
  * 批量渲染字段组
@@ -303,10 +321,11 @@ interface DynamicFieldGroupProps {
   onChange: (fieldKey: string, value: FieldValue) => void;
   disabled?: boolean;
   className?: string;
+  t: TFunction;
 }
 
 export const DynamicFieldGroup: React.FC<DynamicFieldGroupProps> = React.memo(
-  ({ fields, values, onChange, disabled = false, className = "" }) => {
+  ({ fields, values, onChange, disabled = false, className = "", t }) => {
     // ✅ 仅在开发模式下输出调试信息
     if (process.env.NODE_ENV === "development") {
       console.debug(`[DynamicFieldGroup] Rendering ${fields.length} fields`);
@@ -323,9 +342,10 @@ export const DynamicFieldGroup: React.FC<DynamicFieldGroupProps> = React.memo(
             onChange={(value) => onChange(field.key, value)}
             formValues={values}
             disabled={disabled}
+            t={t}
           />
         )),
-      [fields, values, onChange, disabled],
+      [fields, values, onChange, disabled, t],
     );
 
     // 如果没有字段，不渲染任何东西

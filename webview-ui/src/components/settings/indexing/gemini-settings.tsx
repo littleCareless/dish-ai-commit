@@ -10,7 +10,7 @@ import {
   FormMessage,
 } from "../../ui/form";
 import { Input } from "../../ui/input";
-import { Select, SelectItem } from "../../ui/select";
+import { Select, SelectOption } from "../../ui/select";
 
 const models = [
   { value: "text-embedding-004", label: "text-embedding-004 (768)" },
@@ -27,13 +27,14 @@ export const GeminiSettings: React.FC<GeminiSettingsProps> = ({ control }) => {
     <div className="space-y-4">
       <FormField
         control={control}
-        name="geminiApiKey"
+        name="providers.gemini.apiKey"
         render={({ field }) => (
           <FormItem>
             <FormLabel>{t("gemini.apiKey")}</FormLabel>
             <FormControl>
               <Input
                 type="password"
+                placeholder={t("gemini.apiKeyPlaceholder", "AIza...")}
                 {...field}
                 value={String(field.value ?? "")}
               />
@@ -44,7 +45,7 @@ export const GeminiSettings: React.FC<GeminiSettingsProps> = ({ control }) => {
       />
       <FormField
         control={control}
-        name="geminiModel"
+        name="providers.gemini.model"
         render={({ field }) => (
           <FormItem>
             <FormLabel>{t("gemini.model")}</FormLabel>
@@ -55,9 +56,9 @@ export const GeminiSettings: React.FC<GeminiSettingsProps> = ({ control }) => {
                 value={field.value as string}
               >
                 {models.map((model) => (
-                  <SelectItem key={model.value} value={model.value}>
+                  <SelectOption key={model.value} value={model.value}>
                     {model.label}
-                  </SelectItem>
+                  </SelectOption>
                 ))}
               </Select>
             </FormControl>

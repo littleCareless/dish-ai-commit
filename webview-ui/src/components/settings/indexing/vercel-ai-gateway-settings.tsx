@@ -10,7 +10,7 @@ import {
   FormMessage,
 } from "../../ui/form";
 import { Input } from "../../ui/input";
-import { Select, SelectItem } from "../../ui/select";
+import { Select, SelectOption } from "../../ui/select";
 
 const models = [
   {
@@ -54,13 +54,17 @@ export const VercelAIGatewaySettings: React.FC<
     <div className="space-y-4">
       <FormField
         control={control}
-        name="vercelAIGatewayApiKey"
+        name="providers.vercel-ai-gateway.apiKey"
         render={({ field }) => (
           <FormItem>
             <FormLabel>{t("vercelAIGateway.apiKey")}</FormLabel>
             <FormControl>
               <Input
                 type="password"
+                placeholder={t(
+                  "vercelAIGateway.apiKeyPlaceholder",
+                  "vercel_...",
+                )}
                 {...field}
                 value={String(field.value ?? "")}
               />
@@ -71,7 +75,7 @@ export const VercelAIGatewaySettings: React.FC<
       />
       <FormField
         control={control}
-        name="vercelAIGatewayModel"
+        name="providers.vercel-ai-gateway.model"
         render={({ field }) => (
           <FormItem>
             <FormLabel>{t("vercelAIGateway.model")}</FormLabel>
@@ -82,9 +86,9 @@ export const VercelAIGatewaySettings: React.FC<
                 value={field.value as string}
               >
                 {models.map((model) => (
-                  <SelectItem key={model.value} value={model.value}>
+                  <SelectOption key={model.value} value={model.value}>
                     {model.label}
-                  </SelectItem>
+                  </SelectOption>
                 ))}
               </Select>
             </FormControl>

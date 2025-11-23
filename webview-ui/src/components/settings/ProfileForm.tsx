@@ -7,6 +7,7 @@ import {
 import { Edit, Plus, Trash2 } from "lucide-react";
 import React, { useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { z } from "zod";
 import { Profile } from "../../types/settings";
 import {
@@ -46,6 +47,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
   onEditProfile,
   onDeleteProfile,
 }) => {
+  const { t } = useTranslation("profile-settings");
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileFormSchema),
     defaultValues: {
@@ -73,19 +75,21 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
     <Form {...form}>
       <div className="space-y-2">
         <div className="flex items-center justify-between">
-          <FormLabel className="text-sm font-medium">选择配置</FormLabel>
+          <FormLabel className="text-sm font-medium">
+            {t("selectProfile")}
+          </FormLabel>
           <div className="flex items-center gap-2 text-xs">
             {isLoading ? (
               <span className="text-blue-600 dark:text-blue-500 px-2 py-1 rounded-full bg-blue-50 dark:bg-blue-950">
-                <span className="animate-pulse">●</span> 加载中...
+                <span className="animate-pulse">●</span> {t("loading")}
               </span>
             ) : isCurrentActive ? (
               <span className="text-green-600 dark:text-green-500 px-2 py-1 rounded-full bg-green-50 dark:bg-green-950">
-                ✓ 编辑中 (当前活跃配置)
+                {t("editingActive")}
               </span>
             ) : (
               <span className="text-amber-600 dark:text-amber-500 px-2 py-1 rounded-full bg-amber-50 dark:bg-amber-950">
-                ✎ 编辑中 (点击"完成"激活)
+                {t("editingInactive")}
               </span>
             )}
           </div>
@@ -106,11 +110,12 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                     {profiles.map((profile) => (
                       <VSCodeOption key={profile.id} value={profile.id}>
                         {profile.name}
-                        {profile.isDefault ? " (默认)" : ""}
-                        {activeProfile?.id === profile.id ? " ★ 当前活跃" : ""}
+                        {activeProfile?.id === profile.id
+                          ? t("currentActive")
+                          : ""}
                         {selectedProfile === profile.id &&
                         activeProfile?.id !== profile.id
-                          ? " ✎ 编辑中"
+                          ? t("editing")
                           : ""}
                       </VSCodeOption>
                     ))}
@@ -124,7 +129,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
           <div className="flex items-center gap-2">
             <VSCodeButton
               appearance="icon"
-              title="新增配置"
+              title={t("addProfile")}
               onClick={onCreateProfile}
             >
               <Plus className="w-4 h-4" />
@@ -133,14 +138,14 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
               <>
                 <VSCodeButton
                   appearance="icon"
-                  title="编辑配置"
+                  title={t("editProfile")}
                   onClick={() => onEditProfile(currentProfile.id)}
                 >
                   <Edit className="w-4 h-4" />
                 </VSCodeButton>
                 <VSCodeButton
                   appearance="icon"
-                  title="删除配置"
+                  title={t("deleteProfile")}
                   onClick={() => onDeleteProfile(currentProfile.id)}
                 >
                   <Trash2 className="w-4 h-4" />
@@ -150,22 +155,15 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
           </div>
         </div>
         <div className="p-2 bg-slate-50 dark:bg-slate-900 rounded border text-xs text-muted-foreground space-y-1">
-          <div className="font-medium">使用说明:</div>
-          <div>
-            • 从下拉菜单<strong>选择</strong>要编辑的配置文件
-          </div>
-          <div>
-            • 在修改设置后会<strong>自动保存</strong>到编辑中的配置
-          </div>
-          <div>
-            • 点击顶部"<strong>完成</strong>"按钮将当前编辑的配置设为
-            <strong>活跃</strong>配置
-          </div>
+          <div className="font-medium">{t("usageInstructions")}</div>
+          <div dangerouslySetInnerHTML={{ __html: t("selectToEdit") }} />
+          <div dangerouslySetInnerHTML={{ __html: t("autoSave") }} />
+          <div dangerouslySetInnerHTML={{ __html: t("clickDone") }} />
         </div>
 
         {currentProfile && (
           <div className="space-y-2 pt-4">
-            <h3 className="text-sm font-medium">当前配置信息 (JSON)</h3>
+            <h3 className="text-sm font-medium">{t("currentProfileInfo")}</h3>
             <pre className="p-2 bg-gray-100 dark:bg-gray-800 rounded border text-xs overflow-auto">
               {JSON.stringify(currentProfile, null, 2)}
             </pre>

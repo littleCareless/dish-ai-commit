@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Select, SelectItem } from "../../ui/select";
+import { Select, SelectOption } from "../../ui/select";
 
 interface ProviderSelectorProps {
   selectedProvider: string;
@@ -25,9 +25,9 @@ export const ProviderSelector: React.FC<ProviderSelectorProps> = ({
   return (
     <Select value={selectedProvider} onValueChange={onProviderChange}>
       {providers.map((provider) => (
-        <SelectItem key={provider.value} value={provider.value}>
+        <SelectOption key={provider.value} value={provider.value}>
           {provider.label}
-        </SelectItem>
+        </SelectOption>
       ))}
     </Select>
   );

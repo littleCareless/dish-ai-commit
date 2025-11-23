@@ -1,10 +1,17 @@
 import { zodResolver } from "@hookform/resolvers/zod";
 import { VSCodeDropdown, VSCodeOption } from "@vscode/webview-ui-toolkit/react";
 import { AlertCircle, Loader } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import { z } from "zod";
-import { ProviderRegistry } from "../../config/provider-registry";
+import { providerRegistry } from "../../config/provider-registry";
 import { ExtendedProviderConfig } from "../../types/provider-metadata";
 import { canFetchModels } from "../../utils/config-validator";
 import {
@@ -24,11 +31,12 @@ interface ProviderConfigFormProps {
 }
 
 // 分离的错误 UI 组件
-const ProviderNotSupportedError: React.FC<{ providerId: string }> = ({
-  providerId,
-}) => (
+const ProviderNotSupportedError: React.FC<{
+  providerId: string;
+  t: (key: string) => string;
+}> = ({ providerId, t }) => (
   <div className="p-4 text-center text-red-600">
-    不支持的提供商: {providerId}
+    {t("unsupportedProvider")}: {providerId}
   </div>
 );
 
@@ -39,6 +47,8 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
   // onTestProvider,
   // onOpenSettings,
 }) => {
+  const { t } = useTranslation("provider-registry");
+  const ProviderRegistry = providerRegistry;
   // 将所有 hooks 调用移到组件顶部（必须在条件检查之前）
 
   // 1. 初始化所有状态 - 这些必须无条件地调用
@@ -56,9 +66,13 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
   const providerMeta = ProviderRegistry[provider.id];
 
   // 4. 创建 schema 和类型（必须无条件调用）
-  const providerSchema = providerMeta
-    ? createProviderSchema(providerMeta.fields)
-    : z.object({});
+  const providerSchema = useMemo(
+    () =>
+      providerMeta
+        ? createProviderSchema(providerMeta.fields, t)
+        : z.object({}),
+    [providerMeta, t],
+  );
 
   type ProviderConfigFormData = z.infer<typeof providerSchema>;
 
@@ -102,10 +116,8 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
 
   // When config truly changes (e.g., switching profiles or providers), reset form
   useEffect(() => {
-    // Per user feedback, config changes should NOT trigger a form reset
-    // to prevent infinite loops. We only reset when the provider itself changes.
     console.log(
-      `[ProviderConfigForm] Provider changed, resetting form for provider: ${provider.id}`,
+      `[ProviderConfigForm] Config/Provider changed, resetting form for provider: ${provider.id}`,
     );
 
     const newDefaults = getDefaultValues();
@@ -115,7 +127,11 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
     prevConfigRef.current = config as Record<string, unknown>;
     prevProviderIdRef.current = provider.id;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [provider.id]); // ‼️ Intentionally only depending on provider.id
+  }, [
+    provider.id,
+    (config as ExtendedProviderConfig).defaultModel,
+    (config as ExtendedProviderConfig & { model?: string }).model,
+  ]); // ‼️ Depends on provider.id and the actual model fields
 
   // 7. 获取监听的值
   const watchedValues = form.watch();
@@ -254,7 +270,9 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
             }
           } else {
             setModels([]);
-            setModelError((messageData.error as string) || "获取模型列表失败");
+            setModelError(
+              (messageData.error as string) || t("fetchModelsFailed"),
+            );
           }
         }
       },
@@ -307,13 +325,13 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
       pendingFetchRef.current = setTimeout(() => {
         if (!responseReceivedRef.current) {
           setIsLoadingModels(false);
-          setModelError("获取模型列表超时");
+          setModelError(t("fetchModelsTimeout"));
         }
       }, 30000);
     } catch (error) {
       setIsLoadingModels(false);
       setModelError(
-        error instanceof Error ? error.message : "获取模型列表失败",
+        error instanceof Error ? error.message : t("fetchModelsFailed"),
       );
     }
   }, [provider.id, providerMeta, form]);
@@ -324,7 +342,7 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
   // 10. Per user feedback, disable automatic model fetching when API key/URL changes.
   // Model fetching should only happen on initial load (handled by the effect below).
 
-  // 10.1 新增：当组件加载或配置变更时，主动触发模型列表加载
+  // 10.1 新增：当组件加载或提供商变更时，主动触发模型列表加载
   // 这确保每次打开配置时都会尝试加载模型列表
   useEffect(() => {
     if (providerMeta?.features.streaming) {
@@ -339,6 +357,28 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [provider.id]);
 
+  // 10.2 Auto-fetch when API Key or Base URL changes (Debounced)
+  useEffect(() => {
+    if (!providerMeta?.features.streaming) return;
+
+    // We watch these values in the dependency array, but don't need to assign them to variables
+    // if we are just triggering the ref.
+
+    const timer = setTimeout(() => {
+      console.log(
+        `[ProviderConfigForm] API Key or Base URL changed, triggering fetch`,
+      );
+      fetchModelsRef.current();
+    }, 1000); // 1 second debounce
+
+    return () => clearTimeout(timer);
+  }, [
+    watchedValues.apiKey,
+    watchedValues.baseURL,
+    watchedValues.baseUrl,
+    providerMeta?.features.streaming,
+  ]);
+
   // 11. 清理资源
   useEffect(() => {
     return () => {
@@ -351,7 +391,7 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
   // ========== 现在可以进行条件检查 ==========
   // 如果提供商不支持，返回错误 UI
   if (!providerMeta) {
-    return <ProviderNotSupportedError providerId={provider.id} />;
+    return <ProviderNotSupportedError providerId={provider.id} t={t} />;
   }
 
   // 检查配置是否有效
@@ -366,6 +406,7 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
         {providerMeta.fields.length > 0 && (
           <DynamicFieldGroup
             fields={providerMeta.fields}
+            t={t}
             values={
               watchedValues as Record<
                 string,
@@ -379,44 +420,46 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
         {providerMeta.features.streaming && (
           <div className="flex flex-col gap-2">
             <div className="flex items-center justify-between">
-              <label className="text-sm font-medium">模型选择</label>
+              <label className="text-sm font-medium">
+                {t("modelSelection")}
+              </label>
               {isLoadingModels && (
                 <div className="flex items-center gap-1 text-xs text-muted-foreground">
                   <Loader className="w-3 h-3 animate-spin" />
-                  加载中...
+                  {t("loading")}...
                 </div>
               )}
             </div>
             {/* 调试信息面板 - 模型选择状态 */}
             <div className="text-xs text-muted-foreground bg-slate-100 dark:bg-slate-800 p-2 rounded mb-2 border border-slate-200 dark:border-slate-700">
               <div className="font-medium mb-1 flex items-center justify-between">
-                <span>模型选择状态</span>
+                <span>{t("modelSelectionStatus")}</span>
                 {watchedValues.model && watchedValues.defaultModel ? (
                   <span className="text-green-600 dark:text-green-500 px-1 py-0.5 rounded bg-green-50 dark:bg-green-950 text-[10px]">
-                    已配置
+                    {t("configured")}
                   </span>
                 ) : (
                   <span className="text-amber-600 dark:text-amber-500 px-1 py-0.5 rounded bg-amber-50 dark:bg-amber-950 text-[10px]">
-                    未配置
+                    {t("notConfigured")}
                   </span>
                 )}
               </div>
               <div className="grid grid-cols-2 gap-1">
                 <div>
-                  Model 字段:{" "}
+                  {t("modelField")}:{" "}
                   <span className="font-mono">
-                    {(watchedValues.model as string) || "未设置"}
+                    {(watchedValues.model as string) || t("notSet")}
                   </span>
                 </div>
                 <div>
-                  DefaultModel 字段:{" "}
+                  {t("defaultModelField")}:{" "}
                   <span className="font-mono">
-                    {(watchedValues.defaultModel as string) || "未设置"}
+                    {(watchedValues.defaultModel as string) || t("notSet")}
                   </span>
                 </div>
               </div>
               <div className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
-                (此信息仅用于调试，可在正式版中移除)
+                ({t("debugInfo")})
               </div>
             </div>
             <VSCodeDropdown
@@ -501,14 +544,27 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
             >
               <VSCodeOption value="">
                 {models.length === 0
-                  ? "请先输入 API Key 或 Base URL"
-                  : "选择模型"}
+                  ? t("enterApiKeyOrBaseUrl")
+                  : t("selectModel")}
               </VSCodeOption>
-              {models.map((model) => (
-                <VSCodeOption key={model.id} value={model.id}>
-                  {model.name || model.id}
-                </VSCodeOption>
-              ))}
+              {models
+                .filter(
+                  (model: { id: string; name?: string; category?: string }) => {
+                    const category = model.category;
+                    // Only show text-based models
+                    return (
+                      !category ||
+                      category === "chat" ||
+                      category === "text" ||
+                      category === "completion"
+                    );
+                  },
+                )
+                .map((model) => (
+                  <VSCodeOption key={model.id} value={model.id}>
+                    {model.name || model.id}
+                  </VSCodeOption>
+                ))}
             </VSCodeDropdown>
             {modelError && (
               <div className="flex items-start gap-2 p-2 bg-red-50 dark:bg-red-950 rounded text-xs text-red-600 dark:text-red-400">

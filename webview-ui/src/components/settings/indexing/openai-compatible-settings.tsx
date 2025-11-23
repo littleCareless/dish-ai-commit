@@ -23,12 +23,19 @@ export const OpenAICompatibleSettings: React.FC<
     <div className="space-y-4">
       <FormField
         control={control}
-        name="openaiCompatibleBaseUrl"
+        name="providers.openai-compatible.baseUrl"
         render={({ field }) => (
           <FormItem>
             <FormLabel>{t("openaiCompatible.baseUrl")}</FormLabel>
             <FormControl>
-              <Input {...field} value={field.value ?? ""} />
+              <Input
+                placeholder={t(
+                  "openaiCompatible.baseUrlPlaceholder",
+                  "https://api.openai.com/v1",
+                )}
+                {...field}
+                value={field.value ?? ""}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -36,12 +43,17 @@ export const OpenAICompatibleSettings: React.FC<
       />
       <FormField
         control={control}
-        name="openaiCompatibleApiKey"
+        name="providers.openai-compatible.apiKey"
         render={({ field }) => (
           <FormItem>
             <FormLabel>{t("openaiCompatible.apiKey")}</FormLabel>
             <FormControl>
-              <Input type="password" {...field} value={field.value ?? ""} />
+              <Input
+                type="password"
+                placeholder={t("openaiCompatible.apiKeyPlaceholder", "sk-...")}
+                {...field}
+                value={field.value ?? ""}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -49,12 +61,19 @@ export const OpenAICompatibleSettings: React.FC<
       />
       <FormField
         control={control}
-        name="openaiCompatibleModel"
+        name="providers.openai-compatible.model"
         render={({ field }) => (
           <FormItem>
-            <FormLabel>{t("openaiCompatible.model")}</FormLabel>
+            <FormLabel>{t("openaiCompatible.model", "模型名称")}</FormLabel>
             <FormControl>
-              <Input {...field} value={String(field.value ?? "")} />
+              <Input
+                placeholder={t(
+                  "openaiCompatible.modelPlaceholder",
+                  "text-embedding-ada-002",
+                )}
+                {...field}
+                value={field.value ?? ""}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>
@@ -62,12 +81,20 @@ export const OpenAICompatibleSettings: React.FC<
       />
       <FormField
         control={control}
-        name="openaiCompatibleModelDimensions"
+        name="providers.openai-compatible.modelDimensions"
         render={({ field }) => (
           <FormItem>
             <FormLabel>{t("openaiCompatible.modelDimensions")}</FormLabel>
             <FormControl>
-              <Input {...field} type="text" value={String(field.value ?? "")} />
+              <Input
+                placeholder={t(
+                  "openaiCompatible.modelDimensionsPlaceholder",
+                  "1536",
+                )}
+                {...field}
+                type="text"
+                value={String(field.value ?? "")}
+              />
             </FormControl>
             <FormMessage />
           </FormItem>

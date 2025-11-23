@@ -50,7 +50,15 @@ export const AdvancedIndexingSettings: React.FC<
               <FormItem>
                 <FormLabel>{t("qdrant.apiKey")}</FormLabel>
                 <FormControl>
-                  <Input type="password" {...field} value={field.value ?? ""} />
+                  <Input
+                    type="password"
+                    placeholder={t(
+                      "qdrant.apiKeyPlaceholder",
+                      "Your Qdrant API Key",
+                    )}
+                    {...field}
+                    value={field.value ?? ""}
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>

@@ -5,8 +5,8 @@ import { Select, SelectOption } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Info } from "lucide-react";
 import React from "react";
+import { useTranslation } from "react-i18next";
 import { UserPreferences } from "../../types/settings";
-import { Skeleton } from "@/components/ui/skeleton";
 
 interface PreferencesSettingsProps {
   preferences: UserPreferences;
@@ -15,57 +15,13 @@ interface PreferencesSettingsProps {
   isLoading?: boolean;
 }
 
-const PreferencesSettingsSkeleton: React.FC = () => {
-  return (
-    <div className="space-y-6">
-      {/* Skeleton for Temperature Control */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Skeleton className="h-5 w-5" />
-            <Skeleton className="h-5 w-48" />
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Skeleton className="h-5 w-32" />
-              <Skeleton className="h-6 w-40" />
-            </div>
-            <Skeleton className="h-5 w-full" />
-            <Skeleton className="h-4 w-full" />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Skeleton for Language */}
-      <Card>
-        <CardHeader>
-          <CardTitle>
-            <Skeleton className="h-6 w-32" />
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Skeleton className="h-4 w-24" />
-            <Skeleton className="h-10 w-full" />
-            <Skeleton className="h-4 w-full" />
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
-};
-
 export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
   preferences,
   onChange,
   className = "",
-  isLoading,
 }) => {
-  if (isLoading) {
-    return <PreferencesSettingsSkeleton />;
-  }
+  const { t } = useTranslation("preferences-settings");
+
   const handleTemperatureChange = (
     event: React.ChangeEvent<HTMLInputElement>,
   ) => {
@@ -79,12 +35,34 @@ export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
   };
 
   const getTemperatureDescription = (value: number) => {
-    if (value === 0) return "Deterministic (most focused)";
-    if (value <= 0.5) return "Low creativity";
-    if (value <= 1.0) return "Balanced";
-    if (value <= 1.5) return "High creativity";
-    return "Maximum creativity";
+    if (value === 0) return t("temperatureLevels.deterministic");
+    if (value <= 0.5) return t("temperatureLevels.low");
+    if (value <= 1.0) return t("temperatureLevels.balanced");
+    if (value <= 1.5) return t("temperatureLevels.high");
+    return t("temperatureLevels.max");
   };
+
+  const languageOptions = [
+    { value: "Simplified Chinese", labelKey: "languages.simplifiedChinese" },
+    { value: "Traditional Chinese", labelKey: "languages.traditionalChinese" },
+    { value: "Japanese", labelKey: "languages.japanese" },
+    { value: "Korean", labelKey: "languages.korean" },
+    { value: "Czech", labelKey: "languages.czech" },
+    { value: "German", labelKey: "languages.german" },
+    { value: "French", labelKey: "languages.french" },
+    { value: "Italian", labelKey: "languages.italian" },
+    { value: "Dutch", labelKey: "languages.dutch" },
+    { value: "Portuguese", labelKey: "languages.portuguese" },
+    { value: "Vietnamese", labelKey: "languages.vietnamese" },
+    { value: "English", labelKey: "languages.english" },
+    { value: "Spanish", labelKey: "languages.spanish" },
+    { value: "Swedish", labelKey: "languages.swedish" },
+    { value: "Russian", labelKey: "languages.russian" },
+    { value: "Bahasa", labelKey: "languages.bahasa" },
+    { value: "Polish", labelKey: "languages.polish" },
+    { value: "Turkish", labelKey: "languages.turkish" },
+    { value: "Thai", labelKey: "languages.thai" },
+  ];
 
   return (
     <div className={`space-y-6 ${className}`}>
@@ -93,13 +71,15 @@ export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Info className="w-4 h-4" />
-            Response Creativity
+            {t("responseCreativity")}
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
             <div className="flex items-center justify-between">
-              <Label>Temperature: {preferences.temperature}</Label>
+              <Label>
+                {t("temperature", { temperature: preferences.temperature })}
+              </Label>
               <Badge variant="outline">
                 {getTemperatureDescription(preferences.temperature)}
               </Badge>
@@ -113,8 +93,7 @@ export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
               className="w-full"
             />
             <p className="text-sm text-muted-foreground">
-              Controls randomness in responses. Lower values make responses more
-              focused and deterministic.
+              {t("temperatureDescription")}
             </p>
           </div>
         </CardContent>
@@ -123,41 +102,23 @@ export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
       {/* Language */}
       <Card>
         <CardHeader>
-          <CardTitle>Language</CardTitle>
+          <CardTitle>{t("language")}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-2">
-            <Label htmlFor="language">Interface Language</Label>
+            <Label htmlFor="language">{t("generatedContentLanguage")}</Label>
             <Select
               value={preferences.language}
               onChange={handleLanguageChange}
             >
-              <SelectOption value="Simplified Chinese">
-                Simplified Chinese
-              </SelectOption>
-              <SelectOption value="Traditional Chinese">
-                Traditional Chinese
-              </SelectOption>
-              <SelectOption value="Japanese">Japanese</SelectOption>
-              <SelectOption value="Korean">Korean</SelectOption>
-              <SelectOption value="Czech">Czech</SelectOption>
-              <SelectOption value="German">German</SelectOption>
-              <SelectOption value="French">French</SelectOption>
-              <SelectOption value="Italian">Italian</SelectOption>
-              <SelectOption value="Dutch">Dutch</SelectOption>
-              <SelectOption value="Portuguese">Portuguese</SelectOption>
-              <SelectOption value="Vietnamese">Vietnamese</SelectOption>
-              <SelectOption value="English">English</SelectOption>
-              <SelectOption value="Spanish">Spanish</SelectOption>
-              <SelectOption value="Swedish">Swedish</SelectOption>
-              <SelectOption value="Russian">Russian</SelectOption>
-              <SelectOption value="Bahasa">Bahasa</SelectOption>
-              <SelectOption value="Polish">Polish</SelectOption>
-              <SelectOption value="Turkish">Turkish</SelectOption>
-              <SelectOption value="Thai">Thai</SelectOption>
+              {languageOptions.map((option) => (
+                <SelectOption key={option.value} value={option.value}>
+                  {t(option.labelKey)}
+                </SelectOption>
+              ))}
             </Select>
             <p className="text-sm text-muted-foreground">
-              Choose your preferred language for the user interface.
+              {t("generatedContentLanguageDescription")}
             </p>
           </div>
         </CardContent>
