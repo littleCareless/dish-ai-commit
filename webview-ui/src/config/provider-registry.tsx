@@ -3,7 +3,6 @@
  * 包含所有支持的 AI 提供商的完整配置信息
  */
 
-import { OllamaModelDiscovery } from "../components/settings/OllamaModelDiscovery";
 import {
   AuthMode,
   FieldType,
@@ -12,36 +11,13 @@ import {
   ValidationRuleType,
 } from "../types/provider-metadata";
 
-// 通用验证规则
-const commonValidations = {
-  required: (message: string) => ({
-    type: ValidationRuleType.REQUIRED,
-    message,
-  }),
-  pattern: (pattern: RegExp, message: string) => ({
-    type: ValidationRuleType.PATTERN,
-    pattern,
-    message,
-  }),
-  min: (min: number, message: string) => ({
-    type: ValidationRuleType.MIN,
-    min,
-    message,
-  }),
-  max: (max: number, message: string) => ({
-    type: ValidationRuleType.MAX,
-    max,
-    message,
-  }),
-};
-
 // 提供商元数据注册表
-export const ProviderRegistry: ProviderRegistryType = {
+export const providerRegistry: ProviderRegistryType = {
   // === 第一方提供商 ===
   openai: {
     id: "openai",
     name: "OpenAI",
-    description: "GPT 模型，由 OpenAI 开发",
+    description: "openai.description",
     website: "https://openai.com",
     type: ProviderType.FIRST_PARTY,
     authMode: AuthMode.API_KEY,
@@ -49,14 +25,21 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "apiKey",
         type: FieldType.PASSWORD,
-        label: "API Key",
+        label: "openai.fields.apiKey.label",
         required: true,
         secure: true,
-        placeholder: "sk-...",
-        helpText: "从 OpenAI 平台获取的 API 密钥",
+        placeholder: "openai.fields.apiKey.placeholder",
+        helpText: "openai.fields.apiKey.helpText",
         validation: [
-          commonValidations.required("API Key 是必需的"),
-          commonValidations.pattern(/^sk-/, "OpenAI API Key 应以 sk- 开头"),
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "openai.fields.apiKey.validation.required",
+          },
+          {
+            type: ValidationRuleType.PATTERN,
+            pattern: /^sk-/,
+            message: "openai.fields.apiKey.validation.pattern",
+          },
         ],
       },
       // {
@@ -70,20 +53,24 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "useCustomUrl",
         type: FieldType.CHECKBOX,
-        label: "使用自定义基础 URL",
+        label: "openai.fields.useCustomUrl.label",
         required: false,
         defaultValue: false,
-        helpText: "用于代理或私有部署",
+        helpText: "openai.fields.useCustomUrl.helpText",
       },
       {
         key: "baseURL",
         type: FieldType.URL,
-        label: "自定义基础 URL",
+        label: "openai.fields.baseURL.label",
         required: false,
-        placeholder: "https://api.openai.com/v1",
+        placeholder: "openai.fields.baseURL.placeholder",
         conditional: { field: "useCustomUrl", value: true },
         validation: [
-          commonValidations.pattern(/^https?:\/\/.+/, "请输入有效的 URL"),
+          {
+            type: ValidationRuleType.PATTERN,
+            pattern: /^https?:\/\/.+/,
+            message: "openai.fields.baseURL.validation.pattern",
+          },
         ],
       },
     ],
@@ -126,10 +113,454 @@ export const ProviderRegistry: ProviderRegistryType = {
     },
   },
 
+  deepseek: {
+    id: "deepseek",
+    name: "DeepSeek",
+    description: "deepseek.description",
+    website: "https://www.deepseek.com",
+    type: ProviderType.FIRST_PARTY,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "deepseek.fields.apiKey.label",
+        required: true,
+        secure: true,
+        placeholder: "deepseek.fields.apiKey.placeholder",
+        helpText: "deepseek.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "deepseek.fields.apiKey.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: true,
+      vision: false,
+      promptCache: true,
+      embeddings: true,
+      tools: true,
+      jsonMode: true,
+    },
+    models: [
+      {
+        id: "deepseek-chat",
+        name: "DeepSeek Chat (V2)",
+        contextWindow: 32000,
+        maxOutputTokens: 4096,
+        capabilities: ["text", "function-calling"],
+      },
+      {
+        id: "deepseek-coder",
+        name: "DeepSeek Coder (V2)",
+        contextWindow: 32000,
+        maxOutputTokens: 4096,
+        capabilities: ["text", "code"],
+      },
+    ],
+    documentation: {
+      setup: "https://platform.deepseek.com",
+      apiReference: "https://platform.deepseek.com/api-docs",
+      examples: "https://platform.deepseek.com/api-docs",
+    },
+  },
+
+  togetherai: {
+    id: "togetherai",
+    name: "Together AI",
+    description: "togetherai.description",
+    website: "https://www.together.ai",
+    type: ProviderType.FIRST_PARTY,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "togetherai.fields.apiKey.label",
+        required: true,
+        secure: true,
+        placeholder: "togetherai.fields.apiKey.placeholder",
+        helpText: "togetherai.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "togetherai.fields.apiKey.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: true,
+      vision: false,
+      promptCache: false,
+      embeddings: true,
+      tools: true,
+      jsonMode: true,
+    },
+    models: [
+      {
+        id: "meta-llama/Llama-3-70b-chat-hf",
+        name: "Llama 3 70B",
+        contextWindow: 8192,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+      {
+        id: "meta-llama/Llama-3-8b-chat-hf",
+        name: "Llama 3 8B",
+        contextWindow: 8192,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+      {
+        id: "mistralai/Mixtral-8x7B-Instruct-v0.1",
+        name: "Mixtral 8x7B",
+        contextWindow: 32000,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+    ],
+    documentation: {
+      setup: "https://docs.together.ai/docs/quickstart",
+      apiReference: "https://docs.together.ai/docs/inference-rest",
+      examples: "https://docs.together.ai/docs/examples",
+    },
+  },
+
+  xai: {
+    id: "xai",
+    name: "xAI (Grok)",
+    description: "xai.description",
+    website: "https://x.ai",
+    type: ProviderType.FIRST_PARTY,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "xai.fields.apiKey.label",
+        required: true,
+        secure: true,
+        placeholder: "xai.fields.apiKey.placeholder",
+        helpText: "xai.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "xai.fields.apiKey.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: false,
+      vision: false,
+      promptCache: false,
+      embeddings: false,
+      tools: false,
+      jsonMode: false,
+    },
+    models: [
+      {
+        id: "grok-beta",
+        name: "Grok Beta",
+        contextWindow: 128000,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+    ],
+    documentation: {
+      setup: "https://x.ai/api",
+      apiReference: "https://docs.x.ai/api",
+      examples: "https://docs.x.ai/docs",
+    },
+  },
+
+  "google-vertex": {
+    id: "google-vertex",
+    name: "Google Vertex AI",
+    description: "google-vertex.description",
+    website: "https://cloud.google.com/vertex-ai",
+    type: ProviderType.FIRST_PARTY,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "google-vertex.fields.apiKey.label",
+        required: true,
+        secure: false,
+        placeholder: "google-vertex.fields.apiKey.placeholder",
+        helpText: "google-vertex.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "google-vertex.fields.apiKey.validation.required",
+          },
+          {
+            type: ValidationRuleType.PATTERN,
+            pattern: /^.+:.+$/,
+            message: "google-vertex.fields.apiKey.validation.pattern",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: true,
+      vision: true,
+      promptCache: false,
+      embeddings: true,
+      tools: true,
+      jsonMode: true,
+    },
+    models: [
+      {
+        id: "gemini-1.5-pro",
+        name: "Gemini 1.5 Pro",
+        contextWindow: 1000000,
+        maxOutputTokens: 8192,
+        capabilities: ["text", "vision", "function-calling"],
+      },
+      {
+        id: "gemini-1.5-flash",
+        name: "Gemini 1.5 Flash",
+        contextWindow: 1000000,
+        maxOutputTokens: 8192,
+        capabilities: ["text", "vision", "function-calling"],
+      },
+    ],
+    documentation: {
+      setup:
+        "https://cloud.google.com/vertex-ai/docs/start/quickstarts/generative-ai",
+      apiReference: "https://cloud.google.com/vertex-ai/docs/reference/rest",
+      examples: "https://cloud.google.com/vertex-ai/docs/samples",
+    },
+  },
+
+  azure: {
+    id: "azure",
+    name: "Azure OpenAI",
+    description: "azure.description",
+    website:
+      "https://azure.microsoft.com/en-us/products/ai-services/openai-service",
+    type: ProviderType.FIRST_PARTY,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "azure.fields.apiKey.label",
+        required: true,
+        secure: true,
+        placeholder: "azure.fields.apiKey.placeholder",
+        helpText: "azure.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "azure.fields.apiKey.validation.required",
+          },
+        ],
+      },
+      {
+        key: "baseURL",
+        type: FieldType.TEXT,
+        label: "azure.fields.baseURL.label",
+        required: true,
+        placeholder: "azure.fields.baseURL.placeholder",
+        helpText: "azure.fields.baseURL.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "azure.fields.baseURL.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: true,
+      vision: true,
+      promptCache: false,
+      embeddings: true,
+      tools: true,
+      jsonMode: true,
+    },
+    models: [
+      {
+        id: "gpt-4",
+        name: "GPT-4 (Deployment: gpt-4)",
+        contextWindow: 8192,
+        maxOutputTokens: 4096,
+        capabilities: ["text", "function-calling"],
+      },
+      {
+        id: "gpt-35-turbo",
+        name: "GPT-3.5 Turbo (Deployment: gpt-35-turbo)",
+        contextWindow: 4096,
+        maxOutputTokens: 4096,
+        capabilities: ["text", "function-calling"],
+      },
+    ],
+    documentation: {
+      setup:
+        "https://learn.microsoft.com/en-us/azure/ai-services/openai/quickstart",
+      apiReference:
+        "https://learn.microsoft.com/en-us/azure/ai-services/openai/reference",
+      examples:
+        "https://learn.microsoft.com/en-us/azure/ai-services/openai/examples",
+    },
+  },
+
+  mistral: {
+    id: "mistral",
+    name: "Mistral AI",
+    description: "mistral.description",
+    website: "https://mistral.ai",
+    type: ProviderType.FIRST_PARTY,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "mistral.fields.apiKey.label",
+        required: true,
+        secure: true,
+        placeholder: "mistral.fields.apiKey.placeholder",
+        helpText: "mistral.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "mistral.fields.apiKey.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: true,
+      vision: false,
+      promptCache: false,
+      embeddings: true,
+      tools: true,
+      jsonMode: true,
+    },
+    models: [
+      {
+        id: "mistral-large-latest",
+        name: "Mistral Large",
+        contextWindow: 32000,
+        maxOutputTokens: 4096,
+        capabilities: ["text", "function-calling"],
+      },
+      {
+        id: "mistral-medium-latest",
+        name: "Mistral Medium",
+        contextWindow: 32000,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+      {
+        id: "mistral-small-latest",
+        name: "Mistral Small",
+        contextWindow: 32000,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+      {
+        id: "open-mixtral-8x7b",
+        name: "Mixtral 8x7B",
+        contextWindow: 32000,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+    ],
+    documentation: {
+      setup: "https://docs.mistral.ai",
+      apiReference: "https://docs.mistral.ai/api",
+      examples: "https://docs.mistral.ai/guides",
+    },
+  },
+
+  groq: {
+    id: "groq",
+    name: "Groq",
+    description: "groq.description",
+    website: "https://groq.com",
+    type: ProviderType.FIRST_PARTY,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "groq.fields.apiKey.label",
+        required: true,
+        secure: true,
+        placeholder: "groq.fields.apiKey.placeholder",
+        helpText: "groq.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "groq.fields.apiKey.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: true,
+      vision: false,
+      promptCache: false,
+      embeddings: false,
+      tools: true,
+      jsonMode: true,
+    },
+    models: [
+      {
+        id: "llama3-8b-8192",
+        name: "Llama 3 8B",
+        contextWindow: 8192,
+        maxOutputTokens: 8192,
+        capabilities: ["text", "function-calling"],
+      },
+      {
+        id: "llama3-70b-8192",
+        name: "Llama 3 70B",
+        contextWindow: 8192,
+        maxOutputTokens: 8192,
+        capabilities: ["text", "function-calling"],
+      },
+      {
+        id: "mixtral-8x7b-32768",
+        name: "Mixtral 8x7B",
+        contextWindow: 32768,
+        maxOutputTokens: 32768,
+        capabilities: ["text", "function-calling"],
+      },
+      {
+        id: "gemma-7b-it",
+        name: "Gemma 7B",
+        contextWindow: 8192,
+        maxOutputTokens: 8192,
+        capabilities: ["text"],
+      },
+    ],
+    documentation: {
+      setup: "https://console.groq.com/docs/quickstart",
+      apiReference: "https://console.groq.com/docs/api-reference",
+      examples: "https://console.groq.com/docs/examples",
+    },
+  },
+
   anthropic: {
     id: "anthropic",
     name: "Anthropic",
-    description: "Claude 模型，由 Anthropic 开发",
+    description: "anthropic.description",
     website: "https://www.anthropic.com",
     type: ProviderType.FIRST_PARTY,
     authMode: AuthMode.API_KEY,
@@ -137,17 +568,21 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "apiKey",
         type: FieldType.PASSWORD,
-        label: "API Key",
+        label: "anthropic.fields.apiKey.label",
         required: true,
         secure: true,
-        placeholder: "sk-ant-...",
-        helpText: "从 Anthropic 控制台获取的 API 密钥",
+        placeholder: "anthropic.fields.apiKey.placeholder",
+        helpText: "anthropic.fields.apiKey.helpText",
         validation: [
-          commonValidations.required("API Key 是必需的"),
-          commonValidations.pattern(
-            /^sk-ant-/,
-            "Anthropic API Key 应以 sk-ant- 开头",
-          ),
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "anthropic.fields.apiKey.validation.required",
+          },
+          {
+            type: ValidationRuleType.PATTERN,
+            pattern: /^sk-ant-/,
+            message: "anthropic.fields.apiKey.validation.pattern",
+          },
         ],
       },
     ],
@@ -186,7 +621,7 @@ export const ProviderRegistry: ProviderRegistryType = {
   gemini: {
     id: "gemini",
     name: "Google Gemini",
-    description: "Gemini 模型，由 Google 开发",
+    description: "gemini.description",
     website: "https://ai.google.dev",
     type: ProviderType.FIRST_PARTY,
     authMode: AuthMode.API_KEY,
@@ -194,12 +629,17 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "apiKey",
         type: FieldType.PASSWORD,
-        label: "API Key",
+        label: "gemini.fields.apiKey.label",
         required: true,
         secure: true,
-        placeholder: "AI...",
-        helpText: "从 Google AI Studio 获取的 API 密钥",
-        validation: [commonValidations.required("API Key 是必需的")],
+        placeholder: "gemini.fields.apiKey.placeholder",
+        helpText: "gemini.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "gemini.fields.apiKey.validation.required",
+          },
+        ],
       },
     ],
     features: {
@@ -229,50 +669,11 @@ export const ProviderRegistry: ProviderRegistryType = {
     ],
   },
 
-  mistral: {
-    id: "mistral",
-    name: "Mistral AI",
-    description: "Mistral 模型，由 Mistral AI 开发",
-    website: "https://mistral.ai",
-    type: ProviderType.FIRST_PARTY,
-    authMode: AuthMode.API_KEY,
-    fields: [
-      {
-        key: "apiKey",
-        type: FieldType.PASSWORD,
-        label: "API Key",
-        required: true,
-        secure: true,
-        placeholder: "...",
-        helpText: "从 Mistral AI 平台获取的 API 密钥",
-        validation: [commonValidations.required("API Key 是必需的")],
-      },
-    ],
-    features: {
-      streaming: true,
-      functionCalling: true,
-      vision: false,
-      promptCache: false,
-      embeddings: true,
-      tools: false,
-      jsonMode: true,
-    },
-    models: [
-      {
-        id: "mistral-large-latest",
-        name: "Mistral Large",
-        contextWindow: 128000,
-        maxOutputTokens: 8192,
-        capabilities: ["text", "function-calling"],
-      },
-    ],
-  },
-
   // === 云服务提供商 ===
   "azure-openai": {
     id: "azure-openai",
     name: "Azure OpenAI",
-    description: "Azure 上的 OpenAI 服务",
+    description: "azure-openai.description",
     website:
       "https://azure.microsoft.com/en-us/products/ai-services/openai-service",
     type: ProviderType.CLOUD,
@@ -281,31 +682,40 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "apiKey",
         type: FieldType.PASSWORD,
-        label: "API Key",
+        label: "azure-openai.fields.apiKey.label",
         required: true,
         secure: true,
-        helpText: "Azure OpenAI 服务的 API 密钥",
-        validation: [commonValidations.required("API Key 是必需的")],
+        helpText: "azure-openai.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "azure-openai.fields.apiKey.validation.required",
+          },
+        ],
       },
       {
         key: "baseURL",
         type: FieldType.URL,
-        label: "Endpoint URL",
+        label: "azure-openai.fields.baseURL.label",
         required: true,
-        placeholder: "https://your-resource.openai.azure.com/",
-        helpText: "Azure OpenAI 服务的端点 URL",
+        placeholder: "azure-openai.fields.baseURL.placeholder",
+        helpText: "azure-openai.fields.baseURL.helpText",
         validation: [
-          commonValidations.required("Endpoint URL 是必需的"),
-          commonValidations.pattern(
-            /^https:\/\/.+\..+\.openai\.azure\.com\/?$/,
-            "请输入有效的 Azure OpenAI 端点",
-          ),
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "azure-openai.fields.baseURL.validation.required",
+          },
+          {
+            type: ValidationRuleType.PATTERN,
+            pattern: /^https:\/\/.+\..+\.openai\.azure\.com\/?$/,
+            message: "azure-openai.fields.baseURL.validation.pattern",
+          },
         ],
       },
       {
         key: "apiVersion",
         type: FieldType.SELECT,
-        label: "API 版本",
+        label: "azure-openai.fields.apiVersion.label",
         required: true,
         defaultValue: "2024-02-15-preview",
         options: [
@@ -338,7 +748,7 @@ export const ProviderRegistry: ProviderRegistryType = {
   vertexai: {
     id: "vertexai",
     name: "Google Vertex AI",
-    description: "Google Cloud 上的 AI 服务",
+    description: "vertexai.description",
     website: "https://cloud.google.com/vertex-ai",
     type: ProviderType.CLOUD,
     authMode: AuthMode.API_KEY,
@@ -346,25 +756,35 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "apiKey",
         type: FieldType.PASSWORD,
-        label: "API Key",
+        label: "vertexai.fields.apiKey.label",
         required: true,
         secure: true,
-        helpText: "Google Cloud 服务账号密钥",
-        validation: [commonValidations.required("API Key 是必需的")],
+        helpText: "vertexai.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "vertexai.fields.apiKey.validation.required",
+          },
+        ],
       },
       {
         key: "projectId",
         type: FieldType.TEXT,
-        label: "Project ID",
+        label: "vertexai.fields.projectId.label",
         required: true,
-        placeholder: "your-project-id",
-        helpText: "Google Cloud 项目 ID",
-        validation: [commonValidations.required("Project ID 是必需的")],
+        placeholder: "vertexai.fields.projectId.placeholder",
+        helpText: "vertexai.fields.projectId.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "vertexai.fields.projectId.validation.required",
+          },
+        ],
       },
       {
         key: "region",
         type: FieldType.SELECT,
-        label: "区域",
+        label: "vertexai.fields.region.label",
         required: true,
         defaultValue: "us-central1",
         options: [
@@ -398,7 +818,7 @@ export const ProviderRegistry: ProviderRegistryType = {
   "baidu-qianfan": {
     id: "baidu-qianfan",
     name: "百度千帆",
-    description: "百度智能云千帆大模型平台",
+    description: "baidu-qianfan.description",
     website: "https://cloud.baidu.com/product/wenxinworkshop",
     type: ProviderType.CLOUD,
     authMode: AuthMode.API_KEY,
@@ -406,20 +826,30 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "apiKey",
         type: FieldType.PASSWORD,
-        label: "API Key",
+        label: "baidu-qianfan.fields.apiKey.label",
         required: true,
         secure: true,
-        helpText: "千帆平台的 API Key",
-        validation: [commonValidations.required("API Key 是必需的")],
+        helpText: "baidu-qianfan.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "baidu-qianfan.fields.apiKey.validation.required",
+          },
+        ],
       },
       {
         key: "secretKey",
         type: FieldType.PASSWORD,
-        label: "Secret Key",
+        label: "baidu-qianfan.fields.secretKey.label",
         required: true,
         secure: true,
-        helpText: "千帆平台的 Secret Key",
-        validation: [commonValidations.required("Secret Key 是必需的")],
+        helpText: "baidu-qianfan.fields.secretKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "baidu-qianfan.fields.secretKey.validation.required",
+          },
+        ],
       },
     ],
     features: {
@@ -445,7 +875,7 @@ export const ProviderRegistry: ProviderRegistryType = {
   "cloudflare-workersai": {
     id: "cloudflare-workersai",
     name: "Cloudflare Workers AI",
-    description: "Cloudflare 的边缘 AI 服务",
+    description: "cloudflare-workersai.description",
     website: "https://developers.cloudflare.com/workers-ai/",
     type: ProviderType.CLOUD,
     authMode: AuthMode.API_KEY,
@@ -453,20 +883,31 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "apiKey",
         type: FieldType.PASSWORD,
-        label: "API Token",
+        label: "cloudflare-workersai.fields.apiKey.label",
         required: true,
         secure: true,
-        helpText: "Cloudflare API Token",
-        validation: [commonValidations.required("API Token 是必需的")],
+        helpText: "cloudflare-workersai.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "cloudflare-workersai.fields.apiKey.validation.required",
+          },
+        ],
       },
       {
         key: "accountId",
         type: FieldType.TEXT,
-        label: "Account ID",
+        label: "cloudflare-workersai.fields.accountId.label",
         required: true,
-        placeholder: "your-account-id",
-        helpText: "Cloudflare 账户 ID",
-        validation: [commonValidations.required("Account ID 是必需的")],
+        placeholder: "cloudflare-workersai.fields.accountId.placeholder",
+        helpText: "cloudflare-workersai.fields.accountId.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message:
+              "cloudflare-workersai.fields.accountId.validation.required",
+          },
+        ],
       },
     ],
     features: {
@@ -493,7 +934,7 @@ export const ProviderRegistry: ProviderRegistryType = {
   openrouter: {
     id: "openrouter",
     name: "OpenRouter",
-    description: "访问多个 AI 模型的聚合服务",
+    description: "openrouter.description",
     website: "https://openrouter.ai",
     type: ProviderType.AGGREGATOR,
     authMode: AuthMode.API_KEY,
@@ -501,11 +942,16 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "apiKey",
         type: FieldType.PASSWORD,
-        label: "API Key",
+        label: "openrouter.fields.apiKey.label",
         required: true,
         secure: true,
-        helpText: "OpenRouter API 密钥",
-        validation: [commonValidations.required("API Key 是必需的")],
+        helpText: "openrouter.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "openrouter.fields.apiKey.validation.required",
+          },
+        ],
       },
     ],
     features: {
@@ -528,48 +974,10 @@ export const ProviderRegistry: ProviderRegistryType = {
     ],
   },
 
-  groq: {
-    id: "groq",
-    name: "Groq",
-    description: "高速 AI 推理服务",
-    website: "https://groq.com",
-    type: ProviderType.AGGREGATOR,
-    authMode: AuthMode.API_KEY,
-    fields: [
-      {
-        key: "apiKey",
-        type: FieldType.PASSWORD,
-        label: "API Key",
-        required: true,
-        secure: true,
-        helpText: "Groq API 密钥",
-        validation: [commonValidations.required("API Key 是必需的")],
-      },
-    ],
-    features: {
-      streaming: true,
-      functionCalling: false,
-      vision: false,
-      promptCache: false,
-      embeddings: false,
-      tools: false,
-      jsonMode: false,
-    },
-    models: [
-      {
-        id: "llama-3.1-70b-versatile",
-        name: "Llama 3.1 70B",
-        contextWindow: 131072,
-        maxOutputTokens: 2048,
-        capabilities: ["text"],
-      },
-    ],
-  },
-
   perplexity: {
     id: "perplexity",
     name: "Perplexity",
-    description: "实时搜索增强的 AI 模型",
+    description: "perplexity.description",
     website: "https://perplexity.ai",
     type: ProviderType.AGGREGATOR,
     authMode: AuthMode.API_KEY,
@@ -577,11 +985,16 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "apiKey",
         type: FieldType.PASSWORD,
-        label: "API Key",
+        label: "perplexity.fields.apiKey.label",
         required: true,
         secure: true,
-        helpText: "Perplexity API 密钥",
-        validation: [commonValidations.required("API Key 是必需的")],
+        helpText: "perplexity.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "perplexity.fields.apiKey.validation.required",
+          },
+        ],
       },
     ],
     features: {
@@ -608,7 +1021,7 @@ export const ProviderRegistry: ProviderRegistryType = {
   dashscope: {
     id: "dashscope",
     name: "阿里云通义千问",
-    description: "阿里云通义千问大模型",
+    description: "dashscope.description",
     website: "https://dashscope.aliyun.com",
     type: ProviderType.CLOUD,
     authMode: AuthMode.API_KEY,
@@ -616,11 +1029,16 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "apiKey",
         type: FieldType.PASSWORD,
-        label: "API Key",
+        label: "dashscope.fields.apiKey.label",
         required: true,
         secure: true,
-        helpText: "通义千问 API Key",
-        validation: [commonValidations.required("API Key 是必需的")],
+        helpText: "dashscope.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "dashscope.fields.apiKey.validation.required",
+          },
+        ],
       },
     ],
     features: {
@@ -643,48 +1061,10 @@ export const ProviderRegistry: ProviderRegistryType = {
     ],
   },
 
-  deepseek: {
-    id: "deepseek",
-    name: "DeepSeek",
-    description: "DeepSeek 大模型",
-    website: "https://www.deepseek.com",
-    type: ProviderType.FIRST_PARTY,
-    authMode: AuthMode.API_KEY,
-    fields: [
-      {
-        key: "apiKey",
-        type: FieldType.PASSWORD,
-        label: "API Key",
-        required: true,
-        secure: true,
-        helpText: "DeepSeek API 密钥",
-        validation: [commonValidations.required("API Key 是必需的")],
-      },
-    ],
-    features: {
-      streaming: true,
-      functionCalling: true,
-      vision: false,
-      promptCache: false,
-      embeddings: false,
-      tools: false,
-      jsonMode: true,
-    },
-    models: [
-      {
-        id: "deepseek-chat",
-        name: "DeepSeek Chat",
-        contextWindow: 32768,
-        maxOutputTokens: 4096,
-        capabilities: ["text", "function-calling"],
-      },
-    ],
-  },
-
   doubao: {
     id: "doubao",
     name: "字节豆包",
-    description: "字节跳动豆包大模型",
+    description: "doubao.description",
     website: "https://www.volcengine.com/product/doubao",
     type: ProviderType.CLOUD,
     authMode: AuthMode.API_KEY,
@@ -692,11 +1072,16 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "apiKey",
         type: FieldType.PASSWORD,
-        label: "API Key",
+        label: "doubao.fields.apiKey.label",
         required: true,
         secure: true,
-        helpText: "豆包 API 密钥",
-        validation: [commonValidations.required("API Key 是必需的")],
+        helpText: "doubao.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "doubao.fields.apiKey.validation.required",
+          },
+        ],
       },
     ],
     features: {
@@ -722,7 +1107,7 @@ export const ProviderRegistry: ProviderRegistryType = {
   zhipu: {
     id: "zhipu",
     name: "智谱 AI",
-    description: "智谱清言大模型",
+    description: "zhipu.description",
     website: "https://www.zhipuai.cn",
     type: ProviderType.FIRST_PARTY,
     authMode: AuthMode.API_KEY,
@@ -730,11 +1115,16 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "apiKey",
         type: FieldType.PASSWORD,
-        label: "API Key",
+        label: "zhipu.fields.apiKey.label",
         required: true,
         secure: true,
-        helpText: "智谱 AI API 密钥",
-        validation: [commonValidations.required("API Key 是必需的")],
+        helpText: "zhipu.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "zhipu.fields.apiKey.validation.required",
+          },
+        ],
       },
     ],
     features: {
@@ -761,7 +1151,7 @@ export const ProviderRegistry: ProviderRegistryType = {
   siliconflow: {
     id: "siliconflow",
     name: "SiliconFlow",
-    description: "硅流 AI 模型服务",
+    description: "siliconflow.description",
     website: "https://siliconflow.cn",
     type: ProviderType.AGGREGATOR,
     authMode: AuthMode.API_KEY,
@@ -769,11 +1159,16 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "apiKey",
         type: FieldType.PASSWORD,
-        label: "API Key",
+        label: "siliconflow.fields.apiKey.label",
         required: true,
         secure: true,
-        helpText: "SiliconFlow API 密钥",
-        validation: [commonValidations.required("API Key 是必需的")],
+        helpText: "siliconflow.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "siliconflow.fields.apiKey.validation.required",
+          },
+        ],
       },
     ],
     features: {
@@ -799,7 +1194,7 @@ export const ProviderRegistry: ProviderRegistryType = {
   together: {
     id: "together",
     name: "Together AI",
-    description: "Together AI 模型服务",
+    description: "together.description",
     website: "https://together.ai",
     type: ProviderType.AGGREGATOR,
     authMode: AuthMode.API_KEY,
@@ -807,11 +1202,16 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "apiKey",
         type: FieldType.PASSWORD,
-        label: "API Key",
+        label: "together.fields.apiKey.label",
         required: true,
         secure: true,
-        helpText: "Together AI API 密钥",
-        validation: [commonValidations.required("API Key 是必需的")],
+        helpText: "together.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "together.fields.apiKey.validation.required",
+          },
+        ],
       },
     ],
     features: {
@@ -834,48 +1234,10 @@ export const ProviderRegistry: ProviderRegistryType = {
     ],
   },
 
-  xai: {
-    id: "xai",
-    name: "xAI",
-    description: "xAI 的 Grok 模型",
-    website: "https://x.ai",
-    type: ProviderType.FIRST_PARTY,
-    authMode: AuthMode.API_KEY,
-    fields: [
-      {
-        key: "apiKey",
-        type: FieldType.PASSWORD,
-        label: "API Key",
-        required: true,
-        secure: true,
-        helpText: "xAI API 密钥",
-        validation: [commonValidations.required("API Key 是必需的")],
-      },
-    ],
-    features: {
-      streaming: true,
-      functionCalling: false,
-      vision: false,
-      promptCache: false,
-      embeddings: false,
-      tools: false,
-      jsonMode: false,
-    },
-    models: [
-      {
-        id: "grok-beta",
-        name: "Grok Beta",
-        contextWindow: 128000,
-        maxOutputTokens: 4096,
-        capabilities: ["text"],
-      },
-    ],
-  },
-
   premai: {
     id: "premai",
     name: "PremAI",
-    description: "PremAI 模型服务",
+    description: "premai.description",
     website: "https://premai.io",
     type: ProviderType.AGGREGATOR,
     authMode: AuthMode.API_KEY,
@@ -883,11 +1245,16 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "apiKey",
         type: FieldType.PASSWORD,
-        label: "API Key",
+        label: "premai.fields.apiKey.label",
         required: true,
         secure: true,
-        helpText: "PremAI API 密钥",
-        validation: [commonValidations.required("API Key 是必需的")],
+        helpText: "premai.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "premai.fields.apiKey.validation.required",
+          },
+        ],
       },
     ],
     features: {
@@ -910,11 +1277,283 @@ export const ProviderRegistry: ProviderRegistryType = {
     ],
   },
 
+  // === 新增提供商 ===
+  bedrock: {
+    id: "bedrock",
+    name: "Amazon Bedrock",
+    description: "bedrock.description",
+    website: "https://aws.amazon.com/bedrock/",
+    type: ProviderType.CLOUD,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "bedrock.fields.apiKey.label",
+        required: true,
+        secure: true,
+        placeholder: "bedrock.fields.apiKey.placeholder",
+        helpText: "bedrock.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "bedrock.fields.apiKey.validation.required",
+          },
+          {
+            type: ValidationRuleType.PATTERN,
+            pattern: /^[^:]+:[^:]+$/,
+            message: "bedrock.fields.apiKey.validation.pattern",
+          },
+        ],
+      },
+      {
+        key: "baseURL",
+        type: FieldType.TEXT,
+        label: "bedrock.fields.baseURL.label",
+        required: true,
+        defaultValue: "us-east-1",
+        placeholder: "bedrock.fields.baseURL.placeholder",
+        helpText: "bedrock.fields.baseURL.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "bedrock.fields.baseURL.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: true,
+      vision: true,
+      promptCache: false,
+      embeddings: true,
+      tools: true,
+      jsonMode: false,
+    },
+    models: [
+      {
+        id: "anthropic.claude-3-sonnet-20240229-v1:0",
+        name: "Claude 3 Sonnet",
+        contextWindow: 200000,
+        maxOutputTokens: 4096,
+        capabilities: ["text", "vision", "function-calling"],
+      },
+      {
+        id: "anthropic.claude-3-haiku-20240307-v1:0",
+        name: "Claude 3 Haiku",
+        contextWindow: 200000,
+        maxOutputTokens: 4096,
+        capabilities: ["text", "vision", "function-calling"],
+      },
+    ],
+  },
+
+  cohere: {
+    id: "cohere",
+    name: "Cohere",
+    description: "cohere.description",
+    website: "https://cohere.com",
+    type: ProviderType.FIRST_PARTY,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "cohere.fields.apiKey.label",
+        required: true,
+        secure: true,
+        helpText: "cohere.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "cohere.fields.apiKey.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: true,
+      vision: false,
+      promptCache: false,
+      embeddings: true,
+      tools: true,
+      jsonMode: false,
+    },
+    models: [
+      {
+        id: "command-r",
+        name: "Command R",
+        contextWindow: 128000,
+        maxOutputTokens: 4096,
+        capabilities: ["text", "function-calling"],
+      },
+      {
+        id: "command-r-plus",
+        name: "Command R+",
+        contextWindow: 128000,
+        maxOutputTokens: 4096,
+        capabilities: ["text", "function-calling"],
+      },
+    ],
+  },
+
+  fireworks: {
+    id: "fireworks",
+    name: "Fireworks AI",
+    description: "fireworks.description",
+    website: "https://fireworks.ai",
+    type: ProviderType.AGGREGATOR,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "fireworks.fields.apiKey.label",
+        required: true,
+        secure: true,
+        helpText: "fireworks.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "fireworks.fields.apiKey.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: true,
+      vision: true,
+      promptCache: false,
+      embeddings: true,
+      tools: true,
+      jsonMode: true,
+    },
+    models: [
+      {
+        id: "accounts/fireworks/models/llama-v3-8b-instruct",
+        name: "Llama 3 8B Instruct",
+        contextWindow: 8192,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+      {
+        id: "accounts/fireworks/models/mixtral-8x7b-instruct",
+        name: "Mixtral 8x7B Instruct",
+        contextWindow: 32768,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+    ],
+  },
+
+  deepinfra: {
+    id: "deepinfra",
+    name: "DeepInfra",
+    description: "deepinfra.description",
+    website: "https://deepinfra.com",
+    type: ProviderType.AGGREGATOR,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "deepinfra.fields.apiKey.label",
+        required: true,
+        secure: true,
+        helpText: "deepinfra.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "deepinfra.fields.apiKey.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: true,
+      vision: true,
+      promptCache: false,
+      embeddings: true,
+      tools: true,
+      jsonMode: true,
+    },
+    models: [
+      {
+        id: "meta-llama/Meta-Llama-3-8B-Instruct",
+        name: "Llama 3 8B Instruct",
+        contextWindow: 8192,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+      {
+        id: "mistralai/Mixtral-8x7B-Instruct-v0.1",
+        name: "Mixtral 8x7B Instruct",
+        contextWindow: 32768,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+    ],
+  },
+
+  cerebras: {
+    id: "cerebras",
+    name: "Cerebras",
+    description: "cerebras.description",
+    website: "https://cerebras.ai",
+    type: ProviderType.FIRST_PARTY,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "cerebras.fields.apiKey.label",
+        required: true,
+        secure: true,
+        helpText: "cerebras.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "cerebras.fields.apiKey.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: false,
+      vision: false,
+      promptCache: false,
+      embeddings: false,
+      tools: false,
+      jsonMode: false,
+    },
+    models: [
+      {
+        id: "llama3.1-8b",
+        name: "Llama 3.1 8B",
+        contextWindow: 8192,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+      {
+        id: "llama3.1-70b",
+        name: "Llama 3.1 70B",
+        contextWindow: 8192,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+    ],
+  },
+
   // === 本地/自托管 ===
   ollama: {
     id: "ollama",
     name: "Ollama",
-    description: "本地 AI 模型运行环境",
+    description: "ollama.description",
     website: "https://ollama.ai",
     type: ProviderType.LOCAL,
     authMode: AuthMode.NONE,
@@ -922,25 +1561,22 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "baseURL",
         type: FieldType.URL,
-        label: "Ollama 服务器 URL",
+        label: "ollama.fields.baseURL.label",
         required: true,
         defaultValue: "http://localhost:11434",
-        placeholder: "http://localhost:11434",
-        helpText: "Ollama 服务器的地址",
+        placeholder: "ollama.fields.baseURL.placeholder",
+        helpText: "ollama.fields.baseURL.helpText",
         validation: [
-          commonValidations.required("服务器 URL 是必需的"),
-          commonValidations.pattern(/^https?:\/\/.+/, "请输入有效的 URL"),
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "ollama.fields.baseURL.validation.required",
+          },
+          {
+            type: ValidationRuleType.PATTERN,
+            pattern: /^https?:\/\/.+/,
+            message: "ollama.fields.baseURL.validation.pattern",
+          },
         ],
-      },
-      {
-        key: "modelDiscovery",
-        type: FieldType.CUSTOM,
-        label: "模型发现",
-        required: false,
-        helpText: "自动发现本地 Ollama 安装中的可用模型",
-        customRenderer: (props) => {
-          return <OllamaModelDiscovery {...props} />;
-        },
       },
     ],
     features: {
@@ -967,7 +1603,7 @@ export const ProviderRegistry: ProviderRegistryType = {
   lmstudio: {
     id: "lmstudio",
     name: "LM Studio",
-    description: "本地 AI 模型管理工具",
+    description: "lmstudio.description",
     website: "https://lmstudio.ai",
     type: ProviderType.LOCAL,
     authMode: AuthMode.NONE,
@@ -975,14 +1611,21 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "baseURL",
         type: FieldType.URL,
-        label: "LM Studio 服务器 URL",
+        label: "lmstudio.fields.baseURL.label",
         required: true,
         defaultValue: "http://localhost:1234",
-        placeholder: "http://localhost:1234",
-        helpText: "LM Studio 服务器的地址",
+        placeholder: "lmstudio.fields.baseURL.placeholder",
+        helpText: "lmstudio.fields.baseURL.helpText",
         validation: [
-          commonValidations.required("服务器 URL 是必需的"),
-          commonValidations.pattern(/^https?:\/\/.+/, "请输入有效的 URL"),
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "lmstudio.fields.baseURL.validation.required",
+          },
+          {
+            type: ValidationRuleType.PATTERN,
+            pattern: /^https?:\/\/.+/,
+            message: "lmstudio.fields.baseURL.validation.pattern",
+          },
         ],
       },
     ],
@@ -1010,7 +1653,7 @@ export const ProviderRegistry: ProviderRegistryType = {
   vscode: {
     id: "vscode",
     name: "VSCode 内置 AI",
-    description: "VSCode 内置的 AI 功能",
+    description: "vscode.description",
     website: "https://code.visualstudio.com",
     type: ProviderType.LOCAL,
     authMode: AuthMode.NONE,
@@ -1039,7 +1682,7 @@ export const ProviderRegistry: ProviderRegistryType = {
   "openai-compatible": {
     id: "openai-compatible",
     name: "OpenAI 兼容 API",
-    description: "任何 OpenAI 兼容的 API 端点",
+    description: "openai-compatible.description",
     website: "",
     type: ProviderType.OPENAI_COMPATIBLE,
     authMode: AuthMode.API_KEY,
@@ -1047,44 +1690,56 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "apiKey",
         type: FieldType.PASSWORD,
-        label: "API Key",
+        label: "openai-compatible.fields.apiKey.label",
         required: true,
         secure: true,
-        helpText: "兼容 API 的密钥",
-        validation: [commonValidations.required("API Key 是必需的")],
+        helpText: "openai-compatible.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "openai-compatible.fields.apiKey.validation.required",
+          },
+        ],
       },
       {
         key: "baseURL",
         type: FieldType.URL,
-        label: "API 端点 URL",
+        label: "openai-compatible.fields.baseURL.label",
         required: true,
-        placeholder: "https://api.example.com/v1",
-        helpText: "OpenAI 兼容的 API 端点",
+        placeholder: "openai-compatible.fields.baseURL.placeholder",
+        helpText: "openai-compatible.fields.baseURL.helpText",
         validation: [
-          commonValidations.required("API 端点 URL 是必需的"),
-          commonValidations.pattern(/^https?:\/\/.+/, "请输入有效的 URL"),
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "openai-compatible.fields.baseURL.validation.required",
+          },
+          {
+            type: ValidationRuleType.PATTERN,
+            pattern: /^https?:\/\/.+/,
+            message: "openai-compatible.fields.baseURL.validation.pattern",
+          },
         ],
       },
       {
         key: "organization",
         type: FieldType.TEXT,
-        label: "Organization ID",
+        label: "openai-compatible.fields.organization.label",
         required: false,
-        placeholder: "org-...",
-        helpText: "可选的 OpenAI 组织 ID",
+        placeholder: "openai-compatible.fields.organization.placeholder",
+        helpText: "openai-compatible.fields.organization.helpText",
       },
       {
         key: "useAzure",
         type: FieldType.CHECKBOX,
-        label: "使用 Azure 服务",
+        label: "openai-compatible.fields.useAzure.label",
         required: false,
         defaultValue: false,
-        helpText: "启用 Azure OpenAI 服务配置",
+        helpText: "openai-compatible.fields.useAzure.helpText",
       },
       {
         key: "azureApiVersion",
         type: FieldType.SELECT,
-        label: "Azure API 版本",
+        label: "openai-compatible.fields.azureApiVersion.label",
         required: false,
         conditional: { field: "useAzure", value: true },
         options: [
@@ -1097,24 +1752,24 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "useCustomHeaders",
         type: FieldType.CHECKBOX,
-        label: "自定义请求头",
+        label: "openai-compatible.fields.useCustomHeaders.label",
         required: false,
         defaultValue: false,
-        helpText: "添加自定义 HTTP 请求头",
+        helpText: "openai-compatible.fields.useCustomHeaders.helpText",
       },
       {
         key: "customHeaders",
         type: FieldType.TEXTAREA,
-        label: "自定义请求头 (JSON)",
+        label: "openai-compatible.fields.customHeaders.label",
         required: false,
         conditional: { field: "useCustomHeaders", value: true },
-        placeholder: '{"Authorization": "Bearer token", "X-API-Key": "key"}',
-        helpText: "JSON 格式的自定义请求头",
+        placeholder: "openai-compatible.fields.customHeaders.placeholder",
+        helpText: "openai-compatible.fields.customHeaders.helpText",
         rows: 3,
         validation: [
           {
             type: ValidationRuleType.CUSTOM,
-            message: "请输入有效的 JSON 格式",
+            message: "openai-compatible.fields.customHeaders.validation.custom",
             validator: (value: string) => {
               if (!value) return true;
               try {
@@ -1130,27 +1785,26 @@ export const ProviderRegistry: ProviderRegistryType = {
       {
         key: "enableR1Models",
         type: FieldType.CHECKBOX,
-        label: "启用 R1 模型参数",
+        label: "openai-compatible.fields.enableR1Models.label",
         required: false,
         defaultValue: false,
-        helpText: "使用 QWQ 等 R1 系列模型时必须启用，避免出现 400 错误",
+        helpText: "openai-compatible.fields.enableR1Models.helpText",
       },
       {
         key: "useLegacyFormat",
         type: FieldType.CHECKBOX,
-        label: "使用传统 OpenAI API 格式",
+        label: "openai-compatible.fields.useLegacyFormat.label",
         required: false,
         defaultValue: false,
-        helpText: "启用流式传输",
+        helpText: "openai-compatible.fields.useLegacyFormat.helpText",
       },
       {
         key: "includeMaxTokens",
         type: FieldType.CHECKBOX,
-        label: "包含最大输出 Token 数",
+        label: "openai-compatible.fields.includeMaxTokens.label",
         required: false,
         defaultValue: true,
-        helpText:
-          "在 API 请求中发送最大输出 Token 参数。某些提供商可能不支持此功能。",
+        helpText: "openai-compatible.fields.includeMaxTokens.helpText",
       },
     ],
     features: {
@@ -1175,39 +1829,43 @@ export const ProviderRegistry: ProviderRegistryType = {
 };
 
 // 导出按类型分组的提供商
-export const providersByType = {
-  [ProviderType.FIRST_PARTY]: Object.values(ProviderRegistry).filter(
-    (p) => p.type === ProviderType.FIRST_PARTY,
-  ),
-  [ProviderType.CLOUD]: Object.values(ProviderRegistry).filter(
-    (p) => p.type === ProviderType.CLOUD,
-  ),
-  [ProviderType.AGGREGATOR]: Object.values(ProviderRegistry).filter(
-    (p) => p.type === ProviderType.AGGREGATOR,
-  ),
-  [ProviderType.LOCAL]: Object.values(ProviderRegistry).filter(
-    (p) => p.type === ProviderType.LOCAL,
-  ),
-  [ProviderType.OPENAI_COMPATIBLE]: Object.values(ProviderRegistry).filter(
-    (p) => p.type === ProviderType.OPENAI_COMPATIBLE,
-  ),
+export const getProvidersByType = () => {
+  return {
+    [ProviderType.FIRST_PARTY]: Object.values(providerRegistry).filter(
+      (p) => p.type === ProviderType.FIRST_PARTY,
+    ),
+    [ProviderType.CLOUD]: Object.values(providerRegistry).filter(
+      (p) => p.type === ProviderType.CLOUD,
+    ),
+    [ProviderType.AGGREGATOR]: Object.values(providerRegistry).filter(
+      (p) => p.type === ProviderType.AGGREGATOR,
+    ),
+    [ProviderType.LOCAL]: Object.values(providerRegistry).filter(
+      (p) => p.type === ProviderType.LOCAL,
+    ),
+    [ProviderType.OPENAI_COMPATIBLE]: Object.values(providerRegistry).filter(
+      (p) => p.type === ProviderType.OPENAI_COMPATIBLE,
+    ),
+  };
 };
 
 // 导出所有提供商 ID
-export const allProviderIds = Object.keys(ProviderRegistry);
+export const getAllProviderIds = () => Object.keys(providerRegistry);
 
 // 导出按认证模式分组的提供商
-export const providersByAuthMode = {
-  [AuthMode.API_KEY]: Object.values(ProviderRegistry).filter(
-    (p) => p.authMode === AuthMode.API_KEY,
-  ),
-  [AuthMode.CLI]: Object.values(ProviderRegistry).filter(
-    (p) => p.authMode === AuthMode.CLI,
-  ),
-  [AuthMode.OAUTH]: Object.values(ProviderRegistry).filter(
-    (p) => p.authMode === AuthMode.OAUTH,
-  ),
-  [AuthMode.NONE]: Object.values(ProviderRegistry).filter(
-    (p) => p.authMode === AuthMode.NONE,
-  ),
+export const getProvidersByAuthMode = () => {
+  return {
+    [AuthMode.API_KEY]: Object.values(providerRegistry).filter(
+      (p) => p.authMode === AuthMode.API_KEY,
+    ),
+    [AuthMode.CLI]: Object.values(providerRegistry).filter(
+      (p) => p.authMode === AuthMode.CLI,
+    ),
+    [AuthMode.OAUTH]: Object.values(providerRegistry).filter(
+      (p) => p.authMode === AuthMode.OAUTH,
+    ),
+    [AuthMode.NONE]: Object.values(providerRegistry).filter(
+      (p) => p.authMode === AuthMode.NONE,
+    ),
+  };
 };
