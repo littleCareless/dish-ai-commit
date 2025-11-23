@@ -50,11 +50,4 @@ const SelectOption: React.FC<SelectOptionProps> = ({ value, children }) => {
   return <VSCodeOption value={value}>{children}</VSCodeOption>;
 };
 
-export {
-  Select,
-  Select as SelectContent,
-  SelectOption as SelectItem,
-  SelectOption,
-  Select as SelectTrigger,
-  Select as SelectValue,
-};
+export { Select, SelectOption };

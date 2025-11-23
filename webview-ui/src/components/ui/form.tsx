@@ -98,7 +98,7 @@ const FormDescription = React.forwardRef<
     <p
       ref={ref}
       id={formDescriptionId}
-      className={cn("text-sm", className)}
+      className={cn("text-xs opacity-80", className)}
       style={{ color: "var(--vscode-descriptionForeground)" }}
       {...props}
     />

@@ -18,8 +18,14 @@ const Checkbox: React.FC<CheckboxProps> = ({
   ...props
 }) => {
   const handleChange = (event: React.FormEvent<HTMLElement>) => {
+    // VSCodeCheckbox 使用 currentTarget.checked 而不是 target.checked
+    const isChecked =
+      (event.currentTarget as { checked?: boolean })?.checked ??
+      (event.target as { checked?: boolean })?.checked ??
+      false;
+    console.log("Checkbox changed:", isChecked);
     onChange?.(event);
-    onCheckedChange?.((event.target as HTMLInputElement).checked);
+    onCheckedChange?.(isChecked);
   };
 
   return (
@@ -27,7 +33,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
       checked={checked}
       indeterminate={indeterminate}
       disabled={disabled}
-      onInput={handleChange}
+      onChange={handleChange}
       {...props}
     />
   );
