@@ -123,7 +123,9 @@ export const ExtensionStateContextProvider: React.FC<{
   const [state, setState] = useState<ExtensionState>({
     apiConfiguration: {},
     version: "",
-    language: "en",
+    language:
+      (window as { initialData?: { language?: string } }).initialData
+        ?.language || "en",
     listApiConfigMeta: [],
     currentApiConfigName: "default",
     telemetrySetting: "unset",

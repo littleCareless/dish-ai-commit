@@ -3,10 +3,12 @@
  * 将 provider-registry.ts 中的验证规则转换为 Zod schema
  */
 
+import i18next, { TFunction } from "i18next";
 import { z } from "zod";
 import {
   FieldConfig,
   FieldType,
+  ValidationRule,
   ValidationRuleType,
 } from "../types/provider-metadata";
 
@@ -39,49 +41,51 @@ function getBaseSchema(fieldType: FieldType): z.ZodTypeAny {
  */
 function applyValidationRules(
   schema: z.ZodTypeAny,
-  rules: any[],
+  rules: ValidationRule[],
+  t: TFunction,
 ): z.ZodTypeAny {
   let result = schema;
 
   rules.forEach((rule) => {
+    const message = t(rule.message);
     switch (rule.type) {
       case ValidationRuleType.REQUIRED:
         if (result instanceof z.ZodString) {
-          result = result.min(1, rule.message);
+          result = result.min(1, message);
         }
         break;
       case ValidationRuleType.PATTERN:
-        if (result instanceof z.ZodString) {
-          result = result.regex(rule.pattern, rule.message);
+        if (result instanceof z.ZodString && rule.pattern) {
+          result = result.regex(rule.pattern, message);
         }
         break;
       case ValidationRuleType.MIN:
-        if (result instanceof z.ZodNumber) {
-          result = result.min(rule.min, rule.message);
-        } else if (result instanceof z.ZodString) {
-          result = result.min(rule.min, rule.message);
+        if (result instanceof z.ZodNumber && rule.min !== undefined) {
+          result = result.min(rule.min, message);
+        } else if (result instanceof z.ZodString && rule.min !== undefined) {
+          result = result.min(rule.min, message);
         }
         break;
       case ValidationRuleType.MAX:
-        if (result instanceof z.ZodNumber) {
-          result = result.max(rule.max, rule.message);
-        } else if (result instanceof z.ZodString) {
-          result = result.max(rule.max, rule.message);
+        if (result instanceof z.ZodNumber && rule.max !== undefined) {
+          result = result.max(rule.max, message);
+        } else if (result instanceof z.ZodString && rule.max !== undefined) {
+          result = result.max(rule.max, message);
         }
         break;
       case ValidationRuleType.EMAIL:
         if (result instanceof z.ZodString) {
-          result = result.email(rule.message);
+          result = result.email(message);
         }
         break;
       case ValidationRuleType.URL:
         if (result instanceof z.ZodString) {
-          result = result.url(rule.message);
+          result = result.url(message);
         }
         break;
       case ValidationRuleType.CUSTOM:
         if (rule.validator) {
-          result = result.refine(rule.validator, rule.message);
+          result = result.refine(rule.validator, message);
         }
         break;
     }
@@ -93,12 +97,15 @@ function applyValidationRules(
 /**
  * 为字段创建 Zod 验证器
  */
-export function createZodValidator(field: FieldConfig): z.ZodTypeAny {
+export function createZodValidator(
+  field: FieldConfig,
+  t: TFunction,
+): z.ZodTypeAny {
   let schema = getBaseSchema(field.type);
 
   // 应用验证规则
   if (field.validation && field.validation.length > 0) {
-    schema = applyValidationRules(schema, field.validation);
+    schema = applyValidationRules(schema, field.validation, t);
   }
 
   // 处理必填/可选
@@ -112,10 +119,13 @@ export function createZodValidator(field: FieldConfig): z.ZodTypeAny {
 /**
  * 为提供商创建完整的 Zod schema
  */
-export function createProviderSchema(fields: FieldConfig[]): z.ZodObject<any> {
+export function createProviderSchema(
+  fields: FieldConfig[],
+  t: TFunction,
+): z.ZodObject<any> {
   const schemaObject = fields.reduce(
     (acc, field) => {
-      acc[field.key] = createZodValidator(field);
+      acc[field.key] = createZodValidator(field, t);
       return acc;
     },
     {} as Record<string, z.ZodTypeAny>,
@@ -132,7 +142,7 @@ export function validateFieldValue(
   value: any,
 ): { isValid: boolean; error?: string } {
   try {
-    const validator = createZodValidator(field);
+    const validator = createZodValidator(field, i18next.t);
     validator.parse(value);
     return { isValid: true };
   } catch (error) {

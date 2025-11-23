@@ -1,11 +1,11 @@
 import { v4 as uuidv4 } from "uuid";
-import { ResponseMessage } from "../types/messages";
+import { ResponseMessage } from "../../types/messages";
 import {
   DEFAULT_USER_PREFERENCES,
   Profile,
   ProviderConfig,
-} from "../types/settings";
-import { postMessage } from "../utils/vscode";
+} from "../../types/settings";
+import { postMessage } from "../../utils/vscode";
 
 // Helper function to create a request-response mechanism
 function invoke<T>(
@@ -118,7 +118,6 @@ export class ProfileManager {
       id: `profile_${Date.now()}`,
       name,
       description,
-      isDefault: false,
       providers: {},
       preferences: { ...DEFAULT_USER_PREFERENCES },
       createdAt: now,
@@ -133,7 +132,6 @@ export class ProfileManager {
       ...profile,
       id: `profile_${Date.now()}`,
       name: newName,
-      isDefault: false,
       createdAt: now,
       updatedAt: now,
     };

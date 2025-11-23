@@ -1,5 +1,5 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { profileManager } from "../services/profile-manager";
+import { profileManager } from "../services/webview/profile-manager";
 import { Profile, ProviderConfig, UserPreferences } from "../types/settings";
 import { SettingsContext, SettingsContextType } from "./settings-context-type";
 
@@ -229,12 +229,6 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
     async (profileId: string) => {
       try {
         setError(null);
-        const profileToDelete = availableProfiles.find(
-          (p) => p.id === profileId,
-        );
-        if (profileToDelete?.isDefault) {
-          throw new Error("Cannot delete default profile");
-        }
         await profileManager.deleteProfile(profileId);
         // 状态更新将由 'profilesUpdated' 消息触发
         console.log("[SettingsContext] Profile deletion requested:", profileId);

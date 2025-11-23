@@ -71,7 +71,6 @@ export interface Profile {
   id: string;
   name: string;
   description?: string;
-  isDefault: boolean;
   providers: Record<string, ProviderConfig>;
   preferences: UserPreferences;
   createdAt: Date;
