@@ -1,14 +1,14 @@
+import * as path from "path";
 import * as vscode from "vscode";
-import { BaseCommand } from "./base-command";
-import { SCMDetectorService } from "../services/scm-detector-service";
-import { getMessage, formatMessage } from "../utils/i18n";
+import { addSimilarCodeContext } from "../ai/utils/embedding-helper";
+import { SCMDetectorService } from "../services/core/scm-detector-service";
+import { validateAndGetModel } from "../utils/ai/model-validation";
+import { formatMessage, getMessage } from "../utils/i18n";
 import {
   notify,
   withProgress,
 } from "../utils/notification/notification-manager";
-import * as path from "path";
-import { validateAndGetModel } from "../utils/ai/model-validation";
-import { addSimilarCodeContext } from "../ai/utils/embedding-helper";
+import { BaseCommand } from "./base-command";
 
 /**
  * 代码审查命令类
@@ -50,7 +50,9 @@ export class ReviewCodeCommand extends BaseCommand {
           await notify.warn("no.changes.selected");
           return;
         }
-        this.logger.info(`Selected files for review: ${selectedFiles.join(", ")}`);
+        this.logger.info(
+          `Selected files for review: ${selectedFiles.join(", ")}`
+        );
 
         progress.report({
           increment: 5,
@@ -142,9 +144,8 @@ export class ReviewCodeCommand extends BaseCommand {
 
               await addSimilarCodeContext(requestParams);
 
-              const reviewResult = await aiProvider?.generateCodeReview?.(
-                requestParams
-              );
+              const reviewResult =
+                await aiProvider?.generateCodeReview?.(requestParams);
 
               if (reviewResult?.content) {
                 fileReviews.set(filePath, reviewResult.content);
@@ -160,7 +161,10 @@ export class ReviewCodeCommand extends BaseCommand {
               await notify.warn(
                 formatMessage("review.file.failed", [path.basename(filePath)])
               );
-              this.logger.logError(error as Error, `评审文件失败: ${path.basename(filePath)}`);
+              this.logger.logError(
+                error as Error,
+                `评审文件失败: ${path.basename(filePath)}`
+              );
               progress.report({
                 // Still report increment even if failed to keep progress accurate
                 increment: progressPerFile,

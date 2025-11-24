@@ -1,15 +1,14 @@
 import * as vscode from "vscode";
-import { ConfigurationManager } from "../config/configuration-manager";
 import { AIProviderFactory } from "../ai/ai-provider-factory";
-import { ISCMProvider } from "../scm/scm-provider";
-import { ModelPickerService } from "../services/model-picker-service";
-import { SCMDetectorService } from "../services/scm-detector-service";
-import { notify } from "../utils/notification/notification-manager";
-import { getMessage, formatMessage } from "../utils/i18n";
+import { AIModel, AIProvider } from "../ai/types";
+import { ConfigurationManager } from "../config/configuration-manager";
+import { ModelPickerService } from "../services/core/model-picker-service";
+import { SCMDetectorService } from "../services/core/scm-detector-service";
 import { validateAndGetModel } from "../utils/ai/model-validation";
-import { AIProvider, AIModel, AIProviders } from "../ai/types";
-import { stateManager } from "../utils/state/state-manager";
+import { getMessage } from "../utils/i18n";
 import { Logger } from "../utils/logger";
+import { notify } from "../utils/notification/notification-manager";
+import { stateManager } from "../utils/state/state-manager";
 
 /**
  * 基础命令类,提供通用的命令执行功能
@@ -33,7 +32,10 @@ export abstract class BaseCommand {
    * @returns 配置是否有效
    */
   protected async validateConfig(): Promise<boolean> {
-    if ((await ConfigurationManager.getInstance().validateConfiguration()) === false) {
+    if (
+      (await ConfigurationManager.getInstance().validateConfiguration()) ===
+      false
+    ) {
       await notify.error(getMessage("command.execution.failed"));
       return false;
     }
@@ -198,13 +200,9 @@ export abstract class BaseCommand {
     const result = await notify.info(
       "confirm.ai.provider.tos.message",
       undefined,
-      { 
-        modal: true, 
-        buttons: [
-          acceptAlways.title,
-          acceptWorkspace.title,
-          cancel.title
-        ]
+      {
+        modal: true,
+        buttons: [acceptAlways.title, acceptWorkspace.title, cancel.title],
       }
     );
 

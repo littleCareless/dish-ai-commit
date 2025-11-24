@@ -1,7 +1,7 @@
+import { SCMDetectorService } from "../../../services/core/scm-detector-service";
+import { getMessage } from "../../../utils/i18n";
 import { Logger } from "../../../utils/logger";
 import { notify } from "../../../utils/notification/notification-manager";
-import { getMessage } from "../../../utils/i18n";
-import { SCMDetectorService } from "../../../services/scm-detector-service";
 
 /**
  * 代码变更模式处理器
@@ -34,7 +34,7 @@ export class ChangesModeHandler {
 
     // 获取选中的文件
     let selectedFiles = SCMDetectorService.getSelectedFiles(resources);
-    
+
     // 如果没有明确选中的文件，获取所有变更
     if (!selectedFiles || selectedFiles.length === 0) {
       selectedFiles = undefined;
@@ -85,14 +85,18 @@ export class ChangesModeHandler {
         return undefined;
       }
 
-      this.logger.info(`AI generated branch name from changes: ${branchNameResult.content}`);
-      
+      this.logger.info(
+        `AI generated branch name from changes: ${branchNameResult.content}`
+      );
+
       return {
         branchName: branchNameResult.content,
         scmProvider: detectedScmProvider,
       };
     } catch (error) {
-      this.logger.error(`Failed to generate branch name from changes: ${error}`);
+      this.logger.error(
+        `Failed to generate branch name from changes: ${error}`
+      );
       await notify.error(getMessage("branch.name.generation.failed"));
       return undefined;
     }

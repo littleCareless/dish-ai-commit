@@ -1,8 +1,8 @@
-import * as vscode from 'vscode';
-import { BaseCommand } from './base-command';
-import { TokenStatsService } from '../services/token-stats-service';
-import { notify } from '../utils/notification/notification-manager';
-import { getMessage, formatMessage } from '../utils/i18n';
+import * as vscode from "vscode";
+import { TokenStatsService } from "../services/core/token-stats-service";
+import { formatMessage, getMessage } from "../utils/i18n";
+import { notify } from "../utils/notification/notification-manager";
+import { BaseCommand } from "./base-command";
 
 export class ShowTokenStatsCommand extends BaseCommand {
   constructor(context: vscode.ExtensionContext) {
@@ -13,9 +13,9 @@ export class ShowTokenStatsCommand extends BaseCommand {
     try {
       const tokenStatsService = TokenStatsService.getInstance();
       const totalTokens = tokenStatsService.getTotalTokens();
-      notify.info(formatMessage('token.stats.totalTokens', [totalTokens]));
+      notify.info(formatMessage("token.stats.totalTokens", [totalTokens]));
     } catch (error) {
-      this.handleError(error, getMessage('token.stats.showError'));
+      this.handleError(error, getMessage("token.stats.showError"));
     }
   }
 }
