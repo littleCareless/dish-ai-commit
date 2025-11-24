@@ -4,16 +4,11 @@ import {
   getPRSummarySystemPrompt,
   getPRSummaryUserPrompt,
 } from "../../prompt/pr-summary";
-import {
-  AIRequestParams,
-  AIResponse,
-  AIModel,
-  type AIProviders,
-} from "../types";
-import { AbstractAIProvider } from "./abstract-ai-provider";
-import { TokenStatsService } from "../../services/token-stats-service";
+import { TokenStatsService } from "../../services/core/token-stats-service";
 import { tokenizerService } from "../../utils/tokenizer";
+import { AIModel, AIRequestParams, AIResponse } from "../types";
 import { generateWithRetry, getSystemPrompt } from "../utils/generate-helper"; // Import getSystemPrompt
+import { AbstractAIProvider } from "./abstract-ai-provider";
 
 /**
  * OpenAI提供者配置项接口
@@ -83,7 +78,8 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       config.baseURL = this.config.baseURL;
       config.defaultHeaders = {
         "api-key": apiKey,
-        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
+        "User-Agent":
+          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
       };
     }
 
@@ -272,7 +268,7 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
               id: this.provider.id,
               name: this.provider.name,
             },
-          } as AIModel)
+          }) as AIModel
       );
     } catch (error) {
       console.warn("Failed to fetch models: ", this.config.providerName, error);
