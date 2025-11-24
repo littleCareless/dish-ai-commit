@@ -67,6 +67,18 @@ export const userPreferencesSchema = z.object({
 });
 export type UserPreferences = z.infer<typeof userPreferencesSchema>;
 
+// Zod Schema for Profile
+export const profileSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  description: z.string().optional(),
+  providers: z.record(z.string(), providerConfigSchema),
+  preferences: userPreferencesSchema,
+  createdAt: z.date().or(z.string().datetime()),
+  updatedAt: z.date().or(z.string().datetime()),
+  version: z.string(),
+});
+export type Profile = z.infer<typeof profileSchema>;
 
 // 扩展配置接口
 export interface ExtensionConfig {
@@ -82,8 +94,8 @@ export interface ExtensionConfig {
     syncEnabled: boolean;
   };
   ui: {
-    theme: 'light' | 'dark' | 'auto';
-    language: 'zh' | 'en';
+    theme: "light" | "dark" | "auto";
+    language: "zh" | "en";
     fontSize: number;
   };
 }
@@ -107,8 +119,8 @@ export interface ConfigValidationResult {
 
 // 设置变更事件
 export interface SettingsChangeEvent {
-  type: 'provider' | 'profile' | 'preferences' | 'feature';
-  action: 'create' | 'update' | 'delete' | 'activate';
+  type: "provider" | "profile" | "preferences" | "feature";
+  action: "create" | "update" | "delete" | "activate";
   target: string;
   timestamp: Date;
 }
@@ -119,13 +131,16 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   verbosity: 0,
   rateLimitSeconds: 5,
   consecutiveMistakeLimit: 3,
-  language: 'zh',
+  language: "zh",
   maxTokens: 4000,
   timeout: 30000,
   retryAttempts: 3,
 };
 
-export const DEFAULT_PROVIDER_CONFIG: Omit<ProviderConfig, 'id' | 'name' | 'type'> = {
+export const DEFAULT_PROVIDER_CONFIG: Omit<
+  ProviderConfig,
+  "id" | "name" | "type"
+> = {
   models: [],
   isActive: false,
   createdAt: new Date(),
@@ -133,8 +148,13 @@ export const DEFAULT_PROVIDER_CONFIG: Omit<ProviderConfig, 'id' | 'name' | 'type
 };
 
 // 工具函数类型
-export type ProviderValidator = (provider: ProviderConfig) => ConfigValidationResult;
+export type ProviderValidator = (
+  provider: ProviderConfig
+) => ConfigValidationResult;
 
 // 事件回调类型
-export type ProviderChangeCallback = (providerId: string, provider: ProviderConfig) => void;
+export type ProviderChangeCallback = (
+  providerId: string,
+  provider: ProviderConfig
+) => void;
 export type SettingsChangeCallback = (event: SettingsChangeEvent) => void;

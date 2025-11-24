@@ -1,33 +1,33 @@
 import * as path from "path";
 import Parser from "web-tree-sitter";
 import {
-  javascriptQuery,
-  typescriptQuery,
-  tsxQuery,
-  pythonQuery,
-  rustQuery,
-  goQuery,
   cppQuery,
   cQuery,
   csharpQuery,
-  rubyQuery,
-  javaQuery,
-  phpQuery,
-  htmlQuery,
-  swiftQuery,
-  kotlinQuery,
   cssQuery,
-  ocamlQuery,
-  solidityQuery,
-  tomlQuery,
-  vueQuery,
-  luaQuery,
-  systemrdlQuery,
-  tlaPlusQuery,
-  zigQuery,
-  embeddedTemplateQuery,
   elispQuery,
   elixirQuery,
+  embeddedTemplateQuery,
+  goQuery,
+  htmlQuery,
+  javaQuery,
+  javascriptQuery,
+  kotlinQuery,
+  luaQuery,
+  ocamlQuery,
+  phpQuery,
+  pythonQuery,
+  rubyQuery,
+  rustQuery,
+  solidityQuery,
+  swiftQuery,
+  systemrdlQuery,
+  tlaPlusQuery,
+  tomlQuery,
+  tsxQuery,
+  typescriptQuery,
+  vueQuery,
+  zigQuery,
 } from "./queries";
 
 export interface LanguageParser {
@@ -209,7 +209,7 @@ export async function loadRequiredLanguageParsers(
         query = language.query(elixirQuery);
         break;
       default:
-        throw new Error(`Unsupported language: ${ext}`);
+        continue;
     }
     const parser = new Parser();
     parser.setLanguage(language);
