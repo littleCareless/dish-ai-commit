@@ -694,6 +694,13 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
+    "@ai-sdk/azure": "^2.0.70",
+    "@ai-sdk/deepseek": "^1.0.28",
+    "@ai-sdk/google-vertex": "^3.0.68",
+    "@ai-sdk/groq": "^2.0.29",
+    "@ai-sdk/mistral": "^2.0.24",
+    "@ai-sdk/togetherai": "^1.0.28",
+    "@ai-sdk/xai": "^2.0.33",
     "@anthropic-ai/sdk": "^0.65.0",
     "@baiducloud/qianfan": "^0.2.3",
     "@google-cloud/aiplatform": "^5.7.0",
@@ -708,6 +715,7 @@
     "inversify": "^7.10.1",
     "node-notifier": "^10.0.1",
     "ollama": "^0.6.0",
+    "ollama-ai-provider-v2": "^1.5.4",
     "openai": "^5.23.1",
     "tiktoken": "^1.0.22",
     "tree-sitter-wasms": "^0.1.12",

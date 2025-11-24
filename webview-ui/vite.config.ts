@@ -129,7 +129,7 @@ export default defineConfig(({ mode }) => {
             }
             return "assets/[name][extname]";
           },
-          manualChunks: (id, { getModuleInfo }) => {
+          manualChunks: (id: string, { getModuleInfo }) => {
             // Consolidate all mermaid code and its direct large dependencies (like dagre)
             // into a single chunk. The 'channel.js' error often points to dagre.
             if (
@@ -145,14 +145,14 @@ export default defineConfig(({ mode }) => {
             // This is a more advanced check if simple path matching isn't enough.
             const moduleInfo = getModuleInfo(id);
             if (
-              moduleInfo?.importers.some((importer) =>
+              moduleInfo?.importers.some((importer: string) =>
                 importer.includes("node_modules/mermaid"),
               )
             ) {
               return "mermaid-bundle";
             }
             if (
-              moduleInfo?.dynamicImporters.some((importer) =>
+              moduleInfo?.dynamicImporters.some((importer: string) =>
                 importer.includes("node_modules/mermaid"),
               )
             ) {
