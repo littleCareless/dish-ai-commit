@@ -8,6 +8,7 @@ export const routes = {
   experimental: "/experimental",
   about: "/about",
   indexing: "/indexing",
+  i18nDebug: "/i18n-debug",
 } as const;
 
 // 路由类型
