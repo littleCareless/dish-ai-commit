@@ -8,15 +8,15 @@ import * as path from "path";
 import * as fs from "fs";
 import { promisify } from "util";
 import { exec } from "child_process";
-import { SvnUtilsHelper } from "./svn/helpers/svn-utils-helper";
-import { ImprovedPathUtils } from "./utils/improved-path-utils";
+import { SvnUtilsHelper } from "@/scm/svn/helpers/svn-utils-helper";
+import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils";
 import {
   IMultiRepositoryContextManager,
   RepositoryInfo,
   RepositoryContext,
   DetectionErrorType,
   StagedDetectionError,
-} from "./staged-detector-types";
+} from "@/scm/staged-detector-types";
 
 const execAsync = promisify(exec);
 const statAsync = promisify(fs.stat);

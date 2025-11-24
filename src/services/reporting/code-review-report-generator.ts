@@ -1,5 +1,5 @@
-import { CodeReviewIssue, CodeReviewResult } from "../../ai/types";
-import { getMessage } from "../../utils/i18n";
+import { CodeReviewIssue, CodeReviewResult } from "@/ai/types";
+import { getMessage } from "@/utils/i18n";
 
 /**
  * 代码审查报告生成器，将代码审查结果转换为格式化的 Markdown 文档

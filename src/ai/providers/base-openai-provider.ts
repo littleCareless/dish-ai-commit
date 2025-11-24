@@ -3,12 +3,12 @@ import { ChatCompletionMessageParam } from "openai/resources";
 import {
   getPRSummarySystemPrompt,
   getPRSummaryUserPrompt,
-} from "../../prompt/pr-summary";
-import { TokenStatsService } from "../../services/core/token-stats-service";
-import { tokenizerService } from "../../utils/tokenizer";
-import { AIModel, AIRequestParams, AIResponse } from "../types";
-import { generateWithRetry, getSystemPrompt } from "../utils/generate-helper"; // Import getSystemPrompt
-import { AbstractAIProvider } from "./abstract-ai-provider";
+} from "@/prompt/pr-summary";
+import { TokenStatsService } from "@/services/core/token-stats-service";
+import { tokenizerService } from "@/utils/tokenizer";
+import { AIModel, AIRequestParams, AIResponse } from "@/ai/types";
+import { generateWithRetry, getSystemPrompt } from "@/ai/utils/generate-helper"; // Import getSystemPrompt
+import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
 
 /**
  * OpenAI提供者配置项接口
@@ -122,7 +122,12 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
 
     if (usage.totalTokens) {
       const tokenStatsService = TokenStatsService.getInstance();
-      await tokenStatsService.addTokens(usage.totalTokens);
+      await tokenStatsService.addTokens(
+        usage.totalTokens,
+        (params.model && params.model.id) || this.config.defaultModel || "gpt-3.5-turbo",
+        this.provider.id,
+        params.feature || "unknown"
+      );
     }
 
     let jsonContent;
@@ -209,14 +214,19 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
 
         if (totalTokens > 0) {
           const tokenStatsService = TokenStatsService.getInstance();
-          await tokenStatsService.addTokens(totalTokens);
+          await tokenStatsService.addTokens(
+            totalTokens,
+            model.id,
+            this.provider.id,
+            params.feature || "unknown"
+          );
         }
       } catch (error) {
         this.handleContextLengthError(
           error,
           (params.model && params.model.id) ||
-            this.config.defaultModel ||
-            "gpt-3.5-turbo"
+          this.config.defaultModel ||
+          "gpt-3.5-turbo"
         );
       }
     };

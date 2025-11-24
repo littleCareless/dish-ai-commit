@@ -2,6 +2,10 @@ import * as vscode from "vscode";
 
 export interface PreferencesSettings {
     language: string;
+    commitTemperature: number;
+    reviewTemperature: number;
+    branchNameTemperature: number;
+    weeklyReportTemperature: number;
 }
 
 export class PreferencesSettingsManager {
@@ -10,14 +14,21 @@ export class PreferencesSettingsManager {
 
     private _settings: PreferencesSettings = {
         language: "Simplified Chinese",
+        commitTemperature: 0.3,
+        reviewTemperature: 0.6,
+        branchNameTemperature: 0.4,
+        weeklyReportTemperature: 0.3,
     };
 
     private constructor(private context: vscode.ExtensionContext) { }
 
     public static getInstance(
-        context: vscode.ExtensionContext
+        context?: vscode.ExtensionContext
     ): PreferencesSettingsManager {
         if (!PreferencesSettingsManager.instance) {
+            if (!context) {
+                throw new Error("PreferencesSettingsManager not initialized and no context provided");
+            }
             PreferencesSettingsManager.instance = new PreferencesSettingsManager(context);
         }
         return PreferencesSettingsManager.instance;

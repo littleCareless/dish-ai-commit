@@ -1,12 +1,12 @@
 import * as vscode from "vscode";
-import { AIProviderFactory } from "../../../../ai/ai-provider-factory";
+import { AIProviderFactory } from "@/ai/ai-provider-factory";
 import {
     EmbeddingService,
     EmbeddingServiceError,
-} from "../../../../core/indexing/embedding-service";
-import { EmbeddingServiceManager } from "../../../../core/indexing/embedding-service-manager";
-import { notify } from "../../../../utils/notification/notification-manager";
-import { IndexingSettingsManager } from "../../../settings/indexing-settings-manager";
+} from "@/core/indexing/embedding-service";
+import { EmbeddingServiceManager } from "@/core/indexing/embedding-service-manager";
+import { notify } from "@/utils/notification/notification-manager";
+import { IndexingSettingsManager } from "@/services/settings/indexing-settings-manager";
 
 export class IndexingMessageHandler {
     private _settingsManager: IndexingSettingsManager;

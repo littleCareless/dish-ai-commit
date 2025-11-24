@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { profileManager } from "../services/webview/profile-manager";
-import { Profile, ProviderConfig, UserPreferences } from "../types/settings";
+import { profileManager } from "@/services/webview/profile-manager";
+import { Profile, ProviderConfig, UserPreferences } from "@/types/settings";
 import { SettingsContext, SettingsContextType } from "./settings-context-type";
 
 // ==================== Provider 组件 ====================

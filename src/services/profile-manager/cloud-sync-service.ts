@@ -1,5 +1,5 @@
-import { ProviderProfileRepository } from "./provider-profile-repository";
-import { ProviderProfiles, ProviderSettingsWithId, isSecretStateKey } from "./types";
+import { ProviderProfileRepository } from "@/services/profile-manager/provider-profile-repository";
+import { ProviderProfiles, ProviderSettingsWithId, isSecretStateKey } from "@/services/profile-manager/types";
 import deepEqual from "fast-deep-equal";
 
 export interface SyncCloudProfilesResult {

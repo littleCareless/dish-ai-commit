@@ -1,15 +1,23 @@
-import { ConfigurationManager } from "../../config/configuration-manager";
+import { ConfigurationManager } from "@/config/configuration-manager";
 import {
   generateBranchNameSystemPrompt,
   generateBranchNameUserPrompt,
-} from "../../prompt/branch-name";
-import { getCodeReviewPrompt as getCodeReviewPrompts } from "../../prompt/code-review";
-import { generateCommitMessageSystemPrompt } from "../../prompt/generate-commit";
-import { generateFallbackCommitMessageSystemPrompt } from "../../prompt/generate-commit-fallback";
-import { loadCommitlintConfig } from "../../utils/commitlint";
-import { getMessage } from "../../utils/i18n";
-import { notify } from "../../utils/notification/notification-manager";
-import { AIRequestParams } from "../types";
+} from "@/prompt/branch-name";
+import { getCodeReviewPrompt as getCodeReviewPrompts } from "@/prompt/code-review";
+import {
+  generateCommitMessageSystemPrompt,
+  generateThinkingProcessPrompt,
+  generateTypeReferenceFromConfig,
+  getDefaultTypeReference,
+  getMergeCommitsSection,
+  getVCSExamples,
+} from "@/prompt/generate-commit";
+import { generateFallbackCommitMessageSystemPrompt } from "@/prompt/generate-commit-fallback";
+import { loadCommitlintConfig } from "@/utils/commitlint";
+import { getMessage } from "@/utils/i18n";
+import { notify } from "@/utils/notification/notification-manager";
+import { processPromptTemplate } from "@/utils/prompt-template";
+import { AIRequestParams } from "@/ai/types";
 
 /**
  * AI 生成过程中可能遇到的错误类型枚举
@@ -167,8 +175,7 @@ export async function* generateStreamWithRetry(
 
       // 达到最大重试次数或遇到不可重试的错误, 抛出异常
       throw new Error(
-        `Stream generation failed after ${retries} retries: ${
-          error.message || String(error)
+        `Stream generation failed after ${retries} retries: ${error.message || String(error)
         }`
       );
     }
@@ -263,7 +270,45 @@ export async function getSystemPrompt(
     const configuredPrompt = config.features?.commitMessage?.systemPrompt;
 
     if (configuredPrompt) {
-      return appendConstraints(configuredPrompt, params, directOutput);
+      const {
+        base: { language },
+        features: {
+          commitFormat: { enableMergeCommit, enableEmoji, enableBody = true },
+          commitMessage: { useRecentCommitsAsReference },
+        },
+      } = config;
+
+      // Calculate block variables
+      const typeReference = commitlintConfig
+        ? generateTypeReferenceFromConfig(commitlintConfig, enableEmoji)
+        : getDefaultTypeReference(enableEmoji);
+
+      const formatTemplate = getMergeCommitsSection(
+        enableMergeCommit,
+        enableEmoji,
+        enableBody
+      );
+
+      const examples = getVCSExamples(
+        params.scm === "svn" ? "svn" : "git",
+        enableMergeCommit,
+        enableEmoji,
+        enableBody
+      );
+
+      const thinkingProcess = generateThinkingProcessPrompt(
+        useRecentCommitsAsReference
+      );
+
+      // Process template variables
+      const processedPrompt = processPromptTemplate(configuredPrompt, {
+        language: params.language || config.base.language,
+        type_reference: typeReference,
+        format_template: formatTemplate,
+        examples: examples,
+        thinking_process: thinkingProcess,
+      });
+      return appendConstraints(processedPrompt, params, directOutput);
     }
 
     // 3. 根据 useFallback 标志选择使用默认提示词还是备用提示词

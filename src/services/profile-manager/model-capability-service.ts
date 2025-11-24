@@ -1,4 +1,4 @@
-import { ProviderSettingsWithId } from "./types";
+import { ProviderSettingsWithId } from "@/services/profile-manager/types";
 import { AIProviderFactory } from "@/ai/ai-provider-factory";
 
 import { AIModel } from "@/ai/types";

@@ -1,26 +1,26 @@
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { getCommitMessageTools } from "@/prompt/generate-commit";
+import { getWeeklyReportPrompt } from "@/prompt/weekly-report";
+import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
+import { formatMessage } from "@/utils/i18n/localization-manager";
+import { Logger } from "@/utils/logger";
 import {
+  AIModel,
   AIProvider,
   AIRequestParams,
   AIResponse,
-  AIModel,
-  LayeredCommitMessage,
   ContextLengthExceededError,
-} from "../types";
+  LayeredCommitMessage,
+} from "@/ai/types";
 import {
-  getSystemPrompt,
-  getCodeReviewPrompt,
+  extractModifiedFilePaths,
   getBranchNameSystemPrompt,
   getBranchNameUserPrompt,
-  getGlobalSummaryPrompt,
+  getCodeReviewPrompt,
   getFileDescriptionPrompt,
-  extractModifiedFilePaths,
-  generateWithRetry,
-} from "../utils/generate-helper";
-import { getWeeklyReportPrompt } from "../../prompt/weekly-report";
-import { getCommitMessageTools } from "../../prompt/generate-commit";
-import { formatMessage } from "../../utils/i18n/localization-manager";
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { Logger } from "../../utils/logger";
+  getGlobalSummaryPrompt,
+  getSystemPrompt
+} from "@/ai/utils/generate-helper";
 
 /**
  * AI提供者的抽象基类
@@ -50,8 +50,9 @@ export abstract class AbstractAIProvider implements AIProvider {
         ];
       }
 
+      const preferences = PreferencesSettingsManager.getInstance().getSettings();
       const result = await this.executeAIRequest(params, {
-        temperature: 0.3, // 提交信息推荐温度值 0.3
+        temperature: preferences.commitTemperature,
       });
       return result;
     } catch (error) {
@@ -84,8 +85,9 @@ export abstract class AbstractAIProvider implements AIProvider {
         ];
       }
 
+      const preferences = PreferencesSettingsManager.getInstance().getSettings();
       return this.executeAIStreamRequest(params, {
-        temperature: 0.3, // 提交信息推荐温度值 0.3
+        temperature: preferences.commitTemperature,
       });
     } catch (error) {
       // 错误现在由 executeStreamWithRetry 内部处理和抛出
@@ -121,8 +123,9 @@ export abstract class AbstractAIProvider implements AIProvider {
       const commitlintConfig = await loadCommitlintConfig(params.workspaceRoot);
       const tools = getCommitMessageTools(config, commitlintConfig);
 
+      const preferences = PreferencesSettingsManager.getInstance().getSettings();
       const result = await this.executeAIRequest(params, {
-        temperature: 0.3,
+        temperature: preferences.commitTemperature,
         tools: tools,
       });
 
@@ -177,9 +180,10 @@ export abstract class AbstractAIProvider implements AIProvider {
           { role: "user", content: params.diff },
         ];
       }
+      const preferences = PreferencesSettingsManager.getInstance().getSettings();
       const result = await this.executeAIRequest(params, {
         // parseAsJSON: true,
-        temperature: 0.6, // 代码审查推荐温度值 0.6，范围 0.5-0.6
+        temperature: preferences.reviewTemperature,
       });
 
       if (result.content) {
@@ -222,8 +226,9 @@ export abstract class AbstractAIProvider implements AIProvider {
           { role: "user", content: params.diff },
         ];
       }
+      const preferences = PreferencesSettingsManager.getInstance().getSettings();
       const result = await this.executeAIRequest(params, {
-        temperature: 0.4, // 分支命名推荐温度值 0.4
+        temperature: preferences.branchNameTemperature,
       });
       return result;
     } catch (error) {
@@ -280,7 +285,7 @@ export abstract class AbstractAIProvider implements AIProvider {
           ],
         },
         {
-          temperature: 0.3, // 周报生成推荐温度值 0.3
+          temperature: PreferencesSettingsManager.getInstance().getSettings().weeklyReportTemperature,
         }
       );
       return result;
@@ -320,7 +325,7 @@ export abstract class AbstractAIProvider implements AIProvider {
           ],
         },
         {
-          temperature: 0.3, // 与提交信息一致使用 0.3
+          temperature: PreferencesSettingsManager.getInstance().getSettings().commitTemperature,
         }
       );
       const summary = summaryResult.content;
@@ -353,7 +358,7 @@ export abstract class AbstractAIProvider implements AIProvider {
               ],
             },
             {
-              temperature: 0.3, // 文件描述也使用提交信息的温度值 0.3
+              temperature: PreferencesSettingsManager.getInstance().getSettings().commitTemperature,
             }
           );
 

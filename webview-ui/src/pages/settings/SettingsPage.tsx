@@ -11,12 +11,12 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Settings as SettingsIcon } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { AdvancedSettings } from "../../components/settings/AdvancedSettings";
-import { PreferencesSettings } from "../../components/settings/PreferencesSettings";
-import { ProfileEditDialog } from "../../components/settings/ProfileEditDialog";
-import { profileManager } from "../../services/webview/profile-manager";
-import { DEFAULT_USER_PREFERENCES, Profile } from "../../types/settings";
-import { showInformationMessage } from "../../utils/vscode";
+import { AdvancedSettings } from "@/components/settings/AdvancedSettings";
+import { PreferencesSettings } from "@/components/settings/PreferencesSettings";
+import { ProfileEditDialog } from "@/components/settings/ProfileEditDialog";
+import { profileManager } from "@/services/webview/profile-manager";
+import { DEFAULT_USER_PREFERENCES, Profile } from "@/types/settings";
+import { showInformationMessage } from "@/utils/vscode";
 import { FeaturesSettings } from "./FeaturesSettings";
 import { ProvidersSettings } from "./ProvidersSettings";
 

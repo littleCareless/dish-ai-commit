@@ -1,8 +1,8 @@
-import { ContextBlock } from "./types";
-import { TokenCalculator } from "./token-calculator";
-import { FORCE_RETAIN_BLOCKS, MIN_BLOCK_SIZE_FOR_TRUNCATION, TRUNCATION_RATIO } from "./constants";
-import { notify } from "../notification";
-import { formatMessage } from "../i18n";
+import { ContextBlock } from "@/utils/context-manager/types";
+import { TokenCalculator } from "@/utils/context-manager/token-calculator";
+import { FORCE_RETAIN_BLOCKS, MIN_BLOCK_SIZE_FOR_TRUNCATION, TRUNCATION_RATIO } from "@/utils/context-manager/constants";
+import { notify } from "@/utils/notification";
+import { formatMessage } from "@/utils/i18n";
 
 /**
  * 智能截断器

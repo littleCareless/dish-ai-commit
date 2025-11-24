@@ -4,7 +4,7 @@
 //   SelectOption,
 // } from "@/components/ui/select";
 // import React from "react";
-// import { ModelConfig } from "../../types/settings";
+// import { ModelConfig } from "@/types/settings";
 
 // interface ModelSelectProps {
 //   models: ModelConfig[];

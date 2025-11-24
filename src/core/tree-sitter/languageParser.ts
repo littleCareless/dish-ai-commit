@@ -28,7 +28,7 @@ import {
   typescriptQuery,
   vueQuery,
   zigQuery,
-} from "./queries";
+} from "@/core/tree-sitter/queries";
 
 export interface LanguageParser {
   [key: string]: {

@@ -1,5 +1,4 @@
-import { AIRequestParams } from "../ai/types";
-import { ExtensionConfiguration } from "../config/types";
+import { ExtensionConfiguration } from "@/config/types";
 
 interface LayeredCommitFileParams {
   config: ExtensionConfiguration["features"]["commitFormat"];

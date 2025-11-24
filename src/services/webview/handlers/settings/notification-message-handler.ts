@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
-import { NotificationSettingsManager } from "../../../../utils/notification/notification-settings-manager";
-import { SoundPlayerService } from "../../../../utils/notification/sound-player";
-import { systemNotifier } from "../../../../utils/notification/system-notification-service";
-import { TextToSpeechService } from "../../../../utils/notification/text-to-speech";
+import { NotificationSettingsManager } from "@/utils/notification/notification-settings-manager";
+import { SoundPlayerService } from "@/utils/notification/sound-player";
+import { systemNotifier } from "@/utils/notification/system-notification-service";
+import { TextToSpeechService } from "@/utils/notification/text-to-speech";
 
 export class NotificationMessageHandler {
     public async handle(message: any, webview: vscode.Webview): Promise<void> {

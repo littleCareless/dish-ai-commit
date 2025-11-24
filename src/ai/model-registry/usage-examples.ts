@@ -3,14 +3,14 @@
  * 展示如何使用增强的模型验证和获取功能
  */
 
-import { AIModel } from '../types';
+import { AIModel } from '@/ai/types';
 import { 
   getAccurateTokenLimits, 
   getEnhancedModelSpec, 
   validateModelInfo,
   validateMultipleModels,
   clearModelCache
-} from './index';
+} from '@/ai/model-registry/index';
 
 /**
  * 示例1: 基本的token限制获取（推荐用法）

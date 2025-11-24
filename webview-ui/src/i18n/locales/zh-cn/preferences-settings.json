@@ -1,5 +1,10 @@
 {
   "responseCreativity": "响应创造力",
+  "temperatureSettings": "温度设置",
+  "commitTemperature": "提交信息温度",
+  "reviewTemperature": "代码评审温度",
+  "branchNameTemperature": "分支命名温度",
+  "weeklyReportTemperature": "周报生成温度",
   "temperature": "温度: {{temperature}}",
   "temperatureDescription": "控制响应的随机性。较低的值会使响应更加专注和确定。",
   "temperatureLevels": {

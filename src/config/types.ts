@@ -6,11 +6,11 @@ import {
   type ConfigValueTypeBoolean,
   type ConfigValueTypeNumber,
   type ConfigValueTypeString,
-} from "./config-schema"
+} from "@/config/config-schema"
 import {
   PROVIDER_DEFINITIONS,
   getAllProviderIds,
-} from "./provider-definitions"
+} from "@/config/provider-definitions"
 
 /**
  * 从中心化的提供商定义生成 AI 提供商枚举对象

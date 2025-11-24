@@ -3,7 +3,7 @@
  * Contains categories: base, providers, and features
  * @const {Object}
  */
-import { getAllProviderDisplayNames } from "./provider-definitions"
+import { getAllProviderDisplayNames } from "@/config/provider-definitions"
 
 export const CONFIG_SCHEMA = {
   base: {
@@ -572,11 +572,11 @@ export {
   generateConfiguration,
   getAllConfigPaths,
   getCategoryConfigPaths
-} from "./utils/config-builder"
-export { generateConfigKeys } from "./utils/config-keys-generator"
+} from "@/config/utils/config-builder"
+export { generateConfigKeys } from "@/config/utils/config-keys-generator"
 export {
   generateConfigMetadata,
   type ConfigMetadataItem
-} from "./utils/config-metadata-generator"
-export { isConfigValue } from "./utils/config-validation"
+} from "@/config/utils/config-metadata-generator"
+export { isConfigValue } from "@/config/utils/config-validation"
 

@@ -1,6 +1,6 @@
 import { ExtensionContext } from "vscode";
-import { ProviderProfiles } from "./types";
-import { ProviderProfileRepository } from "./provider-profile-repository";
+import { ProviderProfiles } from "@/services/profile-manager/types";
+import { ProviderProfileRepository } from "@/services/profile-manager/provider-profile-repository";
 
 // Manually defining modes as it's part of the new architecture to be implemented.
 export type Mode = {

@@ -1,6 +1,6 @@
-import { CONFIG_SCHEMA } from "../config-schema";
-import type { ConfigObject } from "../config-schema";
-import { isConfigValue } from "./config-validation";
+import { CONFIG_SCHEMA } from "@/config/config-schema";
+import type { ConfigObject } from "@/config/config-schema";
+import { isConfigValue } from "@/config/utils/config-validation";
 
 /**
  * Generates configuration object from schema

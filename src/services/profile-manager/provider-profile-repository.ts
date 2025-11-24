@@ -1,12 +1,12 @@
 import { ExtensionContext } from "vscode";
 import { z, ZodError } from "zod";
-import { TelemetryService } from "../telemetry-service";
+import { TelemetryService } from "@/services/telemetry-service";
 import {
   ProviderProfiles,
   providerProfilesSchema,
   ProviderSettingsWithId,
   providerSettingsWithIdSchema,
-} from "./types";
+} from "@/services/profile-manager/types";
 
 export class ProviderProfileRepository {
   private static readonly SCOPE_PREFIX = "dish_config_";

@@ -1,18 +1,12 @@
 import * as vscode from "vscode";
-import { BaseCommand } from "./base-command";
-import { ConfigurationManager } from "../config/configuration-manager";
-import { AIProviderFactory } from "../ai/ai-provider-factory";
-import { SCMFactory } from "../scm/scm-provider";
-import { notify } from "../utils/notification";
-import { getMessage, formatMessage } from "../utils/i18n";
-import { ProgressHandler } from "../utils/notification/progress-handler";
 import {
-  AIRequestParams,
-  AIProvider,
-  AIModel,
-  AIProviders,
-  ModelNames,
-} from "../ai/types";
+  AIRequestParams
+} from "@/ai/types";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { formatMessage, getMessage } from "@/utils/i18n";
+import { notify } from "@/utils/notification";
+import { ProgressHandler } from "@/utils/notification/progress-handler";
+import { BaseCommand } from "@/commands/base-command";
 
 export class GeneratePRSummaryCommand extends BaseCommand {
   constructor(context: vscode.ExtensionContext) {
@@ -187,14 +181,12 @@ export class GeneratePRSummaryCommand extends BaseCommand {
             increment: 40,
             message: getMessage("analyzing.commits"),
           });
-          const requestParams: AIRequestParams = {
-            // 这里需要根据aiProvider.generatePRSummary的参数进行调整
-            // 目前AIRequestParams没有直接对应PR摘要的字段，可能需要扩展或复用现有字段
-            diff: "", // PR摘要通常不需要diff，而是commit列表
+          const params: AIRequestParams = {
+            diff: "", // PR summary uses commit messages, not diff
             model: selectedModel,
             additionalContext: commitMessages.join("\n"), // 将commit列表作为额外上下文
             language: configuration.base.language,
-            // 其他可能需要的参数，例如PR模板等
+            feature: "pr-summary",
           };
           // 确保 aiProvider.generatePRSummary 存在
           if (!aiProvider.generatePRSummary) {
@@ -208,7 +200,7 @@ export class GeneratePRSummaryCommand extends BaseCommand {
           }
 
           const prSummary = await aiProvider.generatePRSummary(
-            requestParams,
+            params,
             commitMessages
           );
 
@@ -223,9 +215,8 @@ export class GeneratePRSummaryCommand extends BaseCommand {
           if (prSummary && prSummary.content) {
             // 将生成的PR摘要显示给用户，例如在新的编辑器窗口中打开
             const document = await vscode.workspace.openTextDocument({
-              content: `# ${getMessage("pr.summary.title")}\n\n${
-                prSummary.content
-              }`,
+              content: `# ${getMessage("pr.summary.title")}\n\n${prSummary.content
+                }`,
               language: "markdown",
             });
             await vscode.window.showTextDocument(document);

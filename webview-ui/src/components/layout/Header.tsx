@@ -2,7 +2,7 @@ import { VSCodeButton } from "@vscode/webview-ui-toolkit/react";
 import { Menu, Moon, Sun, X } from "lucide-react";
 import React from "react";
 import { useLocation } from "react-router-dom";
-import { useTheme } from "../../hooks/useTheme";
+import { useTheme } from "@/hooks/useTheme";
 
 export const Header: React.FC = () => {
   const location = useLocation();

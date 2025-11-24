@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ProviderConfig } from "../../../types/settings";
+import { ProviderConfig } from "@/types/settings";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";

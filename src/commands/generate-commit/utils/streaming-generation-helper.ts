@@ -1,23 +1,23 @@
 import * as vscode from "vscode";
-import { ISCMProvider } from "../../../scm/scm-provider";
-import { AIProvider, AIModel } from "../../../ai/types";
-import { ContextManager, RequestTooLargeError } from "../../../utils/context-manager";
-import { getAccurateTokenLimits } from "../../../ai/model-registry";
-import { getSystemPrompt } from "../../../ai/utils/generate-helper";
-import { stateManager } from "../../../utils/state/state-manager";
-import { multiRepositoryContextManager } from "../../../scm/multi-repository-context-manager";
-import { stagedContentDetector } from "../../../scm/staged-content-detector";
-import { smartDiffSelector } from "../../../scm/smart-diff-selector";
-import { DiffTarget } from "../../../scm/staged-detector-types";
-import { ConfigurationManager } from "../../../config/configuration-manager";
-import { getMessage } from "../../../utils/i18n";
-import { notify } from "../../../utils/notification/notification-manager";
-import { showCommitSuccessNotification } from "../../../utils/notification/system-notification";
-import { CommitContextBuilder } from "../builders/context-builder";
-import { LayeredCommitHandler } from "../handlers/layered-commit-handler";
-import { StreamingHandler } from "../handlers/streaming-handler";
-import { FunctionCallingHandler } from "../handlers/function-calling-handler";
-import { Logger } from "../../../utils/logger";
+import { getAccurateTokenLimits } from "@/ai/model-registry";
+import { AIModel, AIProvider } from "@/ai/types";
+import { getSystemPrompt } from "@/ai/utils/generate-helper";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { multiRepositoryContextManager } from "@/scm/multi-repository-context-manager";
+import { ISCMProvider } from "@/scm/scm-provider";
+import { smartDiffSelector } from "@/scm/smart-diff-selector";
+import { stagedContentDetector } from "@/scm/staged-content-detector";
+import { DiffTarget } from "@/scm/staged-detector-types";
+import { ContextManager, RequestTooLargeError } from "@/utils/context-manager";
+import { getMessage } from "@/utils/i18n";
+import { Logger } from "@/utils/logger";
+import { notify } from "@/utils/notification/notification-manager";
+import { showCommitSuccessNotification } from "@/utils/notification/system-notification";
+import { stateManager } from "@/utils/state/state-manager";
+import { CommitContextBuilder } from "@/commands/generate-commit/builders/context-builder";
+import { FunctionCallingHandler } from "@/commands/generate-commit/handlers/function-calling-handler";
+import { LayeredCommitHandler } from "@/commands/generate-commit/handlers/layered-commit-handler";
+import { StreamingHandler } from "@/commands/generate-commit/handlers/streaming-handler";
 
 /**
  * 流式生成辅助类 - 遵循单一职责原则
@@ -56,12 +56,12 @@ export class StreamingGenerationHelper {
     }>
   ): Promise<void> {
     this.logger.info("Performing streaming generation...");
-    
+
     // 步骤1: 获取配置和diff内容
     const { configuration, diffContent } = await this.prepareConfigurationAndDiff(
       progress, scmProvider, selectedFiles, resources
     );
-    
+
     if (!diffContent) {
       return;
     }
@@ -73,7 +73,7 @@ export class StreamingGenerationHelper {
 
     // 步骤3: 准备提示词和上下文
     const { contextManager, requestParams } = await this.preparePromptAndContext(
-      modelConfig.selectedModel, scmProvider, diffContent, configuration, 
+      modelConfig.selectedModel, scmProvider, diffContent, configuration,
       selectedFiles, repositoryPath
     );
 
@@ -85,7 +85,7 @@ export class StreamingGenerationHelper {
     // 步骤5: 执行生成流程
     await this.executeGenerationFlow(
       modelConfig.aiProvider, requestParams, scmProvider, contextManager,
-      selectedFiles, modelConfig.selectedModel, token, progress, 
+      selectedFiles, modelConfig.selectedModel, token, progress,
       configuration, repositoryPath, modelConfig.provider
     );
   }
@@ -190,7 +190,7 @@ export class StreamingGenerationHelper {
     }>
   ): Promise<{ provider: string; model: string; aiProvider: AIProvider; selectedModel: AIModel }> {
     progress.report({ message: getMessage("progress.updating.model.config") });
-    
+
     const {
       provider: newProvider,
       model: newModel,
@@ -234,6 +234,7 @@ export class StreamingGenerationHelper {
       languages: configuration.base.language,
       diff: diffContent,
       additionalContext: "",
+      feature: "commit-generation",
     };
 
     const systemPrompt = await getSystemPrompt(tempParams);
@@ -330,7 +331,7 @@ export class StreamingGenerationHelper {
 
       if (useFunctionCalling) {
         await this.handleFunctionCallingGeneration(
-          aiProvider, requestParams, scmProvider, contextManager, 
+          aiProvider, requestParams, scmProvider, contextManager,
           token, progress, repositoryPath, newProvider
         );
       } else {

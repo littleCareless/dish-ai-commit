@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
-import { MessageType } from "../../../../types/messages";
-import { notify } from "../../../../utils/notification/notification-manager";
-import { PromptManagerService } from "../../../core/prompt-manager-service";
+import { MessageType } from "@/types/messages";
+import { notify } from "@/utils/notification/notification-manager";
+import { PromptManagerService } from "@/services/core/prompt-manager-service";
 
 export class PromptMessageHandler {
     private _promptManager: PromptManagerService;

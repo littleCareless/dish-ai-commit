@@ -1,12 +1,12 @@
 import * as vscode from "vscode";
 import * as path from "path";
 import * as fs from "fs";
-import { Logger } from "../../../utils/logger";
-import { SvnPathHelper } from "./svn-path-helper";
-import { ISvnProvider } from "../svn-provider-interface";
-import { SvnProvider } from "../svn-provider";
-import { SvnCommandProvider } from "../svn-command-provider";
-import { CliSvnProvider } from "../cli-svn-provider";
+import { Logger } from "@/utils/logger";
+import { SvnPathHelper } from "@/scm/svn/helpers/svn-path-helper";
+import { ISvnProvider } from "@/scm/svn/svn-provider-interface";
+import { SvnProvider } from "@/scm/svn/svn-provider";
+import { SvnCommandProvider } from "@/scm/svn/svn-command-provider";
+import { CliSvnProvider } from "@/scm/svn/cli-svn-provider";
 
 /**
  * SVN测试帮助类

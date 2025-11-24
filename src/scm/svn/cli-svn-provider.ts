@@ -1,12 +1,12 @@
 import { exec } from "child_process";
 import { promisify } from "util";
 import * as vscode from "vscode";
-import { ISvnProvider } from "./svn-provider-interface";
-import { getMessage } from "../../utils";
-import { DiffProcessor } from "../../utils/diff/diff-processor";
-import { notify } from "../../utils/notification/notification-manager";
-import { Logger } from "../../utils/logger";
-import { SvnPathHelper } from "./helpers/svn-path-helper";
+import { ISvnProvider } from "@/scm/svn/svn-provider-interface";
+import { getMessage } from "@/utils";
+import { DiffProcessor } from "@/utils/diff/diff-processor";
+import { notify } from "@/utils/notification/notification-manager";
+import { Logger } from "@/utils/logger";
+import { SvnPathHelper } from "@/scm/svn/helpers/svn-path-helper";
 
 const execAsync = promisify(exec);
 

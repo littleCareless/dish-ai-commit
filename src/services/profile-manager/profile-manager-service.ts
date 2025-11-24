@@ -1,10 +1,10 @@
 import * as vscode from "vscode";
-import { AIProviderFactory } from "../../ai/ai-provider-factory";
-import { ProviderConfig, ProviderType } from "../../types/settings";
-import { Logger } from "../../utils/logger";
-import { ProviderProfileRepository } from "./provider-profile-repository";
-import { ProviderStore } from "./provider-store";
-import { ProviderProfiles } from "./types";
+import { AIProviderFactory } from "@/ai/ai-provider-factory";
+import { ProviderConfig, ProviderType } from "@/types/settings";
+import { Logger } from "@/utils/logger";
+import { ProviderProfileRepository } from "@/services/profile-manager/provider-profile-repository";
+import { ProviderStore } from "@/services/profile-manager/provider-store";
+import { ProviderProfiles } from "@/services/profile-manager/types";
 
 export class ProfileManagerService {
   private static instance: ProfileManagerService;

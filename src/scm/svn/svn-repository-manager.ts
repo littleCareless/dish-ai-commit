@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
-import { SvnRepository } from "./svn-provider-interface";
-import { ImprovedPathUtils } from "../utils/improved-path-utils";
-import { Logger } from "../../utils/logger";
+import { SvnRepository } from "@/scm/svn/svn-provider-interface";
+import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils";
+import { Logger } from "@/utils/logger";
 
 /**
  * SVN仓库管理器

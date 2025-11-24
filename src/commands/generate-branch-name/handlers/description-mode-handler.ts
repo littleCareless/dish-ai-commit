@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
-import { Logger } from "../../../utils/logger";
-import { notify } from "../../../utils/notification/notification-manager";
-import { getMessage } from "../../../utils/i18n";
+import { Logger } from "@/utils/logger";
+import { notify } from "@/utils/notification/notification-manager";
+import { getMessage } from "@/utils/i18n";
 
 /**
  * 描述模式处理器

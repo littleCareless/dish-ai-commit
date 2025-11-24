@@ -3,14 +3,14 @@
  * 集成模型验证和智能匹配功能
  */
 
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { ModelSpec, findModelSpec, getDefaultTokenLimits } from "./model-specs";
-import { AIModel } from "../types";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { ModelSpec, findModelSpec, getDefaultTokenLimits } from "@/ai/model-registry/model-specs";
+import { AIModel } from "@/ai/types";
 import {
   ModelValidator,
   ModelValidationResult,
   ProxyDetectionResult,
-} from "./model-validator";
+} from "@/ai/model-registry/model-validator";
 
 export interface EnhancedModelSpec extends ModelSpec {
   /** 验证信息 */

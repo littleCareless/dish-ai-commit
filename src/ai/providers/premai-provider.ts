@@ -1,9 +1,9 @@
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { AIModel, type AIProviders, type PremAIModelID } from "../types";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { AIModel, type AIProviders, type PremAIModelID } from "@/ai/types";
 import {
   BaseOpenAIProvider,
   OpenAIProviderConfig,
-} from "./base-openai-provider";
+} from "@/ai/providers/base-openai-provider";
 
 /**
  * PremAI支持的AI模型配置列表

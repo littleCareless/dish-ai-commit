@@ -9,7 +9,7 @@ import React, { useCallback, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
-import { Profile } from "../../types/settings";
+import { Profile } from "@/types/settings";
 import {
   Form,
   FormControl,
@@ -17,7 +17,7 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "../ui/form";
+} from "@/components/ui/form";
 
 const profileFormSchema = z.object({
   selectedProfile: z.string(),
@@ -102,9 +102,7 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                 <FormControl>
                   <VSCodeDropdown
                     value={field.value}
-                    onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                      handleProfileChange(e.target.value)
-                    }
+                    onChange={(e: any) => handleProfileChange(e.target.value)}
                     className="w-full"
                   >
                     {profiles.map((profile) => (

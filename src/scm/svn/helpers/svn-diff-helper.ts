@@ -2,14 +2,14 @@ import * as childProcess from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import { promisify } from "util";
-import { Logger } from "../../../utils/logger";
-import { getMessage, formatMessage } from "../../../utils/i18n";
-import { notify } from "../../../utils/notification/notification-manager";
-import { DiffProcessor } from "../../../utils/diff/diff-processor";
-import { DiffSimplifier } from "../../../utils";
-import { ImprovedPathUtils } from "../../utils/improved-path-utils";
-import { ConfigurationManager } from "../../../config/configuration-manager";
-import { SvnPathHelper } from "./svn-path-helper";
+import { Logger } from "@/utils/logger";
+import { getMessage, formatMessage } from "@/utils/i18n";
+import { notify } from "@/utils/notification/notification-manager";
+import { DiffProcessor } from "@/utils/diff/diff-processor";
+import { DiffSimplifier } from "@/utils";
+import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { SvnPathHelper } from "@/scm/svn/helpers/svn-path-helper";
 
 const exec = promisify(childProcess.exec);
 

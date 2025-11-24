@@ -6,10 +6,10 @@ import React, {
   useState,
 } from "react";
 
-import { postMessage } from "../utils/vscode";
+import { postMessage } from "@/utils/vscode";
 // Assuming a utility for theme conversion exists, similar to the reference
 // If not, this can be replaced with a simple JSON.parse
-import { convertTextMateToHljs } from "../utils/textMateToHljs";
+import { convertTextMateToHljs } from "@/utils/textMateToHljs";
 
 // --- Type Definitions ---
 

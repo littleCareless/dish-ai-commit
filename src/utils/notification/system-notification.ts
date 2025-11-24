@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 import * as notifier from "node-notifier";
 import * as path from "path";
-import { getMessage } from "../i18n";
-import { NotificationSettingsManager } from "./notification-settings-manager";
+import { getMessage } from "@/utils/i18n";
+import { NotificationSettingsManager } from "@/utils/notification/notification-settings-manager";
 
 /**
  * Sends a system-level notification.

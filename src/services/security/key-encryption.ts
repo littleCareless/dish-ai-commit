@@ -6,7 +6,7 @@
 
 // import * as vscode from "vscode";
 // import * as crypto from "crypto";
-// import { Logger } from "../../utils/logger";
+// import { Logger } from "@/utils/logger";
 
 // /**
 //  * 密钥加密服务接口

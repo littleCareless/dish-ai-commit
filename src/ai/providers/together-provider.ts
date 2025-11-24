@@ -1,9 +1,9 @@
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { AIModel, type TogetherAIModelID } from "../types";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { AIModel, type TogetherAIModelID } from "@/ai/types";
 import {
   BaseOpenAIProvider,
   OpenAIProviderConfig,
-} from "./base-openai-provider";
+} from "@/ai/providers/base-openai-provider";
 
 const togetherModels: AIModel<"together", TogetherAIModelID>[] = [
   {

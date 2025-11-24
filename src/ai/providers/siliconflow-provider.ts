@@ -1,12 +1,12 @@
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { getMessage } from "../../utils/i18n";
-import { notify } from "../../utils/notification/notification-manager";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { getMessage } from "@/utils/i18n";
+import { notify } from "@/utils/notification/notification-manager";
 import {
   type AIModel,
   type AIProviders,
   type SiliconFlowModels,
-} from "../types";
-import { BaseOpenAIProvider } from "./base-openai-provider";
+} from "@/ai/types";
+import { BaseOpenAIProvider } from "@/ai/providers/base-openai-provider";
 
 /** 硅基流动服务提供者标识信息 */
 const provider = { id: "siliconflow", name: "SiliconFlow" } as const;

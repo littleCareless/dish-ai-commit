@@ -1,14 +1,14 @@
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { AIModel, AIRequestParams, type AIProviders } from "../types";
-import { AbstractAIProvider } from "./abstract-ai-provider";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
+import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
 import { VertexAI, Content, Part } from "@google-cloud/vertexai";
 import { GoogleAuthOptions } from "google-auth-library";
 import {
   getPRSummarySystemPrompt,
   getPRSummaryUserPrompt,
-} from "../../prompt/pr-summary";
-import { getSystemPrompt } from "../utils/generate-helper";
-import { ensureInitialized } from "../../utils";
+} from "@/prompt/pr-summary";
+import { getSystemPrompt } from "@/ai/utils/generate-helper";
+import { ensureInitialized } from "@/utils";
 
 /**
  * Vertex AI Provider Configuration Interface

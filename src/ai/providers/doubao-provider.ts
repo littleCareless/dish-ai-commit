@@ -1,6 +1,6 @@
-import { BaseOpenAIProvider } from "./base-openai-provider";
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { AIModel } from "../types";
+import { BaseOpenAIProvider } from "@/ai/providers/base-openai-provider";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { AIModel } from "@/ai/types";
 
 /**
  * 豆包AI支持的模型配置列表

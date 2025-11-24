@@ -146,7 +146,7 @@ const Button: React.FC<ButtonProps> = ({
       type={type}
       className={className}
       title={title}
-      ref={ref}
+      ref={ref as any}
       {...props}
     >
       {children}

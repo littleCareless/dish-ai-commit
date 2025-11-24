@@ -1,15 +1,15 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { ProfileForm } from "../../components/settings/ProfileForm";
-import { ProviderConfigForm } from "../../components/settings/ProviderConfigForm";
-import { providerRegistry } from "../../config/provider-registry";
-import { secureStorage } from "../../services/secure-storage";
+import { ProfileForm } from "@/components/settings/ProfileForm";
+import { ProviderConfigForm } from "@/components/settings/ProviderConfigForm";
+import { providerRegistry } from "@/config/provider-registry";
+import { secureStorage } from "@/services/secure-storage";
 import {
   ExtendedProviderConfig,
   ProviderMetadata,
-} from "../../types/provider-metadata";
-import { Profile, ProviderConfig } from "../../types/settings";
-import { getFieldDefaultValue } from "../../utils/validation-helpers";
+} from "@/types/provider-metadata";
+import { Profile, ProviderConfig } from "@/types/settings";
+import { getFieldDefaultValue } from "@/utils/validation-helpers";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -267,9 +267,7 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
           <div className="flex flex-col space-y-2">
             <VSCodeDropdown
               value={selectedProvider}
-              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                handleProviderChange(e.target.value)
-              }
+              onChange={(e: any) => handleProviderChange(e.target.value)}
             >
               {Object.values(ProviderRegistry).map(
                 (provider: ProviderMetadata) => (

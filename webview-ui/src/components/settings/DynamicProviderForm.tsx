@@ -9,8 +9,8 @@ import {
   FieldMetadata,
   FieldType,
   ValidationResult,
-} from "../../types/provider-metadata";
-import { validationEngine } from "../../utils/validation-engine";
+} from "@/types/provider-metadata";
+import { validationEngine } from "@/utils/validation-engine";
 
 // UI 组件导入
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -192,9 +192,7 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
           return (
             <VSCodeDropdown
               value={String(value)}
-              onChange={(e: { target: { value: string } }) =>
-                handleFieldChange(field, e.target.value)
-              }
+              onChange={(e: any) => handleFieldChange(field, e.target.value)}
               disabled={disabled || field.disabled}
             >
               {field.options?.map((option) => (
@@ -238,9 +236,7 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
           return (
             <VSCodeCheckbox
               checked={Boolean(value)}
-              onChange={(e: { target: { checked: boolean } }) =>
-                handleFieldChange(field, e.target.checked)
-              }
+              onChange={(e: any) => handleFieldChange(field, e.target.checked)}
               disabled={disabled || field.disabled}
             >
               {field.label}

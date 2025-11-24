@@ -11,5 +11,19 @@
   "reset": "重置",
   "noPromptSelected": "请从左侧选择一个提示词进行编辑，或新建一个提示词。",
   "deleteConfirm": "确定要删除提示词 \"{{key}}\" 吗？",
-  "renamePrompt": "为 \"{{oldKey}}\" 输入新的名称:"
+  "renamePrompt": "为 \"{{oldKey}}\" 输入新的名称:",
+  "availableVariables": "可用变量",
+  "variableHint": "点击变量以将其插入到提示词模板中。",
+  "variables": {
+    "language": "输出内容的目标语言",
+    "type_reference": "自动生成的提交类型表（遵循配置）",
+    "format_template": "自动生成的格式指南（遵循配置）",
+    "examples": "自动生成的示例（遵循配置和版本控制系统）",
+    "thinking_process": "自动生成的思维链步骤",
+    "filePath": "正在提交的文件路径",
+    "globalContext": "变更的全局上下文",
+    "otherFiles": "提交中的其他文件列表",
+    "startDate": "报告期间的开始日期",
+    "endDate": "报告期间的结束日期"
+  }
 }

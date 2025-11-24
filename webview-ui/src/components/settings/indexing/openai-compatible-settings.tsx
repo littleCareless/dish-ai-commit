@@ -1,15 +1,15 @@
 import React from "react";
 import { Control } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { IndexingFormValues } from "../../../pages/indexing-page";
+import { IndexingFormValues } from "@/pages/indexing-page";
 import {
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from "../../ui/form";
-import { Input } from "../../ui/input";
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 
 interface OpenAICompatibleSettingsProps {
   control: Control<IndexingFormValues>;

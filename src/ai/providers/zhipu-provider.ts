@@ -1,6 +1,6 @@
-import { BaseOpenAIProvider } from "./base-openai-provider";
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { AIModel, type AIProviders } from "../types";
+import { BaseOpenAIProvider } from "@/ai/providers/base-openai-provider";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { AIModel, type AIProviders } from "@/ai/types";
 
 /**
  * 智谱AI模型配置列表

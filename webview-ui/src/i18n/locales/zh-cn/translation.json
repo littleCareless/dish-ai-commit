@@ -14,6 +14,18 @@
     "indexing_description": "配置代码库索引",
     "about": "关于",
     "about_description": "了解应用信息",
+    "usage": "用量",
+    "usage_description": "监控 Token 用量",
     "language": "语言"
+  },
+  "openai": {
+    "fields": {
+      "apiKey": {
+        "validation": {
+          "required": "API Key 是必需的",
+          "pattern": "OpenAI API Key 应以 sk- 开头"
+        }
+      }
+    }
   }
 }

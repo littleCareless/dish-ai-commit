@@ -1,5 +1,5 @@
-import { Logger } from "../../utils/logger";
-import { getMessage } from "../../utils/i18n";
+import { Logger } from "@/utils/logger";
+import { getMessage } from "@/utils/i18n";
 
 /**
  * 错误类型枚举

@@ -1,4 +1,4 @@
-import { vscode } from '../../utils/vscode';
+import { vscode } from '@/utils/vscode';
 
 export interface CommitChatConfig {
   style: 'conventional' | 'descriptive' | 'emoji' | 'minimal';

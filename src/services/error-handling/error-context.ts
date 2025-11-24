@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
-import { Logger } from "../../utils/logger";
-import { ErrorContext } from "./error-translation";
+import { Logger } from "@/utils/logger";
+import { ErrorContext } from "@/services/error-handling/error-translation";
 
 /**
  * 用户操作历史记录

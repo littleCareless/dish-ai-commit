@@ -2,7 +2,7 @@ import { useContext } from "react";
 import {
   SettingsContext,
   SettingsContextType,
-} from "../contexts/settings-context-type";
+} from "@/contexts/settings-context-type";
 
 /**
  * useSettings Hook - 获取完整的设置 Context

@@ -1,14 +1,14 @@
 import * as vscode from "vscode";
-import { AIProviderFactory } from "../ai/ai-provider-factory";
-import { AIModel, AIProvider } from "../ai/types";
-import { ConfigurationManager } from "../config/configuration-manager";
-import { ModelPickerService } from "../services/core/model-picker-service";
-import { SCMDetectorService } from "../services/core/scm-detector-service";
-import { validateAndGetModel } from "../utils/ai/model-validation";
-import { getMessage } from "../utils/i18n";
-import { Logger } from "../utils/logger";
-import { notify } from "../utils/notification/notification-manager";
-import { stateManager } from "../utils/state/state-manager";
+import { AIProviderFactory } from "@/ai/ai-provider-factory";
+import { AIModel, AIProvider } from "@/ai/types";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { ModelPickerService } from "@/services/core/model-picker-service";
+import { SCMDetectorService } from "@/services/core/scm-detector-service";
+import { validateAndGetModel } from "@/utils/ai/model-validation";
+import { getMessage } from "@/utils/i18n";
+import { Logger } from "@/utils/logger";
+import { notify } from "@/utils/notification/notification-manager";
+import { stateManager } from "@/utils/state/state-manager";
 
 /**
  * 基础命令类,提供通用的命令执行功能

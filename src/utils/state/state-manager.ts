@@ -1,4 +1,4 @@
-import * as vscode from 'vscode';
+import * as vscode from "vscode";
 
 /**
  * Manages the state for the VSCode extension.
@@ -31,7 +31,7 @@ class StateManager {
    */
   public initialize(context: vscode.ExtensionContext): void {
     if (this._context) {
-      console.warn('StateManager is already initialized.');
+      console.warn("StateManager is already initialized.");
       return;
     }
     this._context = context;
@@ -39,7 +39,9 @@ class StateManager {
 
   private get context(): vscode.ExtensionContext {
     if (!this._context) {
-      throw new Error('StateManager not initialized. Call initialize(context) first.');
+      throw new Error(
+        "StateManager not initialized. Call initialize(context) first."
+      );
     }
     return this._context;
   }
@@ -192,7 +194,7 @@ class StateManager {
   public async deleteSecret(key: string): Promise<void> {
     return this.context.secrets.delete(key);
   }
-/**
+  /**
    * Retrieves the workspace configuration for a specific section.
    * @param section - The configuration section to retrieve.
    * @returns The workspace configuration.
@@ -206,66 +208,3 @@ class StateManager {
 
 // Export a singleton instance for easy use across the extension
 export const stateManager = StateManager.getInstance();
-
-/*
-// --- Example Usage (typically in your extension.ts activate function) ---
-
-import * as vscode from 'vscode';
-import { stateManager } from './path/to/StateManager'; // Adjust path as needed
-
-export function activate(context: vscode.ExtensionContext) {
-  // Initialize the StateManager
-  stateManager.initialize(context);
-
-  // --- Global State Example ---
-  // Set a global value
-  stateManager.setGlobal('userGreeting', 'Hello from My Extension!');
-
-  // Get a global value (with a default if not found)
-  const greeting = stateManager.getGlobal<string>('userGreeting', 'Default Greeting');
-  console.log('Global Greeting:', greeting);
-
-  // Delete a global value
-  // stateManager.deleteGlobal('userGreeting');
-
-
-  // --- Workspace State Example ---
-  // Set a workspace-specific value
-  stateManager.setWorkspace('currentProjectVersion', '1.0.2');
-
-  // Get a workspace value
-  const projectVersion = stateManager.getWorkspace<string>('currentProjectVersion');
-  if (projectVersion) {
-    console.log('Current Project Version:', projectVersion);
-  }
-
-  // Delete a workspace value
-  // stateManager.deleteWorkspace('currentProjectVersion');
-
-
-  // --- Secret Storage Example ---
-  async function manageSecrets() {
-    // Store a secret (e.g., an API key)
-    await stateManager.setSecret('myApiKey', 'verySecureKey123');
-    console.log('Secret stored.');
-
-    // Retrieve the secret
-    const apiKey = await stateManager.getSecret('myApiKey');
-    if (apiKey) {
-      console.log('Retrieved API Key:', apiKey);
-    } else {
-      console.log('API Key not found.');
-    }
-
-    // Delete the secret
-    // await stateManager.deleteSecret('myApiKey');
-    // console.log('Secret deleted.');
-  }
-
-  manageSecrets().catch(console.error);
-}
-
-export function deactivate() {
-  // Cleanup if needed
-}
-*/

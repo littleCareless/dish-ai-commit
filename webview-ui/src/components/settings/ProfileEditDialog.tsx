@@ -20,7 +20,7 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
-import { Profile } from "../../types/settings";
+import { DEFAULT_USER_PREFERENCES, Profile } from "@/types/settings";
 
 const createNewProfileId = (): string => {
   return `profile_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
@@ -88,16 +88,7 @@ export const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
         name: data.name,
         description: data.description || "",
         providers: profile?.providers || {},
-        preferences: profile?.preferences || {
-          temperature: 0.0,
-          verbosity: 0,
-          rateLimitSeconds: 5,
-          consecutiveMistakeLimit: 3,
-          language: "zh",
-          maxTokens: 4000,
-          timeout: 30000,
-          retryAttempts: 3,
-        },
+        preferences: profile?.preferences || DEFAULT_USER_PREFERENCES,
         createdAt: profile?.createdAt || now,
         updatedAt: now,
         version: profile?.version || "1.0.0",

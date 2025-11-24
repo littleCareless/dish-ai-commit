@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
-import { BaseCommand } from "./base-command";
-import { ConfigurationManager } from "../config/configuration-manager";
-import { notify } from "../utils/notification/notification-manager";
+import { BaseCommand } from "@/commands/base-command";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { notify } from "@/utils/notification/notification-manager";
 
 /**
  * 模型选择命令类

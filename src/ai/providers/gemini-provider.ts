@@ -1,13 +1,13 @@
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { AIModel, AIRequestParams, type AIProviders } from "../types";
-import { AbstractAIProvider } from "./abstract-ai-provider";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
+import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
 import { GoogleGenAI, Part, Content } from "@google/genai";
-import type { OpenAIProviderConfig } from "./base-openai-provider";
+import type { OpenAIProviderConfig } from "@/ai/providers/base-openai-provider";
 import {
   getPRSummarySystemPrompt,
   getPRSummaryUserPrompt,
-} from "../../prompt/pr-summary";
-import { getSystemPrompt } from "../utils/generate-helper"; // Import getSystemPrompt
+} from "@/prompt/pr-summary";
+import { getSystemPrompt } from "@/ai/utils/generate-helper"; // Import getSystemPrompt
 
 /**
  * Gemini支持的AI模型配置列表

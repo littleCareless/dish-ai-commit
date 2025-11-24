@@ -1,6 +1,6 @@
-import { BaseOpenAIProvider } from "./base-openai-provider";
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { AIModel } from "../types";
+import { BaseOpenAIProvider } from "@/ai/providers/base-openai-provider";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { AIModel } from "@/ai/types";
 
 /**
  * 阿里云DashScope通义千问模型配置列表

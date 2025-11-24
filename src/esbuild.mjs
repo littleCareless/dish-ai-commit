@@ -52,7 +52,7 @@ async function main() {
 							["src/license", "LICENSE", { optional: true }],
 							["SECURITY.md", "SECURITY.md", { optional: true }],
 							["webview-ui-dist", "webview-ui-dist"],
-							["src/prompt", "dist/prompt"],
+							["src/out/prompt", "dist/prompt"],
 						],
 						srcDir,
 						buildDir,
@@ -94,7 +94,7 @@ async function main() {
 					} else {
 						console.log("[esbuild] Build failed with errors, skipping WASM files copy.")
 					}
-					
+
 					console.log("[esbuild-problem-matcher#onEnd]")
 				})
 			},

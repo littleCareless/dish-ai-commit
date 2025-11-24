@@ -1,4 +1,4 @@
-import { DiffChunk } from "./types";
+import { DiffChunk } from "@/utils/diff/types";
 
 export class DiffSplitter {
   /**

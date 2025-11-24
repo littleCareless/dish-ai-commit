@@ -16,7 +16,7 @@ import {
   Zap,
 } from "lucide-react";
 import React from "react";
-import { ProviderFeatures as ProviderFeaturesType } from "../../types/provider-metadata";
+import { ProviderFeatures as ProviderFeaturesType } from "@/types/provider-metadata";
 
 interface ProviderFeaturesProps {
   features: ProviderFeaturesType;

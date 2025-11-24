@@ -1,13 +1,14 @@
 import * as vscode from "vscode";
-import { EmbeddingService } from "../../../core/indexing/embedding-service";
-import { MessageType } from "../../../types/messages";
-import { ConnectionMessageHandler } from "./settings/connection-message-handler";
-import { FeaturesMessageHandler } from "./settings/features-message-handler";
-import { IndexingMessageHandler } from "./settings/indexing-message-handler";
-import { NotificationMessageHandler } from "./settings/notification-message-handler";
-import { ProfileMessageHandler } from "./settings/profile-message-handler";
-import { PromptMessageHandler } from "./settings/prompt-message-handler";
-import { SystemMessageHandler } from "./settings/system-message-handler";
+import { EmbeddingService } from "@/core/indexing/embedding-service";
+import { MessageType } from "@/types/messages";
+import { ConnectionMessageHandler } from "@/services/webview/handlers/settings/connection-message-handler";
+import { FeaturesMessageHandler } from "@/services/webview/handlers/settings/features-message-handler";
+import { IndexingMessageHandler } from "@/services/webview/handlers/settings/indexing-message-handler";
+import { NotificationMessageHandler } from "@/services/webview/handlers/settings/notification-message-handler";
+import { ProfileMessageHandler } from "@/services/webview/handlers/settings/profile-message-handler";
+import { PromptMessageHandler } from "@/services/webview/handlers/settings/prompt-message-handler";
+import { SystemMessageHandler } from "@/services/webview/handlers/settings/system-message-handler";
+import { UsageMessageHandler } from "@/services/webview/handlers/settings/usage-message-handler";
 
 export class SettingsViewMessageHandler {
   private readonly _extensionId: string;
@@ -20,6 +21,7 @@ export class SettingsViewMessageHandler {
   private _connectionHandler: ConnectionMessageHandler;
   private _systemHandler: SystemMessageHandler;
   private _featuresHandler: FeaturesMessageHandler;
+  private _usageHandler: UsageMessageHandler;
 
   constructor(
     extensionId: string,
@@ -37,6 +39,7 @@ export class SettingsViewMessageHandler {
     this._connectionHandler = new ConnectionMessageHandler(_extensionContext);
     this._systemHandler = new SystemMessageHandler(_extensionContext);
     this._featuresHandler = new FeaturesMessageHandler(_extensionContext);
+    this._usageHandler = new UsageMessageHandler(_extensionContext);
   }
 
   public async handleMessage(
@@ -120,6 +123,12 @@ export class SettingsViewMessageHandler {
       case "loadFeaturesSettings":
       case "saveFeaturesSettings":
         await this._featuresHandler.handle(message, webview);
+        break;
+
+      // Usage
+      case "getUsageStats":
+      case "resetUsageStats":
+        await this._usageHandler.handle(message, webview);
         break;
 
       default:

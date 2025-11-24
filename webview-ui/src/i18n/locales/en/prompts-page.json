@@ -11,5 +11,19 @@
   "reset": "Reset",
   "noPromptSelected": "Please select a prompt from the left to edit, or create a new one.",
   "deleteConfirm": "Are you sure you want to delete the prompt \"{{key}}\"?",
-  "renamePrompt": "Enter a new name for \"{{oldKey}}\":"
+  "renamePrompt": "Enter a new name for \"{{oldKey}}\":",
+  "availableVariables": "Available Variables",
+  "variableHint": "Click on a variable to insert it into your prompt template.",
+  "variables": {
+    "language": "Target language for the output",
+    "type_reference": "Auto-generated commit type table (respects config)",
+    "format_template": "Auto-generated format guide (respects config)",
+    "examples": "Auto-generated examples (respects config & VCS)",
+    "thinking_process": "Auto-generated Chain-of-Thought steps",
+    "filePath": "Path of the file being committed",
+    "globalContext": "Global context of the changes",
+    "otherFiles": "List of other files in the commit",
+    "startDate": "Start date of the report period",
+    "endDate": "End date of the report period"
+  }
 }

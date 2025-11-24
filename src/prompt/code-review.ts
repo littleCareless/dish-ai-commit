@@ -1,14 +1,14 @@
 import * as vscode from "vscode";
-import { ExtensionConfiguration } from "../config/types";
+import { ExtensionConfiguration } from "@/config/types";
 
 interface CodeReviewPromptParams {
-  config: ExtensionConfiguration;
-  languageSpecific?: boolean; // whether language-specific code review is needed
+   config: ExtensionConfiguration;
+   languageSpecific?: boolean; // whether language-specific code review is needed
 }
 
 // Generate code quality review section
 function getQualityReviewSection() {
-  return `## Code Quality Review Dimensions
+   return `## Code Quality Review Dimensions
 
 | Dimension | Description | Checkpoints |
 | --- | --- | --- |
@@ -22,7 +22,7 @@ function getQualityReviewSection() {
 
 // Generate language-specific review rules
 function getLanguageSpecificRules() {
-  return `## Language-Specific Review Rules
+   return `## Language-Specific Review Rules
 
 | Language | Reference Standards | Special Focus Areas |
 | --- | --- | --- |
@@ -40,7 +40,7 @@ function getLanguageSpecificRules() {
 
 // Generate output format section
 function getOutputFormatSection() {
-  return `## Output Format
+   return `## Output Format
 
 Your code review report must strictly follow this format:
 
@@ -81,7 +81,7 @@ Your code review report must strictly follow this format:
 
 // Generate examples section
 function getExamplesSection() {
-  return `## Examples
+   return `## Examples
 
 ### Example 1: Python Backend Service Code Review
 
@@ -204,7 +204,7 @@ function getExamplesSection() {
 
 // Generate workflow section
 function getWorkflowSection() {
-  return `## Code Review Workflow
+   return `## Code Review Workflow
 
 1. **Syntax-Level Analysis**
    - Static syntax checking
@@ -239,14 +239,14 @@ function getWorkflowSection() {
 
 // Generate main prompt function
 export function generateCodeReviewSystemPrompt({
-  config,
-  languageSpecific = true,
+   config,
+   languageSpecific = true,
 }: CodeReviewPromptParams) {
-  const {
-    base: { language },
-  } = config;
+   const {
+      base: { language },
+   } = config;
 
-  return `# Full-Stack Code Quality Review Expert
+   return `# Full-Stack Code Quality Review Expert
 
 ## Role and Responsibilities
 
@@ -314,29 +314,29 @@ Please provide the code changes for review, and I will conduct a comprehensive a
 }
 
 export function getCodeReviewPrompt(): string {
-  const config = vscode.workspace.getConfiguration("dish-ai-commit");
-  const customPrompt = config.get<string>("features.codeReview.systemPrompt");
+   const config = vscode.workspace.getConfiguration("dish-ai-commit");
+   const customPrompt = config.get<string>("features.codeReview.systemPrompt");
 
-  // If there's a custom prompt, use it
-  if (customPrompt) {
-    return customPrompt;
-  }
+   // If there's a custom prompt, use it
+   if (customPrompt) {
+      return customPrompt;
+   }
 
-  // Get current extension configuration
-  const baseLanguage = config.get<string>("base.language") || "English";
+   // Get current extension configuration
+   const baseLanguage = config.get<string>("base.language") || "English";
 
-  // Create configuration object with actual user settings
-  const extensionConfig = {
-    base: {
-      language: baseLanguage,
-    },
-  } as ExtensionConfiguration;
+   // Create configuration object with actual user settings
+   const extensionConfig = {
+      base: {
+         language: baseLanguage,
+      },
+   } as ExtensionConfiguration;
 
-  const languageSpecific =
-    config.get<boolean>("features.codeReview.languageSpecific") !== false;
+   const languageSpecific =
+      config.get<boolean>("features.codeReview.languageSpecific") !== false;
 
-  return generateCodeReviewSystemPrompt({
-    config: extensionConfig,
-    languageSpecific,
-  });
+   return generateCodeReviewSystemPrompt({
+      config: extensionConfig,
+      languageSpecific,
+   });
 }

@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { FeaturesSettingsManager } from "../../../settings/features-settings-manager";
+import { FeaturesSettingsManager } from "@/services/settings/features-settings-manager";
 
 export class FeaturesMessageHandler {
     private _settingsManager: FeaturesSettingsManager;

@@ -1,4 +1,4 @@
-import type { ConfigValue } from "../config-schema";
+import type { ConfigValue } from "@/config/config-schema";
 
 /**
  * Type guard for configuration values

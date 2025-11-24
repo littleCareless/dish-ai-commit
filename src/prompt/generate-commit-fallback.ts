@@ -1,4 +1,4 @@
-import { ExtensionConfiguration } from "../config/types";
+import { ExtensionConfiguration } from "@/config/types";
 
 interface SystemPromptParams {
   config: ExtensionConfiguration;
@@ -19,10 +19,9 @@ export function generateFallbackCommitMessageSystemPrompt({
   const steps = [
     "Analyze the CODE CHANGES thoroughly to understand what's been modified.",
     "Use the ORIGINAL CODE to understand the context of the CODE CHANGES. Use the line numbers to map the CODE CHANGES to the ORIGINAL CODE.",
-    `Identify the purpose of the changes to answer the *why* for the commit messages${
-      useRecentCommitsAsReference
-        ? ", also considering the optionally provided RECENT USER COMMITS"
-        : ""
+    `Identify the purpose of the changes to answer the *why* for the commit messages${useRecentCommitsAsReference
+      ? ", also considering the optionally provided RECENT USER COMMITS"
+      : ""
     }.`,
   ];
 

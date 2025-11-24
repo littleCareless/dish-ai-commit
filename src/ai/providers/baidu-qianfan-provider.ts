@@ -1,18 +1,18 @@
-import { ConfigurationManager } from "../../config/configuration-manager";
+import { ConfigurationManager } from "@/config/configuration-manager";
 import {
   AIModel,
   AIRequestParams,
   type AIProviders,
   AIMessage,
-} from "../types";
-import { AbstractAIProvider } from "./abstract-ai-provider";
+} from "@/ai/types";
+import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
 import Qianfan from "@baiducloud/qianfan";
-import type { OpenAIProviderConfig } from "./base-openai-provider";
+import type { OpenAIProviderConfig } from "@/ai/providers/base-openai-provider";
 import {
   getPRSummarySystemPrompt,
   getPRSummaryUserPrompt,
-} from "../../prompt/pr-summary";
-import { getSystemPrompt } from "../utils/generate-helper";
+} from "@/prompt/pr-summary";
+import { getSystemPrompt } from "@/ai/utils/generate-helper";
 
 /**
  * Baidu Qianfan 支持的AI模型配置列表

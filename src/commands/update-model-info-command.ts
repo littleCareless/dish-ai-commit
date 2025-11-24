@@ -4,14 +4,14 @@
  */
 
 import * as vscode from "vscode";
-import { BaseCommand } from "./base-command";
+import { BaseCommand } from "@/commands/base-command";
 import {
   ModelUpdateService,
   checkModelUpdates,
-} from "../ai/model-registry/model-update-service";
-import { notify } from "../utils/notification/notification-manager";
-import { getMessage, formatMessage } from "../utils/i18n";
-import { ProgressHandler } from "../utils/notification/progress-handler";
+} from "@/ai/model-registry/model-update-service";
+import { notify } from "@/utils/notification/notification-manager";
+import { getMessage, formatMessage } from "@/utils/i18n";
+import { ProgressHandler } from "@/utils/notification/progress-handler";
 
 /**
  * 更新模型信息命令类

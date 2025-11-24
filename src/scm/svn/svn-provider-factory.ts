@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
-import { Logger } from "../../utils/logger";
-import { ISvnProvider } from "./svn-provider-interface";
-import { SvnProvider } from "./svn-provider";
-import { SvnCommandProvider } from "./svn-command-provider";
-import { CliSvnProvider } from "./cli-svn-provider";
+import { Logger } from "@/utils/logger";
+import { ISvnProvider } from "@/scm/svn/svn-provider-interface";
+import { SvnProvider } from "@/scm/svn/svn-provider";
+import { SvnCommandProvider } from "@/scm/svn/svn-command-provider";
+import { CliSvnProvider } from "@/scm/svn/cli-svn-provider";
 
 /**
  * SVN提供者工厂类

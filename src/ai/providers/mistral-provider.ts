@@ -1,14 +1,14 @@
 import { Mistral } from "@mistralai/mistralai";
 import * as components from "@mistralai/mistralai/models/components";
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { AIModel, AIRequestParams, type AIProviders } from "../types";
-import { AbstractAIProvider } from "./abstract-ai-provider";
-import type { OpenAIProviderConfig } from "./base-openai-provider";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
+import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
+import type { OpenAIProviderConfig } from "@/ai/providers/base-openai-provider";
 import {
   getPRSummarySystemPrompt,
   getPRSummaryUserPrompt,
-} from "../../prompt/pr-summary";
-import { getSystemPrompt } from "../utils/generate-helper";
+} from "@/prompt/pr-summary";
+import { getSystemPrompt } from "@/ai/utils/generate-helper";
 
 /**
  * MistralAI支持的AI模型配置列表

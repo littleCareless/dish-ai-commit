@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
-import { TokenStatsService } from "../services/core/token-stats-service";
-import { formatMessage, getMessage } from "../utils/i18n";
-import { notify } from "../utils/notification/notification-manager";
-import { BaseCommand } from "./base-command";
+import { TokenStatsService } from "@/services/core/token-stats-service";
+import { formatMessage, getMessage } from "@/utils/i18n";
+import { notify } from "@/utils/notification/notification-manager";
+import { BaseCommand } from "@/commands/base-command";
 
 export class ShowTokenStatsCommand extends BaseCommand {
   constructor(context: vscode.ExtensionContext) {

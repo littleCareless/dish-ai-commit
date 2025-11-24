@@ -3,26 +3,26 @@ import {
   AIMessage,
   AIRequestParams,
   ContextLengthExceededError,
-} from "../ai/types";
-import { AbstractAIProvider } from "../ai/providers/abstract-ai-provider";
-import { notify } from "./notification";
+} from "@/ai/types";
+import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
+import { notify } from "@/utils/notification";
 
 // 导入模块化组件
 import {
   ContextBlock,
   TruncationStrategy,
   RequestTooLargeError,
-} from "./context-manager/types";
+} from "@/utils/context-manager/types";
 import {
   FORCE_RETAIN_BLOCKS,
   DEFAULT_TOKEN_RESERVE,
-} from "./context-manager/constants";
-import { TokenCalculator } from "./context-manager/token-calculator";
-import { BlockProcessor } from "./context-manager/block-processor";
-import { ContentTruncator } from "./context-manager/content-truncator";
-import { ContentBuilder } from "./context-manager/content-builder";
-import { SmartTruncator } from "./context-manager/smart-truncator";
-import { ContextLogger } from "./context-manager/context-logger";
+} from "@/utils/context-manager/constants";
+import { TokenCalculator } from "@/utils/context-manager/token-calculator";
+import { BlockProcessor } from "@/utils/context-manager/block-processor";
+import { ContentTruncator } from "@/utils/context-manager/content-truncator";
+import { ContentBuilder } from "@/utils/context-manager/content-builder";
+import { SmartTruncator } from "@/utils/context-manager/smart-truncator";
+import { ContextLogger } from "@/utils/context-manager/context-logger";
 
 // 重新导出类型和枚举以保持向后兼容
 export { ContextBlock, TruncationStrategy, RequestTooLargeError };

@@ -1,12 +1,12 @@
 import { promisify } from "util";
 import * as childProcess from "child_process";
-import { Logger } from "../../../utils/logger";
-import { DiffProcessor } from "../../../utils/diff/diff-processor";
-import { ImprovedPathUtils } from "../../utils/improved-path-utils";
-import { formatMessage } from "../../../utils/i18n";
-import { notify } from "../../../utils/notification/notification-manager";
-import { ConfigurationManager } from "../../../config/configuration-manager";
-import { GitRepository } from "./git-repository-helper";
+import { Logger } from "@/utils/logger";
+import { DiffProcessor } from "@/utils/diff/diff-processor";
+import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils";
+import { formatMessage } from "@/utils/i18n";
+import { notify } from "@/utils/notification/notification-manager";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { GitRepository } from "@/scm/git/helpers/git-repository-helper";
 
 const exec = promisify(childProcess.exec);
 

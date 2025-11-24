@@ -3,7 +3,7 @@
  * 统一处理提供商配置的验证逻辑，确保按钮禁用状态的一致性
  */
 
-import { FieldMetadata, ProviderMetadata } from "../types/provider-metadata";
+import { FieldMetadata, ProviderMetadata } from "@/types/provider-metadata";
 
 /**
  * 检查字段是否有值（考虑空字符串和空白字符）

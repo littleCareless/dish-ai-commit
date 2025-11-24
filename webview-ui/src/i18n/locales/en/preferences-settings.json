@@ -1,5 +1,10 @@
 {
   "responseCreativity": "Response Creativity",
+  "temperatureSettings": "Temperature Settings",
+  "commitTemperature": "Commit Message Temperature",
+  "reviewTemperature": "Code Review Temperature",
+  "branchNameTemperature": "Branch Name Temperature",
+  "weeklyReportTemperature": "Weekly Report Temperature",
   "temperature": "Temperature: {{temperature}}",
   "temperatureDescription": "Controls randomness in responses. Lower values make responses more focused and deterministic.",
   "temperatureLevels": {

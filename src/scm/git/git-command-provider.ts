@@ -1,12 +1,12 @@
 import * as vscode from "vscode";
 import { promisify } from "util";
 import * as childProcess from "child_process";
-import { IGitProvider } from "./git-provider-interface";
-import { Logger } from "../../utils/logger";
-import { formatMessage } from "../../utils/i18n";
-import { notify } from "../../utils/notification/notification-manager";
-import { GitDiffHelper } from "./helpers/git-diff-helper";
-import { GitLogHelper } from "./helpers/git-log-helper";
+import { IGitProvider } from "@/scm/git/git-provider-interface";
+import { Logger } from "@/utils/logger";
+import { formatMessage } from "@/utils/i18n";
+import { notify } from "@/utils/notification/notification-manager";
+import { GitDiffHelper } from "@/scm/git/helpers/git-diff-helper";
+import { GitLogHelper } from "@/scm/git/helpers/git-log-helper";
 
 const exec = promisify(childProcess.exec);
 

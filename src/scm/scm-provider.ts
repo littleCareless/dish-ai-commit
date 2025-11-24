@@ -2,9 +2,9 @@ import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
 import { exec } from "child_process";
-import { GitProvider } from "./git-provider";
-import { SvnProvider } from "./svn-provider";
-import { ImprovedPathUtils } from "./utils/improved-path-utils";
+import { GitProvider } from "@/scm/git-provider";
+import { SvnProvider } from "@/scm/svn-provider";
+import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils";
 
 /**
  * 最近提交信息

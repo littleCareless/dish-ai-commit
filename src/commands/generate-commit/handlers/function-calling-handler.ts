@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
-import { ISCMProvider } from "../../../scm/scm-provider";
-import { AIProvider, AIRequestParams, AIMessage } from "../../../ai/types";
-import { filterCodeBlockMarkers } from "../utils/commit-formatter";
-import { getMessage } from "../../../utils/i18n";
-import { Logger } from "../../../utils/logger";
+import { ISCMProvider } from "@/scm/scm-provider";
+import { AIProvider, AIRequestParams, AIMessage } from "@/ai/types";
+import { filterCodeBlockMarkers } from "@/commands/generate-commit/utils/commit-formatter";
+import { getMessage } from "@/utils/i18n";
+import { Logger } from "@/utils/logger";
 
 /**
  * 函数调用处理器类，负责处理函数调用模式的提交信息生成

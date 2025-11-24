@@ -2,16 +2,16 @@ import { ExtensionContext } from "vscode";
 import {
   CloudSyncService,
   SyncCloudProfilesResult,
-} from "./cloud-sync-service";
-import { ModelCapabilityService } from "./model-capability-service";
-import { ProfileMigrationService } from "./profile-migration-service";
-import { ProviderProfileRepository } from "./provider-profile-repository";
+} from "@/services/profile-manager/cloud-sync-service";
+import { ModelCapabilityService } from "@/services/profile-manager/model-capability-service";
+import { ProfileMigrationService } from "@/services/profile-manager/profile-migration-service";
+import { ProviderProfileRepository } from "@/services/profile-manager/provider-profile-repository";
 import {
   discriminatedProviderSettingsWithIdSchema,
   Mode,
   ProviderProfiles,
   ProviderSettingsWithId,
-} from "./types";
+} from "@/services/profile-manager/types";
 
 type Subscriber = (profiles: ProviderProfiles) => void;
 

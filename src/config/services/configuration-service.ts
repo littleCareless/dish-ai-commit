@@ -25,13 +25,13 @@ import {
   ConfigKey,
   ExtensionConfiguration,
   ConfigurationValueType,
-} from "../types";
-import { EXTENSION_NAME } from "../../constants";
-import { CONFIG_SCHEMA, generateConfiguration } from "../config-schema";
-import { WORKSPACE_CONFIG_SCHEMA } from "../workspace-config-schema";
-import { getSystemPrompt } from "../../ai/utils/generate-helper";
-import { SCMFactory } from "../../scm/scm-provider";
-import { stateManager } from "../../utils/state/state-manager";
+} from "@/config/types";
+import { EXTENSION_NAME } from "@/constants";
+import { CONFIG_SCHEMA, generateConfiguration } from "@/config/config-schema";
+import { WORKSPACE_CONFIG_SCHEMA } from "@/config/workspace-config-schema";
+import { getSystemPrompt } from "@/ai/utils/generate-helper";
+import { SCMFactory } from "@/scm/scm-provider";
+import { stateManager } from "@/utils/state/state-manager";
 
 /**
  * 处理配置的获取和更新

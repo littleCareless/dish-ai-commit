@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
-import { notify } from "../../../utils/notification";
-import { showWeeklyReportSuccessNotification } from "../../../utils/notification/system-notification";
-import { ModelConfigurationManager } from "../config/model-configuration-manager";
-import { WeeklyReportGenerator } from "../services/weekly-report-generator";
+import { notify } from "@/utils/notification";
+import { showWeeklyReportSuccessNotification } from "@/utils/notification/system-notification";
+import { ModelConfigurationManager } from "@/services/webview/config/model-configuration-manager";
+import { WeeklyReportGenerator } from "@/services/webview/services/weekly-report-generator";
 
 export class WeeklyReportMessageHandler {
   private readonly generator: WeeklyReportGenerator;

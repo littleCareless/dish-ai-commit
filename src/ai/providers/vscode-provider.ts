@@ -5,14 +5,14 @@ import {
   type AIRequestParams,
   type AIResponse,
   type ModelNames,
-} from "../types";
-import { AbstractAIProvider } from "./abstract-ai-provider";
-import { getMessage } from "../../utils/i18n";
+} from "@/ai/types";
+import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
+import { getMessage } from "@/utils/i18n";
 import {
   getPRSummarySystemPrompt,
   getPRSummaryUserPrompt,
-} from "../../prompt/pr-summary";
-import { getSystemPrompt } from "../utils/generate-helper"; // Import getSystemPrompt
+} from "@/prompt/pr-summary";
+import { getSystemPrompt } from "@/ai/utils/generate-helper"; // Import getSystemPrompt
 
 export class VSCodeProvider extends AbstractAIProvider {
   private readonly provider = {

@@ -1,4 +1,4 @@
-import { Logger } from "../../../utils/logger";
+import { Logger } from "@/utils/logger";
 
 /**
  * 分支名称格式化服务

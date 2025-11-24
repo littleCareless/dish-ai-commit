@@ -10,7 +10,7 @@ import React from "react";
 import {
   ModelMetadata,
   PricingInfo as PricingInfoType,
-} from "../../types/provider-metadata";
+} from "@/types/provider-metadata";
 
 interface PricingInfoProps {
   pricing?: PricingInfoType;

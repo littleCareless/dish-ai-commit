@@ -85,7 +85,8 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         "@": resolve(__dirname, "./src"),
-        "@src": resolve(__dirname, "./src"),
+        "~": resolve(__dirname, "./src"),
+        "@src": resolve(__dirname, "../src"),
       },
       dedupe: ["@microsoft/fast-web-utilities"],
     },

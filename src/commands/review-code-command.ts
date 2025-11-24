@@ -1,14 +1,14 @@
 import * as path from "path";
 import * as vscode from "vscode";
-import { addSimilarCodeContext } from "../ai/utils/embedding-helper";
-import { SCMDetectorService } from "../services/core/scm-detector-service";
-import { validateAndGetModel } from "../utils/ai/model-validation";
-import { formatMessage, getMessage } from "../utils/i18n";
+import { addSimilarCodeContext } from "@/ai/utils/embedding-helper";
+import { SCMDetectorService } from "@/services/core/scm-detector-service";
+import { validateAndGetModel } from "@/utils/ai/model-validation";
+import { formatMessage, getMessage } from "@/utils/i18n";
 import {
   notify,
   withProgress,
-} from "../utils/notification/notification-manager";
-import { BaseCommand } from "./base-command";
+} from "@/utils/notification/notification-manager";
+import { BaseCommand } from "@/commands/base-command";
 
 /**
  * 代码审查命令类

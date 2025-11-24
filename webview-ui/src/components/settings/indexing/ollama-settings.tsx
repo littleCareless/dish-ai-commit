@@ -4,17 +4,17 @@ import { useTranslation } from "react-i18next";
 import {
   EMBEDDING_MODEL_PROFILES,
   getModelDimension,
-} from "../../../lib/embedding-models";
-import { IndexingFormValues } from "../../../pages/indexing-page";
+} from "@/lib/embedding-models";
+import { IndexingFormValues } from "@/pages/indexing-page";
 import {
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from "../../ui/form";
-import { Input } from "../../ui/input";
-import { Select, SelectOption } from "../../ui/select";
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectOption } from "@/components/ui/select";
 
 interface OllamaSettingsProps {
   control: Control<IndexingFormValues>;

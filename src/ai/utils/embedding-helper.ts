@@ -1,8 +1,8 @@
-import { AIRequestParams } from "../types";
-import { EmbeddingServiceManager } from "../../core/indexing/embedding-service-manager";
-import { stateManager } from "../../utils/state/state-manager";
-import { notify } from "../../utils";
-import { EmbeddingServiceError } from "../../core/indexing/embedding-service";
+import { AIRequestParams } from "@/ai/types";
+import { EmbeddingServiceManager } from "@/core/indexing/embedding-service-manager";
+import { stateManager } from "@/utils/state/state-manager";
+import { notify } from "@/utils";
+import { EmbeddingServiceError } from "@/core/indexing/embedding-service";
 
 /**
  * 使用嵌入服务搜索相似代码，并将其添加到请求参数中。

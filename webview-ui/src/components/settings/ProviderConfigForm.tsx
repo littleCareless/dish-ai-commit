@@ -11,15 +11,15 @@ import React, {
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
-import { providerRegistry } from "../../config/provider-registry";
-import { ExtendedProviderConfig } from "../../types/provider-metadata";
-import { canFetchModels } from "../../utils/config-validator";
+import { providerRegistry } from "@/config/provider-registry";
+import { ExtendedProviderConfig } from "@/types/provider-metadata";
+import { canFetchModels } from "@/utils/config-validator";
 import {
   createProviderSchema,
   getFieldDefaultValue,
-} from "../../utils/validation-helpers";
-import { postMessage, useMessageHandler } from "../../utils/vscode";
-import { Form } from "../ui/form";
+} from "@/utils/validation-helpers";
+import { postMessage, useMessageHandler } from "@/utils/vscode";
+import { Form } from "@/components/ui/form";
 import { DynamicFieldGroup } from "./DynamicFieldRenderer";
 
 interface ProviderConfigFormProps {

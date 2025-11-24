@@ -1,23 +1,24 @@
 import React from "react";
 import { MemoryRouter, Navigate, Route, Routes } from "react-router-dom";
-import { useVSCodeContext } from "../contexts/VSCodeContext";
-import { useTheme } from "../hooks/useTheme";
+import { useVSCodeContext } from "@/contexts/VSCodeContext";
+import { useTheme } from "@/hooks/useTheme";
 
 // 页面组件
-import { AboutPage } from "../pages/about-page";
-import { ContextPage } from "../pages/context-page";
-import { ExperimentalPage } from "../pages/experimental-page";
-import { I18nDebugPage } from "../pages/i18n-debug-page";
-import { IndexingPage } from "../pages/indexing-page";
-import { NotificationsPage } from "../pages/notifications-page";
-import { PromptsPage } from "../pages/prompts-page";
-import { SettingsPage } from "../pages/settings/SettingsPage";
-import WelcomePage from "../pages/welcome-page";
+import { AboutPage } from "@/pages/about-page";
+import { ContextPage } from "@/pages/context-page";
+import { ExperimentalPage } from "@/pages/experimental-page";
+import { I18nDebugPage } from "@/pages/i18n-debug-page";
+import { IndexingPage } from "@/pages/indexing-page";
+import { NotificationsPage } from "@/pages/notifications-page";
+import { PromptsPage } from "@/pages/prompts-page";
+import { SettingsPage } from "@/pages/settings/SettingsPage";
+import { UsagePage } from "@/pages/usage-page";
+import WelcomePage from "@/pages/welcome-page";
 
 // 布局组件
-import { ErrorBoundary } from "../components/common/ErrorBoundary";
-import { LoadingPage } from "../components/common/LoadingPage";
-import { Layout } from "../components/layout/Layout";
+import { ErrorBoundary } from "@/components/common/ErrorBoundary";
+import { LoadingPage } from "@/components/common/LoadingPage";
+import { Layout } from "@/components/layout/Layout";
 
 import { routes } from "./routes";
 
@@ -90,6 +91,9 @@ export const AppRouter: React.FC = () => {
                       path={routes.i18nDebug}
                       element={<I18nDebugPage />}
                     />
+
+                    {/* 用量页面 */}
+                    <Route path={routes.usage} element={<UsagePage />} />
 
                     {/* 404 页面 */}
                     <Route

@@ -10,7 +10,7 @@ import {
   FieldType,
   ValidationRule,
   ValidationRuleType,
-} from "../types/provider-metadata";
+} from "@/types/provider-metadata";
 
 /**
  * 根据字段类型获取基础 Zod schema

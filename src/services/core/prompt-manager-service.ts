@@ -1,8 +1,8 @@
 import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
-import { ExtensionConfiguration } from "../../config/types";
-import { PromptDetail, PromptKey, PromptSource } from "../../types/prompts";
+import { ExtensionConfiguration } from "@/config/types";
+import { PromptDetail, PromptKey, PromptSource } from "@/types/prompts";
 
 export class PromptManagerService {
   private static instance: PromptManagerService;
@@ -21,7 +21,10 @@ export class PromptManagerService {
   }
 
   private async loadDefaultPrompts() {
-    const promptDir = path.join(__dirname, "..", "prompt");
+    // __dirname 在 VSCode 扩展中指向源码目录，但实际运行的是打包后的代码
+    // 使用扩展的实际安装路径来定位 prompt 目录
+    const extensionPath = vscode.extensions.getExtension("littleCareless.dish-ai-commit")?.extensionPath || __dirname;
+    const promptDir = path.join(extensionPath, "dist", "prompt");
     const files = await fs.promises.readdir(promptDir);
     const config = vscode.workspace.getConfiguration("dish-ai-commit");
     const extensionConfig = {

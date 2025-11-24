@@ -1,4 +1,4 @@
-import * as packageJson from "./package.json"
+import * as packageJson from "@/package.json"
 
 /** 扩展的包名 */
 export const EXTENSION_NAME = packageJson.name;

@@ -1,15 +1,15 @@
 import * as vscode from "vscode";
-import { BaseCommand } from "../base-command";
-import { getMessage } from "../../utils/i18n";
+import { BaseCommand } from "@/commands/base-command";
+import { getMessage } from "@/utils/i18n";
 import {
   notify,
   withProgress,
-} from "../../utils/notification/notification-manager";
-import { validateAndGetModel } from "../../utils/ai/model-validation";
-import { Logger } from "../../utils/logger";
-import { DescriptionModeHandler } from "./handlers/description-mode-handler";
-import { ChangesModeHandler } from "./handlers/changes-mode-handler";
-import { BranchSuggester } from "./services/branch-suggester";
+} from "@/utils/notification/notification-manager";
+import { validateAndGetModel } from "@/utils/ai/model-validation";
+import { Logger } from "@/utils/logger";
+import { DescriptionModeHandler } from "@/commands/generate-branch-name/handlers/description-mode-handler";
+import { ChangesModeHandler } from "@/commands/generate-branch-name/handlers/changes-mode-handler";
+import { BranchSuggester } from "@/commands/generate-branch-name/services/branch-suggester";
 
 /**
  * 分支名称生成命令类 - 重构后的精简版本

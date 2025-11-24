@@ -3,11 +3,11 @@ import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
 import { z, ZodError } from "zod";
-import { formatMessage as t } from "../../../../utils/i18n/localization-manager";
-import { safeWriteJson } from "../../../../utils/safe-write-json";
-import { ProfileManagerService } from "../../../profile-manager/profile-manager-service";
-import { ProviderStore } from "../../../profile-manager/provider-store";
-import { LanguageSettingsManager } from "../../../settings/language-settings-manager";
+import { formatMessage as t } from "@/utils/i18n/localization-manager";
+import { safeWriteJson } from "@/utils/safe-write-json";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
+import { ProviderStore } from "@/services/profile-manager/provider-store";
+import { LanguageSettingsManager } from "@/services/settings/language-settings-manager";
 
 export class ProfileMessageHandler {
     private _profileManager: ProfileManagerService;

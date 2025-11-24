@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { PreferencesSettingsManager } from "../../../settings/preferences-settings-manager";
+import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
 
 export class PreferencesMessageHandler {
     private _settingsManager: PreferencesSettingsManager;

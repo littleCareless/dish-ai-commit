@@ -1,15 +1,15 @@
 import * as vscode from "vscode";
-import { COMMANDS } from "./constants";
-import { GenerateCommitCommand } from "./commands/generate-commit/generate-commit-command";
-import { SelectModelCommand } from "./commands/select-model-command";
-import { GenerateWeeklyReportCommand } from "./commands/generate-weekly-report-command";
-import { ReviewCodeCommand } from "./commands/review-code-command";
-import { GenerateBranchNameCommand } from "./commands/generate-branch-name/generate-branch-name-command";
-import { GeneratePRSummaryCommand } from "./commands/generate-pr-summary-command";
-import { UpdateModelInfoCommand } from "./commands/update-model-info-command";
-import { ShowTokenStatsCommand } from "./commands/show-token-stats-command";
-import { ResetTokenStatsCommand } from "./commands/reset-token-stats-command";
-import { notify } from "./utils";
+import { COMMANDS } from "@/constants";
+import { GenerateCommitCommand } from "@/commands/generate-commit/generate-commit-command";
+import { SelectModelCommand } from "@/commands/select-model-command";
+import { GenerateWeeklyReportCommand } from "@/commands/generate-weekly-report-command";
+import { ReviewCodeCommand } from "@/commands/review-code-command";
+import { GenerateBranchNameCommand } from "@/commands/generate-branch-name/generate-branch-name-command";
+import { GeneratePRSummaryCommand } from "@/commands/generate-pr-summary-command";
+import { UpdateModelInfoCommand } from "@/commands/update-model-info-command";
+import { ShowTokenStatsCommand } from "@/commands/show-token-stats-command";
+import { ResetTokenStatsCommand } from "@/commands/reset-token-stats-command";
+import { notify } from "@/utils";
 
 /**
  * 管理VS Code命令的注册和销毁

@@ -1,7 +1,7 @@
-import { SCMDetectorService } from "../../../services/core/scm-detector-service";
-import { getMessage } from "../../../utils/i18n";
-import { Logger } from "../../../utils/logger";
-import { notify } from "../../../utils/notification/notification-manager";
+import { SCMDetectorService } from "@/services/core/scm-detector-service";
+import { getMessage } from "@/utils/i18n";
+import { Logger } from "@/utils/logger";
+import { notify } from "@/utils/notification/notification-manager";
 
 /**
  * 代码变更模式处理器

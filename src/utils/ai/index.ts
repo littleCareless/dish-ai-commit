@@ -1,1 +1,1 @@
-export * from "./model-validation";
+export * from "@/utils/ai/model-validation";

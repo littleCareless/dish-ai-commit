@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
-import { multiRepositoryContextManager } from "../../scm/multi-repository-context-manager";
-import { ISCMProvider, SCMFactory } from "../../scm/scm-provider";
-import { getMessage } from "../../utils/i18n";
-import { notify } from "../../utils/notification/notification-manager";
+import { multiRepositoryContextManager } from "@/scm/multi-repository-context-manager";
+import { ISCMProvider, SCMFactory } from "@/scm/scm-provider";
+import { getMessage } from "@/utils/i18n";
+import { notify } from "@/utils/notification/notification-manager";
 
 /**
  * SCM检测器服务

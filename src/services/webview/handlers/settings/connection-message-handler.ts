@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
-import { AISDKService } from "../../../ai-sdk/ai-sdk-service";
-import { IndexingSettingsManager } from "../../../settings/indexing-settings-manager";
+import { AISDKService } from "@/services/ai-sdk/ai-sdk-service";
+import { IndexingSettingsManager } from "@/services/settings/indexing-settings-manager";
 
 export class ConnectionMessageHandler {
     constructor(private readonly _extensionContext: vscode.ExtensionContext) { }

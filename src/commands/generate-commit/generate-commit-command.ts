@@ -1,12 +1,11 @@
 import * as vscode from "vscode";
-import { BaseCommand } from "../base-command";
-import { notify } from "../../utils/notification/notification-manager";
-import { getMessage, formatMessage } from "../../utils/i18n";
-import { ProgressHandler } from "../../utils/notification/progress-handler";
-import { multiRepositoryContextManager } from "../../scm/multi-repository-context-manager";
-import { SCMFactory } from "../../scm/scm-provider";
-import { CrossRepositoryHandler } from "./handlers/cross-repository-handler";
-import { StreamingGenerationHelper } from "./utils/streaming-generation-helper";
+import { SCMFactory } from "@/scm/scm-provider";
+import { formatMessage, getMessage } from "@/utils/i18n";
+import { notify } from "@/utils/notification/notification-manager";
+import { ProgressHandler } from "@/utils/notification/progress-handler";
+import { BaseCommand } from "@/commands/base-command";
+import { CrossRepositoryHandler } from "@/commands/generate-commit/handlers/cross-repository-handler";
+import { StreamingGenerationHelper } from "@/commands/generate-commit/utils/streaming-generation-helper";
 
 /**
  * 提交信息生成命令类 - 遵循单一职责原则的简洁版本
@@ -72,7 +71,7 @@ export class GenerateCommitCommand extends BaseCommand {
   ): Promise<void> {
     // 解析参数
     const parsedArgs = this.parseArguments(arg);
-    
+
     // 检测是否为跨仓库场景
     if (parsedArgs.isCrossRepository) {
       await this.handleCrossRepositoryScenario(
@@ -118,7 +117,7 @@ export class GenerateCommitCommand extends BaseCommand {
     if (resourceStates && resourceStates.length > 0) {
       // 这里需要异步处理，但我们先简化处理
       // 实际实现中需要await multiRepositoryContextManager.groupFilesByRepository(resourceStates)
-      isCrossRepository = false; // 暂时设为false，避免异步问题
+      isCrossRepository = false;
     }
 
     return {
@@ -193,7 +192,7 @@ export class GenerateCommitCommand extends BaseCommand {
       formatMessage("progress.generating.commit", [scmProvider.type.toLocaleUpperCase()]),
       async (progress, token) => {
         await this.streamingHelper.performStreamingGeneration(
-          progress, token, provider, model, scmProvider, selectedFiles, 
+          progress, token, provider, model, scmProvider, selectedFiles,
           parsedArgs.resourceStates || [], finalRepoPath,
           this.selectAndUpdateModelConfiguration.bind(this)
         );

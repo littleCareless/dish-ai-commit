@@ -1,5 +1,5 @@
-import { PROVIDER_DEFINITIONS } from "../config/provider-definitions";
-import type { AIGenerationErrorType } from "./utils/generate-helper";
+import { PROVIDER_DEFINITIONS } from "@/config/provider-definitions";
+import type { AIGenerationErrorType } from "@/ai/utils/generate-helper";
 
 /**
  * AI请求选项接口，定义了向AI模型发送请求时的基本参数
@@ -78,6 +78,8 @@ export interface AIRequestParams {
   language?: string;
   /** 目标语言列表 */
   languages?: string;
+  /** 功能标识 (e.g., "commit-generation", "pr-summary") */
+  feature?: string;
 
   /** 代码分析相关选项 */
   simplifyDiff?: boolean;
@@ -479,50 +481,50 @@ export type AnthropicAIModels =
 
 export type AIModels<Provider extends AIProviders = AIProviders> =
   Provider extends "github"
-    ? GitHubModels
-    : Provider extends "openai"
-      ? OpenAIModels
-      : Provider extends "vscode"
-        ? VSCodeAIModels
-        : Provider extends "zhipu"
-          ? ZhipuAIModels
-          : Provider extends "dashscope"
-            ? DashScopeModels
-            : Provider extends "doubao"
-              ? DoubaoModels
-              : Provider extends "deepseek"
-                ? DeepseekModels
-                : Provider extends "gemini"
-                  ? GeminiAIModels
-                  : Provider extends "google-ai"
-                    ? GoogleAIModels
-                    : Provider extends "baidu-qianfan"
-                      ? BaiduQianfanModels
-                      : Provider extends "siliconflow"
-                        ? SiliconFlowModels
-                        : Provider extends "openrouter"
-                          ? OpenRouterModels
-                          : Provider extends "perplexity"
-                            ? PerplexityAIModels
-                            : Provider extends "premai"
-                              ? PremAIModels
-                              : Provider extends "together"
-                                ? TogetherAIModels
-                                : Provider extends "xai"
-                                  ? XAIModels
-                                  : Provider extends "anthropic"
-                                    ? AnthropicAIModels
-                                    : Provider extends "mistral"
-                                      ? MistralAIModels
-                                      : Provider extends "cloudflare"
-                                        ? CloudflareWorkersAIModels
-                                        : Provider extends "vertexai"
-                                          ? VertexAIModels
-                                          : Provider extends "groq"
-                                            ? "mixtral-8x7b-32768"
-                                            : Provider extends "lmstudio"
-                                              ? LMStudioModels
-                                              : OpenAIModels;
+  ? GitHubModels
+  : Provider extends "openai"
+  ? OpenAIModels
+  : Provider extends "vscode"
+  ? VSCodeAIModels
+  : Provider extends "zhipu"
+  ? ZhipuAIModels
+  : Provider extends "dashscope"
+  ? DashScopeModels
+  : Provider extends "doubao"
+  ? DoubaoModels
+  : Provider extends "deepseek"
+  ? DeepseekModels
+  : Provider extends "gemini"
+  ? GeminiAIModels
+  : Provider extends "google-ai"
+  ? GoogleAIModels
+  : Provider extends "baidu-qianfan"
+  ? BaiduQianfanModels
+  : Provider extends "siliconflow"
+  ? SiliconFlowModels
+  : Provider extends "openrouter"
+  ? OpenRouterModels
+  : Provider extends "perplexity"
+  ? PerplexityAIModels
+  : Provider extends "premai"
+  ? PremAIModels
+  : Provider extends "together"
+  ? TogetherAIModels
+  : Provider extends "xai"
+  ? XAIModels
+  : Provider extends "anthropic"
+  ? AnthropicAIModels
+  : Provider extends "mistral"
+  ? MistralAIModels
+  : Provider extends "cloudflare"
+  ? CloudflareWorkersAIModels
+  : Provider extends "vertexai"
+  ? VertexAIModels
+  : Provider extends "groq"
+  ? "mixtral-8x7b-32768"
+  : Provider extends "lmstudio"
+  ? LMStudioModels
+  : OpenAIModels;
 
 export type SupportedAIModels =
   | `github:${AIModels<"github">}`

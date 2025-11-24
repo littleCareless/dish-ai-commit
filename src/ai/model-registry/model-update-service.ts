@@ -3,11 +3,11 @@
  * 负责定期更新模型规格数据，确保信息的准确性
  */
 
-import { ModelInfoFetcher } from './model-info-fetcher';
-import { ModelSpec, ALL_MODEL_SPECS } from './model-specs';
-import { AIModel } from '../types';
-import { notify } from '../../utils/notification/notification-manager';
-import { getMessage } from '../../utils/i18n';
+import { ModelInfoFetcher } from '@/ai/model-registry/model-info-fetcher';
+import { ModelSpec, ALL_MODEL_SPECS } from '@/ai/model-registry/model-specs';
+import { AIModel } from '@/ai/types';
+import { notify } from '@/utils/notification/notification-manager';
+import { getMessage } from '@/utils/i18n';
 
 export interface UpdateResult {
   success: boolean;

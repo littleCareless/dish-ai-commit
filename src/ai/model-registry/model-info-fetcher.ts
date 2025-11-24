@@ -3,9 +3,9 @@
  * 负责从各个AI提供商的API动态获取最新的模型信息
  */
 
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { ModelSpec, findModelSpec, getDefaultTokenLimits } from "./model-specs";
-import { AIModel } from "../types";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { ModelSpec, findModelSpec, getDefaultTokenLimits } from "@/ai/model-registry/model-specs";
+import { AIModel } from "@/ai/types";
 
 export interface ModelInfoCache {
   [modelId: string]: {

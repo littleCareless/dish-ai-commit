@@ -2,9 +2,9 @@ import * as fs from "fs";
 import { execSync } from "child_process";
 import * as path from "path";
 import * as vscode from "vscode";
-import { DiffSimplifier } from "./diff-simplifier";
-import { DiffSplitter } from "./diff-splitter";
-import { DiffChunk, getDiffConfig } from "./types";
+import { DiffSimplifier } from "@/utils/diff/diff-simplifier";
+import { DiffSplitter } from "@/utils/diff/diff-splitter";
+import { DiffChunk, getDiffConfig } from "@/utils/diff/types";
 
 /**
  * A class to process diffs by simplifying and summarizing them into a structured plain text format.

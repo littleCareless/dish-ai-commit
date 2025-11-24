@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
-import { DiffConfig } from "./types";
-import { getDiffConfig } from "./types";
+import { DiffConfig } from "@/utils/diff/types";
+import { getDiffConfig } from "@/utils/diff/types";
 
 /**
  * 用于简化和格式化差异文本的工具类

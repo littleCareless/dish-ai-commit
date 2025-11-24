@@ -1,12 +1,12 @@
 import * as vscode from "vscode";
-import { AuthorService } from "../../scm/author-service";
+import { AuthorService } from "@/scm/author-service";
 import {
   CommitLogStrategy,
   GitCommitStrategy,
   SvnCommitStrategy,
-} from "../../scm/commit-log-strategy";
-import { SCMFactory, type ISCMProvider } from "../../scm/scm-provider";
-import { WorkItem } from "../../types/weekly-report";
+} from "@/scm/commit-log-strategy";
+import { SCMFactory, type ISCMProvider } from "@/scm/scm-provider";
+import { WorkItem } from "@/types/weekly-report";
 
 /**
  * Represents a time period with start and end dates

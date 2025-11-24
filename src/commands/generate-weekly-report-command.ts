@@ -1,5 +1,5 @@
-import { WeeklyReportPanel } from "../services/webview/weekly-report-panel";
-import { BaseCommand } from "./base-command";
+import { WeeklyReportPanel } from "@/services/webview/weekly-report-panel";
+import { BaseCommand } from "@/commands/base-command";
 
 /**
  * 生成周报命令类

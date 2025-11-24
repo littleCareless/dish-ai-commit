@@ -1,12 +1,20 @@
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
+import {
+  Form,
+  FormControl,
+  FormDescription,
+  FormField,
+  FormItem,
+  FormLabel,
+} from "@/components/ui/form";
 import { Select, SelectOption } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
 import { Info } from "lucide-react";
-import React from "react";
+import React, { useEffect } from "react";
+import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { UserPreferences } from "../../types/settings";
+import { DEFAULT_USER_PREFERENCES, UserPreferences } from "@/types/settings";
 
 interface PreferencesSettingsProps {
   preferences: UserPreferences;
@@ -16,23 +24,29 @@ interface PreferencesSettingsProps {
 }
 
 export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
-  preferences,
+  preferences: userPreferences,
   onChange,
   className = "",
 }) => {
+  const preferences = { ...DEFAULT_USER_PREFERENCES, ...userPreferences };
   const { t } = useTranslation("preferences-settings");
 
-  const handleTemperatureChange = (
-    event: React.ChangeEvent<HTMLInputElement>,
-  ) => {
-    const value = parseFloat(event.target.value || "0");
-    onChange({ ...preferences, temperature: value });
-  };
+  const form = useForm<UserPreferences>({
+    defaultValues: preferences,
+  });
 
-  const handleLanguageChange = (event: React.FormEvent<HTMLElement>) => {
-    const value = (event.target as HTMLSelectElement)?.value || "";
-    onChange({ ...preferences, language: value });
-  };
+  // 当外部 preferences 变化时更新表单
+  useEffect(() => {
+    form.reset(preferences);
+  }, [preferences, form]);
+
+  // 监听表单值变化并通知父组件
+  useEffect(() => {
+    const subscription = form.watch((value) => {
+      onChange(value as UserPreferences);
+    });
+    return () => subscription.unsubscribe();
+  }, [form, onChange]);
 
   const getTemperatureDescription = (value: number) => {
     if (value === 0) return t("temperatureLevels.deterministic");
@@ -64,65 +78,108 @@ export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
     { value: "Thai", labelKey: "languages.thai" },
   ];
 
-  return (
-    <div className={`space-y-6 ${className}`}>
-      {/* Temperature Control */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Info className="w-4 h-4" />
-            {t("responseCreativity")}
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between">
-              <Label>
-                {t("temperature", { temperature: preferences.temperature })}
-              </Label>
-              <Badge variant="outline">
-                {getTemperatureDescription(preferences.temperature)}
-              </Badge>
-            </div>
+  const renderTemperatureField = (
+    name: keyof UserPreferences,
+    label: string,
+  ) => (
+    <FormField
+      control={form.control}
+      name={name}
+      render={({ field }) => (
+        <FormItem>
+          <div className="flex items-center justify-between">
+            <FormLabel>
+              {label} ({field.value})
+            </FormLabel>
+            <Badge variant="outline">
+              {getTemperatureDescription(field.value as number)}
+            </Badge>
+          </div>
+          <FormControl>
             <Slider
               min={0}
               max={2}
               step={0.1}
-              value={preferences.temperature}
-              onChange={handleTemperatureChange}
+              value={[field.value as number]}
+              onValueChange={(value) => field.onChange(value[0])}
               className="w-full"
             />
-            <p className="text-sm text-muted-foreground">
-              {t("temperatureDescription")}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          </FormControl>
+        </FormItem>
+      )}
+    />
+  );
 
-      {/* Language */}
-      <Card>
-        <CardHeader>
-          <CardTitle>{t("language")}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Label htmlFor="language">{t("generatedContentLanguage")}</Label>
-            <Select
-              value={preferences.language}
-              onChange={handleLanguageChange}
-            >
-              {languageOptions.map((option) => (
-                <SelectOption key={option.value} value={option.value}>
-                  {t(option.labelKey)}
-                </SelectOption>
-              ))}
-            </Select>
-            <p className="text-sm text-muted-foreground">
-              {t("generatedContentLanguageDescription")}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
+  return (
+    <Form {...form}>
+      <div className={`space-y-6 ${className}`}>
+        {/* Temperature Control */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Info className="w-4 h-4" />
+              {t("temperatureSettings")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {renderTemperatureField(
+              "commitTemperature",
+              t("commitTemperature"),
+            )}
+            {renderTemperatureField(
+              "reviewTemperature",
+              t("reviewTemperature"),
+            )}
+            {renderTemperatureField(
+              "branchNameTemperature",
+              t("branchNameTemperature"),
+            )}
+            {renderTemperatureField(
+              "weeklyReportTemperature",
+              t("weeklyReportTemperature"),
+            )}
+
+            <FormDescription>{t("temperatureDescription")}</FormDescription>
+          </CardContent>
+        </Card>
+
+        {/* Language */}
+        <Card>
+          <CardHeader>
+            <CardTitle>{t("language")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <FormField
+              control={form.control}
+              name="language"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("generatedContentLanguage")}</FormLabel>
+                  <FormControl>
+                    <Select
+                      value={field.value}
+                      onChange={(event: React.FormEvent<HTMLElement>) => {
+                        const value =
+                          (event.target as HTMLSelectElement)?.value || "";
+                        field.onChange(value);
+                      }}
+                    >
+                      {languageOptions.map((option) => (
+                        <SelectOption key={option.value} value={option.value}>
+                          {t(option.labelKey)}
+                        </SelectOption>
+                      ))}
+                    </Select>
+                  </FormControl>
+                  <FormDescription>
+                    {t("generatedContentLanguageDescription")}
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+          </CardContent>
+        </Card>
+      </div>
+    </Form>
   );
 };

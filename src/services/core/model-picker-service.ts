@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
-import { AIProviderFactory } from "../../ai/ai-provider-factory";
-import type { AIModel } from "../../ai/types";
-import { getMessage } from "../../utils/i18n";
-import { notify } from "../../utils/notification";
+import { AIProviderFactory } from "@/ai/ai-provider-factory";
+import type { AIModel } from "@/ai/types";
+import { getMessage } from "@/utils/i18n";
+import { notify } from "@/utils/notification";
 
 /**
  * Service class for handling AI model selection via VS Code's quick pick interface

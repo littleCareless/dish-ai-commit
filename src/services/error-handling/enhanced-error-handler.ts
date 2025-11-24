@@ -1,16 +1,16 @@
 import * as vscode from "vscode";
-import { Logger } from "../../utils/logger";
-import { notify } from "../../utils/notification/notification-manager";
+import { Logger } from "@/utils/logger";
+import { notify } from "@/utils/notification/notification-manager";
 import {
   ErrorClassificationResult,
   ErrorClassificationService,
-} from "./error-classification";
-import { ErrorContextCollector } from "./error-context";
+} from "@/services/error-handling/error-classification";
+import { ErrorContextCollector } from "@/services/error-handling/error-context";
 import {
   ErrorContext,
   ErrorTranslationService,
   UserFriendlyError,
-} from "./error-translation";
+} from "@/services/error-handling/error-translation";
 
 /**
  * 错误处理选项

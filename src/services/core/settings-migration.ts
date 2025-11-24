@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
-import { Profile, ProviderConfig, ProviderType } from "../../types/settings";
-import { ProfileManagerService } from "../profile-manager/profile-manager-service";
+import { Profile, ProviderConfig, ProviderType } from "@/types/settings";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 
 export class SettingsMigration {
   private profileManager: ProfileManagerService;

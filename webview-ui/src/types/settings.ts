@@ -57,7 +57,11 @@ export interface ProviderConfig {
 }
 
 export interface UserPreferences {
-  temperature: number;
+  temperature: number; // Deprecated, kept for backward compatibility if needed, or remove if safe. Let's keep it for now but maybe mark as deprecated in comment.
+  commitTemperature: number;
+  reviewTemperature: number;
+  branchNameTemperature: number;
+  weeklyReportTemperature: number;
   verbosity: number;
   rateLimitSeconds: number;
   consecutiveMistakeLimit: number;
@@ -135,6 +139,10 @@ export interface SettingsChangeEvent {
 // 默认配置
 export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   temperature: 0.0,
+  commitTemperature: 0.3,
+  reviewTemperature: 0.6,
+  branchNameTemperature: 0.4,
+  weeklyReportTemperature: 0.3,
   verbosity: 0,
   rateLimitSeconds: 5,
   consecutiveMistakeLimit: 3,

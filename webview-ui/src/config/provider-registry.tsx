@@ -9,7 +9,7 @@ import {
   ProviderRegistry as ProviderRegistryType,
   ProviderType,
   ValidationRuleType,
-} from "../types/provider-metadata";
+} from "@/types/provider-metadata";
 
 // 提供商元数据注册表
 export const providerRegistry: ProviderRegistryType = {

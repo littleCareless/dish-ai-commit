@@ -1,6 +1,6 @@
-import { ISCMProvider } from "../../../scm/scm-provider";
-import { AIRequestParams } from "../../../ai/types";
-import { addSimilarCodeContext } from "../../../ai/utils/embedding-helper";
+import { ISCMProvider } from "@/scm/scm-provider";
+import { AIRequestParams } from "@/ai/types";
+import { addSimilarCodeContext } from "@/ai/utils/embedding-helper";
 
 /**
  * 上下文收集器类，负责收集各种上下文信息

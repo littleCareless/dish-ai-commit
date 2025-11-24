@@ -11,19 +11,19 @@ import {
 import { TFunction } from "i18next";
 import { AlertCircle, Loader } from "lucide-react";
 import React, { useMemo } from "react";
-import { FieldConfig, FieldType } from "../../types/provider-metadata";
+import { FieldConfig, FieldType } from "@/types/provider-metadata";
 import {
   shouldShowField,
   validateFieldValue,
-} from "../../utils/validation-helpers";
+} from "@/utils/validation-helpers";
 import {
   FormControl,
   FormDescription,
   FormItem,
   FormLabel,
   FormMessage,
-} from "../ui/form";
-import { Switch } from "../ui/switch";
+} from "@/components/ui/form";
+import { Switch } from "@/components/ui/switch";
 
 type FieldValue = string | number | boolean | null | undefined;
 
@@ -117,10 +117,8 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
           case FieldType.PASSWORD:
             return (
               <VSCodeTextField
-                value={value || ""}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  onChange(e.target.value)
-                }
+                value={String(value || "")}
+                onChange={(e: any) => onChange(e.target.value)}
                 placeholder={
                   field.placeholder ? t(field.placeholder) : `${t(field.label)}`
                 }
@@ -132,10 +130,8 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
           case FieldType.TEXT:
             return (
               <VSCodeTextField
-                value={value || ""}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  onChange(e.target.value)
-                }
+                value={String(value || "")}
+                onChange={(e: any) => onChange(e.target.value)}
                 placeholder={
                   field.placeholder ? t(field.placeholder) : `${t(field.label)}`
                 }
@@ -146,10 +142,8 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
           case FieldType.URL:
             return (
               <VSCodeTextField
-                value={value || ""}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  onChange(e.target.value)
-                }
+                value={String(value || "")}
+                onChange={(e: any) => onChange(e.target.value)}
                 placeholder={
                   field.placeholder
                     ? t(field.placeholder)
@@ -162,8 +156,8 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
           case FieldType.NUMBER:
             return (
               <VSCodeTextField
-                value={value?.toString() || ""}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                value={String(value?.toString() || "")}
+                onChange={(e: any) => {
                   const numValue = parseFloat(e.target.value) || 0;
                   onChange(numValue);
                 }}
@@ -175,10 +169,8 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
           case FieldType.SELECT:
             return (
               <VSCodeDropdown
-                value={value || ""}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                  onChange(e.target.value)
-                }
+                value={String(value || "")}
+                onChange={(e: any) => onChange(e.target.value)}
                 disabled={isFieldDisabled}
               >
                 <VSCodeOption value="">
@@ -286,10 +278,8 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
           default:
             return (
               <VSCodeTextField
-                value={value || ""}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                  onChange(e.target.value)
-                }
+                value={String(value || "")}
+                onChange={(e: any) => onChange(e.target.value)}
                 placeholder={
                   field.placeholder ? t(field.placeholder) : `${t(field.label)}`
                 }

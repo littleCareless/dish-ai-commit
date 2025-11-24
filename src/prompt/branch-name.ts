@@ -1,4 +1,4 @@
-import { ExtensionConfiguration } from "../config/types";
+import { ExtensionConfiguration } from "@/config/types";
 
 interface BranchNamePromptParams {
   config: ExtensionConfiguration;

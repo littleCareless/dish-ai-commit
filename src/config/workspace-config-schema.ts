@@ -2,7 +2,7 @@ import type {
   ConfigObject,
   ConfigValue,
   ConfigValueTypeString,
-} from "./config-schema";
+} from "@/config/config-schema";
 
 /**
  * Workspace-specific configuration schema.

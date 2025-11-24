@@ -3,12 +3,12 @@ import {
   ConfigKey,
   ExtensionConfiguration,
   type ConfigurationValueType,
-} from "./types";
-import { CONFIG_SCHEMA, getCategoryConfigPaths } from "./config-schema";
-import { ConfigurationService } from "./services/configuration-service";
-import { ConfigurationChangeHandler } from "./services/configuration-change-handler";
-import { ProviderConfigValidator } from "./services/provider-config-validator";
-import { ConfigurationMonitor } from "./services/configuration-monitor";
+} from "@/config/types";
+import { CONFIG_SCHEMA, getCategoryConfigPaths } from "@/config/config-schema";
+import { ConfigurationService } from "@/config/services/configuration-service";
+import { ConfigurationChangeHandler } from "@/config/services/configuration-change-handler";
+import { ProviderConfigValidator } from "@/config/services/provider-config-validator";
+import { ConfigurationMonitor } from "@/config/services/configuration-monitor";
 
 /**
  * 管理VSCode扩展配置，支持动态更新和变更处理

@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
-import { getMessage } from "../../utils/i18n";
-import { WeeklyReportMessageHandler } from "./handlers/weekly-report-message-handler";
-import { SettingsViewHTMLProvider } from "./providers/settings-view-html-provider";
+import { getMessage } from "@/utils/i18n";
+import { WeeklyReportMessageHandler } from "@/services/webview/handlers/weekly-report-message-handler";
+import { SettingsViewHTMLProvider } from "@/services/webview/providers/settings-view-html-provider";
 
 export class WeeklyReportPanel {
   public static readonly viewType = "weeklyReport.view";

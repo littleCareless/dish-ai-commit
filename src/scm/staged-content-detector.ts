@@ -15,7 +15,7 @@ import {
   DetectionErrorType,
   StagedDetectionError,
   DetectionCacheEntry,
-} from "./staged-detector-types";
+} from "@/scm/staged-detector-types";
 
 const execAsync = promisify(exec);
 

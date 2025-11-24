@@ -1,16 +1,16 @@
 import React from "react";
 import { Control } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { IndexingFormValues } from "../../../pages/indexing-page";
+import { IndexingFormValues } from "@/pages/indexing-page";
 import {
   FormControl,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
-} from "../../ui/form";
-import { Input } from "../../ui/input";
-import { Select, SelectOption } from "../../ui/select";
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Select, SelectOption } from "@/components/ui/select";
 
 const models = [
   { value: "codestral-embed-2505", label: "codestral-embed-2505 (1536)" },

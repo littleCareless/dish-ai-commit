@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { AdvancedSettingsManager } from "../../../settings/advanced-settings-manager";
+import { AdvancedSettingsManager } from "@/services/settings/advanced-settings-manager";
 
 export class AdvancedMessageHandler {
     private _settingsManager: AdvancedSettingsManager;

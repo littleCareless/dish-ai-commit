@@ -1,5 +1,5 @@
-import { notify } from "../notification";
-import { formatMessage } from "../i18n";
+import { notify } from "@/utils/notification";
+import { formatMessage } from "@/utils/i18n";
 
 /**
  * 上下文日志记录器

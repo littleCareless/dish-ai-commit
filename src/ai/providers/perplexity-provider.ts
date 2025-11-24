@@ -1,16 +1,16 @@
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { AIModel, AIRequestParams, type AIProviders } from "../types";
-import { AbstractAIProvider } from "./abstract-ai-provider";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
+import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
 
 // Perplexity AI API 客户端 (需要安装相应的 npm 包)
 // import { Perplexity } from "perplexity-ai";
 
-import type { OpenAIProviderConfig } from "./base-openai-provider";
+import type { OpenAIProviderConfig } from "@/ai/providers/base-openai-provider";
 import {
   getPRSummarySystemPrompt,
   getPRSummaryUserPrompt,
-} from "../../prompt/pr-summary";
-import { getSystemPrompt } from "../utils/generate-helper"; // Import getSystemPrompt
+} from "@/prompt/pr-summary";
+import { getSystemPrompt } from "@/ai/utils/generate-helper"; // Import getSystemPrompt
 
 /**
  * Perplexity AI支持的AI模型配置列表

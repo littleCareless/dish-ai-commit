@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
-import { WORKSPACE_CONFIG_PATHS } from "../../config/workspace-config-schema";
-import { EmbeddingService } from "../../core/indexing/embedding-service";
-import { stateManager } from "../../utils/state/state-manager";
-import { SettingsViewMessageHandler } from "./handlers/settings-view-message-handler";
-import { SettingsViewHTMLProvider } from "./providers/settings-view-html-provider";
+import { WORKSPACE_CONFIG_PATHS } from "@/config/workspace-config-schema";
+import { EmbeddingService } from "@/core/indexing/embedding-service";
+import { stateManager } from "@/utils/state/state-manager";
+import { SettingsViewMessageHandler } from "@/services/webview/handlers/settings-view-message-handler";
+import { SettingsViewHTMLProvider } from "@/services/webview/providers/settings-view-html-provider";
 
 export class SettingsViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "dish-ai-commit.settingsView"; // 必须与 package.json 中的 id 匹配

@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
-import { Logger } from "../../../utils/logger";
-import { notify } from "../../../utils/notification/notification-manager";
-import { getMessage } from "../../../utils/i18n";
-import { BranchFormatter } from "./branch-formatter";
-import { BranchCreator } from "./branch-creator";
+import { Logger } from "@/utils/logger";
+import { notify } from "@/utils/notification/notification-manager";
+import { getMessage } from "@/utils/i18n";
+import { BranchFormatter } from "@/commands/generate-branch-name/services/branch-formatter";
+import { BranchCreator } from "@/commands/generate-branch-name/services/branch-creator";
 
 /**
  * 分支名称建议服务

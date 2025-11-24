@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { LanguageSettingsManager } from "../../../settings/language-settings-manager";
+import { LanguageSettingsManager } from "@/services/settings/language-settings-manager";
 
 export class LanguageMessageHandler {
     constructor(private extensionContext: vscode.ExtensionContext) { }

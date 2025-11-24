@@ -1,8 +1,8 @@
-import { ISCMProvider } from "../../../scm/scm-provider";
-import { AIModel } from "../../../ai/types";
-import { ContextManager, TruncationStrategy } from "../../../utils/context-manager";
-import { ContextCollector } from "../utils/context-collector";
-import { extractProcessedDiff } from "../utils/diff-extractor";
+import { ISCMProvider } from "@/scm/scm-provider";
+import { AIModel } from "@/ai/types";
+import { ContextManager, TruncationStrategy } from "@/utils/context-manager";
+import { ContextCollector } from "@/commands/generate-commit/utils/context-collector";
+import { extractProcessedDiff } from "@/commands/generate-commit/utils/diff-extractor";
 
 /**
  * 提交上下文构建器类，负责构建和管理上下文管理器

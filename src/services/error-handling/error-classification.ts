@@ -1,5 +1,5 @@
-import { Logger } from "../../utils/logger";
-import { ErrorSeverity, ErrorType } from "./error-translation";
+import { Logger } from "@/utils/logger";
+import { ErrorSeverity, ErrorType } from "@/services/error-handling/error-translation";
 
 /**
  * 错误分类规则接口

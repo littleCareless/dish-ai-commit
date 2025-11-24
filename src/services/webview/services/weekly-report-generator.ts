@@ -1,10 +1,10 @@
-import { getMessage } from "../../../utils/i18n";
-import { ProgressHandler } from "../../../utils/notification";
+import { getMessage } from "@/utils/i18n";
+import { ProgressHandler } from "@/utils/notification";
 import {
   WeeklyReportService,
   type Period,
-} from "../../reporting/weekly-report";
-import { ModelConfigurationManager } from "../config/model-configuration-manager";
+} from "@/services/reporting/weekly-report";
+import { ModelConfigurationManager } from "@/services/webview/config/model-configuration-manager";
 
 export class WeeklyReportGenerator {
   private readonly weeklyReportService: WeeklyReportService;

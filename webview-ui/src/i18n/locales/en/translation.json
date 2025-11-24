@@ -14,6 +14,8 @@
     "indexing_description": "Configure codebase indexing",
     "about": "About",
     "about_description": "Learn about the application",
+    "usage": "Usage",
+    "usage_description": "Monitor token usage",
     "language": "Language"
   }
 }

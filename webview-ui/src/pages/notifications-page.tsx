@@ -12,7 +12,7 @@ import { Switch } from "@/components/ui/switch";
 import { Bell, Info, MessageSquare, Volume2, VolumeX } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { postMessage, useMessageHandler } from "../utils/vscode";
+import { postMessage, useMessageHandler } from "@/utils/vscode";
 
 interface NotificationSettings {
   textToSpeech: boolean;

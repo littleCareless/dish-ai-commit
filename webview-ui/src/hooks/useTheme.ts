@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useVSCodeContext } from "../contexts/VSCodeContext";
+import { useVSCodeContext } from "@/contexts/VSCodeContext";
 
 export const useTheme = () => {
   const { theme: vscodeTheme, setTheme: setVSCodeTheme } = useVSCodeContext();

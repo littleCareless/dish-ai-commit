@@ -10,16 +10,16 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Control, useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import * as z from "zod";
-import { AdvancedIndexingSettings } from "../components/settings/indexing/advanced-indexing-settings";
-import { GeminiSettings } from "../components/settings/indexing/gemini-settings";
-import { MistralSettings } from "../components/settings/indexing/mistral-settings";
-import { OllamaSettings } from "../components/settings/indexing/ollama-settings";
-import { OpenAICompatibleSettings } from "../components/settings/indexing/openai-compatible-settings";
-import { OpenAISettings } from "../components/settings/indexing/openai-settings";
-import { ProviderSelector } from "../components/settings/indexing/provider-selector";
-import { VercelAIGatewaySettings } from "../components/settings/indexing/vercel-ai-gateway-settings";
-import { Button } from "../components/ui/button";
-import { Checkbox } from "../components/ui/checkbox";
+import { AdvancedIndexingSettings } from "@/components/settings/indexing/advanced-indexing-settings";
+import { GeminiSettings } from "@/components/settings/indexing/gemini-settings";
+import { MistralSettings } from "@/components/settings/indexing/mistral-settings";
+import { OllamaSettings } from "@/components/settings/indexing/ollama-settings";
+import { OpenAICompatibleSettings } from "@/components/settings/indexing/openai-compatible-settings";
+import { OpenAISettings } from "@/components/settings/indexing/openai-settings";
+import { ProviderSelector } from "@/components/settings/indexing/provider-selector";
+import { VercelAIGatewaySettings } from "@/components/settings/indexing/vercel-ai-gateway-settings";
+import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -27,8 +27,8 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "../components/ui/form";
-import { useVSCodeMessage } from "../hooks/use-vscode-message";
+} from "@/components/ui/form";
+import { useVSCodeMessage } from "@/hooks/use-vscode-message";
 
 // Define message payload types
 interface IndexingProgressPayload {

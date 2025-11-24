@@ -1,6 +1,6 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { Select, SelectOption } from "../../ui/select";
+import { Select, SelectOption } from "@/components/ui/select";
 
 interface ProviderSelectorProps {
   selectedProvider: string;

@@ -5,14 +5,14 @@ import * as treeSitter from "web-tree-sitter"; // For types
 import {
   LanguageParser,
   loadRequiredLanguageParsers,
-} from "../tree-sitter/languageParser"; // Assuming path
-import { scannerExtensions } from "../shared/supported-extensions"; // Assuming path
+} from "@/core/tree-sitter/languageParser"; // Assuming path
+import { scannerExtensions } from "@/core/shared/supported-extensions"; // Assuming path
 import {
   MAX_BLOCK_CHARS,
   MIN_BLOCK_CHARS,
   MIN_CHUNK_REMAINDER_CHARS,
   MAX_CHARS_TOLERANCE_FACTOR,
-} from "../constants"; // Assuming path
+} from "@/core/constants"; // Assuming path
 
 export interface SemanticBlock {
   type: string; // e.g., "function", "class", "interface", "method", "variable", "function_chunk"

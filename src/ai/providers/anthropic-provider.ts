@@ -1,13 +1,14 @@
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { AIModel, AIRequestParams, type AIProviders } from "../types";
-import { AbstractAIProvider } from "./abstract-ai-provider";
 import Anthropic from "@anthropic-ai/sdk";
-import type { OpenAIProviderConfig } from "./base-openai-provider";
+import { ConfigurationManager } from "@/config/configuration-manager";
 import {
   getPRSummarySystemPrompt,
   getPRSummaryUserPrompt,
-} from "../../prompt/pr-summary";
-import { getSystemPrompt } from "../utils/generate-helper"; // Import getSystemPrompt
+} from "@/prompt/pr-summary";
+import { TokenStatsService } from "@/services/core/token-stats-service";
+import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
+import { getSystemPrompt } from "@/ai/utils/generate-helper"; // Import getSystemPrompt
+import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
+import type { OpenAIProviderConfig } from "@/ai/providers/base-openai-provider";
 
 /**
  * Anthropic支持的AI模型配置列表
@@ -132,10 +133,20 @@ export class AnthropicAIProvider extends AbstractAIProvider {
 
       // 由于Anthropic API目前不返回token使用情况，我们无法提供精确的usage数据
       const usage = {
-        promptTokens: undefined,
-        completionTokens: undefined,
-        totalTokens: undefined,
+        promptTokens: response.usage.input_tokens,
+        completionTokens: response.usage.output_tokens,
+        totalTokens: response.usage.input_tokens + response.usage.output_tokens,
       };
+
+      if (usage.totalTokens) {
+        const tokenStatsService = TokenStatsService.getInstance();
+        await tokenStatsService.addTokens(
+          usage.totalTokens,
+          modelId,
+          this.provider.id,
+          params.feature || "unknown"
+        );
+      }
 
       const content =
         response.content[0]?.type === "text" ? response.content[0].text : "";

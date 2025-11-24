@@ -38,7 +38,7 @@ const Input: React.FC<InputProps> = ({
       disabled={disabled}
       readOnly={readOnly}
       type={type}
-      onInput={handleInput}
+      onInput={handleInput as any}
       maxlength={maxLength}
       {...props}
     />

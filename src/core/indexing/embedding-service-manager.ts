@@ -4,12 +4,12 @@ import * as vscode from "vscode";
 import {
   WORKSPACE_CONFIG_PATHS,
   WorkspaceConfigPath,
-} from "../../config/workspace-config-schema";
-import { stateManager } from "../../utils/state/state-manager";
-import { getWorkspacePath } from "../utils/path";
-import { EMBEDDING_MODEL_PROFILES } from "./embedding-model-profiles";
-import { EmbeddingService } from "./embedding-service";
-import { VectorStore } from "./vector-store";
+} from "@/config/workspace-config-schema";
+import { stateManager } from "@/utils/state/state-manager";
+import { getWorkspacePath } from "@/core/utils/path";
+import { EMBEDDING_MODEL_PROFILES } from "@/core/indexing/embedding-model-profiles";
+import { EmbeddingService } from "@/core/indexing/embedding-service";
+import { VectorStore } from "@/core/indexing/vector-store";
 
 /**
  * 管理 EmbeddingService 的单例实例

@@ -6,5 +6,7 @@
   "author": "Author",
   "repository": "Github",
   "viewOnGithub": "View on Github",
-  "dependencies": "Dependencies"
+  "dependencies": "Dependencies",
+  "description": "Dish AI Commit is a powerful VSCode extension designed to streamline your commit workflow. By leveraging the capabilities of over 20 AI services, it automatically generates standardized, high-quality commit messages for Git and SVN. Whether you're working on a small personal project or a large enterprise-level application, this extension helps you maintain a clear, consistent, and understandable commit history. It supports 19 languages and offers a rich set of features like code review, weekly reports, branch naming, and PR summaries to boost your productivity.",
+  "contact": "Contact"
 }

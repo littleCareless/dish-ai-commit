@@ -1,8 +1,8 @@
-import { AIProviderFactory } from "../../ai/ai-provider-factory";
-import { AIModel } from "../../ai/types";
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { ModelPickerService } from "../../services/core/model-picker-service";
-import { getMessage } from "../i18n";
+import { AIProviderFactory } from "@/ai/ai-provider-factory";
+import { AIModel } from "@/ai/types";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { ModelPickerService } from "@/services/core/model-picker-service";
+import { getMessage } from "@/utils/i18n";
 
 interface ValidatedModelResult {
   provider: string;

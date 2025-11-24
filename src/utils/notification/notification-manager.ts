@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
-import { NotificationType, NotificationConfig } from "./notification-types";
-import { formatMessage } from "../i18n/localization-manager";
+import { NotificationType, NotificationConfig } from "@/utils/notification/notification-types";
+import { formatMessage } from "@/utils/i18n/localization-manager";
 
 // 常量配置
 const DEFAULT_TIMEOUT = 3000;

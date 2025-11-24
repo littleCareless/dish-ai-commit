@@ -2,7 +2,7 @@ import type { ChatMessage, CommitChatState } from "@src/types/messages";
 import { VSCodeButton, VSCodeTextArea } from "@vscode/webview-ui-toolkit/react";
 import { Bot, Loader2, Send, User } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { postMessage, useMessageHandler } from "../../utils/vscode";
+import { postMessage, useMessageHandler } from "@/utils/vscode";
 
 interface CommitChatViewProps {
   className?: string;
@@ -290,9 +290,9 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
           <div className="flex gap-3">
             <div className="flex-1 relative">
               <VSCodeTextArea
-                ref={textareaRef}
+                ref={textareaRef as any}
                 value={state.inputValue}
-                onInput={handleInputChange}
+                onInput={handleInputChange as any}
                 onKeyDown={handleKeyDown}
                 placeholder="描述你的代码变更，或者告诉我你想要的 commit message 风格..."
                 className="min-h-[60px] max-h-[120px] resize-none pr-12"

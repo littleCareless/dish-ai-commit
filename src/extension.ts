@@ -1,18 +1,18 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import { registerCommands } from "./commands";
-import { ConfigurationManager } from "./config/configuration-manager";
-import { EmbeddingServiceManager } from "./core/indexing/embedding-service-manager";
-import { TokenStatsService } from "./services/core/token-stats-service";
-import { ProfileManagerService } from "./services/profile-manager/profile-manager-service";
-import { initializeLocalization } from "./utils/i18n";
-import { Logger } from "./utils/logger";
-import { notify } from "./utils/notification/notification-manager";
-import { stateManager } from "./utils/state/state-manager";
+import { registerCommands } from "@/commands";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { EmbeddingServiceManager } from "@/core/indexing/embedding-service-manager";
+import { TokenStatsService } from "@/services/core/token-stats-service";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
+import { initializeLocalization } from "@/utils/i18n";
+import { Logger } from "@/utils/logger";
+import { notify } from "@/utils/notification/notification-manager";
+import { stateManager } from "@/utils/state/state-manager";
 
-import { SettingsViewProvider } from "./services/webview/settings-view-provider"; // 确保路径正确
-import { NotificationSettingsManager } from "./utils/notification/notification-settings-manager";
+import { SettingsViewProvider } from "@/services/webview/settings-view-provider"; // 确保路径正确
+import { NotificationSettingsManager } from "@/utils/notification/notification-settings-manager";
 
 /**
  * 在首次执行命令时激活扩展

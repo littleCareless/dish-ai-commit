@@ -10,9 +10,9 @@ import {
   DiffTarget,
   DiffResult,
   AutoDetectionConfig,
-} from "./staged-detector-types";
-import { ISCMProvider } from "./scm-provider";
-import { notify } from "../utils/notification/notification-manager";
+} from "@/scm/staged-detector-types";
+import { ISCMProvider } from "@/scm/scm-provider";
+import { notify } from "@/utils/notification/notification-manager";
 
 /**
  * Provides intelligent diff target selection based on detection results and user preferences

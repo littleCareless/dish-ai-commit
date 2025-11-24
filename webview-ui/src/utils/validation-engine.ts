@@ -10,7 +10,7 @@ import {
   ValidationResult,
   ValidationRule,
   ValidationRuleType,
-} from "../types/provider-metadata";
+} from "@/types/provider-metadata";
 
 export class ValidationEngine {
   private static instance: ValidationEngine;

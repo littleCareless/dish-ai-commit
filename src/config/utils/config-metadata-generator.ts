@@ -1,5 +1,5 @@
-import type { ConfigObject, ConfigValue, SchemaType } from "../config-schema";
-import { isConfigValue } from "./config-validation";
+import type { ConfigObject, ConfigValue, SchemaType } from "@/config/config-schema";
+import { isConfigValue } from "@/config/utils/config-validation";
 
 /**
  * Configuration metadata item interface

@@ -2,14 +2,17 @@
   "ollama": {
     "modelName": "模型名称",
     "baseUrl": "基础 URL",
+    "baseUrlPlaceholder": "http://localhost:11434",
     "modelDimensions": "模型维度",
+    "modelDimensionsPlaceholder": "4096",
     "modelPlaceholder": "例如 nomic-embed-text"
   },
   "qdrant": {
     "title": "Qdrant 设置",
     "url": "Qdrant URL",
     "urlPlaceholder": "http://localhost:6333",
-    "apiKey": "Qdrant API 密钥"
+    "apiKey": "Qdrant API 密钥",
+    "apiKeyPlaceholder": "您的 Qdrant API 密钥"
   },
   "advanced": {
     "title": "高级配置",

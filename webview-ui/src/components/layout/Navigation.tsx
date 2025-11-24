@@ -1,4 +1,5 @@
 import {
+  BarChart3,
   Bell,
   BookText,
   Database,
@@ -11,15 +12,15 @@ import {
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
-import { useExtensionState } from "../../context/ExtensionStateContext";
-import { cn } from "../../lib/utils";
-import { routes } from "../../router/routes";
+import { useExtensionState } from "@/context/ExtensionStateContext";
+import { cn } from "@/lib/utils";
+import { routes } from "@/router/routes";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
   DropdownMenuTrigger,
-} from "../ui/dropdown-menu";
+} from "@/components/ui/dropdown-menu";
 
 export const Navigation: React.FC = () => {
   // 使用 react-i18next 的标准 hook，它会自动响应语言变化
@@ -65,6 +66,12 @@ export const Navigation: React.FC = () => {
         label: t("nav.indexing"),
         icon: Database,
         description: t("nav.indexing_description"),
+      },
+      {
+        path: routes.usage,
+        label: t("nav.usage"),
+        icon: BarChart3,
+        description: t("nav.usage_description"),
       },
       {
         path: routes.about,

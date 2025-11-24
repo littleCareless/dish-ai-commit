@@ -1,4 +1,4 @@
-import { ChatMessage } from '../../types/messages';
+import { ChatMessage } from '@/types/messages';
 
 export interface ResponseProcessingOptions {
   enableFormatting: boolean;

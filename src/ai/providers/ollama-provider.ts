@@ -5,16 +5,16 @@ import {
   type AIModel,
   type AIProviders,
   AIMessage,
-} from "../types";
-import { AbstractAIProvider } from "./abstract-ai-provider";
-import { AIProvider } from "../../config/types";
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { notify } from "../../utils/notification/notification-manager";
+} from "@/ai/types";
+import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
+import { AIProvider } from "@/config/types";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { notify } from "@/utils/notification/notification-manager";
 import {
   getPRSummarySystemPrompt,
   getPRSummaryUserPrompt,
-} from "../../prompt/pr-summary";
-import { getSystemPrompt } from "../utils/generate-helper"; // Import getSystemPrompt
+} from "@/prompt/pr-summary";
+import { getSystemPrompt } from "@/ai/utils/generate-helper"; // Import getSystemPrompt
 
 /**
  * Ollama AI服务提供者实现类

@@ -1,11 +1,11 @@
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { AIModel, AIRequestParams, type AIProviders } from "../types";
-import { AbstractAIProvider } from "./abstract-ai-provider";
-import { getSystemPrompt } from "../utils/generate-helper";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
+import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
+import { getSystemPrompt } from "@/ai/utils/generate-helper";
 import {
   getPRSummarySystemPrompt,
   getPRSummaryUserPrompt,
-} from "../../prompt/pr-summary";
+} from "@/prompt/pr-summary";
 
 /**
  * Cloudflare Workers AI supported models

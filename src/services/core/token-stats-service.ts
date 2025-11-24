@@ -1,6 +1,22 @@
 import { ExtensionContext, Memento } from 'vscode';
 
 const TOTAL_TOKENS_KEY = 'totalTokens';
+const DETAILED_STATS_KEY = 'detailedTokenStats';
+
+export interface TokenUsageRecord {
+  model: string;
+  provider: string;
+  feature: string;
+  tokens: number;
+  timestamp: number;
+}
+
+export interface DailyUsageStats {
+  date: string; // YYYY-MM-DD
+  totalTokens: number;
+  byModel: Record<string, number>;
+  byFeature: Record<string, number>;
+}
 
 export class TokenStatsService {
   private static instance: TokenStatsService;
@@ -23,16 +39,50 @@ export class TokenStatsService {
     return TokenStatsService.instance;
   }
 
-  public async addTokens(tokens: number): Promise<void> {
+  public async addTokens(tokens: number, model: string = 'unknown', provider: string = 'unknown', feature: string = 'unknown'): Promise<void> {
     const currentTokens = this.getTotalTokens();
     await this.storage.update(TOTAL_TOKENS_KEY, currentTokens + tokens);
+
+    await this.updateDetailedStats(tokens, model, provider, feature);
+  }
+
+  private async updateDetailedStats(tokens: number, model: string, provider: string, feature: string): Promise<void> {
+    const today = new Date().toISOString().split('T')[0];
+    const stats = this.getDetailedStats();
+
+    let dailyStats = stats.find(s => s.date === today);
+    if (!dailyStats) {
+      dailyStats = {
+        date: today,
+        totalTokens: 0,
+        byModel: {},
+        byFeature: {}
+      };
+      stats.push(dailyStats);
+    }
+
+    dailyStats.totalTokens += tokens;
+    dailyStats.byModel[model] = (dailyStats.byModel[model] || 0) + tokens;
+    dailyStats.byFeature[feature] = (dailyStats.byFeature[feature] || 0) + tokens;
+
+    // Keep only last 30 days
+    if (stats.length > 30) {
+      stats.shift();
+    }
+
+    await this.storage.update(DETAILED_STATS_KEY, stats);
   }
 
   public getTotalTokens(): number {
     return this.storage.get<number>(TOTAL_TOKENS_KEY, 0);
   }
 
+  public getDetailedStats(): DailyUsageStats[] {
+    return this.storage.get<DailyUsageStats[]>(DETAILED_STATS_KEY, []);
+  }
+
   public async resetTotalTokens(): Promise<void> {
     await this.storage.update(TOTAL_TOKENS_KEY, 0);
+    await this.storage.update(DETAILED_STATS_KEY, []);
   }
 }

@@ -10,7 +10,7 @@
 import {
   ExtendedProviderConfig,
   ProviderMetadata,
-} from "../types/provider-metadata";
+} from "@/types/provider-metadata";
 
 export class SecureStorage {
   private static instance: SecureStorage;

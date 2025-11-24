@@ -1,16 +1,16 @@
 import * as vscode from "vscode";
-import { ISCMProvider } from "../../../scm/scm-provider";
-import { AIProvider, AIRequestParams, AIModel } from "../../../ai/types";
-import { ConfigurationManager } from "../../../config/configuration-manager";
-import { getLayeredCommitFilePrompt } from "../../../prompt/layered-commit-file";
-import { getMessage, formatMessage } from "../../../utils/i18n";
-import { notify } from "../../../utils/notification/notification-manager";
-import { CommitContextBuilder } from "../builders/context-builder";
-import { CommitMessageBuilder } from "../builders/message-builder";
-import { filterCodeBlockMarkers } from "../utils/commit-formatter";
-import { Logger } from "../../../utils/logger";
-import { getSystemPrompt } from "../../../ai/utils/generate-helper";
-import { GlobalContextExtractor } from "../services/global-context-extractor";
+import { ISCMProvider } from "@/scm/scm-provider";
+import { AIProvider, AIRequestParams, AIModel } from "@/ai/types";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { getLayeredCommitFilePrompt } from "@/prompt/layered-commit-file";
+import { getMessage, formatMessage } from "@/utils/i18n";
+import { notify } from "@/utils/notification/notification-manager";
+import { CommitContextBuilder } from "@/commands/generate-commit/builders/context-builder";
+import { CommitMessageBuilder } from "@/commands/generate-commit/builders/message-builder";
+import { filterCodeBlockMarkers } from "@/commands/generate-commit/utils/commit-formatter";
+import { Logger } from "@/utils/logger";
+import { getSystemPrompt } from "@/ai/utils/generate-helper";
+import { GlobalContextExtractor } from "@/commands/generate-commit/services/global-context-extractor";
 
 /**
  * 分层提交处理器类，负责处理分层提交信息生成

@@ -4,13 +4,13 @@ import * as path from "path";
 import util from "util";
 import { v5 as uuidv5 } from "uuid";
 import * as vscode from "vscode";
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { ConfigKey } from "../../config/types"; // Assuming ConfigKey is exported from types
-import { formatMessage } from "../../utils/i18n/localization-manager";
-import { stateManager } from "../../utils/state/state-manager";
-import { CodeIndexer } from "./code-indexer";
-import { FileNode, FileScanner } from "./file-scanner";
-import { QdrantPoint, VectorStore } from "./vector-store";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { ConfigKey } from "@/config/types"; // Assuming ConfigKey is exported from types
+import { formatMessage } from "@/utils/i18n/localization-manager";
+import { stateManager } from "@/utils/state/state-manager";
+import { CodeIndexer } from "@/core/indexing/code-indexer";
+import { FileNode, FileScanner } from "@/core/indexing/file-scanner";
+import { QdrantPoint, VectorStore } from "@/core/indexing/vector-store";
 
 const NAMESPACE = "5b4d94f6-fb6b-4a4e-b053-6d9c8f8e8c72"; // Fixed namespace for deterministic IDs
 
