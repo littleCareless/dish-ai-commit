@@ -8,10 +8,10 @@ import {
   MessageSquare,
   Settings,
 } from "lucide-react";
-import React, { useEffect, useRef } from "react";
+import React from "react";
+import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
 import { useExtensionState } from "../../context/ExtensionStateContext";
-import { useAppTranslation } from "../../i18n/translation-context";
 import { cn } from "../../lib/utils";
 import { routes } from "../../router/routes";
 import {
@@ -22,94 +22,9 @@ import {
 } from "../ui/dropdown-menu";
 
 export const Navigation: React.FC = () => {
-  console.log("[Navigation] rendered");
-  // 使用 TranslationContext 的 t 函数，它应该能正确响应语言变化
-  const { t, i18n } = useAppTranslation();
-  const { setLanguage, language: extensionLanguage } = useExtensionState();
-
-  // 检查 i18n 的资源加载情况
-  const resources = i18n.options.resources || {};
-  const currentLangResources = resources[i18n.language] as
-    | Record<string, unknown>
-    | undefined;
-
-  // 检查翻译资源内容
-  const translationResource = currentLangResources?.translation as
-    | { nav?: { settings?: string; notifications?: string; language?: string } }
-    | undefined;
-  const navResource = translationResource?.nav;
-
-  // 使用 getResourceBundle 直接获取资源
-  const directResource = i18n.getResourceBundle(
-    i18n.language,
-    "translation",
-  ) as { nav?: { settings?: string } } | undefined;
-  const directNavSettings = directResource?.nav?.settings;
-
-  console.log("[Navigation] useAppTranslation result:", {
-    i18nLanguage: i18n.language,
-    tFunctionType: typeof t,
-    testTranslation: t("nav.settings"),
-    availableLanguages: Object.keys(resources),
-    currentLanguageResources: currentLangResources
-      ? Object.keys(currentLangResources)
-      : "NOT FOUND",
-    translationNamespace: translationResource ? "EXISTS" : "NOT FOUND",
-    navResource: navResource ? "EXISTS" : "NOT FOUND",
-    navSettingsDirect: navResource?.settings || "NOT FOUND",
-    directTranslation: i18n.t("nav.settings", { lng: i18n.language }),
-    directTranslationNoOpts: i18n.t("nav.settings"),
-    directResourceBundle: directNavSettings || "NOT FOUND",
-    // 检查资源内容的实际值
-    translationResourceSample: translationResource
-      ? JSON.stringify(translationResource).substring(0, 200)
-      : "NO RESOURCE",
-  });
-
-  // 追踪之前的语言和翻译值
-  const prevLanguageRef = useRef<string | null>(null);
-  const prevTranslationsRef = useRef<Record<string, string>>({});
-
-  useEffect(() => {
-    const currentTranslations = {
-      settings: t("nav.settings"),
-      notifications: t("nav.notifications"),
-      language: t("nav.language"),
-    };
-
-    console.log("[Navigation] useEffect triggered:", {
-      i18nLanguage: i18n.language,
-      extensionLanguage,
-      prevLanguage: prevLanguageRef.current,
-      translationKeys: currentTranslations,
-      prevTranslations: prevTranslationsRef.current,
-    });
-
-    // 检查翻译值是否变化
-    const translationsChanged =
-      prevTranslationsRef.current.settings !== currentTranslations.settings ||
-      prevTranslationsRef.current.notifications !==
-        currentTranslations.notifications ||
-      prevTranslationsRef.current.language !== currentTranslations.language;
-
-    if (translationsChanged) {
-      console.log("[Navigation] Translations changed:", {
-        prev: prevTranslationsRef.current,
-        current: currentTranslations,
-      });
-      prevTranslationsRef.current = currentTranslations;
-    }
-
-    if (i18n.language !== prevLanguageRef.current) {
-      console.log(
-        "[Navigation] i18n.language changed from",
-        prevLanguageRef.current,
-        "to",
-        i18n.language,
-      );
-      prevLanguageRef.current = i18n.language || null;
-    }
-  }, [t, i18n.language, extensionLanguage]);
+  // 使用 react-i18next 的标准 hook，它会自动响应语言变化
+  const { t, i18n } = useTranslation("translation");
+  const { setLanguage } = useExtensionState();
 
   // 使用 useMemo 确保语言变化时重新计算
   // 现在使用 TranslationContext 的 t 函数，它应该能正确响应语言变化
@@ -159,31 +74,21 @@ export const Navigation: React.FC = () => {
       },
     ];
 
-    console.log(
-      "[Navigation] navigationItems computed with language:",
-      i18n.language,
-      "Labels:",
-      items.map((item) => ({ path: item.path, label: item.label })),
-    );
+    // 开发模式下添加调试页面
+    // if (import.meta.env.DEV) {
+    //   items.push({
+    //     path: routes.i18nDebug,
+    //     label: "🐛 i18n Debug",
+    //     icon: Bug,
+    //     description: "i18n debugging tools",
+    //   });
+    // }
 
     return items;
   }, [t, i18n.language]);
 
-  console.log(
-    "[Navigation] Current navigation items labels:",
-    navigationItems.map((item) => ({ path: item.path, label: item.label })),
-  );
-
   const handleLanguageChange = (lang: string) => {
-    console.log("[Navigation] Language change requested:", lang);
-    console.log(
-      "[Navigation] Before change - i18n.language:",
-      i18n.language,
-      "extensionLanguage:",
-      extensionLanguage,
-    );
     setLanguage(lang);
-    console.log("[Navigation] After setLanguage call");
   };
 
   return (
