@@ -1,21 +1,17 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import * as vscode from "vscode";
-import * as path from "path";
-import { ConfigurationManager } from "./config/configuration-manager";
-import { ProfileManagerService } from "./services/profile-manager-service";
 import { registerCommands } from "./commands";
-import { Logger } from "./utils/logger";
-import { initializeLocalization } from "./utils/i18n";
-import {
-  notify,
-  withProgress,
-} from "./utils/notification/notification-manager";
-import { stateManager } from "./utils/state/state-manager";
+import { ConfigurationManager } from "./config/configuration-manager";
 import { EmbeddingServiceManager } from "./core/indexing/embedding-service-manager";
-import { TokenStatsService } from "./services/token-stats-service";
+import { TokenStatsService } from "./services/core/token-stats-service";
+import { ProfileManagerService } from "./services/profile-manager/profile-manager-service";
+import { initializeLocalization } from "./utils/i18n";
+import { Logger } from "./utils/logger";
+import { notify } from "./utils/notification/notification-manager";
+import { stateManager } from "./utils/state/state-manager";
 
-import { SettingsViewProvider } from "./webview/settings-view-provider"; // 确保路径正确
+import { SettingsViewProvider } from "./services/webview/settings-view-provider"; // 确保路径正确
 import { NotificationSettingsManager } from "./utils/notification/notification-settings-manager";
 
 /**
@@ -29,7 +25,9 @@ export async function activate(context: vscode.ExtensionContext) {
     // 初始化 Logger
     const logger = Logger.getInstance("Dish AI Commit Gen");
     logger.info("Activating extension...");
-    logger.info(`Extension version: ${vscode.extensions.getExtension("littleCareless.dish-ai-commit")?.packageJSON.version}`);
+    logger.info(
+      `Extension version: ${vscode.extensions.getExtension("littleCareless.dish-ai-commit")?.packageJSON.version}`
+    );
     logger.info(`VSCode version: ${vscode.version}`);
     context.subscriptions.push(logger);
 
@@ -59,7 +57,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // 初始化通知设置管理器
     logger.info("Initializing notification settings manager...");
-    const notificationSettingsManager = NotificationSettingsManager.getInstance();
+    const notificationSettingsManager =
+      NotificationSettingsManager.getInstance();
     await notificationSettingsManager.initialize(context);
 
     // 注册所有命令到VS Code
@@ -80,7 +79,9 @@ export async function activate(context: vscode.ExtensionContext) {
       )
     );
   } catch (e) {
-    Logger.getInstance("Dish AI Commit Gen").error(`Error activating extension: ${e}`);
+    Logger.getInstance("Dish AI Commit Gen").error(
+      `Error activating extension: ${e}`
+    );
     // 向用户显示本地化的错误提示
     notify.error("extension.activation.failed", [
       e instanceof Error ? e.message : String(e),
