@@ -233,7 +233,7 @@ export const NotificationsPage: React.FC = () => {
                 </AlertTitle>
                 <AlertDescription>
                   <Trans
-                    i18nKey="systemNotifications.macOsAlertDescription"
+                    i18nKey="notifications-page:systemNotifications.macOsAlertDescription"
                     components={{
                       code: (
                         <code className="font-mono bg-muted text-muted-foreground p-1 rounded-sm" />

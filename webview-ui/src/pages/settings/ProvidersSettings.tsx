@@ -1,23 +1,19 @@
-import { Skeleton } from "@/components/ui/skeleton";
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { ProfileForm } from "../../components/settings/ProfileForm";
 import { ProviderConfigForm } from "../../components/settings/ProviderConfigForm";
-import { ProviderRegistry } from "../../config/provider-registry";
+import { providerRegistry } from "../../config/provider-registry";
 import { secureStorage } from "../../services/secure-storage";
-import { ExtendedProviderConfig } from "../../types/provider-metadata";
+import {
+  ExtendedProviderConfig,
+  ProviderMetadata,
+} from "../../types/provider-metadata";
 import { Profile, ProviderConfig } from "../../types/settings";
 import { getFieldDefaultValue } from "../../utils/validation-helpers";
 
 // UI Components
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
 import { VSCodeDropdown, VSCodeOption } from "@vscode/webview-ui-toolkit/react";
 
 interface ProvidersSettingsProps {
@@ -33,67 +29,6 @@ interface ProvidersSettingsProps {
   onProfileDelete: (profileId: string) => void;
 }
 
-const ProvidersSettingsSkeleton: React.FC = () => {
-  return (
-    <div className="space-y-6">
-      {/* Skeleton for ProfileForm */}
-      <div>
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <Skeleton className="h-6 w-1/4" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="flex items-center gap-2">
-            <Skeleton className="h-10 flex-grow" />
-            <Skeleton className="h-10 w-10" />
-            <Skeleton className="h-10 w-10" />
-            <Skeleton className="h-10 w-24" />
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Skeleton for Provider Selection */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <Skeleton className="h-5 w-32" />
-            <Skeleton className="h-8 w-48" />
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Skeleton className="h-10 w-full" />
-        </CardContent>
-      </Card>
-
-      {/* Skeleton for Provider Config Form */}
-      <div className="space-y-6">
-        <Card>
-          <CardHeader>
-            <CardTitle>
-              <Skeleton className="h-6 w-40" />
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-1/4" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-1/4" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-1/4" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-};
-
 export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
   profile: editingProfile,
   activeProfile,
@@ -105,10 +40,12 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
   onProfileEdit,
   onProfileDelete,
 }) => {
-  const { t } = useTranslation("providers-settings");
+  const { t, i18n } = useTranslation([
+    "providers-settings",
+    "provider-registry",
+  ]);
+  const ProviderRegistry = providerRegistry;
   const [selectedProvider, setSelectedProvider] = useState<string>("");
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState<boolean>(false);
-  const [profileToDelete, setProfileToDelete] = useState<string | null>(null);
 
   const currentProviderMetadata = ProviderRegistry[selectedProvider];
 
@@ -132,7 +69,7 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
       });
     }
     return config as unknown as ExtendedProviderConfig;
-  }, [editingProfile, selectedProvider, currentProviderMetadata]);
+  }, [editingProfile, selectedProvider, currentProviderMetadata, t]);
 
   const handleConfigChange = useCallback(
     async (providerId: string, newConfig: Record<string, unknown>) => {
@@ -217,7 +154,7 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
       };
       onChange(updatedProfile);
     },
-    [editingProfile, onChange],
+    [editingProfile, onChange, ProviderRegistry, t],
   );
 
   const handleProviderSelect = useCallback(
@@ -241,19 +178,6 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
     },
     [editingProfile, addProviderToProfile, handleProviderSelect],
   );
-
-  const handleDeleteProfileClick = (profileId: string) => {
-    setProfileToDelete(profileId);
-    setShowDeleteConfirm(true);
-  };
-
-  const confirmDeleteProfile = () => {
-    if (profileToDelete) {
-      onProfileDelete(profileToDelete);
-      setShowDeleteConfirm(false);
-      setProfileToDelete(null);
-    }
-  };
 
   useEffect(() => {
     if (!editingProfile) {
@@ -299,11 +223,12 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
     selectedProvider,
     addProviderToProfile,
     handleProviderSelect,
+    ProviderRegistry,
   ]);
 
-  if (isLoading) {
-    return <ProvidersSettingsSkeleton />;
-  }
+  // if (isLoading) {
+  //   return <ProvidersSettingsSkeleton />;
+  // }
 
   return (
     <div className="space-y-6">
@@ -316,7 +241,7 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
           onProfileChange={onProfileSelect}
           onCreateProfile={onProfileCreate}
           onEditProfile={onProfileEdit}
-          onDeleteProfile={handleDeleteProfileClick}
+          onDeleteProfile={onProfileDelete}
         />
       </div>
 
@@ -333,7 +258,7 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
                 }
                 className="text-blue-600 hover:text-blue-800"
               >
-                {t("providerDocs", { name: currentProviderMetadata.name })}
+                {t("providerDocs", { name: t(currentProviderMetadata.name) })}
               </Button>
             )}
           </CardTitle>
@@ -342,15 +267,17 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
           <div className="flex flex-col space-y-2">
             <VSCodeDropdown
               value={selectedProvider}
-              onChange={(e: Event) =>
-                handleProviderChange((e.target as HTMLSelectElement).value)
+              onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+                handleProviderChange(e.target.value)
               }
             >
-              {Object.values(ProviderRegistry).map((provider) => (
-                <VSCodeOption key={provider.id} value={provider.id}>
-                  {provider.icon} {provider.name}
-                </VSCodeOption>
-              ))}
+              {Object.values(ProviderRegistry).map(
+                (provider: ProviderMetadata) => (
+                  <VSCodeOption key={provider.id} value={provider.id}>
+                    {provider.icon} {t(provider.name)}
+                  </VSCodeOption>
+                ),
+              )}
             </VSCodeDropdown>
           </div>
         </CardContent>
@@ -358,6 +285,7 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
 
       {currentProviderMetadata && (
         <ProviderConfigForm
+          key={`${editingProfile?.id}-${selectedProvider}-${i18n.language}`}
           provider={
             currentProviderMetadata as unknown as ExtendedProviderConfig
           }
@@ -367,32 +295,6 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
           onOpenSettings={() => {}}
         />
       )}
-
-      <Dialog open={showDeleteConfirm} onOpenChange={setShowDeleteConfirm}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{t("dialogs.confirmDelete.title")}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              {t("dialogs.confirmDelete.description", {
-                name: allProfiles.find((p) => p.id === profileToDelete)?.name,
-              })}
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button
-                variant="outline"
-                onClick={() => setShowDeleteConfirm(false)}
-              >
-                {t("dialogs.confirmDelete.cancel")}
-              </Button>
-              <Button variant="destructive" onClick={confirmDeleteProfile}>
-                {t("dialogs.confirmDelete.delete")}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
     </div>
   );
 };

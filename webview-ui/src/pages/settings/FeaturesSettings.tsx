@@ -1,6 +1,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { postMessage } from "@/utils/vscode";
 import {
   BarChart3,
   ClipboardCheck,
@@ -9,7 +10,7 @@ import {
   GitCommit,
   GitPullRequest,
 } from "lucide-react";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface FeatureSwitchProps {
@@ -66,14 +67,37 @@ export const FeaturesSettings: React.FC = () => {
     generatePRSummary: true,
   });
 
+  // Load settings from backend on mount
+  useEffect(() => {
+    postMessage("loadFeaturesSettings");
+
+    // Listen for settings updates from backend
+    const handleMessage = (event: MessageEvent) => {
+      const message = event.data;
+      if (message.command === "updateFeaturesSettings" && message.settings) {
+        setFeatures(message.settings);
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, []);
+
   const handleFeatureToggle = (
     feature: keyof typeof features,
     enabled: boolean,
   ) => {
-    setFeatures((prev) => ({
-      ...prev,
+    // Build the updated settings object
+    const updatedSettings = {
+      ...features,
       [feature]: enabled,
-    }));
+    };
+
+    // Update local state immediately for responsive UI
+    setFeatures(updatedSettings);
+
+    // Save to backend with the updated settings
+    postMessage("saveFeaturesSettings", updatedSettings);
   };
 
   return (

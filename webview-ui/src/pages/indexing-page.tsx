@@ -1,7 +1,14 @@
-import { useAppTranslation } from "@/i18n/translation-context";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { postMessage } from "@/utils/vscode";
 import { zodResolver } from "@hookform/resolvers/zod";
-import React from "react";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { Control, useForm, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 import * as z from "zod";
 import { AdvancedIndexingSettings } from "../components/settings/indexing/advanced-indexing-settings";
 import { GeminiSettings } from "../components/settings/indexing/gemini-settings";
@@ -21,6 +28,30 @@ import {
   FormLabel,
   FormMessage,
 } from "../components/ui/form";
+import { useVSCodeMessage } from "../hooks/use-vscode-message";
+
+// Define message payload types
+interface IndexingProgressPayload {
+  message: string;
+  current: number;
+  total: number;
+}
+
+interface IndexStatusPayload {
+  isIndexed: number;
+}
+
+interface IndexingFailedPayload {
+  error: string;
+}
+
+interface IndexingStats {
+  total: number;
+  succeeded: number;
+  failed: number;
+  skipped: number;
+  failedFiles: Array<{ path: string; error: string }>;
+}
 
 // Define the form schema using Zod
 const formSchema = z.object({
@@ -30,19 +61,50 @@ const formSchema = z.object({
   qdrantApiKey: z.string().optional(),
   searchScoreThreshold: z.number().optional(),
   maxSearchResults: z.number().optional(),
-  ollamaModel: z.string().optional(),
-  openaiApiKey: z.string().optional(),
-  openaiModel: z.string().optional(),
-  geminiApiKey: z.string().optional(),
-  geminiModel: z.string().optional(),
-  mistralApiKey: z.string().optional(),
-  mistralModel: z.string().optional(),
-  vercelAIGatewayApiKey: z.string().optional(),
-  vercelAIGatewayModel: z.string().optional(),
-  openaiCompatibleBaseUrl: z.string().optional(),
-  openaiCompatibleApiKey: z.string().optional(),
-  openaiCompatibleModel: z.string().optional(),
-  openaiCompatibleModelDimensions: z.number().optional(),
+  embeddingModel: z.string().optional(), // Keep this to track active model if needed, or rely on provider config
+  providers: z
+    .object({
+      ollama: z
+        .object({
+          model: z.string().optional(),
+          baseUrl: z.string().optional(),
+          modelDimensions: z.number().optional(),
+        })
+        .optional(),
+      openai: z
+        .object({
+          apiKey: z.string().optional(),
+          model: z.string().optional(),
+        })
+        .optional(),
+      gemini: z
+        .object({
+          apiKey: z.string().optional(),
+          model: z.string().optional(),
+        })
+        .optional(),
+      mistral: z
+        .object({
+          apiKey: z.string().optional(),
+          model: z.string().optional(),
+        })
+        .optional(),
+      "vercel-ai-gateway": z
+        .object({
+          apiKey: z.string().optional(),
+          model: z.string().optional(),
+        })
+        .optional(),
+      "openai-compatible": z
+        .object({
+          baseUrl: z.string().optional(),
+          apiKey: z.string().optional(),
+          model: z.string().optional(),
+          modelDimensions: z.number().optional(),
+        })
+        .optional(),
+    })
+    .optional(),
 });
 
 export type IndexingFormValues = z.infer<typeof formSchema>;
@@ -59,26 +121,162 @@ const providerComponents: {
 };
 
 export const IndexingPage: React.FC = () => {
-  const { t } = useAppTranslation();
+  const { t } = useTranslation();
   const form = useForm<IndexingFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
       enabled: false,
       provider: "ollama",
+      qdrantUrl: "http://localhost:6333",
+      providers: {
+        ollama: {
+          baseUrl: "http://localhost:11434",
+        },
+      },
     },
   });
+
+  const [statusInfo, setStatusInfo] = useState<{
+    key?: string;
+    message?: string;
+    options?: Record<string, unknown>;
+  } | null>(null);
+  const [indexingProgress, setIndexingProgress] = useState({
+    current: 0,
+    total: 0,
+  });
+  const [isIndexed, setIsIndexed] = useState<number>(0);
+  const [indexingStats, setIndexingStats] = useState<IndexingStats | null>(
+    null,
+  );
+  const [showDetails, setShowDetails] = useState(false);
 
   const selectedProvider = useWatch({
     control: form.control,
     name: "provider",
   });
+  const enabled = useWatch({
+    control: form.control,
+    name: "enabled",
+  });
   const ProviderComponent = providerComponents[selectedProvider];
 
-  function onSubmit(values: IndexingFormValues) {
-    // Do something with the form values.
-    // ✅ This will be type-safe and validated.
-    console.log(values);
-  }
+  const indexingStatus = useMemo(() => {
+    if (!statusInfo) {
+      return null;
+    }
+    if (statusInfo.key) {
+      const translated = t(statusInfo.key, statusInfo.options);
+      if (statusInfo.message) {
+        return `${translated}: ${statusInfo.message}`;
+      }
+      return translated;
+    }
+    return statusInfo.message;
+  }, [statusInfo, t]);
+
+  const onSubmit = useCallback((values: IndexingFormValues) => {
+    // 清除之前的状态
+    setStatusInfo(null);
+    setIndexingProgress({ current: 0, total: 0 });
+    setIndexingStats(null);
+
+    console.log("save value", values);
+
+    // 先保存设置
+    postMessage("saveSettings", values);
+
+    // 只有在启用索引时才触发扫描
+    if (values.enabled) {
+      postMessage("startIndexing", { clearIndex: false });
+    }
+  }, []);
+
+  const handleClearIndex = useCallback(() => {
+    postMessage("clearIndex");
+  }, []);
+
+  useVSCodeMessage(
+    "indexingProgress",
+    (payload: { data: IndexingProgressPayload }) => {
+      setStatusInfo({ message: payload.data.message });
+      setIndexingProgress({
+        current: payload.data.current,
+        total: payload.data.total,
+      });
+    },
+  );
+
+  useVSCodeMessage(
+    "indexingFinished",
+    (payload: {
+      data: IndexStatusPayload & { stats?: IndexingStats; warning?: string };
+    }) => {
+      setStatusInfo(
+        payload.data.warning
+          ? { message: payload.data.warning }
+          : { key: "indexing-page:status.indexingComplete" },
+      );
+      console.log("payload", payload);
+      setIsIndexed(payload.data.isIndexed);
+      if (payload.data.stats) {
+        setIndexingStats(payload.data.stats);
+      }
+    },
+  );
+
+  useVSCodeMessage("indexCleared", (payload: { data: IndexStatusPayload }) => {
+    setStatusInfo({ key: "indexing-page:status.indexCleared" });
+    setIsIndexed(payload.data.isIndexed);
+  });
+
+  useVSCodeMessage(
+    "indexingFailed",
+    (payload: { data: IndexingFailedPayload }) => {
+      setStatusInfo({
+        key: "indexing-page:status.indexingFailed",
+        message: payload.data.error,
+      });
+    },
+  );
+
+  useVSCodeMessage("settingsSaved", () => {
+    setStatusInfo({ key: "indexing-page:status.settingsSaved" });
+  });
+
+  // 加载设置
+  useVSCodeMessage(
+    "loadIndexingSettings",
+    (payload: {
+      data: { config: Partial<IndexingFormValues>; isIndexed: number };
+    }) => {
+      const { config, isIndexed } = payload.data;
+      console.log("config", config);
+
+      // 更新表单值 - 合并现有值和新加载的设置以保持表单状态
+      const currentValues = form.getValues();
+      form.reset(
+        {
+          ...currentValues,
+          ...config, // config is now a flat object matching IndexingFormValues
+        },
+        {
+          keepDefaultValues: false,
+        },
+      );
+
+      // 更新索引状态
+      setIsIndexed(isIndexed);
+      if (isIndexed > 0) {
+        setStatusInfo({ key: "indexing-page:status.upToDate" });
+      }
+    },
+  );
+
+  // 组件挂载时请求设置
+  useEffect(() => {
+    postMessage("getSettings");
+  }, []);
 
   return (
     <Form {...form}>
@@ -90,7 +288,6 @@ export const IndexingPage: React.FC = () => {
             <a href="#">{t("indexing-page:learnMore")}</a>
           </p>
         </div>
-
         <FormField
           control={form.control}
           name="enabled"
@@ -99,7 +296,10 @@ export const IndexingPage: React.FC = () => {
               <FormControl>
                 <Checkbox
                   checked={field.value}
-                  onCheckedChange={field.onChange}
+                  onCheckedChange={(checked) => {
+                    console.log("Form field enabled changed:", checked);
+                    field.onChange(checked);
+                  }}
                 />
               </FormControl>
               <FormLabel className="font-normal">
@@ -108,16 +308,125 @@ export const IndexingPage: React.FC = () => {
             </FormItem>
           )}
         />
-
         <div>
           <h2 className="text-lg font-medium text-gray-900">
             {t("indexing-page:status.title")}
           </h2>
-          <p className="mt-1 text-sm text-gray-600">
-            {t("indexing-page:status.indexed")}
-          </p>
-        </div>
 
+          {/* 状态概览 */}
+          <div className="mt-2 space-y-2">
+            {/* 进度条和状态 */}
+            <div className="w-full">
+              <div className="flex justify-between text-sm mb-1 min-h-[20px]">
+                <span>
+                  {indexingStatus
+                    ? `${t("indexing-page:status.current")}: ${indexingStatus}`
+                    : ""}
+                </span>
+                {indexingProgress.total > 0 && (
+                  <span className="text-gray-500">
+                    {indexingProgress.current} / {indexingProgress.total}
+                  </span>
+                )}
+              </div>
+              {indexingProgress.total > 0 && (
+                <progress
+                  value={indexingProgress.current}
+                  max={indexingProgress.total}
+                  className="w-full h-2 rounded-full overflow-hidden"
+                />
+              )}
+            </div>
+
+            {/* 统计信息 */}
+            {indexingStats && (
+              <div className="flex flex-wrap gap-4 text-sm">
+                <span className="text-green-600 font-medium">
+                  {t("indexing-page:stats.succeeded")}:{" "}
+                  {indexingStats.succeeded + indexingStats.skipped}/
+                  {indexingStats.total}
+                </span>
+                <span
+                  className={`font-medium ${indexingStats.failed > 0 ? "text-red-600 cursor-pointer hover:underline" : "text-gray-400"}`}
+                  onClick={() =>
+                    indexingStats.failed > 0 && setShowDetails(true)
+                  }
+                >
+                  {t("indexing-page:stats.failed")}: {indexingStats.failed}/
+                  {indexingStats.total}
+                  {indexingStats.failed > 0 &&
+                    ` (${t("indexing-page:stats.viewFailureDetails")})`}
+                </span>
+              </div>
+            )}
+
+            {/* 操作按钮 */}
+            <div className="flex space-x-3 mt-4">
+              {!indexingStats && (
+                <Button
+                  type="button"
+                  size="sm"
+                  onClick={() =>
+                    postMessage("startIndexing", { clearIndex: false })
+                  }
+                  disabled={!enabled}
+                >
+                  {isIndexed > 0
+                    ? t("indexing-page:buttons.updateIndex")
+                    : t("indexing-page:buttons.startIndexing")}
+                </Button>
+              )}
+              {indexingStats && indexingStats.failed > 0 && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setShowDetails(true)}
+                >
+                  {t("indexing-page:buttons.viewDetails")}
+                </Button>
+              )}
+            </div>
+
+            {/* 失败详情弹窗 */}
+            <Dialog open={showDetails} onOpenChange={setShowDetails}>
+              <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+                <DialogHeader>
+                  <DialogTitle>
+                    {t("indexing-page:dialog.failedFilesTitle", {
+                      count: indexingStats?.failed || 0,
+                    })}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="flex-1 overflow-y-auto p-1">
+                  {indexingStats &&
+                  indexingStats.failedFiles &&
+                  indexingStats.failedFiles.length > 0 ? (
+                    <ul className="space-y-3">
+                      {indexingStats.failedFiles.map((file, idx) => (
+                        <li
+                          key={idx}
+                          className="text-sm border-b pb-2 last:border-0"
+                        >
+                          <div className="font-mono font-semibold text-gray-800 break-all">
+                            {file.path}
+                          </div>
+                          <div className="text-red-600 mt-1 text-xs break-words">
+                            {t("indexing-page:dialog.errorLabel")}: {file.error}
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  ) : (
+                    <p className="text-gray-500">
+                      {t("indexing-page:dialog.noFailedFiles")}
+                    </p>
+                  )}
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </div>
         <div className="space-y-4">
           <FormField
             control={form.control}
@@ -128,7 +437,9 @@ export const IndexingPage: React.FC = () => {
                 <FormControl>
                   <ProviderSelector
                     selectedProvider={field.value}
-                    onProviderChange={field.onChange}
+                    onProviderChange={(value) =>
+                      form.setValue("provider", value)
+                    }
                   />
                 </FormControl>
                 <FormMessage />
@@ -141,13 +452,11 @@ export const IndexingPage: React.FC = () => {
             />
           )}
         </div>
-
         <AdvancedIndexingSettings
           control={form.control as Control<IndexingFormValues>}
         />
-
         <div className="flex justify-end space-x-2">
-          <Button type="button" variant="secondary">
+          <Button type="button" variant="secondary" onClick={handleClearIndex}>
             {t("indexing-page:clearIndex")}
           </Button>
           <Button type="submit">{t("indexing-page:save")}</Button>

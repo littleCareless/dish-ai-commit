@@ -14,7 +14,7 @@ import { useTranslation } from "react-i18next";
 import { AdvancedSettings } from "../../components/settings/AdvancedSettings";
 import { PreferencesSettings } from "../../components/settings/PreferencesSettings";
 import { ProfileEditDialog } from "../../components/settings/ProfileEditDialog";
-import { profileManager } from "../../services/profile-manager";
+import { profileManager } from "../../services/webview/profile-manager";
 import { DEFAULT_USER_PREFERENCES, Profile } from "../../types/settings";
 import { showInformationMessage } from "../../utils/vscode";
 import { FeaturesSettings } from "./FeaturesSettings";
@@ -54,7 +54,6 @@ export const SettingsPage: React.FC = () => {
           t("defaultProfileName"),
           t("defaultProfileDescription"),
         );
-        defaultProfile.isDefault = true;
         await profileManager.saveProfile(defaultProfile);
         await profileManager.setActiveProfile(defaultProfile.id);
 
@@ -62,12 +61,12 @@ export const SettingsPage: React.FC = () => {
         setAllProfiles([defaultProfile]);
         setActiveProfile(defaultProfile);
         setEditingProfile(defaultProfile);
+        return; // Early return to prevent state from being overwritten
       }
+
       setAllProfiles(profiles);
       const active =
-        profiles.find((p) => p.id === activeProfileId) ||
-        profiles.find((p) => p.isDefault) ||
-        profiles[0];
+        profiles.find((p) => p.id === activeProfileId) || profiles[0];
       setActiveProfile(active);
       setEditingProfile(active); // Initially, edit the active profile
     } catch (err) {
@@ -97,10 +96,6 @@ export const SettingsPage: React.FC = () => {
   const handleProfileDelete = async (profileId: string) => {
     const profile = allProfiles.find((p) => p.id === profileId);
     if (!profile) return;
-    if (profile.isDefault) {
-      showInformationMessage(t("errors.cannotDeleteDefaultProfile"));
-      return;
-    }
 
     setProfileToDelete(profile);
     setIsDeleteConfirmationOpen(true);
@@ -145,6 +140,8 @@ export const SettingsPage: React.FC = () => {
       await profileManager.saveProfile(profile);
       setEditDialogOpen(false);
       await loadData(); // Refresh data
+      // Set the newly saved profile as the editing profile
+      setEditingProfile(profile);
       showInformationMessage(
         t("messages.profileSaved", { name: profile.name }),
       );
@@ -164,8 +161,12 @@ export const SettingsPage: React.FC = () => {
     try {
       await profileManager.saveProfile(editingProfile);
       await profileManager.setActiveProfile(editingProfile.id);
+      await loadData(); // Refresh data to update JSON display
       setHasUnsavedChanges(false);
       setActiveProfile(editingProfile);
+      // Ensure editingProfile remains set to the activated profile
+      // This makes sure the profile selector shows the correct selection
+      setEditingProfile(editingProfile);
       showInformationMessage(
         t("messages.switchedToProfile", { name: editingProfile.name }),
       );
