@@ -1,9 +1,18 @@
 import { MessageType } from "@/types/messages";
-import { PROMPT_DISPLAY_NAMES, PromptDetail, PromptKey } from "@/types/prompts";
-import React, { useCallback, useEffect, useState } from "react";
+import {
+  CATEGORY_DISPLAY_NAMES,
+  PROMPT_CATEGORIES,
+  PROMPT_DISPLAY_NAMES,
+  PROMPT_VARIABLES,
+  PromptCategory,
+  PromptDetail,
+  PromptKey,
+} from "@/types/prompts";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CreatePromptModal } from "../components/prompts/create-prompt-modal";
-import { postMessage } from "../utils/vscode";
+import { CreatePromptModal } from "@/components/prompts/create-prompt-modal";
+import { VariablePicker } from "@/components/prompts/variable-picker";
+import { postMessage } from "@/utils/vscode";
 
 interface Prompts {
   [key: string]: PromptDetail;
@@ -17,7 +26,34 @@ export const PromptsPage: React.FC = () => {
   const [saveTarget, setSaveTarget] = useState<"workspace" | "global">(
     "workspace",
   );
+
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const handleInsertVariable = (variableName: string) => {
+    if (textareaRef.current) {
+      const textarea = textareaRef.current;
+      const start = textarea.selectionStart;
+      const end = textarea.selectionEnd;
+      const text = textarea.value;
+      const variableText = `{{${variableName}}}`;
+      const newText =
+        text.substring(0, start) + variableText + text.substring(end);
+
+      setCurrentContent(newText);
+
+      // Restore cursor position after insertion
+      setTimeout(() => {
+        textarea.focus();
+        textarea.setSelectionRange(
+          start + variableText.length,
+          start + variableText.length,
+        );
+      }, 0);
+    } else {
+      setCurrentContent((prev) => prev + `{{${variableName}}}`);
+    }
+  };
 
   const fetchPrompts = useCallback(() => {
     postMessage(MessageType.GetAllPrompts);
@@ -150,56 +186,77 @@ export const PromptsPage: React.FC = () => {
             {t("createNew")}
           </button>
           <div className="flex-grow overflow-y-auto border border-[var(--vscode-panel-border)] rounded-md">
-            {Object.entries(prompts).map(([key, detail]) => (
-              <div
-                key={key}
-                onClick={() => handleSelectChange(key)}
-                className={`p-3 cursor-pointer flex justify-between items-center border-b border-[var(--vscode-panel-border)]
-                  hover:bg-[var(--vscode-list-hoverBackground)]
-                  ${
-                    selectedKey === key
-                      ? "bg-[var(--vscode-list-activeSelectionBackground)]"
-                      : ""
+            {Object.values(PromptCategory).map((category) => {
+              const categoryPrompts = Object.entries(prompts).filter(
+                ([key]) => {
+                  const mappedCategory = PROMPT_CATEGORIES[key as PromptKey];
+                  if (category === PromptCategory.Custom) {
+                    return !mappedCategory;
                   }
-                `}
-              >
-                <div>
-                  <div className="font-semibold">
-                    {PROMPT_DISPLAY_NAMES[key as PromptKey] || key}
+                  return mappedCategory === category;
+                },
+              );
+
+              if (categoryPrompts.length === 0) return null;
+
+              return (
+                <div key={category}>
+                  <div className="px-3 py-2 text-xs font-bold uppercase text-[var(--vscode-descriptionForeground)] bg-[var(--vscode-sideBar-background)] border-b border-[var(--vscode-panel-border)] sticky top-0">
+                    {CATEGORY_DISPLAY_NAMES[category]}
                   </div>
-                  {detail.isCustomized && (
-                    <div className="text-xs text-[var(--vscode-descriptionForeground)]">
-                      {detail.isNew ? t("custom") : t("modified")} -
-                      {detail.source === "workspace"
-                        ? t("workspace")
-                        : t("global")}
+                  {categoryPrompts.map(([key, detail]) => (
+                    <div
+                      key={key}
+                      onClick={() => handleSelectChange(key)}
+                      className={`p-3 cursor-pointer flex justify-between items-center border-b border-[var(--vscode-panel-border)]
+                        hover:bg-[var(--vscode-list-hoverBackground)]
+                        ${
+                          selectedKey === key
+                            ? "bg-[var(--vscode-list-activeSelectionBackground)]"
+                            : ""
+                        }
+                      `}
+                    >
+                      <div>
+                        <div className="font-semibold">
+                          {PROMPT_DISPLAY_NAMES[key as PromptKey] || key}
+                        </div>
+                        {detail.isCustomized && (
+                          <div className="text-xs text-[var(--vscode-descriptionForeground)]">
+                            {detail.isNew ? t("custom") : t("modified")} -
+                            {detail.source === "workspace"
+                              ? t("workspace")
+                              : t("global")}
+                          </div>
+                        )}
+                      </div>
+                      {detail.isNew && (
+                        <div className="flex space-x-2">
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleRename(key);
+                            }}
+                            className="p-1 text-xs hover:text-[var(--vscode-foreground)]"
+                          >
+                            ✏️
+                          </button>
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              handleDelete(key);
+                            }}
+                            className="p-1 text-xs hover:text-[var(--vscode-foreground)]"
+                          >
+                            🗑️
+                          </button>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  ))}
                 </div>
-                {detail.isNew && (
-                  <div className="flex space-x-2">
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRename(key);
-                      }}
-                      className="p-1 text-xs hover:text-[var(--vscode-foreground)]"
-                    >
-                      ✏️
-                    </button>
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleDelete(key);
-                      }}
-                      className="p-1 text-xs hover:text-[var(--vscode-foreground)]"
-                    >
-                      🗑️
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))}
+              );
+            })}
           </div>
         </div>
 
@@ -208,9 +265,16 @@ export const PromptsPage: React.FC = () => {
           {selectedKey ? (
             <div className="h-full flex flex-col gap-4">
               <textarea
-                className="w-full flex-grow p-2 border rounded-md bg-[var(--vscode-input-background)] text-[var(--vscode-input-foreground)] border-[var(--vscode-input-border)]"
+                ref={textareaRef}
+                className="w-full flex-grow p-2 border rounded-md bg-[var(--vscode-input-background)] text-[var(--vscode-input-foreground)] border-[var(--vscode-input-border)] font-mono"
                 value={currentContent}
                 onChange={(e) => setCurrentContent(e.target.value)}
+              />
+              <VariablePicker
+                variables={
+                  selectedKey ? PROMPT_VARIABLES[selectedKey as PromptKey] : []
+                }
+                onInsert={handleInsertVariable}
               />
               <div className="flex justify-between items-center">
                 <div className="flex items-center space-x-4">
