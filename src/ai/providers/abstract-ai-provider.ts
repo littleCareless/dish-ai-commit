@@ -1,9 +1,3 @@
-import { ConfigurationManager } from "@/config/configuration-manager";
-import { getCommitMessageTools } from "@/prompt/generate-commit";
-import { getWeeklyReportPrompt } from "@/prompt/weekly-report";
-import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
-import { formatMessage } from "@/utils/i18n/localization-manager";
-import { Logger } from "@/utils/logger";
 import {
   AIModel,
   AIProvider,
@@ -14,6 +8,7 @@ import {
 } from "@/ai/types";
 import {
   extractModifiedFilePaths,
+  generateWithRetry,
   getBranchNameSystemPrompt,
   getBranchNameUserPrompt,
   getCodeReviewPrompt,
@@ -21,6 +16,18 @@ import {
   getGlobalSummaryPrompt,
   getSystemPrompt
 } from "@/ai/utils/generate-helper";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { getCommitMessageTools } from "@/prompt/generate-commit";
+import {
+  getPRSummarySystemPrompt,
+  getPRSummaryUserPrompt,
+} from "@/prompt/pr-summary";
+import { getWeeklyReportPrompt } from "@/prompt/weekly-report";
+import { TokenStatsService } from "@/services/core/token-stats-service";
+import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
+import { formatMessage } from "@/utils/i18n/localization-manager";
+import { Logger } from "@/utils/logger";
+import { tokenizerService } from "@/utils/tokenizer";
 
 /**
  * AI提供者的抽象基类
@@ -54,6 +61,9 @@ export abstract class AbstractAIProvider implements AIProvider {
       const result = await this.executeAIRequest(params, {
         temperature: preferences.commitTemperature,
       });
+
+      await this.recordTokenUsage(result, params);
+
       return result;
     } catch (error) {
       this.logger.logError(error as Error, formatMessage("generation.failed", [
@@ -76,6 +86,12 @@ export abstract class AbstractAIProvider implements AIProvider {
     params: AIRequestParams
   ): Promise<AsyncIterable<string>> {
     this.logger.info(`Generating commit stream with provider: ${this.getId()}`);
+    console.log('[AbstractAIProvider] generateCommitStream - params:', {
+      feature: params.feature,
+      hasModel: !!params.model,
+      hasMessages: Array.isArray(params.messages),
+      messageCount: params.messages?.length
+    });
     try {
       if (!params.messages) {
         const systemPrompt = await getSystemPrompt(params);
@@ -86,9 +102,49 @@ export abstract class AbstractAIProvider implements AIProvider {
       }
 
       const preferences = PreferencesSettingsManager.getInstance().getSettings();
-      return this.executeAIStreamRequest(params, {
+      const stream = await this.executeAIStreamRequest(params, {
         temperature: preferences.commitTemperature,
       });
+
+      const self = this;
+      const model = params.model || this.getDefaultModel();
+      let fullContent = "";
+
+      async function* wrappedStream() {
+        for await (const chunk of stream) {
+          fullContent += chunk;
+          yield chunk;
+        }
+
+        // Stream finished, count tokens
+        try {
+          const promptTokens = tokenizerService.countTokens(
+            JSON.stringify(params.messages),
+            model
+          );
+          const completionTokens = tokenizerService.countTokens(
+            fullContent,
+            model
+          );
+          const totalTokens = promptTokens + completionTokens;
+
+          await self.recordTokenUsage(
+            {
+              content: fullContent,
+              usage: {
+                promptTokens,
+                completionTokens,
+                totalTokens,
+              },
+            },
+            params
+          );
+        } catch (e) {
+          console.warn("Failed to record token usage for stream:", e);
+        }
+      }
+
+      return wrappedStream();
     } catch (error) {
       // 错误现在由 executeStreamWithRetry 内部处理和抛出
       // 这里只捕获最终的、不可重试的错误
@@ -138,15 +194,21 @@ export abstract class AbstractAIProvider implements AIProvider {
           const emoji = enableEmoji && args.emoji ? `${args.emoji} ` : "";
           const body = enableBody && args.body ? `\n\n${args.body}` : "";
           const commitMessage = `${emoji}${args.type}${scope}: ${args.subject}${body}`;
-          return {
+
+          const finalResult = {
             content: commitMessage,
             usage: result.usage,
           };
+
+          await this.recordTokenUsage(finalResult, params);
+
+          return finalResult;
         }
       }
 
       // Fallback to content if no function call was made
       if (result.content) {
+        await this.recordTokenUsage(result, params);
         return result;
       }
 
@@ -187,13 +249,16 @@ export abstract class AbstractAIProvider implements AIProvider {
       });
 
       if (result.content) {
-        return {
+        const finalResult = {
           // content: CodeReviewReportGenerator.generateMarkdownReport(
           //   result.jsonContent as CodeReviewResult
           // ),
           content: result.content,
           usage: result.usage,
         };
+
+        await this.recordTokenUsage(finalResult, params);
+        return finalResult;
       } else {
         throw new Error("Failed to parse code review result as JSON");
       }
@@ -230,6 +295,9 @@ export abstract class AbstractAIProvider implements AIProvider {
       const result = await this.executeAIRequest(params, {
         temperature: preferences.branchNameTemperature,
       });
+
+      await this.recordTokenUsage(result, params);
+
       return result;
     } catch (error) {
       this.logger.logError(error as Error, formatMessage("branchName.generation.failed", [
@@ -288,6 +356,9 @@ export abstract class AbstractAIProvider implements AIProvider {
           temperature: PreferencesSettingsManager.getInstance().getSettings().weeklyReportTemperature,
         }
       );
+
+      await this.recordTokenUsage(result, params);
+
       return result;
     } catch (error) {
       this.logger.logError(error as Error, formatMessage("weeklyReport.generation.failed", [
@@ -328,6 +399,7 @@ export abstract class AbstractAIProvider implements AIProvider {
           temperature: PreferencesSettingsManager.getInstance().getSettings().commitTemperature,
         }
       );
+      await this.recordTokenUsage(summaryResult, params);
       const summary = summaryResult.content;
 
       // 步骤2: 为每个文件生成描述
@@ -362,6 +434,8 @@ export abstract class AbstractAIProvider implements AIProvider {
             }
           );
 
+          await this.recordTokenUsage(fileResult, params);
+
           fileChanges.push({
             filePath,
             description: fileResult.content,
@@ -378,6 +452,87 @@ export abstract class AbstractAIProvider implements AIProvider {
         formatMessage("layeredCommit.generation.failed", [
           error instanceof Error ? error.message : String(error),
         ])
+      );
+    }
+  }
+
+  /**
+   * 生成PR摘要
+   * @param params AI请求参数
+   * @param commitMessages 提交信息列表
+   * @returns AI响应
+   */
+  async generatePRSummary(
+    params: AIRequestParams,
+    commitMessages: string[]
+  ): Promise<AIResponse> {
+    const systemPrompt =
+      params.systemPrompt || getPRSummarySystemPrompt(params.language);
+    const userPrompt = getPRSummaryUserPrompt(params.language);
+
+    const userContent = commitMessages.join("\n- ");
+    const commitMessagesString = commitMessages.join("\n- ");
+
+    return generateWithRetry(
+      {
+        ...params,
+        diff: commitMessagesString,
+        additionalContext: commitMessagesString,
+      },
+      async (_truncatedContent: string) => {
+        const response = await this.executeAIRequest(
+          {
+            ...params,
+            messages: [
+              { role: "system", content: systemPrompt },
+              { role: "user", content: userPrompt },
+              { role: "user", content: `- ${userContent}` },
+            ],
+          },
+          {
+            temperature: 0.7,
+          }
+        );
+
+        await this.recordTokenUsage(response, params);
+
+        return { content: response.content, usage: response.usage };
+      },
+      {
+        initialMaxLength: commitMessagesString.length,
+        provider: this.getId(),
+      }
+    );
+  }
+
+  /**
+   * 记录Token使用情况
+   * @param result AI响应结果
+   * @param params AI请求参数
+   */
+  protected async recordTokenUsage(
+    result: AIResponse,
+    params: AIRequestParams
+  ): Promise<void> {
+    if (result.usage?.totalTokens) {
+      const tokenStatsService = TokenStatsService.getInstance();
+      const model =
+        (params.model && params.model.id) ||
+        this.getConfig()?.defaultModel ||
+        "unknown-model";
+      const feature = params.feature || "unknown";
+
+      console.log(`[AbstractAIProvider] Recording token usage for ${this.getId()}:`, {
+        tokens: result.usage.totalTokens,
+        model,
+        feature,
+      });
+
+      await tokenStatsService.addTokens(
+        result.usage.totalTokens,
+        model,
+        this.getId(),
+        feature
       );
     }
   }

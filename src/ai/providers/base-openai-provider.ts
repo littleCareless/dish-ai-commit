@@ -1,14 +1,8 @@
+import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
+import { AIModel, AIRequestParams } from "@/ai/types";
+import { getSystemPrompt } from "@/ai/utils/generate-helper";
 import OpenAI from "openai";
 import { ChatCompletionMessageParam } from "openai/resources";
-import {
-  getPRSummarySystemPrompt,
-  getPRSummaryUserPrompt,
-} from "@/prompt/pr-summary";
-import { TokenStatsService } from "@/services/core/token-stats-service";
-import { tokenizerService } from "@/utils/tokenizer";
-import { AIModel, AIRequestParams, AIResponse } from "@/ai/types";
-import { generateWithRetry, getSystemPrompt } from "@/ai/utils/generate-helper"; // Import getSystemPrompt
-import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
 
 /**
  * OpenAI提供者配置项接口
@@ -102,6 +96,7 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       params
     )) as ChatCompletionMessageParam[];
 
+    console.log(`[BaseOpenAIProvider] executeAIRequest called at ${new Date().toISOString()} `);
     console.log("Final messages for AI:", JSON.stringify(messages, null, 2));
 
     const completion = await this.openai.chat.completions.create({
@@ -113,22 +108,14 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       temperature: options?.temperature,
     });
 
+
+
     const content = completion.choices[0]?.message?.content || "";
     const usage = {
       promptTokens: completion.usage?.prompt_tokens,
       completionTokens: completion.usage?.completion_tokens,
       totalTokens: completion.usage?.total_tokens,
     };
-
-    if (usage.totalTokens) {
-      const tokenStatsService = TokenStatsService.getInstance();
-      await tokenStatsService.addTokens(
-        usage.totalTokens,
-        (params.model && params.model.id) || this.config.defaultModel || "gpt-3.5-turbo",
-        this.provider.id,
-        params.feature || "unknown"
-      );
-    }
 
     let jsonContent;
     if (options?.parseAsJSON) {
@@ -201,26 +188,7 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
           }
         }
 
-        const model = params.model || this.getDefaultModel();
-        const promptTokens = tokenizerService.countTokens(
-          JSON.stringify(filteredMessages),
-          model
-        );
-        const completionTokens = tokenizerService.countTokens(
-          completionContent,
-          model
-        );
-        const totalTokens = promptTokens + completionTokens;
 
-        if (totalTokens > 0) {
-          const tokenStatsService = TokenStatsService.getInstance();
-          await tokenStatsService.addTokens(
-            totalTokens,
-            model.id,
-            this.provider.id,
-            params.feature || "unknown"
-          );
-        }
       } catch (error) {
         this.handleContextLengthError(
           error,
@@ -374,57 +342,4 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
    */
   abstract isAvailable(): Promise<boolean>;
 
-  /**
-   * 生成PR摘要
-   * @param params AI请求参数
-   * @param commitMessages 提交信息列表
-   * @returns AI响应
-   */
-  async generatePRSummary(
-    params: AIRequestParams,
-    commitMessages: string[]
-  ): Promise<AIResponse> {
-    const systemPrompt =
-      params.systemPrompt || getPRSummarySystemPrompt(params.language); // 使用新的方法生成系统提示
-    const userPrompt = getPRSummaryUserPrompt(params.language);
-
-    // PR摘要通常不需要原始diff，而是commit列表
-    // userContent 可以是commit列表的字符串形式，或者根据需要调整
-    const userContent = commitMessages.join("\n- ");
-
-    // PR 摘要生成不直接依赖于单个 diff 字符串的截断，
-    // 但我们仍然可以使用 generateWithRetry 来处理 API 错误等。
-    // initialMaxLength 可以基于 commitMessages 的总长度。
-    const commitMessagesString = commitMessages.join("\n- ");
-    return generateWithRetry(
-      // AIRequestParams，其中 diff 字段可以为空或设为 commitMessagesString
-      {
-        ...params,
-        diff: commitMessagesString,
-        additionalContext: commitMessagesString,
-      },
-      async (_truncatedContent: string) => {
-        // generateFn 现在接收一个参数，但我们在这里不直接使用它
-        const response = await this.executeAIRequest(
-          {
-            ...params,
-            messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userPrompt },
-              { role: "user", content: `- ${userContent}` },
-            ],
-          },
-          {
-            temperature: 0.7,
-          }
-        );
-        return { content: response.content, usage: response.usage };
-      },
-      {
-        initialMaxLength: commitMessagesString.length, // 基于 commit 消息的总长度
-        provider: this.getId(), // 或者 params.model?.provider?.id
-        // reductionFactor 和 retryableErrors 可以使用默认值或根据需要调整
-      }
-    );
-  }
 }

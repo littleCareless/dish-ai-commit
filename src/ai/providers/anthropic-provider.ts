@@ -1,14 +1,9 @@
-import Anthropic from "@anthropic-ai/sdk";
-import { ConfigurationManager } from "@/config/configuration-manager";
-import {
-  getPRSummarySystemPrompt,
-  getPRSummaryUserPrompt,
-} from "@/prompt/pr-summary";
-import { TokenStatsService } from "@/services/core/token-stats-service";
-import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
-import { getSystemPrompt } from "@/ai/utils/generate-helper"; // Import getSystemPrompt
 import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
 import type { OpenAIProviderConfig } from "@/ai/providers/base-openai-provider";
+import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
+import { getSystemPrompt } from "@/ai/utils/generate-helper"; // Import getSystemPrompt
+import { ConfigurationManager } from "@/config/configuration-manager";
+import Anthropic from "@anthropic-ai/sdk";
 
 /**
  * Anthropic支持的AI模型配置列表
@@ -137,16 +132,6 @@ export class AnthropicAIProvider extends AbstractAIProvider {
         completionTokens: response.usage.output_tokens,
         totalTokens: response.usage.input_tokens + response.usage.output_tokens,
       };
-
-      if (usage.totalTokens) {
-        const tokenStatsService = TokenStatsService.getInstance();
-        await tokenStatsService.addTokens(
-          usage.totalTokens,
-          modelId,
-          this.provider.id,
-          params.feature || "unknown"
-        );
-      }
 
       const content =
         response.content[0]?.type === "text" ? response.content[0].text : "";
@@ -282,42 +267,7 @@ export class AnthropicAIProvider extends AbstractAIProvider {
     return "anthropic";
   }
 
-  /**
-   * 生成PR摘要 (占位符实现)
-   * @param params AI请求参数
-   * @param commitMessages 提交信息列表
-   * @returns AI响应
-   */
-  async generatePRSummary(
-    params: AIRequestParams,
-    commitMessages: string[]
-  ): Promise<import("../types").AIResponse> {
-    console.warn(
-      "generatePRSummary is not fully implemented for AnthropicAIProvider and will return an empty response."
-    );
-    const systemPrompt =
-      params.systemPrompt || getPRSummarySystemPrompt(params.language);
-    const userPrompt = getPRSummaryUserPrompt(params.language);
-    const userContent = commitMessages.join("\n- ");
 
-    // Anthropic的executeAIRequest会将userPrompt和userContent合并
-    // 所以这里我们将commit列表作为userContent，userPrompt作为引导
-    const response = await this.executeAIRequest(
-      {
-        ...params,
-        messages: [
-          { role: "system", content: systemPrompt },
-          { role: "user", content: userPrompt },
-          { role: "user", content: `- ${userContent}` },
-        ],
-      },
-      {
-        temperature: 0.7,
-      }
-    );
-
-    return { content: response.content, usage: response.usage };
-  }
   /**
    * 构建特定于提供商的消息数组。
    * Anthropic API 使用 systemInstruction 和 contents 数组。
