@@ -95,8 +95,8 @@ export const PROMPT_VARIABLES: Record<PromptKey, PromptVariable[]> = {
   [PromptKey.LayeredCommitFile]: [
     { name: "language", description: "Target language for the output" },
     { name: "filePath", description: "Path of the file being committed" },
-    { name: "globalContext", description: "Global context of the changes" },
-    { name: "otherFiles", description: "List of other files in the commit" },
+    { name: "body_instruction", description: "Instruction for body content based on config" },
+    { name: "context_section", description: "Global context and other files info" },
   ],
   [PromptKey.PRSummarySystem]: [
     { name: "language", description: "Target language for the output" },
@@ -108,11 +108,23 @@ export const PROMPT_VARIABLES: Record<PromptKey, PromptVariable[]> = {
   ],
 };
 
-export type PromptSource = "workspace" | "global" | "default";
+/**
+ * 系统生成型提示词列表
+ * 这些提示词包含复杂的动态生成逻辑，不应该被直接编辑
+ */
+export const SYSTEM_GENERATED_PROMPTS: Set<PromptKey> = new Set([
+  PromptKey.GenerateCommitSystem,
+  PromptKey.GenerateCommitSystem1,
+  PromptKey.CodeReviewSystem,
+  PromptKey.CodeReviewSystem1,
+]);
+
+export type PromptSource = "workspace" | "global" | "default" | "project";
 
 export interface PromptDetail {
   content: string;
   source: PromptSource;
   isCustomized: boolean;
   isNew?: boolean;
+  isSystemGenerated?: boolean; // 标识是否为系统生成型提示词
 }

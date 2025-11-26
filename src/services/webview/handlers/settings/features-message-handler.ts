@@ -1,5 +1,5 @@
-import * as vscode from "vscode";
 import { FeaturesSettingsManager } from "@/services/settings/features-settings-manager";
+import * as vscode from "vscode";
 
 export class FeaturesMessageHandler {
     private _settingsManager: FeaturesSettingsManager;
@@ -26,6 +26,21 @@ export class FeaturesMessageHandler {
                     await webview.postMessage({
                         command: "updateFeaturesSettings",
                         settings: this._settingsManager.getSettings(),
+                    });
+                }
+                break;
+
+            case "setActivePrompt":
+                if (message.key) {
+                    // Update the active prompt key in configuration
+                    const config = vscode.workspace.getConfiguration("dish-ai-commit.features.commitMessage");
+                    await config.update("activePromptKey", message.key, vscode.ConfigurationTarget.Workspace);
+
+                    // Refresh settings to UI
+                    const settings = this._settingsManager.getSettings();
+                    await webview.postMessage({
+                        command: "updateFeaturesSettings",
+                        settings,
                     });
                 }
                 break;

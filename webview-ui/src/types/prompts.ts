@@ -108,11 +108,12 @@ export const PROMPT_VARIABLES: Record<PromptKey, PromptVariable[]> = {
   ],
 };
 
-export type PromptSource = "workspace" | "global" | "default";
+export type PromptSource = "workspace" | "global" | "default" | "project";
 
 export interface PromptDetail {
   content: string;
   source: PromptSource;
   isCustomized: boolean;
   isNew: boolean;
+  isSystemGenerated?: boolean;
 }

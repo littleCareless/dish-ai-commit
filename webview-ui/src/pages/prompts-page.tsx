@@ -1,3 +1,5 @@
+import { CreatePromptModal } from "@/components/prompts/create-prompt-modal";
+import { VariablePicker } from "@/components/prompts/variable-picker";
 import { MessageType } from "@/types/messages";
 import {
   CATEGORY_DISPLAY_NAMES,
@@ -8,11 +10,10 @@ import {
   PromptDetail,
   PromptKey,
 } from "@/types/prompts";
+import { postMessage } from "@/utils/vscode";
+import { CheckCircle2, Circle } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { CreatePromptModal } from "@/components/prompts/create-prompt-modal";
-import { VariablePicker } from "@/components/prompts/variable-picker";
-import { postMessage } from "@/utils/vscode";
 
 interface Prompts {
   [key: string]: PromptDetail;
@@ -26,6 +27,8 @@ export const PromptsPage: React.FC = () => {
   const [saveTarget, setSaveTarget] = useState<"workspace" | "global">(
     "workspace",
   );
+  const [activePromptKey, setActivePromptKey] =
+    useState<string>("generate-commit");
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -57,6 +60,13 @@ export const PromptsPage: React.FC = () => {
 
   const fetchPrompts = useCallback(() => {
     postMessage(MessageType.GetAllPrompts);
+    // Also fetch active prompt key - we might need a new message type or piggyback
+    // For now, let's assume we can get it via a separate message or part of GetAllPrompts payload if we modified backend
+    // Since we didn't modify GetAllPrompts payload structure in backend yet to include active key,
+    // we should probably add a way to get it.
+    // Actually, let's add a new message type "GetActivePromptKey" in backend or just use "loadFeaturesSettings"
+    // since we added it to features settings.
+    postMessage("loadFeaturesSettings");
   }, []);
 
   const handleSelectChange = useCallback(
@@ -66,8 +76,11 @@ export const PromptsPage: React.FC = () => {
 
       setSelectedKey(key);
       setCurrentContent(selectedPrompt.content);
-      if (selectedPrompt.source !== "default") {
-        setSaveTarget(selectedPrompt.source);
+      if (
+        selectedPrompt.source !== "default" &&
+        selectedPrompt.source !== "project"
+      ) {
+        setSaveTarget(selectedPrompt.source as "workspace" | "global");
       } else {
         setSaveTarget("workspace"); // Default to workspace if not customized
       }
@@ -93,8 +106,9 @@ export const PromptsPage: React.FC = () => {
               if (firstPrompt) {
                 setCurrentContent(firstPrompt.content);
                 setSaveTarget(
-                  firstPrompt.source !== "default"
-                    ? firstPrompt.source
+                  firstPrompt.source !== "default" &&
+                    firstPrompt.source !== "project"
+                    ? (firstPrompt.source as "workspace" | "global")
                     : "workspace",
                 );
                 return firstKey;
@@ -102,6 +116,18 @@ export const PromptsPage: React.FC = () => {
             }
             return prevSelectedKey;
           });
+        }
+      } else if (
+        message.command === "updateFeaturesSettings" &&
+        message.settings
+      ) {
+        // Assuming the backend sends the full settings object including our new key
+        // We need to make sure the backend actually sends this.
+        // The current backend implementation of "loadFeaturesSettings" sends what's in the config.
+        // We added "dish-ai-commit.features.commitMessage.activePromptKey" to package.json
+        // So it should be available in the settings object if we update the backend handler.
+        if (message.settings.activePromptKey) {
+          setActivePromptKey(message.settings.activePromptKey);
         }
       }
     };
@@ -158,6 +184,17 @@ export const PromptsPage: React.FC = () => {
         target: prompts[oldKey].source,
       });
     }
+  };
+
+  const handleSetActive = () => {
+    if (!selectedKey) return;
+    // We need a new message type for this or reuse saveFeaturesSettings
+    // Let's reuse saveFeaturesSettings but we need to be careful not to overwrite other settings
+    // Or we can create a specific message.
+    // For simplicity, let's assume we can send a partial update or a specific command.
+    // Let's use a specific command "setActivePrompt"
+    postMessage("setActivePrompt", { key: selectedKey });
+    setActivePromptKey(selectedKey);
   };
 
   return (
@@ -217,18 +254,25 @@ export const PromptsPage: React.FC = () => {
                         }
                       `}
                     >
-                      <div>
-                        <div className="font-semibold">
-                          {PROMPT_DISPLAY_NAMES[key as PromptKey] || key}
-                        </div>
-                        {detail.isCustomized && (
-                          <div className="text-xs text-[var(--vscode-descriptionForeground)]">
-                            {detail.isNew ? t("custom") : t("modified")} -
-                            {detail.source === "workspace"
-                              ? t("workspace")
-                              : t("global")}
-                          </div>
+                      <div className="flex items-center gap-2">
+                        {activePromptKey === key && (
+                          <CheckCircle2 className="w-4 h-4 text-green-500" />
                         )}
+                        <div>
+                          <div className="font-semibold">
+                            {PROMPT_DISPLAY_NAMES[key as PromptKey] || key}
+                          </div>
+                          {detail.isCustomized && (
+                            <div className="text-xs text-[var(--vscode-descriptionForeground)]">
+                              {detail.isNew ? t("custom") : t("modified")} -
+                              {detail.source === "workspace"
+                                ? t("workspace")
+                                : detail.source === "project"
+                                  ? "Project"
+                                  : t("global")}
+                            </div>
+                          )}
+                        </div>
                       </div>
                       {detail.isNew && (
                         <div className="flex space-x-2">
@@ -264,15 +308,48 @@ export const PromptsPage: React.FC = () => {
         <div className="w-2/3 flex flex-col gap-4">
           {selectedKey ? (
             <div className="h-full flex flex-col gap-4">
+              <div className="flex justify-between items-center">
+                <div className="text-sm text-[var(--vscode-descriptionForeground)]">
+                  {activePromptKey === selectedKey ? (
+                    <span className="flex items-center gap-1 text-green-500 font-bold">
+                      <CheckCircle2 className="w-4 h-4" /> Active Prompt
+                    </span>
+                  ) : (
+                    <button
+                      onClick={handleSetActive}
+                      className="flex items-center gap-1 text-[var(--vscode-textLink-foreground)] hover:underline"
+                    >
+                      <Circle className="w-4 h-4" /> Set as Active
+                    </button>
+                  )}
+                </div>
+              </div>
+
+              {/* System Generated Prompt Notice */}
+              {prompts[selectedKey]?.isSystemGenerated && (
+                <div className="p-3 bg-[var(--vscode-editor-inactiveSelectionBackground)] border border-[var(--vscode-inputValidation-infoBackground)] rounded-md text-sm text-[var(--vscode-descriptionForeground)]">
+                  🔒
+                  这是系统内置提示词，使用复杂逻辑动态生成。如需自定义，请创建新的提示词并设为
+                  Active。
+                </div>
+              )}
+
               <textarea
                 ref={textareaRef}
                 className="w-full flex-grow p-2 border rounded-md bg-[var(--vscode-input-background)] text-[var(--vscode-input-foreground)] border-[var(--vscode-input-border)] font-mono"
                 value={currentContent}
                 onChange={(e) => setCurrentContent(e.target.value)}
+                readOnly={
+                  prompts[selectedKey]?.source === "project" ||
+                  prompts[selectedKey]?.isSystemGenerated
+                }
               />
               <VariablePicker
                 variables={
-                  selectedKey ? PROMPT_VARIABLES[selectedKey as PromptKey] : []
+                  selectedKey
+                    ? PROMPT_VARIABLES[selectedKey as PromptKey] ||
+                      PROMPT_VARIABLES[PromptKey.GenerateCommitSystem]
+                    : []
                 }
                 onInsert={handleInsertVariable}
               />
@@ -287,6 +364,10 @@ export const PromptsPage: React.FC = () => {
                       checked={saveTarget === "workspace"}
                       onChange={() => setSaveTarget("workspace")}
                       className="h-4 w-4 accent-[var(--vscode-button-background)]"
+                      disabled={
+                        prompts[selectedKey]?.source === "project" ||
+                        prompts[selectedKey]?.isSystemGenerated
+                      }
                     />
                     <span>{t("workspace")}</span>
                   </label>
@@ -298,6 +379,10 @@ export const PromptsPage: React.FC = () => {
                       checked={saveTarget === "global"}
                       onChange={() => setSaveTarget("global")}
                       className="h-4 w-4 accent-[var(--vscode-button-background)]"
+                      disabled={
+                        prompts[selectedKey]?.source === "project" ||
+                        prompts[selectedKey]?.isSystemGenerated
+                      }
                     />
                     <span>{t("global")}</span>
                   </label>
@@ -307,6 +392,10 @@ export const PromptsPage: React.FC = () => {
                   <button
                     onClick={handleSave}
                     className="font-bold py-1 px-3 rounded text-[var(--vscode-button-foreground)] bg-[var(--vscode-button-background)] hover:bg-[var(--vscode-button-hoverBackground)]"
+                    disabled={
+                      prompts[selectedKey]?.source === "project" ||
+                      prompts[selectedKey]?.isSystemGenerated
+                    }
                   >
                     {t("save")}
                   </button>
@@ -317,6 +406,10 @@ export const PromptsPage: React.FC = () => {
                       <button
                         onClick={handleReset}
                         className="font-bold py-1 px-3 rounded text-[var(--vscode-button-secondaryForeground)] bg-[var(--vscode-button-secondaryBackground)] hover:bg-[var(--vscode-button-secondaryHoverBackground)]"
+                        disabled={
+                          prompts[selectedKey]?.source === "project" ||
+                          prompts[selectedKey]?.isSystemGenerated
+                        }
                       >
                         {t("reset")}
                       </button>
