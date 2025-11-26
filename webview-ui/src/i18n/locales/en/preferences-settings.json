@@ -37,5 +37,39 @@
     "polish": "Polish",
     "turkish": "Turkish",
     "thai": "Thai"
+  },
+  "skipDiffConfig": "Skip Diff File Configuration",
+  "skipDiffConfigDescription": "Configure which files do not need detailed diff content generation to improve performance and quality",
+  "skipDiffFileTypes": "Skip Diff File Types",
+  "fileExtensions": "File Extensions",
+  "fileExtensionsLabel": "Skipped File Extensions",
+  "extensionPlaceholder": "Enter extension, e.g., .png",
+  "skipDiffDescription": "For these file types, the system will only show file operation types (add/modify/delete/rename/copy) without generating detailed diff content",
+  "pathPatterns": "Path Patterns",
+  "pathPatternsLabel": "Skipped Path Patterns (Glob Format)",
+  "pathPatternPlaceholder": "Enter path pattern, e.g., dist/**",
+  "pathPatternDescription": "Use Glob patterns to match file paths, such as node_modules/**, **/*.min.js",
+  "maxFileSize": "Maximum File Size Limit",
+  "maxFileSizeLabel": "Maximum File Size (KB)",
+  "maxFileSizeDescription": "Files exceeding this size will skip diff generation. Set to 0 for no limit",
+  "advancedOptions": "Advanced Options",
+  "autoDetectBinary": "Auto-detect Binary Files",
+  "autoDetectBinaryTooltip": "Detect null characters in file content to automatically identify binary files",
+  "respectGitAttributes": "Read .gitattributes Configuration",
+  "respectGitAttributesTooltip": "Respect file types marked as binary in .gitattributes file",
+  "resetToDefault": "Reset to Default",
+  "addPreset": "Add Preset",
+  "previewImpact": "Preview Impact",
+  "presets": {
+    "images": "All Image Formats",
+    "videos": "All Video Formats",
+    "audios": "All Audio Formats",
+    "documents": "All Office Documents"
+  },
+  "previewResult": {
+    "title": "Current Configuration Impact",
+    "willSkip": "Will skip diff generation for {{count}} files:",
+    "andMore": "...and {{count}} more files",
+    "estimatedTimeSaved": "Estimated time saved: {{time}}s"
   }
 }

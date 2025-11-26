@@ -37,5 +37,39 @@
     "polish": "波兰语",
     "turkish": "土耳其语",
     "thai": "泰语"
+  },
+  "skipDiffConfig": "跳过 Diff 的文件配置",
+  "skipDiffConfigDescription": "配置哪些文件不需要生成详细的 diff 内容，提升性能和生成质量",
+  "skipDiffFileTypes": "跳过 Diff 的文件类型",
+  "fileExtensions": "文件扩展名",
+  "fileExtensionsLabel": "跳过的文件扩展名",
+  "extensionPlaceholder": "输入扩展名，如 .png",
+  "skipDiffDescription": "对于这些文件类型，系统将只显示文件操作类型（新增/修改/删除/重命名/复制），不生成详细的 diff 内容",
+  "pathPatterns": "路径模式",
+  "pathPatternsLabel": "跳过的路径模式（Glob 格式）",
+  "pathPatternPlaceholder": "输入路径模式，如 dist/**",
+  "pathPatternDescription": "使用 Glob 模式匹配文件路径，例如 node_modules/**、**/*.min.js",
+  "maxFileSize": "最大文件大小限制",
+  "maxFileSizeLabel": "最大文件大小（KB）",
+  "maxFileSizeDescription": "超过此大小的文件将跳过 diff 生成。设置为 0 表示不限制",
+  "advancedOptions": "高级选项",
+  "autoDetectBinary": "自动检测二进制文件",
+  "autoDetectBinaryTooltip": "检测文件内容中是否包含 null 字符，自动识别二进制文件",
+  "respectGitAttributes": "读取 .gitattributes 配置",
+  "respectGitAttributesTooltip": "尊重 .gitattributes 文件中标记为 binary 的文件类型",
+  "resetToDefault": "恢复默认配置",
+  "addPreset": "添加预设组合",
+  "previewImpact": "预览影响范围",
+  "presets": {
+    "images": "所有图片格式",
+    "videos": "所有视频格式",
+    "audios": "所有音频格式",
+    "documents": "所有Office文档"
+  },
+  "previewResult": {
+    "title": "当前配置影响",
+    "willSkip": "将跳过 {{count}} 个文件的 diff 生成：",
+    "andMore": "...以及其他 {{count}} 个文件",
+    "estimatedTimeSaved": "估算节省时间: {{time}}s"
   }
 }

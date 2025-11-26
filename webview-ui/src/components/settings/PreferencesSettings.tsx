@@ -1,5 +1,13 @@
 import { Badge } from "@/components/ui/badge";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -8,13 +16,26 @@ import {
   FormItem,
   FormLabel,
 } from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
 import { Select, SelectOption } from "@/components/ui/select";
 import { Slider } from "@/components/ui/slider";
-import { Info } from "lucide-react";
+import { TagInput } from "@/components/ui/tag-input";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
+import {
+  DEFAULT_SKIP_DIFF_EXTENSIONS,
+  DEFAULT_SKIP_DIFF_PATTERNS,
+  DEFAULT_USER_PREFERENCES,
+  UserPreferences,
+} from "@/types/settings";
+import { FileCode, Info } from "lucide-react";
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { DEFAULT_USER_PREFERENCES, UserPreferences } from "@/types/settings";
 
 interface PreferencesSettingsProps {
   preferences: UserPreferences;
@@ -48,12 +69,75 @@ export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
     return () => subscription.unsubscribe();
   }, [form, onChange]);
 
-  const getTemperatureDescription = (value: number) => {
-    if (value === 0) return t("temperatureLevels.deterministic");
-    if (value <= 0.5) return t("temperatureLevels.low");
-    if (value <= 1.0) return t("temperatureLevels.balanced");
-    if (value <= 1.5) return t("temperatureLevels.high");
+  const getTemperatureLabel = (temp: number): string => {
+    if (temp === 0) return t("temperatureLevels.deterministic");
+    if (temp < 0.3) return t("temperatureLevels.low");
+    if (temp < 0.7) return t("temperatureLevels.balanced");
+    if (temp < 1.0) return t("temperatureLevels.high");
     return t("temperatureLevels.max");
+  };
+
+  // 别名，保持向后兼容
+  const getTemperatureDescription = getTemperatureLabel;
+
+  // === Diff 跳过配置相关 ===
+
+  // 预设组合
+  const presetGroups = {
+    images: [
+      ".png",
+      ".jpg",
+      ".jpeg",
+      ".gif",
+      ".bmp",
+      ".ico",
+      ".webp",
+      ".svg",
+      ".tiff",
+      ".tif",
+      ".psd",
+      ".ai",
+      ".eps",
+      ".raw",
+      ".heic",
+      ".avif",
+    ],
+    videos: [
+      ".mp4",
+      ".avi",
+      ".mov",
+      ".mkv",
+      ".webm",
+      ".flv",
+      ".wmv",
+      ".m4v",
+      ".mpg",
+      ".mpeg",
+      ".3gp",
+      ".ogv",
+    ],
+    audios: [".mp3", ".wav", ".ogg", ".m4a", ".flac", ".aac", ".wma", ".opus"],
+    documents: [".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx"],
+  };
+
+  // 恢复默认配置
+  const handleResetToDefault = () => {
+    form.setValue("skipDiffFileExtensions", DEFAULT_SKIP_DIFF_EXTENSIONS);
+    form.setValue("maxDiffFileSizeKB", 500);
+    form.setValue("autoDetectBinaryFiles", true);
+    form.setValue("skipDiffPathPatterns", DEFAULT_SKIP_DIFF_PATTERNS);
+    form.setValue("respectGitAttributes", true);
+  };
+
+  // 添加预设组合
+  const handleAddPreset = (presetName: keyof typeof presetGroups) => {
+    const currentExtensions = form.getValues("skipDiffFileExtensions") || [];
+    const presetExtensions = presetGroups[presetName];
+    const newExtensions = [
+      ...currentExtensions,
+      ...presetExtensions.filter((ext) => !currentExtensions.includes(ext)),
+    ];
+    form.setValue("skipDiffFileExtensions", newExtensions);
   };
 
   const languageOptions = [
@@ -177,6 +261,198 @@ export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
                 </FormItem>
               )}
             />
+          </CardContent>
+        </Card>
+
+        {/* Diff 跳过配置 */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <FileCode className="w-4 h-4" />
+              {t("skipDiffConfig")}
+            </CardTitle>
+            <CardDescription>{t("skipDiffConfigDescription")}</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            {/* 文件扩展名 */}
+            <FormField
+              control={form.control}
+              name="skipDiffFileExtensions"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("fileExtensionsLabel")}</FormLabel>
+                  <FormControl>
+                    <TagInput
+                      value={field.value || []}
+                      onChange={field.onChange}
+                      placeholder={t("extensionPlaceholder")}
+                      isPathPattern={false}
+                    />
+                  </FormControl>
+                  <FormDescription>{t("skipDiffDescription")}</FormDescription>
+                </FormItem>
+              )}
+            />
+
+            {/* 路径模式 */}
+            <FormField
+              control={form.control}
+              name="skipDiffPathPatterns"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("pathPatternsLabel")}</FormLabel>
+                  <FormControl>
+                    <TagInput
+                      value={field.value || []}
+                      onChange={field.onChange}
+                      placeholder={t("pathPatternPlaceholder")}
+                      isPathPattern={true}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {t("pathPatternDescription")}
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+
+            {/* 文件大小限制 */}
+            <FormField
+              control={form.control}
+              name="maxDiffFileSizeKB"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>{t("maxFileSizeLabel")}</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="text"
+                      value={field.value?.toString() || "0"}
+                      onChange={(e: React.FormEvent<HTMLElement>) => {
+                        const value = parseInt(
+                          (e.target as HTMLInputElement)?.value || "0",
+                        );
+                        field.onChange(value);
+                      }}
+                    />
+                  </FormControl>
+                  <FormDescription>
+                    {t("maxFileSizeDescription")}
+                  </FormDescription>
+                </FormItem>
+              )}
+            />
+
+            {/* 高级选项 */}
+            <div className="space-y-3">
+              <FormLabel>{t("advancedOptions")}</FormLabel>
+              <div className="space-y-2">
+                <FormField
+                  control={form.control}
+                  name="autoDetectBinaryFiles"
+                  render={({ field }) => (
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                      <label
+                        className="text-sm cursor-pointer"
+                        onClick={() => field.onChange(!field.value)}
+                      >
+                        {t("autoDetectBinary")}
+                      </label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{t("autoDetectBinaryTooltip")}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="respectGitAttributes"
+                  render={({ field }) => (
+                    <div className="flex items-center space-x-2">
+                      <Checkbox
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                      />
+                      <label
+                        className="text-sm cursor-pointer"
+                        onClick={() => field.onChange(!field.value)}
+                      >
+                        {t("respectGitAttributes")}
+                      </label>
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                          </TooltipTrigger>
+                          <TooltipContent>
+                            <p>{t("respectGitAttributesTooltip")}</p>
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                    </div>
+                  )}
+                />
+              </div>
+            </div>
+
+            {/* 快捷操作 */}
+            <div className="flex flex-wrap gap-2">
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={handleResetToDefault}
+              >
+                {t("resetToDefault")}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleAddPreset("images")}
+              >
+                {t("presets.images")}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleAddPreset("videos")}
+              >
+                {t("presets.videos")}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleAddPreset("audios")}
+              >
+                {t("presets.audios")}
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() => handleAddPreset("documents")}
+              >
+                {t("presets.documents")}
+              </Button>
+            </div>
           </CardContent>
         </Card>
       </div>

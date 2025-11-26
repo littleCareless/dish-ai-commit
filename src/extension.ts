@@ -1,6 +1,5 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
-import * as vscode from "vscode";
 import { registerCommands } from "@/commands";
 import { ConfigurationManager } from "@/config/configuration-manager";
 import { EmbeddingServiceManager } from "@/core/indexing/embedding-service-manager";
@@ -10,9 +9,11 @@ import { initializeLocalization } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
 import { notify } from "@/utils/notification/notification-manager";
 import { stateManager } from "@/utils/state/state-manager";
+import * as vscode from "vscode";
 
 import { SettingsViewProvider } from "@/services/webview/settings-view-provider"; // 确保路径正确
 import { NotificationSettingsManager } from "@/utils/notification/notification-settings-manager";
+import { PreferencesSettingsManager } from "./services/settings/preferences-settings-manager";
 
 /**
  * 在首次执行命令时激活扩展
@@ -60,6 +61,12 @@ export async function activate(context: vscode.ExtensionContext) {
     const notificationSettingsManager =
       NotificationSettingsManager.getInstance();
     await notificationSettingsManager.initialize(context);
+
+    // 初始化偏好设置管理器
+    logger.info("Initializing preferences settings manager...");
+    const preferencesSettingsManager =
+      PreferencesSettingsManager.getInstance(context);
+    await preferencesSettingsManager.initialize();
 
     // 注册所有命令到VS Code
     logger.info("Registering commands...");

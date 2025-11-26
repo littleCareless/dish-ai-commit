@@ -3,6 +3,7 @@ import * as vscode from "vscode";
 export interface DiffChunk {
   filename: string;
   content: string;
+  isNonCodeFile?: boolean;
 }
 
 export enum FilePathMode {

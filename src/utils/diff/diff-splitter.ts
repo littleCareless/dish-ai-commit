@@ -1,3 +1,4 @@
+import { FileTypeUtils } from "@/utils/diff/file-type-utils";
 import { DiffChunk } from "@/utils/diff/types";
 
 export class DiffSplitter {
@@ -22,9 +23,11 @@ export class DiffSplitter {
         continue;
       }
 
+      const filename = fileNameMatch[1];
       chunks.push({
-        filename: fileNameMatch[1],
+        filename,
         content: file?.trim(),
+        isNonCodeFile: FileTypeUtils.isNonCodeFile(filename),
       });
     }
 
@@ -53,6 +56,7 @@ export class DiffSplitter {
       chunks.push({
         filename,
         content: file?.trim(),
+        isNonCodeFile: FileTypeUtils.isNonCodeFile(filename),
       });
     }
 

@@ -1,10 +1,8 @@
-import * as fs from "fs";
-import { execSync } from "child_process";
-import * as path from "path";
-import * as vscode from "vscode";
 import { DiffSimplifier } from "@/utils/diff/diff-simplifier";
 import { DiffSplitter } from "@/utils/diff/diff-splitter";
 import { DiffChunk, getDiffConfig } from "@/utils/diff/types";
+import { execSync } from "child_process";
+import * as vscode from "vscode";
 
 /**
  * A class to process diffs by simplifying and summarizing them into a structured plain text format.
@@ -66,6 +64,18 @@ export class DiffProcessor {
     chunk: DiffChunk,
     type: "git" | "svn"
   ): { originalCode: string | null; codeChanges: string } | null {
+    // 检查是否为非代码文件
+    if (chunk.isNonCodeFile) {
+      // 对于非代码文件，不获取原始内容，只返回文件信息
+      const codeChanges = [
+        `# FILE: ${chunk.filename}`,
+        "# CODE CHANGES:",
+        "[Binary/Resource file - diff content not shown]",
+      ].join("\n");
+
+      return { originalCode: null, codeChanges };
+    }
+
     const config = getDiffConfig();
     let diffContent = chunk.content;
 

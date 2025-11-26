@@ -26,15 +26,18 @@ export interface ProviderConfig {
   id: string;
   name: string;
   type: ProviderType;
+  // Dynamic fields based on provider type
   apiKey?: string;
   baseURL?: string;
+  organization?: string;
   region?: string;
   projectId?: string;
+  embeddingModel?: string;
+  model?: string;
+  accessKeyId?: string;
+  secretAccessKey?: string;
   customHeaders?: Record<string, string>;
-  models: ModelConfig[];
   defaultModel?: string;
-  organization?: string;
-  isActive?: boolean;
   createdAt?: Date;
   updatedAt?: Date;
 
@@ -69,6 +72,13 @@ export interface UserPreferences {
   maxTokens?: number;
   timeout?: number;
   retryAttempts?: number;
+
+  // === Diff 跳过配置 ===
+  skipDiffFileExtensions: string[]; // 文件扩展名列表
+  maxDiffFileSizeKB: number; // 文件大小限制（KB），0 = 不限制
+  autoDetectBinaryFiles: boolean; // 自动检测二进制文件
+  skipDiffPathPatterns: string[]; // 路径模式列表（Glob 格式）
+  respectGitAttributes: boolean; // 读取 .gitattributes 中的 binary 标记
 }
 
 export interface Profile {
@@ -76,6 +86,7 @@ export interface Profile {
   name: string;
   description?: string;
   providers: Record<string, ProviderConfig>;
+  activeProviderId?: string; // 当前激活的提供商ID
   preferences: UserPreferences;
   createdAt: Date;
   updatedAt: Date;
@@ -136,6 +147,91 @@ export interface SettingsChangeEvent {
   timestamp: Date;
 }
 
+// Diff 跳过配置默认值
+export const DEFAULT_SKIP_DIFF_EXTENSIONS = [
+  // 图片
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".bmp",
+  ".ico",
+  ".webp",
+  ".svg",
+  ".tiff",
+  ".tif",
+  ".psd",
+  ".ai",
+  ".eps",
+  ".raw",
+  ".heic",
+  ".avif",
+  // 视频
+  ".mp4",
+  ".avi",
+  ".mov",
+  ".mkv",
+  ".webm",
+  ".flv",
+  ".wmv",
+  ".m4v",
+  ".mpg",
+  ".mpeg",
+  ".3gp",
+  ".ogv",
+  // 音频
+  ".mp3",
+  ".wav",
+  ".ogg",
+  ".m4a",
+  ".flac",
+  ".aac",
+  ".wma",
+  ".opus",
+  // 字体
+  ".ttf",
+  ".otf",
+  ".woff",
+  ".woff2",
+  ".eot",
+  // 压缩包
+  ".zip",
+  ".tar",
+  ".gz",
+  ".rar",
+  ".7z",
+  ".bz2",
+  ".xz",
+  // Office & PDF
+  ".pdf",
+  ".doc",
+  ".docx",
+  ".xls",
+  ".xlsx",
+  ".ppt",
+  ".pptx",
+  // 二进制
+  ".exe",
+  ".dll",
+  ".so",
+  ".dylib",
+  ".wasm",
+  ".class",
+  ".pyc",
+  // 数据库
+  ".db",
+  ".sqlite",
+  ".sqlite3",
+];
+
+export const DEFAULT_SKIP_DIFF_PATTERNS = [
+  "node_modules/**",
+  "dist/**",
+  "build/**",
+  "**/*.min.js",
+  "**/*.min.css",
+];
+
 // 默认配置
 export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   temperature: 0.0,
@@ -150,14 +246,18 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   maxTokens: 4000,
   timeout: 30000,
   retryAttempts: 3,
+  // Diff 跳过配置默认值
+  skipDiffFileExtensions: DEFAULT_SKIP_DIFF_EXTENSIONS,
+  maxDiffFileSizeKB: 500,
+  autoDetectBinaryFiles: true,
+  skipDiffPathPatterns: DEFAULT_SKIP_DIFF_PATTERNS,
+  respectGitAttributes: true,
 };
 
 export const DEFAULT_PROVIDER_CONFIG: Omit<
   ProviderConfig,
   "id" | "name" | "type"
 > = {
-  models: [],
-  isActive: false,
   createdAt: new Date(),
   updatedAt: new Date(),
 };

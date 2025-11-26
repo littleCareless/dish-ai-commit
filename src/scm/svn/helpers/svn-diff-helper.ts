@@ -1,15 +1,16 @@
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { SvnPathHelper } from "@/scm/svn/helpers/svn-path-helper";
+import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils";
+import { DiffSimplifier } from "@/utils";
+import { DiffProcessor } from "@/utils/diff/diff-processor";
+import { FileTypeUtils } from "@/utils/diff/file-type-utils";
+import { formatMessage } from "@/utils/i18n";
+import { Logger } from "@/utils/logger";
+import { notify } from "@/utils/notification/notification-manager";
 import * as childProcess from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 import { promisify } from "util";
-import { Logger } from "@/utils/logger";
-import { getMessage, formatMessage } from "@/utils/i18n";
-import { notify } from "@/utils/notification/notification-manager";
-import { DiffProcessor } from "@/utils/diff/diff-processor";
-import { DiffSimplifier } from "@/utils";
-import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils";
-import { ConfigurationManager } from "@/config/configuration-manager";
-import { SvnPathHelper } from "@/scm/svn/helpers/svn-path-helper";
 
 const exec = promisify(childProcess.exec);
 
@@ -77,9 +78,21 @@ export class SvnDiffHelper {
     try {
       let diffOutput = "";
 
+      // 如果指定了文件列表，则只处理这些文件
       if (files && files.length > 0) {
-        // 处理指定文件的差异
         for (const file of files) {
+          // 构建完整文件路径
+          const fullFilePath = path.join(repositoryPath, file);
+
+          // 检查是否应该跳过 diff 生成
+          if (FileTypeUtils.shouldSkipDiff(fullFilePath, repositoryPath)) {
+            const fileStatus = await this.getFileStatus(file, repositoryPath);
+            const fileTypeDesc = FileTypeUtils.getFileTypeDescription(file);
+            diffOutput += `\n=== ${fileStatus}: ${file} ===\n`;
+            diffOutput += `[${fileTypeDesc} - diff content not shown]\n`;
+            continue;
+          }
+
           const fileStatus = await this.getFileStatus(file, repositoryPath);
           const escapedFile = ImprovedPathUtils.escapeShellPath(file);
 
@@ -101,8 +114,7 @@ export class SvnDiffHelper {
               fs.writeFileSync(tempEmptyFile, "");
 
               const result = await exec(
-                `"${
-                  this.svnPath
+                `"${this.svnPath
                 }" diff --diff-cmd diff -x "-u" ${ImprovedPathUtils.escapeShellPath(
                   tempEmptyFile
                 )} ${escapedFile}`,
@@ -123,12 +135,11 @@ export class SvnDiffHelper {
               } else {
                 // 回退到读取整个文件内容
                 const fileContent = fs.readFileSync(file, "utf8");
-                stdout = `--- /dev/null\n+++ ${file}\n@@ -0,0 +1,${
-                  fileContent?.split("\n").length
-                } @@\n${fileContent
-                  ?.split("\n")
-                  .map((line) => `+${line}`)
-                  .join("\n")}`;
+                stdout = `--- /dev/null\n+++ ${file}\n@@ -0,0 +1,${fileContent?.split("\n").length
+                  } @@\n${fileContent
+                    ?.split("\n")
+                    .map((line) => `+${line}`)
+                    .join("\n")}`;
               }
             }
           } else {
@@ -239,8 +250,7 @@ export class SvnDiffHelper {
               fs.writeFileSync(tempEmptyFile, "");
 
               const result = await exec(
-                `"${
-                  this.svnPath
+                `"${this.svnPath
                 }" diff --diff-cmd diff -x "-u" ${ImprovedPathUtils.escapeShellPath(
                   tempEmptyFile
                 )} ${escapedFile}`,
@@ -381,9 +391,8 @@ export class SvnDiffHelper {
             path.join(repositoryPath, file),
             "utf8"
           );
-          const diffContent = `--- /dev/null\n+++ ${file}\n@@ -0,0 +1,${
-            fileContent?.split("\n").length
-          } @@\n${fileContent?.split("\n").map((line) => `+${line}`).join("\n")}`;
+          const diffContent = `--- /dev/null\n+++ ${file}\n@@ -0,0 +1,${fileContent?.split("\n").length
+            } @@\n${fileContent?.split("\n").map((line) => `+${line}`).join("\n")}`;
           diffOutput += `\n=== New File: ${file} ===\n${diffContent}`;
         } catch (readError) {
           this.logger.error(`Failed to read file ${file}: ${readError}`);
