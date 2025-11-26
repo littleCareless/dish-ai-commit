@@ -1,3 +1,4 @@
+import { AIRequestParams } from "@/ai/types";
 import { ConfigurationManager } from "@/config/configuration-manager";
 import {
   generateBranchNameSystemPrompt,
@@ -13,11 +14,12 @@ import {
   getVCSExamples,
 } from "@/prompt/generate-commit";
 import { generateFallbackCommitMessageSystemPrompt } from "@/prompt/generate-commit-fallback";
+import { PromptManagerService } from "@/services/core/prompt-manager-service";
+import { PromptKey } from "@/types/prompts";
 import { loadCommitlintConfig } from "@/utils/commitlint";
 import { getMessage } from "@/utils/i18n";
 import { notify } from "@/utils/notification/notification-manager";
 import { processPromptTemplate } from "@/utils/prompt-template";
-import { AIRequestParams } from "@/ai/types";
 
 /**
  * AI 生成过程中可能遇到的错误类型枚举
@@ -266,10 +268,11 @@ export async function getSystemPrompt(
     //   return appendConstraints(params.systemPrompt, params, directOutput);
     // }
 
-    // 2. 检查配置中是否有自定义提示词
-    const configuredPrompt = config.features?.commitMessage?.systemPrompt;
+    // 2. 获取 Active Prompt (支持 .dish/prompts, Config, Default)
+    const promptManager = PromptManagerService.getInstance();
+    const activePromptContent = await promptManager.getActivePromptContent(PromptKey.GenerateCommitSystem);
 
-    if (configuredPrompt) {
+    if (activePromptContent) {
       const {
         base: { language },
         features: {
@@ -301,7 +304,8 @@ export async function getSystemPrompt(
       );
 
       // Process template variables
-      const processedPrompt = processPromptTemplate(configuredPrompt, {
+      // 即使是自定义提示词，也支持变量替换，这样可以响应 enableEmoji 等设置
+      const processedPrompt = processPromptTemplate(activePromptContent, {
         language: params.language || config.base.language,
         type_reference: typeReference,
         format_template: formatTemplate,
@@ -311,7 +315,7 @@ export async function getSystemPrompt(
       return appendConstraints(processedPrompt, params, directOutput);
     }
 
-    // 3. 根据 useFallback 标志选择使用默认提示词还是备用提示词
+    // 3. Fallback (should rarely happen if default prompts are loaded)
     const promptGenerator = useFallback
       ? generateFallbackCommitMessageSystemPrompt
       : generateCommitMessageSystemPrompt;
