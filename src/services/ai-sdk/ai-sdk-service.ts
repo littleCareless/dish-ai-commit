@@ -16,7 +16,9 @@ import { createXai } from "@ai-sdk/xai";
 import * as aiModelsImport from "@simonorzel26/ai-models";
 import { generateText } from "ai";
 import { createOllama } from "ollama-ai-provider-v2";
-const aiModels = (aiModelsImport as any).default || aiModelsImport;
+const aiModels = aiModelsImport;
+
+type AIModelsProvider = Parameters<typeof aiModels.getModelsByProvider>[0];
 
 export interface AISDKModel {
   id: string;
@@ -34,7 +36,7 @@ export interface AISDKModel {
 export class AISDKService {
   private static instance: AISDKService;
 
-  private constructor() { }
+  private constructor() {}
 
   public static getInstance(): AISDKService {
     if (!AISDKService.instance) {
@@ -164,7 +166,11 @@ export class AISDKService {
   ): Promise<boolean> {
     try {
       // Special handling for Ollama and OpenAI Compatible validation
-      if (providerId === "ollama" || providerId === "vscode" || providerId === "openai-compatible") {
+      if (
+        providerId === "ollama" ||
+        providerId === "vscode" ||
+        providerId === "openai-compatible"
+      ) {
         // For Ollama and OpenAI Compatible, we can't easily validate via generation without knowing a model name.
         // And we can't assume any specific model exists.
         // Best way is to try to list models (tags).
@@ -377,9 +383,9 @@ export class AISDKService {
 
         const response = await fetch(`${apiBase}/models`, {
           headers: {
-            "Authorization": `Bearer ${apiKey}`,
-            "Content-Type": "application/json"
-          }
+            Authorization: `Bearer ${apiKey}`,
+            "Content-Type": "application/json",
+          },
         });
 
         if (!response.ok) {
@@ -405,7 +411,10 @@ export class AISDKService {
           }));
         }
       } catch (error) {
-        console.warn(`[AISDKService] Failed to fetch models dynamically for ${providerId}:`, error);
+        console.warn(
+          `[AISDKService] Failed to fetch models dynamically for ${providerId}:`,
+          error
+        );
         // Fallthrough to static list
       }
     }
@@ -417,8 +426,8 @@ export class AISDKService {
           headers: {
             "x-api-key": apiKey,
             "anthropic-version": "2023-06-01",
-            "Content-Type": "application/json"
-          }
+            "Content-Type": "application/json",
+          },
         });
 
         if (response.ok) {
@@ -445,7 +454,9 @@ export class AISDKService {
         // Google API requires key in query param usually for simple calls, or Bearer if OAuth.
         // AI SDK usually uses API key.
         // Endpoint: https://generativelanguage.googleapis.com/v1beta/models?key=API_KEY
-        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+        const response = await fetch(
+          `https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`
+        );
 
         if (response.ok) {
           const data = (await response.json()) as { models: any[] };
@@ -481,7 +492,9 @@ export class AISDKService {
     if (typeof aiModels.getModelsByProvider === "function") {
       // The library might expect specific casing or IDs
       // Try to fetch using the helper
-      const result = aiModels.getModelsByProvider(providerKeyInLib);
+      const result = aiModels.getModelsByProvider(
+        providerKeyInLib as AIModelsProvider
+      );
       if (Array.isArray(result)) {
         models = result;
       }
@@ -498,9 +511,9 @@ export class AISDKService {
         category: m.category, // Map category
         pricing: m.pricing
           ? {
-            input: m.pricing.input,
-            output: m.pricing.output,
-          }
+              input: m.pricing.input,
+              output: m.pricing.output,
+            }
           : undefined,
       }));
     }
