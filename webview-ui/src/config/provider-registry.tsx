@@ -1720,14 +1720,7 @@ export const providerRegistry: ProviderRegistryType = {
           },
         ],
       },
-      {
-        key: "organization",
-        type: FieldType.TEXT,
-        label: "openai-compatible.fields.organization.label",
-        required: false,
-        placeholder: "openai-compatible.fields.organization.placeholder",
-        helpText: "openai-compatible.fields.organization.helpText",
-      },
+
       {
         key: "useAzure",
         type: FieldType.CHECKBOX,

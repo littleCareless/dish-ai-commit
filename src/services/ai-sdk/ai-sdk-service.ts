@@ -163,9 +163,9 @@ export class AISDKService {
     baseUrl?: string
   ): Promise<boolean> {
     try {
-      // Special handling for Ollama validation
-      if (providerId === "ollama" || providerId === "vscode") {
-        // For Ollama, we can't easily validate via generation without knowing a model name.
+      // Special handling for Ollama and OpenAI Compatible validation
+      if (providerId === "ollama" || providerId === "vscode" || providerId === "openai-compatible") {
+        // For Ollama and OpenAI Compatible, we can't easily validate via generation without knowing a model name.
         // And we can't assume any specific model exists.
         // Best way is to try to list models (tags).
         // If we can list models, connection is good.
@@ -315,6 +315,156 @@ export class AISDKService {
       }
     }
 
+    // Dynamic fetching for OpenAI and compatible providers
+    if (
+      [
+        "openai",
+        "mistral",
+        "groq",
+        "deepseek",
+        "togetherai",
+        "fireworks",
+        "deepinfra",
+        "cerebras",
+        "xai",
+        "openai-compatible",
+      ].includes(providerId)
+    ) {
+      try {
+        let apiBase = baseUrl || "";
+
+        // Set default base URLs if not provided
+        if (!apiBase) {
+          switch (providerId) {
+            case "openai":
+              apiBase = "https://api.openai.com/v1";
+              break;
+            case "mistral":
+              apiBase = "https://api.mistral.ai/v1";
+              break;
+            case "groq":
+              apiBase = "https://api.groq.com/openai/v1";
+              break;
+            case "deepseek":
+              apiBase = "https://api.deepseek.com"; // DeepSeek often uses root or /v1
+              break;
+            case "togetherai":
+              apiBase = "https://api.together.xyz/v1";
+              break;
+            case "fireworks":
+              apiBase = "https://api.fireworks.ai/inference/v1";
+              break;
+            case "deepinfra":
+              apiBase = "https://api.deepinfra.com/v1/openai";
+              break;
+            case "cerebras":
+              apiBase = "https://api.cerebras.ai/v1";
+              break;
+            case "xai":
+              apiBase = "https://api.x.ai/v1";
+              break;
+          }
+        }
+
+        // Normalize to ensure we don't double slash or miss it
+        if (apiBase.endsWith("/")) {
+          apiBase = apiBase.slice(0, -1);
+        }
+
+        // For standard OpenAI compatible, we usually append /models.
+        // Some might need /v1/models if the base is root.
+        // The defaults above include /v1 where appropriate.
+
+        const response = await fetch(`${apiBase}/models`, {
+          headers: {
+            "Authorization": `Bearer ${apiKey}`,
+            "Content-Type": "application/json"
+          }
+        });
+
+        if (!response.ok) {
+          // If fetching fails, we might fall back to static list for known providers,
+          // but for now we log and try to proceed or return empty.
+          // However, if we return empty, the UI might show nothing.
+          // Let's throw to let the caller handle or fallback.
+          // But wait, the original logic had a fallback to static list.
+          // We should probably try dynamic first, and if it fails, fallback to static list (except for openai-compatible which has no static list).
+          throw new Error(`Failed to fetch models: ${response.statusText}`);
+        }
+
+        const data = (await response.json()) as { data: any[] };
+
+        if (Array.isArray(data.data)) {
+          return data.data.map((m: any) => ({
+            id: m.id,
+            name: m.id,
+            contextWindow: 4096, // Default
+            maxOutputTokens: 4096,
+            capabilities: ["text", "chat"],
+            category: "text",
+          }));
+        }
+      } catch (error) {
+        console.warn(`[AISDKService] Failed to fetch models dynamically for ${providerId}:`, error);
+        // Fallthrough to static list
+      }
+    }
+
+    // Dynamic fetching for Anthropic
+    if (providerId === "anthropic") {
+      try {
+        const response = await fetch("https://api.anthropic.com/v1/models", {
+          headers: {
+            "x-api-key": apiKey,
+            "anthropic-version": "2023-06-01",
+            "Content-Type": "application/json"
+          }
+        });
+
+        if (response.ok) {
+          const data = (await response.json()) as { data: any[] };
+          if (Array.isArray(data.data)) {
+            return data.data.map((m: any) => ({
+              id: m.id,
+              name: m.display_name || m.id,
+              contextWindow: 200000, // Anthropic usually has large context
+              maxOutputTokens: 4096,
+              capabilities: ["text", "chat"],
+              category: "text",
+            }));
+          }
+        }
+      } catch (error) {
+        console.warn("[AISDKService] Failed to fetch Anthropic models:", error);
+      }
+    }
+
+    // Dynamic fetching for Google/Gemini
+    if (providerId === "google" || providerId === "gemini") {
+      try {
+        // Google API requires key in query param usually for simple calls, or Bearer if OAuth.
+        // AI SDK usually uses API key.
+        // Endpoint: https://generativelanguage.googleapis.com/v1beta/models?key=API_KEY
+        const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models?key=${apiKey}`);
+
+        if (response.ok) {
+          const data = (await response.json()) as { models: any[] };
+          if (Array.isArray(data.models)) {
+            return data.models.map((m: any) => ({
+              id: m.name.replace("models/", ""), // Google returns "models/gemini-pro"
+              name: m.displayName || m.name,
+              contextWindow: m.inputTokenLimit || 32000,
+              maxOutputTokens: m.outputTokenLimit || 8192,
+              capabilities: ["text", "chat"],
+              category: "text",
+            }));
+          }
+        }
+      } catch (error) {
+        console.warn("[AISDKService] Failed to fetch Google models:", error);
+      }
+    }
+
     // For now, we rely on static metadata from @simonorzel26/ai-models
     // because the AI SDK doesn't have a universal "list models" API yet
     // (it varies by provider).
@@ -338,12 +488,6 @@ export class AISDKService {
     }
 
     // Fallback: if helper didn't return anything or not found, try ALL_MODELS
-    if (models.length === 0 && aiModels.ALL_MODELS) {
-      models = Object.values(aiModels.ALL_MODELS).filter(
-        (model: any) => model.provider === providerKeyInLib
-      );
-    }
-
     if (models.length > 0) {
       return models.map((m: any) => ({
         id: m.model,

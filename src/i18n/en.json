@@ -261,5 +261,6 @@
   "token.stats.resetSuccess": "Token statistics have been reset",
   "token.stats.resetError": "Failed to reset token statistics",
   "command.token.stats.show.failed": "Failed to show token statistics: {0}",
-  "command.token.stats.reset.failed": "Failed to reset token statistics: {0}"
+  "command.token.stats.reset.failed": "Failed to reset token statistics: {0}",
+  "extension.displayName": "Dish AI Commit"
 }

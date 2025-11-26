@@ -36,7 +36,7 @@ export const modelConfigSchema = z.object({
 export type ModelConfig = z.infer<typeof modelConfigSchema>;
 
 // Zod Schema for ProviderConfig
-export const providerConfigSchema = z.object({
+const providerConfigSchema = z.object({
   id: z.string(),
   name: z.string(),
   type: providerTypeSchema,
@@ -45,10 +45,9 @@ export const providerConfigSchema = z.object({
   region: z.string().optional(),
   projectId: z.string().optional(),
   customHeaders: z.record(z.string(), z.string()).optional(),
-  models: z.array(modelConfigSchema),
+  models: z.array(modelConfigSchema).optional(),
   defaultModel: z.string().optional(),
   organization: z.string().optional(),
-  isActive: z.boolean().optional(),
   createdAt: z.date().or(z.string().datetime()).optional(),
   updatedAt: z.date().or(z.string().datetime()).optional(),
 });
@@ -137,12 +136,19 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   retryAttempts: 3,
 };
 
+export const DEFAULT_OPENAI_CONFIG: ProviderConfig = {
+  id: "openai",
+  name: "OpenAI",
+  type: "first-party",
+  models: [], // Assuming models is a required field for ProviderConfig
+  createdAt: new Date(),
+  updatedAt: new Date(),
+};
+
 export const DEFAULT_PROVIDER_CONFIG: Omit<
   ProviderConfig,
   "id" | "name" | "type"
 > = {
-  models: [],
-  isActive: false,
   createdAt: new Date(),
   updatedAt: new Date(),
 };
@@ -158,3 +164,19 @@ export type ProviderChangeCallback = (
   provider: ProviderConfig
 ) => void;
 export type SettingsChangeCallback = (event: SettingsChangeEvent) => void;
+
+export interface FeatureSettings {
+  enableEmoji: boolean;
+  enableMergeCommit: boolean;
+  enableBody: boolean;
+  enableLayeredCommit: boolean;
+  enableGlobalContext: boolean;
+  useRecentCommitsAsReference: boolean;
+  simplifyDiff: boolean;
+  autoDetectStaged: boolean;
+  fallbackToAll: boolean;
+  weeklyReport: boolean;
+  codeReview: boolean;
+  generateBranchName: boolean;
+  generatePRSummary: boolean;
+}

@@ -1,32 +1,31 @@
+import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
 import {
-  AIModel,
   AIMessage,
+  AIModel,
   AIRequestParams,
   ContextLengthExceededError,
 } from "@/ai/types";
-import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
 import { notify } from "@/utils/notification";
 
 // 导入模块化组件
+import { BlockProcessor } from "@/utils/context-manager/block-processor";
+import {
+  DEFAULT_TOKEN_RESERVE,
+  FORCE_RETAIN_BLOCKS,
+} from "@/utils/context-manager/constants";
+import { ContentBuilder } from "@/utils/context-manager/content-builder";
+import { ContentTruncator } from "@/utils/context-manager/content-truncator";
+import { ContextLogger } from "@/utils/context-manager/context-logger";
+import { SmartTruncator } from "@/utils/context-manager/smart-truncator";
+import { TokenCalculator } from "@/utils/context-manager/token-calculator";
 import {
   ContextBlock,
-  TruncationStrategy,
   RequestTooLargeError,
+  TruncationStrategy,
 } from "@/utils/context-manager/types";
-import {
-  FORCE_RETAIN_BLOCKS,
-  DEFAULT_TOKEN_RESERVE,
-} from "@/utils/context-manager/constants";
-import { TokenCalculator } from "@/utils/context-manager/token-calculator";
-import { BlockProcessor } from "@/utils/context-manager/block-processor";
-import { ContentTruncator } from "@/utils/context-manager/content-truncator";
-import { ContentBuilder } from "@/utils/context-manager/content-builder";
-import { SmartTruncator } from "@/utils/context-manager/smart-truncator";
-import { ContextLogger } from "@/utils/context-manager/context-logger";
 
 // 重新导出类型和枚举以保持向后兼容
-export { ContextBlock, TruncationStrategy, RequestTooLargeError };
-export { FORCE_RETAIN_BLOCKS };
+export { ContextBlock, FORCE_RETAIN_BLOCKS, RequestTooLargeError, TruncationStrategy };
 
 /**
  * 管理和构建 AI 请求的上下文
@@ -140,6 +139,12 @@ export class ContextManager {
     while (retries <= maxRetries) {
       const messages = this.buildMessages();
       const currentRequestParams = { ...requestParams, messages };
+      console.log('[ContextManager] buildWithRetry - currentRequestParams:', {
+        feature: currentRequestParams.feature,
+        hasModel: !!currentRequestParams.model,
+        hasMessages: Array.isArray(currentRequestParams.messages),
+        messageCount: currentRequestParams.messages?.length
+      });
       try {
         const stream = await aiProvider.generateCommitStream(
           currentRequestParams

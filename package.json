@@ -23,6 +23,7 @@
     "quality-gate": "turbo quality-gate --log-order grouped --output-logs new-only"
   },
   "devDependencies": {
+    "@types/micromatch": "^4.0.10",
     "@types/node": "^22.14.0",
     "@types/proper-lockfile": "^4.1.4",
     "@types/stream-json": "^1.7.8",
