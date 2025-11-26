@@ -1,5 +1,5 @@
-import React from "react";
 import "@vscode/webview-ui-toolkit/dist/toolkit";
+import React from "react";
 
 interface CardProps extends React.HTMLAttributes<HTMLElement> {
   children: React.ReactNode;
@@ -30,7 +30,7 @@ const CardHeader: React.FC<CardProps> = ({ children, ...props }) => {
 
 const CardTitle: React.FC<CardProps> = ({ children, ...props }) => {
   return (
-    <h3 className="text-lg font-semibold" {...props}>
+    <h3 className="text-lg font-semibold tracking-tight" {...props}>
       {children}
     </h3>
   );
@@ -39,8 +39,11 @@ const CardTitle: React.FC<CardProps> = ({ children, ...props }) => {
 const CardDescription: React.FC<CardProps> = ({ children, ...props }) => {
   return (
     <p
-      className="text-sm"
-      style={{ color: "var(--vscode-descriptionForeground)" }}
+      className="text-sm mt-1"
+      style={{
+        color: "var(--vscode-descriptionForeground)",
+        opacity: 0.8,
+      }}
       {...props}
     >
       {children}
@@ -62,9 +65,9 @@ const CardFooter: React.FC<CardProps> = ({ children, ...props }) => {
 
 export {
   Card,
-  CardHeader,
-  CardFooter,
-  CardTitle,
-  CardDescription,
   CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
 };

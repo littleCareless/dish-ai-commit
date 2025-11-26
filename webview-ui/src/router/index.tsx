@@ -1,7 +1,7 @@
-import React from "react";
-import { MemoryRouter, Navigate, Route, Routes } from "react-router-dom";
 import { useVSCodeContext } from "@/contexts/VSCodeContext";
 import { useTheme } from "@/hooks/useTheme";
+import React from "react";
+import { MemoryRouter, Navigate, Route, Routes } from "react-router-dom";
 
 // 页面组件
 import { AboutPage } from "@/pages/about-page";
@@ -12,6 +12,7 @@ import { IndexingPage } from "@/pages/indexing-page";
 import { NotificationsPage } from "@/pages/notifications-page";
 import { PromptsPage } from "@/pages/prompts-page";
 import { SettingsPage } from "@/pages/settings/SettingsPage";
+import { StoragePage } from "@/pages/storage-page";
 import { UsagePage } from "@/pages/usage-page";
 import WelcomePage from "@/pages/welcome-page";
 
@@ -94,6 +95,9 @@ export const AppRouter: React.FC = () => {
 
                     {/* 用量页面 */}
                     <Route path={routes.usage} element={<UsagePage />} />
+
+                    {/* 存储页面 */}
+                    <Route path={routes.storage} element={<StoragePage />} />
 
                     {/* 404 页面 */}
                     <Route

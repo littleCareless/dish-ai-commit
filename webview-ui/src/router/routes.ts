@@ -10,6 +10,7 @@ export const routes = {
   indexing: "/indexing",
   i18nDebug: "/i18n-debug",
   usage: "/usage",
+  storage: "/storage",
 } as const;
 
 // 路由类型

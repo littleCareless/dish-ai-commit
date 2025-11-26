@@ -1,4 +1,14 @@
 import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { useExtensionState } from "@/context/ExtensionStateContext";
+import { cn } from "@/lib/utils";
+import { routes } from "@/router/routes";
+import {
+  Archive,
   BarChart3,
   Bell,
   BookText,
@@ -12,15 +22,13 @@ import {
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { NavLink } from "react-router-dom";
-import { useExtensionState } from "@/context/ExtensionStateContext";
-import { cn } from "@/lib/utils";
-import { routes } from "@/router/routes";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu";
+
+type NavigationItem = {
+  path: (typeof routes)[keyof typeof routes];
+  label: string;
+  icon: React.ElementType;
+  description: string;
+};
 
 export const Navigation: React.FC = () => {
   // 使用 react-i18next 的标准 hook，它会自动响应语言变化
@@ -30,7 +38,7 @@ export const Navigation: React.FC = () => {
   // 使用 useMemo 确保语言变化时重新计算
   // 现在使用 TranslationContext 的 t 函数，它应该能正确响应语言变化
   const navigationItems = React.useMemo(() => {
-    const items = [
+    const items: NavigationItem[] = [
       {
         path: routes.settings,
         label: t("nav.settings"),
@@ -82,14 +90,14 @@ export const Navigation: React.FC = () => {
     ];
 
     // 开发模式下添加调试页面
-    // if (import.meta.env.DEV) {
-    //   items.push({
-    //     path: routes.i18nDebug,
-    //     label: "🐛 i18n Debug",
-    //     icon: Bug,
-    //     description: "i18n debugging tools",
-    //   });
-    // }
+    if (import.meta.env.DEV) {
+      items.push({
+        path: routes.storage,
+        label: t("nav.storage"),
+        icon: Archive,
+        description: t("nav.storage_description"),
+      });
+    }
 
     return items;
   }, [t, i18n.language]);

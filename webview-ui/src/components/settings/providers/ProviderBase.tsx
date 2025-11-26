@@ -1,11 +1,11 @@
-import React, { useState } from "react";
-import { ProviderConfig } from "@/types/settings";
-import { Input } from "@/components/ui/input";
-import { Button } from "@/components/ui/button";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { CheckCircle, XCircle, Loader2 } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { ProviderConfig } from "@/types/settings";
+import { CheckCircle, Loader2, XCircle } from "lucide-react";
+import React, { useState } from "react";
 
 interface ProviderBaseProps {
   config: ProviderConfig;
@@ -83,7 +83,6 @@ export const ProviderBase: React.FC<ProviderBaseProps> = ({
               {config.type.replace("-", " ")}
             </Badge>
           </CardTitle>
-          {config.isActive && <Badge variant="default">Active</Badge>}
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -155,14 +154,6 @@ export const ProviderBase: React.FC<ProviderBaseProps> = ({
                 <span className="text-sm">Connection Failed</span>
               </div>
             )}
-          </div>
-        )}
-
-        {/* Model Count */}
-        {config.models.length > 0 && (
-          <div className="text-sm text-muted-foreground">
-            {config.models.length} model{config.models.length !== 1 ? "s" : ""}{" "}
-            available
           </div>
         )}
       </CardContent>
