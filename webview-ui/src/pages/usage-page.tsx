@@ -29,6 +29,7 @@ export const UsagePage: React.FC = () => {
   useEvent("message", (event: MessageEvent) => {
     const message = event.data;
     if (message.command === "usageStats") {
+      console.log("[UsagePage] 接收到使用统计数据:", message.data);
       setTotalTokens(message.data.totalTokens);
       setDetailedStats(message.data.detailedStats || []);
     }
@@ -74,10 +75,12 @@ export const UsagePage: React.FC = () => {
           <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
           <p className="text-muted-foreground mt-2">{t("description")}</p>
         </div>
-        <Button variant="outline" size="sm" onClick={handleReset}>
-          <RotateCcw className="mr-2 h-4 w-4" />
-          {t("reset")}
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" size="sm" onClick={handleReset}>
+            <RotateCcw className="mr-2 h-4 w-4" />
+            {t("reset")}
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -99,7 +102,7 @@ export const UsagePage: React.FC = () => {
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <Card className="col-span-2">
+        <Card>
           <CardHeader>
             <CardTitle>{t("dailyUsage")}</CardTitle>
           </CardHeader>
