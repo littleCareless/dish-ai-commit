@@ -1,15 +1,12 @@
-import * as vscode from "vscode";
 import { BaseCommand } from "@/commands/base-command";
+import { ChangesModeHandler } from "@/commands/generate-branch-name/handlers/changes-mode-handler";
+import { DescriptionModeHandler } from "@/commands/generate-branch-name/handlers/description-mode-handler";
+import { BranchSuggester } from "@/commands/generate-branch-name/services/branch-suggester";
 import { getMessage } from "@/utils/i18n";
 import {
-  notify,
-  withProgress,
+  withProgress
 } from "@/utils/notification/notification-manager";
-import { validateAndGetModel } from "@/utils/ai/model-validation";
-import { Logger } from "@/utils/logger";
-import { DescriptionModeHandler } from "@/commands/generate-branch-name/handlers/description-mode-handler";
-import { ChangesModeHandler } from "@/commands/generate-branch-name/handlers/changes-mode-handler";
-import { BranchSuggester } from "@/commands/generate-branch-name/services/branch-suggester";
+import * as vscode from "vscode";
 
 /**
  * 分支名称生成命令类 - 重构后的精简版本
@@ -40,39 +37,27 @@ export class GenerateBranchNameCommand extends BaseCommand {
     resources?: vscode.SourceControlResourceState[]
   ): Promise<void> {
     this.logger.info("Executing GenerateBranchNameCommand...");
-    
-    // 步骤1: 验证AI提供商服务条款
-    if ((await this.showConfirmAIProviderToS()) === false) {
-      this.logger.warn("User did not confirm AI provider ToS.");
-      return;
-    }
-
-    // 步骤2: 验证配置
-    const configResult = await this.handleConfiguration();
-    if (!configResult) {
-      this.logger.warn("Configuration is not valid.");
-      return;
-    }
-
-    const { config, configuration } = this.getExtConfig();
-    let { provider, model } = configResult;
 
     try {
       await withProgress(
         getMessage("generating.branch.name"),
         async (progress) => {
-          progress.report({
-            increment: 5,
-            message: getMessage("validating.model"),
+          // 使用 prepare 方法进行前置检查
+          const context = await this.prepare(resources, {
+            requireSelectedFiles: false, // 分支生成可能基于描述，不一定需要文件
+            validateModel: true,
+            progress,
           });
 
-          const { aiProvider, selectedModel } = await validateAndGetModel(
-            provider,
-            model
-          );
+          if (!context) {
+            return;
+          }
+
+          const { aiProvider, selectedModel } = context;
+          const { configuration } = this.getExtConfig();
+
           this.logger.info(
-            `Model validated. AI Provider: ${aiProvider.getId()}, Model: ${
-              selectedModel?.id
+            `Model validated. AI Provider: ${aiProvider?.getId()}, Model: ${selectedModel?.id
             }`
           );
 

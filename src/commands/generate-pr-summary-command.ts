@@ -1,12 +1,13 @@
-import * as vscode from "vscode";
+import { AIProviderFactory } from "@/ai/ai-provider-factory";
 import {
   AIRequestParams
 } from "@/ai/types";
+import { BaseCommand } from "@/commands/base-command";
 import { ConfigurationManager } from "@/config/configuration-manager";
 import { formatMessage, getMessage } from "@/utils/i18n";
 import { notify } from "@/utils/notification";
 import { ProgressHandler } from "@/utils/notification/progress-handler";
-import { BaseCommand } from "@/commands/base-command";
+import * as vscode from "vscode";
 
 export class GeneratePRSummaryCommand extends BaseCommand {
   constructor(context: vscode.ExtensionContext) {
@@ -25,9 +26,9 @@ export class GeneratePRSummaryCommand extends BaseCommand {
       this.logger.warn("Configuration is not valid.");
       return;
     }
-    const { provider, model } = configResult;
+    const { provider, model, baseURL } = configResult;
     this.logger.info(
-      `Configuration handled. Provider: ${provider}, Model: ${model}`
+      `Configuration handled. Provider: ${provider}, Model: ${model}, BaseURL: ${baseURL || '默认'}`
     );
 
     try {
@@ -140,34 +141,27 @@ export class GeneratePRSummaryCommand extends BaseCommand {
             return;
           }
 
-          progress.report({
-            increment: 5,
-            message: getMessage("validating.model"),
-          });
-          const {
-            provider: newProvider,
-            model: newModel,
-            aiProvider,
-            selectedModel,
-          } = await this.selectAndUpdateModelConfiguration(provider, model);
+          // Model is already validated by handleConfiguration
+          const aiProvider = AIProviderFactory.getProvider(provider);
+          const selectedModel: any = { id: model, name: model }; // Simplified, type assertion to bypass strict checking
 
-          if (!selectedModel || !aiProvider) {
-            this.logger.error("No model selected or AI provider not found.");
-            notify.error("no.model.selected");
+          if (!aiProvider) {
+            this.logger.error("AI provider not found.");
+            notify.error("ai.provider.not.found");
             return;
           }
           this.logger.info(
-            `Model validated. AI Provider: ${aiProvider.getId()}, Model: ${selectedModel?.id}`
+            `Using AI Provider: ${provider}, Model: ${model}`
           );
 
           // 检查AI Provider是否支持生成PR摘要的方法
           if (!aiProvider.generatePRSummary) {
             this.logger.error(
-              `Provider ${newProvider} does not support PR Summary Generation.`
+              `Provider ${provider} does not support PR Summary Generation.`
             );
             notify.error(
               formatMessage("provider.does.not.support.feature", [
-                newProvider,
+                provider,
                 "PR Summary Generation",
               ])
             );
@@ -192,7 +186,7 @@ export class GeneratePRSummaryCommand extends BaseCommand {
           if (!aiProvider.generatePRSummary) {
             const errorMessage = formatMessage(
               "provider.does.not.support.feature",
-              [newProvider, "PR Summary Generation"]
+              [provider, "PR Summary Generation"]
             );
             this.logger.error(errorMessage);
             notify.error(errorMessage);

@@ -1,7 +1,10 @@
-import * as vscode from "vscode";
 import { getAccurateTokenLimits } from "@/ai/model-registry";
 import { AIModel, AIProvider } from "@/ai/types";
 import { getSystemPrompt } from "@/ai/utils/generate-helper";
+import { CommitContextBuilder } from "@/commands/generate-commit/builders/context-builder";
+import { FunctionCallingHandler } from "@/commands/generate-commit/handlers/function-calling-handler";
+import { LayeredCommitHandler } from "@/commands/generate-commit/handlers/layered-commit-handler";
+import { StreamingHandler } from "@/commands/generate-commit/handlers/streaming-handler";
 import { ConfigurationManager } from "@/config/configuration-manager";
 import { multiRepositoryContextManager } from "@/scm/multi-repository-context-manager";
 import { ISCMProvider } from "@/scm/scm-provider";
@@ -14,10 +17,7 @@ import { Logger } from "@/utils/logger";
 import { notify } from "@/utils/notification/notification-manager";
 import { showCommitSuccessNotification } from "@/utils/notification/system-notification";
 import { stateManager } from "@/utils/state/state-manager";
-import { CommitContextBuilder } from "@/commands/generate-commit/builders/context-builder";
-import { FunctionCallingHandler } from "@/commands/generate-commit/handlers/function-calling-handler";
-import { LayeredCommitHandler } from "@/commands/generate-commit/handlers/layered-commit-handler";
-import { StreamingHandler } from "@/commands/generate-commit/handlers/streaming-handler";
+import * as vscode from "vscode";
 
 /**
  * 流式生成辅助类 - 遵循单一职责原则
@@ -47,13 +47,7 @@ export class StreamingGenerationHelper {
     scmProvider: ISCMProvider,
     selectedFiles: string[] | undefined,
     resources: vscode.SourceControlResourceState[],
-    repositoryPath: string | undefined,
-    selectAndUpdateModelConfiguration: (provider: string, model: string) => Promise<{
-      provider: string;
-      model: string;
-      aiProvider: AIProvider;
-      selectedModel: AIModel | undefined;
-    }>
+    repositoryPath: string | undefined
   ): Promise<void> {
     this.logger.info("Performing streaming generation...");
 
@@ -68,7 +62,7 @@ export class StreamingGenerationHelper {
 
     // 步骤2: 处理模型配置
     const modelConfig = await this.processModelConfiguration(
-      progress, provider, model, selectAndUpdateModelConfiguration
+      progress, provider, model
     );
 
     // 步骤3: 准备提示词和上下文
@@ -181,22 +175,13 @@ export class StreamingGenerationHelper {
   private async processModelConfiguration(
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     provider: string,
-    model: string,
-    selectAndUpdateModelConfiguration: (provider: string, model: string) => Promise<{
-      provider: string;
-      model: string;
-      aiProvider: AIProvider;
-      selectedModel: AIModel | undefined;
-    }>
+    model: string
   ): Promise<{ provider: string; model: string; aiProvider: AIProvider; selectedModel: AIModel }> {
     progress.report({ message: getMessage("progress.updating.model.config") });
 
-    const {
-      provider: newProvider,
-      model: newModel,
-      aiProvider,
-      selectedModel,
-    } = await selectAndUpdateModelConfiguration(provider, model);
+    // 直接使用validateAndGetModel获取配置
+    const { validateAndGetModel } = await import("@/utils/ai/model-validation");
+    const { provider: newProvider, model: newModel, aiProvider, selectedModel } = await validateAndGetModel(provider, model);
 
     if (!selectedModel) {
       this.logger.error("No model selected.");

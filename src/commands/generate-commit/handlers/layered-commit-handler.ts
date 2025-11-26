@@ -1,16 +1,19 @@
-import * as vscode from "vscode";
-import { ISCMProvider } from "@/scm/scm-provider";
-import { AIProvider, AIRequestParams, AIModel } from "@/ai/types";
-import { ConfigurationManager } from "@/config/configuration-manager";
-import { getLayeredCommitFilePrompt } from "@/prompt/layered-commit-file";
-import { getMessage, formatMessage } from "@/utils/i18n";
-import { notify } from "@/utils/notification/notification-manager";
+import { AIModel, AIProvider, AIRequestParams } from "@/ai/types";
+import { getSystemPrompt } from "@/ai/utils/generate-helper";
 import { CommitContextBuilder } from "@/commands/generate-commit/builders/context-builder";
 import { CommitMessageBuilder } from "@/commands/generate-commit/builders/message-builder";
-import { filterCodeBlockMarkers } from "@/commands/generate-commit/utils/commit-formatter";
-import { Logger } from "@/utils/logger";
-import { getSystemPrompt } from "@/ai/utils/generate-helper";
 import { GlobalContextExtractor } from "@/commands/generate-commit/services/global-context-extractor";
+import { filterCodeBlockMarkers } from "@/commands/generate-commit/utils/commit-formatter";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { getLayeredCommitVariables } from "@/prompt/layered-commit-file";
+import { ISCMProvider } from "@/scm/scm-provider";
+import { PromptManagerService } from "@/services/core/prompt-manager-service";
+import { PromptKey } from "@/types/prompts";
+import { formatMessage, getMessage } from "@/utils/i18n";
+import { Logger } from "@/utils/logger";
+import { notify } from "@/utils/notification/notification-manager";
+import { processPromptTemplate } from "@/utils/prompt-template";
+import * as vscode from "vscode";
 
 /**
  * 分层提交处理器类，负责处理分层提交信息生成
@@ -57,7 +60,7 @@ export class LayeredCommitHandler {
     }
 
     const config = ConfigurationManager.getInstance().getConfiguration();
-    
+
     // === 新增: 阶段0 - 全局上下文提取 ===
     progress.report({ message: getMessage("progress.extracting.global.context") });
     const globalContext = await this.globalContextExtractor.extractGlobalContext(
@@ -82,7 +85,10 @@ export class LayeredCommitHandler {
       }
 
       // 🔥 关键改动: 构建增强prompt
-      const systemPrompt = getLayeredCommitFilePrompt({
+      const promptManager = PromptManagerService.getInstance();
+      const activePromptContent = await promptManager.getActivePromptContent(PromptKey.LayeredCommitFile);
+
+      const variables = getLayeredCommitVariables({
         config: config.features.commitFormat,
         language: config.base.language,
         filePath: filePath,
@@ -90,13 +96,15 @@ export class LayeredCommitHandler {
         otherFiles: selectedFiles.filter(f => f !== filePath) // ✅ 新增参数
       });
 
+      const systemPrompt = processPromptTemplate(activePromptContent, variables);
+
       const contextManager = await this.contextBuilder.buildContextManager(
         selectedModel,
         systemPrompt,
         scmProvider,
         fileDiff,
         config,
-        { 
+        {
           exclude: ["similar-code"], // 降低token压力
           globalContext: globalContext // 作为高优先级block添加
         }

@@ -1,11 +1,11 @@
-import * as vscode from "vscode";
+import { BaseCommand } from "@/commands/base-command";
+import { CrossRepositoryHandler } from "@/commands/generate-commit/handlers/cross-repository-handler";
+import { StreamingGenerationHelper } from "@/commands/generate-commit/utils/streaming-generation-helper";
 import { SCMFactory } from "@/scm/scm-provider";
 import { formatMessage, getMessage } from "@/utils/i18n";
 import { notify } from "@/utils/notification/notification-manager";
 import { ProgressHandler } from "@/utils/notification/progress-handler";
-import { BaseCommand } from "@/commands/base-command";
-import { CrossRepositoryHandler } from "@/commands/generate-commit/handlers/cross-repository-handler";
-import { StreamingGenerationHelper } from "@/commands/generate-commit/utils/streaming-generation-helper";
+import * as vscode from "vscode";
 
 /**
  * 提交信息生成命令类 - 遵循单一职责原则的简洁版本
@@ -35,19 +35,19 @@ export class GenerateCommitCommand extends BaseCommand {
   async execute(arg?: any): Promise<void> {
     this.logger.info("Executing GenerateCommitCommand...");
 
-    // 步骤1: 验证AI提供商服务条款
-    if ((await this.showConfirmAIProviderToS()) === false) {
-      this.logger.warn("User did not confirm AI provider ToS.");
+    // 使用 prepare 方法进行前置检查
+    // 注意：GenerateCommitCommand 的参数 arg 比较特殊，可能是 resourceStates 数组，也可能是 sourceControl 对象
+    // prepare 方法已经处理了这两种情况
+    const context = await this.prepare(arg, {
+      requireSelectedFiles: false, // 提交生成不一定强制需要选中的文件（比如可能是全部更改）
+      validateModel: true,
+    });
+
+    if (!context) {
       return;
     }
 
-    // 步骤2: 验证配置
-    const configResult = await this.handleConfiguration();
-    if (!configResult) {
-      this.logger.warn("Configuration is not valid.");
-      return;
-    }
-    const { provider, model } = configResult;
+    const { provider, model } = context;
     this.logger.info(`Using AI provider: ${provider}, model: ${model}`);
 
     // 步骤3: 处理具体执行逻辑
@@ -148,8 +148,7 @@ export class GenerateCommitCommand extends BaseCommand {
       model,
       (progress, token, provider, model, scmProvider, selectedFiles, resources, repoPath) =>
         this.streamingHelper.performStreamingGeneration(
-          progress, token, provider, model, scmProvider, selectedFiles, resources, repoPath,
-          this.selectAndUpdateModelConfiguration.bind(this)
+          progress, token, provider, model, scmProvider, selectedFiles, resources, repoPath
         )
     );
   }
@@ -193,8 +192,7 @@ export class GenerateCommitCommand extends BaseCommand {
       async (progress, token) => {
         await this.streamingHelper.performStreamingGeneration(
           progress, token, provider, model, scmProvider, selectedFiles,
-          parsedArgs.resourceStates || [], finalRepoPath,
-          this.selectAndUpdateModelConfiguration.bind(this)
+          parsedArgs.resourceStates || [], finalRepoPath
         );
       }
     );
