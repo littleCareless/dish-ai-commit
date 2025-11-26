@@ -1,3 +1,4 @@
+import { DISH_CONFIG_PREFIX } from "@/config/constants";
 import * as vscode from "vscode";
 
 /**
@@ -45,9 +46,10 @@ export class NotificationSettingsManager {
     }
 
     try {
-      const settings = this._extensionContext.globalState.get<NotificationSettings>(
-        "notificationSettings"
-      );
+      const settings =
+        this._extensionContext.globalState.get<NotificationSettings>(
+          `${DISH_CONFIG_PREFIX}_notification_settings`
+        );
       if (settings) {
         this._settings = { ...this._settings, ...settings };
       }
@@ -67,7 +69,7 @@ export class NotificationSettingsManager {
     try {
       this._settings = { ...settings };
       await this._extensionContext.globalState.update(
-        "notificationSettings",
+        `${DISH_CONFIG_PREFIX}_notification_settings`,
         this._settings
       );
     } catch (error) {
@@ -134,4 +136,3 @@ export class NotificationSettingsManager {
     });
   }
 }
-

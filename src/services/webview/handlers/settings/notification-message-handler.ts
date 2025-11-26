@@ -1,8 +1,7 @@
-import * as vscode from "vscode";
 import { NotificationSettingsManager } from "@/utils/notification/notification-settings-manager";
-import { SoundPlayerService } from "@/utils/notification/sound-player";
-import { systemNotifier } from "@/utils/notification/system-notification-service";
+import { showSystemNotification } from "@/utils/notification/system-notification";
 import { TextToSpeechService } from "@/utils/notification/text-to-speech";
+import * as vscode from "vscode";
 
 export class NotificationMessageHandler {
     public async handle(message: any, webview: vscode.Webview): Promise<void> {
@@ -50,12 +49,9 @@ export class NotificationMessageHandler {
                     const settingsManager = NotificationSettingsManager.getInstance();
                     await settingsManager.saveSettings(settings);
 
-                    // Update TTS and Sound service status
+                    // Update TTS service status
                     const ttsService = TextToSpeechService.getInstance();
                     ttsService.setEnabled(settings.textToSpeech);
-
-                    const soundService = SoundPlayerService.getInstance();
-                    soundService.setEnabled(settings.soundNotifications);
 
                     webview.postMessage({
                         command: "setNotificationSettingsResponse",
@@ -87,7 +83,7 @@ export class NotificationMessageHandler {
                 );
                 try {
                     const { title, message: notificationMessage } = message.data;
-                    systemNotifier.notify({ title, message: notificationMessage });
+                    showSystemNotification(title, notificationMessage);
                 } catch (error) {
                     console.error(
                         "[NotificationMessageHandler] Error in testSystemNotification:",
@@ -99,3 +95,4 @@ export class NotificationMessageHandler {
         }
     }
 }
+

@@ -24,12 +24,6 @@
     "linuxAlertTitle": "Linux 用户请注意",
     "linuxAlertDescription": "此功能依赖 'node-notifier'。如果通知不显示，请尝试安装 <code>libnotify-bin</code>（例如，在 Debian/Ubuntu 上使用 <code>sudo apt-get install libnotify-bin</code>）。",
     "windowsAlertTitle": "Windows 用户请注意",
-    "windowsAlertDescription": "此功能在 Windows 8/10 及更高版本上效果最佳。它依赖 'SnoreToast' 进行通知。",
-    "testButton": "测试通知",
-    "testDescription": "点击以发送测试通知来验证设置。"
-  },
-  "testNotification": {
-    "title": "测试通知",
-    "message": "这是来自 Dish AI Commit Gen 的测试通知。"
+    "windowsAlertDescription": "此功能在 Windows 8/10 及更高版本上效果最佳。它依赖 'SnoreToast' 进行通知。"
   }
 }

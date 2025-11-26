@@ -1,5 +1,4 @@
-import * as vscode from "vscode";
-import * as path from "path";
+import { NotificationSettingsManager } from "@/utils/notification/notification-settings-manager";
 import * as fs from "fs";
 
 /**
@@ -8,10 +7,9 @@ import * as fs from "fs";
  */
 export class SoundPlayerService {
   private static instance: SoundPlayerService | undefined;
-  private _enabled: boolean = false;
   private _extensionPath: string | undefined;
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(extensionPath?: string): SoundPlayerService {
     if (!SoundPlayerService.instance) {
@@ -23,26 +21,16 @@ export class SoundPlayerService {
     return SoundPlayerService.instance;
   }
 
-  /**
-   * 设置是否启用音效
-   */
-  public setEnabled(enabled: boolean): void {
-    this._enabled = enabled;
-  }
 
-  /**
-   * 检查是否已启用
-   */
-  public isEnabled(): boolean {
-    return this._enabled;
-  }
 
   /**
    * 播放音效
    * @param soundType 音效类型
    */
   public async playSound(soundType: "success" | "error" | "info" | "warning"): Promise<void> {
-    if (!this._enabled) {
+    // 检查是否启用了声音通知
+    const settingsManager = NotificationSettingsManager.getInstance();
+    if (!settingsManager.isSoundNotificationsEnabled()) {
       return;
     }
 

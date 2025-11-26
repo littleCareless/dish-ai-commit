@@ -24,12 +24,6 @@
     "linuxAlertTitle": "Note for Linux Users",
     "linuxAlertDescription": "This feature relies on 'node-notifier'. If notifications do not appear, try installing <code>libnotify-bin</code> (e.g., <code>sudo apt-get install libnotify-bin</code> on Debian/Ubuntu).",
     "windowsAlertTitle": "Note for Windows Users",
-    "windowsAlertDescription": "This feature works best on Windows 8/10 and above. It relies on 'SnoreToast' for notifications.",
-    "testButton": "Test Notification",
-    "testDescription": "Click to send a test notification to verify the settings."
-  },
-  "testNotification": {
-    "title": "Test Notification",
-    "message": "This is a test notification from Dish AI Commit Gen."
+    "windowsAlertDescription": "This feature works best on Windows 8/10 and above. It relies on 'SnoreToast' for notifications."
   }
 }

@@ -67,6 +67,12 @@ async function main() {
 			},
 		},
 		{
+			name: "copyNotifiers",
+			setup(build) {
+				build.onEnd(() => copyNotifiers(srcDir, distDir))
+			},
+		},
+		{
 			name: "esbuild-problem-matcher",
 			setup(build) {
 				build.onStart(() => {
@@ -88,6 +94,10 @@ async function main() {
 							console.log("[esbuild] Build successful, attempting to copy WASM files...")
 							copyWasms(srcDir, distDir)
 							console.log("[esbuild] WASM files copy process finished.")
+
+							console.log("[esbuild] Attempting to copy notifier binaries...")
+							copyNotifiers(srcDir, distDir)
+							console.log("[esbuild] Notifier binaries copy process finished.")
 						} catch (e) {
 							console.error(`[copyWasms] Error during WASM copy: ${e.message}`, e.stack)
 						}
@@ -274,6 +284,52 @@ function copyWasms(srcDir, distDir) {
 		)
 	}
 }
+
+/**
+ * Copy notification binaries (like terminal-notifier for macOS)
+ */
+function copyNotifiers(srcDir, distDir) {
+	const nodeModulesDir = path.join(srcDir, "node_modules")
+
+	// Copy macOS terminal-notifier
+	if (process.platform === "darwin") {
+		const terminalNotifierSource = path.join(
+			nodeModulesDir,
+			"node-notifier",
+			"vendor",
+			"mac.noindex",
+			"terminal-notifier.app"
+		)
+
+		const vendorDir = path.join(distDir, "vendor", "mac")
+		const terminalNotifierDest = path.join(vendorDir, "terminal-notifier.app")
+
+		if (fs.existsSync(terminalNotifierSource)) {
+			fs.mkdirSync(vendorDir, { recursive: true })
+
+			// Remove destination if it exists to avoid conflicts
+			if (fs.existsSync(terminalNotifierDest)) {
+				rmDir(terminalNotifierDest)
+			}
+
+			fs.mkdirSync(terminalNotifierDest, { recursive: true })
+			const count = copyDir(terminalNotifierSource, terminalNotifierDest, 0)
+
+			// Ensure the binary is executable
+			const binaryPath = path.join(terminalNotifierDest, "Contents", "MacOS", "terminal-notifier")
+			if (fs.existsSync(binaryPath)) {
+				fs.chmodSync(binaryPath, 0o755)
+			}
+
+			console.log(`[copyNotifiers] Copied terminal-notifier.app (${count} files) to ${terminalNotifierDest}`)
+		} else {
+			console.warn(
+				`[copyNotifiers] terminal-notifier.app not found at ${terminalNotifierSource}. macOS notifications may not work in packaged extension.`
+			)
+		}
+	}
+}
+
 
 main().catch((e) => {
 	console.error(e)

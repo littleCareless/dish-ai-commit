@@ -1,5 +1,3 @@
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import {
   Card,
   CardContent,
@@ -9,10 +7,10 @@ import {
 } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
+import { postMessage, useMessageHandler } from "@/utils/vscode";
 import { Bell, Info, MessageSquare, Volume2, VolumeX } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { Trans, useTranslation } from "react-i18next";
-import { postMessage, useMessageHandler } from "@/utils/vscode";
 
 interface NotificationSettings {
   textToSpeech: boolean;
@@ -124,13 +122,6 @@ export const NotificationsPage: React.FC = () => {
     saveSettings({ ...settings, systemNotifications: checked });
   };
 
-  const handleTestSystemNotification = () => {
-    postMessage("testSystemNotification", {
-      title: t("testNotification.title"),
-      message: t("testNotification.message"),
-    });
-  };
-
   if (isLoading) {
     return (
       <div className="p-4">
@@ -226,51 +217,69 @@ export const NotificationsPage: React.FC = () => {
           </CardHeader>
           <CardContent>
             {os === "darwin" && (
-              <Alert className="mb-4">
-                <Info className="h-4 w-4" />
-                <AlertTitle>
-                  {t("systemNotifications.macOsAlertTitle")}
-                </AlertTitle>
-                <AlertDescription>
-                  <Trans
-                    i18nKey="notifications-page:systemNotifications.macOsAlertDescription"
-                    components={{
-                      code: (
-                        <code className="font-mono bg-muted text-muted-foreground p-1 rounded-sm" />
-                      ),
-                    }}
-                  />
-                </AlertDescription>
-              </Alert>
+              <div className="mb-6 overflow-hidden rounded-md border border-[var(--vscode-widget-border)] bg-[var(--vscode-textBlockQuote-background)]">
+                <div className="border-l-4 border-[var(--vscode-textLink-activeForeground)] p-4">
+                  <div className="flex items-start gap-3">
+                    <Info className="mt-0.5 h-5 w-5 shrink-0 text-[var(--vscode-textLink-activeForeground)]" />
+                    <div className="space-y-2">
+                      <h5 className="font-semibold leading-none tracking-tight text-[var(--vscode-foreground)]">
+                        {t("systemNotifications.macOsAlertTitle")}
+                      </h5>
+                      <div className="text-sm leading-relaxed text-[var(--vscode-descriptionForeground)]">
+                        <Trans
+                          i18nKey="notifications-page:systemNotifications.macOsAlertDescription"
+                          components={{
+                            code: (
+                              <code className="mx-1 inline-block rounded-md bg-[var(--vscode-textCodeBlock-background)] px-1.5 py-0.5 font-mono text-[0.9em] text-[var(--vscode-textPreformat-foreground)] border border-[var(--vscode-widget-border)]" />
+                            ),
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
             {os === "linux" && (
-              <Alert className="mb-4">
-                <Info className="h-4 w-4" />
-                <AlertTitle>
-                  {t("systemNotifications.linuxAlertTitle")}
-                </AlertTitle>
-                <AlertDescription>
-                  <Trans
-                    i18nKey="systemNotifications.linuxAlertDescription"
-                    components={{
-                      code: (
-                        <code className="font-mono bg-muted text-muted-foreground p-1 rounded-sm" />
-                      ),
-                    }}
-                  />
-                </AlertDescription>
-              </Alert>
+              <div className="mb-6 overflow-hidden rounded-md border border-[var(--vscode-widget-border)] bg-[var(--vscode-textBlockQuote-background)]">
+                <div className="border-l-4 border-[var(--vscode-textLink-activeForeground)] p-4">
+                  <div className="flex items-start gap-3">
+                    <Info className="mt-0.5 h-5 w-5 shrink-0 text-[var(--vscode-textLink-activeForeground)]" />
+                    <div className="space-y-2">
+                      <h5 className="font-semibold leading-none tracking-tight text-[var(--vscode-foreground)]">
+                        {t("systemNotifications.linuxAlertTitle")}
+                      </h5>
+                      <div className="text-sm leading-relaxed text-[var(--vscode-descriptionForeground)]">
+                        <Trans
+                          i18nKey="systemNotifications.linuxAlertDescription"
+                          components={{
+                            code: (
+                              <code className="mx-1 inline-block rounded-md bg-[var(--vscode-textCodeBlock-background)] px-1.5 py-0.5 font-mono text-[0.9em] text-[var(--vscode-textPreformat-foreground)] border border-[var(--vscode-widget-border)]" />
+                            ),
+                          }}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
             {os === "win32" && (
-              <Alert className="mb-4">
-                <Info className="h-4 w-4" />
-                <AlertTitle>
-                  {t("systemNotifications.windowsAlertTitle")}
-                </AlertTitle>
-                <AlertDescription>
-                  {t("systemNotifications.windowsAlertDescription")}
-                </AlertDescription>
-              </Alert>
+              <div className="mb-6 overflow-hidden rounded-md border border-[var(--vscode-widget-border)] bg-[var(--vscode-textBlockQuote-background)]">
+                <div className="border-l-4 border-[var(--vscode-textLink-activeForeground)] p-4">
+                  <div className="flex items-start gap-3">
+                    <Info className="mt-0.5 h-5 w-5 shrink-0 text-[var(--vscode-textLink-activeForeground)]" />
+                    <div className="space-y-2">
+                      <h5 className="font-semibold leading-none tracking-tight text-[var(--vscode-foreground)]">
+                        {t("systemNotifications.windowsAlertTitle")}
+                      </h5>
+                      <div className="text-sm leading-relaxed text-[var(--vscode-descriptionForeground)]">
+                        {t("systemNotifications.windowsAlertDescription")}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             )}
             <div className="flex items-center justify-between">
               <Label htmlFor="system-switch" className="flex-1 cursor-pointer">
@@ -285,16 +294,6 @@ export const NotificationsPage: React.FC = () => {
                 checked={settings.systemNotifications}
                 onCheckedChange={handleSystemNotificationsChange}
               />
-            </div>
-            <div className="mt-4 flex items-center gap-4">
-              <Button variant="outline" onClick={handleTestSystemNotification}>
-                {t("systemNotifications.testButton")}
-              </Button>
-              {settings.systemNotifications && (
-                <p className="text-sm text-muted-foreground">
-                  {t("systemNotifications.testDescription")}
-                </p>
-              )}
             </div>
           </CardContent>
         </Card>
