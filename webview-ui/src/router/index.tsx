@@ -7,7 +7,6 @@ import { MemoryRouter, Navigate, Route, Routes } from "react-router-dom";
 import { AboutPage } from "@/pages/about-page";
 import { ContextPage } from "@/pages/context-page";
 import { ExperimentalPage } from "@/pages/experimental-page";
-import { I18nDebugPage } from "@/pages/i18n-debug-page";
 import { IndexingPage } from "@/pages/indexing-page";
 import { NotificationsPage } from "@/pages/notifications-page";
 import { PromptsPage } from "@/pages/prompts-page";
@@ -86,12 +85,6 @@ export const AppRouter: React.FC = () => {
 
                     {/* 索引页面 */}
                     <Route path={routes.indexing} element={<IndexingPage />} />
-
-                    {/* i18n 调试页面 */}
-                    <Route
-                      path={routes.i18nDebug}
-                      element={<I18nDebugPage />}
-                    />
 
                     {/* 用量页面 */}
                     <Route path={routes.usage} element={<UsagePage />} />
