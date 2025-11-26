@@ -1,3 +1,4 @@
+import { DISH_CONFIG_PREFIX } from "@/config/constants";
 import * as vscode from "vscode";
 
 export interface IndexingSettings {
@@ -20,7 +21,7 @@ export interface IndexingSettings {
 
 export class IndexingSettingsManager {
   private static instance: IndexingSettingsManager;
-  private static readonly STORAGE_KEY = "dish.settings.indexing";
+  private static readonly STORAGE_KEY = `${DISH_CONFIG_PREFIX}_indexing_settings`;
 
   private _settings: IndexingSettings = {
     enabled: false,
