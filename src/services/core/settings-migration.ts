@@ -1,6 +1,6 @@
-import * as vscode from "vscode";
-import { Profile, ProviderConfig, ProviderType } from "@/types/settings";
 import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
+import { Profile, ProviderConfig, ProviderType } from "@/types/settings";
+import * as vscode from "vscode";
 
 export class SettingsMigration {
   private profileManager: ProfileManagerService;
@@ -44,8 +44,6 @@ export class SettingsMigration {
           name: this.capitalize(providerId),
           type: this.getProviderType(providerId),
           apiKey: apiKey as string,
-          models: [],
-          isActive: true,
           createdAt: now,
           updatedAt: now,
         };

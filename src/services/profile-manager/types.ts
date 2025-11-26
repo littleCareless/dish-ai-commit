@@ -19,19 +19,9 @@ export type ProviderSettingsWithId = z.infer<typeof providerSettingsWithIdSchema
 
 
 export const providerProfilesSchema = z.object({
-    currentApiConfigName: z.string(),
+    currentApiConfigId: z.string(),
     apiConfigs: z.record(z.string(), providerSettingsWithIdSchema),
-    modeApiConfigs: z.record(z.string(), z.string()).optional(),
     cloudProfileIds: z.array(z.string()).optional(),
-    migrations: z
-        .object({
-            rateLimitSecondsMigrated: z.boolean().optional(),
-            diffSettingsMigrated: z.boolean().optional(),
-            openAiHeadersMigrated: z.boolean().optional(),
-            consecutiveMistakeLimitMigrated: z.boolean().optional(),
-            todoListEnabledMigrated: z.boolean().optional(),
-        })
-        .optional(),
 });
 
 export type ProviderProfiles = z.infer<typeof providerProfilesSchema>;

@@ -1,17 +1,15 @@
-import { ExtensionContext } from "vscode";
 import {
   CloudSyncService,
   SyncCloudProfilesResult,
 } from "@/services/profile-manager/cloud-sync-service";
 import { ModelCapabilityService } from "@/services/profile-manager/model-capability-service";
-import { ProfileMigrationService } from "@/services/profile-manager/profile-migration-service";
 import { ProviderProfileRepository } from "@/services/profile-manager/provider-profile-repository";
 import {
   discriminatedProviderSettingsWithIdSchema,
-  Mode,
   ProviderProfiles,
-  ProviderSettingsWithId,
+  ProviderSettingsWithId
 } from "@/services/profile-manager/types";
+import { ExtensionContext } from "vscode";
 
 type Subscriber = (profiles: ProviderProfiles) => void;
 
@@ -19,7 +17,6 @@ export class ProviderStore {
   private static instance: ProviderStore;
 
   private readonly repository: ProviderProfileRepository;
-  private readonly migrationService: ProfileMigrationService;
   private readonly cloudSyncService: CloudSyncService;
   private readonly capabilityService: ModelCapabilityService;
 
@@ -31,10 +28,6 @@ export class ProviderStore {
     this.repository = new ProviderProfileRepository(
       context,
       defaultProviderProfiles
-    );
-    this.migrationService = new ProfileMigrationService(
-      context,
-      this.repository
     );
     this.cloudSyncService = new CloudSyncService(this.repository);
     this.capabilityService = ModelCapabilityService.instance;
@@ -51,22 +44,30 @@ export class ProviderStore {
   private async initialize(): Promise<void> {
     await this.repository.lock(async () => {
       const loadedProfiles = await this.repository.load();
-      const isDirty = await this.migrationService.runMigrations(loadedProfiles);
 
-      // If no active profile is set, activate the first one
-      if (!loadedProfiles.currentApiConfigName) {
-        if (Object.keys(loadedProfiles.apiConfigs).length > 0) {
-          const firstProfileName = Object.keys(loadedProfiles.apiConfigs)[0];
-          loadedProfiles.currentApiConfigName = firstProfileName;
-          console.log(`Auto-activated first profile: ${firstProfileName}`);
-          await this.repository.store(loadedProfiles);
+      // Check if this is the first initialization (no profiles in storage)
+      const isFirstInit = Object.keys(loadedProfiles.apiConfigs).length === 0;
+
+      if (isFirstInit) {
+        // First time initialization: use default profiles and persist them
+        const defaultProfiles = this.getDefaultProfiles();
+        await this.repository.store(defaultProfiles);
+        this.profiles = defaultProfiles;
+        console.log("First initialization: created and saved default profile");
+      } else {
+        // Existing profiles: check if active profile is set
+        if (!loadedProfiles.currentApiConfigId) {
+          if (Object.keys(loadedProfiles.apiConfigs).length > 0) {
+            const firstProfileId = Object.values(loadedProfiles.apiConfigs)[0].id;
+            loadedProfiles.currentApiConfigId = firstProfileId;
+            console.log(`Auto-activated first profile by ID: ${firstProfileId}`);
+            await this.repository.store(loadedProfiles);
+          }
         }
-      } else if (isDirty) {
-        await this.repository.store(loadedProfiles);
+        this.profiles = loadedProfiles;
+        console.log("initialize", loadedProfiles);
       }
 
-      console.log("initialize", loadedProfiles);
-      this.profiles = loadedProfiles;
       this.notify();
     });
   }
@@ -104,77 +105,42 @@ export class ProviderStore {
   }
 
   public async saveConfig(
-    name: string,
     config: ProviderSettingsWithId
   ): Promise<string> {
     let id = "";
     await this.updateProfiles(async (profiles) => {
-      const existingId = profiles.apiConfigs[name]?.id;
-      id = config.id || existingId || this.generateId();
-
-      // Check if there's another profile with the same ID but a different name
-      // This handles renaming: if we are saving "NewName" with ID "123",
-      // we should remove "OldName" which also has ID "123".
-      const existingEntry = Object.entries(profiles.apiConfigs).find(
-        ([key, conf]) => conf.id === id && key !== name
-      );
-
-      if (existingEntry) {
-        const [oldName] = existingEntry;
-        delete profiles.apiConfigs[oldName];
-        // If the old profile was active, update the active profile name
-        if (profiles.currentApiConfigName === oldName) {
-          profiles.currentApiConfigName = name;
-        }
-      }
+      // Generate ID if not provided
+      id = config.id || this.generateId();
 
       const filteredConfig =
         discriminatedProviderSettingsWithIdSchema.parse(config);
-      profiles.apiConfigs[name] = { ...filteredConfig, id };
+      profiles.apiConfigs[id] = { ...filteredConfig, id };
     });
     return id;
   }
 
-  public async activateProfile(
-    params: { name: string } | { id: string }
-  ): Promise<void> {
+  public async activateProfile(id: string): Promise<void> {
     await this.updateProfiles(async (profiles) => {
-      let nameToActivate: string;
-      if ("name" in params) {
-        nameToActivate = params.name;
-      } else {
-        const entry = Object.entries(profiles.apiConfigs).find(
-          ([_, apiConfig]) => apiConfig.id === params.id
-        );
-        if (!entry) {
-          throw new Error(`Config with ID '${params.id}' not found`);
-        }
-        nameToActivate = entry[0];
+      // Verify the ID exists
+      if (!profiles.apiConfigs[id]) {
+        throw new Error(`Config with ID '${id}' not found`);
       }
-      profiles.currentApiConfigName = nameToActivate;
+      profiles.currentApiConfigId = id;
     });
   }
 
-  public async deleteConfig(name: string): Promise<void> {
+  public async deleteConfig(id: string): Promise<void> {
     await this.updateProfiles((profiles) => {
-      if (!profiles.apiConfigs[name]) {
-        throw new Error(`Config '${name}' not found`);
+      if (!profiles.apiConfigs[id]) {
+        throw new Error(`Config with ID '${id}' not found`);
       }
       if (Object.keys(profiles.apiConfigs).length === 1) {
         throw new Error(`Cannot delete the last remaining configuration`);
       }
-      delete profiles.apiConfigs[name];
+      delete profiles.apiConfigs[id];
     });
   }
 
-  public async setModeConfig(mode: string, configId: string): Promise<void> {
-    await this.updateProfiles((profiles) => {
-      if (!profiles.modeApiConfigs) {
-        profiles.modeApiConfigs = {};
-      }
-      profiles.modeApiConfigs[mode] = configId;
-    });
-  }
 
   public async export(): Promise<ProviderProfiles> {
     const profiles = await this.repository.load();
@@ -217,41 +183,53 @@ export class ProviderStore {
 
   private getDefaultProfiles(): ProviderProfiles {
     const defaultConfigId = this.generateId();
-    const modes: Mode[] = [
-      { slug: "code" },
-      { slug: "architect" },
-      { slug: "ask" },
-      { slug: "debug" },
-      { slug: "project-research" },
-      { slug: "documentation-writer" },
-    ];
-    const defaultModeApiConfigs: Record<string, string> = Object.fromEntries(
-      modes.map((mode) => [mode.slug, defaultConfigId])
-    );
+    const now = new Date().toISOString();
     return {
-      currentApiConfigName: "default",
-      apiConfigs: { default: { id: defaultConfigId } },
-      modeApiConfigs: defaultModeApiConfigs,
-      migrations: {
-        rateLimitSecondsMigrated: true,
-        diffSettingsMigrated: true,
-        openAiHeadersMigrated: true,
-        consecutiveMistakeLimitMigrated: true,
-        todoListEnabledMigrated: true,
+      currentApiConfigId: defaultConfigId,
+      apiConfigs: {
+        [defaultConfigId]: {
+          id: defaultConfigId,
+          name: "默认配置",
+          description: "系统默认配置",
+          createdAt: now,
+          updatedAt: now,
+          version: "1.0.0",
+          activeProviderId: "openai",
+          providers: {
+            openai: {
+              apiKey: "",
+              baseURL: "https://api.openai.com/v1",
+              model: "gpt-3.5-turbo"
+            }
+          },
+          preferences: {
+            temperature: 0.0,
+            commitTemperature: 0.3,
+            reviewTemperature: 0.6,
+            branchNameTemperature: 0.4,
+            weeklyReportTemperature: 0.3,
+            verbosity: 0,
+            rateLimitSeconds: 5,
+            consecutiveMistakeLimit: 3,
+            language: "Simplified Chinese",
+            maxTokens: 4000,
+            timeout: 30000,
+            retryAttempts: 3,
+          },
+        },
       },
     };
   }
   public async importProfile(profile: ProviderProfiles): Promise<void> {
     await this.updateProfiles(async (profiles) => {
-      // A simple merge strategy: overwrite existing configs, add new ones.
-      for (const [name, config] of Object.entries(profile.apiConfigs)) {
-        profiles.apiConfigs[name] = config;
+      // Merge imported configs (keys are already IDs)
+      for (const [id, config] of Object.entries(profile.apiConfigs)) {
+        profiles.apiConfigs[id] = config;
       }
-      if (
-        profile.currentApiConfigName &&
-        profiles.apiConfigs[profile.currentApiConfigName]
-      ) {
-        profiles.currentApiConfigName = profile.currentApiConfigName;
+
+      // Set active profile if it exists in imported data
+      if (profile.currentApiConfigId && profiles.apiConfigs[profile.currentApiConfigId]) {
+        profiles.currentApiConfigId = profile.currentApiConfigId;
       }
     });
   }

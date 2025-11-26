@@ -1,15 +1,15 @@
-import { ExtensionContext } from "vscode";
-import { z, ZodError } from "zod";
-import { TelemetryService } from "@/services/telemetry-service";
+import { DISH_CONFIG_PREFIX } from "@/config/constants";
 import {
   ProviderProfiles,
   providerProfilesSchema,
   ProviderSettingsWithId,
   providerSettingsWithIdSchema,
 } from "@/services/profile-manager/types";
+import { TelemetryService } from "@/services/telemetry-service";
+import { ExtensionContext } from "vscode";
+import { z, ZodError } from "zod";
 
 export class ProviderProfileRepository {
-  private static readonly SCOPE_PREFIX = "dish_config_";
   private readonly context: ExtensionContext;
   private readonly defaultProviderProfiles: ProviderProfiles;
 
@@ -25,7 +25,7 @@ export class ProviderProfileRepository {
   }
 
   private get secretsKey(): string {
-    return `${ProviderProfileRepository.SCOPE_PREFIX}api_config`;
+    return `${DISH_CONFIG_PREFIX}api_config`;
   }
 
   public lock<T>(cb: () => Promise<T>): Promise<T> {

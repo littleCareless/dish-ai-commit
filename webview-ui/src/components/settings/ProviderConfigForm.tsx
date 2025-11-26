@@ -1,3 +1,12 @@
+import { Form } from "@/components/ui/form";
+import { providerRegistry } from "@/config/provider-registry";
+import { ExtendedProviderConfig } from "@/types/provider-metadata";
+import { canFetchModels } from "@/utils/config-validator";
+import {
+  createProviderSchema,
+  getFieldDefaultValue,
+} from "@/utils/validation-helpers";
+import { postMessage, useMessageHandler } from "@/utils/vscode";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { VSCodeDropdown, VSCodeOption } from "@vscode/webview-ui-toolkit/react";
 import { AlertCircle, Loader } from "lucide-react";
@@ -11,15 +20,6 @@ import React, {
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
-import { providerRegistry } from "@/config/provider-registry";
-import { ExtendedProviderConfig } from "@/types/provider-metadata";
-import { canFetchModels } from "@/utils/config-validator";
-import {
-  createProviderSchema,
-  getFieldDefaultValue,
-} from "@/utils/validation-helpers";
-import { postMessage, useMessageHandler } from "@/utils/vscode";
-import { Form } from "@/components/ui/form";
 import { DynamicFieldGroup } from "./DynamicFieldRenderer";
 
 interface ProviderConfigFormProps {
@@ -88,17 +88,9 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
       });
     }
 
-    // 特别处理模型选择字段
-    const modelValue =
-      configData?.defaultModel ||
-      (configData as Record<string, unknown>)?.model;
-    if (modelValue) {
-      defaults["model"] = modelValue;
-      defaults["defaultModel"] = modelValue;
-    }
-
-    if (configData?.customFields) {
-      defaults["customFields"] = configData.customFields;
+    // 处理模型选择字段
+    if (configData?.model) {
+      defaults["model"] = configData.model;
     }
 
     return defaults as ProviderConfigFormData;
@@ -129,9 +121,8 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     provider.id,
-    (config as ExtendedProviderConfig).defaultModel,
     (config as ExtendedProviderConfig & { model?: string }).model,
-  ]); // ‼️ Depends on provider.id and the actual model fields
+  ]); // Depends on provider.id and model field
 
   // 7. 获取监听的值
   const watchedValues = form.watch();
@@ -150,36 +141,11 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
       [fieldKey]: value, // 覆盖正在修改的字段
     };
 
-    // 特别处理model/defaultModel保存，确保同步
-    // 无论设置哪个字段，都需要确保两个字段都有值
-    if (fieldKey === "defaultModel" || fieldKey === "model") {
-      // 确保两个字段都被设置
-      newConfig.defaultModel = value;
-      // 使用索引表示法来设置不在类型定义中的属性
+    // 特别处理 model 字段
+    if (fieldKey === "model") {
+      // 确保 model 字段被设置
       (newConfig as Record<string, unknown>)["model"] = value;
-      // 同时更新form中的这两个值
-      form.setValue("defaultModel", value as never);
       form.setValue("model", value as never);
-
-      // 模型选择的特殊处理：添加到customFields
-      // 这确保了模型选择能够在多种情况下都被保存
-      const modelInfo = models.find((model) => model.id === value);
-      if (modelInfo) {
-        const customFields = {
-          ...(newConfig.customFields || {}),
-          selectedModelInfo: {
-            id: modelInfo.id,
-            name: modelInfo.name || modelInfo.id,
-          },
-        };
-        newConfig.customFields = customFields;
-
-        // 为了调试目的，记录模型信息
-        console.log(`[ProviderConfigForm] 保存模型选择到customFields:`, {
-          modelId: modelInfo.id,
-          modelName: modelInfo.name || modelInfo.id,
-        });
-      }
     }
 
     // 将完整配置传递给父组件
@@ -187,7 +153,6 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
     console.log(`[ProviderConfigForm] handleConfigChange - 传输配置给父组件:`, {
       fieldKey,
       value,
-      hasDefaultModel: !!newConfig.defaultModel,
       configObj: newConfig,
     });
 
@@ -199,9 +164,7 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
     console.log(`[ProviderConfigForm] 配置已更新:`, {
       fieldKey,
       value,
-      hasDefaultModel: !!newConfig.defaultModel,
       hasModel: !!(newConfig as Record<string, unknown>).model,
-      hasCustomFields: !!newConfig.customFields,
     });
   };
 
@@ -230,40 +193,20 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
             setModels(modelsList);
             setModelError(null);
 
-            const currentModel =
-              watchedValues.model || watchedValues.defaultModel;
+            const currentModel = watchedValues.model;
             if (modelsList.length > 0 && currentModel) {
               const foundModel = modelsList.find((m) => m.id === currentModel);
               if (foundModel) {
-                const modelData: Record<string, unknown> = {
-                  defaultModel: foundModel.id,
-                  customFields: {
-                    ...(watchedValues.customFields || {}),
-                    selectedModelInfo: {
-                      id: foundModel.id,
-                      name: foundModel.name || foundModel.id,
-                      isAutoRecovered: true,
-                    },
-                  },
-                };
-                modelData["model"] = foundModel.id;
-
                 console.log(`[ProviderConfigForm] 恢复模型选择:`, {
-                  fromStorage: !!(config as Record<string, unknown>)
-                    .defaultModel,
-                  fromForm: !!watchedValues.model,
                   modelId: foundModel.id,
                   modelName: foundModel.name || foundModel.id,
                 });
 
-                // 关键修复：用 form.setValue 替代 onConfigChange 来打破循环
-                // 这可以防止因父组件状态更新而导致的无限循环，同时保留恢复模型选择的功能
-                form.setValue("defaultModel", modelData.defaultModel as never);
-                form.setValue("model", modelData.model as never);
-                form.setValue("customFields", modelData.customFields as never);
+                // 确保 form 中的 model 值是最新的
+                form.setValue("model", foundModel.id as never);
 
                 console.log(
-                  `[ProviderConfigForm] 从模型列表中恢复模型选择 (表单已更新):`,
+                  `[ProviderConfigForm] 从模型列表中恢复模型选择:`,
                   foundModel,
                 );
               }
@@ -292,10 +235,9 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
       (currentValues.baseURL as string | undefined)?.trim() ||
       (currentValues.baseUrl as string | undefined)?.trim();
 
-    if (currentValues.model || currentValues.defaultModel) {
+    if (currentValues.model) {
       console.log(`[ProviderConfigForm] 当前模型选择状态:`, {
         model: currentValues.model,
-        defaultModel: currentValues.defaultModel,
       });
     }
 
@@ -430,111 +372,25 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
                 </div>
               )}
             </div>
-            {/* 调试信息面板 - 模型选择状态 */}
-            <div className="text-xs text-muted-foreground bg-slate-100 dark:bg-slate-800 p-2 rounded mb-2 border border-slate-200 dark:border-slate-700">
-              <div className="font-medium mb-1 flex items-center justify-between">
-                <span>{t("modelSelectionStatus")}</span>
-                {watchedValues.model && watchedValues.defaultModel ? (
-                  <span className="text-green-600 dark:text-green-500 px-1 py-0.5 rounded bg-green-50 dark:bg-green-950 text-[10px]">
-                    {t("configured")}
-                  </span>
-                ) : (
-                  <span className="text-amber-600 dark:text-amber-500 px-1 py-0.5 rounded bg-amber-50 dark:bg-amber-950 text-[10px]">
-                    {t("notConfigured")}
-                  </span>
-                )}
-              </div>
-              <div className="grid grid-cols-2 gap-1">
-                <div>
-                  {t("modelField")}:{" "}
-                  <span className="font-mono">
-                    {(watchedValues.model as string) || t("notSet")}
-                  </span>
-                </div>
-                <div>
-                  {t("defaultModelField")}:{" "}
-                  <span className="font-mono">
-                    {(watchedValues.defaultModel as string) || t("notSet")}
-                  </span>
-                </div>
-              </div>
-              <div className="mt-1 text-[10px] text-slate-500 dark:text-slate-400">
-                ({t("debugInfo")})
-              </div>
-            </div>
+
             <VSCodeDropdown
-              value={
-                (watchedValues.model as string) ||
-                (watchedValues.defaultModel as string) ||
-                ""
-              }
+              value={(watchedValues.model as string) || ""}
               onChange={
                 ((e: Event) => {
                   const target = e.target as HTMLSelectElement;
                   if (target.value) {
-                    // 获取所选模型的完整数据
-                    const modelData = models.find(
-                      (model) => model.id === target.value,
-                    );
-
-                    // 记录模型选择之前的状态
-                    const prevState = {
-                      model: watchedValues.model as string,
-                      defaultModel: watchedValues.defaultModel as string,
-                    };
-
                     console.log(
-                      `[ProviderConfigForm] 选择模型: ${target.value}，之前的状态:`,
-                      prevState,
+                      `[ProviderConfigForm] 选择模型: ${target.value}`,
                     );
 
-                    // 🔑 简化版本：只调用一次 handleConfigChange，传递完整的配置对象
-                    // 这样能一次性设置 defaultModel + customFields
-                    const customFields = {
-                      ...(watchedValues.customFields || {}),
-                      selectedModelInfo: modelData
-                        ? {
-                            id: modelData.id,
-                            name: modelData.name || modelData.id,
-                          }
-                        : undefined,
-                    };
-
-                    // 创建完整的模型配置对象
-                    const modelConfig = {
-                      defaultModel: target.value,
-                      model: target.value,
-                      customFields,
-                    };
-
-                    // 使用 onConfigChange 来同时更新这些字段
-                    // 将 newConfig 设计为传递所有需要更新的字段
-                    // 这样 ProvidersSettings 中的 handleConfigChange 能正确合并
-                    console.log(
-                      `[ProviderConfigForm] 一次性保存模型配置:`,
-                      modelConfig,
-                    );
-
-                    // 虽然分开调用，但现在 ProvidersSettings 会正确地保留 defaultModel
-                    handleConfigChange("defaultModel", target.value);
-                    if (customFields.selectedModelInfo) {
-                      handleConfigChange("customFields", customFields);
-                    }
+                    // 直接更新 model 字段
+                    handleConfigChange("model", target.value);
 
                     // 记录最终状态用于调试
                     setTimeout(() => {
-                      const finalModelState = {
-                        model: form.getValues("model"),
-                        defaultModel: form.getValues("defaultModel"),
-                        hasModelValue:
-                          !!form.getValues("model") ||
-                          !!form.getValues("defaultModel"),
-                        customFields: form.getValues("customFields"),
-                      };
-
                       console.log(
-                        `[ProviderConfigForm] 模型选择已保存，最终状态:`,
-                        finalModelState,
+                        `[ProviderConfigForm] 模型选择已保存:`,
+                        form.getValues("model"),
                       );
                     }, 100);
                   }

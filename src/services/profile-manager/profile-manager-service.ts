@@ -1,10 +1,10 @@
-import * as vscode from "vscode";
 import { AIProviderFactory } from "@/ai/ai-provider-factory";
-import { ProviderConfig, ProviderType } from "@/types/settings";
-import { Logger } from "@/utils/logger";
 import { ProviderProfileRepository } from "@/services/profile-manager/provider-profile-repository";
 import { ProviderStore } from "@/services/profile-manager/provider-store";
 import { ProviderProfiles } from "@/services/profile-manager/types";
+import { FeatureSettings, ProviderConfig, ProviderType } from "@/types/settings";
+import { Logger } from "@/utils/logger";
+import * as vscode from "vscode";
 
 export class ProfileManagerService {
   private static instance: ProfileManagerService;
@@ -96,7 +96,7 @@ export class ProfileManagerService {
         throw new Error("Profile name is required");
       }
 
-      await this.providerStore.saveConfig(profileData.name, profileData);
+      await this.providerStore.saveConfig(profileData);
       this.logger.info(`Profile '${profileData.name}' saved successfully.`);
     } catch (error) {
       this.logger.logError(error as Error, "Failed to save profile", {
@@ -112,21 +112,8 @@ export class ProfileManagerService {
     const operation = "deleteProfile";
     this.logger.logOperationStart(operation, { data: { profileId } });
     try {
-      // ProviderStore expects a name for deletion, but we might have an ID.
-      // We need to find the name first if we only have the ID.
-      const profiles = this.providerStore.getProfiles();
-      if (!profiles) {
-        throw new Error("No profiles found");
-      }
-      const entry = Object.entries(profiles.apiConfigs).find(
-        ([_, config]) => config.id === profileId
-      );
-      if (!entry) {
-        throw new Error(`Profile with ID '${profileId}' not found`);
-      }
-      const nameToDelete = entry[0];
-      await this.providerStore.deleteConfig(nameToDelete);
-      this.logger.info(`Profile '${nameToDelete}' (ID: ${profileId}) deleted successfully.`);
+      await this.providerStore.deleteConfig(profileId);
+      this.logger.info(`Profile with ID '${profileId}' deleted successfully.`);
     } catch (error) {
       this.logger.logError(error as Error, "Failed to delete profile", {
         operation,
@@ -140,7 +127,19 @@ export class ProfileManagerService {
   async getActiveProfileId(): Promise<string | null> {
     this.logger.debug("Getting active profile ID from ProviderStore.");
     const profiles = this.providerStore.getProfiles();
-    return profiles ? profiles.currentApiConfigName : null;
+    if (!profiles) {
+      return null;
+    }
+
+    return profiles.currentApiConfigId;
+  }
+
+  async getProfileForMode(): Promise<any | null> {
+    const profileId = await this.getActiveProfileId();
+    if (!profileId) {
+      return null;
+    }
+    return this.getProfileById(profileId);
   }
 
   async setActiveProfile(profileId: string): Promise<void> {
@@ -150,7 +149,7 @@ export class ProfileManagerService {
       data: { profileId },
     });
     try {
-      await this.providerStore.activateProfile({ id: profileId });
+      await this.providerStore.activateProfile(profileId);
       this.logger.info(`Active profile set to: ${profileId}`);
     } catch (error) {
       this.logger.logError(error as Error, "Failed to set active profile", {
@@ -246,5 +245,28 @@ export class ProfileManagerService {
     const count = profiles.length;
     this.logger.debug(`Getting profile count: ${count}`, { data: { count } });
     return count;
+  }
+
+  public getFeatureSettings(): FeatureSettings {
+    const settings = this.context.globalState.get<FeatureSettings>(
+      "dish_config_features_settings"
+    );
+    return (
+      settings || {
+        enableEmoji: true,
+        enableMergeCommit: true,
+        enableBody: true,
+        enableLayeredCommit: false,
+        enableGlobalContext: true,
+        useRecentCommitsAsReference: false,
+        simplifyDiff: false,
+        autoDetectStaged: true,
+        fallbackToAll: true,
+        weeklyReport: true,
+        codeReview: true,
+        generateBranchName: true,
+        generatePRSummary: true,
+      }
+    );
   }
 }

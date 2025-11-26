@@ -1,5 +1,3 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { useTranslation } from "react-i18next";
 import { ProfileForm } from "@/components/settings/ProfileForm";
 import { ProviderConfigForm } from "@/components/settings/ProviderConfigForm";
 import { providerRegistry } from "@/config/provider-registry";
@@ -10,6 +8,8 @@ import {
 } from "@/types/provider-metadata";
 import { Profile, ProviderConfig } from "@/types/settings";
 import { getFieldDefaultValue } from "@/utils/validation-helpers";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 // UI Components
 import { Button } from "@/components/ui/button";
@@ -57,8 +57,6 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
       id: selectedProvider,
       name: currentProviderMetadata?.name || selectedProvider,
       type: currentProviderMetadata?.type || "openai-compatible",
-      isActive: true,
-      models: [],
     };
 
     if (currentProviderMetadata?.fields) {
@@ -80,35 +78,9 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
         ...newConfig,
       } as ExtendedProviderConfig;
 
+      // 直接使用配置,不需要转换 models
       const providerConfig: ProviderConfig = {
         ...updatedConfig,
-        models: updatedConfig.models.map(
-          (model: {
-            id: string;
-            name: string;
-            contextWindow: number;
-            maxOutputTokens: number;
-            deprecated?: boolean;
-            capabilities: string[];
-            pricing?: { input: number; output: number };
-          }) => ({
-            id: model.id,
-            name: model.name,
-            provider: providerId,
-            maxTokens: {
-              input: model.contextWindow,
-              output: model.maxOutputTokens,
-            },
-            deprecated: model.deprecated,
-            capabilities: {
-              streaming: model.capabilities.includes("streaming"),
-              functionCalling: model.capabilities.includes("function-calling"),
-            },
-            cost: model.pricing
-              ? { input: model.pricing.input, output: model.pricing.output }
-              : undefined,
-          }),
-        ),
       };
 
       const updatedProfile: Profile = {
@@ -134,8 +106,6 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
         id: providerId,
         name: providerMetadata.name,
         type: providerMetadata.type,
-        isActive: true,
-        models: [],
         ...providerMetadata.fields.reduce(
           (acc, field) => {
             acc[field.key] = field.defaultValue ?? getFieldDefaultValue(field);
@@ -147,6 +117,7 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
 
       const updatedProfile: Profile = {
         ...editingProfile,
+        activeProviderId: providerId, // 设置为当前添加的 provider
         providers: {
           ...editingProfile.providers,
           [providerId]: defaultConfig,
@@ -173,10 +144,18 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
       handleProviderSelect(providerId);
 
       if (providerId && !editingProfile.providers?.[providerId]) {
+        // 如果 provider 不存在,addProviderToProfile 会设置 activeProviderId
         addProviderToProfile(providerId);
+      } else if (providerId && editingProfile.providers?.[providerId]) {
+        // 如果 provider 已存在,只需要更新 activeProviderId
+        const updatedProfile: Profile = {
+          ...editingProfile,
+          activeProviderId: providerId,
+        };
+        onChange(updatedProfile);
       }
     },
-    [editingProfile, addProviderToProfile, handleProviderSelect],
+    [editingProfile, addProviderToProfile, handleProviderSelect, onChange],
   );
 
   useEffect(() => {
@@ -267,7 +246,9 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
           <div className="flex flex-col space-y-2">
             <VSCodeDropdown
               value={selectedProvider}
-              onChange={(e: any) => handleProviderChange(e.target.value)}
+              onChange={(e: { target: { value: string } }) =>
+                handleProviderChange(e.target.value)
+              }
             >
               {Object.values(ProviderRegistry).map(
                 (provider: ProviderMetadata) => (
