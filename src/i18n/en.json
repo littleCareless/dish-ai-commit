@@ -310,5 +310,7 @@
   "error.suggestion.specific.timeout": "The operation timed out. Try again or increase the timeout setting",
   "error.suggestion.validation.check_format": "Verify that the input format is correct",
   "error.suggestion.validation.check_input": "Please check your input and try again",
-  "error.title.unknown": "Unknown Error"
+  "error.title.unknown": "Unknown Error",
+  "scm.repository.select.placeholder": "Select the repository to generate commit message for",
+  "scm.repository.type.label": "{0} Repository"
 }

@@ -315,5 +315,7 @@
   "error.suggestion.specific.timeout": "操作超时。请重试或增加超时设置",
   "error.suggestion.validation.check_format": "验证输入格式是否正确",
   "error.suggestion.validation.check_input": "请检查您的输入并重试",
-  "error.title.unknown": "未知错误"
+  "error.title.unknown": "未知错误",
+  "scm.repository.select.placeholder": "请选择要在哪个仓库中生成提交信息",
+  "scm.repository.type.label": "{0} 仓库"
 }

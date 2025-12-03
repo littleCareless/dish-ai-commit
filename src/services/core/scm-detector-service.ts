@@ -106,6 +106,11 @@ export class SCMDetectorService {
       return;
     }
 
+    // 如果 repositoryPath 仍然是 undefined，从 SCMFactory 获取当前使用的仓库路径
+    if (!repositoryPath) {
+      repositoryPath = SCMFactory.getCurrentRepositoryPath();
+    }
+
     return {
       scmProvider,
       selectedFiles,

@@ -177,7 +177,8 @@ export class GenerateCommitCommand extends BaseCommand {
           scmProvider,
           selectedFiles,
           resources,
-          repoPath
+          repoPath,
+          this.selectAndUpdateModelConfiguration.bind(this)
         )
     );
   }
@@ -212,6 +213,7 @@ export class GenerateCommitCommand extends BaseCommand {
       selectedFiles,
       repositoryPath: finalRepoPath,
     } = result;
+    console.log("finalRepoPath", finalRepoPath);
 
     if (!finalRepoPath) {
       await notify.warn(
@@ -238,6 +240,7 @@ export class GenerateCommitCommand extends BaseCommand {
           selectedFiles,
           parsedArgs.resourceStates || [],
           finalRepoPath
+          this.selectAndUpdateModelConfiguration.bind(this)
         );
       }
     );

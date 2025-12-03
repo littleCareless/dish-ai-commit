@@ -89,6 +89,17 @@ export class SCMFactory {
   /** 当前激活的SCM提供者实例 */
   private static currentProvider: ISCMProvider | undefined;
 
+  /** 当前使用的仓库路径 */
+  private static currentRepositoryPath: string | undefined;
+
+  /**
+   * 获取当前使用的仓库路径
+   * @returns 仓库路径或undefined
+   */
+  static getCurrentRepositoryPath(): string | undefined {
+    return this.currentRepositoryPath;
+  }
+
   /**
    * 根据选中的文件确定工作区根目录
    * @param selectedFiles 选中的文件路径列表
@@ -293,6 +304,73 @@ export class SCMFactory {
   }
 
   /**
+   * 检测所有可用的 SCM 仓库
+   * @returns 仓库信息数组
+   */
+  private static detectAllRepositories(): Array<{
+    type: 'git' | 'svn';
+    rootUri: vscode.Uri;
+    label: string;
+  }> {
+    const repositories: Array<{
+      type: 'git' | 'svn';
+      rootUri: vscode.Uri;
+      label: string;
+    }> = [];
+
+    // vscode.scm.sourceControls 在 VS Code 1.90+ 中可用
+    const sourceControls = (vscode.scm as any).sourceControls as readonly vscode.SourceControl[] | undefined;
+
+    if (!sourceControls) {
+      return repositories;
+    }
+
+    for (const sourceControl of sourceControls) {
+      if (sourceControl.id === 'git' || sourceControl.id === 'svn') {
+        if (sourceControl.rootUri) {
+          repositories.push({
+            type: sourceControl.id as 'git' | 'svn',
+            rootUri: sourceControl.rootUri,
+            label: sourceControl.label
+          });
+        }
+      }
+    }
+
+    return repositories;
+  }
+
+  /**
+   * 让用户选择仓库
+   * @param repositories 可用的仓库列表
+   * @returns 用户选择的仓库信息或undefined（用户取消）
+   */
+  private static async promptUserToSelectRepository(
+    repositories: Array<{
+      type: 'git' | 'svn';
+      rootUri: vscode.Uri;
+      label: string;
+    }>
+  ): Promise<{ type: 'git' | 'svn'; rootUri: vscode.Uri } | undefined> {
+    // 动态导入 i18n 工具
+    const { getMessage, formatMessage } = await import('../utils/i18n');
+
+    const items = repositories.map(repo => ({
+      label: repo.label,
+      description: repo.rootUri.fsPath,
+      detail: formatMessage('scm.repository.type.label', [repo.type.toUpperCase()]),
+      repo
+    }));
+
+    const selected = await vscode.window.showQuickPick(items, {
+      placeHolder: getMessage('scm.repository.select.placeholder'),
+      ignoreFocusOut: true
+    });
+
+    return selected?.repo;
+  }
+
+  /**
    * 检测并创建可用的SCM提供者
    * @param {string[] | undefined} selectedFiles - 可选的选定文件路径列表
    * @param {string | undefined} repositoryPath - 可选的仓库路径，如果提供则优先使用此路径
@@ -303,9 +381,50 @@ export class SCMFactory {
     repositoryPath?: string
   ): Promise<ISCMProvider | undefined> {
     try {
+      // 如果没有提供任何参数，尝试使用 vscode.scm API 检测仓库
+      if (!selectedFiles && !repositoryPath) {
+        console.log('[SCMFactory] No args provided, detecting all repositories...');
+        const repositories = this.detectAllRepositories();
+        console.log(`[SCMFactory] Detected ${repositories.length} repositories`);
+
+        if (repositories.length === 0) {
+          console.log('[SCMFactory] No repositories found, falling back to workspace root detection');
+          // 没有检测到任何仓库，回退到原有逻辑
+          const workspaceRoot = this.findWorkspaceRoot(selectedFiles);
+          if (!workspaceRoot || !ImprovedPathUtils.isValidPath(workspaceRoot)) {
+            return undefined;
+          }
+          const normalizedWorkspaceRoot = ImprovedPathUtils.normalizePath(workspaceRoot);
+          const provider = await this.performDetection(normalizedWorkspaceRoot, selectedFiles);
+          if (provider) {
+            this.currentProvider = provider;
+            // 确保在这里也设置 currentRepositoryPath
+            this.currentRepositoryPath = normalizedWorkspaceRoot;
+            console.log(`[SCMFactory] Provider created via fallback, currentRepositoryPath set to: ${this.currentRepositoryPath}`);
+          }
+          return provider;
+        } else if (repositories.length === 1) {
+          // 只有一个仓库，直接使用
+          repositoryPath = repositories[0].rootUri.fsPath;
+          console.log(`[SCMFactory] Single repository found: ${repositoryPath}`);
+        } else {
+          // 多个仓库，让用户选择
+          const selected = await this.promptUserToSelectRepository(repositories);
+          if (!selected) {
+            // 用户取消选择
+            return undefined;
+          }
+          repositoryPath = selected.rootUri.fsPath;
+          console.log(`[SCMFactory] User selected repository: ${repositoryPath}`);
+        }
+      }
+
       // 优先使用传入的 repositoryPath，如果没有则使用检测方法获取工作区根目录
       const workspaceRoot =
         repositoryPath || this.findWorkspaceRoot(selectedFiles);
+
+      console.log(`[SCMFactory] Workspace root determined: ${workspaceRoot}`);
+
       if (!workspaceRoot || !ImprovedPathUtils.isValidPath(workspaceRoot)) {
         return undefined;
       }
@@ -313,6 +432,10 @@ export class SCMFactory {
       // 规范化工作区根目录路径
       const normalizedWorkspaceRoot =
         ImprovedPathUtils.normalizePath(workspaceRoot);
+
+      // 保存当前使用的仓库路径
+      this.currentRepositoryPath = normalizedWorkspaceRoot;
+      console.log(`[SCMFactory] Setting currentRepositoryPath to: ${this.currentRepositoryPath}`);
 
       // 直接执行检测，每次都创建新的Provider实例
       const provider = await this.performDetection(
