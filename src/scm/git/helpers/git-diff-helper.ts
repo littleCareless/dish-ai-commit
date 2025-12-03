@@ -1,4 +1,3 @@
-import { ConfigurationManager } from "@/config/configuration-manager";
 import { GitRepository } from "@/scm/git/helpers/git-repository-helper";
 import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils";
 import { DiffProcessor } from "@/utils/diff/diff-processor";
@@ -294,7 +293,7 @@ export class GitDiffHelper {
         let diffTarget: "staged" | "all" =
           target === "staged" ? "staged" :
             target === "all" ? "all" :
-              ConfigurationManager.getInstance().getConfig("FEATURES_CODEANALYSIS_DIFFTARGET") === "staged" ? "staged" : "all";
+              undefined === "staged" ? "staged" : "all";
 
         // 如果使用 "auto" 模式，先检查暂存区是否有文件
         if (target === "auto") {

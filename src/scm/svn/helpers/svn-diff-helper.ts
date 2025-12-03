@@ -1,12 +1,11 @@
-import { ConfigurationManager } from "@/config/configuration-manager";
 import { SvnPathHelper } from "@/scm/svn/helpers/svn-path-helper";
 import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils";
-import { DiffSimplifier } from "@/utils";
 import { DiffProcessor } from "@/utils/diff/diff-processor";
 import { FileTypeUtils } from "@/utils/diff/file-type-utils";
 import { formatMessage } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
 import { notify } from "@/utils/notification/notification-manager";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 import * as childProcess from "child_process";
 import * as fs from "fs";
 import * as path from "path";
@@ -177,19 +176,8 @@ export class SvnDiffHelper {
         return undefined;
       }
 
-      // 获取配置
-      const configManager = ConfigurationManager.getInstance();
-      const enableSimplification = configManager.getConfig(
-        "FEATURES_CODEANALYSIS_SIMPLIFYDIFF"
-      );
-
-      // 根据配置决定是否简化diff
-      if (enableSimplification) {
-        notify.warn("diff.simplification.warning");
-        return DiffSimplifier.simplify(diffOutput);
-      }
-
       // 处理diff以获取结构化数据，包括原始文件内容
+      // Diff simplification removed - use DiffProcessor directly
       return DiffProcessor.process(diffOutput, "svn");
     } catch (error) {
       if (error instanceof Error) {
@@ -206,9 +194,10 @@ export class SvnDiffHelper {
    * @private
    */
   private async getAllChangesDiff(repositoryPath: string): Promise<string> {
-    const diffTarget = ConfigurationManager.getInstance().getConfig(
-      "FEATURES_CODEANALYSIS_DIFFTARGET"
-    ) || "all";
+    // 使用 ProfileManagerService 获取 diffTarget 配置
+    const profileManager = ProfileManagerService.getInstance();
+    const featureSettings = profileManager.getFeatureSettings();
+    const diffTarget = featureSettings.diffTarget || "all";
     let diffOutput = "";
 
     if (diffTarget === "staged") {
