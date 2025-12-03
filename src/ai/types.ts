@@ -1,5 +1,5 @@
-import { PROVIDER_DEFINITIONS } from "@/config/provider-definitions";
 import type { AIGenerationErrorType } from "@/ai/utils/generate-helper";
+import { PROVIDER_DEFINITIONS } from "@/config/provider-definitions";
 
 /**
  * AI请求选项接口，定义了向AI模型发送请求时的基本参数
@@ -133,6 +133,8 @@ export interface AIModel<
     id: Provider;
     name: string;
   };
+  /** 每个模型自定义的 baseUrl */
+  readonly baseUrl?: string;
   /** 是否为默认模型 */
   readonly default?: boolean;
   /** 是否在界面上隐藏 */
@@ -143,6 +145,10 @@ export interface AIModel<
     streaming?: boolean;
     /** 是否支持函数调用 */
     functionCalling?: boolean;
+    /** 是否支持视觉能力 */
+    vision?: boolean;
+    /** 是否支持JSON模式输出 */
+    jsonMode?: boolean;
   };
   /** 嵌入模型的维度 */
   readonly dimension?: number;
@@ -224,6 +230,7 @@ export interface AIProvider {
   /** 获取提供者ID */
   getId(): string;
   getConfig(): any;
+  setGlobalConfig?(config: any): void;
   /**
    * 计算文本的token数量
    * @param params - AI请求参数，主要使用其中的消息内容
@@ -323,17 +330,14 @@ export type DashScopeModels =
   | "qwen-coder-turbo-latest"; // 最新版本
 
 export type DoubaoModels =
-  | "doubao-lite-4k"
-  | "doubao-lite-character"
-  | "doubao-lite-32k"
-  | "doubao-lite-128k"
-  | "doubao-pro-4k"
-  | "doubao-pro-character"
-  | "doubao-pro-functioncall"
-  | "doubao-pro-32k"
-  | "doubao-pro-128k"
-  | "doubao-pro-256k"
-  | "doubao-vision-pro-32k";
+  | "doubao-seed-code-preview-251028"
+  | "doubao-seed-1-6-250615"
+  | "doubao-seed-1-6-251015"
+  | "doubao-seed-1-6-lite-251015"
+  | "doubao-seed-translation-250915"
+  | "doubao-seed-1-6-flash-250828"
+  | "doubao-seed-1-6-vision-250815"
+  | "doubao-1-5-pro-32k-character-250715";
 
 export type GeminiAIModels =
   | "gemini-2.5-flash-preview"
@@ -355,7 +359,7 @@ export type BaiduQianfanModels =
   | "ERNIE-3.5-8K"
   | "ERNIE-Speed-8K";
 
-export type DeepseekModels = "deepseek-chat" | "deepseek-reasoner";
+export type DeepseekModels = "deepseek-v3-1-terminus" | "deepseek-v3-1-250821";
 
 export type SiliconFlowModels =
   // Qwen系列

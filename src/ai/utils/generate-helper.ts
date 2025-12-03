@@ -1,10 +1,9 @@
 import { AIRequestParams } from "@/ai/types";
-import { ConfigurationManager } from "@/config/configuration-manager";
 import {
-  generateBranchNameSystemPrompt,
-  generateBranchNameUserPrompt,
+  BRANCH_NAME_SYSTEM_TEMPLATE,
+  BRANCH_NAME_USER_TEMPLATE,
 } from "@/prompt/branch-name";
-import { getCodeReviewPrompt as getCodeReviewPrompts } from "@/prompt/code-review";
+import { CODE_REVIEW_SYSTEM_TEMPLATE, getCodeReviewVariables } from "@/prompt/code-review";
 import {
   generateCommitMessageSystemPrompt,
   generateThinkingProcessPrompt,
@@ -13,8 +12,13 @@ import {
   getMergeCommitsSection,
   getVCSExamples,
 } from "@/prompt/generate-commit";
-import { generateFallbackCommitMessageSystemPrompt } from "@/prompt/generate-commit-fallback";
+import {
+  GENERATE_COMMIT_FALLBACK_TEMPLATE,
+  getFallbackCommitVariables,
+} from "@/prompt/generate-commit-fallback";
 import { PromptManagerService } from "@/services/core/prompt-manager-service";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
+import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
 import { PromptKey } from "@/types/prompts";
 import { loadCommitlintConfig } from "@/utils/commitlint";
 import { getMessage } from "@/utils/i18n";
@@ -249,7 +253,8 @@ let isGeneratingPrompt = false;
 export async function getSystemPrompt(
   params: AIRequestParams,
   directOutput: boolean = false,
-  useFallback: boolean = false
+  useFallback: boolean = false,
+  config?: any
 ): Promise<string> {
   console.log("调用栈:\n", new Error().stack);
 
@@ -260,7 +265,8 @@ export async function getSystemPrompt(
   try {
     isGeneratingPrompt = true;
 
-    const config = ConfigurationManager.getInstance().getConfiguration();
+    const featureSettings = ProfileManagerService.getInstance().getFeatureSettings();
+    const preferences = PreferencesSettingsManager.getInstance().getSettings();
     const commitlintConfig = await loadCommitlintConfig(params.workspaceRoot);
 
     // 1. 优先使用params中提供的系统提示
@@ -274,12 +280,13 @@ export async function getSystemPrompt(
 
     if (activePromptContent) {
       const {
-        base: { language },
-        features: {
-          commitFormat: { enableMergeCommit, enableEmoji, enableBody = true },
-          commitMessage: { useRecentCommitsAsReference },
-        },
-      } = config;
+        enableMergeCommit,
+        enableEmoji,
+        enableBody,
+        useRecentCommitsAsReference,
+      } = featureSettings;
+
+      const language = preferences.language;
 
       // Calculate block variables
       const typeReference = commitlintConfig
@@ -306,7 +313,7 @@ export async function getSystemPrompt(
       // Process template variables
       // 即使是自定义提示词，也支持变量替换，这样可以响应 enableEmoji 等设置
       const processedPrompt = processPromptTemplate(activePromptContent, {
-        language: params.language || config.base.language,
+        language: params.language || language || "Simplified Chinese",
         type_reference: typeReference,
         format_template: formatTemplate,
         examples: examples,
@@ -316,15 +323,36 @@ export async function getSystemPrompt(
     }
 
     // 3. Fallback (should rarely happen if default prompts are loaded)
-    const promptGenerator = useFallback
-      ? generateFallbackCommitMessageSystemPrompt
-      : generateCommitMessageSystemPrompt;
+    let prompt: string;
+    if (useFallback) {
+      const variables = getFallbackCommitVariables({
+        vcsType: (params.scm === "svn" ? "svn" : "git") as "git" | "svn",
+        useRecentCommitsAsReference: featureSettings.useRecentCommitsAsReference,
+      });
+      prompt = processPromptTemplate(GENERATE_COMMIT_FALLBACK_TEMPLATE, variables);
+    } else {
+      // Construct a config object that mimics the old structure for the generator
+      // This is a temporary bridge until we refactor the generators to accept FeatureSettings
+      const effectiveConfig = {
+        base: { language: preferences.language },
+        features: {
+          commitFormat: {
+            enableMergeCommit: featureSettings.enableMergeCommit,
+            enableEmoji: featureSettings.enableEmoji,
+            enableBody: featureSettings.enableBody,
+          },
+          commitMessage: {
+            useRecentCommitsAsReference: featureSettings.useRecentCommitsAsReference,
+          },
+        },
+      } as any;
 
-    const prompt = promptGenerator({
-      config,
-      vcsType: (params.scm === "svn" ? "svn" : "git") as "git" | "svn",
-      commitlintConfig,
-    });
+      prompt = generateCommitMessageSystemPrompt({
+        config: effectiveConfig,
+        vcsType: (params.scm === "svn" ? "svn" : "git") as "git" | "svn",
+        commitlintConfig,
+      });
+    }
 
     // 仅当需要直接输出结果时才添加输出约束
     return appendConstraints(prompt, params, directOutput);
@@ -337,33 +365,39 @@ export async function getSystemPrompt(
  * 获取代码审查提示文本
  * @param {AIRequestParams} params - AI 请求参数
  * @param {boolean} directOutput - 是否要求直接输出结果，不包含解释
- * @returns {string} 代码审查提示文本
+ * @returns {Promise<string>} 代码审查提示文本
  */
-export function getCodeReviewPrompt(
+export async function getCodeReviewPrompt(
   params: AIRequestParams,
-  directOutput: boolean = false
-): string {
-  try {
-    // 1. 优先使用params中提供的代码审查提示
-    if (params.codeReviewPrompt) {
-      return appendConstraints(params.codeReviewPrompt, params, directOutput);
-    }
-
-    // 2. 检查配置中是否有自定义提示词
-    const config = ConfigurationManager.getInstance().getConfiguration();
-    const configuredPrompt = config.features?.codeReview?.systemPrompt;
-
-    if (configuredPrompt) {
-      return appendConstraints(configuredPrompt, params, directOutput);
-    }
-
-    // 3. 使用默认提示词
-    const prompt = getCodeReviewPrompts();
-
-    // 仅当需要直接输出结果时才添加输出约束
-    return directOutput ? appendOutputConstraint(prompt) : prompt;
-  } finally {
+  directOutput: boolean = false,
+  config?: any
+): Promise<string> {
+  // 1. 优先使用 params 中提供的代码审查提示
+  if (params.codeReviewPrompt) {
+    return appendConstraints(params.codeReviewPrompt, params, directOutput);
   }
+
+  // 2. 检查 PromptManager 是否有自定义 prompt
+  const promptManager = PromptManagerService.getInstance();
+  const promptDetail = promptManager.getPromptDetail(PromptKey.CodeReviewSystem);
+  
+  // 3. 获取语言配置
+  const profileManager = ProfileManagerService.getInstance();
+  const profile = await profileManager.getProfileForMode();
+  const language = profile?.preferences?.language || "English";
+  const variables = getCodeReviewVariables(language);
+  
+  if (promptDetail.isCustomized && promptDetail.content.trim() !== "") {
+    // 自定义 prompt 也需要替换变量
+    const customPrompt = processPromptTemplate(promptDetail.content, variables);
+    return directOutput ? appendOutputConstraint(customPrompt) : customPrompt;
+  }
+
+  // 4. 使用默认模板并替换变量
+  const prompt = processPromptTemplate(CODE_REVIEW_SYSTEM_TEMPLATE, variables);
+
+  // 仅当需要直接输出结果时才添加输出约束
+  return directOutput ? appendOutputConstraint(prompt) : prompt;
 }
 
 /**
@@ -374,7 +408,8 @@ export function getCodeReviewPrompt(
  */
 export function getBranchNameSystemPrompt(
   params: AIRequestParams,
-  directOutput: boolean = false
+  directOutput: boolean = false,
+  config?: any
 ): string {
   try {
     // 1. 优先使用params中提供的分支名称提示
@@ -382,18 +417,11 @@ export function getBranchNameSystemPrompt(
       return appendConstraints(params.branchNamePrompt, params, directOutput);
     }
 
-    // 2. 检查配置中是否有自定义提示词
-    const config = ConfigurationManager.getInstance().getConfiguration();
-    const configuredPrompt = config.features?.branchName?.systemPrompt;
-
-    if (configuredPrompt) {
-      return appendConstraints(configuredPrompt, params, directOutput);
-    }
+    // 2. 检查配置中是否有自定义提示词 (Deprecated)
 
     // 3. 使用默认生成的提示词
-    const prompt = generateBranchNameSystemPrompt({
-      config,
-    });
+    // 分支名称提示词固定为英文，不需要语言变量
+    const prompt = BRANCH_NAME_SYSTEM_TEMPLATE;
 
     // 仅当需要直接输出结果时才添加输出约束
     return directOutput ? appendOutputConstraint(prompt) : prompt;
@@ -407,7 +435,7 @@ export function getBranchNameSystemPrompt(
  * @returns {string} 分支名称生成的用户提示文本
  */
 export function getBranchNameUserPrompt(diffContent: string): string {
-  return generateBranchNameUserPrompt(diffContent);
+  return processPromptTemplate(BRANCH_NAME_USER_TEMPLATE, { diffContent });
 }
 
 /**
@@ -416,7 +444,8 @@ export function getBranchNameUserPrompt(diffContent: string): string {
  * @returns {string} 全局摘要生成的系统提示文本
  */
 export async function getGlobalSummaryPrompt(
-  params: AIRequestParams
+  params: AIRequestParams,
+  config?: any
 ): Promise<string> {
   try {
     // 提示AI生成全局摘要
@@ -424,7 +453,7 @@ export async function getGlobalSummaryPrompt(
 摘要应该是高层次的，不需要包含每个文件的细节，而是关注整体变更的目标。
 摘要内容应保持在1-3句话之内。
 
-${await getSystemPrompt(params)}`;
+${await getSystemPrompt(params, false, false, config)}`;
 
     // 全局摘要提示词不是自定义提示词，不应用语言约束
     return prompt;
@@ -440,7 +469,8 @@ ${await getSystemPrompt(params)}`;
  */
 export async function getFileDescriptionPrompt(
   params: AIRequestParams,
-  filePath: string
+  filePath: string,
+  config?: any
 ): Promise<string> {
   try {
     // 提示AI生成文件级描述
@@ -448,7 +478,7 @@ export async function getFileDescriptionPrompt(
 描述应该只关注这个特定文件的变化，说明做了什么修改以及为什么做这些修改。
 描述应该保持在1-2句话之内。
 
-${await getSystemPrompt(params)}`;
+${await getSystemPrompt(params, false, false, config)}`;
 
     // 文件描述提示词不是自定义提示词，不应用语言约束
     return prompt;
