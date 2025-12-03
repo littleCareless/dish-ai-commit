@@ -41,7 +41,7 @@ const providerConfigSchema = z.object({
   name: z.string(),
   type: providerTypeSchema,
   apiKey: z.string().optional(),
-  baseURL: z.string().optional(),
+  baseUrl: z.string().optional(),
   region: z.string().optional(),
   projectId: z.string().optional(),
   customHeaders: z.record(z.string(), z.string()).optional(),
@@ -76,6 +76,7 @@ export const profileSchema = z.object({
   createdAt: z.date().or(z.string().datetime()),
   updatedAt: z.date().or(z.string().datetime()),
   version: z.string(),
+  activeProviderId: z.string().optional(),
 });
 export type Profile = z.infer<typeof profileSchema>;
 
@@ -175,6 +176,8 @@ export interface FeatureSettings {
   simplifyDiff: boolean;
   autoDetectStaged: boolean;
   fallbackToAll: boolean;
+  diffTarget: "staged" | "all" | "auto";
+  suppressNonCriticalWarnings: boolean;
   weeklyReport: boolean;
   codeReview: boolean;
   generateBranchName: boolean;

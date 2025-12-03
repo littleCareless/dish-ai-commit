@@ -1,20 +1,19 @@
-import * as vscode from "vscode";
-import { COMMANDS } from "@/constants";
-import { GenerateCommitCommand } from "@/commands/generate-commit/generate-commit-command";
-import { SelectModelCommand } from "@/commands/select-model-command";
-import { GenerateWeeklyReportCommand } from "@/commands/generate-weekly-report-command";
-import { ReviewCodeCommand } from "@/commands/review-code-command";
 import { GenerateBranchNameCommand } from "@/commands/generate-branch-name/generate-branch-name-command";
+import { GenerateCommitCommand } from "@/commands/generate-commit/generate-commit-command";
 import { GeneratePRSummaryCommand } from "@/commands/generate-pr-summary-command";
-import { UpdateModelInfoCommand } from "@/commands/update-model-info-command";
-import { ShowTokenStatsCommand } from "@/commands/show-token-stats-command";
+import { GenerateWeeklyReportCommand } from "@/commands/generate-weekly-report-command";
 import { ResetTokenStatsCommand } from "@/commands/reset-token-stats-command";
+import { ReviewCodeCommand } from "@/commands/review-code-command";
+import { ShowTokenStatsCommand } from "@/commands/show-token-stats-command";
+import { COMMANDS } from "@/constants";
 import { notify } from "@/utils";
+import * as vscode from "vscode";
 
 /**
  * 管理VS Code命令的注册和销毁
  * @implements {vscode.Disposable}
  */
+import { ProfileManagerService } from "./services/profile-manager/profile-manager-service";
 export class CommandManager implements vscode.Disposable {
   /** 存储所有已注册命令的disposal tokens */
   private disposables: vscode.Disposable[] = [];
@@ -23,7 +22,10 @@ export class CommandManager implements vscode.Disposable {
    * 创建新的命令管理器实例
    * @param {vscode.ExtensionContext} context - VS Code扩展上下文
    */
-  constructor(private readonly context: vscode.ExtensionContext) {
+  constructor(
+    private readonly context: vscode.ExtensionContext,
+    private readonly profileManager: ProfileManagerService
+  ) {
     this.registerCommands();
   }
 
@@ -35,13 +37,20 @@ export class CommandManager implements vscode.Disposable {
   private registerCommands() {
     try {
       // 初始化各个命令处理器
-      const generateCommand = new GenerateCommitCommand(this.context);
-      const selectModelCommand = new SelectModelCommand(this.context);
+      const generateCommand = new GenerateCommitCommand(
+        this.context,
+        this.profileManager
+      );
       const weeklyReportCommand = new GenerateWeeklyReportCommand(this.context);
       const reviewCodeCommand = new ReviewCodeCommand(this.context);
-      const branchNameCommand = new GenerateBranchNameCommand(this.context);
-      const prSummaryCommand = new GeneratePRSummaryCommand(this.context);
-      const updateModelInfoCommand = new UpdateModelInfoCommand(this.context);
+      const branchNameCommand = new GenerateBranchNameCommand(
+        this.context,
+        this.profileManager
+      );
+      const prSummaryCommand = new GeneratePRSummaryCommand(
+        this.context,
+        this.profileManager
+      );
       const showTokenStatsCommand = new ShowTokenStatsCommand(this.context);
       const resetTokenStatsCommand = new ResetTokenStatsCommand(this.context);
 
@@ -60,17 +69,6 @@ export class CommandManager implements vscode.Disposable {
             }
           }
         ),
-        // 注册模型选择命令
-        vscode.commands.registerCommand(COMMANDS.MODEL.SHOW, async () => {
-          try {
-            await selectModelCommand.execute();
-          } catch (error) {
-            // 处理模型选择失败
-            notify.error("command.select.model.failed", [
-              error instanceof Error ? error.message : String(error),
-            ]);
-          }
-        }),
         // 注册周报生成命令
         vscode.commands.registerCommand(
           COMMANDS.WEEKLY_REPORT.GENERATE,
@@ -127,20 +125,6 @@ export class CommandManager implements vscode.Disposable {
             }
           }
         ),
-        // 注册更新模型信息命令
-        vscode.commands.registerCommand(
-          COMMANDS.UPDATE_MODEL_INFO.UPDATE,
-          async () => {
-            try {
-              await updateModelInfoCommand.execute();
-            } catch (error) {
-              // 处理模型信息更新失败
-              notify.error("command.update.model.info.failed", [
-                error instanceof Error ? error.message : String(error),
-              ]);
-            }
-          }
-        ),
         // 注册显示 token 统计命令
         vscode.commands.registerCommand(COMMANDS.TOKEN_STATS.SHOW, async () => {
           try {
@@ -187,7 +171,10 @@ export class CommandManager implements vscode.Disposable {
  * 为扩展注册所有命令
  * @param {vscode.ExtensionContext} context - VS Code扩展上下文
  */
-export function registerCommands(context: vscode.ExtensionContext) {
-  const commandManager = new CommandManager(context);
+export function registerCommands(
+  context: vscode.ExtensionContext,
+  profileManager: ProfileManagerService
+) {
+  const commandManager = new CommandManager(context, profileManager);
   context.subscriptions.push(commandManager);
 }

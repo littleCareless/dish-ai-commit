@@ -7,6 +7,7 @@ import { filterCodeBlockMarkers } from "@/commands/generate-commit/utils/commit-
 import { getLayeredCommitBatchVariables } from "@/prompt/layered-commit-batch"
 import { ISCMProvider } from "@/scm/scm-provider"
 import { PromptManagerService } from "@/services/core/prompt-manager-service"
+import { RateLimiterService } from "@/services/core/rate-limiter-service"
 import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service"
 import { PromptKey } from "@/types/prompts"
 import { getMessage } from "@/utils/i18n"
@@ -368,6 +369,25 @@ export class LayeredCommitHandler {
     for (let i = 0; i < batches.length; i++) {
       const batch = batches[i];
       this.throwIfCancelled(token);
+
+      // === Rate Limiting ===
+      const providerId = aiProvider.getId();
+      const providerConfig = vscode.workspace.getConfiguration("dish-ai-commit.providers").get<any>(providerId);
+
+      if (providerConfig && providerConfig.rateLimitEnabled) {
+        const rateLimiter = RateLimiterService.getInstance();
+        await rateLimiter.acquire(
+          providerId,
+          providerConfig.rateLimitMax || 20,
+          providerConfig.rateLimitWindow || 60,
+          (waitTimeMs) => {
+            progress.report({
+              message: `Rate limit reached. Waiting ${Math.ceil(waitTimeMs / 1000)}s...`
+            });
+          }
+        );
+      }
+      // =====================
 
       progress.report({
         message: `Processing batch ${i + 1}/${batches.length} (${batch.length} files)...`,

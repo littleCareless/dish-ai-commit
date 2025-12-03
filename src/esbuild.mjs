@@ -36,6 +36,9 @@ async function main() {
 		fs.rmSync(distDir, { recursive: true, force: true })
 	}
 
+	// 直接编译 prompt 文件到 dist/prompt（不再依赖 tsc 输出）
+	await buildPromptFiles(buildDir, distDir, { minify, sourcemap })
+
 	/**
 	 * @type {import('esbuild').Plugin[]}
 	 */
@@ -52,7 +55,7 @@ async function main() {
 							["src/license", "LICENSE", { optional: true }],
 							["SECURITY.md", "SECURITY.md", { optional: true }],
 							["webview-ui-dist", "webview-ui-dist"],
-							["src/out/prompt", "dist/prompt"],
+							// 移除: ["src/out/prompt", "dist/prompt"] - 现在由 esbuild 直接编译
 						],
 						srcDir,
 						buildDir,
@@ -283,6 +286,56 @@ function copyWasms(srcDir, distDir) {
 			`[copyWasms] Optional: Directory for language-specific WASMs (${languageWasmDir}) not found. Skipping.`
 		)
 	}
+}
+
+/**
+ * 直接使用 esbuild 编译 prompt/*.ts 文件到 dist/prompt/
+ * 这样 F5 调试时不再依赖 tsc 先编译到 out/ 目录
+ */
+async function buildPromptFiles(buildDir, distDir, options = {}) {
+	const promptSrcDir = path.join(buildDir, "prompt")
+	const promptDistDir = path.join(distDir, "prompt")
+
+	// 确保目标目录存在
+	fs.mkdirSync(promptDistDir, { recursive: true })
+
+	// 读取所有 .ts 文件
+	const files = fs.readdirSync(promptSrcDir).filter(f => f.endsWith(".ts"))
+	
+	if (files.length === 0) {
+		console.log("[buildPromptFiles] No .ts files found in prompt directory")
+		return
+	}
+
+	// 为每个 prompt 文件单独 bundle（因为它们可能有依赖）
+	for (const file of files) {
+		const entryPoint = path.join(promptSrcDir, file)
+		const outfile = path.join(promptDistDir, file.replace(".ts", ".js"))
+		
+		try {
+			await esbuild.build({
+				entryPoints: [entryPoint],
+				outfile,
+				bundle: true, // 需要 bundle 才能解析 @/ 别名
+				minify: options.minify || false,
+				sourcemap: options.sourcemap || false,
+				format: "cjs",
+				platform: "node",
+				target: "ES2022",
+				// 处理路径别名 @/
+				alias: {
+					"@": buildDir,
+				},
+				// 外部依赖，不打包进去
+				external: ["vscode"],
+			})
+		} catch (error) {
+			console.error(`[buildPromptFiles] Error compiling ${file}:`, error.message)
+			throw error
+		}
+	}
+	
+	console.log(`[buildPromptFiles] Compiled ${files.length} prompt files to ${promptDistDir}`)
 }
 
 /**

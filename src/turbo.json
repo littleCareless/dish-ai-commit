@@ -23,6 +23,9 @@
       "cache": false,
       "persistent": true
     },
+    "compile:webview": {
+      "outputs": ["dist/**"]
+    },
     "compile:esbuild": {
       "dependsOn": ["check-types"],
       "outputs": ["dist/**", "webview-ui-dist/**"]

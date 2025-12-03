@@ -1,7 +1,6 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import { registerCommands } from "@/commands";
-import { ConfigurationManager } from "@/config/configuration-manager";
 import { EmbeddingServiceManager } from "@/core/indexing/embedding-service-manager";
 import { TokenStatsService } from "@/services/core/token-stats-service";
 import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
@@ -40,13 +39,11 @@ export async function activate(context: vscode.ExtensionContext) {
     logger.info("Initializing state manager...");
     stateManager.initialize(context);
 
-    // 初始化配置管理器并注册到生命周期
-    logger.info("Initializing configuration manager...");
-    context.subscriptions.push(ConfigurationManager.getInstance());
+    // ConfigurationManager is deprecated - all configuration moved to Profile system
 
     // 初始化 ProfileManagerService
     logger.info("Initializing profile manager service...");
-    await ProfileManagerService.create(context);
+    const profileManager = await ProfileManagerService.create(context);
 
     // 初始化 EmbeddingServiceManager
     logger.info("Initializing embedding service...");
@@ -70,7 +67,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // 注册所有命令到VS Code
     logger.info("Registering commands...");
-    registerCommands(context);
+    registerCommands(context, profileManager);
 
     // 注册 Settings Webview Provider
     const settingsProvider = new SettingsViewProvider(

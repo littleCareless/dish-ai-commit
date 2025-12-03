@@ -81,12 +81,42 @@ export const CONFIG_SCHEMA = {
         default: "https://api.openai.com/v1",
         description: "OpenAI API Base URL / OpenAI API 基础地址",
       },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
+      },
     },
     zhipu: {
       apiKey: {
         type: "string",
         default: "",
         description: "Zhipu AI API Key / 智谱 AI API 密钥",
+      },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
       },
     },
     dashscope: {
@@ -95,12 +125,42 @@ export const CONFIG_SCHEMA = {
         default: "",
         description: "DashScope API Key / 灵积 API 密钥",
       },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
+      },
     },
     doubao: {
       apiKey: {
         type: "string",
         default: "",
         description: "Doubao API Key / 豆包 API 密钥",
+      },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
       },
     },
     ollama: {
@@ -109,12 +169,42 @@ export const CONFIG_SCHEMA = {
         default: "http://localhost:11434",
         description: "Ollama API Base URL / Ollama API 基础地址",
       },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
+      },
     },
     gemini: {
       apiKey: {
         type: "string",
         default: "",
         description: "Gemini AI API Key / Gemini AI API 密钥",
+      },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
       },
     },
     baiduQianfan: {
@@ -128,12 +218,42 @@ export const CONFIG_SCHEMA = {
         default: "",
         description: "Baidu Qianfan Secret Key / 百度千帆 Secret Key",
       },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
+      },
     },
     deepseek: {
       apiKey: {
         type: "string",
         default: "",
         description: "Deepseek AI API Key / Deepseek AI API 密钥",
+      },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
       },
     },
     siliconflow: {
@@ -142,6 +262,21 @@ export const CONFIG_SCHEMA = {
         default: "",
         description: "SiliconFlow AI API Key / SiliconFlow AI API 密钥",
       },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
+      },
     },
     openrouter: {
       apiKey: {
@@ -149,12 +284,42 @@ export const CONFIG_SCHEMA = {
         default: "",
         description: "OpenRouter AI API Key / OpenRouter AI API 密钥",
       },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
+      },
     },
     perplexity: {
       apiKey: {
         type: "string",
         default: "",
         description: "Perplexity AI API Key / Perplexity AI API 密钥",
+      },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
       },
     },
     premai: {
@@ -168,6 +333,21 @@ export const CONFIG_SCHEMA = {
         default: "https://api.premai.com/",
         description: "PremAI API Base URL / PremAI API 基础地址",
       },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
+      },
     },
     together: {
       apiKey: {
@@ -180,12 +360,42 @@ export const CONFIG_SCHEMA = {
         default: "https://api.together.xyz/",
         description: "Together AI API Base URL / Together AI API 基础地址",
       },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
+      },
     },
     xai: {
       apiKey: {
         type: "string",
         default: "",
         description: "xAI API Key / xAI API 密钥",
+      },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
       },
     },
     anthropic: {
@@ -194,12 +404,42 @@ export const CONFIG_SCHEMA = {
         default: "",
         description: "Anthropic API Key / Anthropic API 密钥",
       },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
+      },
     },
     mistral: {
       apiKey: {
         type: "string",
         default: "",
         description: "Mistral AI API Key / Mistral AI API 密钥",
+      },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
       },
     },
     azureOpenai: {
@@ -223,6 +463,21 @@ export const CONFIG_SCHEMA = {
         default: "",
         description: "Azure OpenAI Organization ID / Azure OpenAI 组织 ID",
       },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
+      },
     },
     cloudflare: {
       apiKey: {
@@ -234,6 +489,21 @@ export const CONFIG_SCHEMA = {
         type: "string",
         default: "",
         description: "Cloudflare Account ID / Cloudflare 账户 ID",
+      },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
       },
     },
     vertexai: {
@@ -259,6 +529,21 @@ export const CONFIG_SCHEMA = {
         description:
           "Optional. JSON string of GoogleAuthOptions for authentication. / 可选。用于身份验证的 GoogleAuthOptions 的 JSON 字符串。",
       },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
+      },
     },
     groq: {
       apiKey: {
@@ -266,12 +551,42 @@ export const CONFIG_SCHEMA = {
         default: "",
         description: "Groq API Key / Groq API 密钥",
       },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
+      },
     },
     lmstudio: {
       baseUrl: {
         type: "string",
         default: "http://localhost:1234/v1",
         description: "LMStudio API Base URL / LMStudio API 基础地址",
+      },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
       },
     },
     "openai-compatible": {
@@ -340,6 +655,21 @@ export const CONFIG_SCHEMA = {
         default: "medium",
         description: "Reasoning Effort Level (low/medium/high) / 推理强度级别（低/中/高）",
         enum: ["low", "medium", "high"],
+      },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
       },
     },
   },

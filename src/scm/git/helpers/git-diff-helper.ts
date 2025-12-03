@@ -1,13 +1,13 @@
-import { GitRepository } from "@/scm/git/helpers/git-repository-helper";
-import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils";
-import { DiffProcessor } from "@/utils/diff/diff-processor";
-import { FileTypeUtils } from "@/utils/diff/file-type-utils";
-import { formatMessage } from "@/utils/i18n";
-import { Logger } from "@/utils/logger";
-import { notify } from "@/utils/notification/notification-manager";
-import * as childProcess from "child_process";
-import * as path from "path";
-import { promisify } from "util";
+import { GitRepository } from "@/scm/git/helpers/git-repository-helper"
+import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils"
+import { DiffProcessor } from "@/utils/diff/diff-processor"
+import { FileTypeUtils } from "@/utils/diff/file-type-utils"
+import { formatMessage } from "@/utils/i18n"
+import { Logger } from "@/utils/logger"
+import { notify } from "@/utils/notification/notification-manager"
+import * as childProcess from "child_process"
+import * as path from "path"
+import { promisify } from "util"
 
 const exec = promisify(childProcess.exec);
 
@@ -47,7 +47,7 @@ export class GitDiffHelper {
 
       if (fullStatus) {
         const fullStatusStr = fullStatus.toString();
-        this.logger.info(`[DEBUG] Full git status: ${fullStatusStr}`);
+        // this.logger.info(`[DEBUG] Full git status: ${fullStatusStr}`);
         this.logger.info(`[DEBUG] Checking file: ${file}`);
 
         // 检查是否有包含当前文件的 rename 操作
