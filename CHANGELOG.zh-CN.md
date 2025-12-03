@@ -5,6 +5,41 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+# 0.55.0 (2025-12-03)
+
+
+### ✨ Features
+
+* **scm**: 支持在多仓库工作区中选择仓库 ([0014fc4](https://github.com/littleCareless/dish-ai-commit/commit/0014fc4))
+
+
+
+
+
+## 0.50.2 (2025-09-23)
+
+
+### 🎫 Chores
+
+* **deps**: 更新依赖项 ([0bf0e2a](https://github.com/littleCareless/dish-ai-commit/commit/0bf0e2a))
+* **release**: 0.50.2 ([f1d680c](https://github.com/littleCareless/dish-ai-commit/commit/f1d680c))
+
+
+
+
+
+## 0.50.1 (2025-09-23)
+
+
+### 🎫 Chores
+
+* **docs**: Fix incorrect directory name in installation instructions ([08fd60d](https://github.com/littleCareless/dish-ai-commit/commit/08fd60d))
+* **release**: 0.50.1 ([efa774a](https://github.com/littleCareless/dish-ai-commit/commit/efa774a))
+
+
+
+
+
 # 0.54.0 (2025-10-24)
 
 
