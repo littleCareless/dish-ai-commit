@@ -3,14 +3,14 @@
  * 集成模型验证和智能匹配功能
  */
 
-import { ConfigurationManager } from "@/config/configuration-manager";
 import { ModelSpec, findModelSpec, getDefaultTokenLimits } from "@/ai/model-registry/model-specs";
-import { AIModel } from "@/ai/types";
 import {
-  ModelValidator,
   ModelValidationResult,
+  ModelValidator,
   ProxyDetectionResult,
 } from "@/ai/model-registry/model-validator";
+import { AIModel } from "@/ai/types";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 
 export interface EnhancedModelSpec extends ModelSpec {
   /** 验证信息 */
@@ -20,16 +20,16 @@ export interface EnhancedModelSpec extends ModelSpec {
     actualModelId?: string;
     proxyDetected?: boolean;
     validationMethod:
-      | "exact_match"
-      | "known_mapping"
-      | "fuzzy_match"
-      | "local_spec"
-      | "fallback";
+    | "exact_match"
+    | "known_mapping"
+    | "fuzzy_match"
+    | "local_spec"
+    | "fallback";
     reason?: string;
     suggestion?:
-      | "use_local_spec"
-      | "retry_with_mapping"
-      | "fallback_to_default";
+    | "use_local_spec"
+    | "retry_with_mapping"
+    | "fallback_to_default";
   };
   /** 代理信息 */
   proxyInfo?: ProxyDetectionResult;
@@ -150,6 +150,45 @@ export class EnhancedModelFetcher {
   }
 
   /**
+   * 从 profile 获取 provider 配置
+   */
+  private async getProviderConfig(providerId: string): Promise<{ apiKey?: string; baseUrl?: string } | null> {
+    try {
+      const profileManager = ProfileManagerService.getInstance();
+      const profile = await profileManager.getProfileForMode();
+      
+      if (!profile) {
+        return null;
+      }
+
+      if (profile.providers && typeof profile.providers === "object") {
+        const providers = profile.providers as Record<string, any>;
+        const providerConfig = providers[providerId];
+        
+        if (providerConfig) {
+          return {
+            apiKey: providerConfig.apiKey,
+            baseUrl: providerConfig.baseUrl,
+          };
+        }
+      }
+      
+      // 兼容旧的配置结构
+      if (providerId === "openai" && profile.apiProvider === "openai") {
+        return {
+          apiKey: profile.apiKey,
+          baseUrl: profile.baseUrl,
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.warn(`Failed to get provider config for ${providerId}:`, error);
+      return null;
+    }
+  }
+
+  /**
    * 获取OpenAI模型信息（增强版）
    */
   private async fetchOpenAIModelInfo(
@@ -161,11 +200,13 @@ export class EnhancedModelFetcher {
     }
   ): Promise<EnhancedModelSpec | null> {
     try {
-      const config = ConfigurationManager.getInstance();
-      const apiKey = config.getConfig("PROVIDERS_OPENAI_APIKEY");
-      const baseURL =
-        config.getConfig("PROVIDERS_OPENAI_BASEURL") ||
-        "https://api.openai.com/v1";
+      const providerConfig = await this.getProviderConfig("openai");
+      if (!providerConfig || !providerConfig.apiKey) {
+        return null;
+      }
+      
+      const apiKey = providerConfig.apiKey;
+      const baseUrl = providerConfig.baseUrl || "https://api.openai.com/v1";
 
       if (!apiKey) {
         return null;
@@ -174,11 +215,11 @@ export class EnhancedModelFetcher {
       // 1. 代理检测
       let proxyInfo: ProxyDetectionResult | undefined;
       if (options.enableProxyDetection) {
-        proxyInfo = await this.validator.detectProxyService(baseURL);
+        proxyInfo = await this.validator.detectProxyService(baseUrl);
       }
 
       // 2. 获取模型列表
-      const response = await fetch(`${baseURL}/models`, {
+      const response = await fetch(`${baseUrl}/models`, {
         headers: {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
@@ -207,7 +248,7 @@ export class EnhancedModelFetcher {
         validation = await this.validator.validateModelIdentity(
           model,
           targetModel,
-          baseURL
+          baseUrl
         );
       } else if (options.allowFuzzyMatch && proxyInfo?.isProxy) {
         // 在代理环境中尝试智能匹配
@@ -216,7 +257,7 @@ export class EnhancedModelFetcher {
           validation = await this.validator.validateModelIdentity(
             model,
             targetModel,
-            baseURL
+            baseUrl
           );
         } else {
           validation = {
@@ -275,8 +316,8 @@ export class EnhancedModelFetcher {
             validation.confidence === 1.0
               ? "exact_match"
               : validation.confidence > 0.8
-              ? "known_mapping"
-              : "fuzzy_match",
+                ? "known_mapping"
+                : "fuzzy_match",
         },
         proxyInfo,
       };
@@ -300,22 +341,27 @@ export class EnhancedModelFetcher {
     }
   ): Promise<EnhancedModelSpec | null> {
     try {
-      const config = ConfigurationManager.getInstance();
-      const apiKey = config.getConfig("PROVIDERS_OPENAI_APIKEY");
+      // GitHub Models API 暂时使用 OpenAI 的配置
+      const providerConfig = await this.getProviderConfig("openai");
+      if (!providerConfig || !providerConfig.apiKey) {
+        return null;
+      }
+      
+      const apiKey = providerConfig.apiKey;
 
       if (!apiKey) {
         return null;
       }
 
-      const baseURL = "https://models.inference.ai.azure.com";
+      const baseUrl = "https://models.inference.ai.azure.com";
 
       // 代理检测
       let proxyInfo: ProxyDetectionResult | undefined;
       if (options.enableProxyDetection) {
-        proxyInfo = await this.validator.detectProxyService(baseURL);
+        proxyInfo = await this.validator.detectProxyService(baseUrl);
       }
 
-      const response = await fetch(`${baseURL}/models`, {
+      const response = await fetch(`${baseUrl}/models`, {
         headers: {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
@@ -337,7 +383,7 @@ export class EnhancedModelFetcher {
       const validation = await this.validator.validateModelIdentity(
         model,
         targetModel,
-        baseURL
+        baseUrl
       );
 
       if (
@@ -446,8 +492,7 @@ export class EnhancedModelFetcher {
 
     if (similarities[0]?.score > 0.6) {
       console.log(
-        `模糊匹配: ${requestedId} -> ${
-          similarities[0].model.id
+        `模糊匹配: ${requestedId} -> ${similarities[0].model.id
         } (相似度: ${similarities[0].score.toFixed(2)})`
       );
       return similarities[0].model;
