@@ -1,16 +1,18 @@
 import { AIProviderFactory } from "@/ai/ai-provider-factory";
-import {
-  AIRequestParams
-} from "@/ai/types";
+import { AIRequestParams } from "@/ai/types";
 import { BaseCommand } from "@/commands/base-command";
-import { ConfigurationManager } from "@/config/configuration-manager";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
+import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
 import { formatMessage, getMessage } from "@/utils/i18n";
 import { notify } from "@/utils/notification";
 import { ProgressHandler } from "@/utils/notification/progress-handler";
 import * as vscode from "vscode";
 
 export class GeneratePRSummaryCommand extends BaseCommand {
-  constructor(context: vscode.ExtensionContext) {
+  constructor(
+    context: vscode.ExtensionContext,
+    private readonly profileManager: ProfileManagerService
+  ) {
     super(context);
   }
 
@@ -26,9 +28,9 @@ export class GeneratePRSummaryCommand extends BaseCommand {
       this.logger.warn("Configuration is not valid.");
       return;
     }
-    const { provider, model, baseURL } = configResult;
+    const { provider, model, config } = configResult;
     this.logger.info(
-      `Configuration handled. Provider: ${provider}, Model: ${model}, BaseURL: ${baseURL || '默认'}`
+      `Configuration handled. Provider: ${provider}, Model: ${model}, Config: ${JSON.stringify(config)}`
     );
 
     try {
@@ -53,14 +55,23 @@ export class GeneratePRSummaryCommand extends BaseCommand {
           this.logger.info(`SCM provider detected: ${scmProvider.type}`);
 
           if (scmProvider.type !== "git") {
-            this.logger.error("PR summary generation is only supported for Git.");
+            this.logger.error(
+              "PR summary generation is only supported for Git."
+            );
             notify.error("pr.summary.git.only");
             return;
           }
 
           // 获取配置信息
-          const config = ConfigurationManager.getInstance();
-          const configuration = config.getConfiguration();
+          const featureSettings = this.profileManager.getFeatureSettings();
+          const preferences =
+            PreferencesSettingsManager.getInstance().getSettings();
+          const configuration = {
+            base: { language: preferences.language },
+            features: {
+              prSummary: { baseBranch: "origin/main", headBranch: "HEAD" },
+            },
+          };
           let baseBranch =
             configuration.features.prSummary?.baseBranch || "origin/main";
           const headBranch =
@@ -142,7 +153,12 @@ export class GeneratePRSummaryCommand extends BaseCommand {
           }
 
           // Model is already validated by handleConfiguration
-          const aiProvider = AIProviderFactory.getProvider(provider);
+          // 🔥 关键修复：传递 config 以确保 API key 等配置被正确传递
+          const aiProvider = AIProviderFactory.getProvider(provider, config);
+          // 确保设置全局配置（包含 preferences 等）
+          if (aiProvider && typeof aiProvider.setGlobalConfig === "function") {
+            aiProvider.setGlobalConfig(config);
+          }
           const selectedModel: any = { id: model, name: model }; // Simplified, type assertion to bypass strict checking
 
           if (!aiProvider) {
@@ -150,9 +166,7 @@ export class GeneratePRSummaryCommand extends BaseCommand {
             notify.error("ai.provider.not.found");
             return;
           }
-          this.logger.info(
-            `Using AI Provider: ${provider}, Model: ${model}`
-          );
+          this.logger.info(`Using AI Provider: ${provider}, Model: ${model}`);
 
           // 检查AI Provider是否支持生成PR摘要的方法
           if (!aiProvider.generatePRSummary) {
@@ -209,8 +223,9 @@ export class GeneratePRSummaryCommand extends BaseCommand {
           if (prSummary && prSummary.content) {
             // 将生成的PR摘要显示给用户，例如在新的编辑器窗口中打开
             const document = await vscode.workspace.openTextDocument({
-              content: `# ${getMessage("pr.summary.title")}\n\n${prSummary.content
-                }`,
+              content: `# ${getMessage("pr.summary.title")}\n\n${
+                prSummary.content
+              }`,
               language: "markdown",
             });
             await vscode.window.showTextDocument(document);

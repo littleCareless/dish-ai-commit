@@ -45,6 +45,7 @@ export class DescriptionModeHandler {
         diff: description, // 使用用户描述作为输入
         model: model,
         scm: "git", // 描述模式默认使用 git
+        feature: "branch-name",
       });
 
       if (!branchNameResult?.content) {

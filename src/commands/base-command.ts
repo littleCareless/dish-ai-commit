@@ -1,6 +1,6 @@
 import { AIProviderFactory } from "@/ai/ai-provider-factory";
 import { AIModel, AIProvider } from "@/ai/types";
-import { ConfigurationManager } from "@/config/configuration-manager";
+
 import { DISH_CONFIG_PREFIX } from "@/config/constants";
 import { ISCMProvider, SCMFactory } from "@/scm/scm-provider";
 import { SCMDetectorService } from "@/services/core/scm-detector-service";
@@ -74,7 +74,7 @@ export abstract class BaseCommand {
    * @returns AI提供商和模型信息,如果配置无效则返回undefined
    */
   protected async handleConfiguration(): Promise<
-    { provider: string; model: string; baseURL?: string } | undefined
+    { provider: string; model: string; config: any } | undefined
   > {
     const profileManager = await ProfileManagerService.create(this.context);
 
@@ -90,10 +90,10 @@ export abstract class BaseCommand {
 
     // Step 2: 从 profile 中提取配置信息
     // 新的配置结构:
-    // profile.activeProviderId -> profile.providers[activeProviderId] -> { model, baseURL, ... }
+    // profile.activeProviderId -> profile.providers[activeProviderId] -> { model, baseUrl, ... }
     let provider: string | undefined;
     let model: string | undefined;
-    let baseURL: string | undefined;
+    let config: any = {};
 
     if (profile.providers && typeof profile.providers === "object") {
       const providers = profile.providers as Record<string, any>;
@@ -108,10 +108,10 @@ export abstract class BaseCommand {
         const providerConfig = providers[profile.activeProviderId];
         provider = profile.activeProviderId;
         model = providerConfig.model;
-        baseURL = providerConfig.baseURL;
+        config = providerConfig;
 
         this.logger.info(
-          `使用 activeProviderId: provider=${provider}, model=${model}, baseURL=${baseURL}`
+          `使用 activeProviderId: provider=${provider}, model=${model}`
         );
       }
 
@@ -125,10 +125,10 @@ export abstract class BaseCommand {
           const [providerId, providerConfig] = providerWithModel;
           provider = providerId;
           model = providerConfig.model;
-          baseURL = providerConfig.baseURL;
+          config = providerConfig;
 
           this.logger.info(
-            `使用第一个有模型的 provider: provider=${provider}, model=${model}, baseURL=${baseURL}`
+            `使用第一个有模型的 provider: provider=${provider}, model=${model}`
           );
         }
       }
@@ -139,10 +139,10 @@ export abstract class BaseCommand {
         const providerConfig = providers[firstProviderId];
         provider = firstProviderId;
         model = providerConfig.model;
-        baseURL = providerConfig.baseURL;
+        config = providerConfig;
 
         this.logger.warn(
-          `未设置 activeProviderId,使用第一个 provider: provider=${provider}, model=${model}, baseURL=${baseURL}`
+          `未设置 activeProviderId,使用第一个 provider: provider=${provider}, model=${model}`
         );
       }
     } else {
@@ -155,17 +155,44 @@ export abstract class BaseCommand {
     // Step 3: 验证配置完整性
     if (!provider || !model) {
       this.logger.error(
-        `配置不完整 - Provider: ${provider}, Model: ${model}, BaseURL: ${baseURL}`
+        `配置不完整 - Provider: ${provider}, Model: ${model}, Config: ${JSON.stringify(config)}`
       );
       this.logger.error(`配置数据: ${JSON.stringify(profile, null, 2)}`);
       throw new Error(getMessage("profile.incomplete"));
     }
 
+    // 构建完整配置
+    const featureSettings = profileManager.getFeatureSettings();
+    const fullConfig = {
+      ...config,
+      base: {
+        language: profile.preferences.language || "Simplified Chinese",
+      },
+      features: {
+        commitFormat: {
+          enableMergeCommit: featureSettings.enableMergeCommit,
+          enableEmoji: featureSettings.enableEmoji,
+          enableBody: featureSettings.enableBody,
+        },
+        commitMessage: {
+          useRecentCommitsAsReference:
+            featureSettings.useRecentCommitsAsReference,
+        },
+        codeReview: {
+          systemPrompt: undefined,
+        },
+        branchName: {
+          systemPrompt: undefined,
+        },
+      },
+      preferences: profile.preferences,
+    };
+
     this.logger.info(
-      `最终配置 - Provider: ${provider}, Model: ${model}, BaseURL: ${baseURL || "未设置"}`
+      `最终配置 - Provider: ${provider}, Model: ${model}, Config: ${JSON.stringify(config)}`
     );
 
-    return { provider, model, baseURL };
+    return { provider, model, config: fullConfig };
   }
 
   /**
@@ -176,15 +203,23 @@ export abstract class BaseCommand {
    */
   protected async verifyModelAvailability(
     provider: string,
-    model: string
+    model: string,
+    config?: any
   ): Promise<void> {
     try {
-      const aiProvider = AIProviderFactory.getProvider(provider);
+      const aiProvider = AIProviderFactory.getProvider(provider, config);
       const models = await aiProvider.getModels();
 
       // 检查模型是否在可用模型列表中
       const selectedModel = models.find((m: AIModel) => m.id === model);
+      this.logger.debug("验证模型可用性", {
+        data: { provider, model, found: !!selectedModel, availableModels: models.map(m => m.id) }
+      });
       if (!selectedModel) {
+        this.logger.error("模型未找到", {
+          operation: "verifyModelAvailability",
+          data: { provider, model, availableModels: models.map(m => m.id) }
+        });
         throw new Error(getMessage("model.not.found"));
       }
 
@@ -222,18 +257,6 @@ export abstract class BaseCommand {
    */
   protected async getCommitInput(scmProvider: any) {
     return await scmProvider.getCommitInput();
-  }
-
-  /**
-   * 获取扩展配置
-   * @returns 配置管理器实例和当前配置
-   */
-  protected getExtConfig() {
-    const config = ConfigurationManager.getInstance();
-    return {
-      config,
-      configuration: config.getConfiguration(),
-    };
   }
 
   /**
@@ -317,8 +340,10 @@ export abstract class BaseCommand {
       this.logger.warn("Configuration is not valid.");
       return;
     }
-    const { provider, model, baseURL } = configResult;
-    console.log("configResult", configResult);
+    const { provider, model, config } = configResult;
+    this.logger.debug("配置处理完成", {
+      data: { provider, model, hasConfig: !!config }
+    });
     // 验证模型可用性
     if (options.progress) {
       options.progress.report({
@@ -326,11 +351,12 @@ export abstract class BaseCommand {
       });
     }
     try {
-      await this.verifyModelAvailability(provider, model);
+      await this.verifyModelAvailability(provider, model, config);
     } catch (error) {
       this.logger.logError(
         error as Error,
-        "Model availability verification failed"
+        "Model availability verification failed",
+        { data: { provider, model } }
       );
       await notify.error(getMessage("model.not.available"), [provider, model]);
       return;
@@ -366,7 +392,12 @@ export abstract class BaseCommand {
     if (options.validateModel) {
       // 模型验证逻辑已移除
       // 我们假设ProfileManager返回的配置是有效的，或者在执行时处理错误
-      const aiProvider = AIProviderFactory.getProvider(provider);
+      // 🔥 关键修复：传递 config 以确保 API key 等配置被正确传递
+      const aiProvider = AIProviderFactory.getProvider(provider, config);
+      // 确保设置全局配置（包含 preferences 等）
+      if (aiProvider && typeof aiProvider.setGlobalConfig === 'function') {
+        aiProvider.setGlobalConfig(config);
+      }
       aiContext = {
         aiProvider,
         selectedModel: undefined, // 我们不再预先获取模型详情
@@ -376,7 +407,7 @@ export abstract class BaseCommand {
     return {
       provider,
       model,
-      baseURL,
+      providerConfig: config,
       scmProvider,
       selectedFiles,
       repositoryPath,
@@ -390,10 +421,10 @@ export abstract class BaseCommand {
    */
   protected async resolveSCMContext(arg: any): Promise<
     | {
-      scmProvider: ISCMProvider;
-      selectedFiles: string[] | undefined;
-      repositoryPath: string | undefined;
-    }
+        scmProvider: ISCMProvider;
+        selectedFiles: string[] | undefined;
+        repositoryPath: string | undefined;
+      }
     | undefined
   > {
     // 1. 如果是SourceControl对象 (来自SCM标题菜单)
@@ -424,7 +455,7 @@ export abstract class BaseCommand {
 export interface CommandContext {
   provider: string;
   model: string;
-  baseURL?: string;
+  providerConfig?: any;
   scmProvider: ISCMProvider;
   selectedFiles?: string[];
   repositoryPath?: string;

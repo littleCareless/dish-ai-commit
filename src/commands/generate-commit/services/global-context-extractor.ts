@@ -156,7 +156,8 @@ export class GlobalContextExtractor {
           name: "GPT-4",
           provider: "openai" as any,
           maxTokens: { input: 8192, output: 2048 } 
-        } // 临时模型对象
+        }, // 临时模型对象
+        feature: "commit-generation",
       });
 
       return response.content;

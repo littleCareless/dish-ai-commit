@@ -1,5 +1,6 @@
 import { addSimilarCodeContext } from "@/ai/utils/embedding-helper";
 import { BaseCommand } from "@/commands/base-command";
+import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
 import { formatMessage, getMessage } from "@/utils/i18n";
 import {
   notify,
@@ -45,18 +46,13 @@ export class ReviewCodeCommand extends BaseCommand {
         // selectedFiles is guaranteed to be defined and non-empty because requireSelectedFiles is true
         const files = selectedFiles!;
 
-        this.logger.info(
-          `Selected files for review: ${files.join(", ")}`
-        );
+        this.logger.info(`Selected files for review: ${files.join(", ")}`);
         this.logger.info(`SCM provider detected: ${scmProvider.type}`);
 
         const currentInput = await scmProvider.getCommitInput();
         if (currentInput) {
           this.logger.info("Custom instructions found in SCM input.");
         }
-
-        // 获取配置信息
-        const { configuration } = this.getExtConfig();
 
         // 获取所有选中文件的差异
         const fileReviews = new Map<string, string>();
@@ -103,14 +99,18 @@ export class ReviewCodeCommand extends BaseCommand {
                 ]),
               });
 
+              // Get configuration from profile and preferences
+              const preferences =
+                PreferencesSettingsManager.getInstance().getSettings();
+
               const requestParams = {
-                ...configuration.base,
-                ...configuration.features.codeAnalysis,
+                language: preferences.language,
                 diff,
                 model: selectedModel,
                 scm: scmProvider.type ?? "git",
                 changeFiles: [filePath],
                 additionalContext: currentInput,
+                feature: "code-review",
               };
 
               await addSimilarCodeContext(requestParams);
@@ -129,6 +129,7 @@ export class ReviewCodeCommand extends BaseCommand {
 
               return { success: true, filePath };
             } catch (error) {
+              console.log("error", error);
               await notify.warn(
                 formatMessage("review.file.failed", [path.basename(filePath)])
               );

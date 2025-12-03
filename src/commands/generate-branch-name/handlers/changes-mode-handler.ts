@@ -77,6 +77,7 @@ export class ChangesModeHandler {
         diff: aiInputContent,
         model: model,
         scm: detectedScmProvider.type,
+        feature: "branch-name",
       });
 
       if (!branchNameResult?.content) {

@@ -2,10 +2,10 @@ import { BaseCommand } from "@/commands/base-command";
 import { ChangesModeHandler } from "@/commands/generate-branch-name/handlers/changes-mode-handler";
 import { DescriptionModeHandler } from "@/commands/generate-branch-name/handlers/description-mode-handler";
 import { BranchSuggester } from "@/commands/generate-branch-name/services/branch-suggester";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
+import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
 import { getMessage } from "@/utils/i18n";
-import {
-  withProgress
-} from "@/utils/notification/notification-manager";
+import { withProgress } from "@/utils/notification/notification-manager";
 import * as vscode from "vscode";
 
 /**
@@ -21,7 +21,10 @@ export class GenerateBranchNameCommand extends BaseCommand {
    * 创建命令实例
    * @param context - VSCode扩展上下文
    */
-  constructor(context: vscode.ExtensionContext) {
+  constructor(
+    context: vscode.ExtensionContext,
+    private readonly profileManager: ProfileManagerService
+  ) {
     super(context);
     this.descriptionHandler = new DescriptionModeHandler(this.logger);
     this.changesHandler = new ChangesModeHandler(this.logger);
@@ -54,17 +57,28 @@ export class GenerateBranchNameCommand extends BaseCommand {
           }
 
           const { aiProvider, selectedModel } = context;
-          const { configuration } = this.getExtConfig();
+
+          // Get configuration from profile and preferences
+          const featureSettings = this.profileManager.getFeatureSettings();
+          const preferences =
+            PreferencesSettingsManager.getInstance().getSettings();
+          const configuration = {
+            base: { language: preferences.language },
+            features: featureSettings,
+          };
 
           this.logger.info(
-            `Model validated. AI Provider: ${aiProvider?.getId()}, Model: ${selectedModel?.id
+            `Model validated. AI Provider: ${aiProvider?.getId()}, Model: ${
+              selectedModel?.id
             }`
           );
 
           // 步骤3: 选择生成模式
           const generationMode = await this.selectGenerationMode();
           if (!generationMode) {
-            this.logger.info("User cancelled branch name generation mode selection.");
+            this.logger.info(
+              "User cancelled branch name generation mode selection."
+            );
             return;
           }
 
@@ -112,7 +126,9 @@ export class GenerateBranchNameCommand extends BaseCommand {
         },
         {
           label: getMessage("branch.gen.mode.from.description.label"),
-          description: getMessage("branch.gen.mode.from.description.description"),
+          description: getMessage(
+            "branch.gen.mode.from.description.description"
+          ),
           detail: getMessage("branch.gen.mode.from.description.detail"),
         },
       ],
@@ -123,7 +139,9 @@ export class GenerateBranchNameCommand extends BaseCommand {
     );
 
     if (generationMode) {
-      this.logger.info(`User selected generation mode: ${generationMode.label}`);
+      this.logger.info(
+        `User selected generation mode: ${generationMode.label}`
+      );
     }
 
     return generationMode;
@@ -146,7 +164,8 @@ export class GenerateBranchNameCommand extends BaseCommand {
     resources?: vscode.SourceControlResourceState[]
   ): Promise<string | undefined> {
     if (
-      generationMode.label === getMessage("branch.gen.mode.from.description.label")
+      generationMode.label ===
+      getMessage("branch.gen.mode.from.description.label")
     ) {
       // 描述模式
       return await this.descriptionHandler.handle(

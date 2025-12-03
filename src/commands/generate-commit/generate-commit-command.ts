@@ -2,6 +2,7 @@ import { BaseCommand } from "@/commands/base-command";
 import { CrossRepositoryHandler } from "@/commands/generate-commit/handlers/cross-repository-handler";
 import { StreamingGenerationHelper } from "@/commands/generate-commit/utils/streaming-generation-helper";
 import { SCMFactory } from "@/scm/scm-provider";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 import { formatMessage, getMessage } from "@/utils/i18n";
 import { notify } from "@/utils/notification/notification-manager";
 import { ProgressHandler } from "@/utils/notification/progress-handler";
@@ -19,10 +20,16 @@ export class GenerateCommitCommand extends BaseCommand {
    * 创建命令实例
    * @param context - VSCode扩展上下文
    */
-  constructor(context: vscode.ExtensionContext) {
+  constructor(
+    context: vscode.ExtensionContext,
+    private readonly profileManager: ProfileManagerService
+  ) {
     super(context);
     this.crossRepoHandler = new CrossRepositoryHandler(this.logger);
-    this.streamingHelper = new StreamingGenerationHelper(this.logger);
+    this.streamingHelper = new StreamingGenerationHelper(
+      this.logger,
+      this.profileManager
+    );
   }
 
   /**
@@ -75,15 +82,15 @@ export class GenerateCommitCommand extends BaseCommand {
     // 检测是否为跨仓库场景
     if (parsedArgs.isCrossRepository) {
       await this.handleCrossRepositoryScenario(
-        parsedArgs.filesByRepository, provider, model
+        parsedArgs.filesByRepository,
+        provider,
+        model
       );
       return;
     }
 
     // 处理单仓库场景
-    await this.handleSingleRepositoryScenario(
-      parsedArgs, provider, model
-    );
+    await this.handleSingleRepositoryScenario(parsedArgs, provider, model);
   }
 
   /**
@@ -92,23 +99,27 @@ export class GenerateCommitCommand extends BaseCommand {
   private parseArguments(arg: any): {
     resourceStates?: vscode.SourceControlResourceState[];
     repositoryPath?: string;
-    scmType?: 'git' | 'svn';
+    scmType?: "git" | "svn";
     filesByRepository?: Map<string, string[]>;
     isCrossRepository: boolean;
   } {
     let resourceStates: vscode.SourceControlResourceState[] | undefined;
     let repositoryPath: string | undefined;
-    let scmType: 'git' | 'svn' | undefined;
+    let scmType: "git" | "svn" | undefined;
     let filesByRepository: Map<string, string[]> | undefined;
     let isCrossRepository = false;
 
     if (Array.isArray(arg)) {
       resourceStates = arg;
-      this.logger.info(`Received resourceStates array with ${arg.length} items`);
+      this.logger.info(
+        `Received resourceStates array with ${arg.length} items`
+      );
     } else if (arg?.rootUri) {
       repositoryPath = arg.rootUri.fsPath;
       scmType = arg.id;
-      this.logger.info(`Received sourceControl object: ${scmType} at ${repositoryPath}`);
+      this.logger.info(
+        `Received sourceControl object: ${scmType} at ${repositoryPath}`
+      );
     } else {
       this.logger.info("No valid arguments provided, will use fallback logic");
     }
@@ -125,7 +136,7 @@ export class GenerateCommitCommand extends BaseCommand {
       repositoryPath,
       scmType,
       filesByRepository,
-      isCrossRepository
+      isCrossRepository,
     };
   }
 
@@ -138,7 +149,9 @@ export class GenerateCommitCommand extends BaseCommand {
     model: string
   ): Promise<void> {
     if (!filesByRepository) {
-      this.logger.warn("No files by repository provided for cross-repository scenario");
+      this.logger.warn(
+        "No files by repository provided for cross-repository scenario"
+      );
       return;
     }
 
@@ -146,9 +159,25 @@ export class GenerateCommitCommand extends BaseCommand {
       filesByRepository,
       provider,
       model,
-      (progress, token, provider, model, scmProvider, selectedFiles, resources, repoPath) =>
+      (
+        progress,
+        token,
+        provider,
+        model,
+        scmProvider,
+        selectedFiles,
+        resources,
+        repoPath
+      ) =>
         this.streamingHelper.performStreamingGeneration(
-          progress, token, provider, model, scmProvider, selectedFiles, resources, repoPath
+          progress,
+          token,
+          provider,
+          model,
+          scmProvider,
+          selectedFiles,
+          resources,
+          repoPath
         )
     );
   }
@@ -165,7 +194,9 @@ export class GenerateCommitCommand extends BaseCommand {
 
     if (parsedArgs.repositoryPath && parsedArgs.scmType) {
       // 直接使用已知的仓库信息
-      result = await this.createSCMProviderFromKnownRepo(parsedArgs.repositoryPath);
+      result = await this.createSCMProviderFromKnownRepo(
+        parsedArgs.repositoryPath
+      );
     } else {
       // 通过resourceStates检测
       result = await this.detectSCMProvider(parsedArgs.resourceStates);
@@ -176,11 +207,17 @@ export class GenerateCommitCommand extends BaseCommand {
       return;
     }
 
-    const { scmProvider, selectedFiles, repositoryPath: finalRepoPath } = result;
+    const {
+      scmProvider,
+      selectedFiles,
+      repositoryPath: finalRepoPath,
+    } = result;
 
     if (!finalRepoPath) {
       await notify.warn(
-        formatMessage("scm.repository.not.found", [scmProvider.type.toUpperCase()])
+        formatMessage("scm.repository.not.found", [
+          scmProvider.type.toUpperCase(),
+        ])
       );
       return;
     }
@@ -188,11 +225,19 @@ export class GenerateCommitCommand extends BaseCommand {
     this.logger.info(`Working with repository: ${finalRepoPath}`);
 
     await ProgressHandler.withProgress(
-      formatMessage("progress.generating.commit", [scmProvider.type.toLocaleUpperCase()]),
+      formatMessage("progress.generating.commit", [
+        scmProvider.type.toLocaleUpperCase(),
+      ]),
       async (progress, token) => {
         await this.streamingHelper.performStreamingGeneration(
-          progress, token, provider, model, scmProvider, selectedFiles,
-          parsedArgs.resourceStates || [], finalRepoPath
+          progress,
+          token,
+          provider,
+          model,
+          scmProvider,
+          selectedFiles,
+          parsedArgs.resourceStates || [],
+          finalRepoPath
         );
       }
     );
@@ -201,7 +246,9 @@ export class GenerateCommitCommand extends BaseCommand {
   /**
    * 从已知仓库信息创建SCM提供器 - 遵循单一职责原则
    */
-  private async createSCMProviderFromKnownRepo(repositoryPath: string): Promise<any> {
+  private async createSCMProviderFromKnownRepo(
+    repositoryPath: string
+  ): Promise<any> {
     const scmProvider = await SCMFactory.detectSCM(undefined, repositoryPath);
     if (!scmProvider) {
       await notify.error(getMessage("scm.not.detected"));
@@ -211,9 +258,7 @@ export class GenerateCommitCommand extends BaseCommand {
     return {
       scmProvider,
       selectedFiles: undefined,
-      repositoryPath
+      repositoryPath,
     };
   }
-
-
 }
