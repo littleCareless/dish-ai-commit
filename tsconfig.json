@@ -23,7 +23,9 @@
   },
   "exclude": ["node_modules", "esbuild.ts", "vitest.config.ts"],
   "ts-node": {
-    "esm": true,
+    "compilerOptions": {
+      "module": "CommonJS"
+    },
     "files": true
   }
 }
