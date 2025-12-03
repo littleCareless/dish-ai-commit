@@ -30,5 +30,16 @@
       "path": "./webview-ui"
     }
   ],
-  "exclude": ["node_modules", "dist", "out", "webview-ui/dist"]
+  "exclude": [
+    "node_modules",
+    "dist",
+    "out",
+    "webview-ui/dist",
+    "esbuild.ts",
+    "vitest.config.ts"
+  ],
+  "ts-node": {
+    "esm": true,
+    "files": true
+  }
 }
