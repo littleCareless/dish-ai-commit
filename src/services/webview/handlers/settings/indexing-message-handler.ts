@@ -1,12 +1,13 @@
-import * as vscode from "vscode";
 import { AIProviderFactory } from "@/ai/ai-provider-factory";
 import {
     EmbeddingService,
     EmbeddingServiceError,
 } from "@/core/indexing/embedding-service";
 import { EmbeddingServiceManager } from "@/core/indexing/embedding-service-manager";
-import { notify } from "@/utils/notification/notification-manager";
 import { IndexingSettingsManager } from "@/services/settings/indexing-settings-manager";
+import { UIRequest, ExtensionResponse } from "@/types/messages";
+import { notify } from "@/utils/notification/notification-manager";
+import * as vscode from "vscode";
 
 export class IndexingMessageHandler {
     private _settingsManager: IndexingSettingsManager;
@@ -25,7 +26,7 @@ export class IndexingMessageHandler {
 
     public async handle(message: any, webview: vscode.Webview): Promise<void> {
         switch (message.command) {
-            case "startIndexing": {
+            case UIRequest.IndexingStart: {
                 const { clearIndex } = message.data || {};
                 console.log(
                     `[IndexingMessageHandler] Received startIndexing message with clearIndex: ${clearIndex}`
@@ -33,12 +34,12 @@ export class IndexingMessageHandler {
                 this.startIndexing(0, webview, !!clearIndex);
                 break;
             }
-            case "clearIndex": {
+            case UIRequest.IndexingClear: {
                 console.log("[IndexingMessageHandler] Handling clearIndex");
                 await this.handleClearIndex(webview);
                 break;
             }
-            case "getSettings": {
+            case UIRequest.IndexingGetSettings: {
                 console.log("[IndexingMessageHandler] Handling getSettings");
                 try {
                     const settings = this._settingsManager.getSettings();
@@ -55,9 +56,12 @@ export class IndexingMessageHandler {
                     // 获取索引状态
                     let isIndexed = 0;
                     let indexStatusError: string | null = null;
+                    let stats = { totalVectors: 0, indexedFiles: [] as string[] };
+
                     if (this._embeddingService) {
                         try {
                             isIndexed = await this._embeddingService.isIndexed();
+                            stats = await this._embeddingService.getIndexingStats();
                         } catch (error) {
                             if (error instanceof EmbeddingServiceError) {
                                 indexStatusError = `${error.message}\n来源：${error.context?.source ?? "未知"
@@ -68,7 +72,7 @@ export class IndexingMessageHandler {
                                 indexStatusError = "无法获取索引状态（未知错误）";
                             }
                             webview.postMessage({
-                                command: "indexingStatusError",
+                                command: ExtensionResponse.IndexingStatusError,
                                 error: indexStatusError,
                             });
                         }
@@ -76,12 +80,13 @@ export class IndexingMessageHandler {
 
                     // 异步加载模型，避免阻塞
                     webview.postMessage({
-                        command: "loadIndexingSettings",
+                        command: ExtensionResponse.IndexingSettingsLoaded,
                         data: {
                             config: config,
                             isIndexed: isIndexed,
                             indexStatusError: indexStatusError,
                             embeddingModels: [], // Initially send an empty array
+                            stats: stats,
                         },
                     });
                 } catch (error) {
@@ -92,14 +97,14 @@ export class IndexingMessageHandler {
                     const errorMessage =
                         error instanceof Error ? error.message : String(error);
                     webview.postMessage({
-                        command: "indexingStatusError",
+                        command: ExtensionResponse.IndexingStatusError,
                         error: `获取设置失败: ${errorMessage}`,
                     });
                 }
                 break;
             }
 
-            case "saveSettings": {
+            case UIRequest.IndexingSaveSettings: {
                 console.log(
                     `[IndexingMessageHandler] Handling saveSettings with data: ${JSON.stringify(
                         message.data,
@@ -148,7 +153,7 @@ export class IndexingMessageHandler {
                         this._embeddingService = EmbeddingServiceManager.getInstance().reinitialize() || null;
                     }
 
-                    webview.postMessage({ command: "settingsSaved" });
+                    webview.postMessage({ command: ExtensionResponse.IndexingSettingsSaved });
                     notify.info("settings.save.success");
                 } catch (error) {
                     console.error(
@@ -159,14 +164,14 @@ export class IndexingMessageHandler {
                         error instanceof Error ? error.message : String(error);
                     notify.error("settings.save.failed", [errorMessage]);
                     webview.postMessage({
-                        command: "saveSettingsError",
+                        command: ExtensionResponse.IndexingSettingsError,
                         error: `保存设置失败: ${errorMessage}`,
                     });
                 }
                 break;
             }
 
-            case "fetchEmbeddingModels": {
+            case UIRequest.IndexingFetchEmbeddingModels: {
                 console.log(
                     "[IndexingMessageHandler] Handling fetchEmbeddingModels"
                 );
@@ -174,7 +179,7 @@ export class IndexingMessageHandler {
                     const embeddingModels =
                         await AIProviderFactory.getAllEmbeddingModels();
                     webview.postMessage({
-                        command: "embeddingModelsLoaded",
+                        command: ExtensionResponse.IndexingEmbeddingModelsLoaded,
                         data: {
                             embeddingModels: embeddingModels,
                         },
@@ -187,7 +192,7 @@ export class IndexingMessageHandler {
                     const errorMessage =
                         error instanceof Error ? error.message : String(error);
                     webview.postMessage({
-                        command: "embeddingModelsLoaded",
+                        command: ExtensionResponse.IndexingEmbeddingModelsLoaded,
                         data: {
                             embeddingModels: [],
                             error: `Failed to load embedding models: ${errorMessage}`,
@@ -212,7 +217,7 @@ export class IndexingMessageHandler {
             await this._embeddingService.clearIndex();
             console.log("[IndexingMessageHandler] Index cleared successfully.");
             notify.info("index.clear.success");
-            webview.postMessage({ command: "indexCleared", data: { isIndexed: 0 } });
+            webview.postMessage({ command: ExtensionResponse.IndexingCleared, data: { isIndexed: 0 } });
         } catch (error) {
             console.error(
                 "[IndexingMessageHandler] Error during handleClearIndex:",
@@ -237,7 +242,7 @@ export class IndexingMessageHandler {
             const errorMessage = "EmbeddingService 未初始化，无法执行索引操作。";
             console.error(`[IndexingMessageHandler] ${errorMessage}`);
             webview.postMessage({
-                command: "indexingFailed",
+                command: ExtensionResponse.IndexingFailed,
                 data: { message: errorMessage },
             });
             return;
@@ -257,7 +262,7 @@ export class IndexingMessageHandler {
                     error
                 );
                 webview.postMessage({
-                    command: "indexingFailed",
+                    command: ExtensionResponse.IndexingFailed,
                     data: {
                         message: `清除旧索引失败: ${errorMessage}`,
                         source: "clearIndex",
@@ -276,7 +281,7 @@ export class IndexingMessageHandler {
                 `[IndexingMessageHandler] Indexing finished. isIndexed: ${isIndexed}`
             );
             webview.postMessage({
-                command: "indexingFinished",
+                command: ExtensionResponse.IndexingFinished,
                 data: { isIndexed },
             });
         } catch (error) {
@@ -288,7 +293,7 @@ export class IndexingMessageHandler {
             if (error instanceof EmbeddingServiceError) {
                 // Forward the structured error to the webview
                 webview.postMessage({
-                    command: "indexingFailed",
+                    command: ExtensionResponse.IndexingFailed,
                     data: {
                         message: error.message,
                         source: error.context.source,
@@ -301,7 +306,7 @@ export class IndexingMessageHandler {
                 const errorMessage =
                     error instanceof Error ? error.message : String(error);
                 webview.postMessage({
-                    command: "indexingFailed",
+                    command: ExtensionResponse.IndexingFailed,
                     data: {
                         message: `索引失败: ${errorMessage}`,
                         source: "unknown",

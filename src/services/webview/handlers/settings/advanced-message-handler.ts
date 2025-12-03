@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { UIRequest, ExtensionResponse } from "@/types/messages";
 import { AdvancedSettingsManager } from "@/services/settings/advanced-settings-manager";
 
 export class AdvancedMessageHandler {
@@ -11,20 +12,20 @@ export class AdvancedMessageHandler {
 
     public async handle(message: any, webview: vscode.Webview): Promise<void> {
         switch (message.command) {
-            case "loadAdvancedSettings":
+            case UIRequest.AdvancedLoadSettings:
                 const settings = this._settingsManager.getSettings();
                 await webview.postMessage({
-                    command: "updateAdvancedSettings",
+                    command: ExtensionResponse.AdvancedSettingsUpdated,
                     settings,
                 });
                 break;
 
-            case "saveAdvancedSettings":
+            case UIRequest.AdvancedSaveSettings:
                 if (message.data) {
                     await this._settingsManager.updateSettings(message.data);
                     // Send back updated settings to confirm save
                     await webview.postMessage({
-                        command: "updateAdvancedSettings",
+                        command: ExtensionResponse.AdvancedSettingsUpdated,
                         settings: this._settingsManager.getSettings(),
                     });
                 }

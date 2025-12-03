@@ -1,4 +1,3 @@
-import { DISH_CONFIG_PREFIX } from "@/config/constants";
 import { EmbeddingService } from "@/core/indexing/embedding-service";
 import { ConnectionMessageHandler } from "@/services/webview/handlers/settings/connection-message-handler";
 import { FeaturesMessageHandler } from "@/services/webview/handlers/settings/features-message-handler";
@@ -6,15 +5,16 @@ import { IndexingMessageHandler } from "@/services/webview/handlers/settings/ind
 import { NotificationMessageHandler } from "@/services/webview/handlers/settings/notification-message-handler";
 import { ProfileMessageHandler } from "@/services/webview/handlers/settings/profile-message-handler";
 import { PromptMessageHandler } from "@/services/webview/handlers/settings/prompt-message-handler";
+import { StorageMessageHandler } from "@/services/webview/handlers/settings/storage-message-handler";
 import { SystemMessageHandler } from "@/services/webview/handlers/settings/system-message-handler";
 import { UsageMessageHandler } from "@/services/webview/handlers/settings/usage-message-handler";
-import { MessageType } from "@/types/messages";
+import { UIRequest } from "@/types/messages";
 import * as vscode from "vscode";
-
-const KNOWN_SECRET_KEYS = [`${DISH_CONFIG_PREFIX}_api_config`];
 
 export class SettingsViewMessageHandler {
   private readonly _extensionId: string;
+  private _lastMessage: any = null;
+  private _lastMessageTime = 0;
 
   // Sub-handlers
   private _notificationHandler: NotificationMessageHandler;
@@ -25,6 +25,7 @@ export class SettingsViewMessageHandler {
   private _systemHandler: SystemMessageHandler;
   private _featuresHandler: FeaturesMessageHandler;
   private _usageHandler: UsageMessageHandler;
+  private _storageHandler: StorageMessageHandler;
 
   constructor(
     extensionId: string,
@@ -46,12 +47,31 @@ export class SettingsViewMessageHandler {
     this._systemHandler = new SystemMessageHandler(_extensionContext);
     this._featuresHandler = new FeaturesMessageHandler(_extensionContext);
     this._usageHandler = new UsageMessageHandler(_extensionContext);
+    this._storageHandler = new StorageMessageHandler(_extensionContext);
   }
 
   public async handleMessage(
     message: any,
     webview: vscode.Webview
   ): Promise<void> {
+    const now = Date.now();
+    if (
+      this._lastMessage &&
+      now - this._lastMessageTime < 1000 && // 1秒内防抖
+      this._lastMessage.command === message.command &&
+      JSON.stringify(this._lastMessage.data) === JSON.stringify(message.data)
+    ) {
+      console.log(
+        `[SettingsViewMessageHandler] Duplicate message blocked: ${JSON.stringify(
+          message
+        )}`
+      );
+      return;
+    }
+
+    this._lastMessage = message;
+    this._lastMessageTime = now;
+
     console.log(
       `[SettingsViewMessageHandler] Received message: ${JSON.stringify(
         message,
@@ -61,197 +81,94 @@ export class SettingsViewMessageHandler {
     );
 
     // Dispatch to appropriate handler based on command
-    // We can check if a handler handles the command, or just try them sequentially/based on known commands.
-    // A switch statement here is still cleaner than trying to guess.
-
     switch (message.command) {
-      // Notification
-      case "getNotificationSettings":
-      case "setNotificationSettings":
-      case "testSystemNotification":
+      // ===== Notification Module =====
+      case UIRequest.NotificationGetSettings:
+      case UIRequest.NotificationUpdateSettings:
+      case UIRequest.NotificationTest:
         await this._notificationHandler.handle(message, webview);
         break;
 
-      // Prompt
-      case MessageType.GetAllPrompts:
-      case MessageType.UpdatePrompt:
-      case MessageType.ResetPrompt:
-      case MessageType.ResetAllPrompts:
-      case MessageType.CreatePrompt:
-      case MessageType.DeletePrompt:
-      case MessageType.RenamePrompt:
+      // ===== Prompt Module =====
+      case UIRequest.PromptGetAll:
+      case UIRequest.PromptUpdate:
+      case UIRequest.PromptReset:
+      case UIRequest.PromptResetAll:
+      case UIRequest.PromptCreate:
+      case UIRequest.PromptDelete:
+      case UIRequest.PromptRename:
         await this._promptHandler.handle(message, webview);
         break;
 
-      // Indexing
-      case "startIndexing":
-      case "clearIndex":
-      case "getSettings":
-      case "saveSettings":
-      case "fetchEmbeddingModels":
+      // ===== Indexing Module =====
+      case UIRequest.IndexingStart:
+      case UIRequest.IndexingClear:
+      case UIRequest.IndexingGetSettings:
+      case UIRequest.IndexingSaveSettings:
+      case UIRequest.IndexingFetchEmbeddingModels:
         await this._indexingHandler.handle(message, webview);
         break;
 
-      // Profile
-      case "loadProfiles":
-      case "saveProfile":
-      case "deleteProfile":
-      case "setActiveProfile":
-      case "exportProfile":
-      case "importProfile":
-      case "migrateSettings":
-      case "resetToDefaults":
-      case "getAllProviders":
+      // ===== Profile Module =====
+      case UIRequest.ProfileLoadAll:
+      case UIRequest.ProfileSave:
+      case UIRequest.ProfileDelete:
+      case UIRequest.ProfileSetActive:
+      case UIRequest.ProfileExport:
+      case UIRequest.ProfileImport:
+      case UIRequest.ProfileMigrateSettings:
+      case UIRequest.ProfileResetDefaults:
+      case UIRequest.ProfileGetAllProviders:
         await this._profileHandler.handle(message, webview);
         break;
 
-      // Connection
-      case "testConnection":
-      case "getModelsForProvider":
-      case "fetchProviderModels":
-      case "getModels":
+      // ===== Connection Module =====
+      case UIRequest.ConnectionTest:
+      case UIRequest.ConnectionGetModelsForProvider:
+      case UIRequest.ConnectionFetchProviderModels:
+      case UIRequest.ConnectionGetAllModels:
         await this._connectionHandler.handle(message, webview);
         break;
 
-      // System
-      case "showInformationMessage":
-      case "getPackageInfo":
-      case "getOS":
-      case "setGlobalState":
-      case "getGlobalState":
-      case "setSecret":
-      case "getSecret":
-      case "deleteSecret":
+      // ===== System Module =====
+      case UIRequest.SystemShowMessage:
+      case UIRequest.SystemGetPackageInfo:
+      case UIRequest.SystemGetOS:
+      case UIRequest.SystemSetGlobalState:
+      case UIRequest.SystemGetGlobalState:
+      case UIRequest.SystemSetSecret:
+      case UIRequest.SystemGetSecret:
+      case UIRequest.SystemDeleteSecret:
         await this._systemHandler.handle(message, webview);
         break;
 
-      // Features
-      case "loadFeaturesSettings":
-      case "saveFeaturesSettings":
-      case "setActivePrompt":
+      // ===== Features Module =====
+      case UIRequest.FeaturesLoadSettings:
+      case UIRequest.FeaturesSaveSettings:
+      case UIRequest.FeaturesSetActivePrompt:
         await this._featuresHandler.handle(message, webview);
         break;
 
-      // Usage
-      case "getUsageStats":
-      case "resetUsageStats":
-      case "addTestUsageData":
+      // ===== Usage Module =====
+      case UIRequest.UsageGetStats:
+      case UIRequest.UsageResetStats:
+      case UIRequest.UsageAddTestData:
         await this._usageHandler.handle(message, webview);
         break;
 
-      case "getAllStorage": {
-        const storageData: { [key: string]: any } = {};
-
-        // 1. Global State
-        const globalKeys = this._extensionContext.globalState.keys();
-        for (const key of globalKeys) {
-          storageData[`Global State: ${key}`] =
-            this._extensionContext.globalState.get(key);
-        }
-
-        // 2. Workspace State
-        const workspaceKeys = this._extensionContext.workspaceState.keys();
-        for (const key of workspaceKeys) {
-          storageData[`Workspace State: ${key}`] =
-            this._extensionContext.workspaceState.get(key);
-        }
-
-        // 3. Secrets
-        // Note: secrets API doesn't have a .keys() method for security.
-        // We must explicitly list known keys.
-        for (const key of KNOWN_SECRET_KEYS) {
-          try {
-            const secretValue = await this._extensionContext.secrets.get(key);
-            if (secretValue) {
-              try {
-                // Try parsing as JSON for better readability
-                storageData[`Secrets: ${key}`] = JSON.parse(secretValue);
-              } catch (e) {
-                storageData[`Secrets: ${key}`] = secretValue;
-              }
-            } else {
-              storageData[`Secrets: ${key}`] = "[Not Set]";
-            }
-          } catch (error) {
-            storageData[`Secrets: ${key}`] = `[Error reading secret: ${error}]`;
-          }
-        }
-
-        webview.postMessage({
-          command: "getAllStorageResponse",
-          data: storageData,
-        });
+      // ===== Storage Module =====
+      case UIRequest.SystemGetAllStorage:
+      case UIRequest.SystemClearAllStorage:
+        await this._storageHandler.handle(message, webview);
         break;
-      }
 
-      case "clearAllStorage": {
-        try {
-          // Define all known legacy and current keys to be cleared
-          const keysToClear = {
-            global: [
-              // Legacy keys
-              "confirm:dish:ai:tos",
-              "totalTokens",
-              "detailedTokenStats",
-              `${DISH_CONFIG_PREFIX}_confirm_ai_tos`,
-              `${DISH_CONFIG_PREFIX}_detailed_token_stats`,
-              "profiles",
-              "activeProfileId",
-              "config",
-              "dish.settings.indexing",
-              "dish.settings.features",
-              "notificationSettings",
-              // Keys with provider prefixes
-              "providers.mistral",
-              "providers.vertexai",
-              "providers.cloudflare-workersai",
-              "providers.vscode",
-              // New keys (prefixed)
-              ...this._extensionContext.globalState
-                .keys()
-                .filter((k) => k.startsWith(DISH_CONFIG_PREFIX)),
-            ],
-            workspace: [
-              // Clear any prefixed keys in workspace state
-              ...this._extensionContext.workspaceState
-                .keys()
-                .filter((k) => k.startsWith(DISH_CONFIG_PREFIX)),
-            ],
-            secrets: KNOWN_SECRET_KEYS,
-          };
-
-          // 1. Clear Global State
-          for (const key of keysToClear.global) {
-            await this._extensionContext.globalState.update(key, undefined);
-          }
-
-          // 2. Clear Workspace State
-          for (const key of keysToClear.workspace) {
-            await this._extensionContext.workspaceState.update(key, undefined);
-          }
-
-          // 3. Clear Secrets
-          for (const key of keysToClear.secrets) {
-            await this._extensionContext.secrets.delete(key);
-          }
-
-          // 4. Respond to webview
-          webview.postMessage({
-            command: "clearAllStorageResponse",
-            success: true,
-          });
-
-          // 5. Reload the webview or ask user to reload
-          vscode.commands.executeCommand("workbench.action.reloadWindow");
-        } catch (error) {
-          webview.postMessage({
-            command: "clearAllStorageResponse",
-            success: false,
-            error: error instanceof Error ? error.message : String(error),
-          });
-        }
+      // ===== System Lifecycle Messages =====
+      case "webviewDidLaunch":
+        // Webview 启动通知，静默处理
+        console.log(
+          "[SettingsViewMessageHandler] Webview launched successfully"
+        );
         break;
-      }
 
       default:
         console.warn(

@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { MessageType } from "@/types/messages";
+import { UIRequest, ExtensionResponse } from "@/types/messages";
 import { notify } from "@/utils/notification/notification-manager";
 import { PromptManagerService } from "@/services/core/prompt-manager-service";
 
@@ -12,13 +12,13 @@ export class PromptMessageHandler {
 
     public async handle(message: any, webview: vscode.Webview): Promise<void> {
         switch (message.command) {
-            case MessageType.GetAllPrompts: {
+            case UIRequest.PromptGetAll: {
                 console.log("[PromptMessageHandler] Handling GetAllPrompts");
                 try {
                     const prompts = await this._promptManager.getAllPrompts();
                     console.log("prompts", prompts);
                     webview.postMessage({
-                        command: MessageType.AllPrompts,
+                        command: ExtensionResponse.PromptAllLoaded,
                         payload: prompts,
                     });
                 } catch (error) {
@@ -30,7 +30,7 @@ export class PromptMessageHandler {
                 break;
             }
 
-            case MessageType.UpdatePrompt: {
+            case UIRequest.PromptUpdate: {
                 console.log("[PromptMessageHandler] Handling UpdatePrompt");
                 const { key, content, target } = message.payload;
                 try {
@@ -46,7 +46,7 @@ export class PromptMessageHandler {
                 break;
             }
 
-            case MessageType.ResetPrompt: {
+            case UIRequest.PromptReset: {
                 console.log("[PromptMessageHandler] Handling ResetPrompt");
                 const { key, target } = message.payload;
                 try {
@@ -62,7 +62,7 @@ export class PromptMessageHandler {
                 break;
             }
 
-            case MessageType.ResetAllPrompts: {
+            case UIRequest.PromptResetAll: {
                 console.log("[PromptMessageHandler] Handling ResetAllPrompts");
                 const { target } = message.payload;
                 try {
@@ -78,7 +78,7 @@ export class PromptMessageHandler {
                 break;
             }
 
-            case MessageType.CreatePrompt: {
+            case UIRequest.PromptCreate: {
                 console.log("[PromptMessageHandler] Handling CreatePrompt");
                 const { key, content, target } = message.payload;
                 try {
@@ -87,7 +87,7 @@ export class PromptMessageHandler {
                     // Refresh the prompts in the webview
                     const prompts = await this._promptManager.getAllPrompts();
                     webview.postMessage({
-                        command: MessageType.AllPrompts,
+                        command: ExtensionResponse.PromptAllLoaded,
                         payload: prompts,
                     });
                 } catch (error) {
@@ -100,7 +100,7 @@ export class PromptMessageHandler {
                 break;
             }
 
-            case MessageType.DeletePrompt: {
+            case UIRequest.PromptDelete: {
                 console.log("[PromptMessageHandler] Handling DeletePrompt");
                 const { key, target } = message.payload;
                 try {
@@ -109,7 +109,7 @@ export class PromptMessageHandler {
                     // Refresh the prompts in the webview
                     const prompts = await this._promptManager.getAllPrompts();
                     webview.postMessage({
-                        command: MessageType.AllPrompts,
+                        command: ExtensionResponse.PromptAllLoaded,
                         payload: prompts,
                     });
                 } catch (error) {
@@ -122,7 +122,7 @@ export class PromptMessageHandler {
                 break;
             }
 
-            case MessageType.RenamePrompt: {
+            case UIRequest.PromptRename: {
                 console.log("[PromptMessageHandler] Handling RenamePrompt");
                 const { oldKey, newKey, target } = message.payload;
                 try {
@@ -137,7 +137,7 @@ export class PromptMessageHandler {
                     // Refresh the prompts in the webview
                     const prompts = await this._promptManager.getAllPrompts();
                     webview.postMessage({
-                        command: MessageType.AllPrompts,
+                        command: ExtensionResponse.PromptAllLoaded,
                         payload: prompts,
                     });
                 } catch (error) {

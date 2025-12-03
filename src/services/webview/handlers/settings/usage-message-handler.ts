@@ -1,14 +1,15 @@
 import { TokenStatsService } from "@/services/core/token-stats-service";
+import { UIRequest, ExtensionResponse } from "@/types/messages";
 import * as vscode from "vscode";
 
 export class UsageMessageHandler {
-  constructor(private readonly _extensionContext: vscode.ExtensionContext) {}
+  constructor(private readonly _extensionContext: vscode.ExtensionContext) { }
 
   public async handle(message: any, webview: vscode.Webview): Promise<void> {
     const tokenStatsService = TokenStatsService.getInstance();
 
     switch (message.command) {
-      case "getUsageStats": {
+      case UIRequest.UsageGetStats: {
         const totalTokens = tokenStatsService.getTotalTokens();
         const detailedStats = tokenStatsService.getDetailedStats();
         console.log("[UsageMessageHandler] 获取使用统计数据:", {
@@ -17,16 +18,16 @@ export class UsageMessageHandler {
           detailedStats,
         });
         await webview.postMessage({
-          command: "usageStats",
+          command: ExtensionResponse.UsageStatsLoaded,
           data: { totalTokens, detailedStats },
         });
         break;
       }
 
-      case "resetUsageStats": {
+      case UIRequest.UsageResetStats: {
         await tokenStatsService.resetTotalTokens();
         await webview.postMessage({
-          command: "usageStats",
+          command: ExtensionResponse.UsageStatsLoaded,
           data: { totalTokens: 0, detailedStats: [] },
         });
         break;

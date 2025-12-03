@@ -1,3 +1,4 @@
+import { ExtensionResponse, UIRequest } from "@/types/messages";
 import { NotificationSettingsManager } from "@/utils/notification/notification-settings-manager";
 import { showSystemNotification } from "@/utils/notification/system-notification";
 import { TextToSpeechService } from "@/utils/notification/text-to-speech";
@@ -6,7 +7,7 @@ import * as vscode from "vscode";
 export class NotificationMessageHandler {
     public async handle(message: any, webview: vscode.Webview): Promise<void> {
         switch (message.command) {
-            case "getNotificationSettings": {
+            case UIRequest.NotificationGetSettings: {
                 console.log(
                     "[NotificationMessageHandler] Handling getNotificationSettings"
                 );
@@ -15,7 +16,7 @@ export class NotificationMessageHandler {
                     await settingsManager.loadSettings();
                     const settings = settingsManager.getSettings();
                     webview.postMessage({
-                        command: "getNotificationSettingsResponse",
+                        command: ExtensionResponse.NotificationSettingsLoaded,
                         data: {
                             success: true,
                             settings,
@@ -29,7 +30,7 @@ export class NotificationMessageHandler {
                     const errorMessage =
                         error instanceof Error ? error.message : String(error);
                     webview.postMessage({
-                        command: "getNotificationSettingsResponse",
+                        command: ExtensionResponse.NotificationSettingsLoaded,
                         data: {
                             success: false,
                             error: errorMessage,
@@ -40,7 +41,7 @@ export class NotificationMessageHandler {
                 break;
             }
 
-            case "setNotificationSettings": {
+            case UIRequest.NotificationUpdateSettings: {
                 console.log(
                     "[NotificationMessageHandler] Handling setNotificationSettings"
                 );
@@ -54,7 +55,7 @@ export class NotificationMessageHandler {
                     ttsService.setEnabled(settings.textToSpeech);
 
                     webview.postMessage({
-                        command: "setNotificationSettingsResponse",
+                        command: ExtensionResponse.NotificationSettingsUpdated,
                         data: {
                             success: true,
                         },
@@ -67,7 +68,7 @@ export class NotificationMessageHandler {
                     const errorMessage =
                         error instanceof Error ? error.message : String(error);
                     webview.postMessage({
-                        command: "setNotificationSettingsResponse",
+                        command: ExtensionResponse.NotificationSettingsUpdated,
                         data: {
                             success: false,
                             error: errorMessage,
@@ -77,7 +78,7 @@ export class NotificationMessageHandler {
                 break;
             }
 
-            case "testSystemNotification": {
+            case UIRequest.NotificationTest: {
                 console.log(
                     "[NotificationMessageHandler] Handling testSystemNotification"
                 );

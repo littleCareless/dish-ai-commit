@@ -1,32 +1,40 @@
+import { settingsMigration } from "@/services/core/settings-migration";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
+import { ProviderStore } from "@/services/profile-manager/provider-store";
+import { LanguageSettingsManager } from "@/services/settings/language-settings-manager";
+import { ExtensionResponse, UIRequest } from "@/types/messages";
+import { formatMessage as t } from "@/utils/i18n/localization-manager";
+import { safeWriteJson } from "@/utils/safe-write-json";
 import * as fs from "fs/promises";
 import * as os from "os";
 import * as path from "path";
 import * as vscode from "vscode";
 import { z, ZodError } from "zod";
-import { formatMessage as t } from "@/utils/i18n/localization-manager";
-import { safeWriteJson } from "@/utils/safe-write-json";
-import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
-import { ProviderStore } from "@/services/profile-manager/provider-store";
-import { LanguageSettingsManager } from "@/services/settings/language-settings-manager";
 
 export class ProfileMessageHandler {
-    private _profileManager: ProfileManagerService;
+    private _profileManager: ProfileManagerService | null = null;
     private _providerStore: ProviderStore;
 
     constructor(private readonly _extensionContext: vscode.ExtensionContext) {
-        this._profileManager = ProfileManagerService.getInstance();
         this._providerStore = ProviderStore.getInstance(_extensionContext);
+    }
+
+    private get profileManager(): ProfileManagerService {
+        if (!this._profileManager) {
+            this._profileManager = ProfileManagerService.getInstance();
+        }
+        return this._profileManager;
     }
 
     public async handle(message: any, webview: vscode.Webview): Promise<void> {
         switch (message.command) {
-            case "loadProfiles": {
+            case UIRequest.ProfileLoadAll: {
                 console.log("[ProfileMessageHandler] Handling loadProfiles");
                 const { requestId } = message.data;
                 try {
-                    const profiles = await this._profileManager.getAllProfiles();
+                    const profiles = await this.profileManager.getAllProfiles();
                     const activeProfileId =
-                        await this._profileManager.getActiveProfileId();
+                        await this.profileManager.getActiveProfileId();
 
                     // 从 VSCode Configuration 读取 language 并合并到每个 profile
                     const language = await LanguageSettingsManager.getLanguage();
@@ -41,7 +49,7 @@ export class ProfileMessageHandler {
                     console.log("profiles", profilesWithLanguage);
                     console.log("activeProfileId", activeProfileId);
                     webview.postMessage({
-                        command: "loadProfilesResponse",
+                        command: ExtensionResponse.ProfileAllLoaded,
                         requestId,
                         payload: { profiles: profilesWithLanguage, activeProfileId },
                     });
@@ -53,7 +61,7 @@ export class ProfileMessageHandler {
                     const errorMessage =
                         error instanceof Error ? error.message : String(error);
                     webview.postMessage({
-                        command: "loadProfilesResponse",
+                        command: ExtensionResponse.ProfileAllLoaded,
                         requestId,
                         error: `Failed to load profiles: ${errorMessage}`,
                     });
@@ -61,13 +69,13 @@ export class ProfileMessageHandler {
                 break;
             }
 
-            case "getAllProviders": {
+            case UIRequest.ProfileGetAllProviders: {
                 console.log("[ProfileMessageHandler] Handling getAllProviders");
                 const { requestId } = message.data;
                 try {
-                    const providers = await this._profileManager.getAllProviders();
+                    const providers = await this.profileManager.getAllProviders();
                     webview.postMessage({
-                        command: "getAllProvidersResponse",
+                        command: ExtensionResponse.ProfileAllProvidersLoaded,
                         requestId,
                         payload: providers,
                     });
@@ -79,7 +87,7 @@ export class ProfileMessageHandler {
                     const errorMessage =
                         error instanceof Error ? error.message : String(error);
                     webview.postMessage({
-                        command: "getAllProvidersResponse",
+                        command: ExtensionResponse.ProfileAllProvidersLoaded,
                         requestId,
                         error: `Failed to get all providers: ${errorMessage}`,
                     });
@@ -87,31 +95,16 @@ export class ProfileMessageHandler {
                 break;
             }
 
-            case "saveProfile": {
+            case UIRequest.ProfileSave: {
                 const { requestId, profile } = message.data;
                 console.log(
                     `[ProfileMessageHandler] Handling saveProfile for profile: ${profile?.id}`
                 );
                 try {
-                    // 提取 language 并单独保存到 VSCode Configuration
-                    const language = profile.preferences?.language;
-                    if (language) {
-                        await LanguageSettingsManager.updateLanguage(
-                            language,
-                            vscode.ConfigurationTarget.Global // 默认保存到用户级别
-                        );
-                    }
-
-                    // 从 profile 中移除 language，其他字段正常保存
-                    const { language: _, ...preferencesWithoutLanguage } = profile.preferences || {};
-                    const profileToSave = {
-                        ...profile,
-                        preferences: preferencesWithoutLanguage,
-                    };
-
-                    await this._profileManager.saveProfile(profileToSave);
+                    // 直接保存整个 profile，包括 language（现在 language 存储在 profile 的 preferences 中）
+                    await this.profileManager.saveProfile(profile);
                     webview.postMessage({
-                        command: "saveProfileResponse",
+                        command: ExtensionResponse.ProfileSaved,
                         requestId,
                         payload: { success: true },
                     });
@@ -123,7 +116,7 @@ export class ProfileMessageHandler {
                     const errorMessage =
                         error instanceof Error ? error.message : String(error);
                     webview.postMessage({
-                        command: "saveProfileResponse",
+                        command: ExtensionResponse.ProfileSaved,
                         requestId,
                         error: errorMessage,
                     });
@@ -131,15 +124,15 @@ export class ProfileMessageHandler {
                 break;
             }
 
-            case "deleteProfile": {
+            case UIRequest.ProfileDelete: {
                 const { requestId, profileId } = message.data;
                 console.log(
                     `[ProfileMessageHandler] Handling deleteProfile for profileId: ${profileId}`
                 );
                 try {
-                    await this._profileManager.deleteProfile(profileId);
+                    await this.profileManager.deleteProfile(profileId);
                     webview.postMessage({
-                        command: "deleteProfileResponse",
+                        command: ExtensionResponse.ProfileDeleted,
                         requestId,
                         payload: { success: true },
                     });
@@ -151,7 +144,7 @@ export class ProfileMessageHandler {
                     const errorMessage =
                         error instanceof Error ? error.message : String(error);
                     webview.postMessage({
-                        command: "deleteProfileResponse",
+                        command: ExtensionResponse.ProfileDeleted,
                         requestId,
                         error: errorMessage,
                     });
@@ -159,15 +152,15 @@ export class ProfileMessageHandler {
                 break;
             }
 
-            case "setActiveProfile": {
+            case UIRequest.ProfileSetActive: {
                 const { requestId, profileId } = message.data;
                 console.log(
                     `[ProfileMessageHandler] Handling setActiveProfile for profileId: ${profileId}`
                 );
                 try {
-                    await this._profileManager.setActiveProfile(profileId);
+                    await this.profileManager.setActiveProfile(profileId);
                     webview.postMessage({
-                        command: "setActiveProfileResponse",
+                        command: ExtensionResponse.ProfileActiveChanged,
                         requestId,
                         payload: { profileId },
                     });
@@ -179,7 +172,7 @@ export class ProfileMessageHandler {
                     const errorMessage =
                         error instanceof Error ? error.message : String(error);
                     webview.postMessage({
-                        command: "setActiveProfileResponse",
+                        command: ExtensionResponse.ProfileActiveChanged,
                         requestId,
                         error: `Failed to set active profile: ${errorMessage}`,
                     });
@@ -187,7 +180,7 @@ export class ProfileMessageHandler {
                 break;
             }
 
-            case "exportProfile": {
+            case UIRequest.ProfileExport: {
                 const { profileId } = message.data;
                 console.log(
                     `[ProfileMessageHandler] Handling exportProfile for profileId: ${profileId}`
@@ -230,7 +223,7 @@ export class ProfileMessageHandler {
                 break;
             }
 
-            case "importProfile": {
+            case UIRequest.ProfileImport: {
                 console.log("[ProfileMessageHandler] Handling importProfile");
                 const uris = await vscode.window.showOpenDialog({
                     filters: { JSON: ["json"] },
@@ -265,7 +258,7 @@ export class ProfileMessageHandler {
                     // Since importProfile is void, we can't get the imported profile directly.
                     // We'll just notify success and let the UI reload profiles.
                     webview.postMessage({
-                        command: "profileImported",
+                        command: ExtensionResponse.ProfileImported,
                         data: { success: true },
                     });
                     vscode.window.showInformationMessage(
@@ -281,7 +274,7 @@ export class ProfileMessageHandler {
                         error = e.message;
                     }
                     webview.postMessage({
-                        command: "profileImported",
+                        command: ExtensionResponse.ProfileImported,
                         data: { success: false, error: error },
                     });
                     vscode.window.showErrorMessage(t("profile.import.failed", [error]));
@@ -289,17 +282,41 @@ export class ProfileMessageHandler {
                 break;
             }
 
-            case "migrateSettings": {
-                console.log("[ProfileMessageHandler] Handling migrateSettings");
-                const { requestId } = message.data;
+            case UIRequest.ProfileMigrateSettings: {
+                console.log("[ProfileMessageHandler] Handling profile.migrateSettings");
+                const { requestId, detectOnly, preview, execute } = message.data;
                 try {
-                    const migratedProfile =
-                        await this._profileManager.migrateFromPackageJson();
-                    webview.postMessage({
-                        command: "migrateSettingsResponse",
-                        requestId,
-                        payload: { success: true, migratedProfile },
-                    });
+                    if (detectOnly) {
+                        const result = await settingsMigration.detectOldConfiguration();
+                        webview.postMessage({
+                            command: ExtensionResponse.ProfileSettingsMigrated,
+                            requestId,
+                            payload: { detectResult: result },
+                        });
+                    } else if (preview) {
+                        const result = await settingsMigration.previewMigration();
+                        webview.postMessage({
+                            command: ExtensionResponse.ProfileSettingsMigrated,
+                            requestId,
+                            payload: { previewResult: result },
+                        });
+                    } else if (execute) {
+                        const result = await settingsMigration.performMigration();
+                        webview.postMessage({
+                            command: ExtensionResponse.ProfileSettingsMigrated,
+                            requestId,
+                            payload: { success: result.success, profileId: result.profileId },
+                        });
+                    } else {
+                        // Default fallback (legacy behavior)
+                        const migratedProfile =
+                            await this.profileManager.migrateFromPackageJson();
+                        webview.postMessage({
+                            command: ExtensionResponse.ProfileSettingsMigrated,
+                            requestId,
+                            payload: { success: true, migratedProfile },
+                        });
+                    }
                 } catch (error) {
                     console.error(
                         "[ProfileMessageHandler] Error in migrateSettings:",
@@ -308,7 +325,7 @@ export class ProfileMessageHandler {
                     const errorMessage =
                         error instanceof Error ? error.message : String(error);
                     webview.postMessage({
-                        command: "migrateSettingsResponse",
+                        command: ExtensionResponse.ProfileSettingsMigrated,
                         requestId,
                         error: errorMessage,
                     });
@@ -316,13 +333,13 @@ export class ProfileMessageHandler {
                 break;
             }
 
-            case "resetToDefaults": {
+            case UIRequest.ProfileResetDefaults: {
                 console.log("[ProfileMessageHandler] Handling resetToDefaults");
                 const { requestId } = message.data;
                 try {
-                    await this._profileManager.resetToDefaults();
+                    await this.profileManager.resetToDefaults();
                     webview.postMessage({
-                        command: "resetToDefaultsResponse",
+                        command: ExtensionResponse.ProfileResetComplete,
                         requestId,
                         payload: { success: true },
                     });
@@ -334,7 +351,7 @@ export class ProfileMessageHandler {
                     const errorMessage =
                         error instanceof Error ? error.message : String(error);
                     webview.postMessage({
-                        command: "resetToDefaultsResponse",
+                        command: ExtensionResponse.ProfileResetComplete,
                         requestId,
                         error: errorMessage,
                     });

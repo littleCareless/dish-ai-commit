@@ -1,3 +1,4 @@
+import { UIRequest, ExtensionResponse } from "@/types/messages";
 import * as vscode from "vscode";
 import { notify } from "@/utils/notification";
 import { showWeeklyReportSuccessNotification } from "@/utils/notification/system-notification";
@@ -15,13 +16,13 @@ export class WeeklyReportMessageHandler {
 
   public async handleMessage(message: any, webview: vscode.Webview) {
     switch (message.command) {
-      case "generateTeamReport": // 修改 command
+      case UIRequest.WeeklyReportGenerateTeam: // 修改 command
         await this.handleGenerateTeamReportCommand(message, webview);
         break;
-      case "getUsers": // 新增 getUsers command
+      case UIRequest.WeeklyReportGetUsers: // 新增 getUsers command
         await this.handleGetUsersCommand(webview);
         break;
-      case "notification":
+      case UIRequest.WeeklyReportNotification:
         if (message.text) {
           notify.info(message.text, message.args || []);
         }
@@ -34,7 +35,7 @@ export class WeeklyReportMessageHandler {
       const users = await this.generator.getAllAuthors(); // 假设 generator 中有此方法
       const currentUser = await this.generator.getCurrentAuthor();
       webview.postMessage({
-        command: "usersList",
+        command: ExtensionResponse.WeeklyReportUsersListLoaded,
         data: { users, currentUser },
       });
     } catch (error: any) {
@@ -42,7 +43,7 @@ export class WeeklyReportMessageHandler {
         timeout: 3000,
       });
       webview.postMessage({
-        command: "usersList", // 即使失败也发送消息，让UI可以处理空状态
+        command: ExtensionResponse.WeeklyReportUsersListLoaded, // 即使失败也发送消息，让UI可以处理空状态
         data: { users: [], currentUser: "" },
       });
     }
@@ -62,7 +63,7 @@ export class WeeklyReportMessageHandler {
       // const author = await this.generator.getCurrentAuthor(); // 对于团队报告，可能不需要单个 author
 
       webview.postMessage({
-        command: "report",
+        command: ExtensionResponse.WeeklyReportGenerated,
         data: report,
       });
       const formattedPeriod = this.formatPeriod(message.data.period);

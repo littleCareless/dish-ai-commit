@@ -1,4 +1,5 @@
 import * as vscode from "vscode";
+import { UIRequest, ExtensionResponse } from "@/types/messages";
 import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
 
 export class PreferencesMessageHandler {
@@ -11,20 +12,20 @@ export class PreferencesMessageHandler {
 
     public async handle(message: any, webview: vscode.Webview): Promise<void> {
         switch (message.command) {
-            case "loadPreferencesSettings":
+            case UIRequest.PreferencesLoadSettings:
                 const settings = this._settingsManager.getSettings();
                 await webview.postMessage({
-                    command: "updatePreferencesSettings",
+                    command: ExtensionResponse.PreferencesSettingsUpdated,
                     settings,
                 });
                 break;
 
-            case "savePreferencesSettings":
+            case UIRequest.PreferencesSaveSettings:
                 if (message.data) {
                     await this._settingsManager.updateSettings(message.data);
                     // Send back updated settings to confirm save
                     await webview.postMessage({
-                        command: "updatePreferencesSettings",
+                        command: ExtensionResponse.PreferencesSettingsUpdated,
                         settings: this._settingsManager.getSettings(),
                     });
                 }
