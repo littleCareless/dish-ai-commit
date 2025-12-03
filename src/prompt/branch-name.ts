@@ -1,22 +1,8 @@
-import { ExtensionConfiguration } from "@/config/types";
-
-interface BranchNamePromptParams {
-  config: ExtensionConfiguration;
-}
-
 /**
- * 生成分支名称的系统提示模板
- * @param params - 提示参数，包含配置信息
- * @returns 格式化的系统提示
+ * Branch Name Generator Prompt Template
+ * 使用 {{variable}} 语法表示可替换变量
  */
-export function generateBranchNameSystemPrompt({
-  config,
-}: BranchNamePromptParams): string {
-  const {
-    base: { language },
-  } = config;
-
-  return `# Git/SVN Branch Name Generator
+export const BRANCH_NAME_SYSTEM_TEMPLATE = `# Git/SVN Branch Name Generator
 
 ## Role and Purpose
 
@@ -91,17 +77,8 @@ refactor/optimize-database-queries
 5. Ensure the branch name is valid (no spaces, special characters except hyphens and slashes)
 
 Remember: Your entire output should be a single line containing only the branch name.`;
-}
 
-/**
- * 生成分支名称的用户提示模板
- * @param diffContent - 代码差异内容
- * @returns 格式化的用户提示
- */
-export function generateBranchNameUserPrompt(diffContent: string): string {
-  console.log("Generating branch name user prompt...");
-
-  return `Based on the following Git diff, please generate an appropriate branch name:
+export const BRANCH_NAME_USER_TEMPLATE = `Based on the following Git diff, please generate an appropriate branch name:
 
 IMPORTANT: In Git/SVN diff format, lines starting with '+' indicate additions, and lines starting with '-' indicate deletions.
 Please carefully analyze the diff content to understand whether code is being added or removed.
@@ -115,6 +92,8 @@ Please carefully analyze the diff content to understand whether code is being ad
 5. Ensure the branch name is valid (no spaces, special characters except hyphens and slashes)
 
 \`\`\`diff
-${diffContent}
+{{diffContent}}
 \`\`\``;
-}
+
+// Default export for PromptManagerService to load
+export default () => BRANCH_NAME_SYSTEM_TEMPLATE;

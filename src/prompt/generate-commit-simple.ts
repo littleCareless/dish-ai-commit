@@ -164,16 +164,19 @@ export function generateCommitMessageSystemPrompt({
 4. WRITE ALL CONTENT IN ${language} (except for technical terms and scope)
 5. FOLLOW THE EXACT FORMAT TEMPLATE shown in examples
 4. USE ENGLISH ONLY FOR SCOPE and technical terms
-5. INCLUDE APPROPRIATE EMOJI when enabled (${enableEmoji ? "ENABLED" : "DISABLED"
-    })
-6. ${enableMergeCommit
+5. INCLUDE APPROPRIATE EMOJI when enabled (${
+    enableEmoji ? "ENABLED" : "DISABLED"
+  })
+6. ${
+    enableMergeCommit
       ? "MERGE all changes into a SINGLE commit message"
       : "CREATE SEPARATE commit messages for each file"
-    }
-7. ${enableBody
+  }
+7. ${
+    enableBody
       ? "INCLUDE body content that explains the changes in detail"
       : "DO NOT include body content, ONLY generate the subject line"
-    }
+  }
 
 ## PROHIBITED ACTIONS (MUST NOT DO)
 
@@ -201,8 +204,9 @@ When generating commit messages, always consider both the file status and the co
 
 ## TYPE REFERENCE
 
-${enableEmoji
-      ? `| Type     | Emoji | Description          | Example Scopes      |
+${
+  enableEmoji
+    ? `| Type     | Emoji | Description          | Example Scopes      |
 | -------- | ----- | -------------------- | ------------------- |
 | feat     | ✨    | New feature          | user, payment       |
 | fix      | 🐛    | Bug fix              | auth, data          |
@@ -215,7 +219,7 @@ ${enableEmoji
 | ci       | 👷    | CI config            | Travis, Jenkins     |
 | chore    | 🔧    | Other changes        | scripts, config     |
 | i18n     | 🌐    | Internationalization | locale, translation |`
-      : `| Type     | Description          | Example Scopes      |
+    : `| Type     | Description          | Example Scopes      |
 | -------- | -------------------- | ------------------- |
 | feat     | New feature          | user, payment       |
 | fix      | Bug fix              | auth, data          |
@@ -228,7 +232,7 @@ ${enableEmoji
 | ci       | CI config            | Travis, Jenkins     |
 | chore    | Other changes        | scripts, config     |
 | i18n     | Internationalization | locale, translation |`
-    }
+}
 
 ## WRITING RULES
 
@@ -243,16 +247,17 @@ ${enableEmoji
 - The body MUST begin one blank line after the description
 > If you cannot clearly classify a specific module or function, you can use \`core\` or \`misc\` as the default scope
 
-${enableBody
-      ? `### Body
+${
+  enableBody
+    ? `### Body
 - Breaking Changes must include detailed impact description
 - Use bullet points with "-"
 - Maximum 72 characters per line
 - Explain what and why
 - Must be in ${language}
 - Use【】for categorizing different types of changes`
-      : ""
-    }
+    : ""
+}
 
 ## SELF-VERIFICATION CHECKLIST
 
@@ -262,10 +267,11 @@ Before finalizing your output, verify:
 3. CONTENT CHECK: Does it contain ONLY the commit message with no extra text?
 4. CONSISTENCY CHECK: For multiple files, is the format consistent?
 5. COMPLETENESS CHECK: Does it include all necessary information?
-${enableBody
-      ? "6. BODY CHECK: Does the body explain what was changed and why?"
-      : "6. SUBJECT-ONLY CHECK: Does the output contain ONLY the subject line with no body?"
-    }
+${
+  enableBody
+    ? "6. BODY CHECK: Does the body explain what was changed and why?"
+    : "6. SUBJECT-ONLY CHECK: Does the output contain ONLY the subject line with no body?"
+}
 7. IMPACT CHECK: Does it consider the impact on existing logic, data structures, or external APIs?
 8. DOCUMENTATION CHECK: Does it identify the need for additional documentation or testing?
 9. RISK CHECK: Does it address potential risks or uncertainties and how to mitigate them?
@@ -332,14 +338,15 @@ function getMergedGitExample(useEmoji: boolean, useBody: boolean) {
 - **Generated Commit Message**:
   \`\`\`
   ${prefix}feat!(auth): implement new authentication system
-  ${useBody
+  ${
+    useBody
       ? `
   - replace legacy token auth with JWT
   -【Breaking Change】old token format no longer supported
   -【Migration】clients must update authentication logic
   - implement token refresh mechanism`
       : ``
-    }
+  }
   \`\`\``;
 }
 
@@ -369,19 +376,21 @@ function getSeparateGitExample(useEmoji: boolean, useBody: boolean) {
 - **Generated Commit Messages**:
   \`\`\`
   ${featPrefix}feat(feature): implement new functionality
-  ${useBody
+  ${
+    useBody
       ? `
   - add feature implementation in feature.js`
       : ``
-    }
+  }
   
   ${fixPrefix}fix(bugfix): correct calculation logic 
-  ${useBody
+  ${
+    useBody
       ? `
 
   - fixed calculation of variable y in bugfix.js`
       : ``
-    }
+  }
   \`\`\``;
 }
 
@@ -409,12 +418,13 @@ function getMergedSVNExample(useEmoji: boolean, useBody: boolean) {
 - **Generated Commit Message**:
   \`\`\`
   ${prefix}feat(app): add multiple new files
-  ${useBody
+  ${
+    useBody
       ? `
   - added file1.js
   - added file2.js with basic logging`
       : ``
-    }
+  }
   \`\`\``;
 }
 
@@ -444,19 +454,21 @@ function getSeparateSVNExample(useEmoji: boolean, useBody: boolean) {
 - **Generated Commit Messages**:
   \`\`\`
   ${featPrefix}feat(feature): implement new functionality
-  ${useBody
+  ${
+    useBody
       ? `
   - Add new feature implementation to feature.js`
       : ``
-    }
+  }
 
   ${fixPrefix}fix(bugfix): correct calculation logic
-  ${useBody
+  ${
+    useBody
       ? `
 
   - Fix the calculation logic of variable y in bugfix.js`
       : ``
-    }
+  }
   \`\`\``;
 }
 
@@ -501,7 +513,7 @@ function generateThinkingProcessPrompt(useRecentCommitsAsReference = false) {
   return `# First, think step-by-step:\\n${numberedSteps.join("\\n")}`;
 }
 
-export function generateCommitMessageUserPrompt(language: string) { }
+export function generateCommitMessageUserPrompt(language: string) {}
 
 export function getCommitMessageTools(config: ExtensionConfiguration) {
   const {
@@ -577,3 +589,7 @@ export function getCommitMessageTools(config: ExtensionConfiguration) {
     },
   ];
 }
+
+export const generateCommitSimple = generateCommitMessageSystemPrompt;
+
+export default generateCommitSimple;
