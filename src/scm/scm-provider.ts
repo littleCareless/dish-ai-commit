@@ -1,13 +1,12 @@
-import * as vscode from "vscode";
-import * as fs from "fs";
-import * as path from "path";
-import { exec } from "child_process";
-import { GitProvider } from "@/scm/git-provider";
 import { SvnProvider } from "@/scm/svn-provider";
 import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils";
+import { exec } from "child_process";
+import * as path from "path";
+import * as vscode from "vscode";
+import { GitProvider } from "./git-provider";
+import { multiRepositoryContextManager } from "./multi-repository-context-manager";
 
 /**
- * 最近提交信息
  */
 export interface RecentCommitMessages {
   /** 仓库最近提交信息 */
@@ -307,32 +306,77 @@ export class SCMFactory {
    * 检测所有可用的 SCM 仓库
    * @returns 仓库信息数组
    */
-  private static detectAllRepositories(): Array<{
-    type: 'git' | 'svn';
-    rootUri: vscode.Uri;
-    label: string;
-  }> {
+  private static async detectAllRepositories(): Promise<
+    Array<{
+      type: "git" | "svn";
+      rootUri: vscode.Uri;
+      label: string;
+    }>
+  > {
     const repositories: Array<{
-      type: 'git' | 'svn';
+      type: "git" | "svn";
       rootUri: vscode.Uri;
       label: string;
     }> = [];
 
-    // vscode.scm.sourceControls 在 VS Code 1.90+ 中可用
-    const sourceControls = (vscode.scm as any).sourceControls as readonly vscode.SourceControl[] | undefined;
+    // 1. 尝试使用 MultiRepositoryContextManager 获取仓库
+    try {
+      console.log(
+        "[SCMFactory] Detecting repositories via MultiRepositoryContextManager..."
+      );
+      const detectedRepos =
+        await multiRepositoryContextManager.getAllRepositories();
+      console.log(
+        `[SCMFactory] MultiRepositoryContextManager found ${detectedRepos.length} repositories`
+      );
+
+      for (const repo of detectedRepos) {
+        if (repo.type === "git" || repo.type === "svn") {
+          repositories.push({
+            type: repo.type,
+            rootUri: vscode.Uri.file(repo.path),
+            label: repo.name,
+          });
+        }
+      }
+    } catch (error) {
+      console.error(
+        "[SCMFactory] Failed to detect repositories via MultiRepositoryContextManager:",
+        error
+      );
+    }
+
+    // 如果 MultiRepositoryContextManager 找到了仓库，直接返回
+    if (repositories.length > 0) {
+      return repositories;
+    }
+
+    // 2. 回退到 vscode.scm.sourceControls (在 VS Code 1.90+ 中可用)
+    console.log(
+      "[SCMFactory] Falling back to vscode.scm.sourceControls detection..."
+    );
+    const sourceControls = (vscode.scm as any).sourceControls as
+      | readonly vscode.SourceControl[]
+      | undefined;
 
     if (!sourceControls) {
       return repositories;
     }
 
     for (const sourceControl of sourceControls) {
-      if (sourceControl.id === 'git' || sourceControl.id === 'svn') {
+      if (sourceControl.id === "git" || sourceControl.id === "svn") {
         if (sourceControl.rootUri) {
-          repositories.push({
-            type: sourceControl.id as 'git' | 'svn',
-            rootUri: sourceControl.rootUri,
-            label: sourceControl.label
-          });
+          // 避免重复添加
+          const exists = repositories.some(
+            (r) => r.rootUri.fsPath === sourceControl.rootUri?.fsPath
+          );
+          if (!exists) {
+            repositories.push({
+              type: sourceControl.id as "git" | "svn",
+              rootUri: sourceControl.rootUri,
+              label: sourceControl.label,
+            });
+          }
         }
       }
     }
@@ -347,24 +391,26 @@ export class SCMFactory {
    */
   private static async promptUserToSelectRepository(
     repositories: Array<{
-      type: 'git' | 'svn';
+      type: "git" | "svn";
       rootUri: vscode.Uri;
       label: string;
     }>
-  ): Promise<{ type: 'git' | 'svn'; rootUri: vscode.Uri } | undefined> {
+  ): Promise<{ type: "git" | "svn"; rootUri: vscode.Uri } | undefined> {
     // 动态导入 i18n 工具
-    const { getMessage, formatMessage } = await import('../utils/i18n');
+    const { getMessage, formatMessage } = await import("../utils/i18n");
 
-    const items = repositories.map(repo => ({
+    const items = repositories.map((repo) => ({
       label: repo.label,
       description: repo.rootUri.fsPath,
-      detail: formatMessage('scm.repository.type.label', [repo.type.toUpperCase()]),
-      repo
+      detail: formatMessage("scm.repository.type.label", [
+        repo.type.toUpperCase(),
+      ]),
+      repo,
     }));
 
     const selected = await vscode.window.showQuickPick(items, {
-      placeHolder: getMessage('scm.repository.select.placeholder'),
-      ignoreFocusOut: true
+      placeHolder: getMessage("scm.repository.select.placeholder"),
+      ignoreFocusOut: true,
     });
 
     return selected?.repo;
@@ -383,39 +429,56 @@ export class SCMFactory {
     try {
       // 如果没有提供任何参数，尝试使用 vscode.scm API 检测仓库
       if (!selectedFiles && !repositoryPath) {
-        console.log('[SCMFactory] No args provided, detecting all repositories...');
-        const repositories = this.detectAllRepositories();
-        console.log(`[SCMFactory] Detected ${repositories.length} repositories`);
+        console.log(
+          "[SCMFactory] No args provided, detecting all repositories..."
+        );
+        const repositories = await this.detectAllRepositories();
+        console.log(
+          `[SCMFactory] Detected ${repositories.length} repositories`
+        );
 
         if (repositories.length === 0) {
-          console.log('[SCMFactory] No repositories found, falling back to workspace root detection');
+          console.log(
+            "[SCMFactory] No repositories found, falling back to workspace root detection"
+          );
           // 没有检测到任何仓库，回退到原有逻辑
           const workspaceRoot = this.findWorkspaceRoot(selectedFiles);
           if (!workspaceRoot || !ImprovedPathUtils.isValidPath(workspaceRoot)) {
             return undefined;
           }
-          const normalizedWorkspaceRoot = ImprovedPathUtils.normalizePath(workspaceRoot);
-          const provider = await this.performDetection(normalizedWorkspaceRoot, selectedFiles);
+          const normalizedWorkspaceRoot =
+            ImprovedPathUtils.normalizePath(workspaceRoot);
+          const provider = await this.performDetection(
+            normalizedWorkspaceRoot,
+            selectedFiles
+          );
           if (provider) {
             this.currentProvider = provider;
             // 确保在这里也设置 currentRepositoryPath
             this.currentRepositoryPath = normalizedWorkspaceRoot;
-            console.log(`[SCMFactory] Provider created via fallback, currentRepositoryPath set to: ${this.currentRepositoryPath}`);
+            console.log(
+              `[SCMFactory] Provider created via fallback, currentRepositoryPath set to: ${this.currentRepositoryPath}`
+            );
           }
           return provider;
         } else if (repositories.length === 1) {
           // 只有一个仓库，直接使用
           repositoryPath = repositories[0].rootUri.fsPath;
-          console.log(`[SCMFactory] Single repository found: ${repositoryPath}`);
+          console.log(
+            `[SCMFactory] Single repository found: ${repositoryPath}`
+          );
         } else {
           // 多个仓库，让用户选择
-          const selected = await this.promptUserToSelectRepository(repositories);
+          const selected =
+            await this.promptUserToSelectRepository(repositories);
           if (!selected) {
             // 用户取消选择
             return undefined;
           }
           repositoryPath = selected.rootUri.fsPath;
-          console.log(`[SCMFactory] User selected repository: ${repositoryPath}`);
+          console.log(
+            `[SCMFactory] User selected repository: ${repositoryPath}`
+          );
         }
       }
 
@@ -435,7 +498,9 @@ export class SCMFactory {
 
       // 保存当前使用的仓库路径
       this.currentRepositoryPath = normalizedWorkspaceRoot;
-      console.log(`[SCMFactory] Setting currentRepositoryPath to: ${this.currentRepositoryPath}`);
+      console.log(
+        `[SCMFactory] Setting currentRepositoryPath to: ${this.currentRepositoryPath}`
+      );
 
       // 直接执行检测，每次都创建新的Provider实例
       const provider = await this.performDetection(
