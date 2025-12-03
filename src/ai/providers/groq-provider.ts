@@ -1,21 +1,15 @@
-import {
-  ChatCompletionMessageParam,
-  ChatCompletionFunctionMessageParam,
-  ChatCompletionSystemMessageParam,
-  ChatCompletionUserMessageParam,
-  ChatCompletionAssistantMessageParam,
-  ChatCompletionToolMessageParam,
-} from "groq-sdk/resources/chat/completions";
-import { ConfigurationManager } from "@/config/configuration-manager";
-import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
 import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
-import Groq from "groq-sdk";
 import type { OpenAIProviderConfig } from "@/ai/providers/base-openai-provider";
+import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
 import {
-  getPRSummarySystemPrompt,
-  getPRSummaryUserPrompt,
+  PR_SUMMARY_SYSTEM_TEMPLATE,
+  PR_SUMMARY_USER_TEMPLATE,
 } from "@/prompt/pr-summary";
-import { getSystemPrompt } from "@/ai/utils/generate-helper"; // Import getSystemPrompt
+import { processPromptTemplate } from "@/utils/prompt-template";
+import Groq from "groq-sdk";
+import {
+  ChatCompletionMessageParam
+} from "groq-sdk/resources/chat/completions";
 
 const groqModels: AIModel[] = [
   {
@@ -39,12 +33,13 @@ export class GroqAIProvider extends AbstractAIProvider {
   } as const;
   protected config: OpenAIProviderConfig;
 
-  constructor() {
+  constructor(config?: any) {
     super();
-    const configManager = ConfigurationManager.getInstance();
+
+    const apiKey = config?.apiKey;
     this.config = {
-      apiKey: configManager.getConfig("PROVIDERS_GROQ_APIKEY"),
-      baseURL: "https://api.groq.com/",
+      apiKey: apiKey,
+      baseUrl: "https://api.groq.com/",
       providerId: "groq",
       providerName: "Groq",
       models: groqModels,
@@ -187,7 +182,13 @@ export class GroqAIProvider extends AbstractAIProvider {
   }
 
   async refreshModels(): Promise<string[]> {
-    return Promise.resolve(this.config.models.map((m) => m.id));
+    if (!this.groq) {
+      throw new Error(
+        "Groq API client not initialized. Please check your API key."
+      );
+    }
+    const response = await this.groq.models.list();
+    return response.data.map((model) => model.id);
   }
 
   getName(): string {
@@ -206,8 +207,13 @@ export class GroqAIProvider extends AbstractAIProvider {
       "generatePRSummary is not fully implemented for GroqAIProvider and will return an empty response."
     );
     const systemPrompt =
-      params.systemPrompt || getPRSummarySystemPrompt(params.language);
-    const userPrompt = getPRSummaryUserPrompt(params.language);
+      params.systemPrompt ||
+      processPromptTemplate(PR_SUMMARY_SYSTEM_TEMPLATE, {
+        language: params.language,
+      });
+    const userPrompt = processPromptTemplate(PR_SUMMARY_USER_TEMPLATE, {
+      language: params.language,
+    });
     const userContent = commitMessages.join("\n- ");
 
     const response = await this.executeAIRequest(

@@ -1,5 +1,4 @@
 import { BaseOpenAIProvider } from "@/ai/providers/base-openai-provider";
-import { ConfigurationManager } from "@/config/configuration-manager";
 import { AIModel } from "@/ai/types";
 
 /**
@@ -8,118 +7,77 @@ import { AIModel } from "@/ai/types";
  */
 const doubaoModels: AIModel[] = [
   {
-    id: "doubao-lite-4k",
-    name: "豆包 Lite 4K - 入门级: 适用于日常对话和简单创作任务",
-    maxTokens: { input: 4096, output: 4096 },
-    provider: { id: "doubao", name: "豆包 AI" },
-    cost: {
-      input: 0.0003,
-      output: 0.0006,
-    },
-  },
-  {
-    id: "doubao-lite-character",
-    name: "豆包 Lite Character - 角色扮演: 为角色对话和剧本创作优化",
-    maxTokens: { input: 4096, output: 4096 },
-    provider: { id: "doubao", name: "豆包 AI" },
-    cost: {
-      input: 0.0003,
-      output: 0.0006,
-    },
-  },
-  {
-    id: "doubao-lite-32k",
-    name: "豆包 Lite 32K - 长文本基础版: 支持较长文本处理",
-    maxTokens: { input: 32768, output: 4096 },
-    provider: { id: "doubao", name: "豆包 AI" },
-    cost: {
-      input: 0.0003,
-      output: 0.0006,
-    },
-  },
-  {
-    id: "doubao-lite-128k",
-    name: "豆包 Lite 128K - 超长文本基础版: 支持超长文本理解和生成",
-    maxTokens: { input: 131072, output: 4096 },
-    provider: { id: "doubao", name: "豆包 AI" },
-    cost: {
-      input: 0.0008,
-      output: 0.001,
-    },
-  },
-  {
-    id: "doubao-pro-4k",
-    name: "豆包 Pro 4K - 专业版: 更强的理解能力和生成质量",
-    maxTokens: { input: 4096, output: 4096 },
-    provider: { id: "doubao", name: "豆包 AI" },
-    default: true,
-    cost: {
-      input: 0.0008,
-      output: 0.002,
-    },
-  },
-  {
-    id: "doubao-pro-character",
-    name: "豆包 Pro Character - 专业角色版: 高质量的角色扮演和对话生成",
-    maxTokens: { input: 4096, output: 4096 },
-    provider: { id: "doubao", name: "豆包 AI" },
-    cost: {
-      input: 0.0008,
-      output: 0.002,
-    },
-  },
-  {
-    id: "doubao-pro-functioncall",
-    name: "豆包 Pro Function Call - 函数调用版: 支持复杂的函数调用和工具使用",
-    maxTokens: { input: 4096, output: 4096 },
+    id: "doubao-seed-code-preview-251028",
+    name: "doubao-seed-code (preview-251028) - 深度思考/代码",
+    maxTokens: { input: 224 * 1024, output: 32 * 1024 },
     provider: { id: "doubao", name: "豆包 AI" },
     capabilities: {
       functionCalling: true,
-    },
-    cost: {
-      input: 0.0008,
-      output: 0.002,
+      vision: true,
     },
   },
   {
-    id: "doubao-pro-32k",
-    name: "豆包 Pro 32K - 长文本专业版: 高质量的长文本处理能力",
-    maxTokens: { input: 32768, output: 4096 },
+    id: "doubao-seed-1-6-250615",
+    name: "doubao-seed-1.6 (250615) - 深度思考/多模态",
+    maxTokens: { input: 224 * 1024, output: 32 * 1024 },
     provider: { id: "doubao", name: "豆包 AI" },
-    cost: {
-      input: 0.0008,
-      output: 0.002,
+    capabilities: {
+      functionCalling: true,
+      vision: true,
     },
   },
   {
-    id: "doubao-pro-128k",
-    name: "豆包 Pro 128K - 超长文本专业版: 处理大规模文档和知识库",
-    maxTokens: { input: 131072, output: 4096 },
+    id: "doubao-seed-1-6-251015",
+    name: "doubao-seed-1.6 (251015) - 深度思考/多模态",
+    maxTokens: { input: 224 * 1024, output: 32 * 1024 },
     provider: { id: "doubao", name: "豆包 AI" },
-    cost: {
-      input: 0.005,
-      output: 0.009,
+    default: true,
+    capabilities: {
+      functionCalling: true,
+      vision: true,
     },
   },
   {
-    id: "doubao-pro-256k",
-    name: "豆包 Pro 256K - 特大文本专业版: 支持超大规模文本分析和生成",
-    maxTokens: { input: 262144, output: 4096 },
+    id: "doubao-seed-1-6-lite-251015",
+    name: "doubao-seed-1.6-lite (251015) - 深度思考/多模态/轻量",
+    maxTokens: { input: 224 * 1024, output: 32 * 1024 },
     provider: { id: "doubao", name: "豆包 AI" },
-    cost: {
-      input: 0.005,
-      output: 0.009,
+    capabilities: {
+      functionCalling: true,
+      vision: true,
     },
   },
   {
-    id: "doubao-vision-pro-32k",
-    name: "豆包 Vision Pro 32K - 多模态版: 支持图像理解和文本生成",
-    maxTokens: { input: 32768, output: 4096 },
+    id: "doubao-seed-translation-250915",
+    name: "doubao-seed-translation (250915) - 翻译增强",
+    maxTokens: { input: 1 * 1024, output: 3 * 1024 },
     provider: { id: "doubao", name: "豆包 AI" },
-    cost: {
-      input: 0.02,
-      output: 0.02,
+  },
+  {
+    id: "doubao-seed-1-6-flash-250828",
+    name: "doubao-seed-1.6-flash (250828) - 深度思考/多模态/高速",
+    maxTokens: { input: 224 * 1024, output: 32 * 1024 },
+    provider: { id: "doubao", name: "豆包 AI" },
+    capabilities: {
+      functionCalling: true,
+      vision: true,
     },
+  },
+  {
+    id: "doubao-seed-1-6-vision-250815",
+    name: "doubao-seed-1.6-vision (250815) - 深度思考/视觉",
+    maxTokens: { input: 224 * 1024, output: 32 * 1024 },
+    provider: { id: "doubao", name: "豆包 AI" },
+    capabilities: {
+      functionCalling: true,
+      vision: true,
+    },
+  },
+  {
+    id: "doubao-1-5-pro-32k-character-250715",
+    name: "doubao-1.5-pro-32k (character-250715) - 角色扮演",
+    maxTokens: { input: 32 * 1024, output: 12 * 1024 },
+    provider: { id: "doubao", name: "豆包 AI" },
   },
 ];
 
@@ -132,15 +90,17 @@ export class DoubaoProvider extends BaseOpenAIProvider {
    * 创建豆包AI提供者实例
    * 从配置管理器获取API密钥，初始化基类配置
    */
-  constructor() {
-    const configManager = ConfigurationManager.getInstance();
+  constructor(config?: any) {
+    const apiKey = config?.apiKey;
     super({
-      apiKey: configManager.getConfig("PROVIDERS_DOUBAO_APIKEY"),
-      baseURL: "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
+      apiKey: apiKey,
+      // https://ark.cn-beijing.volces.com/api/v3
+      // baseUrl: "https://ark.cn-beijing.volces.com/api/v3/chat/completions",
+      baseUrl: "https://ark.cn-beijing.volces.com/api/v3",
       providerId: "doubao",
       providerName: "豆包 AI",
       models: doubaoModels,
-      defaultModel: "doubao-pro-4k",
+      defaultModel: "doubao-seed-1-6-251015",
     });
   }
 
@@ -157,10 +117,32 @@ export class DoubaoProvider extends BaseOpenAIProvider {
   }
 
   /**
+   * 获取当前支持的AI模型列表
+   * 火山方舟不支持 models.list() API，直接返回静态模型列表
+   * @returns Promise<AIModel[]> 支持的模型配置数组
+   */
+  async getModels(): Promise<AIModel[]> {
+    return doubaoModels;
+  }
+
+  /**
    * 刷新可用的模型列表
+   * 火山方舟不支持 models.list() API，使用轻量级聊天请求验证连接
    * @returns 返回预定义的模型ID列表
    */
   async refreshModels(): Promise<string[]> {
-    return Promise.resolve(doubaoModels.map((m) => m.id));
+    try {
+      // 使用轻量级聊天请求验证 API 连接
+      await this.openai.chat.completions.create({
+        model: this.config.defaultModel || "doubao-seed-1-6-251015",
+        messages: [{ role: "user", content: "test" }],
+        max_tokens: 1,
+      });
+      // 如果成功，返回静态模型列表
+      return doubaoModels.map((m) => m.id);
+    } catch (error) {
+      console.error("[DoubaoProvider] Failed to verify connection:", error);
+      throw error;
+    }
   }
 }

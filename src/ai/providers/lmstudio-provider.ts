@@ -1,6 +1,5 @@
-import { ConfigurationManager } from "@/config/configuration-manager";
-import { AIModel } from "@/ai/types";
 import { BaseOpenAIProvider } from "@/ai/providers/base-openai-provider";
+import { AIModel } from "@/ai/types";
 
 const provider = { id: "lmstudio", name: "LMStudio" } as const;
 
@@ -15,10 +14,11 @@ const models: AIModel[] = [
 ];
 
 export class LMStudioProvider extends BaseOpenAIProvider {
-  constructor() {
-    const configManager = ConfigurationManager.getInstance();
+  constructor(config?: any) {
+
+    const baseUrl = config?.baseUrl;
     super({
-      baseURL: configManager.getConfig("PROVIDERS_LMSTUDIO_BASEURL"),
+      baseUrl: baseUrl,
       providerId: "lmstudio",
       providerName: "LMStudio",
       models: models,

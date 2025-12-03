@@ -1,11 +1,11 @@
-import { ConfigurationManager } from "@/config/configuration-manager";
-import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
 import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
+import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
 import { getSystemPrompt } from "@/ai/utils/generate-helper";
 import {
-  getPRSummarySystemPrompt,
-  getPRSummaryUserPrompt,
+  PR_SUMMARY_SYSTEM_TEMPLATE,
+  PR_SUMMARY_USER_TEMPLATE,
 } from "@/prompt/pr-summary";
+import { processPromptTemplate } from "@/utils/prompt-template";
 
 /**
  * Cloudflare Workers AI supported models
@@ -78,11 +78,11 @@ export class CloudflareWorkersAIProvider extends AbstractAIProvider {
   private accountId: string;
   private apiKey: string;
 
-  constructor() {
+  constructor(config?: any) {
     super();
-    const configManager = ConfigurationManager.getInstance();
-    this.apiKey = configManager.getConfig("PROVIDERS_CLOUDFLARE_APIKEY");
-    this.accountId = configManager.getConfig("PROVIDERS_CLOUDFLARE_ACCOUNTID");
+
+    this.apiKey = config?.apiKey;
+    this.accountId = config?.accountId;
 
     this.config = {
       apiKey: this.apiKey,
@@ -287,6 +287,33 @@ export class CloudflareWorkersAIProvider extends AbstractAIProvider {
   }
 
   async refreshModels(): Promise<string[]> {
+    if (!this.apiKey || !this.accountId) {
+      throw new Error("Cloudflare API key or Account ID not configured");
+    }
+    // Validate connection by making a test API call
+    const modelId = this.config.defaultModel;
+    const url = `https://api.cloudflare.com/client/v4/accounts/${this.accountId}/ai/run/${modelId}`;
+
+    const response = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${this.apiKey}`,
+      },
+      body: JSON.stringify({
+        messages: [{ role: "user", content: "test" }],
+        max_tokens: 1,
+      }),
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      throw new Error(
+        `Cloudflare API validation failed: ${response.statusText} - ${errorText}`
+      );
+    }
+
+    // If successful, return static model list
     return Promise.resolve(this.config.models.map((m) => m.id));
   }
 
@@ -295,8 +322,13 @@ export class CloudflareWorkersAIProvider extends AbstractAIProvider {
     commitMessages: string[]
   ): Promise<import("../types").AIResponse> {
     const systemPrompt =
-      params.systemPrompt || getPRSummarySystemPrompt(params.language);
-    const userPrompt = getPRSummaryUserPrompt(params.language);
+      params.systemPrompt ||
+      processPromptTemplate(PR_SUMMARY_SYSTEM_TEMPLATE, {
+        language: params.language,
+      });
+    const userPrompt = processPromptTemplate(PR_SUMMARY_USER_TEMPLATE, {
+      language: params.language,
+    });
     const userContent = commitMessages.join("\n- ");
 
     const response = await this.executeAIRequest(

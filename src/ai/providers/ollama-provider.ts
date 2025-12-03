@@ -1,20 +1,20 @@
-import { Ollama } from "ollama";
+import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
 import {
+  AIMessage,
   AIRequestParams,
   AIResponse,
   type AIModel,
   type AIProviders,
-  AIMessage,
 } from "@/ai/types";
-import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
-import { AIProvider } from "@/config/types";
-import { ConfigurationManager } from "@/config/configuration-manager";
-import { notify } from "@/utils/notification/notification-manager";
-import {
-  getPRSummarySystemPrompt,
-  getPRSummaryUserPrompt,
-} from "@/prompt/pr-summary";
 import { getSystemPrompt } from "@/ai/utils/generate-helper"; // Import getSystemPrompt
+import { AIProvider } from "@/config/types";
+import {
+  PR_SUMMARY_SYSTEM_TEMPLATE,
+  PR_SUMMARY_USER_TEMPLATE,
+} from "@/prompt/pr-summary";
+import { notify } from "@/utils/notification/notification-manager";
+import { processPromptTemplate } from "@/utils/prompt-template";
+import { Ollama } from "ollama";
 
 /**
  * Ollama AI服务提供者实现类
@@ -61,17 +61,14 @@ export class OllamaProvider extends AbstractAIProvider {
     },
   ];
 
-  /** 配置管理器实例 */
-  private configManager: ConfigurationManager;
-
   /**
    * 创建Ollama提供者实例
    * 初始化Ollama客户端并配置基础URL
    */
-  constructor() {
+  constructor(config?: any) {
     super();
-    this.configManager = ConfigurationManager.getInstance();
-    const baseUrl = this.getBaseUrl();
+    const baseUrl = config?.baseUrl || "http://localhost:11434";
+
     this.ollama = new Ollama({
       host: baseUrl,
     });
@@ -83,10 +80,7 @@ export class OllamaProvider extends AbstractAIProvider {
    * @private
    */
   private getBaseUrl(): string {
-    return (
-      this.configManager.getConfig("PROVIDERS_OLLAMA_BASEURL") ||
-      "http://localhost:11434"
-    );
+    return "http://localhost:11434";
   }
 
   /**
@@ -95,15 +89,8 @@ export class OllamaProvider extends AbstractAIProvider {
    * @throws 如果获取失败则返回空数组并显示错误通知
    */
   async refreshModels(): Promise<string[]> {
-    try {
-      const response = await this.ollama.list();
-      notify.info("ollama.models.updated");
-      return response.models.map((model) => model.name);
-    } catch (error) {
-      console.error("Failed to fetch Ollama models:", error);
-      notify.error("ollama.models.fetch.failed");
-      return [];
-    }
+    const response = await this.ollama.list();
+    return response.models.map((model) => model.name);
   }
 
   /**
@@ -224,12 +211,9 @@ export class OllamaProvider extends AbstractAIProvider {
    * 获取默认模型
    */
   protected getDefaultModel(): AIModel {
-    const defaultModelConfig = this.configManager.getConfig(
-      "BASE_MODEL"
-    ) as any;
     return {
-      id: defaultModelConfig?.id || "llama2:latest",
-      name: defaultModelConfig?.name || "Default Ollama Model",
+      id: "llama2:latest",
+      name: "Default Ollama Model",
       maxTokens: { input: 4096, output: 4096 },
       provider: this.provider,
     };
@@ -295,7 +279,7 @@ export class OllamaProvider extends AbstractAIProvider {
   /**
    * 资源释放
    */
-  dispose() {}
+  dispose() { }
 
   /**
    * 生成PR摘要
@@ -308,8 +292,13 @@ export class OllamaProvider extends AbstractAIProvider {
     commitMessages: string[]
   ): Promise<AIResponse> {
     const systemPrompt =
-      params.systemPrompt || getPRSummarySystemPrompt(params.language);
-    const userPrompt = getPRSummaryUserPrompt(params.language);
+      params.systemPrompt ||
+      processPromptTemplate(PR_SUMMARY_SYSTEM_TEMPLATE, {
+        language: params.language,
+      });
+    const userPrompt = processPromptTemplate(PR_SUMMARY_USER_TEMPLATE, {
+      language: params.language,
+    });
     const userContent = `- ${commitMessages.join("\n- ")}`;
 
     const response = await this.executeAIRequest({

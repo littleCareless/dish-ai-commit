@@ -1,14 +1,14 @@
-import { ConfigurationManager } from "@/config/configuration-manager";
-import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
 import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
-import { VertexAI, Content, Part } from "@google-cloud/vertexai";
-import { GoogleAuthOptions } from "google-auth-library";
-import {
-  getPRSummarySystemPrompt,
-  getPRSummaryUserPrompt,
-} from "@/prompt/pr-summary";
+import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
 import { getSystemPrompt } from "@/ai/utils/generate-helper";
+import {
+  PR_SUMMARY_SYSTEM_TEMPLATE,
+  PR_SUMMARY_USER_TEMPLATE,
+} from "@/prompt/pr-summary";
 import { ensureInitialized } from "@/utils";
+import { processPromptTemplate } from "@/utils/prompt-template";
+import { Content, Part, VertexAI } from "@google-cloud/vertexai";
+import { GoogleAuthOptions } from "google-auth-library";
 
 /**
  * Vertex AI Provider Configuration Interface
@@ -82,32 +82,16 @@ export class VertexAIProvider extends AbstractAIProvider {
   } as const;
   protected config: VertexAIProviderConfig;
 
-  constructor() {
+  constructor(config?: any) {
     super();
-    const configManager = ConfigurationManager.getInstance();
 
-    const apiEndpoint = configManager.getConfig(
-      "PROVIDERS_VERTEXAI_APIENDPOINT"
-    );
-    const authOptionsString = configManager.getConfig(
-      "PROVIDERS_VERTEXAI_GOOGLEAUTHOPTIONS"
-    );
-
-    let googleAuthOptions: GoogleAuthOptions | undefined;
-    if (authOptionsString) {
-      try {
-        googleAuthOptions = JSON.parse(authOptionsString);
-      } catch (error) {
-        console.error(
-          "Failed to parse Vertex AI GoogleAuthOptions from settings:",
-          error
-        );
-      }
-    }
+    const apiEndpoint = config?.apiEndpoint;
+    const googleAuthOptions: GoogleAuthOptions | undefined =
+      config?.googleAuthOptions;
 
     this.config = {
-      project: configManager.getConfig("PROVIDERS_VERTEXAI_PROJECTID"),
-      location: configManager.getConfig("PROVIDERS_VERTEXAI_LOCATION"),
+      project: config?.project,
+      location: config?.location,
       apiEndpoint: apiEndpoint || undefined,
       googleAuthOptions,
       providerId: "vertexai",
@@ -250,6 +234,26 @@ export class VertexAIProvider extends AbstractAIProvider {
   }
 
   async refreshModels(): Promise<string[]> {
+    if (!this.vertexAI) {
+      throw new Error("Vertex AI client not initialized. Please check your project and location.");
+    }
+    // Validate connection by attempting to list models or make a lightweight API call
+    // Note: Vertex AI SDK may not have a direct models.list(), so we validate by attempting
+    // to get a model instance
+    try {
+      const testModel = this.vertexAI.getGenerativeModel({
+        model: this.config.defaultModel
+      });
+      // The getGenerativeModel doesn't validate the connection until we use it,
+      // so we need to make an actual API call here
+      // For now, we'll just verify the client is initialized
+      if (!testModel) {
+        throw new Error("Failed to initialize Vertex AI model");
+      }
+    } catch (error) {
+      throw error;
+    }
+    // If successful, return static model list
     return Promise.resolve(this.config.models.map((m) => m.id));
   }
 
@@ -269,8 +273,13 @@ export class VertexAIProvider extends AbstractAIProvider {
       "generatePRSummary is not fully implemented for VertexAIProvider and will return an empty response."
     );
     const systemPrompt =
-      params.systemPrompt || getPRSummarySystemPrompt(params.language);
-    const userPrompt = getPRSummaryUserPrompt(params.language);
+      params.systemPrompt ||
+      processPromptTemplate(PR_SUMMARY_SYSTEM_TEMPLATE, {
+        language: params.language,
+      });
+    const userPrompt = processPromptTemplate(PR_SUMMARY_USER_TEMPLATE, {
+      language: params.language,
+    });
     const userContent = commitMessages.join("\n- ");
 
     const response = await this.executeAIRequest(

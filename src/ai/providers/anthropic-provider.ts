@@ -2,7 +2,6 @@ import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
 import type { OpenAIProviderConfig } from "@/ai/providers/base-openai-provider";
 import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
 import { getSystemPrompt } from "@/ai/utils/generate-helper"; // Import getSystemPrompt
-import { ConfigurationManager } from "@/config/configuration-manager";
 import Anthropic from "@anthropic-ai/sdk";
 
 /**
@@ -60,21 +59,28 @@ export class AnthropicAIProvider extends AbstractAIProvider {
    * 创建Anthropic AI提供者实例
    * 从配置管理器获取API密钥，初始化Anthropic
    */
-  constructor() {
+  constructor(config?: any) {
     super();
-    const configManager = ConfigurationManager.getInstance();
+    const apiKey = config?.apiKey;
+    const baseUrl = config?.baseUrl || "https://api.anthropic.com/";
+    const providerId = config?.providerId || "anthropic";
+    const providerName = config?.providerName || "Anthropic";
+    const models = config?.models || anthropicModels;
+    const defaultModel = config?.defaultModel || "claude-3-opus-20240229";
+
     this.config = {
-      apiKey: configManager.getConfig("PROVIDERS_ANTHROPIC_APIKEY"),
-      baseURL: "https://api.anthropic.com/",
-      providerId: "anthropic",
-      providerName: "Anthropic",
-      models: anthropicModels,
-      defaultModel: "claude-3-opus-20240229",
+      apiKey: apiKey,
+      baseUrl: baseUrl,
+      providerId: providerId,
+      providerName: providerName,
+      models: models,
+      defaultModel: defaultModel,
     };
 
     if (this.config.apiKey) {
       this.anthropic = new Anthropic({
         apiKey: this.config.apiKey,
+        baseURL: this.config.baseUrl, // Use the determined base URL
       });
     }
   }
@@ -250,7 +256,49 @@ export class AnthropicAIProvider extends AbstractAIProvider {
    * @returns 返回预定义的模型ID列表
    */
   async refreshModels(): Promise<string[]> {
-    return Promise.resolve(this.config.models.map((m) => m.id));
+    if (!this.config.apiKey) {
+      throw new Error("Anthropic API key is missing");
+    }
+
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/models", {
+        headers: {
+          "x-api-key": this.config.apiKey,
+          "anthropic-version": "2023-06-01",
+          "Content-Type": "application/json",
+        },
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(
+          `Failed to fetch models: ${response.status} ${response.statusText} - ${errorText}`
+        );
+      }
+
+      const data = (await response.json()) as { data: any[] };
+      if (Array.isArray(data.data)) {
+        const fetchedModels: AIModel[] = data.data.map((m: any) => ({
+          id: m.id,
+          name: m.display_name || m.id,
+          maxTokens: { input: 200000, output: 4096 }, // Default values
+          provider: { id: "anthropic", name: "Anthropic" },
+          capabilities: {
+            streaming: true,
+            functionCalling: false, // Can be refined based on model capabilities if known
+          },
+        }));
+
+        // Update internal config models
+        this.config.models = fetchedModels;
+        return fetchedModels.map((m) => m.id);
+      } else {
+        throw new Error("Invalid response format from Anthropic API");
+      }
+    } catch (error) {
+      console.error("Failed to refresh Anthropic models:", error);
+      throw error;
+    }
   }
 
   /**

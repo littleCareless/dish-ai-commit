@@ -1,9 +1,8 @@
-import { ConfigurationManager } from "@/config/configuration-manager";
-import { AIModel, type AIProviders } from "@/ai/types";
 import {
   BaseOpenAIProvider,
   OpenAIProviderConfig,
 } from "@/ai/providers/base-openai-provider";
+import { AIModel } from "@/ai/types";
 
 /**
  * xAI支持的AI模型配置列表
@@ -42,20 +41,20 @@ export class XAIProvider extends BaseOpenAIProvider {
    * 创建xAI AI提供者实例
    * 从配置管理器获取API密钥，并设置OpenAI兼容配置
    */
-  constructor() {
-    const configManager = ConfigurationManager.getInstance();
-    const apiKey = configManager.getConfig("PROVIDERS_XAI_APIKEY");
+  constructor(config?: any) {
 
-    const config: OpenAIProviderConfig = {
+    const apiKey = config?.apiKey;
+
+    const providerConfig: OpenAIProviderConfig = {
       apiKey,
-      baseURL: "https://api.xai.com/v1",
+      baseUrl: "https://api.xai.com/v1",
       providerId: "xai",
       providerName: "xAI",
       models: xaiModels,
       defaultModel: "grok-1.5-flash",
     };
 
-    super(config);
+    super(providerConfig);
   }
 
   /**

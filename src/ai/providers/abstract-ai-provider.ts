@@ -14,19 +14,25 @@ import {
   getCodeReviewPrompt,
   getFileDescriptionPrompt,
   getGlobalSummaryPrompt,
-  getSystemPrompt
+  getSystemPrompt,
 } from "@/ai/utils/generate-helper";
-import { ConfigurationManager } from "@/config/configuration-manager";
 import { getCommitMessageTools } from "@/prompt/generate-commit";
 import {
-  getPRSummarySystemPrompt,
-  getPRSummaryUserPrompt,
+  PR_SUMMARY_SYSTEM_TEMPLATE,
+  PR_SUMMARY_USER_TEMPLATE,
 } from "@/prompt/pr-summary";
-import { getWeeklyReportPrompt } from "@/prompt/weekly-report";
+import {
+  WEEKLY_REPORT_TEMPLATE,
+  getWeeklyReportVariables,
+} from "@/prompt/weekly-report";
+import { PromptManagerService } from "@/services/core/prompt-manager-service";
 import { TokenStatsService } from "@/services/core/token-stats-service";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
+import { PromptKey } from "@/types/prompts";
 import { formatMessage } from "@/utils/i18n/localization-manager";
 import { Logger } from "@/utils/logger";
+import { processPromptTemplate } from "@/utils/prompt-template";
 import { tokenizerService } from "@/utils/tokenizer";
 
 /**
@@ -36,9 +42,14 @@ import { tokenizerService } from "@/utils/tokenizer";
 export abstract class AbstractAIProvider implements AIProvider {
   protected logger: Logger;
   protected config: any;
+  protected globalConfig: any = {};
 
   constructor() {
     this.logger = Logger.getInstance("Dish AI Commit Gen");
+  }
+
+  public setGlobalConfig(config: any): void {
+    this.globalConfig = config;
   }
 
   /**
@@ -50,14 +61,21 @@ export abstract class AbstractAIProvider implements AIProvider {
     this.logger.info(`Generating commit with provider: ${this.getId()}`);
     try {
       if (!params.messages) {
-        const systemPrompt = await getSystemPrompt(params);
+        const systemPrompt = await getSystemPrompt(
+          params,
+          false,
+          false,
+          this.globalConfig
+        );
         params.messages = [
           { role: "system", content: systemPrompt },
           { role: "user", content: params.diff },
         ];
       }
 
-      const preferences = PreferencesSettingsManager.getInstance().getSettings();
+      const preferences =
+        this.globalConfig.preferences ||
+        PreferencesSettingsManager.getInstance().getSettings();
       const result = await this.executeAIRequest(params, {
         temperature: preferences.commitTemperature,
       });
@@ -66,9 +84,12 @@ export abstract class AbstractAIProvider implements AIProvider {
 
       return result;
     } catch (error) {
-      this.logger.logError(error as Error, formatMessage("generation.failed", [
-        error instanceof Error ? error.message : String(error),
-      ]));
+      this.logger.logError(
+        error as Error,
+        formatMessage("generation.failed", [
+          error instanceof Error ? error.message : String(error),
+        ])
+      );
       throw new Error(
         formatMessage("generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -86,28 +107,39 @@ export abstract class AbstractAIProvider implements AIProvider {
     params: AIRequestParams
   ): Promise<AsyncIterable<string>> {
     this.logger.info(`Generating commit stream with provider: ${this.getId()}`);
-    console.log('[AbstractAIProvider] generateCommitStream - params:', {
+    console.log("[AbstractAIProvider] generateCommitStream - params:", {
       feature: params.feature,
       hasModel: !!params.model,
       hasMessages: Array.isArray(params.messages),
-      messageCount: params.messages?.length
+      messageCount: params.messages?.length,
     });
     try {
       if (!params.messages) {
-        const systemPrompt = await getSystemPrompt(params);
+        const systemPrompt = await getSystemPrompt(
+          params,
+          false,
+          false,
+          this.globalConfig
+        );
         params.messages = [
           { role: "system", content: systemPrompt },
           { role: "user", content: params.diff },
         ];
       }
 
-      const preferences = PreferencesSettingsManager.getInstance().getSettings();
+      const preferences =
+        this.globalConfig.preferences ||
+        PreferencesSettingsManager.getInstance().getSettings();
       const stream = await this.executeAIStreamRequest(params, {
         temperature: preferences.commitTemperature,
       });
 
       const self = this;
-      const model = params.model || this.getDefaultModel();
+      // 确保 params.model 存在，用于后续的 token 统计
+      if (!params.model) {
+        params.model = this.getDefaultModel();
+      }
+      const model = params.model;
       let fullContent = "";
 
       async function* wrappedStream() {
@@ -148,9 +180,12 @@ export abstract class AbstractAIProvider implements AIProvider {
     } catch (error) {
       // 错误现在由 executeStreamWithRetry 内部处理和抛出
       // 这里只捕获最终的、不可重试的错误
-      this.logger.logError(error as Error, formatMessage("generation.failed", [
-        error instanceof Error ? error.message : String(error),
-      ]));
+      this.logger.logError(
+        error as Error,
+        formatMessage("generation.failed", [
+          error instanceof Error ? error.message : String(error),
+        ])
+      );
       throw new Error(
         formatMessage("generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -167,19 +202,46 @@ export abstract class AbstractAIProvider implements AIProvider {
     );
     try {
       if (!params.messages) {
-        const systemPrompt = await getSystemPrompt(params);
+        const systemPrompt = await getSystemPrompt(
+          params,
+          false,
+          false,
+          this.globalConfig
+        );
         params.messages = [
           { role: "system", content: systemPrompt },
           { role: "user", content: params.diff },
         ];
       }
-      const config = ConfigurationManager.getInstance().getConfiguration();
       // Directly await the async function
       const { loadCommitlintConfig } = await import("../../utils/commitlint");
       const commitlintConfig = await loadCommitlintConfig(params.workspaceRoot);
-      const tools = getCommitMessageTools(config, commitlintConfig);
 
-      const preferences = PreferencesSettingsManager.getInstance().getSettings();
+      // We need to construct a config object for getCommitMessageTools if it expects one
+      // But getCommitMessageTools likely expects the full config object.
+      // Let's check getCommitMessageTools signature.
+      // Assuming we can pass a mock config or update getCommitMessageTools.
+      // For now, let's construct a minimal config object from FeatureSettings.
+      const featureSettings =
+        ProfileManagerService.getInstance().getFeatureSettings();
+      const preferences =
+        this.globalConfig.preferences ||
+        PreferencesSettingsManager.getInstance().getSettings();
+
+      const mockConfig = {
+        base: {
+          language: preferences.language,
+        },
+        features: {
+          commitFormat: {
+            enableBody: featureSettings.enableBody,
+            enableEmoji: featureSettings.enableEmoji,
+          },
+        },
+      } as any;
+
+      const tools = getCommitMessageTools(mockConfig, commitlintConfig);
+
       const result = await this.executeAIRequest(params, {
         temperature: preferences.commitTemperature,
         tools: tools,
@@ -189,7 +251,7 @@ export abstract class AbstractAIProvider implements AIProvider {
         const toolCall = result.tool_calls[0];
         if (toolCall.function.name === "generate_commit_message") {
           const args = JSON.parse(toolCall.function.arguments);
-          const { enableBody, enableEmoji } = config.features.commitFormat;
+          const { enableBody, enableEmoji } = featureSettings;
           const scope = args.scope ? `(${args.scope})` : "";
           const emoji = enableEmoji && args.emoji ? `${args.emoji} ` : "";
           const body = enableBody && args.body ? `\n\n${args.body}` : "";
@@ -216,9 +278,12 @@ export abstract class AbstractAIProvider implements AIProvider {
         "Failed to generate commit message with function calling."
       );
     } catch (error) {
-      this.logger.logError(error as Error, formatMessage("generation.failed", [
-        error instanceof Error ? error.message : String(error),
-      ]));
+      this.logger.logError(
+        error as Error,
+        formatMessage("generation.failed", [
+          error instanceof Error ? error.message : String(error),
+        ])
+      );
       throw new Error(
         formatMessage("generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -236,13 +301,19 @@ export abstract class AbstractAIProvider implements AIProvider {
     this.logger.info(`Generating code review with provider: ${this.getId()}`);
     try {
       if (!params.messages) {
-        const systemPrompt = getCodeReviewPrompt(params);
+        const systemPrompt = await getCodeReviewPrompt(
+          params,
+          false,
+          this.globalConfig
+        );
         params.messages = [
           { role: "system", content: systemPrompt },
           { role: "user", content: params.diff },
         ];
       }
-      const preferences = PreferencesSettingsManager.getInstance().getSettings();
+      const preferences =
+        this.globalConfig.preferences ||
+        PreferencesSettingsManager.getInstance().getSettings();
       const result = await this.executeAIRequest(params, {
         // parseAsJSON: true,
         temperature: preferences.reviewTemperature,
@@ -263,9 +334,12 @@ export abstract class AbstractAIProvider implements AIProvider {
         throw new Error("Failed to parse code review result as JSON");
       }
     } catch (error) {
-      this.logger.logError(error as Error, formatMessage("codeReview.generation.failed", [
-        error instanceof Error ? error.message : String(error),
-      ]));
+      this.logger.logError(
+        error as Error,
+        formatMessage("codeReview.generation.failed", [
+          error instanceof Error ? error.message : String(error),
+        ])
+      );
       throw new Error(
         formatMessage("codeReview.generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -283,7 +357,11 @@ export abstract class AbstractAIProvider implements AIProvider {
     this.logger.info(`Generating branch name with provider: ${this.getId()}`);
     try {
       if (!params.messages) {
-        const systemPrompt = getBranchNameSystemPrompt(params);
+        const systemPrompt = getBranchNameSystemPrompt(
+          params,
+          false,
+          this.globalConfig
+        );
         const userPrompt = getBranchNameUserPrompt(params.diff);
         params.messages = [
           { role: "system", content: systemPrompt },
@@ -291,7 +369,9 @@ export abstract class AbstractAIProvider implements AIProvider {
           { role: "user", content: params.diff },
         ];
       }
-      const preferences = PreferencesSettingsManager.getInstance().getSettings();
+      const preferences =
+        this.globalConfig.preferences ||
+        PreferencesSettingsManager.getInstance().getSettings();
       const result = await this.executeAIRequest(params, {
         temperature: preferences.branchNameTemperature,
       });
@@ -300,9 +380,12 @@ export abstract class AbstractAIProvider implements AIProvider {
 
       return result;
     } catch (error) {
-      this.logger.logError(error as Error, formatMessage("branchName.generation.failed", [
-        error instanceof Error ? error.message : String(error),
-      ]));
+      this.logger.logError(
+        error as Error,
+        formatMessage("branchName.generation.failed", [
+          error instanceof Error ? error.message : String(error),
+        ])
+      );
       throw new Error(
         formatMessage("branchName.generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -328,7 +411,29 @@ export abstract class AbstractAIProvider implements AIProvider {
   ): Promise<AIResponse> {
     this.logger.info(`Generating weekly report with provider: ${this.getId()}`);
     try {
-      let systemPrompt = getWeeklyReportPrompt(period);
+      // 优先从 prompt-manager-service 获取自定义 prompt
+      const promptManager = PromptManagerService.getInstance();
+      const promptDetail = promptManager.getPromptDetail(
+        PromptKey.WeeklyReport
+      );
+
+      let systemPrompt: string;
+      if (promptDetail.isCustomized && promptDetail.content.trim() !== "") {
+        systemPrompt = promptDetail.content;
+      } else {
+        // 使用默认模板
+        const profileManager = ProfileManagerService.getInstance();
+        const profile = await profileManager.getProfileForMode();
+        const baseLanguage = profile?.preferences?.language || "English";
+
+        const variables = getWeeklyReportVariables({
+          language: baseLanguage,
+          startDate: period.startDate,
+          endDate: period.endDate,
+        });
+
+        systemPrompt = processPromptTemplate(WEEKLY_REPORT_TEMPLATE, variables);
+      }
       if (users && users.length > 0) {
         // 如果有用户信息，可以附加到 systemPrompt 或 userContent
         // 例如，附加到 systemPrompt
@@ -343,6 +448,7 @@ export abstract class AbstractAIProvider implements AIProvider {
         diff: userContent, // diff 字段现在承载的是 commit messages
         model: model || this.getDefaultModel(),
         additionalContext: users ? `Team members: ${users.join(", ")}` : "", // 可以用 additionalContext
+        feature: "weekly-report",
       };
       const result = await this.executeAIRequest(
         {
@@ -353,7 +459,10 @@ export abstract class AbstractAIProvider implements AIProvider {
           ],
         },
         {
-          temperature: PreferencesSettingsManager.getInstance().getSettings().weeklyReportTemperature,
+          temperature: (
+            this.globalConfig.preferences ||
+            PreferencesSettingsManager.getInstance().getSettings()
+          ).weeklyReportTemperature,
         }
       );
 
@@ -361,9 +470,12 @@ export abstract class AbstractAIProvider implements AIProvider {
 
       return result;
     } catch (error) {
-      this.logger.logError(error as Error, formatMessage("weeklyReport.generation.failed", [
-        error instanceof Error ? error.message : String(error),
-      ]));
+      this.logger.logError(
+        error as Error,
+        formatMessage("weeklyReport.generation.failed", [
+          error instanceof Error ? error.message : String(error),
+        ])
+      );
       throw new Error(
         formatMessage("weeklyReport.generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -380,13 +492,18 @@ export abstract class AbstractAIProvider implements AIProvider {
   async generateLayeredCommit(
     params: AIRequestParams
   ): Promise<LayeredCommitMessage> {
-    this.logger.info(`Generating layered commit with provider: ${this.getId()}`);
+    this.logger.info(
+      `Generating layered commit with provider: ${this.getId()}`
+    );
     try {
       const modifiedFiles = extractModifiedFilePaths(params.diff);
 
       // 步骤1: 生成全局摘要
       this.logger.info("Generating global summary for layered commit...");
-      const summarySystemPrompt = await getGlobalSummaryPrompt(params);
+      const summarySystemPrompt = await getGlobalSummaryPrompt(
+        params,
+        this.globalConfig
+      );
       const summaryResult = await this.executeAIRequest(
         {
           ...params,
@@ -396,7 +513,10 @@ export abstract class AbstractAIProvider implements AIProvider {
           ],
         },
         {
-          temperature: PreferencesSettingsManager.getInstance().getSettings().commitTemperature,
+          temperature: (
+            this.globalConfig.preferences ||
+            PreferencesSettingsManager.getInstance().getSettings()
+          ).commitTemperature,
         }
       );
       await this.recordTokenUsage(summaryResult, params);
@@ -419,7 +539,8 @@ export abstract class AbstractAIProvider implements AIProvider {
         if (fileDiff) {
           const fileSystemPrompt = await getFileDescriptionPrompt(
             params,
-            filePath
+            filePath,
+            this.globalConfig
           );
           const fileResult = await this.executeAIRequest(
             {
@@ -430,7 +551,10 @@ export abstract class AbstractAIProvider implements AIProvider {
               ],
             },
             {
-              temperature: PreferencesSettingsManager.getInstance().getSettings().commitTemperature,
+              temperature: (
+                this.globalConfig.preferences ||
+                PreferencesSettingsManager.getInstance().getSettings()
+              ).commitTemperature,
             }
           );
 
@@ -445,9 +569,12 @@ export abstract class AbstractAIProvider implements AIProvider {
 
       return { summary, fileChanges };
     } catch (error) {
-      this.logger.logError(error as Error, formatMessage("layeredCommit.generation.failed", [
-        error instanceof Error ? error.message : String(error),
-      ]));
+      this.logger.logError(
+        error as Error,
+        formatMessage("layeredCommit.generation.failed", [
+          error instanceof Error ? error.message : String(error),
+        ])
+      );
       throw new Error(
         formatMessage("layeredCommit.generation.failed", [
           error instanceof Error ? error.message : String(error),
@@ -467,8 +594,13 @@ export abstract class AbstractAIProvider implements AIProvider {
     commitMessages: string[]
   ): Promise<AIResponse> {
     const systemPrompt =
-      params.systemPrompt || getPRSummarySystemPrompt(params.language);
-    const userPrompt = getPRSummaryUserPrompt(params.language);
+      params.systemPrompt ||
+      processPromptTemplate(PR_SUMMARY_SYSTEM_TEMPLATE, {
+        language: params.language,
+      });
+    const userPrompt = processPromptTemplate(PR_SUMMARY_USER_TEMPLATE, {
+      language: params.language,
+    });
 
     const userContent = commitMessages.join("\n- ");
     const commitMessagesString = commitMessages.join("\n- ");
@@ -522,11 +654,14 @@ export abstract class AbstractAIProvider implements AIProvider {
         "unknown-model";
       const feature = params.feature || "unknown";
 
-      console.log(`[AbstractAIProvider] Recording token usage for ${this.getId()}:`, {
-        tokens: result.usage.totalTokens,
-        model,
-        feature,
-      });
+      console.log(
+        `[AbstractAIProvider] Recording token usage for ${this.getId()}:`,
+        {
+          tokens: result.usage.totalTokens,
+          model,
+          feature,
+        }
+      );
 
       await tokenStatsService.addTokens(
         result.usage.totalTokens,

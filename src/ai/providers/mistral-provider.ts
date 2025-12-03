@@ -1,14 +1,14 @@
-import { Mistral } from "@mistralai/mistralai";
-import * as components from "@mistralai/mistralai/models/components";
-import { ConfigurationManager } from "@/config/configuration-manager";
-import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
 import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
 import type { OpenAIProviderConfig } from "@/ai/providers/base-openai-provider";
-import {
-  getPRSummarySystemPrompt,
-  getPRSummaryUserPrompt,
-} from "@/prompt/pr-summary";
+import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
 import { getSystemPrompt } from "@/ai/utils/generate-helper";
+import {
+  PR_SUMMARY_SYSTEM_TEMPLATE,
+  PR_SUMMARY_USER_TEMPLATE,
+} from "@/prompt/pr-summary";
+import { processPromptTemplate } from "@/utils/prompt-template";
+import { Mistral } from "@mistralai/mistralai";
+import * as components from "@mistralai/mistralai/models/components";
 
 /**
  * MistralAI支持的AI模型配置列表
@@ -68,12 +68,13 @@ export class MistralAIProvider extends AbstractAIProvider {
   } as const;
   protected config: OpenAIProviderConfig;
 
-  constructor() {
+  constructor(config?: any) {
     super();
-    const configManager = ConfigurationManager.getInstance();
+
+    const apiKey = config?.apiKey;
     this.config = {
-      apiKey: configManager.getConfig("PROVIDERS_MISTRAL_APIKEY"),
-      baseURL: "https://api.mistral.ai/v1/",
+      apiKey: apiKey,
+      baseUrl: "https://api.mistral.ai/v1/",
       providerId: "mistral",
       providerName: "Mistral AI",
       models: mistralModels,
@@ -200,7 +201,13 @@ export class MistralAIProvider extends AbstractAIProvider {
   }
 
   async refreshModels(): Promise<string[]> {
-    return Promise.resolve(this.config.models.map((m) => m.id));
+    if (!this.client) {
+      throw new Error(
+        "Mistral API client not initialized. Please check your API key."
+      );
+    }
+    const response = await this.client.models.list();
+    return (response.data || []).map((model: any) => model.id);
   }
 
   getName(): string {
@@ -216,8 +223,13 @@ export class MistralAIProvider extends AbstractAIProvider {
     commitMessages: string[]
   ): Promise<import("../types").AIResponse> {
     const systemPrompt =
-      params.systemPrompt || getPRSummarySystemPrompt(params.language);
-    const userPrompt = getPRSummaryUserPrompt(params.language);
+      params.systemPrompt ||
+      processPromptTemplate(PR_SUMMARY_SYSTEM_TEMPLATE, {
+        language: params.language,
+      });
+    const userPrompt = processPromptTemplate(PR_SUMMARY_USER_TEMPLATE, {
+      language: params.language,
+    });
     const userContent = commitMessages.join("\n- ");
 
     const response = await this.executeAIRequest(

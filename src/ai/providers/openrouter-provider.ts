@@ -1,7 +1,5 @@
-import { ConfigurationManager } from "@/config/configuration-manager";
-import { notify } from "@/utils/notification/notification-manager";
-import { type AIModel } from "@/ai/types";
 import { BaseOpenAIProvider } from "@/ai/providers/base-openai-provider";
+import { type AIModel } from "@/ai/types";
 
 /** OpenRouter服务提供者标识信息 */
 const provider = { id: "openrouter", name: "OpenRouter" } as const;
@@ -59,11 +57,12 @@ export class OpenRouterProvider extends BaseOpenAIProvider {
    * 创建OpenRouter提供者实例
    * 从配置管理器获取必要的配置信息并初始化基类
    */
-  constructor() {
-    const configManager = ConfigurationManager.getInstance();
+  constructor(config?: any) {
+
+    const apiKey = config?.apiKey;
     super({
-      apiKey: configManager.getConfig("PROVIDERS_OPENROUTER_APIKEY"),
-      baseURL: "https://openrouter.ai/api/v1",
+      apiKey: apiKey,
+      baseUrl: "https://openrouter.ai/api/v1",
       apiVersion: "v1",
       providerId: "openrouter",
       providerName: "OpenRouter",
@@ -119,14 +118,7 @@ export class OpenRouterProvider extends BaseOpenAIProvider {
    * @throws 如果API调用失败会记录错误并返回空数组
    */
   async refreshModels(): Promise<string[]> {
-    try {
-      const models = await this.openai.models.list();
-      notify.info("openrouter.models.update.success");
-      return models.data.map((model) => model.id);
-    } catch (error) {
-      console.error("Failed to fetch OpenRouter models:", error);
-      notify.error("openrouter.models.fetch.failed");
-      return [];
-    }
+    const models = await this.openai.models.list();
+    return models.data.map((model) => model.id);
   }
 }

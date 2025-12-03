@@ -1,16 +1,16 @@
-import { ConfigurationManager } from "@/config/configuration-manager";
-import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
 import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
+import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
 
 // Perplexity AI API 客户端 (需要安装相应的 npm 包)
 // import { Perplexity } from "perplexity-ai";
 
 import type { OpenAIProviderConfig } from "@/ai/providers/base-openai-provider";
-import {
-  getPRSummarySystemPrompt,
-  getPRSummaryUserPrompt,
-} from "@/prompt/pr-summary";
 import { getSystemPrompt } from "@/ai/utils/generate-helper"; // Import getSystemPrompt
+import {
+  PR_SUMMARY_SYSTEM_TEMPLATE,
+  PR_SUMMARY_USER_TEMPLATE,
+} from "@/prompt/pr-summary";
+import { processPromptTemplate } from "@/utils/prompt-template";
 
 /**
  * Perplexity AI支持的AI模型配置列表
@@ -58,12 +58,12 @@ export class PerplexityAIProvider extends AbstractAIProvider {
    * 创建Perplexity AI提供者实例
    * 从配置管理器获取API密钥，初始化Perplexity AI
    */
-  constructor() {
+  constructor(config?: any) {
     super();
-    const configManager = ConfigurationManager.getInstance();
+
     this.config = {
-      apiKey: configManager.getConfig("PROVIDERS_PERPLEXITY_APIKEY"),
-      baseURL: "https://api.perplexity.ai/",
+      apiKey: config?.apiKey,
+      baseUrl: "https://api.perplexity.ai/",
       providerId: "perplexity",
       providerName: "Perplexity AI",
       models: perplexityModels,
@@ -76,8 +76,12 @@ export class PerplexityAIProvider extends AbstractAIProvider {
         chat: {
           completions: {
             create: async (options: any) => {
-              console.warn("Perplexity client not fully initialized. Returning mock response.");
-              return { choices: [{ message: { content: "Mock Perplexity response" } }] };
+              console.warn(
+                "Perplexity client not fully initialized. Returning mock response."
+              );
+              return {
+                choices: [{ message: { content: "Mock Perplexity response" } }],
+              };
             },
           },
         },
@@ -192,6 +196,11 @@ export class PerplexityAIProvider extends AbstractAIProvider {
    * @returns 返回预定义的模型ID列表
    */
   async refreshModels(): Promise<string[]> {
+    if (!this.perplexityClient) {
+      throw new Error("Perplexity AI client not initialized. Please check your API key.");
+    }
+    // Note: This is a mock implementation. In production, this should make a real API call
+    // to validate the connection before returning the static list.
     return Promise.resolve(this.config.models.map((m) => m.id));
   }
 
@@ -223,8 +232,13 @@ export class PerplexityAIProvider extends AbstractAIProvider {
       "generatePRSummary is not fully implemented for PerplexityAIProvider and will return an empty response."
     );
     const systemPrompt =
-      params.systemPrompt || getPRSummarySystemPrompt(params.language);
-    const userPrompt = getPRSummaryUserPrompt(params.language);
+      params.systemPrompt ||
+      processPromptTemplate(PR_SUMMARY_SYSTEM_TEMPLATE, {
+        language: params.language,
+      });
+    const userPrompt = processPromptTemplate(PR_SUMMARY_USER_TEMPLATE, {
+      language: params.language,
+    });
     const userContent = commitMessages.join("\n- ");
 
     // Perplexity AI的executeAIRequest会将userPrompt和userContent合并

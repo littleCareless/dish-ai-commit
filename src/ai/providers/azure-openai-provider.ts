@@ -1,18 +1,18 @@
-import { ConfigurationManager } from "@/config/configuration-manager";
-import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
 import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
-import OpenAI, { AzureOpenAI } from "openai";
-import { ChatCompletionMessageParam } from "openai/resources";
 import type { OpenAIProviderConfig } from "@/ai/providers/base-openai-provider";
-import {
-  getPRSummarySystemPrompt,
-  getPRSummaryUserPrompt,
-} from "@/prompt/pr-summary";
+import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
 import { getSystemPrompt } from "@/ai/utils/generate-helper";
+import {
+  PR_SUMMARY_SYSTEM_TEMPLATE,
+  PR_SUMMARY_USER_TEMPLATE,
+} from "@/prompt/pr-summary";
+import { processPromptTemplate } from "@/utils/prompt-template";
 import {
   DefaultAzureCredential,
   getBearerTokenProvider,
 } from "@azure/identity";
+import { AzureOpenAI } from "openai";
+import { ChatCompletionMessageParam } from "openai/resources";
 
 /**
  * Azure OpenAI支持的AI模型配置列表
@@ -59,25 +59,25 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
    * 创建Azure OpenAI 提供者实例
    * 从配置管理器获取API密钥，初始化OpenAI
    */
-  constructor() {
+  constructor(config?: any) {
     super();
-    const configManager = ConfigurationManager.getInstance();
+
     this.config = {
-      apiKey: configManager.getConfig("PROVIDERS_AZUREOPENAI_APIKEY"),
-      baseURL: configManager.getConfig("PROVIDERS_AZUREOPENAI_ENDPOINT"),
+      apiKey: config?.apiKey,
+      baseUrl: config?.baseUrl,
       providerId: "azure-openai",
       providerName: "Azure OpenAI",
       models: azureOpenAIModels,
       defaultModel: "gpt-3.5-turbo",
-      apiVersion: configManager.getConfig("PROVIDERS_AZUREOPENAI_APIVERSION"),
-      organization: configManager.getConfig("PROVIDERS_AZUREOPENAI_ORGID"),
+      apiVersion: config?.apiVersion,
+      organization: config?.organization,
     };
 
-    if (this.config.baseURL && this.config.apiVersion) {
+    if (this.config.baseUrl && this.config.apiVersion) {
       if (this.config.apiKey) {
         this.openai = new AzureOpenAI({
           apiKey: this.config.apiKey,
-          endpoint: this.config.baseURL,
+          endpoint: this.config.baseUrl,
           apiVersion: this.config.apiVersion,
           organization: this.config.organization,
           defaultHeaders: {
@@ -89,7 +89,7 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
         const scope = "https://cognitiveservices.azure.com/.default";
         const azureADTokenProvider = getBearerTokenProvider(credential, scope);
         this.openai = new AzureOpenAI({
-          endpoint: this.config.baseURL,
+          endpoint: this.config.baseUrl,
           apiVersion: this.config.apiVersion,
           azureADTokenProvider,
           organization: this.config.organization,
@@ -220,7 +220,7 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
   async isAvailable(): Promise<boolean> {
     return !!(
       this.config.apiKey &&
-      this.config.baseURL &&
+      this.config.baseUrl &&
       this.config.apiVersion
     );
   }
@@ -230,6 +230,12 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
    * @returns 返回预定义的模型ID列表
    */
   async refreshModels(): Promise<string[]> {
+    if (!this.openai) {
+      throw new Error("Azure OpenAI client not initialized");
+    }
+    // Validate connection by calling the API
+    await this.openai.models.list();
+    // If successful, return static model list
     return Promise.resolve(this.config.models.map((m) => m.id));
   }
 
@@ -258,8 +264,13 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
     commitMessages: string[]
   ): Promise<import("../types").AIResponse> {
     const systemPrompt =
-      params.systemPrompt || getPRSummarySystemPrompt(params.language);
-    const userPrompt = getPRSummaryUserPrompt(params.language);
+      params.systemPrompt ||
+      processPromptTemplate(PR_SUMMARY_SYSTEM_TEMPLATE, {
+        language: params.language,
+      });
+    const userPrompt = processPromptTemplate(PR_SUMMARY_USER_TEMPLATE, {
+      language: params.language,
+    });
     const userContent = commitMessages.join("\n- ");
 
     const response = await this.executeAIRequest(
@@ -296,10 +307,10 @@ export class AzureOpenAIProvider extends AbstractAIProvider {
         )
         .map(
           (m) =>
-            ({
-              role: m.role,
-              content: m.content,
-            } as ChatCompletionMessageParam)
+          ({
+            role: m.role,
+            content: m.content,
+          } as ChatCompletionMessageParam)
         );
     }
 

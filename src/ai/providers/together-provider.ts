@@ -1,9 +1,8 @@
-import { ConfigurationManager } from "@/config/configuration-manager";
-import { AIModel, type TogetherAIModelID } from "@/ai/types";
 import {
   BaseOpenAIProvider,
   OpenAIProviderConfig,
 } from "@/ai/providers/base-openai-provider";
+import { AIModel, type TogetherAIModelID } from "@/ai/types";
 
 const togetherModels: AIModel<"together", TogetherAIModelID>[] = [
   {
@@ -52,17 +51,18 @@ const togetherModels: AIModel<"together", TogetherAIModelID>[] = [
 ];
 
 export class TogetherAIProvider extends BaseOpenAIProvider {
-  constructor() {
-    const configManager = ConfigurationManager.getInstance();
-    const config: OpenAIProviderConfig = {
-      apiKey: configManager.getConfig("PROVIDERS_TOGETHER_APIKEY") as string,
-      baseURL: "https://api.together.ai/v1",
+  constructor(config?: any) {
+
+    const apiKey = config?.apiKey as string;
+    const providerConfig: OpenAIProviderConfig = {
+      apiKey: apiKey,
+      baseUrl: "https://api.together.ai/v1",
       providerId: "together",
       providerName: "Together AI",
       models: togetherModels,
       defaultModel: "mistralai/Mixtral-8x7B-Instruct-v0.1",
     };
-    super(config);
+    super(providerConfig);
   }
 
   async isAvailable(): Promise<boolean> {
