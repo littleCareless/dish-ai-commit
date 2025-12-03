@@ -21,5 +21,9 @@
     },
     "jsx": "react-jsx"
   },
-  "exclude": ["node_modules", "esbuild.ts", "vitest.config.ts"]
+  "exclude": ["node_modules", "esbuild.ts", "vitest.config.ts"],
+  "ts-node": {
+    "esm": true,
+    "files": true
+  }
 }
