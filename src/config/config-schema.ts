@@ -3,7 +3,7 @@
  * Contains categories: base, providers, and features
  * @const {Object}
  */
-import { getAllProviderDisplayNames } from "@/config/provider-definitions"
+import { getAllProviderDisplayNames } from "@/config/provider-definitions";
 
 export const CONFIG_SCHEMA = {
   base: {
@@ -274,6 +274,74 @@ export const CONFIG_SCHEMA = {
         description: "LMStudio API Base URL / LMStudio API 基础地址",
       },
     },
+    "openai-compatible": {
+      apiKey: {
+        type: "string",
+        default: "",
+        description: "API Key / API 密钥",
+      },
+      baseUrl: {
+        type: "string",
+        default: "",
+        description: "API Base URL / API 基础地址",
+      },
+      model: {
+        type: "string",
+        default: "gpt-3.5-turbo",
+        description: "Model ID / 模型 ID",
+      },
+      apiVersion: {
+        type: "string",
+        default: "",
+        description: "API Version / API 版本",
+      },
+      enableR1Models: {
+        type: "boolean",
+        default: false,
+        description: "Enable R1 Model Parameters (Required for DeepSeek R1 etc.) / 启用 R1 模型参数 (DeepSeek R1 等模型必需)",
+      },
+      useAzure: {
+        type: "boolean",
+        default: false,
+        description: "Use Azure OpenAI Service / 使用 Azure OpenAI 服务",
+      },
+      azureApiVersion: {
+        type: "string",
+        default: "2024-05-01-preview",
+        description: "Azure API Version / Azure API 版本",
+      },
+      customHeaders: {
+        type: "object",
+        default: {},
+        description: "Custom HTTP Headers / 自定义 HTTP 请求头",
+      },
+      useLegacyFormat: {
+        type: "boolean",
+        default: false,
+        description: "Use Legacy Format / 使用传统格式",
+      },
+      includeMaxTokens: {
+        type: "boolean",
+        default: true,
+        description: "Include Max Tokens / 包含最大 Token 数",
+      },
+      maxTokens: {
+        type: "number",
+        default: -1,
+        description: "Max Output Tokens (-1 for default) / 最大输出 Token 数 (-1 表示使用默认值)",
+      },
+      enableReasoningEffort: {
+        type: "boolean",
+        default: false,
+        description: "Enable Reasoning Effort Control (for o1 series models) / 启用推理能力控制（适用于 o1 系列模型）",
+      },
+      reasoningEffortLevel: {
+        type: "string",
+        default: "medium",
+        description: "Reasoning Effort Level (low/medium/high) / 推理强度级别（低/中/高）",
+        enum: ["low", "medium", "high"],
+      },
+    },
   },
   features: {
     suppressNonCriticalWarnings: {
@@ -464,16 +532,28 @@ export type ConfigValueTypeNumber = ConfigValueTypeBase & {
   default: number;
 };
 
+/**
+ * Object configuration value type
+ * @interface ConfigValueTypeObject
+ * @extends {ConfigValueTypeBase}
+ */
+export type ConfigValueTypeObject = ConfigValueTypeBase & {
+  type: "object";
+  default: Record<string, any>;
+};
+
 export type ConfigValueType =
   | ConfigValueTypeString
   | ConfigValueTypeBoolean
-  | ConfigValueTypeNumber;
+  | ConfigValueTypeNumber
+  | ConfigValueTypeObject;
 
 // Or directly use union type
 export type ConfigValue =
   | ConfigValueTypeString
   | ConfigValueTypeBoolean
-  | ConfigValueTypeNumber;
+  | ConfigValueTypeNumber
+  | ConfigValueTypeObject;
 
 // Add interface definition for configuration values
 export interface ConfigObject {
@@ -572,11 +652,11 @@ export {
   generateConfiguration,
   getAllConfigPaths,
   getCategoryConfigPaths
-} from "@/config/utils/config-builder"
-export { generateConfigKeys } from "@/config/utils/config-keys-generator"
+} from "@/config/utils/config-builder";
+export { generateConfigKeys } from "@/config/utils/config-keys-generator";
 export {
   generateConfigMetadata,
   type ConfigMetadataItem
-} from "@/config/utils/config-metadata-generator"
-export { isConfigValue } from "@/config/utils/config-validation"
+} from "@/config/utils/config-metadata-generator";
+export { isConfigValue } from "@/config/utils/config-validation";
 

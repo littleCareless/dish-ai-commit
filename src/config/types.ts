@@ -6,11 +6,11 @@ import {
   type ConfigValueTypeBoolean,
   type ConfigValueTypeNumber,
   type ConfigValueTypeString,
-} from "@/config/config-schema"
+} from "@/config/config-schema";
 import {
   PROVIDER_DEFINITIONS,
   getAllProviderIds,
-} from "@/config/provider-definitions"
+} from "@/config/provider-definitions";
 
 /**
  * 从中心化的提供商定义生成 AI 提供商枚举对象
@@ -33,7 +33,10 @@ function generateProviderEnum() {
 }
 
 /** AI 提供商枚举常量 - 从中心化定义生成 */
-export const AIProvider = generateProviderEnum();
+export const AIProvider: Record<string, string> = {
+  ...generateProviderEnum(),
+  OPENAI_COMPATIBLE: 'openai-compatible',
+};
 
 /**
  * 从配置值类型定义中提取实际类型
@@ -61,10 +64,10 @@ type FilterNever<T> = {
 
 type GenerateConfigType<T> = FilterNever<{
   [K in keyof T]: T[K] extends { type: string; default: any }
-    ? ExtractConfigValueType<T[K]>
-    : T[K] extends ConfigObject
-    ? GenerateConfigType<T[K]>
-    : never;
+  ? ExtractConfigValueType<T[K]>
+  : T[K] extends ConfigObject
+  ? GenerateConfigType<T[K]>
+  : never;
 }>;
 
 /** 扩展配置接口类型 */
@@ -77,14 +80,14 @@ export type ExtensionConfiguration = GenerateConfigType<typeof CONFIG_SCHEMA>;
  */
 type RecursiveConfigPath<T, P extends string = ""> = {
   [K in keyof T]: T[K] extends { type: string }
-    ? P extends ""
-      ? `${K & string}`
-      : `${P}_${K & string}`
-    : T[K] extends ConfigObject
-    ? P extends ""
-      ? `${K & string}` | RecursiveConfigPath<T[K], `${K & string}`>
-      : `${P}_${K & string}` | RecursiveConfigPath<T[K], `${P}_${K & string}`>
-    : never;
+  ? P extends ""
+  ? `${K & string}`
+  : `${P}_${K & string}`
+  : T[K] extends ConfigObject
+  ? P extends ""
+  ? `${K & string}` | RecursiveConfigPath<T[K], `${K & string}`>
+  : `${P}_${K & string}` | RecursiveConfigPath<T[K], `${P}_${K & string}`>
+  : never;
 }[keyof T];
 
 /** 配置路径类型 */
@@ -110,8 +113,8 @@ type GetSchemaType<
   P extends string
 > = P extends `${infer Head}.${infer Rest}`
   ? Head extends keyof T
-    ? GetSchemaType<T[Head], Rest>
-    : never
+  ? GetSchemaType<T[Head], Rest>
+  : never
   : P extends keyof T
   ? T[P]
   : never;

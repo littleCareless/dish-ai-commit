@@ -172,6 +172,7 @@ export const PROVIDER_DEFINITIONS: Record<string, ProviderDefinition> = {
     displayName: 'OpenAI Compatible',
     enumKey: 'OPENAI_COMPATIBLE',
     aliases: ['openai_compatible', 'openaicompatible'],
+    custom: true,
   },
 } as const;
 
