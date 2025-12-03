@@ -267,5 +267,7 @@
   "token.stats.resetSuccess": "Token 统计已重置",
   "token.stats.resetError": "重置 Token 统计失败",
   "command.token.stats.show.failed": "显示 Token 统计失败: {0}",
-  "command.token.stats.reset.failed": "重置 Token 统计失败: {0}"
+  "command.token.stats.reset.failed": "重置 Token 统计失败: {0}",
+  "scm.repository.select.placeholder": "请选择要在哪个仓库中生成提交信息",
+  "scm.repository.type.label": "{0} 仓库"
 }

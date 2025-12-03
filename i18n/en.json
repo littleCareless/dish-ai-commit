@@ -261,5 +261,7 @@
   "token.stats.resetSuccess": "Token statistics have been reset",
   "token.stats.resetError": "Failed to reset token statistics",
   "command.token.stats.show.failed": "Failed to show token statistics: {0}",
-  "command.token.stats.reset.failed": "Failed to reset token statistics: {0}"
+  "command.token.stats.reset.failed": "Failed to reset token statistics: {0}",
+  "scm.repository.select.placeholder": "Select the repository to generate commit message for",
+  "scm.repository.type.label": "{0} Repository"
 }

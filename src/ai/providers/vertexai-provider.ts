@@ -122,7 +122,7 @@ export class VertexAIProvider extends AbstractAIProvider {
           project: this.config.project,
           location: this.config.location,
           apiEndpoint: this.config.apiEndpoint,
-          googleAuthOptions: this.config.googleAuthOptions,
+          googleAuthOptions: this.config.googleAuthOptions as any,
         });
       } catch (error) {
         console.error("Failed to initialize Vertex AI client:", error);

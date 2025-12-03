@@ -66,10 +66,10 @@ export class SCMDetectorService {
       | string[]
   ): Promise<
     | {
-        scmProvider: ISCMProvider;
-        selectedFiles: string[] | undefined;
-        repositoryPath: string | undefined;
-      }
+      scmProvider: ISCMProvider;
+      selectedFiles: string[] | undefined;
+      repositoryPath: string | undefined;
+    }
     | undefined
   > {
     let selectedFiles: string[] | undefined;
@@ -104,6 +104,11 @@ export class SCMDetectorService {
     if (!scmProvider) {
       await notify.error(getMessage("scm.not.detected"));
       return;
+    }
+
+    // 如果 repositoryPath 仍然是 undefined，从 SCMFactory 获取当前使用的仓库路径
+    if (!repositoryPath) {
+      repositoryPath = SCMFactory.getCurrentRepositoryPath();
     }
 
     return {

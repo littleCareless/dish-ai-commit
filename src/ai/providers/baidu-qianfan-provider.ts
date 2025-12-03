@@ -6,7 +6,7 @@ import {
   AIMessage,
 } from "../types";
 import { AbstractAIProvider } from "./abstract-ai-provider";
-import Qianfan from "@baiducloud/qianfan";
+import * as Qianfan from "@baiducloud/qianfan";
 import type { OpenAIProviderConfig } from "./base-openai-provider";
 import {
   getPRSummarySystemPrompt,
