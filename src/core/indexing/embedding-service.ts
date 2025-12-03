@@ -1,16 +1,16 @@
+import { ConfigurationService } from "@/config/services/configuration-service";
+import { ConfigKey } from "@/config/types"; // Assuming ConfigKey is exported from types
+import { CodeIndexer } from "@/core/indexing/code-indexer";
+import { FileNode, FileScanner } from "@/core/indexing/file-scanner";
+import { QdrantPoint, VectorStore } from "@/core/indexing/vector-store";
+import { formatMessage } from "@/utils/i18n/localization-manager";
+import { stateManager } from "@/utils/state/state-manager";
 import * as crypto from "crypto";
 import OpenAI from "openai";
 import * as path from "path";
 import util from "util";
 import { v5 as uuidv5 } from "uuid";
 import * as vscode from "vscode";
-import { ConfigurationManager } from "@/config/configuration-manager";
-import { ConfigKey } from "@/config/types"; // Assuming ConfigKey is exported from types
-import { formatMessage } from "@/utils/i18n/localization-manager";
-import { stateManager } from "@/utils/state/state-manager";
-import { CodeIndexer } from "@/core/indexing/code-indexer";
-import { FileNode, FileScanner } from "@/core/indexing/file-scanner";
-import { QdrantPoint, VectorStore } from "@/core/indexing/vector-store";
 
 const NAMESPACE = "5b4d94f6-fb6b-4a4e-b053-6d9c8f8e8c72"; // Fixed namespace for deterministic IDs
 
@@ -215,6 +215,7 @@ export class EmbeddingService {
   private openaiCompatibleApiKey?: string;
   private openaiCompatibleModel?: string;
   private processedBlocks: number = 0;
+  private configManager: ConfigurationService;
 
   constructor(
     vectorStore: VectorStore,
@@ -226,25 +227,23 @@ export class EmbeddingService {
     this.projectName = projectName;
     this.projectRoot = projectRoot;
     this.fileScanner = new FileScanner(this.projectRoot);
-
-    const configManager = ConfigurationManager.getInstance();
-    // Explicitly type cast the config keys
+    this.configManager = new ConfigurationService();
 
     // Try to get OpenAI API Key from Global State Config first, then VS Code Config
     this.openaiApiKey =
       this.getGlobalConfig("providers.openai.apiKey") ||
-      configManager.getConfig("PROVIDERS_OPENAI_APIKEY" as ConfigKey);
+      this.configManager.getConfig("PROVIDERS_OPENAI_APIKEY" as ConfigKey);
 
     // Try to get OpenAI Base URL from Global State Config first, then VS Code Config
     this.openaiBaseUrl =
       this.getGlobalConfig("providers.openai.baseUrl") ||
-      configManager.getConfig("PROVIDERS_OPENAI_BASEURL" as ConfigKey) ||
+      this.configManager.getConfig("PROVIDERS_OPENAI_BASEURL" as ConfigKey) ||
       undefined;
 
     // Try to get Ollama Base URL from Global State Config first, then VS Code Config
     this.ollamaBaseUrl =
       this.getGlobalConfig("providers.ollama.baseUrl") ||
-      configManager.getConfig("PROVIDERS_OLLAMA_BASEURL" as ConfigKey) ||
+      this.configManager.getConfig("PROVIDERS_OLLAMA_BASEURL" as ConfigKey) ||
       undefined;
 
     // Load OpenAI Compatible settings from Global State Config
@@ -386,9 +385,12 @@ export class EmbeddingService {
 
             if (!isIndexed) {
               const fileContent = await fs.readFile(absoluteFilePath, "utf-8");
-              const semanticBlocks = await this.codeIndexer.parseFile(node.path, {
-                content: fileContent,
-              });
+              const semanticBlocks = await this.codeIndexer.parseFile(
+                node.path,
+                {
+                  content: fileContent,
+                }
+              );
               count += semanticBlocks.length;
             }
           }
@@ -884,6 +886,31 @@ export class EmbeddingService {
           originalError: error,
         }
       );
+    }
+  }
+
+  public async getIndexingStats(): Promise<{
+    totalVectors: number;
+    indexedFiles: string[];
+  }> {
+    try {
+      const totalVectors = await this.vectorStore.hasVectors();
+      const indexedFiles = await this.vectorStore.getIndexedFiles(
+        this.projectName
+      );
+      return {
+        totalVectors,
+        indexedFiles,
+      };
+    } catch (error) {
+      console.error(
+        "[EmbeddingService] Error getting indexing stats:",
+        error
+      );
+      return {
+        totalVectors: 0,
+        indexedFiles: [],
+      };
     }
   }
   /**

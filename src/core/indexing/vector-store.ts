@@ -305,4 +305,49 @@ export class VectorStore {
       return false; // Assume not indexed on error
     }
   }
+
+  /**
+   * Get a list of all unique files currently indexed for the project
+   * @param projectName Project name
+   * @returns Array of file paths
+   */
+  public async getIndexedFiles(projectName: string): Promise<string[]> {
+    await this.initializeStore();
+    try {
+      // We need to scroll through all points for the project to collect unique files.
+      // This might be slow for very large indices, but acceptable for typical project sizes.
+      // Qdrant 'scroll' API is used here.
+      const uniqueFiles = new Set<string>();
+      let nextOffset: string | number | undefined = undefined;
+      const batchSize = 1000;
+
+      do {
+        const result = await this.client.scroll(this.collectionName, {
+          filter: {
+            must: [{ key: "project", match: { value: projectName } }],
+          },
+          limit: batchSize,
+          offset: nextOffset,
+          with_payload: true,
+          with_vector: false,
+        });
+
+        for (const point of result.points) {
+          const payload = point.payload as any;
+          if (payload && payload.file) {
+            uniqueFiles.add(payload.file);
+          }
+        }
+        nextOffset = result.next_page_offset as string | number | undefined;
+      } while (nextOffset);
+
+      return Array.from(uniqueFiles).sort();
+    } catch (error) {
+      console.error(
+        `[VectorStore] Error getting indexed files for project ${projectName}:`,
+        error
+      );
+      return [];
+    }
+  }
 }
