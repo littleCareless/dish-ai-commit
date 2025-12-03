@@ -1,3 +1,4 @@
+import { DISH_CONFIG_PREFIX } from "@/config/constants";
 import { AIProviderFactory } from "@/ai/ai-provider-factory";
 import { ProviderProfileRepository } from "@/services/profile-manager/provider-profile-repository";
 import { ProviderStore } from "@/services/profile-manager/provider-store";
@@ -249,7 +250,7 @@ export class ProfileManagerService {
 
   public getFeatureSettings(): FeatureSettings {
     const settings = this.context.globalState.get<FeatureSettings>(
-      "dish_config_features_settings"
+      `${DISH_CONFIG_PREFIX}_features_settings`
     );
     return (
       settings || {
@@ -262,6 +263,8 @@ export class ProfileManagerService {
         simplifyDiff: false,
         autoDetectStaged: true,
         fallbackToAll: true,
+        diffTarget: "auto",
+        suppressNonCriticalWarnings: true,
         weeklyReport: true,
         codeReview: true,
         generateBranchName: true,

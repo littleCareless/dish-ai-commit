@@ -198,7 +198,7 @@ export class ProviderStore {
           providers: {
             openai: {
               apiKey: "",
-              baseURL: "https://api.openai.com/v1",
+              baseUrl: "https://api.openai.com/v1",
               model: "gpt-3.5-turbo"
             }
           },
