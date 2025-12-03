@@ -39,7 +39,9 @@
     "vitest.config.ts"
   ],
   "ts-node": {
-    "esm": true,
+    "compilerOptions": {
+      "module": "CommonJS"
+    },
     "files": true
   }
 }
