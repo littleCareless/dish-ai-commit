@@ -29,7 +29,7 @@ export class SettingsViewHTMLProvider {
   ): Promise<string> {
     const webviewUiDistPath = vscode.Uri.joinPath(
       this._extensionUri,
-      "..",
+      "dist",
       "webview-ui-dist"
     );
     const htmlPath = vscode.Uri.joinPath(webviewUiDistPath, "index.html");
@@ -43,7 +43,9 @@ export class SettingsViewHTMLProvider {
     const styleUri = webview.asWebviewUri(
       vscode.Uri.joinPath(webviewUiDistPath, "assets", "index.css")
     );
-
+    const faviconUri = webview.asWebviewUri(
+      vscode.Uri.joinPath(webviewUiDistPath, "favicon.svg")
+    );
     const localesBaseUri = webview.asWebviewUri(
       vscode.Uri.joinPath(webviewUiDistPath, "locales")
     );

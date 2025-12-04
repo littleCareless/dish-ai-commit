@@ -55,7 +55,7 @@ const persistPortPlugin = (): Plugin => ({
 
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
-  const outDir = "../webview-ui-dist";
+  const outDir = "dist";
 
   const pkg = JSON.parse(
     fs.readFileSync(path.join(__dirname, "package.json"), "utf8"),

@@ -20,7 +20,7 @@ export class WeeklyReportPanel {
     this._panel.webview.options = {
       enableScripts: true,
       localResourceRoots: [
-        vscode.Uri.joinPath(extensionUri, "webview-ui-dist"),
+        vscode.Uri.joinPath(extensionUri, "dist", "webview-ui-dist"),
       ],
     };
 
@@ -69,7 +69,7 @@ export class WeeklyReportPanel {
         enableScripts: true,
         retainContextWhenHidden: true,
         localResourceRoots: [
-          vscode.Uri.joinPath(extensionUri, "..", "webview-ui-dist"),
+          vscode.Uri.joinPath(extensionUri, "dist", "webview-ui-dist"),
         ],
       }
     );

@@ -3,7 +3,7 @@
   "files.exclude": {
     "out": false, // set this to true to hide the "out" folder with the compiled JS files
     "dist": false, // set this to true to hide the "dist" folder with the compiled JS files
-    "webview-ui-dist": false, // set this to true to hide the "webview-ui-dist" folder
+    "webview-ui/dist": false, // set this to true to hide the "webview-ui/dist" folder
     "node_modules": true, // hide node_modules
     ".turbo": true, // hide turbo cache
     "*.vsix": true // hide packaged extension files
@@ -11,7 +11,7 @@
   "search.exclude": {
     "out": true, // set this to false to include "out" folder in search results
     "dist": true, // set this to false to include "dist" folder in search results
-    "webview-ui-dist": true, // set this to false to include "webview-ui-dist" folder in search results
+    "webview-ui/dist": true, // set this to false to include "webview-ui/dist" folder in search results
     "node_modules": true, // exclude node_modules from search
     ".turbo": true, // exclude turbo cache from search
     "*.vsix": true // exclude packaged extension files from search

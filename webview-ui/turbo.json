@@ -8,6 +8,10 @@
     },
     "compile:webview": {
       "outputs": ["dist/**"]
+    },
+    "dev": {
+      "cache": false,
+      "persistent": true
     }
   }
 }

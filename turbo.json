@@ -8,7 +8,7 @@
     },
     "@dish-ai-commit/webview-ui#build": {
       "dependsOn": [],
-      "outputs": ["../webview-ui-dist/**"],
+      "outputs": ["dist/**"],
       "cache": false
     },
     "dish-ai-commit#build": {
@@ -50,7 +50,7 @@
     },
     "compile:webview": {
       "dependsOn": ["^build"],
-      "outputs": ["../webview-ui-dist/**"]
+      "outputs": ["webview-ui/dist/**"]
     },
     "package": {
       "dependsOn": ["^build", "@dish-ai-commit/webview-ui#build"],

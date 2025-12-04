@@ -19,7 +19,7 @@
     "package": "turbo package --log-order grouped --output-logs new-only",
     "publish": "turbo publish --log-order grouped --output-logs new-only",
     "vsix": "turbo vsix --log-order grouped --output-logs new-only",
-    "clean": "turbo clean --log-order grouped --output-logs new-only && rimraf dist out webview-ui-dist .turbo",
+    "clean": "turbo clean --log-order grouped --output-logs new-only && rimraf dist out webview-ui/dist .turbo",
     "quality-gate": "turbo quality-gate --log-order grouped --output-logs new-only"
   },
   "devDependencies": {

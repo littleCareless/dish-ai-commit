@@ -41,7 +41,7 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
     webviewView.webview.options = {
       enableScripts: true,
       localResourceRoots: [
-        vscode.Uri.joinPath(this._extensionUri, "..", "webview-ui-dist"),
+        vscode.Uri.joinPath(this._extensionUri, "dist", "webview-ui-dist"),
       ],
     };
 
