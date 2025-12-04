@@ -11,6 +11,8 @@ export const routes = {
   i18nDebug: "/i18n-debug",
   usage: "/usage",
   storage: "/storage",
+  profiles: "/profiles",
+  migration: "/migration",
 } as const;
 
 // 路由类型

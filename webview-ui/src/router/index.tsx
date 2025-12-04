@@ -8,6 +8,7 @@ import { AboutPage } from "@/pages/about-page";
 import { ContextPage } from "@/pages/context-page";
 import { ExperimentalPage } from "@/pages/experimental-page";
 import { IndexingPage } from "@/pages/indexing-page";
+import MigrationPage from "@/pages/migration-page";
 import { NotificationsPage } from "@/pages/notifications-page";
 import { PromptsPage } from "@/pages/prompts-page";
 import { SettingsPage } from "@/pages/settings/SettingsPage";
@@ -61,6 +62,12 @@ export const AppRouter: React.FC = () => {
 
                     {/* 设置页面 */}
                     <Route path={routes.settings} element={<SettingsPage />} />
+
+                    {/* 迁移页面 */}
+                    <Route
+                      path={routes.migration}
+                      element={<MigrationPage />}
+                    />
 
                     {/* 通知页面 */}
                     <Route
