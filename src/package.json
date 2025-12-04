@@ -621,7 +621,7 @@
     }
   },
   "scripts": {
-    "build": "npm run build --prefix ../webview-ui && node esbuild.mjs && rimraf ../webview-ui-dist",
+    "build": "node esbuild.mjs",
     "compile": "tsc -p ./",
     "compile:esbuild": "npm run check-types && node esbuild.mjs",
     "watch:esbuild-tsc": "tsc --noEmit --watch --project tsconfig.json",
@@ -638,8 +638,8 @@
     "quality-gate": "npm run test:coverage && npm run coverage:check",
     "format": "prettier --write .",
     "clean": "rimraf out dist",
-    "package": "vsce package",
-    "vsix": "vsce package",
+    "package": "vsce package --no-dependencies",
+    "vsix": "vsce package --no-dependencies",
     "publish": "vsce publish && npx ovsx publish -p $OVSX_PAT",
     "publish:pre": "vsce publish --pre-release && npx ovsx publish --pre-release -p $OVSX_PAT",
     "vscode:prepublish": "npm run vscode:prepublish:esbuild",
@@ -702,6 +702,7 @@
     "@google-cloud/vertexai": "^1.10.0",
     "@google/genai": "^1.21.0",
     "@mistralai/mistralai": "^1.10.0",
+    "@dish-ai-commit/webview-ui": "workspace:*",
     "@qdrant/js-client-rest": "^1.15.1",
     "@types/node-notifier": "^8.0.5",
     "cosmiconfig": "^9.0.0",

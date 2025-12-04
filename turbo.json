@@ -4,7 +4,16 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "out/**", "webview-ui-dist/**"]
+      "outputs": ["dist/**", "out/**"]
+    },
+    "@dish-ai-commit/webview-ui#build": {
+      "dependsOn": [],
+      "outputs": ["../webview-ui-dist/**"],
+      "cache": false
+    },
+    "dish-ai-commit#build": {
+      "dependsOn": ["@dish-ai-commit/webview-ui#build"],
+      "outputs": ["dist/**"]
     },
     "dev": {
       "cache": false,
@@ -41,10 +50,10 @@
     },
     "compile:webview": {
       "dependsOn": ["^build"],
-      "outputs": ["webview-ui-dist/**"]
+      "outputs": ["../webview-ui-dist/**"]
     },
     "package": {
-      "dependsOn": ["build", "compile:webview"],
+      "dependsOn": ["^build", "@dish-ai-commit/webview-ui#build"],
       "outputs": ["*.vsix"]
     },
     "vsix": {

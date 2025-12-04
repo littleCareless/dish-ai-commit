@@ -139,6 +139,9 @@ importers:
       '@baiducloud/qianfan':
         specifier: ^0.2.3
         version: 0.2.3(@babel/core@7.28.5)(encoding@0.1.13)
+      '@dish-ai-commit/webview-ui':
+        specifier: workspace:*
+        version: link:../webview-ui
       '@google-cloud/aiplatform':
         specifier: ^5.7.0
         version: 5.12.0
