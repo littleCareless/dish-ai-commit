@@ -34,7 +34,7 @@ import {
 } from "@/types/settings";
 import { FileCode, Info } from "lucide-react";
 import React, { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 interface PreferencesSettingsProps {
@@ -49,7 +49,10 @@ export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
   onChange,
   className = "",
 }) => {
-  const preferences = { ...DEFAULT_USER_PREFERENCES, ...userPreferences };
+  const preferences = React.useMemo(
+    () => ({ ...DEFAULT_USER_PREFERENCES, ...userPreferences }),
+    [userPreferences],
+  );
   const { t } = useTranslation("preferences-settings");
 
   const form = useForm<UserPreferences>({
@@ -61,13 +64,12 @@ export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
     form.reset(preferences);
   }, [preferences, form]);
 
+  const values = useWatch({ control: form.control });
+
   // 监听表单值变化并通知父组件
   useEffect(() => {
-    const subscription = form.watch((value) => {
-      onChange(value as UserPreferences);
-    });
-    return () => subscription.unsubscribe();
-  }, [form, onChange]);
+    onChange(values as UserPreferences);
+  }, [values, onChange]);
 
   const getTemperatureLabel = (temp: number): string => {
     if (temp === 0) return t("temperatureLevels.deterministic");
@@ -135,7 +137,9 @@ export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
     const presetExtensions = presetGroups[presetName];
     const newExtensions = [
       ...currentExtensions,
-      ...presetExtensions.filter((ext) => !currentExtensions.includes(ext)),
+      ...presetExtensions.filter(
+        (ext) => !(currentExtensions as string[]).includes(ext),
+      ),
     ];
     form.setValue("skipDiffFileExtensions", newExtensions);
   };
@@ -163,7 +167,11 @@ export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
   ];
 
   const renderTemperatureField = (
-    name: keyof UserPreferences,
+    name:
+      | "commitTemperature"
+      | "reviewTemperature"
+      | "branchNameTemperature"
+      | "weeklyReportTemperature",
     label: string,
   ) => (
     <FormField
@@ -185,7 +193,7 @@ export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
               max={2}
               step={0.1}
               value={[field.value as number]}
-              onValueChange={(value) => field.onChange(value[0])}
+              onValueChange={(value: number[]) => field.onChange(value[0])}
               className="w-full"
             />
           </FormControl>
@@ -286,7 +294,6 @@ export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
                       value={field.value || []}
                       onChange={field.onChange}
                       placeholder={t("extensionPlaceholder")}
-                      isPathPattern={false}
                     />
                   </FormControl>
                   <FormDescription>{t("skipDiffDescription")}</FormDescription>
@@ -306,7 +313,6 @@ export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
                       value={field.value || []}
                       onChange={field.onChange}
                       placeholder={t("pathPatternPlaceholder")}
-                      isPathPattern={true}
                     />
                   </FormControl>
                   <FormDescription>
@@ -327,11 +333,9 @@ export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
                     <Input
                       type="text"
                       value={field.value?.toString() || "0"}
-                      onChange={(e: React.FormEvent<HTMLElement>) => {
-                        const value = parseInt(
-                          (e.target as HTMLInputElement)?.value || "0",
-                        );
-                        field.onChange(value);
+                      onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
+                        const value = parseInt(e.target.value || "0", 10);
+                        field.onChange(isNaN(value) ? 0 : value);
                       }}
                     />
                   </FormControl>
@@ -352,7 +356,7 @@ export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
                   render={({ field }) => (
                     <div className="flex items-center space-x-2">
                       <Checkbox
-                        checked={field.value}
+                        checked={!!field.value}
                         onCheckedChange={field.onChange}
                       />
                       <label
@@ -381,7 +385,7 @@ export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
                   render={({ field }) => (
                     <div className="flex items-center space-x-2">
                       <Checkbox
-                        checked={field.value}
+                        checked={!!field.value}
                         onCheckedChange={field.onChange}
                       />
                       <label

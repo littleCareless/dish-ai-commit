@@ -4,28 +4,34 @@
  */
 
 import {
-  VSCodeDropdown,
-  VSCodeOption,
-  VSCodeTextField,
-} from "@vscode/webview-ui-toolkit/react";
-import { TFunction } from "i18next";
-import { AlertCircle, Loader } from "lucide-react";
-import React, { useMemo } from "react";
-import { FieldConfig, FieldType } from "@/types/provider-metadata";
-import {
-  shouldShowField,
-  validateFieldValue,
-} from "@/utils/validation-helpers";
-import {
   FormControl,
   FormDescription,
   FormItem,
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
-import { Switch } from "@/components/ui/switch";
+import { FieldConfig, FieldType } from "@/types/provider-metadata";
+import {
+  shouldShowField,
+  validateFieldValue,
+} from "@/utils/validation-helpers";
+import {
+  VSCodeDropdown,
+  VSCodeOption,
+  VSCodeTextField,
+} from "@vscode/webview-ui-toolkit/react";
+import { TFunction } from "i18next";
+import { AlertCircle, Loader } from "lucide-react";
+import React, { ChangeEvent, useMemo } from "react";
+import { KeyValueField } from "./KeyValueField";
 
-type FieldValue = string | number | boolean | null | undefined;
+type FieldValue =
+  | string
+  | number
+  | boolean
+  | Record<string, string>
+  | null
+  | undefined;
 
 interface DynamicFieldRendererProps {
   field: FieldConfig;
@@ -75,7 +81,17 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
       }
 
       // 验证字段值
-      const validation = validateFieldValue(field, value);
+      // 对于可选字段，空值不应该显示验证错误
+      const isEmpty =
+        value === undefined ||
+        value === null ||
+        value === "" ||
+        (typeof value === "object" && Object.keys(value).length === 0);
+
+      const shouldValidate = field.required || !isEmpty;
+      const validation = shouldValidate
+        ? validateFieldValue(field, value)
+        : { isValid: true };
       const hasError = !validation.isValid;
 
       // 渲染字段标签
@@ -118,7 +134,9 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
             return (
               <VSCodeTextField
                 value={String(value || "")}
-                onChange={(e: any) => onChange(e.target.value)}
+                onChange={(e: Event) =>
+                  onChange((e.target as HTMLInputElement).value)
+                }
                 placeholder={
                   field.placeholder ? t(field.placeholder) : `${t(field.label)}`
                 }
@@ -131,7 +149,9 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
             return (
               <VSCodeTextField
                 value={String(value || "")}
-                onChange={(e: any) => onChange(e.target.value)}
+                onChange={(e: Event) =>
+                  onChange((e.target as HTMLInputElement).value)
+                }
                 placeholder={
                   field.placeholder ? t(field.placeholder) : `${t(field.label)}`
                 }
@@ -143,7 +163,9 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
             return (
               <VSCodeTextField
                 value={String(value || "")}
-                onChange={(e: any) => onChange(e.target.value)}
+                onChange={(e: Event) =>
+                  onChange((e.target as HTMLInputElement).value)
+                }
                 placeholder={
                   field.placeholder
                     ? t(field.placeholder)
@@ -157,9 +179,11 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
             return (
               <VSCodeTextField
                 value={String(value?.toString() || "")}
-                onChange={(e: any) => {
-                  const numValue = parseFloat(e.target.value) || 0;
-                  onChange(numValue);
+                onChange={(e: Event) => {
+                  const numValue = parseFloat(
+                    (e.target as HTMLInputElement).value,
+                  );
+                  onChange(isNaN(numValue) ? 0 : numValue);
                 }}
                 placeholder={field.placeholder ? t(field.placeholder) : "0"}
                 disabled={isFieldDisabled}
@@ -170,7 +194,9 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
             return (
               <VSCodeDropdown
                 value={String(value || "")}
-                onChange={(e: any) => onChange(e.target.value)}
+                onChange={(e: Event) =>
+                  onChange((e.target as HTMLInputElement).value)
+                }
                 disabled={isFieldDisabled}
               >
                 <VSCodeOption value="">
@@ -191,18 +217,14 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
             return (
               <div className="flex items-center gap-3">
                 <FormControl>
-                  <Switch
+                  <input
+                    type="checkbox"
                     checked={!!checkboxValue}
-                    onCheckedChange={(newValue) => {
-                      console.log(
-                        `🔥 [CHECKBOX onChange] ${field.key} changed from ${checkboxValue} to ${newValue}`,
-                      );
-                      onChange(newValue);
-                      console.log(
-                        `🔥 [CHECKBOX onChange] called onChange callback`,
-                      );
-                    }}
+                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
+                      onChange(e.target.checked)
+                    }
                     disabled={isCheckboxDisabled}
+                    className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                   />
                 </FormControl>
                 <div className="flex flex-col gap-1">
@@ -240,7 +262,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
                   className="w-full"
                 />
                 <div className="text-sm text-muted-foreground text-center">
-                  {value || min}
+                  {typeof value === "number" ? value : min}
                 </div>
               </div>
             );
@@ -260,11 +282,40 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
               />
             );
 
+          case FieldType.KEY_VALUE_LIST:
+            return (
+              <KeyValueField
+                value={value}
+                onChange={(newValue) => onChange(newValue)}
+                disabled={isFieldDisabled}
+                field={field}
+                t={t}
+              />
+            );
+
+          case FieldType.INFO_BLOCK:
+            return (
+              <div className="bg-yellow-50 border border-yellow-200 rounded-md p-3 mb-4">
+                <div className="flex items-start">
+                  <div className="flex-1">
+                    {field.defaultValue &&
+                    typeof field.defaultValue === "string" ? (
+                      <ul className="text-xs text-yellow-700 space-y-1 list-disc list-inside">
+                        {field.defaultValue.split("\n").map((line, index) => (
+                          <li key={index}>{t(line)}</li>
+                        ))}
+                      </ul>
+                    ) : null}
+                  </div>
+                </div>
+              </div>
+            );
+
           case FieldType.CUSTOM:
             if (field.customRenderer) {
               return field.customRenderer({
-                value,
-                onChange,
+                value: value,
+                onChange: (v: unknown) => onChange(v as FieldValue),
                 disabled: isFieldDisabled,
                 field,
               });
@@ -279,7 +330,9 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
             return (
               <VSCodeTextField
                 value={String(value || "")}
-                onChange={(e: any) => onChange(e.target.value)}
+                onChange={(e: Event) =>
+                  onChange((e.target as HTMLInputElement).value)
+                }
                 placeholder={
                   field.placeholder ? t(field.placeholder) : `${t(field.label)}`
                 }
@@ -291,9 +344,13 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
 
       return (
         <FormItem className={className}>
-          {field.type !== FieldType.CHECKBOX && renderLabel()}
+          {field.type !== FieldType.CHECKBOX &&
+            field.type !== FieldType.KEY_VALUE_LIST &&
+            renderLabel()}
           <FormControl>{renderFieldControl()}</FormControl>
-          {field.type !== FieldType.CHECKBOX && renderHelpText()}
+          {field.type !== FieldType.CHECKBOX &&
+            field.type !== FieldType.KEY_VALUE_LIST &&
+            renderHelpText()}
           {renderError()}
           <FormMessage />
         </FormItem>

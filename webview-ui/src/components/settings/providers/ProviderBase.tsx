@@ -98,8 +98,8 @@ export const ProviderBase: React.FC<ProviderBaseProps> = ({
             id={`${config.id}-api-key`}
             type="password"
             value={config.apiKey || ""}
-            onChange={(e) =>
-              handleApiKeyChange((e.target as HTMLInputElement)?.value || "")
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              handleApiKeyChange(e.target.value)
             }
             placeholder={
               config.type === "local"
@@ -117,8 +117,8 @@ export const ProviderBase: React.FC<ProviderBaseProps> = ({
             id={`${config.id}-base-url`}
             type="url"
             value={config.baseURL || ""}
-            onChange={(e) =>
-              handleBaseUrlChange((e.target as HTMLInputElement)?.value || "")
+            onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              handleBaseUrlChange(e.target.value)
             }
             placeholder="https://api.example.com/v1"
           />

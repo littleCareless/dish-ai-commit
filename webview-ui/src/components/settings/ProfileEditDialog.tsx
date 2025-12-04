@@ -16,29 +16,32 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { zodResolver } from "@hookform/resolvers/zod";
-import React, { useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { z } from "zod";
 import { DEFAULT_USER_PREFERENCES, Profile } from "@/types/settings";
+import { zodResolver } from "@hookform/resolvers/zod";
+import React, { useEffect, useMemo } from "react";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { z } from "zod";
 
 const createNewProfileId = (): string => {
   return `profile_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 };
 
-const profileSchema = z.object({
-  name: z
-    .string()
-    .min(2, "Profile name must be at least 2 characters")
-    .max(50, "Profile name must be less than 50 characters"),
-  description: z
-    .string()
-    .max(200, "Description must be less than 200 characters")
-    .optional()
-    .or(z.literal("")),
-});
+// Schema factory function
+const createProfileSchema = (t: (key: string) => string) =>
+  z.object({
+    name: z
+      .string()
+      .min(2, t("profileEditDialog.validation.nameMin"))
+      .max(50, t("profileEditDialog.validation.nameMax")),
+    description: z
+      .string()
+      .max(200, t("profileEditDialog.validation.descriptionMax"))
+      .optional()
+      .or(z.literal("")),
+  });
 
-type ProfileFormData = z.infer<typeof profileSchema>;
+type ProfileFormData = z.infer<ReturnType<typeof createProfileSchema>>;
 
 interface ProfileEditDialogProps {
   profile: Profile | null;
@@ -53,6 +56,10 @@ export const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
   onClose,
   onSave,
 }) => {
+  const { t } = useTranslation("profile-settings");
+
+  const profileSchema = useMemo(() => createProfileSchema(t), [t]);
+
   const form = useForm<ProfileFormData>({
     resolver: zodResolver(profileSchema),
     defaultValues: {
@@ -78,15 +85,12 @@ export const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
   const handleSave = async (data: ProfileFormData) => {
     try {
       const now = new Date();
-
-      // ✅ 严格区分：新增 vs 编辑
-      // - 编辑：profile 不为 null，使用现有 ID
-      // - 新增：profile 为 null，生成新 ID
       const isEditing = !!profile;
       const savedProfile: Profile = {
         id: isEditing ? profile!.id : createNewProfileId(),
         name: data.name,
         description: data.description || "",
+        isDefault: profile?.isDefault || false,
         providers: profile?.providers || {},
         preferences: profile?.preferences || DEFAULT_USER_PREFERENCES,
         createdAt: profile?.createdAt || now,
@@ -105,7 +109,11 @@ export const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-md" onClose={onClose}>
         <DialogHeader>
-          <DialogTitle>{profile ? "Edit Profile" : "New Profile"}</DialogTitle>
+          <DialogTitle>
+            {profile
+              ? t("profileEditDialog.titleEdit")
+              : t("profileEditDialog.titleNew")}
+          </DialogTitle>
         </DialogHeader>
 
         <Form {...form}>
@@ -114,11 +122,11 @@ export const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
               name="name"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Profile Name</FormLabel>
+                  <FormLabel>{t("profileEditDialog.nameLabel")}</FormLabel>
                   <FormControl>
                     <Input
                       {...field}
-                      placeholder="Enter profile name..."
+                      placeholder={t("profileEditDialog.namePlaceholder")}
                       maxLength={50}
                     />
                   </FormControl>
@@ -131,11 +139,15 @@ export const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
               name="description"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Description (Optional)</FormLabel>
+                  <FormLabel>
+                    {t("profileEditDialog.descriptionLabel")}
+                  </FormLabel>
                   <FormControl>
                     <Textarea
                       {...field}
-                      placeholder="Enter profile description..."
+                      placeholder={t(
+                        "profileEditDialog.descriptionPlaceholder",
+                      )}
                       rows={3}
                     />
                   </FormControl>
@@ -146,14 +158,16 @@ export const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
 
             <DialogFooter>
               <Button variant="outline" onClick={onClose}>
-                Cancel
+                {t("common.cancel", { ns: "translation" })}
               </Button>
               <Button
                 onClick={() => {
                   form.handleSubmit(handleSave)();
                 }}
               >
-                {profile ? "Save Changes" : "Create Profile"}
+                {profile
+                  ? t("common.saveChanges", { ns: "translation" })
+                  : t("profileEditDialog.createButton")}
               </Button>
             </DialogFooter>
           </form>

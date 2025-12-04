@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { providerRegistry } from "@/config/provider-registry";
 import { ExtendedProviderConfig } from "@/types/provider-metadata";
@@ -8,8 +9,9 @@ import {
 } from "@/utils/validation-helpers";
 import { postMessage, useMessageHandler } from "@/utils/vscode";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 import { VSCodeDropdown, VSCodeOption } from "@vscode/webview-ui-toolkit/react";
-import { AlertCircle, Loader } from "lucide-react";
+import { AlertCircle, Loader, RefreshCw } from "lucide-react";
 import React, {
   useCallback,
   useEffect,
@@ -47,7 +49,7 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
   // onTestProvider,
   // onOpenSettings,
 }) => {
-  const { t } = useTranslation("provider-registry");
+  const { t, i18n } = useTranslation("provider-registry");
   const ProviderRegistry = providerRegistry;
   // 将所有 hooks 调用移到组件顶部（必须在条件检查之前）
 
@@ -174,10 +176,26 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
         const message = event.data as Record<string, unknown>;
         const messageData = message.data as Record<string, unknown> | undefined;
 
+        // 添加详细的日志以便调试
+        console.log(`[ProviderConfigForm] 收到消息:`, {
+          command: message.command,
+          expectedCommand: ExtensionResponse.ConnectionAllModelsFetched,
+          providerId: messageData?.providerId,
+          currentProviderId: provider.id,
+        });
+
         if (
-          message.command === "providerModelsFetched" &&
+          message.command === ExtensionResponse.ConnectionAllModelsFetched &&
           messageData?.providerId === provider.id
         ) {
+          console.log(`[ProviderConfigForm] 匹配到正确的消息，处理响应:`, {
+            success: messageData.success,
+            modelsCount: Array.isArray(messageData.models)
+              ? messageData.models.length
+              : 0,
+            error: messageData.error,
+          });
+
           responseReceivedRef.current = true;
           if (pendingFetchRef.current) {
             clearTimeout(pendingFetchRef.current);
@@ -190,6 +208,9 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
             const modelsList =
               (messageData.models as Array<{ id: string; name?: string }>) ||
               [];
+            console.log(
+              `[ProviderConfigForm] 成功获取模型列表，共 ${modelsList.length} 个模型`,
+            );
             setModels(modelsList);
             setModelError(null);
 
@@ -204,22 +225,31 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
 
                 // 确保 form 中的 model 值是最新的
                 form.setValue("model", foundModel.id as never);
-
-                console.log(
-                  `[ProviderConfigForm] 从模型列表中恢复模型选择:`,
-                  foundModel,
-                );
               }
             }
           } else {
-            setModels([]);
-            setModelError(
-              (messageData.error as string) || t("fetchModelsFailed"),
+            const errorMessage =
+              (messageData.error as string) || t("fetchModelsFailed");
+            console.error(
+              `[ProviderConfigForm] 获取模型列表失败:`,
+              errorMessage,
             );
+            setModels([]);
+            setModelError(errorMessage);
+          }
+        } else {
+          // 记录不匹配的消息（用于调试）
+          if (
+            message.command === ExtensionResponse.ConnectionAllModelsFetched
+          ) {
+            console.warn(`[ProviderConfigForm] 收到消息但 providerId 不匹配:`, {
+              messageProviderId: messageData?.providerId,
+              currentProviderId: provider.id,
+            });
           }
         }
       },
-      [provider.id, watchedValues, config, form],
+      [provider.id, watchedValues, config, form, t],
     ),
   );
 
@@ -232,7 +262,7 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
     const currentValues = form.getValues();
     const apiKey = (currentValues.apiKey as string | undefined)?.trim();
     const baseUrl =
-      (currentValues.baseURL as string | undefined)?.trim() ||
+      (currentValues.baseUrl as string | undefined)?.trim() ||
       (currentValues.baseUrl as string | undefined)?.trim();
 
     if (currentValues.model) {
@@ -254,7 +284,13 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
     responseReceivedRef.current = false;
 
     try {
-      postMessage("fetchProviderModels", {
+      console.log(`[ProviderConfigForm] 开始获取模型列表:`, {
+        providerId: provider.id,
+        hasApiKey: !!apiKey,
+        hasBaseUrl: !!baseUrl,
+      });
+
+      postMessage(UIRequest.ConnectionFetchProviderModels, {
         providerId: provider.id,
         apiKey: apiKey || undefined,
         baseUrl: baseUrl || undefined,
@@ -264,13 +300,22 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
         clearTimeout(pendingFetchRef.current);
       }
 
+      // 设置 60 秒超时（后端超时是 120 秒，加上网络延迟和重试时间，60 秒是合理的）
       pendingFetchRef.current = setTimeout(() => {
         if (!responseReceivedRef.current) {
+          console.warn(
+            `[ProviderConfigForm] 获取模型列表超时（60秒），可能的原因：`,
+            {
+              providerId: provider.id,
+              message: "后端可能没有响应，或者网络连接有问题",
+            },
+          );
           setIsLoadingModels(false);
           setModelError(t("fetchModelsTimeout"));
         }
-      }, 30000);
+      }, 60000);
     } catch (error) {
+      console.error(`[ProviderConfigForm] 发送获取模型列表请求失败:`, error);
       setIsLoadingModels(false);
       setModelError(
         error instanceof Error ? error.message : t("fetchModelsFailed"),
@@ -316,7 +361,7 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
     return () => clearTimeout(timer);
   }, [
     watchedValues.apiKey,
-    watchedValues.baseURL,
+    watchedValues.baseUrl,
     watchedValues.baseUrl,
     providerMeta?.features.streaming,
   ]);
@@ -347,6 +392,7 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
         {/* Dynamic Form Fields */}
         {providerMeta.fields.length > 0 && (
           <DynamicFieldGroup
+            key={i18n.language} // 语言切换时强制重新渲染
             fields={providerMeta.fields}
             t={t}
             values={
@@ -365,65 +411,89 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
               <label className="text-sm font-medium">
                 {t("modelSelection")}
               </label>
-              {isLoadingModels && (
-                <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                  <Loader className="w-3 h-3 animate-spin" />
-                  {t("loading")}...
-                </div>
-              )}
+              <div className="flex items-center gap-2">
+                {isLoadingModels && (
+                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
+                    <Loader className="w-3 h-3 animate-spin" />
+                    {t("loading")}...
+                  </div>
+                )}
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => {
+                    fetchModelsRef.current();
+                  }}
+                  disabled={isLoadingModels}
+                  title={t("refreshModels")}
+                  className="shrink-0 hover:bg-transparent"
+                >
+                  <RefreshCw
+                    className={`h-3.5 w-3.5 ${isLoadingModels ? "animate-spin" : ""}`}
+                  />
+                </Button>
+              </div>
             </div>
 
-            <VSCodeDropdown
-              value={(watchedValues.model as string) || ""}
-              onChange={
-                ((e: Event) => {
-                  const target = e.target as HTMLSelectElement;
-                  if (target.value) {
-                    console.log(
-                      `[ProviderConfigForm] 选择模型: ${target.value}`,
-                    );
-
-                    // 直接更新 model 字段
-                    handleConfigChange("model", target.value);
-
-                    // 记录最终状态用于调试
-                    setTimeout(() => {
+            <div className="flex gap-2">
+              <VSCodeDropdown
+                className="flex-1"
+                value={(watchedValues.model as string) || ""}
+                onChange={
+                  ((e: Event) => {
+                    const target = e.target as HTMLSelectElement;
+                    if (target.value) {
                       console.log(
-                        `[ProviderConfigForm] 模型选择已保存:`,
-                        form.getValues("model"),
+                        `[ProviderConfigForm] 选择模型: ${target.value}`,
                       );
-                    }, 100);
-                  }
-                }) as any // eslint-disable-line @typescript-eslint/no-explicit-any
-              }
-              disabled={!canSelectModel}
-            >
-              <VSCodeOption value="">
-                {models.length === 0
-                  ? t("enterApiKeyOrBaseUrl")
-                  : t("selectModel")}
-              </VSCodeOption>
-              {models
-                .filter(
-                  (model: { id: string; name?: string; category?: string }) => {
-                    const category = model.category;
-                    // Only show text-based models
-                    return (
-                      !category ||
-                      category === "chat" ||
-                      category === "text" ||
-                      category === "completion"
-                    );
-                  },
-                )
-                .map((model) => (
-                  <VSCodeOption key={model.id} value={model.id}>
-                    {model.name || model.id}
-                  </VSCodeOption>
-                ))}
-            </VSCodeDropdown>
+
+                      // 直接更新 model 字段
+                      handleConfigChange("model", target.value);
+
+                      // 记录最终状态用于调试
+                      setTimeout(() => {
+                        console.log(
+                          `[ProviderConfigForm] 模型选择已保存:`,
+                          form.getValues("model"),
+                        );
+                      }, 100);
+                    }
+                  }) as any // eslint-disable-line @typescript-eslint/no-explicit-any
+                }
+                disabled={!canSelectModel}
+              >
+                <VSCodeOption value="">
+                  {models.length === 0
+                    ? t("enterApiKeyOrBaseUrl")
+                    : t("selectModel")}
+                </VSCodeOption>
+                {models
+                  .filter(
+                    (model: {
+                      id: string;
+                      name?: string;
+                      category?: string;
+                    }) => {
+                      const category = model.category;
+                      // Only show text-based models
+                      return (
+                        !category ||
+                        category === "chat" ||
+                        category === "text" ||
+                        category === "completion"
+                      );
+                    },
+                  )
+                  .map((model) => (
+                    <VSCodeOption key={model.id} value={model.id}>
+                      {model.name || model.id}
+                    </VSCodeOption>
+                  ))}
+              </VSCodeDropdown>
+            </div>
             {modelError && (
-              <div className="flex items-start gap-2 p-2 bg-red-50 dark:bg-red-950 rounded text-xs text-red-600 dark:text-red-400">
+              <div className="flex items-start gap-2 p-2 bg-red-50 dark:bg-red-950 rounded text-xs text-red-600 dark:text-red-400 break-all whitespace-pre-wrap">
                 <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span>{modelError}</span>
               </div>

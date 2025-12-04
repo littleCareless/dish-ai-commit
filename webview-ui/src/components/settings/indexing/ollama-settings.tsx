@@ -1,11 +1,3 @@
-import React from "react";
-import { Control, useWatch } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import {
-  EMBEDDING_MODEL_PROFILES,
-  getModelDimension,
-} from "@/lib/embedding-models";
-import { IndexingFormValues } from "@/pages/indexing-page";
 import {
   FormControl,
   FormField,
@@ -15,6 +7,14 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Select, SelectOption } from "@/components/ui/select";
+import {
+  EMBEDDING_MODEL_PROFILES,
+  getModelDimension,
+} from "@/lib/embedding-models";
+import { IndexingFormValues } from "@/pages/indexing-page";
+import React from "react";
+import { Control, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
 
 interface OllamaSettingsProps {
   control: Control<IndexingFormValues>;
@@ -97,7 +97,7 @@ export const OllamaSettings: React.FC<OllamaSettingsProps> = ({ control }) => {
                   placeholder={t("ollama.modelDimensionsPlaceholder", "4096")}
                   {...field}
                   value={String(field.value ?? "")}
-                  onChange={(e) => {
+                  onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                     const value = parseInt(
                       (e.target as HTMLInputElement).value,
                       10,

@@ -1,15 +1,3 @@
-import { zodResolver } from "@hookform/resolvers/zod";
-import {
-  VSCodeButton,
-  VSCodeDropdown,
-  VSCodeOption,
-} from "@vscode/webview-ui-toolkit/react";
-import { Edit, Plus, Trash2 } from "lucide-react";
-import React, { useCallback, useEffect } from "react";
-import { useForm } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import { z } from "zod";
-import { Profile } from "@/types/settings";
 import {
   Form,
   FormControl,
@@ -18,6 +6,18 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { Profile } from "@/types/settings";
+import { zodResolver } from "@hookform/resolvers/zod";
+import {
+  VSCodeButton,
+  VSCodeDropdown,
+  VSCodeOption,
+} from "@vscode/webview-ui-toolkit/react";
+import { Edit, Plus, Trash2 } from "lucide-react";
+import React, { useEffect } from "react";
+import { useForm } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { z } from "zod";
 
 const profileFormSchema = z.object({
   selectedProfile: z.string(),
@@ -64,13 +64,6 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
   const currentProfile = profiles.find((p) => p.id === selectedProfile);
   const isCurrentActive = activeProfile?.id === selectedProfile;
 
-  const handleProfileChange = useCallback(
-    (profileId: string) => {
-      onProfileChange(profileId);
-    },
-    [onProfileChange],
-  );
-
   return (
     <Form {...form}>
       <div className="space-y-2">
@@ -102,7 +95,10 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
                 <FormControl>
                   <VSCodeDropdown
                     value={field.value}
-                    onChange={(e: any) => handleProfileChange(e.target.value)}
+                    onChange={(e: { target: unknown }) => {
+                      const target = e.target as unknown as { value: string };
+                      onProfileChange(target.value);
+                    }}
                     className="w-full"
                   >
                     {profiles.map((profile) => (

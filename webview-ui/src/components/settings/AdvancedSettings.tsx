@@ -11,10 +11,10 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
+import { UserPreferences } from "@/types/settings";
 import React, { useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
-import { UserPreferences } from "@/types/settings";
 
 interface AdvancedSettingsProps {
   preferences: UserPreferences;
@@ -198,7 +198,7 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
                         )}
                         {...field}
                         value={field.value?.toString() || ""}
-                        onChange={(e) => {
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                           const target = e.target as HTMLInputElement;
                           const numValue = parseInt(target.value, 10);
                           if (!isNaN(numValue) && numValue > 0) {
@@ -233,7 +233,7 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
                         )}
                         {...field}
                         value={field.value?.toString() || ""}
-                        onChange={(e) => {
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                           const target = e.target as HTMLInputElement;
                           const numValue = parseInt(target.value, 10);
                           if (!isNaN(numValue) && numValue > 0) {
@@ -268,7 +268,7 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
                         )}
                         {...field}
                         value={field.value?.toString() || ""}
-                        onChange={(e) => {
+                        onChange={(e: React.ChangeEvent<HTMLInputElement>) => {
                           const target = e.target as HTMLInputElement;
                           const numValue = parseInt(target.value, 10);
                           if (!isNaN(numValue) && numValue > 0) {
