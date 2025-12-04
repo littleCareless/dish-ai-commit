@@ -1,9 +1,3 @@
-import React from "react";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import * as z from "zod";
-import { postMessage } from "@/utils/vscode";
-import { MessageType } from "@/types/messages";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -24,6 +18,12 @@ import {
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Textarea } from "@/components/ui/textarea";
+import { postMessage } from "@/utils/vscode";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { UIRequest } from "@shared/types/messages";
+import React from "react";
+import { useForm } from "react-hook-form";
+import * as z from "zod";
 
 const formSchema = z.object({
   key: z.string().min(1, { message: "提示词名称不能为空" }),
@@ -52,7 +52,7 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
   });
 
   const onSubmit = (values: FormValues) => {
-    postMessage(MessageType.CreatePrompt, {
+    postMessage(UIRequest.PromptCreate, {
       key: values.key,
       content: values.content,
       target: values.saveTarget,
