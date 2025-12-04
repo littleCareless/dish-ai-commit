@@ -1,5 +1,5 @@
-import { DISH_CONFIG_PREFIX } from "@/config/constants";
 import { AIProviderFactory } from "@/ai/ai-provider-factory";
+import { DISH_CONFIG_PREFIX } from "@/config/constants";
 import { ProviderProfileRepository } from "@/services/profile-manager/provider-profile-repository";
 import { ProviderStore } from "@/services/profile-manager/provider-store";
 import { ProviderProfiles } from "@/services/profile-manager/types";
@@ -51,24 +51,6 @@ export class ProfileManagerService {
     return ProfileManagerService.instance;
   }
 
-  private async loadProfiles(): Promise<void> {
-    const operation = "loadProfiles";
-    this.logger.logOperationStart(operation);
-    const startTime = Date.now();
-
-    try {
-      // The ProviderStore is now the source of truth and handles its own loading.
-      // This method is kept for now to ensure `create()` works, but it does nothing.
-      this.logger.info("Profiles are now managed by ProviderStore.");
-    } catch (error) {
-      this.logger.logError(error as Error, "Failed to load profiles", {
-        operation,
-      });
-    } finally {
-      const duration = Date.now() - startTime;
-      this.logger.logOperationEnd(operation, duration);
-    }
-  }
 
   async getAllProfiles(): Promise<any[]> {
     this.logger.debug("Getting all profiles.");

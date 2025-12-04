@@ -1,4 +1,4 @@
-import { CommitSuggestion } from '@/types/messages';
+import { CommitSuggestion } from '@shared/types/messages';
 
 export interface CommitTemplate {
   name: string;

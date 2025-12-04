@@ -1,5 +1,5 @@
-import { ChatMessage } from '@/types/messages';
-import { CommitSuggestion } from '@/types/messages';
+import { ChatMessage } from '@shared/types/messages';
+import { CommitSuggestion } from '@shared/types/messages';
 
 export interface UserPreference {
   id: string;

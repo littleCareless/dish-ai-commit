@@ -1,6 +1,6 @@
 import { AIProviderFactory } from "@/ai/ai-provider-factory";
 import { IndexingSettingsManager } from "@/services/settings/indexing-settings-manager";
-import { ExtensionResponse, UIRequest } from "@/types/messages";
+import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 import * as vscode from "vscode";
 
 export class ConnectionMessageHandler {

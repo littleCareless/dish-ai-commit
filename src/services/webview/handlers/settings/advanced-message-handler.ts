@@ -1,5 +1,5 @@
 import * as vscode from "vscode";
-import { UIRequest, ExtensionResponse } from "@/types/messages";
+import { UIRequest, ExtensionResponse } from "@shared/types/messages";
 import { AdvancedSettingsManager } from "@/services/settings/advanced-settings-manager";
 
 export class AdvancedMessageHandler {

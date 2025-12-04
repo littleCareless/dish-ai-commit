@@ -1,4 +1,4 @@
-import { ExtensionResponse, UIRequest } from "@/types/messages";
+import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 import { NotificationSettingsManager } from "@/utils/notification/notification-settings-manager";
 import { showSystemNotification } from "@/utils/notification/system-notification";
 import { TextToSpeechService } from "@/utils/notification/text-to-speech";

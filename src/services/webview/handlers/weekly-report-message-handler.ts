@@ -1,9 +1,9 @@
-import { UIRequest, ExtensionResponse } from "@/types/messages";
-import * as vscode from "vscode";
-import { notify } from "@/utils/notification";
-import { showWeeklyReportSuccessNotification } from "@/utils/notification/system-notification";
 import { ModelConfigurationManager } from "@/services/webview/config/model-configuration-manager";
 import { WeeklyReportGenerator } from "@/services/webview/services/weekly-report-generator";
+import { notify } from "@/utils/notification";
+import { showWeeklyReportSuccessNotification } from "@/utils/notification/system-notification";
+import { ExtensionResponse, UIRequest } from "@shared/types/messages";
+import * as vscode from "vscode";
 
 export class WeeklyReportMessageHandler {
   private readonly generator: WeeklyReportGenerator;

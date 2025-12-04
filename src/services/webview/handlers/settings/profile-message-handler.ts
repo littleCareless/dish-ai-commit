@@ -2,7 +2,7 @@ import { settingsMigration } from "@/services/core/settings-migration";
 import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 import { ProviderStore } from "@/services/profile-manager/provider-store";
 import { LanguageSettingsManager } from "@/services/settings/language-settings-manager";
-import { ExtensionResponse, UIRequest } from "@/types/messages";
+import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 import { formatMessage as t } from "@/utils/i18n/localization-manager";
 import { safeWriteJson } from "@/utils/safe-write-json";
 import * as fs from "fs/promises";

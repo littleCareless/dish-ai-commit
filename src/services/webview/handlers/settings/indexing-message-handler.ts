@@ -5,7 +5,7 @@ import {
 } from "@/core/indexing/embedding-service";
 import { EmbeddingServiceManager } from "@/core/indexing/embedding-service-manager";
 import { IndexingSettingsManager } from "@/services/settings/indexing-settings-manager";
-import { UIRequest, ExtensionResponse } from "@/types/messages";
+import { UIRequest, ExtensionResponse } from "@shared/types/messages";
 import { notify } from "@/utils/notification/notification-manager";
 import * as vscode from "vscode";
 

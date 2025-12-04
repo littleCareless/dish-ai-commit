@@ -63,6 +63,15 @@ export const userPreferencesSchema = z.object({
   maxTokens: z.number().optional(),
   timeout: z.number().optional(),
   retryAttempts: z.number().optional(),
+  skipDiffFileExtensions: z.array(z.string()).optional(),
+  skipDiffPathPatterns: z.array(z.string()).optional(),
+  maxDiffFileSizeKB: z.number().optional(),
+  autoDetectBinaryFiles: z.boolean().optional(),
+  respectGitAttributes: z.boolean().optional(),
+  commitTemperature: z.number().optional(),
+  reviewTemperature: z.number().optional(),
+  branchNameTemperature: z.number().optional(),
+  weeklyReportTemperature: z.number().optional(),
 });
 export type UserPreferences = z.infer<typeof userPreferencesSchema>;
 
@@ -126,6 +135,50 @@ export interface SettingsChangeEvent {
 }
 
 // 默认配置
+export const DEFAULT_SKIP_DIFF_EXTENSIONS = [
+  ".jpg",
+  ".jpeg",
+  ".png",
+  ".gif",
+  ".bmp",
+  ".tiff",
+  ".ico",
+  ".pdf",
+  ".zip",
+  ".rar",
+  ".7z",
+  ".tar",
+  ".gz",
+  ".bz2",
+  ".xz",
+  ".doc",
+  ".docx",
+  ".xls",
+  ".xlsx",
+  ".ppt",
+  ".pptx",
+  ".o",
+  ".a",
+  ".so",
+  ".dll",
+  ".exe",
+  ".jar",
+  ".war",
+  ".ear",
+  ".class",
+  ".pyc",
+  ".swo",
+  ".swp",
+  ".DS_Store",
+  ".lock",
+  ".log",
+];
+export const DEFAULT_SKIP_DIFF_PATTERNS = [
+  "**/package-lock.json",
+  "**/pnpm-lock.yaml",
+  "**/yarn.lock",
+];
+
 export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   temperature: 0.0,
   verbosity: 0,
@@ -135,6 +188,15 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   maxTokens: 4000,
   timeout: 30000,
   retryAttempts: 3,
+  skipDiffFileExtensions: DEFAULT_SKIP_DIFF_EXTENSIONS,
+  skipDiffPathPatterns: DEFAULT_SKIP_DIFF_PATTERNS,
+  maxDiffFileSizeKB: 1024,
+  autoDetectBinaryFiles: true,
+  respectGitAttributes: true,
+  commitTemperature: 0.7,
+  reviewTemperature: 0.8,
+  branchNameTemperature: 0.7,
+  weeklyReportTemperature: 0.9,
 };
 
 export const DEFAULT_OPENAI_CONFIG: ProviderConfig = {

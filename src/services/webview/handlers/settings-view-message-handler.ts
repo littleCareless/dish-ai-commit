@@ -8,7 +8,7 @@ import { PromptMessageHandler } from "@/services/webview/handlers/settings/promp
 import { StorageMessageHandler } from "@/services/webview/handlers/settings/storage-message-handler";
 import { SystemMessageHandler } from "@/services/webview/handlers/settings/system-message-handler";
 import { UsageMessageHandler } from "@/services/webview/handlers/settings/usage-message-handler";
-import { UIRequest } from "@/types/messages";
+import { UIRequest } from "@shared/types/messages";
 import * as vscode from "vscode";
 
 export class SettingsViewMessageHandler {
@@ -167,6 +167,11 @@ export class SettingsViewMessageHandler {
         // Webview 启动通知，静默处理
         console.log(
           "[SettingsViewMessageHandler] Webview launched successfully"
+        );
+        // 立即发送所有存储状态，以解除前端 RouteGuard 的阻塞
+        await this._storageHandler.handle(
+          { command: UIRequest.SystemGetAllStorage },
+          webview
         );
         break;
 

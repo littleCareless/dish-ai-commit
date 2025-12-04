@@ -1,6 +1,6 @@
 import { DISH_CONFIG_PREFIX } from "@/config/constants";
 import { FeaturesSettingsManager } from "@/services/settings/features-settings-manager";
-import { UIRequest, ExtensionResponse } from "@/types/messages";
+import { UIRequest, ExtensionResponse } from "@shared/types/messages";
 import * as vscode from "vscode";
 
 export class FeaturesMessageHandler {

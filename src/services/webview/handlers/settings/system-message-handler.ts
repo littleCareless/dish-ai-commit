@@ -1,4 +1,4 @@
-import { UIRequest, ExtensionResponse } from "@/types/messages";
+import { UIRequest, ExtensionResponse } from "@shared/types/messages";
 import * as fs from "fs/promises";
 import * as os from "os";
 import * as path from "path";
