@@ -1,33 +1,42 @@
-import { useState, useEffect } from "react";
-import { useVSCodeContext } from "@/contexts/VSCodeContext";
+import { useEffect, useState } from "react";
+
+type Theme = "light" | "dark";
+
+const getTheme = (): Theme => {
+  if (typeof window === "undefined") {
+    return "light";
+  }
+  return document.body.classList.contains("vscode-dark") ? "dark" : "light";
+};
 
 export const useTheme = () => {
-  const { theme: vscodeTheme, setTheme: setVSCodeTheme } = useVSCodeContext();
-  const [theme, setTheme] = useState(vscodeTheme || "light");
+  const [theme, setTheme] = useState<Theme>(getTheme());
 
   useEffect(() => {
-    if (vscodeTheme) {
-      setTheme(vscodeTheme);
+    if (typeof window === "undefined") {
+      return;
     }
-  }, [vscodeTheme]);
 
-  const toggleTheme = () => {
-    const newTheme = theme === "light" ? "dark" : "light";
-    setTheme(newTheme);
-    setVSCodeTheme(newTheme);
-  };
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        if (
+          mutation.type === "attributes" &&
+          mutation.attributeName === "class"
+        ) {
+          setTheme(getTheme());
+        }
+      });
+    });
 
-  const isDark = theme === "dark";
-  const isLight = theme === "light";
+    observer.observe(document.body, {
+      attributes: true,
+      attributeFilter: ["class"],
+    });
 
-  return {
-    theme,
-    isDark,
-    isLight,
-    toggleTheme,
-    setTheme: (newTheme: string) => {
-      setTheme(newTheme);
-      setVSCodeTheme(newTheme);
-    },
-  };
+    return () => {
+      observer.disconnect();
+    };
+  }, []);
+
+  return { theme };
 };

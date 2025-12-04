@@ -1,5 +1,5 @@
 import { createContext } from "react";
-import { Profile, ProviderConfig, UserPreferences } from "@/types/settings";
+import { Profile, ProviderConfig, UserPreferences } from "../types/settings";
 
 export interface SettingsContextType {
   // 状态 - 明确区分

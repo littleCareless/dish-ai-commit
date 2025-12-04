@@ -59,17 +59,17 @@ export const providerRegistry: ProviderRegistryType = {
         helpText: "openai.fields.useCustomUrl.helpText",
       },
       {
-        key: "baseURL",
+        key: "baseUrl",
         type: FieldType.URL,
-        label: "openai.fields.baseURL.label",
+        label: "openai.fields.baseUrl.label",
         required: false,
-        placeholder: "openai.fields.baseURL.placeholder",
+        placeholder: "openai.fields.baseUrl.placeholder",
         conditional: { field: "useCustomUrl", value: true },
         validation: [
           {
             type: ValidationRuleType.PATTERN,
             pattern: /^https?:\/\/.+/,
-            message: "openai.fields.baseURL.validation.pattern",
+            message: "openai.fields.baseUrl.validation.pattern",
           },
         ],
       },
@@ -368,16 +368,16 @@ export const providerRegistry: ProviderRegistryType = {
         ],
       },
       {
-        key: "baseURL",
+        key: "baseUrl",
         type: FieldType.TEXT,
-        label: "azure.fields.baseURL.label",
+        label: "azure.fields.baseUrl.label",
         required: true,
-        placeholder: "azure.fields.baseURL.placeholder",
-        helpText: "azure.fields.baseURL.helpText",
+        placeholder: "azure.fields.baseUrl.placeholder",
+        helpText: "azure.fields.baseUrl.helpText",
         validation: [
           {
             type: ValidationRuleType.REQUIRED,
-            message: "azure.fields.baseURL.validation.required",
+            message: "azure.fields.baseUrl.validation.required",
           },
         ],
       },
@@ -694,21 +694,21 @@ export const providerRegistry: ProviderRegistryType = {
         ],
       },
       {
-        key: "baseURL",
+        key: "baseUrl",
         type: FieldType.URL,
-        label: "azure-openai.fields.baseURL.label",
+        label: "azure-openai.fields.baseUrl.label",
         required: true,
-        placeholder: "azure-openai.fields.baseURL.placeholder",
-        helpText: "azure-openai.fields.baseURL.helpText",
+        placeholder: "azure-openai.fields.baseUrl.placeholder",
+        helpText: "azure-openai.fields.baseUrl.helpText",
         validation: [
           {
             type: ValidationRuleType.REQUIRED,
-            message: "azure-openai.fields.baseURL.validation.required",
+            message: "azure-openai.fields.baseUrl.validation.required",
           },
           {
             type: ValidationRuleType.PATTERN,
             pattern: /^https:\/\/.+\..+\.openai\.azure\.com\/?$/,
-            message: "azure-openai.fields.baseURL.validation.pattern",
+            message: "azure-openai.fields.baseUrl.validation.pattern",
           },
         ],
       },
@@ -834,20 +834,6 @@ export const providerRegistry: ProviderRegistryType = {
           {
             type: ValidationRuleType.REQUIRED,
             message: "baidu-qianfan.fields.apiKey.validation.required",
-          },
-        ],
-      },
-      {
-        key: "secretKey",
-        type: FieldType.PASSWORD,
-        label: "baidu-qianfan.fields.secretKey.label",
-        required: true,
-        secure: true,
-        helpText: "baidu-qianfan.fields.secretKey.helpText",
-        validation: [
-          {
-            type: ValidationRuleType.REQUIRED,
-            message: "baidu-qianfan.fields.secretKey.validation.required",
           },
         ],
       },
@@ -1307,17 +1293,17 @@ export const providerRegistry: ProviderRegistryType = {
         ],
       },
       {
-        key: "baseURL",
+        key: "baseUrl",
         type: FieldType.TEXT,
-        label: "bedrock.fields.baseURL.label",
+        label: "bedrock.fields.baseUrl.label",
         required: true,
         defaultValue: "us-east-1",
-        placeholder: "bedrock.fields.baseURL.placeholder",
-        helpText: "bedrock.fields.baseURL.helpText",
+        placeholder: "bedrock.fields.baseUrl.placeholder",
+        helpText: "bedrock.fields.baseUrl.helpText",
         validation: [
           {
             type: ValidationRuleType.REQUIRED,
-            message: "bedrock.fields.baseURL.validation.required",
+            message: "bedrock.fields.baseUrl.validation.required",
           },
         ],
       },
@@ -1559,22 +1545,22 @@ export const providerRegistry: ProviderRegistryType = {
     authMode: AuthMode.NONE,
     fields: [
       {
-        key: "baseURL",
+        key: "baseUrl",
         type: FieldType.URL,
-        label: "ollama.fields.baseURL.label",
+        label: "ollama.fields.baseUrl.label",
         required: true,
         defaultValue: "http://localhost:11434",
-        placeholder: "ollama.fields.baseURL.placeholder",
-        helpText: "ollama.fields.baseURL.helpText",
+        placeholder: "ollama.fields.baseUrl.placeholder",
+        helpText: "ollama.fields.baseUrl.helpText",
         validation: [
           {
             type: ValidationRuleType.REQUIRED,
-            message: "ollama.fields.baseURL.validation.required",
+            message: "ollama.fields.baseUrl.validation.required",
           },
           {
             type: ValidationRuleType.PATTERN,
             pattern: /^https?:\/\/.+/,
-            message: "ollama.fields.baseURL.validation.pattern",
+            message: "ollama.fields.baseUrl.validation.pattern",
           },
         ],
       },
@@ -1609,22 +1595,22 @@ export const providerRegistry: ProviderRegistryType = {
     authMode: AuthMode.NONE,
     fields: [
       {
-        key: "baseURL",
+        key: "baseUrl",
         type: FieldType.URL,
-        label: "lmstudio.fields.baseURL.label",
+        label: "lmstudio.fields.baseUrl.label",
         required: true,
         defaultValue: "http://localhost:1234",
-        placeholder: "lmstudio.fields.baseURL.placeholder",
-        helpText: "lmstudio.fields.baseURL.helpText",
+        placeholder: "lmstudio.fields.baseUrl.placeholder",
+        helpText: "lmstudio.fields.baseUrl.helpText",
         validation: [
           {
             type: ValidationRuleType.REQUIRED,
-            message: "lmstudio.fields.baseURL.validation.required",
+            message: "lmstudio.fields.baseUrl.validation.required",
           },
           {
             type: ValidationRuleType.PATTERN,
             pattern: /^https?:\/\/.+/,
-            message: "lmstudio.fields.baseURL.validation.pattern",
+            message: "lmstudio.fields.baseUrl.validation.pattern",
           },
         ],
       },
@@ -1702,21 +1688,21 @@ export const providerRegistry: ProviderRegistryType = {
         ],
       },
       {
-        key: "baseURL",
+        key: "baseUrl",
         type: FieldType.URL,
-        label: "openai-compatible.fields.baseURL.label",
+        label: "openai-compatible.fields.baseUrl.label",
         required: true,
-        placeholder: "openai-compatible.fields.baseURL.placeholder",
-        helpText: "openai-compatible.fields.baseURL.helpText",
+        placeholder: "openai-compatible.fields.baseUrl.placeholder",
+        helpText: "openai-compatible.fields.baseUrl.helpText",
         validation: [
           {
             type: ValidationRuleType.REQUIRED,
-            message: "openai-compatible.fields.baseURL.validation.required",
+            message: "openai-compatible.fields.baseUrl.validation.required",
           },
           {
             type: ValidationRuleType.PATTERN,
             pattern: /^https?:\/\/.+/,
-            message: "openai-compatible.fields.baseURL.validation.pattern",
+            message: "openai-compatible.fields.baseUrl.validation.pattern",
           },
         ],
       },
@@ -1743,37 +1729,12 @@ export const providerRegistry: ProviderRegistryType = {
         defaultValue: "2024-02-15-preview",
       },
       {
-        key: "useCustomHeaders",
-        type: FieldType.CHECKBOX,
-        label: "openai-compatible.fields.useCustomHeaders.label",
-        required: false,
-        defaultValue: false,
-        helpText: "openai-compatible.fields.useCustomHeaders.helpText",
-      },
-      {
         key: "customHeaders",
-        type: FieldType.TEXTAREA,
+        type: FieldType.KEY_VALUE_LIST,
         label: "openai-compatible.fields.customHeaders.label",
         required: false,
-        conditional: { field: "useCustomHeaders", value: true },
-        placeholder: "openai-compatible.fields.customHeaders.placeholder",
-        helpText: "openai-compatible.fields.customHeaders.helpText",
-        rows: 3,
-        validation: [
-          {
-            type: ValidationRuleType.CUSTOM,
-            message: "openai-compatible.fields.customHeaders.validation.custom",
-            validator: (value: string) => {
-              if (!value) return true;
-              try {
-                JSON.parse(value);
-                return true;
-              } catch {
-                return false;
-              }
-            },
-          },
-        ],
+        defaultValue: {},
+        placeholder: "openai-compatible.fields.customHeaders.addButton",
       },
       {
         key: "enableR1Models",
@@ -1798,6 +1759,119 @@ export const providerRegistry: ProviderRegistryType = {
         required: false,
         defaultValue: true,
         helpText: "openai-compatible.fields.includeMaxTokens.helpText",
+      },
+      {
+        key: "enableReasoningEffort",
+        type: FieldType.CHECKBOX,
+        label: "openai-compatible.fields.enableReasoningEffort.label",
+        required: false,
+        defaultValue: false,
+        helpText: "openai-compatible.fields.enableReasoningEffort.helpText",
+      },
+      {
+        key: "reasoningEffortLevel",
+        type: FieldType.SELECT,
+        label: "openai-compatible.fields.reasoningEffortLevel.label",
+        required: false,
+        defaultValue: "medium",
+        conditional: { field: "enableReasoningEffort", value: true },
+        options: [
+          {
+            value: "low",
+            label: "openai-compatible.fields.reasoningEffortLevel.options.low",
+          },
+          {
+            value: "medium",
+            label:
+              "openai-compatible.fields.reasoningEffortLevel.options.medium",
+          },
+          {
+            value: "high",
+            label: "openai-compatible.fields.reasoningEffortLevel.options.high",
+          },
+        ],
+        helpText: "openai-compatible.fields.reasoningEffortLevel.helpText",
+      },
+      {
+        key: "customModelSupportsPromptCache",
+        type: FieldType.CHECKBOX,
+        label: "openai-compatible.fields.customModelSupportsPromptCache.label",
+        required: false,
+        defaultValue: false,
+        helpText:
+          "openai-compatible.fields.customModelSupportsPromptCache.helpText",
+      },
+      {
+        key: "customModelConfigNotice",
+        type: FieldType.INFO_BLOCK,
+        label: "openai-compatible.fields.customModelConfigNotice.title",
+        required: false,
+        defaultValue: [
+          "openai-compatible.fields.customModelConfigNotice.point1",
+          "openai-compatible.fields.customModelConfigNotice.point2",
+          "openai-compatible.fields.customModelConfigNotice.point3",
+        ].join("\n"),
+        helpText: "",
+      },
+      {
+        key: "customModelMaxTokens",
+        type: FieldType.NUMBER,
+        label: "openai-compatible.fields.customModelMaxTokens.label",
+        required: false,
+        defaultValue: -1,
+        placeholder:
+          "openai-compatible.fields.customModelMaxTokens.placeholder",
+        helpText: "openai-compatible.fields.customModelMaxTokens.helpText",
+      },
+      {
+        key: "customModelContextWindow",
+        type: FieldType.NUMBER,
+        label: "openai-compatible.fields.customModelContextWindow.label",
+        required: false,
+        defaultValue: 204800,
+        placeholder:
+          "openai-compatible.fields.customModelContextWindow.placeholder",
+        helpText: "openai-compatible.fields.customModelContextWindow.helpText",
+      },
+      {
+        key: "customModelInputPrice",
+        type: FieldType.NUMBER,
+        label: "openai-compatible.fields.customModelInputPrice.label",
+        required: false,
+        placeholder:
+          "openai-compatible.fields.customModelInputPrice.placeholder",
+        helpText: "openai-compatible.fields.customModelInputPrice.helpText",
+      },
+      {
+        key: "customModelOutputPrice",
+        type: FieldType.NUMBER,
+        label: "openai-compatible.fields.customModelOutputPrice.label",
+        required: false,
+        placeholder:
+          "openai-compatible.fields.customModelOutputPrice.placeholder",
+        helpText: "openai-compatible.fields.customModelOutputPrice.helpText",
+      },
+      {
+        key: "customModelCacheReadsPrice",
+        type: FieldType.NUMBER,
+        label: "openai-compatible.fields.customModelCacheReadsPrice.label",
+        required: false,
+        conditional: { field: "customModelSupportsPromptCache", value: true },
+        placeholder:
+          "openai-compatible.fields.customModelCacheReadsPrice.placeholder",
+        helpText:
+          "openai-compatible.fields.customModelCacheReadsPrice.helpText",
+      },
+      {
+        key: "customModelCacheWritesPrice",
+        type: FieldType.NUMBER,
+        label: "openai-compatible.fields.customModelCacheWritesPrice.label",
+        required: false,
+        conditional: { field: "customModelSupportsPromptCache", value: true },
+        placeholder:
+          "openai-compatible.fields.customModelCacheWritesPrice.placeholder",
+        helpText:
+          "openai-compatible.fields.customModelCacheWritesPrice.helpText",
       },
     ],
     features: {

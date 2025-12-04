@@ -6,10 +6,13 @@ import React, {
   useState,
 } from "react";
 
-import { postMessage } from "@/utils/vscode";
-// Assuming a utility for theme conversion exists, similar to the reference
-// If not, this can be replaced with a simple JSON.parse
-import { convertTextMateToHljs } from "@/utils/textMateToHljs";
+import {
+  ExtensionResponse,
+  ExtensionResponseMessage,
+  UIRequestMessage,
+} from "@shared/types/messages";
+import { convertTextMateToHljs } from "../utils/textMateToHljs";
+import { postMessage } from "../utils/vscode";
 
 // --- Type Definitions ---
 
@@ -63,17 +66,6 @@ export interface ExtensionState {
   reasoningBlockCollapsed?: boolean;
   includeCurrentTime?: boolean;
   includeCurrentCost?: boolean;
-}
-
-// The message format for communication between the extension and webview
-export interface ExtensionMessage {
-  type: "state" | "theme" | "listApiConfig" | "commands" | "workspaceUpdated";
-  state?: ExtensionState;
-  text?: string; // For theme JSON
-  listApiConfig?: ProviderSettingsEntry[];
-  commands?: Command[];
-  filePaths?: string[];
-  openedTabs?: Array<{ label: string; isActive: boolean; path?: string }>;
 }
 
 // The full context type, including state and setters
@@ -164,10 +156,10 @@ export const ExtensionStateContextProvider: React.FC<{
 
   const handleMessage = useCallback(
     (event: MessageEvent) => {
-      const message: ExtensionMessage = event.data;
-      switch (message.type) {
-        case "state": {
-          const newState = message.state!;
+      const message: ExtensionResponseMessage | UIRequestMessage = event.data;
+      switch (message.command) {
+        case ExtensionResponse.SystemAllStorageLoaded: {
+          const newState = message.data as ExtensionState;
           setState((prevState) => mergeExtensionState(prevState, newState));
           // A simple heuristic for the welcome screen: show if no API keys are configured.
           const hasApiKeys = Object.values(
@@ -177,10 +169,13 @@ export const ExtensionStateContextProvider: React.FC<{
           setDidHydrateState(true);
           break;
         }
-        case "theme": {
-          if (message.text) {
+        case ExtensionResponse.SystemMessageShown: {
+          // Assuming this is for theme changes
+          if (message.data) {
             try {
-              setTheme(convertTextMateToHljs(JSON.parse(message.text)));
+              setTheme(
+                convertTextMateToHljs(JSON.parse(message.data as string)),
+              );
             } catch (e) {
               console.error("Failed to parse or convert theme JSON", e);
               setTheme({});
@@ -188,17 +183,19 @@ export const ExtensionStateContextProvider: React.FC<{
           }
           break;
         }
-        case "workspaceUpdated": {
-          setFilePaths(message.filePaths ?? []);
-          setOpenedTabs(message.openedTabs ?? []);
+        case ExtensionResponse.SystemPackageInfoLoaded: {
+          // Assuming this for workspace updates
+          setFilePaths(message.data.filePaths ?? []);
+          setOpenedTabs(message.data.openedTabs ?? []);
           break;
         }
-        case "commands": {
-          setCommands(message.commands ?? []);
+        case ExtensionResponse.ConnectionAllModelsLoaded: {
+          // Assuming this for command updates
+          setCommands(message.data ?? []);
           break;
         }
-        case "listApiConfig": {
-          setListApiConfigMeta(message.listApiConfig ?? []);
+        case ExtensionResponse.ProfileAllProvidersLoaded: {
+          setListApiConfigMeta(message.data ?? []);
           break;
         }
       }
@@ -215,6 +212,22 @@ export const ExtensionStateContextProvider: React.FC<{
 
   useEffect(() => {
     postMessage("webviewDidLaunch");
+
+    // Fallback: Ensure UI unblocks even if extension doesn't send initial state
+    // 保留作为兜底方案，防止后端响应失败导致页面卡死
+    const timer = setTimeout(() => {
+      setDidHydrateState((prev) => {
+        if (!prev) {
+          console.warn(
+            "[ExtensionStateContext] Hydration timed out, forcing ready state.",
+          );
+          return true;
+        }
+        return prev;
+      });
+    }, 1000);
+
+    return () => clearTimeout(timer);
   }, []);
 
   const contextValue: ExtensionStateContextType = {

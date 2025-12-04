@@ -1,4 +1,4 @@
-import type { ChatMessage, CommitChatState } from "@src/types/messages";
+import { ChatMessage, CommitChatState } from "@shared/types/messages";
 import { useCallback, useEffect, useRef, useState } from "react";
 
 export interface CommitChatConfig {

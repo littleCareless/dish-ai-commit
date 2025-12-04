@@ -1,95 +1,37 @@
-import React, {
-  createContext,
-  useContext,
-  useState,
-  useEffect,
-  ReactNode,
-} from "react";
+import React from "react";
+import {
+  ExtensionState,
+  ExtensionStateContextProvider,
+  useExtensionState,
+} from "../context/ExtensionStateContext";
 
-interface VSCodeContextType {
-  isReady: boolean;
-  theme: string;
-  viewType: string | null;
-  initialData: any;
-  setTheme: (theme: string) => void;
-  setViewType: (viewType: string | null) => void;
-}
+/**
+ * Provides a hook to access the VS Code extension's state.
+ * This is a compatibility wrapper around `useExtensionState`.
+ *
+ * @returns An object with:
+ *  - `isReady`: A boolean that is true when the initial state has been received from the extension.
+ *  - `initialData`: An object containing the full state from the extension.
+ */
+export const useVSCodeContext = () => {
+  const state = useExtensionState();
+  // Separate the readiness flag from the rest of the state data.
+  const { didHydrateState, ...initialData } = state;
 
-const VSCodeContext = createContext<VSCodeContextType | undefined>(undefined);
-
-interface VSCodeProviderProps {
-  children: ReactNode;
-}
-
-export const VSCodeProvider: React.FC<VSCodeProviderProps> = ({ children }) => {
-  const [isReady, setIsReady] = useState(false);
-  const [theme, setTheme] = useState("light");
-  const [viewType, setViewType] = useState<string | null>(null);
-  const [initialData, setInitialData] = useState<any>(null);
-
-  useEffect(() => {
-    // 获取初始数据
-    const getInitialData = () => {
-      const data = (window as any).initialData;
-      if (data) {
-        setInitialData(data);
-        if (data.vscodeTheme) {
-          setTheme(data.vscodeTheme);
-        }
-        if (data.viewType) {
-          setViewType(data.viewType);
-        }
-      }
-    };
-
-    // 监听主题变化
-    const handleThemeChange = (event: CustomEvent) => {
-      const newTheme = event.detail;
-      setTheme(newTheme);
-    };
-
-    // 初始化
-    const initialize = () => {
-      getInitialData();
-      setIsReady(true);
-    };
-
-    // 设置事件监听器
-    window.addEventListener(
-      "vscode-theme-changed",
-      handleThemeChange as EventListener,
-    );
-
-    // 延迟初始化以确保所有数据都已加载
-    const timer = setTimeout(initialize, 100);
-
-    return () => {
-      clearTimeout(timer);
-      window.removeEventListener(
-        "vscode-theme-changed",
-        handleThemeChange as EventListener,
-      );
-    };
-  }, []);
-
-  const value: VSCodeContextType = {
-    isReady,
-    theme,
-    viewType,
-    initialData,
-    setTheme,
-    setViewType,
+  return {
+    isReady: didHydrateState,
+    initialData: initialData as ExtensionState,
   };
-
-  return (
-    <VSCodeContext.Provider value={value}>{children}</VSCodeContext.Provider>
-  );
 };
 
-export const useVSCodeContext = (): VSCodeContextType => {
-  const context = useContext(VSCodeContext);
-  if (context === undefined) {
-    throw new Error("useVSCodeContext must be used within a VSCodeProvider");
-  }
-  return context;
+/**
+ * A compatibility wrapper for the ExtensionStateContextProvider.
+ * This allows the rest of the application to use `VSCodeProvider` as expected.
+ */
+export const VSCodeProvider: React.FC<{ children: React.ReactNode }> = ({
+  children,
+}) => {
+  return (
+    <ExtensionStateContextProvider>{children}</ExtensionStateContextProvider>
+  );
 };
