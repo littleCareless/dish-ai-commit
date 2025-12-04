@@ -2,6 +2,8 @@
   "nav": {
     "settings": "Settings",
     "settings_description": "Configure AI providers and preferences",
+    "migration": "Migration",
+    "migration_description": "Migrate old settings to the new profile system",
     "notifications": "Notifications",
     "notifications_description": "View recent notifications",
     "context": "Context",
@@ -16,6 +18,8 @@
     "about_description": "Learn about the application",
     "usage": "Usage",
     "usage_description": "Monitor token usage",
+    "storage": "Storage",
+    "storage_description": "Inspect internal storage",
     "language": "Language"
   }
 }

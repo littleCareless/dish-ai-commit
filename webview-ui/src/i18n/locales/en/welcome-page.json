@@ -1,4 +1,95 @@
 {
   "title": "Welcome!",
-  "description": "Welcome to this application. Please select an option from the left menu to get started."
+  "description": "Welcome to this application. Please select an option from the left menu to get started.",
+  "hero": {
+    "title": "Dish AI Commit",
+    "subtitle": "Intelligent Git Commit Message Generator",
+    "getStarted": "Get Started",
+    "badges": {
+      "aiPowered": "AI Powered",
+      "fastGeneration": "Fast Generation",
+      "standardCommit": "Standard Commits"
+    }
+  },
+  "features": {
+    "title": "Core Features",
+    "smartCommit": {
+      "title": "Smart Commit Messages",
+      "description": "Automatically generate semantic, standardized commit messages based on code changes"
+    },
+    "multiRepo": {
+      "title": "Multi-Repository Support",
+      "description": "Manage commits across multiple Git repositories, supports monorepo projects"
+    },
+    "fastResponse": {
+      "title": "Fast Response",
+      "description": "Optimized API calls and caching strategy for millisecond-level response"
+    },
+    "secure": {
+      "title": "Secure & Reliable",
+      "description": "Local processing of sensitive information, secure API key storage"
+    },
+    "multiLanguage": {
+      "title": "Multi-Language Support",
+      "description": "Generate commit messages in Chinese, English, and other languages"
+    },
+    "customizable": {
+      "title": "Highly Customizable",
+      "description": "Custom prompt templates to match team conventions"
+    }
+  },
+  "setup": {
+    "selectProvider": "Select AI Provider",
+    "moreProviders": "More Providers",
+    "configureProvider": "Configure {{provider}}",
+    "steps": {
+      "provider": {
+        "title": "Select AI Provider",
+        "description": "Select and configure your AI service provider"
+      },
+      "confirm": {
+        "title": "Confirm Configuration",
+        "description": "Review settings and start using"
+      }
+    },
+    "buttons": {
+      "previous": "Previous",
+      "next": "Next",
+      "saving": "Saving...",
+      "complete": "Complete Setup"
+    },
+    "import": "Import existing configuration",
+    "summary": {
+      "providerType": "Provider",
+      "apiKey": "API Key",
+      "apiKeyHidden": "••••••••",
+      "notSet": "Not set",
+      "model": "Model",
+      "baseUrl": "Base URL",
+      "default": "Default",
+      "hint": "Configuration will be saved in VS Code secure storage, you can modify it anytime in settings"
+    }
+  },
+  "quickStart": {
+    "title": "Quick Start",
+    "links": {
+      "gettingStarted": {
+        "title": "Getting Started",
+        "description": "Get up and running in 5 minutes"
+      },
+      "github": {
+        "title": "GitHub",
+        "description": "View source code and feedback"
+      },
+      "community": {
+        "title": "Community",
+        "description": "Join the user community"
+      }
+    }
+  },
+  "footer": {
+    "title": "Dish AI Commit Message Generator",
+    "madeWith": "Made with ❤️ by"
+  },
+  "scrollHint": "Scroll down"
 }

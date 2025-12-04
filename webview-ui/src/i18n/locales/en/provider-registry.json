@@ -15,6 +15,13 @@
         "label": "Use Custom Base URL",
         "helpText": "For proxies or private deployments"
       },
+      "baseUrl": {
+        "label": "Custom Base URL",
+        "placeholder": "https://api.openai.com/v1",
+        "validation": {
+          "pattern": "Please enter a valid URL"
+        }
+      },
       "baseURL": {
         "label": "Custom Base URL",
         "placeholder": "https://api.openai.com/v1",
@@ -206,13 +213,6 @@
         "helpText": "Qianfan platform API Key",
         "validation": {
           "required": "API Key is required"
-        }
-      },
-      "secretKey": {
-        "label": "Secret Key",
-        "helpText": "Qianfan platform Secret Key",
-        "validation": {
-          "required": "Secret Key is required"
         }
       }
     }
@@ -406,6 +406,15 @@
   "ollama": {
     "description": "Local AI model runtime environment",
     "fields": {
+      "baseUrl": {
+        "label": "Ollama Server URL",
+        "placeholder": "http://localhost:11434",
+        "helpText": "Address of the Ollama server",
+        "validation": {
+          "required": "Server URL is required",
+          "pattern": "Please enter a valid URL"
+        }
+      },
       "baseURL": {
         "label": "Ollama Server URL",
         "placeholder": "http://localhost:11434",
@@ -420,6 +429,15 @@
   "lmstudio": {
     "description": "Local AI model management tool",
     "fields": {
+      "baseUrl": {
+        "label": "LM Studio Server URL",
+        "placeholder": "http://localhost:1234",
+        "helpText": "Address of the LM Studio server",
+        "validation": {
+          "required": "Server URL is required",
+          "pattern": "Please enter a valid URL"
+        }
+      },
       "baseURL": {
         "label": "LM Studio Server URL",
         "placeholder": "http://localhost:1234",

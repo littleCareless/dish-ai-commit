@@ -1,0 +1,44 @@
+{
+  "page": {
+    "title": "配置迁移",
+    "subtitle": "将旧版本的配置迁移到新的配置文件格式"
+  },
+  "detecting": {
+    "title": "正在检测配置...",
+    "description": "正在扫描您的工作区以查找旧版本的配置信息"
+  },
+  "noConfig": {
+    "title": "未检测到旧配置",
+    "description": "我们没有找到任何旧版本的配置信息。您可以直接前往设置页面进行配置。"
+  },
+  "success": {
+    "title": "迁移成功！",
+    "description": "您的配置已成功迁移到新的配置文件格式。",
+    "manualActivationHint": "您可以在设置页面查看和管理新的配置方案。"
+  },
+  "error": {
+    "title": "迁移失败"
+  },
+  "preview": {
+    "sourceConfig": "源配置",
+    "sourceDescription": "检测到的旧版本配置",
+    "detectedProviders": "检测到的提供商",
+    "details": "详细信息",
+    "userPreferences": "用户偏好设置",
+    "targetProfile": "目标配置方案",
+    "targetDescription": "将要创建的新配置方案",
+    "profileName": "方案名称",
+    "providerCount": "提供商数量"
+  },
+  "note": {
+    "title": "注意",
+    "content": "迁移过程不会删除您的旧配置，但建议您在确认新配置工作正常后手动清理旧配置。"
+  },
+  "common": {
+    "goToSettings": "前往设置",
+    "backToHome": "返回首页",
+    "migrating": "正在迁移...",
+    "startMigration": "开始迁移",
+    "skip": "跳过"
+  }
+}

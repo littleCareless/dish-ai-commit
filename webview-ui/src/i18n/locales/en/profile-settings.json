@@ -12,5 +12,19 @@
   "selectToEdit": "• <strong>Select</strong> a profile from the dropdown to edit",
   "autoSave": "• Changes are <strong>auto-saved</strong> to the editing profile",
   "clickDone": "• Click the '<strong>Done</strong>' button at the top to set the current editing profile as <strong>active</strong>",
-  "currentProfileInfo": "Current Profile Info (JSON)"
+  "currentProfileInfo": "Current Profile Info (JSON)",
+  "profileEditDialog": {
+    "titleEdit": "Edit Profile",
+    "titleNew": "New Profile",
+    "nameLabel": "Profile Name",
+    "namePlaceholder": "Enter profile name...",
+    "descriptionLabel": "Description (Optional)",
+    "descriptionPlaceholder": "Enter profile description...",
+    "createButton": "Create Profile",
+    "validation": {
+      "nameMin": "Profile name must be at least 2 characters",
+      "nameMax": "Profile name must be less than 50 characters",
+      "descriptionMax": "Description must be less than 200 characters"
+    }
+  }
 }

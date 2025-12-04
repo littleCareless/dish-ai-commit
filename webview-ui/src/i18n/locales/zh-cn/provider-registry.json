@@ -15,6 +15,13 @@
         "label": "使用自定义基础 URL",
         "helpText": "用于代理或私有部署"
       },
+      "baseUrl": {
+        "label": "自定义基础 URL",
+        "placeholder": "https://api.openai.com/v1",
+        "validation": {
+          "pattern": "请输入有效的 URL"
+        }
+      },
       "baseURL": {
         "label": "自定义基础 URL",
         "placeholder": "https://api.openai.com/v1",
@@ -206,13 +213,6 @@
         "helpText": "千帆平台的 API Key",
         "validation": {
           "required": "API Key 是必需的"
-        }
-      },
-      "secretKey": {
-        "label": "Secret Key",
-        "helpText": "千帆平台的 Secret Key",
-        "validation": {
-          "required": "Secret Key 是必需的"
         }
       }
     }
@@ -406,6 +406,15 @@
   "ollama": {
     "description": "本地 AI 模型运行环境",
     "fields": {
+      "baseUrl": {
+        "label": "Ollama 服务器 URL",
+        "placeholder": "http://localhost:11434",
+        "helpText": "Ollama 服务器的地址",
+        "validation": {
+          "required": "服务器 URL 是必需的",
+          "pattern": "请输入有效的 URL"
+        }
+      },
       "baseURL": {
         "label": "Ollama 服务器 URL",
         "placeholder": "http://localhost:11434",
@@ -420,6 +429,15 @@
   "lmstudio": {
     "description": "本地 AI 模型管理工具",
     "fields": {
+      "baseUrl": {
+        "label": "LM Studio 服务器 URL",
+        "placeholder": "http://localhost:1234",
+        "helpText": "LM Studio 服务器的地址",
+        "validation": {
+          "required": "服务器 URL 是必需的",
+          "pattern": "请输入有效的 URL"
+        }
+      },
       "baseURL": {
         "label": "LM Studio 服务器 URL",
         "placeholder": "http://localhost:1234",
