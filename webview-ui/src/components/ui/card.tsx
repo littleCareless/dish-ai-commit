@@ -1,14 +1,15 @@
 import "@vscode/webview-ui-toolkit/dist/toolkit";
 import React from "react";
+import { cn } from "../../lib/utils";
 
 interface CardProps extends React.HTMLAttributes<HTMLElement> {
   children: React.ReactNode;
 }
 
-const Card: React.FC<CardProps> = ({ children, ...props }) => {
+const Card: React.FC<CardProps> = ({ className, children, ...props }) => {
   return (
     <div
-      className="p-4 border rounded-lg"
+      className={cn("p-4 border rounded-lg", className)}
       style={{
         borderColor: "var(--vscode-panel-border)",
         backgroundColor: "var(--vscode-editor-background)",
@@ -20,26 +21,33 @@ const Card: React.FC<CardProps> = ({ children, ...props }) => {
   );
 };
 
-const CardHeader: React.FC<CardProps> = ({ children, ...props }) => {
+const CardHeader: React.FC<CardProps> = ({ className, children, ...props }) => {
   return (
-    <div className="mb-4" {...props}>
+    <div className={cn("mb-4", className)} {...props}>
       {children}
     </div>
   );
 };
 
-const CardTitle: React.FC<CardProps> = ({ children, ...props }) => {
+const CardTitle: React.FC<CardProps> = ({ className, children, ...props }) => {
   return (
-    <h3 className="text-lg font-semibold tracking-tight" {...props}>
+    <h3
+      className={cn("text-lg font-semibold tracking-tight", className)}
+      {...props}
+    >
       {children}
     </h3>
   );
 };
 
-const CardDescription: React.FC<CardProps> = ({ children, ...props }) => {
+const CardDescription: React.FC<CardProps> = ({
+  className,
+  children,
+  ...props
+}) => {
   return (
     <p
-      className="text-sm mt-1"
+      className={cn("text-sm mt-1", className)}
       style={{
         color: "var(--vscode-descriptionForeground)",
         opacity: 0.8,
@@ -51,13 +59,21 @@ const CardDescription: React.FC<CardProps> = ({ children, ...props }) => {
   );
 };
 
-const CardContent: React.FC<CardProps> = ({ children, ...props }) => {
-  return <div {...props}>{children}</div>;
+const CardContent: React.FC<CardProps> = ({
+  className,
+  children,
+  ...props
+}) => {
+  return (
+    <div className={className} {...props}>
+      {children}
+    </div>
+  );
 };
 
-const CardFooter: React.FC<CardProps> = ({ children, ...props }) => {
+const CardFooter: React.FC<CardProps> = ({ className, children, ...props }) => {
   return (
-    <div className="mt-4 flex items-center" {...props}>
+    <div className={cn("mt-4 flex items-center", className)} {...props}>
       {children}
     </div>
   );

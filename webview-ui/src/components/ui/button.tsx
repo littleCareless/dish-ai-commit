@@ -17,7 +17,6 @@ interface ButtonProps {
     | "default";
   className?: string;
   title?: string;
-  ref?: React.Ref<HTMLButtonElement>;
 }
 
 interface ButtonVariantsProps {
@@ -118,7 +117,6 @@ const Button: React.FC<ButtonProps> = ({
   variant,
   className,
   title,
-  ref,
   ...props
 }) => {
   // Map variant to appearance if provided
@@ -146,7 +144,6 @@ const Button: React.FC<ButtonProps> = ({
       type={type}
       className={className}
       title={title}
-      ref={ref as any}
       {...props}
     >
       {children}
@@ -154,5 +151,6 @@ const Button: React.FC<ButtonProps> = ({
   );
 };
 
+// eslint-disable-next-line react-refresh/only-export-components
 export { Button, buttonVariants };
 export type { ButtonProps, ButtonVariantsProps };

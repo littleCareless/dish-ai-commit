@@ -1,45 +1,27 @@
-import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react";
-import React from "react";
+import * as SwitchPrimitive from "@radix-ui/react-switch";
+import * as React from "react";
 
-interface SwitchProps {
-  checked?: boolean;
-  disabled?: boolean;
-  onChange?: (event: React.ChangeEvent<HTMLInputElement>) => void;
-  onCheckedChange?: (checked: boolean) => void;
-}
+import { cn } from "@/lib/utils";
 
-const Switch: React.FC<SwitchProps> = ({
-  checked = false,
-  disabled = false,
-  onChange,
-  onCheckedChange,
-  ...props
-}) => {
-  const handleChange = (event: Event) => {
-    const target = event.target as HTMLInputElement;
-    console.log(
-      `[Switch.handleChange] Event triggered for checkbox, checked: ${target.checked}`,
-    );
-
-    if (onChange) {
-      onChange(event as unknown as React.ChangeEvent<HTMLInputElement>);
-    }
-
-    const newChecked = target.checked;
-    onCheckedChange?.(newChecked);
-    console.log(
-      `[Switch.handleChange] onChange and onCheckedChange callbacks invoked with value: ${newChecked}`,
-    );
-  };
-
-  return (
-    <VSCodeCheckbox
-      checked={checked}
-      disabled={disabled}
-      onChange={handleChange as any}
-      {...props}
+const Switch = React.forwardRef<
+  React.ElementRef<typeof SwitchPrimitive.Root>,
+  React.ComponentPropsWithoutRef<typeof SwitchPrimitive.Root>
+>(({ className, ...props }, ref) => (
+  <SwitchPrimitive.Root
+    className={cn(
+      "peer inline-flex h-6 w-11 shrink-0 cursor-pointer items-center rounded-full border-2 border-gray-300 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background disabled:cursor-not-allowed disabled:opacity-50 data-[state=checked]:bg-primary data-[state=checked]:border-primary data-[state=unchecked]:bg-input",
+      className,
+    )}
+    {...props}
+    ref={ref}
+  >
+    <SwitchPrimitive.Thumb
+      className={cn(
+        "pointer-events-none block h-5 w-5 rounded-full bg-background shadow-lg ring-0 transition-transform data-[state=checked]:translate-x-5 data-[state=unchecked]:translate-x-0 border-2",
+      )}
     />
-  );
-};
+  </SwitchPrimitive.Root>
+));
+Switch.displayName = SwitchPrimitive.Root.displayName;
 
 export { Switch };
