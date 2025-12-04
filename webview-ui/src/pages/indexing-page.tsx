@@ -1,15 +1,4 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { postMessage } from "@/utils/vscode";
-import { zodResolver } from "@hookform/resolvers/zod";
-import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Control, useForm, useWatch } from "react-hook-form";
-import { useTranslation } from "react-i18next";
-import * as z from "zod";
+import { PageHeader, PageLayout } from "@/components/layout/PageLayout";
 import { AdvancedIndexingSettings } from "@/components/settings/indexing/advanced-indexing-settings";
 import { GeminiSettings } from "@/components/settings/indexing/gemini-settings";
 import { MistralSettings } from "@/components/settings/indexing/mistral-settings";
@@ -21,6 +10,12 @@ import { VercelAIGatewaySettings } from "@/components/settings/indexing/vercel-a
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import {
   Form,
   FormControl,
   FormField,
@@ -29,6 +24,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { useVSCodeMessage } from "@/hooks/use-vscode-message";
+import { postMessage } from "@/utils/vscode";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { ExtensionResponse, UIRequest } from "@shared/types/messages";
+import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { Control, useForm, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import * as z from "zod";
 
 // Define message payload types
 interface IndexingProgressPayload {
@@ -184,20 +186,20 @@ export const IndexingPage: React.FC = () => {
     console.log("save value", values);
 
     // 先保存设置
-    postMessage("saveSettings", values);
+    postMessage(UIRequest.IndexingSaveSettings, values);
 
     // 只有在启用索引时才触发扫描
     if (values.enabled) {
-      postMessage("startIndexing", { clearIndex: false });
+      postMessage(UIRequest.IndexingStart, { clearIndex: false });
     }
   }, []);
 
   const handleClearIndex = useCallback(() => {
-    postMessage("clearIndex");
+    postMessage(UIRequest.IndexingClear);
   }, []);
 
   useVSCodeMessage(
-    "indexingProgress",
+    ExtensionResponse.IndexingProgress,
     (payload: { data: IndexingProgressPayload }) => {
       setStatusInfo({ message: payload.data.message });
       setIndexingProgress({
@@ -208,7 +210,7 @@ export const IndexingPage: React.FC = () => {
   );
 
   useVSCodeMessage(
-    "indexingFinished",
+    ExtensionResponse.IndexingFinished,
     (payload: {
       data: IndexStatusPayload & { stats?: IndexingStats; warning?: string };
     }) => {
@@ -225,13 +227,16 @@ export const IndexingPage: React.FC = () => {
     },
   );
 
-  useVSCodeMessage("indexCleared", (payload: { data: IndexStatusPayload }) => {
-    setStatusInfo({ key: "indexing-page:status.indexCleared" });
-    setIsIndexed(payload.data.isIndexed);
-  });
+  useVSCodeMessage(
+    ExtensionResponse.IndexingCleared,
+    (payload: { data: IndexStatusPayload }) => {
+      setStatusInfo({ key: "indexing-page:status.indexCleared" });
+      setIsIndexed(payload.data.isIndexed);
+    },
+  );
 
   useVSCodeMessage(
-    "indexingFailed",
+    ExtensionResponse.IndexingFailed,
     (payload: { data: IndexingFailedPayload }) => {
       setStatusInfo({
         key: "indexing-page:status.indexingFailed",
@@ -240,13 +245,13 @@ export const IndexingPage: React.FC = () => {
     },
   );
 
-  useVSCodeMessage("settingsSaved", () => {
+  useVSCodeMessage(ExtensionResponse.IndexingSettingsSaved, () => {
     setStatusInfo({ key: "indexing-page:status.settingsSaved" });
   });
 
   // 加载设置
   useVSCodeMessage(
-    "loadIndexingSettings",
+    ExtensionResponse.IndexingSettingsLoaded,
     (payload: {
       data: { config: Partial<IndexingFormValues>; isIndexed: number };
     }) => {
@@ -275,193 +280,199 @@ export const IndexingPage: React.FC = () => {
 
   // 组件挂载时请求设置
   useEffect(() => {
-    postMessage("getSettings");
+    postMessage(UIRequest.IndexingGetSettings);
   }, []);
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="p-4 space-y-8">
-        <div>
-          <h1 className="text-2xl font-bold">{t("indexing-page:title")}</h1>
-          <p className="mt-2 text-gray-600">
-            {t("indexing-page:description")}{" "}
-            <a href="#">{t("indexing-page:learnMore")}</a>
-          </p>
-        </div>
-        <FormField
-          control={form.control}
-          name="enabled"
-          render={({ field }) => (
-            <FormItem className="flex flex-row items-center space-x-3 space-y-0">
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={(checked) => {
-                    console.log("Form field enabled changed:", checked);
-                    field.onChange(checked);
-                  }}
-                />
-              </FormControl>
-              <FormLabel className="font-normal">
-                {t("indexing-page:enableIndexing")}
-              </FormLabel>
-            </FormItem>
-          )}
-        />
-        <div>
-          <h2 className="text-lg font-medium text-gray-900">
-            {t("indexing-page:status.title")}
-          </h2>
-
-          {/* 状态概览 */}
-          <div className="mt-2 space-y-2">
-            {/* 进度条和状态 */}
-            <div className="w-full">
-              <div className="flex justify-between text-sm mb-1 min-h-[20px]">
-                <span>
-                  {indexingStatus
-                    ? `${t("indexing-page:status.current")}: ${indexingStatus}`
-                    : ""}
-                </span>
-                {indexingProgress.total > 0 && (
-                  <span className="text-gray-500">
-                    {indexingProgress.current} / {indexingProgress.total}
-                  </span>
-                )}
-              </div>
-              {indexingProgress.total > 0 && (
-                <progress
-                  value={indexingProgress.current}
-                  max={indexingProgress.total}
-                  className="w-full h-2 rounded-full overflow-hidden"
-                />
-              )}
-            </div>
-
-            {/* 统计信息 */}
-            {indexingStats && (
-              <div className="flex flex-wrap gap-4 text-sm">
-                <span className="text-green-600 font-medium">
-                  {t("indexing-page:stats.succeeded")}:{" "}
-                  {indexingStats.succeeded + indexingStats.skipped}/
-                  {indexingStats.total}
-                </span>
-                <span
-                  className={`font-medium ${indexingStats.failed > 0 ? "text-red-600 cursor-pointer hover:underline" : "text-gray-400"}`}
-                  onClick={() =>
-                    indexingStats.failed > 0 && setShowDetails(true)
-                  }
-                >
-                  {t("indexing-page:stats.failed")}: {indexingStats.failed}/
-                  {indexingStats.total}
-                  {indexingStats.failed > 0 &&
-                    ` (${t("indexing-page:stats.viewFailureDetails")})`}
-                </span>
-              </div>
-            )}
-
-            {/* 操作按钮 */}
-            <div className="flex space-x-3 mt-4">
-              {!indexingStats && (
-                <Button
-                  type="button"
-                  size="sm"
-                  onClick={() =>
-                    postMessage("startIndexing", { clearIndex: false })
-                  }
-                  disabled={!enabled}
-                >
-                  {isIndexed > 0
-                    ? t("indexing-page:buttons.updateIndex")
-                    : t("indexing-page:buttons.startIndexing")}
-                </Button>
-              )}
-              {indexingStats && indexingStats.failed > 0 && (
-                <Button
-                  type="button"
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setShowDetails(true)}
-                >
-                  {t("indexing-page:buttons.viewDetails")}
-                </Button>
-              )}
-            </div>
-
-            {/* 失败详情弹窗 */}
-            <Dialog open={showDetails} onOpenChange={setShowDetails}>
-              <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
-                <DialogHeader>
-                  <DialogTitle>
-                    {t("indexing-page:dialog.failedFilesTitle", {
-                      count: indexingStats?.failed || 0,
-                    })}
-                  </DialogTitle>
-                </DialogHeader>
-                <div className="flex-1 overflow-y-auto p-1">
-                  {indexingStats &&
-                  indexingStats.failedFiles &&
-                  indexingStats.failedFiles.length > 0 ? (
-                    <ul className="space-y-3">
-                      {indexingStats.failedFiles.map((file, idx) => (
-                        <li
-                          key={idx}
-                          className="text-sm border-b pb-2 last:border-0"
-                        >
-                          <div className="font-mono font-semibold text-gray-800 break-all">
-                            {file.path}
-                          </div>
-                          <div className="text-red-600 mt-1 text-xs break-words">
-                            {t("indexing-page:dialog.errorLabel")}: {file.error}
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  ) : (
-                    <p className="text-gray-500">
-                      {t("indexing-page:dialog.noFailedFiles")}
-                    </p>
-                  )}
-                </div>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </div>
-        <div className="space-y-4">
+    <PageLayout maxWidth="3xl">
+      <PageHeader
+        title={t("indexing-page:title")}
+        description={t("indexing-page:description")}
+      />
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
           <FormField
             control={form.control}
-            name="provider"
+            name="enabled"
             render={({ field }) => (
-              <FormItem className="flex flex-col">
-                <FormLabel>{t("indexing-page:embeddingProvider")}</FormLabel>
+              <FormItem className="flex flex-row items-center space-x-3 space-y-0">
                 <FormControl>
-                  <ProviderSelector
-                    selectedProvider={field.value}
-                    onProviderChange={(value) =>
-                      form.setValue("provider", value)
-                    }
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={(checked) => {
+                      console.log("Form field enabled changed:", checked);
+                      field.onChange(checked);
+                    }}
                   />
                 </FormControl>
-                <FormMessage />
+                <FormLabel className="font-normal">
+                  {t("indexing-page:enableIndexing")}
+                </FormLabel>
               </FormItem>
             )}
           />
-          {ProviderComponent && (
-            <ProviderComponent
-              control={form.control as Control<IndexingFormValues>}
+          <div>
+            <h2 className="text-lg font-medium text-gray-900">
+              {t("indexing-page:status.title")}
+            </h2>
+
+            {/* 状态概览 */}
+            <div className="mt-2 space-y-2">
+              {/* 进度条和状态 */}
+              <div className="w-full">
+                <div className="flex justify-between text-sm mb-1 min-h-[20px]">
+                  <span>
+                    {indexingStatus
+                      ? `${t("indexing-page:status.current")}: ${indexingStatus}`
+                      : ""}
+                  </span>
+                  {indexingProgress.total > 0 && (
+                    <span className="text-gray-500">
+                      {indexingProgress.current} / {indexingProgress.total}
+                    </span>
+                  )}
+                </div>
+                {indexingProgress.total > 0 && (
+                  <progress
+                    value={indexingProgress.current}
+                    max={indexingProgress.total}
+                    className="w-full h-2 rounded-full overflow-hidden"
+                  />
+                )}
+              </div>
+
+              {/* 统计信息 */}
+              {indexingStats && (
+                <div className="flex flex-wrap gap-4 text-sm">
+                  <span className="text-green-600 font-medium">
+                    {t("indexing-page:stats.succeeded")}:{" "}
+                    {indexingStats.succeeded + indexingStats.skipped}/
+                    {indexingStats.total}
+                  </span>
+                  <span
+                    className={`font-medium ${indexingStats.failed > 0 ? "text-red-600 cursor-pointer hover:underline" : "text-gray-400"}`}
+                    onClick={() =>
+                      indexingStats.failed > 0 && setShowDetails(true)
+                    }
+                  >
+                    {t("indexing-page:stats.failed")}: {indexingStats.failed}/
+                    {indexingStats.total}
+                    {indexingStats.failed > 0 &&
+                      ` (${t("indexing-page:stats.viewFailureDetails")})`}
+                  </span>
+                </div>
+              )}
+
+              {/* 操作按钮 */}
+              <div className="flex space-x-3 mt-4">
+                {!indexingStats && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    onClick={() =>
+                      postMessage(UIRequest.IndexingStart, {
+                        clearIndex: false,
+                      })
+                    }
+                    disabled={!enabled}
+                  >
+                    {isIndexed > 0
+                      ? t("indexing-page:buttons.updateIndex")
+                      : t("indexing-page:buttons.startIndexing")}
+                  </Button>
+                )}
+                {indexingStats && indexingStats.failed > 0 && (
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setShowDetails(true)}
+                  >
+                    {t("indexing-page:buttons.viewDetails")}
+                  </Button>
+                )}
+              </div>
+
+              {/* 失败详情弹窗 */}
+              <Dialog open={showDetails} onOpenChange={setShowDetails}>
+                <DialogContent className="max-w-2xl max-h-[80vh] flex flex-col">
+                  <DialogHeader>
+                    <DialogTitle>
+                      {t("indexing-page:dialog.failedFilesTitle", {
+                        count: indexingStats?.failed || 0,
+                      })}
+                    </DialogTitle>
+                  </DialogHeader>
+                  <div className="flex-1 overflow-y-auto p-1">
+                    {indexingStats &&
+                    indexingStats.failedFiles &&
+                    indexingStats.failedFiles.length > 0 ? (
+                      <ul className="space-y-3">
+                        {indexingStats.failedFiles.map((file, idx) => (
+                          <li
+                            key={idx}
+                            className="text-sm border-b pb-2 last:border-0"
+                          >
+                            <div className="font-mono font-semibold text-gray-800 break-all">
+                              {file.path}
+                            </div>
+                            <div className="text-red-600 mt-1 text-xs break-words">
+                              {t("indexing-page:dialog.errorLabel")}:{" "}
+                              {file.error}
+                            </div>
+                          </li>
+                        ))}
+                      </ul>
+                    ) : (
+                      <p className="text-gray-500">
+                        {t("indexing-page:dialog.noFailedFiles")}
+                      </p>
+                    )}
+                  </div>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <FormField
+              control={form.control}
+              name="provider"
+              render={({ field }) => (
+                <FormItem className="flex flex-col">
+                  <FormLabel>{t("indexing-page:embeddingProvider")}</FormLabel>
+                  <FormControl>
+                    <ProviderSelector
+                      selectedProvider={field.value}
+                      onProviderChange={(value) =>
+                        form.setValue("provider", value)
+                      }
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
             />
-          )}
-        </div>
-        <AdvancedIndexingSettings
-          control={form.control as Control<IndexingFormValues>}
-        />
-        <div className="flex justify-end space-x-2">
-          <Button type="button" variant="secondary" onClick={handleClearIndex}>
-            {t("indexing-page:clearIndex")}
-          </Button>
-          <Button type="submit">{t("indexing-page:save")}</Button>
-        </div>
-      </form>
-    </Form>
+            {ProviderComponent && (
+              <ProviderComponent
+                control={form.control as Control<IndexingFormValues>}
+              />
+            )}
+          </div>
+          <AdvancedIndexingSettings
+            control={form.control as Control<IndexingFormValues>}
+          />
+          <div className="flex justify-end space-x-2">
+            <Button
+              type="button"
+              variant="secondary"
+              onClick={handleClearIndex}
+            >
+              {t("indexing-page:clearIndex")}
+            </Button>
+            <Button type="submit">{t("indexing-page:save")}</Button>
+          </div>
+        </form>
+      </Form>
+    </PageLayout>
   );
 };

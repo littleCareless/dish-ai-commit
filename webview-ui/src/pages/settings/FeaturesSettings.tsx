@@ -87,17 +87,17 @@ export const FeaturesSettings: React.FC = () => {
     feature: keyof typeof features,
     enabled: boolean,
   ) => {
-    // Build the updated settings object
-    const updatedSettings = {
+    // Update local state immediately for responsive UI
+    setFeatures((prev) => ({
+      ...prev,
+      [feature]: enabled,
+    }));
+
+    // Save to backend
+    postMessage("saveFeaturesSettings", {
       ...features,
       [feature]: enabled,
-    };
-
-    // Update local state immediately for responsive UI
-    setFeatures(updatedSettings);
-
-    // Save to backend with the updated settings
-    postMessage("saveFeaturesSettings", updatedSettings);
+    });
   };
 
   return (

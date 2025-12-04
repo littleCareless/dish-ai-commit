@@ -1,6 +1,5 @@
 import { CreatePromptModal } from "@/components/prompts/create-prompt-modal";
 import { VariablePicker } from "@/components/prompts/variable-picker";
-import { MessageType } from "@/types/messages";
 import {
   CATEGORY_DISPLAY_NAMES,
   PROMPT_CATEGORIES,
@@ -11,6 +10,7 @@ import {
   PromptKey,
 } from "@/types/prompts";
 import { postMessage } from "@/utils/vscode";
+import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 import { CheckCircle2, Circle } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -59,14 +59,14 @@ export const PromptsPage: React.FC = () => {
   };
 
   const fetchPrompts = useCallback(() => {
-    postMessage(MessageType.GetAllPrompts);
+    postMessage(UIRequest.PromptGetAll);
     // Also fetch active prompt key - we might need a new message type or piggyback
     // For now, let's assume we can get it via a separate message or part of GetAllPrompts payload if we modified backend
     // Since we didn't modify GetAllPrompts payload structure in backend yet to include active key,
     // we should probably add a way to get it.
     // Actually, let's add a new message type "GetActivePromptKey" in backend or just use "loadFeaturesSettings"
     // since we added it to features settings.
-    postMessage("loadFeaturesSettings");
+    postMessage(UIRequest.FeaturesLoadSettings);
   }, []);
 
   const handleSelectChange = useCallback(
@@ -93,7 +93,7 @@ export const PromptsPage: React.FC = () => {
 
     const handleMessage = (event: MessageEvent) => {
       const message = event.data;
-      if (message.command === MessageType.AllPrompts) {
+      if (message.command === ExtensionResponse.PromptAllLoaded) {
         const receivedPrompts: Prompts = message.payload;
         setPrompts(receivedPrompts);
 
@@ -118,16 +118,17 @@ export const PromptsPage: React.FC = () => {
           });
         }
       } else if (
-        message.command === "updateFeaturesSettings" &&
-        message.settings
+        message.command === ExtensionResponse.FeaturesSettingsLoaded &&
+        message.data
       ) {
         // Assuming the backend sends the full settings object including our new key
         // We need to make sure the backend actually sends this.
         // The current backend implementation of "loadFeaturesSettings" sends what's in the config.
         // We added "dish-ai-commit.features.commitMessage.activePromptKey" to package.json
         // So it should be available in the settings object if we update the backend handler.
-        if (message.settings.activePromptKey) {
-          setActivePromptKey(message.settings.activePromptKey);
+        const settings = message.data as any;
+        if (settings.activePromptKey) {
+          setActivePromptKey(settings.activePromptKey);
         }
       }
     };
@@ -141,7 +142,7 @@ export const PromptsPage: React.FC = () => {
 
   const handleSave = () => {
     if (!selectedKey) return;
-    postMessage(MessageType.UpdatePrompt, {
+    postMessage(UIRequest.PromptUpdate, {
       key: selectedKey,
       content: currentContent,
       target: saveTarget,
@@ -150,14 +151,14 @@ export const PromptsPage: React.FC = () => {
 
   const handleReset = () => {
     if (!selectedKey) return;
-    postMessage(MessageType.ResetPrompt, {
+    postMessage(UIRequest.PromptReset, {
       key: selectedKey,
       target: saveTarget,
     });
   };
 
   const handleResetAll = () => {
-    postMessage(MessageType.ResetAllPrompts, {
+    postMessage(UIRequest.PromptResetAll, {
       target: saveTarget,
     });
   };
@@ -168,7 +169,7 @@ export const PromptsPage: React.FC = () => {
 
   const handleDelete = (key: string) => {
     if (window.confirm(t("deleteConfirm", { key }))) {
-      postMessage(MessageType.DeletePrompt, {
+      postMessage(UIRequest.PromptDelete, {
         key,
         target: prompts[key].source,
       });
@@ -178,7 +179,7 @@ export const PromptsPage: React.FC = () => {
   const handleRename = (oldKey: string) => {
     const newKey = window.prompt(t("renamePrompt", { oldKey }), oldKey);
     if (newKey && newKey !== oldKey) {
-      postMessage(MessageType.RenamePrompt, {
+      postMessage(UIRequest.PromptRename, {
         oldKey,
         newKey,
         target: prompts[oldKey].source,
@@ -193,7 +194,7 @@ export const PromptsPage: React.FC = () => {
     // Or we can create a specific message.
     // For simplicity, let's assume we can send a partial update or a specific command.
     // Let's use a specific command "setActivePrompt"
-    postMessage("setActivePrompt", { key: selectedKey });
+    postMessage(UIRequest.FeaturesSetActivePrompt, { key: selectedKey });
     setActivePromptKey(selectedKey);
   };
 

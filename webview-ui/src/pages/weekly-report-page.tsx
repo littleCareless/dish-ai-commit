@@ -1,4 +1,5 @@
 import { Editor } from "@/components/Editor";
+import { PageHeader, PageLayout } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { Select as ArcoSelect, DatePicker } from "@arco-design/web-react";
 import "@arco-design/web-react/dist/css/arco.css";
@@ -9,6 +10,7 @@ const { RangePicker } = DatePicker;
 
 import { useToast } from "@/hooks/use-toast";
 import { postMessage, useMessageHandler } from "@/utils/vscode";
+import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 import { FileDown, Save, Wand2 } from "lucide-react";
 
 // Define a more specific type for setting values
@@ -24,7 +26,7 @@ function WeeklyReportPage() {
   // 添加消息监听
   useEffect(() => {
     // 请求用户列表
-    postMessage("getUsers");
+    postMessage(UIRequest.WeeklyReportGetUsers);
   }, []);
 
   useMessageHandler(
@@ -37,7 +39,7 @@ function WeeklyReportPage() {
             // 更新编辑器内容
             setContent(message.data);
             break;
-          case "usersList": // 新增处理用户列表的 case
+          case ExtensionResponse.WeeklyReportUsersListLoaded: // 新增处理用户列表的 case
             setAllUsers(message.data.users || []);
             if (
               message.data.currentUser &&
@@ -101,7 +103,7 @@ function WeeklyReportPage() {
       duration: 5000, // 持续时间长一点
     });
 
-    postMessage("generateTeamReport", {
+    postMessage(UIRequest.WeeklyReportGenerateTeam, {
       content,
       period: {
         startDate: dateRange[0].format("YYYY-MM-DD"),
@@ -129,8 +131,8 @@ function WeeklyReportPage() {
   };
 
   return (
-    <div className="container max-w-5xl p-6 mx-auto">
-      <h1 className="mb-8 text-3xl font-bold">{t("title")}</h1>
+    <PageLayout maxWidth="5xl">
+      <PageHeader title={t("title")} />
 
       <div className="space-y-6">
         <div className="p-6 border rounded-lg bg-card">
@@ -222,7 +224,7 @@ function WeeklyReportPage() {
           <Editor content={content} onChange={setContent} />
         </div>
       </div>
-    </div>
+    </PageLayout>
   );
 }
 

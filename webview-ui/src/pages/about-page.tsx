@@ -1,3 +1,4 @@
+import { PageLayout } from "@/components/layout/PageLayout";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
@@ -34,13 +35,11 @@ export const AboutPage: React.FC = () => {
     ?.replace(".git", "");
 
   return (
-    <div className="p-6  dark:bg-gray-800 h-full">
-      <h1 className="text-3xl font-bold text-gray-900 dark:text-white mb-4">
-        {packageInfo.displayName}
-      </h1>
-      <p className="text-gray-600 dark:text-gray-400 mb-6">
-        {t("description")}
-      </p>
+    <PageLayout maxWidth="3xl">
+      <div>
+        <h1 className="text-3xl font-bold mb-2">{packageInfo.displayName}</h1>
+        <p className="text-muted-foreground">{t("description")}</p>
+      </div>
 
       <div className="space-y-4">
         <InfoRow label={t("version")}>{packageInfo.version}</InfoRow>
@@ -67,6 +66,6 @@ export const AboutPage: React.FC = () => {
           </InfoRow>
         )}
       </div>
-    </div>
+    </PageLayout>
   );
 };

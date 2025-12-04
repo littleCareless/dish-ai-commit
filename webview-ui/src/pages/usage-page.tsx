@@ -1,6 +1,8 @@
+import { PageHeader, PageLayout } from "@/components/layout/PageLayout";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { postMessage } from "@/utils/vscode";
+import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 import { RotateCcw } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -19,7 +21,7 @@ export const UsagePage: React.FC = () => {
   const [detailedStats, setDetailedStats] = useState<DailyUsageStats[]>([]);
 
   const fetchUsageStats = () => {
-    postMessage("getUsageStats", {});
+    postMessage(UIRequest.UsageGetStats, {});
   };
 
   useEffect(() => {
@@ -28,7 +30,7 @@ export const UsagePage: React.FC = () => {
 
   useEvent("message", (event: MessageEvent) => {
     const message = event.data;
-    if (message.command === "usageStats") {
+    if (message.command === ExtensionResponse.UsageStatsLoaded) {
       console.log("[UsagePage] 接收到使用统计数据:", message.data);
       setTotalTokens(message.data.totalTokens);
       setDetailedStats(message.data.detailedStats || []);
@@ -36,7 +38,7 @@ export const UsagePage: React.FC = () => {
   });
 
   const handleReset = () => {
-    postMessage("resetUsageStats", {});
+    postMessage(UIRequest.UsageResetStats, {});
   };
 
   // Prepare data for lists
@@ -69,19 +71,17 @@ export const UsagePage: React.FC = () => {
   );
 
   return (
-    <div className="container mx-auto p-6 max-w-4xl space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">{t("title")}</h1>
-          <p className="text-muted-foreground mt-2">{t("description")}</p>
-        </div>
-        <div className="flex gap-2">
+    <PageLayout maxWidth="4xl">
+      <PageHeader
+        title={t("title")}
+        description={t("description")}
+        actions={
           <Button variant="outline" size="sm" onClick={handleReset}>
             <RotateCcw className="mr-2 h-4 w-4" />
             {t("reset")}
           </Button>
-        </div>
-      </div>
+        }
+      />
 
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
@@ -189,6 +189,6 @@ export const UsagePage: React.FC = () => {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </PageLayout>
   );
 };

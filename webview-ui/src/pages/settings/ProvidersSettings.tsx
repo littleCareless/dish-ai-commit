@@ -4,6 +4,7 @@ import { providerRegistry } from "@/config/provider-registry";
 import { secureStorage } from "@/services/secure-storage";
 import {
   ExtendedProviderConfig,
+  ModelMetadata,
   ProviderMetadata,
 } from "@/types/provider-metadata";
 import { Profile, ProviderConfig } from "@/types/settings";
@@ -67,7 +68,7 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
       });
     }
     return config as unknown as ExtendedProviderConfig;
-  }, [editingProfile, selectedProvider, currentProviderMetadata, t]);
+  }, [editingProfile, selectedProvider, currentProviderMetadata]);
 
   const handleConfigChange = useCallback(
     async (providerId: string, newConfig: Record<string, unknown>) => {
@@ -78,9 +79,26 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
         ...newConfig,
       } as ExtendedProviderConfig;
 
-      // 直接使用配置,不需要转换 models
+      // 转换 models 从 ModelMetadata 到 ModelConfig
       const providerConfig: ProviderConfig = {
         ...updatedConfig,
+        models: (updatedConfig.models || []).map((m: ModelMetadata) => ({
+          id: m.id,
+          name: m.name,
+          provider: providerId,
+          maxTokens: { input: m.contextWindow, output: m.maxOutputTokens },
+          deprecated: m.deprecated,
+          capabilities: {
+            streaming: m.capabilities?.includes("streaming"),
+            functionCalling: m.capabilities?.includes("function-calling"),
+          },
+          cost: m.pricing
+            ? {
+                input: m.pricing.input,
+                output: m.pricing.output,
+              }
+            : undefined,
+        })),
       };
 
       const updatedProfile: Profile = {
@@ -117,7 +135,8 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
 
       const updatedProfile: Profile = {
         ...editingProfile,
-        activeProviderId: providerId, // 设置为当前添加的 provider
+        ...editingProfile,
+        // activeProviderId: providerId, // Removed as it is not in Profile interface
         providers: {
           ...editingProfile.providers,
           [providerId]: defaultConfig,
@@ -125,7 +144,7 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
       };
       onChange(updatedProfile);
     },
-    [editingProfile, onChange, ProviderRegistry, t],
+    [editingProfile, onChange, ProviderRegistry],
   );
 
   const handleProviderSelect = useCallback(
@@ -150,7 +169,8 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
         // 如果 provider 已存在,只需要更新 activeProviderId
         const updatedProfile: Profile = {
           ...editingProfile,
-          activeProviderId: providerId,
+          ...editingProfile,
+          // activeProviderId: providerId, // Removed as it is not in Profile interface
         };
         onChange(updatedProfile);
       }
@@ -246,8 +266,8 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
           <div className="flex flex-col space-y-2">
             <VSCodeDropdown
               value={selectedProvider}
-              onChange={(e: { target: { value: string } }) =>
-                handleProviderChange(e.target.value)
+              onChange={(e: Event) =>
+                handleProviderChange((e.target as HTMLSelectElement).value)
               }
             >
               {Object.values(ProviderRegistry).map(
