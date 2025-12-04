@@ -1,3 +1,4 @@
+import { VSCodeProvider, useVSCodeContext } from "@/contexts/VSCodeContext";
 import { ConfigProvider } from "@arco-design/web-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React, { useCallback, useEffect } from "react";
@@ -8,11 +9,14 @@ import { Toaster } from "./components/ui/sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { ExtensionStateContextProvider } from "./context/ExtensionStateContext";
 import { SettingsProvider } from "./contexts/SettingsContext";
-import { VSCodeProvider, useVSCodeContext } from "./contexts/VSCodeContext";
 import i18n from "./i18n/setup";
-import { I18nProvider } from "./i18n/provider";
+// import { I18nProvider } from "@/i18n/provider";
 import { AppRouter } from "./router";
 import { postMessage } from "./utils/vscode";
+
+// 诊断日志：验证 React 实例
+console.log("[App] React version:", React.version);
+console.log("[App] React instance:", React);
 
 const STANDARD_TOOLTIP_DELAY = 300;
 
@@ -54,13 +58,13 @@ const AppWithProviders = () => (
         <VSCodeProvider>
           <SettingsProvider>
             <ExtensionStateContextProvider>
-              <I18nProvider>
-                <QueryClientProvider client={queryClient}>
-                  <TooltipProvider delayDuration={STANDARD_TOOLTIP_DELAY}>
-                    <App />
-                  </TooltipProvider>
-                </QueryClientProvider>
-              </I18nProvider>
+              {/* <I18nProvider> */}
+              <QueryClientProvider client={queryClient}>
+                <TooltipProvider delayDuration={STANDARD_TOOLTIP_DELAY}>
+                  <App />
+                </TooltipProvider>
+              </QueryClientProvider>
+              {/* </I18nProvider> */}
             </ExtensionStateContextProvider>
           </SettingsProvider>
         </VSCodeProvider>

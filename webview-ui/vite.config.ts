@@ -74,7 +74,7 @@ export default defineConfig(({ mode }) => {
   };
 
   const plugins: PluginOption[] = [
-    react() as any,
+    react(),
     tailwindcss(),
     persistPortPlugin(),
     wasmPlugin(),
@@ -85,10 +85,10 @@ export default defineConfig(({ mode }) => {
     resolve: {
       alias: {
         "@": resolve(__dirname, "./src"),
-        "~": resolve(__dirname, "./src"),
-        "@src": resolve(__dirname, "../src"),
+        "@shared": resolve(__dirname, "../shared"),
       },
-      dedupe: ["@microsoft/fast-web-utilities"],
+      // 确保只有一个 React 实例，避免 "Invalid hook call" 错误
+      dedupe: ["react", "react-dom", "@microsoft/fast-web-utilities"],
     },
     build: {
       outDir,
@@ -177,6 +177,9 @@ export default defineConfig(({ mode }) => {
     define,
     optimizeDeps: {
       include: [
+        "react",
+        "react-dom",
+        "@arco-design/web-react",
         "mermaid",
         "dagre", // Explicitly include dagre for pre-bundling
         "@microsoft/fast-web-utilities", // Include this dependency for pre-bundling
