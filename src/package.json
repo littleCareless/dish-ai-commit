@@ -261,11 +261,6 @@
           "default": "",
           "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.baiduQianfan.apiKey.description%"
         },
-        "dish-ai-commit.providers.baiduQianfan.secretKey": {
-          "type": "string",
-          "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.baiduQianfan.secretKey.description%"
-        },
         "dish-ai-commit.providers.deepseek.apiKey": {
           "type": "string",
           "default": "",

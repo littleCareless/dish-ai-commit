@@ -20,7 +20,6 @@ export const CONFIG_KEYS = {
   "PROVIDERS_GEMINI_APIKEY": "dish-ai-commit.providers.gemini.apiKey",
   "PROVIDERS_BAIDUQIANFAN": "dish-ai-commit.providers.baiduQianfan",
   "PROVIDERS_BAIDUQIANFAN_APIKEY": "dish-ai-commit.providers.baiduQianfan.apiKey",
-  "PROVIDERS_BAIDUQIANFAN_SECRETKEY": "dish-ai-commit.providers.baiduQianfan.secretKey",
   "PROVIDERS_DEEPSEEK": "dish-ai-commit.providers.deepseek",
   "PROVIDERS_DEEPSEEK_APIKEY": "dish-ai-commit.providers.deepseek.apiKey",
   "PROVIDERS_SILICONFLOW": "dish-ai-commit.providers.siliconflow",

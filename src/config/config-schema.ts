@@ -213,11 +213,6 @@ export const CONFIG_SCHEMA = {
         default: "",
         description: "Baidu Qianfan API Key / 百度千帆 API 密钥",
       },
-      secretKey: {
-        type: "string",
-        default: "",
-        description: "Baidu Qianfan Secret Key / 百度千帆 Secret Key",
-      },
       rateLimitEnabled: {
         type: "boolean",
         default: false,

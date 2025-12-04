@@ -45,7 +45,6 @@ export class SettingsMigration {
       const hasConfig =
         apiKey ||
         baseUrl ||
-        config.get(`providers.${providerId}.secretKey`) ||
         config.get(`providers.${providerId}.endpoint`);
 
       if (hasConfig && String(hasConfig).trim().length > 0) {
@@ -172,7 +171,6 @@ export class SettingsMigration {
     const baseUrl = config.get<string>(`${section}.baseUrl`);
 
     // Check for other specific fields
-    const secretKey = config.get<string>(`${section}.secretKey`);
     const endpoint = config.get<string>(`${section}.endpoint`);
     const apiVersion = config.get<string>(`${section}.apiVersion`);
     const orgId = config.get<string>(`${section}.orgId`);
@@ -187,7 +185,7 @@ export class SettingsMigration {
     // Basic validation: if no key/url/endpoint is set, skip it (unless it's a local provider that might not need it, but usually they need a URL)
     // For local providers like Ollama, baseUrl is default, so we might want to include it if it's explicitly set or just always include it?
     // Let's include it if any relevant field is non-empty string.
-    const hasAnyConfig = [apiKey, baseUrl, secretKey, endpoint, projectId].some(
+    const hasAnyConfig = [apiKey, baseUrl, endpoint, projectId].some(
       (v) => v && v.trim().length > 0
     );
 
@@ -218,9 +216,6 @@ export class SettingsMigration {
     }
 
     // Provider specific fields mapping
-    if (providerId === "baiduQianfan" && secretKey) {
-      baseConfig.secretKey = secretKey;
-    }
     if (providerId === "azureOpenai") {
       if (endpoint) {
         baseConfig.endpoint = endpoint;

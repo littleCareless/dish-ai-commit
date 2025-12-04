@@ -48,7 +48,6 @@
   "extension.contributes.configuration.properties.dish-ai-commit.providers.ollama.baseUrl.description": "Ollama API-Basis-URL",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.gemini.apiKey.description": "Gemini AI API-Schlüssel",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.baiduQianfan.apiKey.description": "Baidu Qianfan API-Schlüssel",
-  "extension.contributes.configuration.properties.dish-ai-commit.providers.baiduQianfan.secretKey.description": "Baidu Qianfan Secret Key",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.deepseek.apiKey.description": "Deepseek AI API-Schlüssel",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.siliconflow.apiKey.description": "SiliconFlow AI API-Schlüssel",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.openrouter.apiKey.description": "OpenRouter AI API-Schlüssel",

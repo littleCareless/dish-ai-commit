@@ -48,7 +48,6 @@
   "extension.contributes.configuration.properties.dish-ai-commit.providers.ollama.baseUrl.description": "Ollama API 기본 URL",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.gemini.apiKey.description": "Gemini AI API 키",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.baiduQianfan.apiKey.description": "Baidu Qianfan API 키",
-  "extension.contributes.configuration.properties.dish-ai-commit.providers.baiduQianfan.secretKey.description": "Baidu Qianfan Secret Key",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.deepseek.apiKey.description": "Deepseek AI API 키",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.siliconflow.apiKey.description": "SiliconFlow AI API 키",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.openrouter.apiKey.description": "OpenRouter AI API 키",

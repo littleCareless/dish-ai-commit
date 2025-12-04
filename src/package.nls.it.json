@@ -48,7 +48,6 @@
   "extension.contributes.configuration.properties.dish-ai-commit.providers.ollama.baseUrl.description": "URL base API Ollama",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.gemini.apiKey.description": "Chiave API Gemini AI",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.baiduQianfan.apiKey.description": "Chiave API Baidu Qianfan",
-  "extension.contributes.configuration.properties.dish-ai-commit.providers.baiduQianfan.secretKey.description": "Chiave segreta Baidu Qianfan",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.deepseek.apiKey.description": "Chiave API Deepseek AI",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.siliconflow.apiKey.description": "Chiave API SiliconFlow AI",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.openrouter.apiKey.description": "Chiave API OpenRouter AI",
