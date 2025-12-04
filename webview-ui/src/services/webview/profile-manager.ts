@@ -1,11 +1,29 @@
-import { v4 as uuidv4 } from "uuid";
-import { ResponseMessage } from "@/types/messages";
 import {
   DEFAULT_USER_PREFERENCES,
   Profile,
   ProviderConfig,
 } from "@/types/settings";
 import { postMessage } from "@/utils/vscode";
+import {
+  ExtensionResponse,
+  ExtensionResponseMessage,
+  UIRequest,
+} from "@shared/types/messages";
+import { v4 as uuidv4 } from "uuid";
+
+// Map UIRequest commands to their corresponding ExtensionResponse
+const commandToResponse: Record<string, ExtensionResponse> = {
+  [UIRequest.ProfileLoadAll]: ExtensionResponse.ProfileAllLoaded,
+  [UIRequest.ProfileSave]: ExtensionResponse.ProfileSaved,
+  [UIRequest.ProfileDelete]: ExtensionResponse.ProfileDeleted,
+  [UIRequest.ProfileSetActive]: ExtensionResponse.ProfileActiveChanged,
+  [UIRequest.ProfileGetAllProviders]:
+    ExtensionResponse.ProfileAllProvidersLoaded,
+  [UIRequest.ProfileExport]: ExtensionResponse.ProfileExported,
+  [UIRequest.ProfileImport]: ExtensionResponse.ProfileImported,
+  [UIRequest.ProfileMigrateSettings]: ExtensionResponse.ProfileSettingsMigrated,
+  [UIRequest.ProfileResetDefaults]: ExtensionResponse.ProfileResetComplete,
+};
 
 // Helper function to create a request-response mechanism
 function invoke<T>(
@@ -14,11 +32,17 @@ function invoke<T>(
 ): Promise<T> {
   return new Promise((resolve, reject) => {
     const requestId = uuidv4();
+    const expectedResponse = commandToResponse[command];
+
+    if (!expectedResponse) {
+      reject(new Error(`No response mapping found for command: ${command}`));
+      return;
+    }
 
     const handleResponse = (event: MessageEvent) => {
-      const message = event.data as ResponseMessage;
+      const message = event.data as ExtensionResponseMessage;
       if (
-        message.command === `${command}Response` &&
+        message.command === expectedResponse &&
         message.requestId === requestId
       ) {
         window.removeEventListener("message", handleResponse);
@@ -36,7 +60,7 @@ function invoke<T>(
     setTimeout(() => {
       window.removeEventListener("message", handleResponse);
       reject(new Error(`Request for command '${command}' timed out.`));
-    }, 150000); // 15-second timeout
+    }, 15000); // 15-second timeout
 
     postMessage(command, { ...data, requestId });
   });
@@ -55,29 +79,29 @@ export class ProfileManager {
     activeProfileId: string;
   }> {
     return invoke<{ profiles: Profile[]; activeProfileId: string }>(
-      "loadProfiles",
+      "profile.loadAll",
     );
   }
 
   async saveProfile(profile: Profile): Promise<void> {
-    return invoke<void>("saveProfile", { profile });
+    return invoke<void>("profile.save", { profile });
   }
 
   async deleteProfile(profileId: string): Promise<void> {
-    return invoke<void>("deleteProfile", { profileId });
+    return invoke<void>("profile.delete", { profileId });
   }
 
   async setActiveProfile(profileId: string): Promise<void> {
-    return invoke<void>("setActiveProfile", { profileId });
+    return invoke<void>("profile.setActive", { profileId });
   }
 
   async getAllProviders(): Promise<ProviderConfig[]> {
-    return invoke<ProviderConfig[]>("getAllProviders");
+    return invoke<ProviderConfig[]>("profile.getAllProviders");
   }
 
   async exportProfile(profileId: string): Promise<void> {
     // This is a fire-and-forget command that triggers a VS Code dialog
-    postMessage("exportProfile", { profileId });
+    postMessage("profile.export", { profileId });
   }
 
   async importProfile(): Promise<Profile> {
@@ -99,16 +123,16 @@ export class ProfileManager {
         }
       };
       window.addEventListener("message", handleResponse);
-      postMessage("importProfile");
+      postMessage("profile.import");
     });
   }
 
   async migrateSettings(): Promise<Profile | null> {
-    return invoke<Profile | null>("migrateSettings");
+    return invoke<Profile | null>("profile.migrateSettings");
   }
 
   async resetToDefaults(): Promise<void> {
-    return invoke<void>("resetToDefaults");
+    return invoke<void>("profile.resetDefaults");
   }
 
   // Utility methods can remain if they are pure functions
@@ -123,6 +147,7 @@ export class ProfileManager {
       createdAt: now,
       updatedAt: now,
       version: "1.0.0",
+      isDefault: true,
     };
   }
 

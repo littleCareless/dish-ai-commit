@@ -18,6 +18,8 @@ export enum FieldType {
   TEXTAREA = "textarea",
   MULTISELECT = "multiselect",
   CUSTOM = "custom",
+  INFO_BLOCK = "info_block",
+  KEY_VALUE_LIST = "key_value_list",
 }
 
 // 认证模式
@@ -55,7 +57,7 @@ export interface ValidationRule {
   pattern?: RegExp;
   min?: number;
   max?: number;
-  validator?: (value: any) => boolean | Promise<boolean>;
+  validator?: (value: unknown) => boolean | Promise<boolean>;
 }
 
 // 字段元数据接口
@@ -66,10 +68,10 @@ export interface FieldMetadata {
   required: boolean;
   secure?: boolean; // 是否需要加密存储
   validation?: ValidationRule[];
-  defaultValue?: any;
+  defaultValue?: unknown;
   placeholder?: string;
   helpText?: string;
-  conditional?: { field: string; value: any }; // 条件显示
+  conditional?: { field: string; value: unknown }; // 条件显示
   options?: Array<{ value: string; label: string; disabled?: boolean }>; // 选择框选项
   min?: number; // 数值/滑块最小值
   max?: number; // 数值/滑块最大值
@@ -171,7 +173,7 @@ export interface ExtendedProviderConfig {
   projectId?: string;
 
   // 自定义字段存储
-  customFields?: Record<string, any>;
+  customFields?: Record<string, unknown>;
 
   // 模型配置
   models: ModelMetadata[];
@@ -191,7 +193,7 @@ export interface ExtendedProviderConfig {
 
 // 表单状态接口
 export interface FormState {
-  values: Record<string, any>;
+  values: Record<string, unknown>;
   errors: Record<string, string[]>;
   touched: Record<string, boolean>;
   isValid: boolean;
@@ -204,8 +206,8 @@ export type ProviderRegistry = Record<string, ProviderMetadata>;
 // 字段渲染器属性接口
 export interface FieldRendererProps {
   field: FieldMetadata;
-  value: any;
-  onChange: (value: any) => void;
+  value: unknown;
+  onChange: (value: unknown) => void;
   error?: string;
   disabled?: boolean;
 }
@@ -214,8 +216,8 @@ export interface FieldRendererProps {
 export interface DynamicProviderFormProps {
   metadata: ProviderMetadata;
   config: ExtendedProviderConfig;
-  onChange: (key: string, value: any) => void;
-  onValidate?: (field: string, value: any) => Promise<ValidationResult>;
+  onChange: (key: string, value: unknown) => void;
+  onValidate?: (field: string, value: unknown) => Promise<ValidationResult>;
   disabled?: boolean;
   showAdvanced?: boolean;
 }

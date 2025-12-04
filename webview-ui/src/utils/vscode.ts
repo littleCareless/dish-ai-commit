@@ -25,13 +25,29 @@ function getVscodeApi() {
  * @param command The message command to send.
  * @param data The data to send with the message.
  */
+let lastMessage: { command: string; data?: unknown } | null = null;
+let lastMessageTime = 0;
+
 export function postMessage(command: string, data?: unknown) {
+  const now = Date.now();
+  if (
+    lastMessage &&
+    now - lastMessageTime < 1000 && // 1秒内防抖
+    lastMessage.command === command &&
+    JSON.stringify(lastMessage.data) === JSON.stringify(data)
+  ) {
+    console.log("Duplicate message blocked:", { command, data });
+    return;
+  }
+
   const vscode = getVscodeApi();
   if (vscode) {
     vscode.postMessage({
       command,
       data,
     });
+    lastMessage = { command, data };
+    lastMessageTime = now;
   } else {
     console.warn(
       `VSCode API not available. Could not send message: { command: '${command}' }`,
