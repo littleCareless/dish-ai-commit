@@ -11,6 +11,7 @@ import {
   ExtensionResponseMessage,
   UIRequestMessage,
 } from "@shared/types/messages";
+import i18n from "../i18n/setup";
 import { convertTextMateToHljs } from "../utils/textMateToHljs";
 import { postMessage } from "../utils/vscode";
 
@@ -277,6 +278,8 @@ export const ExtensionStateContextProvider: React.FC<{
       setState((prevState) => ({ ...prevState, includeCurrentCost: value })),
     setLanguage: (value) => {
       setState((prevState) => ({ ...prevState, language: value }));
+      // 同步切换 i18next 语言
+      i18n.changeLanguage(value);
       postMessage("setLanguage", { value });
     },
   };
