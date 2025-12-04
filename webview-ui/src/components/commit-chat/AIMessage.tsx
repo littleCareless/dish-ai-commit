@@ -1,7 +1,7 @@
-import React from "react";
-import { Bot, Copy, ThumbsUp, ThumbsDown, RefreshCw } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { ChatMessage } from "@src/types/messages";
+import { ChatMessage } from "@shared/types/messages";
+import { Bot, Copy, RefreshCw, ThumbsDown, ThumbsUp } from "lucide-react";
+import React from "react";
 
 interface AIMessageProps {
   message: ChatMessage;
@@ -105,10 +105,10 @@ const AIMessage: React.FC<AIMessageProps> = ({
         <div className="flex items-center space-x-1">
           <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
             <div
-              className={`h-full ${getConfidenceColor(
+              className={`h - full ${getConfidenceColor(
                 confidence,
-              )} transition-all duration-300`}
-              style={{ width: `${confidence * 100}%` }}
+              )} transition - all duration - 300`}
+              style={{ width: `${confidence * 100}% ` }}
             />
           </div>
           <span className="text-xs text-muted-foreground">
@@ -175,11 +175,11 @@ const AIMessage: React.FC<AIMessageProps> = ({
               <Button
                 size="sm"
                 variant="ghost"
-                className={`h-6 px-2 text-xs ${
+                className={`h - 6 px - 2 text - xs ${
                   feedback === "positive"
                     ? "text-green-600"
                     : "text-muted-foreground"
-                }`}
+                } `}
                 onClick={() => handleFeedback("positive")}
                 title="有用"
               >
@@ -189,11 +189,11 @@ const AIMessage: React.FC<AIMessageProps> = ({
               <Button
                 size="sm"
                 variant="ghost"
-                className={`h-6 px-2 text-xs ${
+                className={`h - 6 px - 2 text - xs ${
                   feedback === "negative"
                     ? "text-red-600"
                     : "text-muted-foreground"
-                }`}
+                } `}
                 onClick={() => handleFeedback("negative")}
                 title="无用"
               >

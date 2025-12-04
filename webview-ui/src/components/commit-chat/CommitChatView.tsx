@@ -1,8 +1,8 @@
-import type { ChatMessage, CommitChatState } from "@src/types/messages";
+import { postMessage, useMessageHandler } from "@/utils/vscode";
+import type { ChatMessage, CommitChatState } from "@shared/types/messages";
 import { VSCodeButton, VSCodeTextArea } from "@vscode/webview-ui-toolkit/react";
 import { Bot, Loader2, Send, User } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import { postMessage, useMessageHandler } from "@/utils/vscode";
 
 interface CommitChatViewProps {
   className?: string;
@@ -47,7 +47,7 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
     };
 
     // 添加用户消息
-    setState((prev) => ({
+    setState((prev: CommitChatState) => ({
       ...prev,
       messages: [...prev.messages, userMessage],
       inputValue: "",
@@ -65,7 +65,7 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
       });
     } catch (error) {
       console.error("发送消息失败:", error);
-      setState((prev) => ({
+      setState((prev: CommitChatState) => ({
         ...prev,
         isTyping: false,
       }));
@@ -82,7 +82,7 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
 
   // 处理输入变化
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setState((prev) => ({
+    setState((prev: CommitChatState) => ({
       ...prev,
       inputValue: e.target.value,
     }));
@@ -103,7 +103,7 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
             metadata: message.data.metadata,
           };
 
-          setState((prev) => ({
+          setState((prev: CommitChatState) => ({
             ...prev,
             messages: [...prev.messages, aiMessage],
             isTyping: false,
@@ -185,20 +185,22 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
                     建议:
                   </div>
                   <div className="space-y-2">
-                    {message.metadata.suggestions.map((suggestion, index) => (
-                      <div
-                        key={index}
-                        className="text-sm p-2 bg-background/80 rounded border cursor-pointer hover:bg-muted/50 transition-colors"
-                        onClick={() =>
-                          setState((prev) => ({
-                            ...prev,
-                            inputValue: suggestion,
-                          }))
-                        }
-                      >
-                        {suggestion}
-                      </div>
-                    ))}
+                    {message.metadata.suggestions.map(
+                      (suggestion: string, index: number) => (
+                        <div
+                          key={index}
+                          className="text-sm p-2 bg-background/80 rounded border cursor-pointer hover:bg-muted/50 transition-colors"
+                          onClick={() =>
+                            setState((prev: CommitChatState) => ({
+                              ...prev,
+                              inputValue: suggestion,
+                            }))
+                          }
+                        >
+                          {suggestion}
+                        </div>
+                      ),
+                    )}
                   </div>
                 </div>
               )}

@@ -1,7 +1,7 @@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
-import type { CommitCommand, CommitSuggestion } from "@src/types/messages";
+import type { CommitCommand, CommitSuggestion } from "@shared/types/messages";
 import { Loader2, Send, Sparkles } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 

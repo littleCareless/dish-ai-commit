@@ -1,7 +1,7 @@
-import React from "react";
-import { User, Copy, Edit, Trash2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import type { ChatMessage } from "@src/types/messages";
+import { ChatMessage } from "@shared/types/messages";
+import { Copy, Edit, Trash2, User } from "lucide-react";
+import React from "react";
 
 interface UserMessageProps {
   message: ChatMessage;
