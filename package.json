@@ -1,6 +1,6 @@
 {
   "name": "dish-ai-commit-workspace",
-  "packageManager": "pnpm@10.17.1",
+  "packageManager": "pnpm@10.24.0",
   "engines": {
     "node": ">= 18.20.8",
     "pnpm": ">= 10.0.0"
