@@ -5,8 +5,8 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { useExtensionState } from "@/context/ExtensionStateContext";
-import { cn } from "@/lib/utils";
 import { routes } from "@/router/routes";
+import { cn } from "@/utils/cn";
 import {
   Archive,
   BarChart3,
@@ -17,6 +17,7 @@ import {
   Globe,
   Info,
   MessageSquare,
+  Replace,
   Settings,
 } from "lucide-react";
 import React from "react";
@@ -39,11 +40,23 @@ export const Navigation: React.FC = () => {
   // 现在使用 TranslationContext 的 t 函数，它应该能正确响应语言变化
   const navigationItems = React.useMemo(() => {
     const items: NavigationItem[] = [
+      // {
+      //   path: routes.profiles,
+      //   label: t("nav.profiles"),
+      //   icon: Users,
+      //   description: t("nav.profiles_description"),
+      // },
       {
         path: routes.settings,
         label: t("nav.settings"),
         icon: Settings,
         description: t("nav.settings_description"),
+      },
+      {
+        path: routes.migration,
+        label: t("nav.migration"),
+        icon: Replace,
+        description: t("nav.migration_description"),
       },
       {
         path: routes.notifications,
@@ -109,7 +122,7 @@ export const Navigation: React.FC = () => {
   return (
     <nav className="h-full flex flex-col">
       {/* 导航菜单 */}
-      <div className="flex-1 p-4 overflow-y-auto">
+      <div className="flex-1 p-2 overflow-y-auto">
         <div className="space-y-2">
           {navigationItems.map((item) => {
             const Icon = item.icon;
@@ -120,8 +133,8 @@ export const Navigation: React.FC = () => {
                 to={item.path}
                 className={({ isActive }: { isActive: boolean }) =>
                   cn(
-                    "group flex items-center gap-2 px-2 py-2 rounded-xl text-sm transition-all duration-200 border border-transparent",
-                    "hover:bg-accent hover:text-accent-foreground hover:shadow-sm",
+                    "group flex items-center gap-2 px-2 py-2 rounded-xl text-sm transition-all duration-300 ease-in-out border border-transparent",
+                    "hover:bg-accent hover:text-accent-foreground hover:shadow-sm hover:border-accent-foreground/10",
                     isActive &&
                       "bg-accent text-accent-foreground shadow-sm border-accent-foreground/20",
                   )
@@ -153,7 +166,7 @@ export const Navigation: React.FC = () => {
       <div className="p-4 border-t border-border">
         <DropdownMenu>
           <DropdownMenuTrigger className="w-full">
-            <div className="group flex items-center gap-2 px-2 py-2 rounded-xl text-sm transition-all duration-200 border border-transparent hover:bg-accent hover:text-accent-foreground hover:shadow-sm">
+            <div className="group flex items-center gap-1 px-1 py-1 rounded-xl text-sm transition-all duration-300 ease-in-out border border-transparent hover:bg-accent hover:text-accent-foreground hover:shadow-sm hover:border-accent-foreground/10">
               <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
                 <Globe className="w-4 h-4" />
               </div>
