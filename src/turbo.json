@@ -4,7 +4,7 @@
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": ["dist/**", "webview-ui-dist/**"]
+      "outputs": ["dist/**"]
     },
     "bundle": {
       "dependsOn": ["^build"],
@@ -22,9 +22,6 @@
       "dependsOn": ["@dish-ai-commit/webview-ui#build"],
       "cache": false,
       "persistent": true
-    },
-    "compile:webview": {
-      "outputs": ["dist/**"]
     },
     "compile:esbuild": {
       "dependsOn": ["check-types"],

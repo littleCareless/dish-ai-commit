@@ -54,11 +54,11 @@ async function main() {
 							["CHANGELOG.zh-CN.md", "CHANGELOG.zh-CN.md", { optional: true }],
 							["src/license", "LICENSE", { optional: true }],
 							["SECURITY.md", "SECURITY.md", { optional: true }],
-							["webview-ui-dist", "webview-ui-dist"],
+							["webview-ui/dist", "webview-ui-dist"],
 							// 移除: ["src/out/prompt", "dist/prompt"] - 现在由 esbuild 直接编译
 						],
 						srcDir,
-						buildDir,
+						distDir,
 					)
 				})
 			},
