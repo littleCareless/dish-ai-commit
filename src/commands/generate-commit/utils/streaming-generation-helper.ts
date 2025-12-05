@@ -54,6 +54,11 @@ export class StreamingGenerationHelper {
   ): Promise<void> {
     this.logger.info("Performing streaming generation...");
 
+    // 阶段1: 初始化
+    progress.report({
+      message: getMessage("progress.stage.initializing") || "[1/4] 初始化...",
+    });
+
     // 步骤1: 获取配置和diff内容
     const { configuration, diffContent } =
       await this.prepareConfigurationAndDiff(
@@ -67,14 +72,20 @@ export class StreamingGenerationHelper {
       return;
     }
 
-    // 步骤2: 处理模型配置
+    // 阶段2: 分析变更
+    progress.report({
+      message: getMessage("progress.stage.analyzing") || "[2/4] 分析变更...",
+    });
     const modelConfig = await this.processModelConfiguration(
       progress,
       provider,
       model
     );
 
-    // 步骤3: 准备提示词和上下文
+    // 阶段3: 构建上下文
+    progress.report({
+      message: getMessage("progress.stage.buildingContext") || "[3/4] 构建上下文...",
+    });
     const { contextManager, requestParams } =
       await this.preparePromptAndContext(
         modelConfig.selectedModel,
@@ -92,7 +103,10 @@ export class StreamingGenerationHelper {
       configuration
     );
 
-    // 步骤5: 执行生成流程
+    // 阶段4: 生成提交消息
+    progress.report({
+      message: getMessage("progress.stage.generating") || "[4/4] 生成提交消息...",
+    });
     await this.executeGenerationFlow(
       modelConfig.aiProvider,
       requestParams,
