@@ -2,9 +2,7 @@ import { GenerateBranchNameCommand } from "@/commands/generate-branch-name/gener
 import { GenerateCommitCommand } from "@/commands/generate-commit/generate-commit-command";
 import { GeneratePRSummaryCommand } from "@/commands/generate-pr-summary-command";
 import { GenerateWeeklyReportCommand } from "@/commands/generate-weekly-report-command";
-import { ResetTokenStatsCommand } from "@/commands/reset-token-stats-command";
 import { ReviewCodeCommand } from "@/commands/review-code-command";
-import { ShowTokenStatsCommand } from "@/commands/show-token-stats-command";
 import { COMMANDS } from "@/constants";
 import { notify } from "@/utils";
 import * as vscode from "vscode";
@@ -51,8 +49,6 @@ export class CommandManager implements vscode.Disposable {
         this.context,
         this.profileManager
       );
-      const showTokenStatsCommand = new ShowTokenStatsCommand(this.context);
-      const resetTokenStatsCommand = new ResetTokenStatsCommand(this.context);
 
       this.disposables.push(
         // 注册生成commit信息命令
@@ -120,29 +116,6 @@ export class CommandManager implements vscode.Disposable {
             } catch (error) {
               // 处理PR摘要生成失败
               notify.error("command.pr.summary.failed", [
-                error instanceof Error ? error.message : String(error),
-              ]);
-            }
-          }
-        ),
-        // 注册显示 token 统计命令
-        vscode.commands.registerCommand(COMMANDS.TOKEN_STATS.SHOW, async () => {
-          try {
-            await showTokenStatsCommand.execute();
-          } catch (error) {
-            notify.error("command.token.stats.show.failed", [
-              error instanceof Error ? error.message : String(error),
-            ]);
-          }
-        }),
-        // 注册重置 token 统计命令
-        vscode.commands.registerCommand(
-          COMMANDS.TOKEN_STATS.RESET,
-          async () => {
-            try {
-              await resetTokenStatsCommand.execute();
-            } catch (error) {
-              notify.error("command.token.stats.reset.failed", [
                 error instanceof Error ? error.message : String(error),
               ]);
             }

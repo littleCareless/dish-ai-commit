@@ -36,13 +36,6 @@ export const COMMANDS = {
     /** 生成PR摘要的命令 */
     GENERATE: packageJson.contributes.commands[4].command,
   },
-  /** Token统计相关命令 */
-  TOKEN_STATS: {
-    /** 显示Token使用统计的命令 */
-    SHOW: packageJson.contributes.commands[5].command,
-    /** 重置Token使用统计的命令 */
-    RESET: packageJson.contributes.commands[6].command,
-  },
 } as const;
 
 /** COMMANDS常量的TypeScript类型 */

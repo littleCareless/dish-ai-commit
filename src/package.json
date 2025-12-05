@@ -86,16 +86,6 @@
         "description": "%extension.contributes.commands.dish-ai-commit.generateCommitMessage.description%"
       },
       {
-        "command": "dish-ai-commit.selectModel",
-        "title": "%extension.contributes.commands.dish-ai-commit.selectModel.title%",
-        "category": "%extension.contributes.commands.dish-ai-commit.selectModel.category%",
-        "icon": {
-          "light": "images/light/brain.svg",
-          "dark": "images/dark/brain.svg"
-        },
-        "description": "%extension.contributes.commands.dish-ai-commit.selectModel.description%"
-      },
-      {
         "command": "dish-ai-commit.generateWeeklyReport",
         "title": "%extension.contributes.commands.dish-ai-commit.generateWeeklyReport.title%",
         "category": "%extension.contributes.commands.dish-ai-commit.generateWeeklyReport.category%",
@@ -134,28 +124,6 @@
           "dark": "images/dark/git-pull-request.svg"
         },
         "description": "%extension.contributes.commands.dish-ai-commit.generatePRSummary.description%"
-      },
-      {
-        "command": "dish-ai-commit.updateModelInfo",
-        "title": "%extension.contributes.commands.dish-ai-commit.updateModelInfo.title%",
-        "category": "%extension.contributes.commands.dish-ai-commit.updateModelInfo.category%",
-        "icon": {
-          "light": "images/light/brain.svg",
-          "dark": "images/dark/brain.svg"
-        },
-        "description": "%extension.contributes.commands.dish-ai-commit.updateModelInfo.description%"
-      },
-      {
-        "command": "dish-ai-commit.showTokenStats",
-        "title": "%extension.contributes.commands.dish-ai-commit.showTokenStats.title%",
-        "category": "%extension.contributes.commands.dish-ai-commit.showTokenStats.category%",
-        "description": "%extension.contributes.commands.dish-ai-commit.showTokenStats.description%"
-      },
-      {
-        "command": "dish-ai-commit.resetTokenStats",
-        "title": "%extension.contributes.commands.dish-ai-commit.resetTokenStats.title%",
-        "category": "%extension.contributes.commands.dish-ai-commit.resetTokenStats.category%",
-        "description": "%extension.contributes.commands.dish-ai-commit.resetTokenStats.description%"
       }
     ],
     "configuration": {
@@ -509,16 +477,6 @@
           "command": "dish-ai-commit.generatePRSummary",
           "when": "scmProvider == git",
           "group": "2_z_dish@6"
-        },
-        {
-          "command": "dish-ai-commit.selectModel",
-          "when": "scmProvider =~ /(git|svn)/",
-          "group": "2_z_dish@5"
-        },
-        {
-          "command": "dish-ai-commit.updateModelInfo",
-          "when": "scmProvider =~ /(git|svn)/",
-          "group": "2_z_dish@7"
         }
       ],
       "scm/resourceState/context": [
@@ -546,16 +504,6 @@
           "command": "dish-ai-commit.generatePRSummary",
           "when": "config.git.enabled && scmProvider == git && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
           "group": "2_z_dish@6"
-        },
-        {
-          "command": "dish-ai-commit.selectModel",
-          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
-          "group": "2_z_dish@5"
-        },
-        {
-          "command": "dish-ai-commit.updateModelInfo",
-          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
-          "group": "2_z_dish@7"
         }
       ],
       "scm/resourceFolder/context": [
@@ -583,22 +531,9 @@
           "command": "dish-ai-commit.generatePRSummary",
           "when": "config.git.enabled && scmProvider == git && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
           "group": "inline"
-        },
-        {
-          "command": "dish-ai-commit.selectModel",
-          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
-          "group": "inline"
-        },
-        {
-          "command": "dish-ai-commit.updateModelInfo",
-          "when": "((config.svn.enabled && scmProvider == svn) || (config.git.enabled && scmProvider == git)) && scmResourceGroup != unversioned && scmResourceGroup != external && scmResourceGroup != conflicts && scmResourceGroup != remotechanges",
-          "group": "inline"
         }
       ],
       "commandPalette": [
-        {
-          "command": "dish-ai-commit.selectModel"
-        },
         {
           "command": "dish-ai-commit.generateWeeklyReport"
         },
@@ -613,9 +548,6 @@
         },
         {
           "command": "dish-ai-commit.reviewCode"
-        },
-        {
-          "command": "dish-ai-commit.updateModelInfo"
         }
       ]
     }

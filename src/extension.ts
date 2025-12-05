@@ -1,8 +1,6 @@
 // The module 'vscode' contains the VS Code extensibility API
 // Import the module and reference it with the alias vscode in your code below
 import { registerCommands } from "@/commands";
-import { EmbeddingServiceManager } from "@/core/indexing/embedding-service-manager";
-import { TokenStatsService } from "@/services/core/token-stats-service";
 import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 import { initializeLocalization } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
@@ -10,9 +8,12 @@ import { notify } from "@/utils/notification/notification-manager";
 import { stateManager } from "@/utils/state/state-manager";
 import * as vscode from "vscode";
 
-import { SettingsViewProvider } from "@/services/webview/settings-view-provider"; // 确保路径正确
-import { NotificationSettingsManager } from "@/utils/notification/notification-settings-manager";
+import { SettingsViewProvider } from "@/services/webview/settings-view-provider";
+import { EmbeddingServiceManager } from "./core/indexing/embedding-service-manager";
+import { TokenStatsService } from "./services/core/token-stats-service";
+import { IndexingSettingsManager } from "./services/settings/indexing-settings-manager";
 import { PreferencesSettingsManager } from "./services/settings/preferences-settings-manager";
+import { NotificationSettingsManager } from "./utils/notification/notification-settings-manager";
 
 /**
  * 在首次执行命令时激活扩展
@@ -45,9 +46,20 @@ export async function activate(context: vscode.ExtensionContext) {
     logger.info("Initializing profile manager service...");
     const profileManager = await ProfileManagerService.create(context);
 
-    // 初始化 EmbeddingServiceManager
+    // 初始化索引设置管理器（需要在 EmbeddingServiceManager 之前初始化）
+    logger.info("Initializing indexing settings manager...");
+    const indexingSettingsManager =
+      IndexingSettingsManager.getInstance(context);
+    await indexingSettingsManager.initialize();
+
+    // 将 IndexingSettingsManager 传递给 EmbeddingServiceManager
+    EmbeddingServiceManager.getInstance().setIndexingSettingsManager(
+      indexingSettingsManager
+    );
+
+    // 初始化 EmbeddingServiceManager（现在是异步的，支持多仓库检测）
     logger.info("Initializing embedding service...");
-    const embeddingService = EmbeddingServiceManager.getInstance().initialize();
+    const embeddingService = await EmbeddingServiceManager.getInstance().initialize();
 
     // 初始化 TokenStatsService
     logger.info("Initializing token stats service...");
