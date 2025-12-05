@@ -9,6 +9,10 @@ export interface IndexingSettings {
   qdrantApiKey: string;
   searchScoreThreshold: number;
   maxSearchResults: number;
+  /** 最小代码块字符数阈值 (10-500)，小于此值的块将使用回退策略 */
+  minBlockChars: number;
+  /** 是否启用多仓库独立索引 */
+  enableMultiRepoIndexing: boolean;
   providers: {
     [providerId: string]: {
       model?: string;
@@ -31,10 +35,12 @@ export class IndexingSettingsManager {
     qdrantApiKey: "",
     searchScoreThreshold: 0.7,
     maxSearchResults: 10,
+    minBlockChars: 100,
+    enableMultiRepoIndexing: true,
     providers: {},
   };
 
-  private constructor(private context: vscode.ExtensionContext) {}
+  private constructor(private context: vscode.ExtensionContext) { }
 
   public static getInstance(
     context: vscode.ExtensionContext
