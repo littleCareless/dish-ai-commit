@@ -1,6 +1,5 @@
 import { BaseOpenAIProvider } from "@/ai/providers/base-openai-provider";
 import { type AIModel } from "@/ai/types";
-import { notify } from "@/utils/notification/notification-manager";
 
 /** OpenAI服务提供者标识信息 */
 const provider = { id: "openai", name: "OpenAI" } as const;
@@ -157,7 +156,7 @@ export class OpenAIProvider extends BaseOpenAIProvider {
    */
   async refreshModels(): Promise<string[]> {
     const models = await this.openai.models.list();
-    notify.info("openai.models.update.success");
+
     return models.data.map((model) => model.id);
   }
 

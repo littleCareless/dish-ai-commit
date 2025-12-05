@@ -38,7 +38,7 @@
   "ollama.api.request.failed": "Ollama API request failed: {0}",
   "localization.manager.not.initialized": "Localization manager not initialized",
   "openai.config.invalid": "OpenAI configuration invalid",
-  "openai.models.update.success": "OpenAI model list updated",
+
   "openai.models.fetch.failed": "Failed to fetch OpenAI model list",
   "provider.not.available": "AI provider {0} is not available",
   "provider.type.unknown": "Unknown AI provider type: {0}",

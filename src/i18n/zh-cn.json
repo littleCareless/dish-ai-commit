@@ -38,7 +38,6 @@
   "ollama.api.request.failed": "Ollama API请求失败: {0}",
   "localization.manager.not.initialized": "本地化管理器未初始化",
   "openai.config.invalid": "OpenAI 配置无效",
-  "openai.models.update.success": "OpenAI模型列表已更新",
   "openai.models.fetch.failed": "获取OpenAI模型列表失败",
   "provider.not.available": "AI 提供商 {0} 不可用",
   "provider.type.unknown": "未知的 AI 提供商类型：{0}",
