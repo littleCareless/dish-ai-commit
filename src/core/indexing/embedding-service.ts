@@ -1,10 +1,12 @@
 import { ConfigurationService } from "@/config/services/configuration-service";
-import { ConfigKey } from "@/config/types"; // Assuming ConfigKey is exported from types
+import { ConfigKey } from "@/config/types";
 import { CodeIndexer } from "@/core/indexing/code-indexer";
 import { FileNode, FileScanner } from "@/core/indexing/file-scanner";
 import { QdrantPoint, VectorStore } from "@/core/indexing/vector-store";
+import {
+  IndexingSettings
+} from "@/services/settings/indexing-settings-manager";
 import { formatMessage } from "@/utils/i18n/localization-manager";
-import { stateManager } from "@/utils/state/state-manager";
 import * as crypto from "crypto";
 import OpenAI from "openai";
 import * as path from "path";
@@ -205,8 +207,8 @@ async function generateOllamaEmbeddings(
 export class EmbeddingService {
   private codeIndexer: CodeIndexer;
   private vectorStore: VectorStore;
-  private fileScanner: FileScanner; // Added FileScanner instance
-  private projectName: string;
+  private fileScanner: FileScanner;
+  public readonly projectName: string;
   private projectRoot: string;
   private openaiApiKey: string;
   private openaiBaseUrl?: string;
@@ -222,45 +224,42 @@ export class EmbeddingService {
     projectName: string,
     projectRoot: string
   ) {
-    this.codeIndexer = new CodeIndexer();
+    // 从 IndexingSettingsManager 获取 OpenAI Compatible 设置
+    const indexingSettings = this.getIndexingSettings();
+
+    // 使用配置的 minBlockChars 初始化 CodeIndexer
+    const minBlockChars = indexingSettings?.minBlockChars;
+    this.codeIndexer = new CodeIndexer({ minBlockChars });
+
     this.vectorStore = vectorStore;
     this.projectName = projectName;
     this.projectRoot = projectRoot;
     this.fileScanner = new FileScanner(this.projectRoot);
     this.configManager = new ConfigurationService();
 
-    // Try to get OpenAI API Key from Global State Config first, then VS Code Config
-    this.openaiApiKey =
-      this.getGlobalConfig("providers.openai.apiKey") ||
-      this.configManager.getConfig("PROVIDERS_OPENAI_APIKEY" as ConfigKey);
+    // 从 ConfigurationService 获取 OpenAI API Key
+    this.openaiApiKey = this.configManager.getConfig(
+      "PROVIDERS_OPENAI_APIKEY" as ConfigKey
+    );
 
-    // Try to get OpenAI Base URL from Global State Config first, then VS Code Config
+    // 从 ConfigurationService 获取 OpenAI Base URL
     this.openaiBaseUrl =
-      this.getGlobalConfig("providers.openai.baseUrl") ||
       this.configManager.getConfig("PROVIDERS_OPENAI_BASEURL" as ConfigKey) ||
       undefined;
 
-    // Try to get Ollama Base URL from Global State Config first, then VS Code Config
+    // 从 ConfigurationService 获取 Ollama Base URL
     this.ollamaBaseUrl =
-      this.getGlobalConfig("providers.ollama.baseUrl") ||
       this.configManager.getConfig("PROVIDERS_OLLAMA_BASEURL" as ConfigKey) ||
       undefined;
 
-    // Load OpenAI Compatible settings from Global State Config
-    this.openaiCompatibleBaseUrl = this.getGlobalConfig(
-      "experimental.codeIndex.openaiCompatible.baseUrl"
-    );
-    this.openaiCompatibleApiKey = this.getGlobalConfig(
-      "experimental.codeIndex.openaiCompatible.apiKey"
-    );
-    this.openaiCompatibleModel = this.getGlobalConfig(
-      "experimental.codeIndex.openaiCompatible.model"
-    );
+    const openaiCompatibleSettings =
+      indexingSettings?.providers?.["openai-compatible"];
+    this.openaiCompatibleBaseUrl = openaiCompatibleSettings?.baseUrl;
+    this.openaiCompatibleApiKey = openaiCompatibleSettings?.apiKey;
+    this.openaiCompatibleModel = openaiCompatibleSettings?.model;
 
     // Debug: Log loaded configuration
-    console.log(
-      "[EmbeddingService] Configuration loaded from globalState.config:"
-    );
+    console.log("[EmbeddingService] Configuration loaded:");
     console.log(
       "  OpenAI API Key:",
       this.openaiApiKey ? "***SET***" : "NOT SET"
@@ -279,6 +278,29 @@ export class EmbeddingService {
       "  OpenAI Compatible Model:",
       this.openaiCompatibleModel || "NOT SET"
     );
+    console.log(
+      "  Min Block Chars:",
+      minBlockChars || "DEFAULT (100)"
+    );
+  }
+
+  /**
+   * 获取索引设置
+   * 注意：此方法尝试通过 EmbeddingServiceManager 获取设置
+   * 如果 EmbeddingServiceManager 尚未设置 IndexingSettingsManager，则返回 null
+   */
+  private getIndexingSettings(): IndexingSettings | null {
+    try {
+      // 优先使用 EmbeddingServiceManager 获取设置，避免创建未初始化的 IndexingSettingsManager 实例
+      const { EmbeddingServiceManager } = require("@/core/indexing/embedding-service-manager");
+      const settings = EmbeddingServiceManager.getInstance().getSettings();
+      if (settings) {
+        return settings;
+      }
+      return null;
+    } catch {
+      return null;
+    }
   }
 
   public async scanProjectFiles(
@@ -535,11 +557,11 @@ export class EmbeddingService {
           }\n${block.code.substring(0, 500)}`; // Truncate code for embedding
       });
 
-      const embeddingProvider =
-        (this.getGlobalConfig("experimental.codeIndex.embeddingProvider") as
-          | "openai"
-          | "ollama"
-          | "openai-compatible") || "openai";
+      const indexingSettings = this.getIndexingSettings();
+      const embeddingProvider = (indexingSettings?.provider || "openai") as
+        | "openai"
+        | "ollama"
+        | "openai-compatible";
 
       console.log(
         "[EmbeddingService] getEmbeddings - embeddingProvider:",
@@ -550,8 +572,7 @@ export class EmbeddingService {
       let embeddingModelName: string;
       if (embeddingProvider === "ollama") {
         embeddingModelName =
-          this.getGlobalConfig("experimental.codeIndex.embeddingModel") ||
-          "nomic-embed-text";
+          indexingSettings?.embeddingModel || "nomic-embed-text";
         embeddings = await generateOllamaEmbeddings(
           textsToEmbed,
           this.ollamaBaseUrl,
@@ -578,8 +599,7 @@ export class EmbeddingService {
       } else {
         // Default to OpenAI
         embeddingModelName =
-          this.getGlobalConfig("experimental.codeIndex.embeddingModel") ||
-          "text-embedding-3-small";
+          indexingSettings?.embeddingModel || "text-embedding-3-small";
         if (!this.openaiApiKey) {
           console.error(
             `[EmbeddingService] OpenAI API Key is not configured. Skipping embedding generation.`
@@ -755,11 +775,11 @@ export class EmbeddingService {
     queryText: string,
     limit: number = 5
   ): Promise<any[]> {
-    const embeddingProvider =
-      (this.getGlobalConfig("experimental.codeIndex.embeddingProvider") as
-        | "openai"
-        | "ollama"
-        | "openai-compatible") || "openai";
+    const indexingSettings = this.getIndexingSettings();
+    const embeddingProvider = (indexingSettings?.provider || "openai") as
+      | "openai"
+      | "ollama"
+      | "openai-compatible";
 
     console.log(
       `[EmbeddingService] Searching for code similar to: "${queryText}"`
@@ -774,8 +794,7 @@ export class EmbeddingService {
         return [];
       }
       const embeddingModelName =
-        this.getGlobalConfig("experimental.codeIndex.embeddingModel") ||
-        "nomic-embed-text";
+        indexingSettings?.embeddingModel || "nomic-embed-text";
       queryEmbeddings = await generateOllamaEmbeddings(
         [queryText],
         this.ollamaBaseUrl,
@@ -799,8 +818,7 @@ export class EmbeddingService {
         return [];
       }
       const embeddingModelName =
-        this.getGlobalConfig("experimental.codeIndex.embeddingModel") ||
-        "text-embedding-3-small";
+        indexingSettings?.embeddingModel || "text-embedding-3-small";
       queryEmbeddings = await generateOpenAIEmbeddings(
         [queryText],
         this.openaiApiKey,
@@ -912,23 +930,5 @@ export class EmbeddingService {
         indexedFiles: [],
       };
     }
-  }
-  /**
-   * Helper to retrieve a value from the global state config object using a dot-notation path.
-   * @param path The dot-notation path to the setting (e.g., "experimental.codeIndex.enabled").
-   * @returns The value of the setting, or undefined if not found.
-   */
-  private getGlobalConfig(path: string): any {
-    const config: any = stateManager.getGlobal("config") || {};
-    const keys = path.split(".");
-    let current = config;
-    for (const key of keys) {
-      if (current && typeof current === "object" && key in current) {
-        current = current[key];
-      } else {
-        return undefined;
-      }
-    }
-    return current;
   }
 }

@@ -1,18 +1,18 @@
-import { readFile } from "fs/promises";
-import { createHash } from "crypto";
-import * as path from "path";
-import * as treeSitter from "web-tree-sitter"; // For types
+import {
+  MAX_BLOCK_CHARS,
+  MAX_CHARS_TOLERANCE_FACTOR,
+  MIN_BLOCK_CHARS,
+  MIN_CHUNK_REMAINDER_CHARS,
+} from "@/core/constants"; // Assuming path
+import { scannerExtensions } from "@/core/shared/supported-extensions"; // Assuming path
 import {
   LanguageParser,
   loadRequiredLanguageParsers,
 } from "@/core/tree-sitter/languageParser"; // Assuming path
-import { scannerExtensions } from "@/core/shared/supported-extensions"; // Assuming path
-import {
-  MAX_BLOCK_CHARS,
-  MIN_BLOCK_CHARS,
-  MIN_CHUNK_REMAINDER_CHARS,
-  MAX_CHARS_TOLERANCE_FACTOR,
-} from "@/core/constants"; // Assuming path
+import { createHash } from "crypto";
+import { readFile } from "fs/promises";
+import * as path from "path";
+import * as treeSitter from "web-tree-sitter"; // For types
 
 export interface SemanticBlock {
   type: string; // e.g., "function", "class", "interface", "method", "variable", "function_chunk"
@@ -31,9 +31,10 @@ export class CodeIndexer {
   private pendingLoads: Map<string, Promise<LanguageParser | undefined>> =
     new Map();
   private seenSegmentHashes: Set<string> = new Set<string>(); // For deduplicating chunks across calls if instance is reused
+  private readonly minBlockChars: number;
 
-  constructor() {
-    // Initialization if needed, e.g., TreeSitter init (often handled by loadRequiredLanguageParsers)
+  constructor(options?: { minBlockChars?: number }) {
+    this.minBlockChars = options?.minBlockChars ?? MIN_BLOCK_CHARS;
   }
 
   public async parseFile(
@@ -288,7 +289,8 @@ export class CodeIndexer {
     const results: SemanticBlock[] = [];
 
     if (captures.length === 0) {
-      if (content.length >= MIN_BLOCK_CHARS) {
+      // 即使文件小于 minBlockChars，也使用回退策略处理（支持小文件索引）
+      if (content.length > 0) {
         const fallbackChunks = this._performFallbackChunking(
           filePath,
           content,
@@ -352,7 +354,7 @@ export class CodeIndexer {
                 startLine
               )
             );
-          } else if (declarator.text.length >= MIN_BLOCK_CHARS) {
+          } else if (declarator.text.length >= this.minBlockChars) {
             results.push({
               type: semanticType, // 'variable'
               name: varName,
@@ -384,7 +386,7 @@ export class CodeIndexer {
             startLine
           )
         );
-      } else if (nodeContent.length >= MIN_BLOCK_CHARS) {
+      } else if (nodeContent.length >= this.minBlockChars) {
         // Node is of suitable size
         results.push({
           type: semanticType,
@@ -432,7 +434,7 @@ export class CodeIndexer {
     ) => {
       if (
         currentChunkLines.length > 0 &&
-        (currentChunkLength >= MIN_BLOCK_CHARS ||
+        (currentChunkLength >= this.minBlockChars ||
           (isLastOverallChunk && currentChunkLength > 0))
       ) {
         const chunkContent = currentChunkLines.join("\n");
@@ -491,9 +493,8 @@ export class CodeIndexer {
         chunks.push({
           file: filePath,
           name: originalName
-            ? `${originalName} (line ${originalLineNumberInFile} segment ${
-                segmentIndex + 1
-              })`
+            ? `${originalName} (line ${originalLineNumberInFile} segment ${segmentIndex + 1
+            })`
             : `(line ${originalLineNumberInFile} segment ${segmentIndex + 1})`,
           type: `${baseSemanticType}_line_segment`,
           startLine: originalLineNumberInFile, // Corrected from start_line
@@ -543,7 +544,7 @@ export class CodeIndexer {
         const remainingLength = remainingLines.join("\n").length;
 
         if (
-          currentChunkLength >= MIN_BLOCK_CHARS &&
+          currentChunkLength >= this.minBlockChars &&
           remainingLength < MIN_CHUNK_REMAINDER_CHARS &&
           currentChunkLines.length > 1 &&
           i > chunkStartLineIndex
