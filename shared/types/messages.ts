@@ -79,6 +79,14 @@ export enum UIRequest {
   // ===== Preferences Module =====
   PreferencesLoadSettings = "preferences.loadSettings",
   PreferencesSaveSettings = "preferences.saveSettings",
+
+  // ===== Onboarding Module =====
+  OnboardingDetectEnvironment = "onboarding.detectEnvironment",
+  OnboardingGetTemplates = "onboarding.getTemplates",
+  OnboardingApplyTemplate = "onboarding.applyTemplate",
+  OnboardingValidateConfig = "onboarding.validateConfig",
+  OnboardingSetCompleted = "onboarding.setCompleted",
+  OnboardingGetStatus = "onboarding.getStatus",
 }
 
 // ============================================================================
@@ -165,6 +173,13 @@ export enum ExtensionResponse {
 
   // ===== Preferences Module =====
   PreferencesSettingsUpdated = "preferences.settingsUpdated",
+
+  // ===== Onboarding Module =====
+  OnboardingEnvironmentDetected = "onboarding.environmentDetected",
+  OnboardingTemplatesLoaded = "onboarding.templatesLoaded",
+  OnboardingTemplateApplied = "onboarding.templateApplied",
+  OnboardingConfigValidated = "onboarding.configValidated",
+  OnboardingStatusLoaded = "onboarding.statusLoaded",
 }
 
 // ============================================================================
