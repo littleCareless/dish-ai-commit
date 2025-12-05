@@ -1,9 +1,10 @@
 import * as vscode from "vscode";
-import { WORKSPACE_CONFIG_PATHS } from "@/config/workspace-config-schema";
 import { EmbeddingService } from "@/core/indexing/embedding-service";
-import { stateManager } from "@/utils/state/state-manager";
+import { IndexingSettingsManager } from "@/services/settings/indexing-settings-manager";
 import { SettingsViewMessageHandler } from "@/services/webview/handlers/settings-view-message-handler";
 import { SettingsViewHTMLProvider } from "@/services/webview/providers/settings-view-html-provider";
+import { getWorkspacePath } from "@/core/utils/path";
+import { createHash } from "crypto";
 
 export class SettingsViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "dish-ai-commit.settingsView"; // 必须与 package.json 中的 id 匹配
@@ -45,12 +46,16 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
       ],
     };
 
-    const qdrantUrl = stateManager.getWorkspace<string>(
-      WORKSPACE_CONFIG_PATHS.experimental.codeIndex.qdrantUrl
-    );
-    const qdrantCollectionName = stateManager.getWorkspace<string>(
-      WORKSPACE_CONFIG_PATHS.experimental.codeIndex.qdrantCollectionName
-    );
+    // 从 IndexingSettingsManager 获取配置
+    const indexingSettings = IndexingSettingsManager.getInstance(
+      this._extensionContext
+    ).getSettings();
+    const qdrantUrl = indexingSettings.qdrantUrl;
+
+    // Generate collection name from workspace path
+    const workspacePath = getWorkspacePath();
+    const hash = createHash("sha256").update(workspacePath).digest("hex");
+    const qdrantCollectionName = `dish-${hash.substring(0, 16)}`;
 
     webviewView.webview.html =
       await this._htmlContentProvider.getWebviewContent(webviewView.webview, {

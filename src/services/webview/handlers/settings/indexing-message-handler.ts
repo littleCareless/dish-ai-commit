@@ -3,10 +3,10 @@ import {
     EmbeddingService,
     EmbeddingServiceError,
 } from "@/core/indexing/embedding-service";
-import { EmbeddingServiceManager } from "@/core/indexing/embedding-service-manager";
+import { EmbeddingServiceManager, RepositoryInfo } from "@/core/indexing/embedding-service-manager";
 import { IndexingSettingsManager } from "@/services/settings/indexing-settings-manager";
-import { UIRequest, ExtensionResponse } from "@shared/types/messages";
 import { notify } from "@/utils/notification/notification-manager";
+import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 import * as vscode from "vscode";
 
 export class IndexingMessageHandler {
@@ -78,6 +78,20 @@ export class IndexingMessageHandler {
                         }
                     }
 
+                    // 获取多仓库状态
+                    const manager = EmbeddingServiceManager.getInstance();
+                    let repositories: Array<{
+                        repository: RepositoryInfo;
+                        isIndexed: number;
+                        lastIndexed?: Date;
+                    }> = [];
+
+                    try {
+                        repositories = await manager.getRepositoriesStatus();
+                    } catch (error) {
+                        console.warn("[IndexingMessageHandler] Failed to get repositories status:", error);
+                    }
+
                     // 异步加载模型，避免阻塞
                     webview.postMessage({
                         command: ExtensionResponse.IndexingSettingsLoaded,
@@ -87,6 +101,7 @@ export class IndexingMessageHandler {
                             indexStatusError: indexStatusError,
                             embeddingModels: [], // Initially send an empty array
                             stats: stats,
+                            repositories: repositories,
                         },
                     });
                 } catch (error) {
@@ -150,7 +165,7 @@ export class IndexingMessageHandler {
                     // Check for Qdrant URL change
                     if (newSettingsData.qdrantUrl && newSettingsData.qdrantUrl !== currentSettings.qdrantUrl) {
                         console.log(`Qdrant URL updated to "${newSettingsData.qdrantUrl}". Reinitializing EmbeddingService.`);
-                        this._embeddingService = EmbeddingServiceManager.getInstance().reinitialize() || null;
+                        this._embeddingService = await EmbeddingServiceManager.getInstance().reinitialize() || null;
                     }
 
                     webview.postMessage({ command: ExtensionResponse.IndexingSettingsSaved });
@@ -206,15 +221,35 @@ export class IndexingMessageHandler {
 
     private async handleClearIndex(webview: vscode.Webview): Promise<void> {
         console.log("[IndexingMessageHandler] handleClearIndex called.");
-        if (!this._embeddingService) {
+
+        const manager = EmbeddingServiceManager.getInstance();
+        const settings = this._settingsManager.getSettings();
+        let services: EmbeddingService[] = [];
+
+        if (settings.enableMultiRepoIndexing) {
+            const serviceMap = manager.getAllServices();
+            services = Array.from(serviceMap.values());
+            // 如果列表为空且启用了多仓库，可能是尚未初始化，尝试初始化一次
+            if (services.length === 0) {
+                await manager.initialize();
+                services = Array.from(manager.getAllServices().values());
+            }
+        } else if (this._embeddingService) {
+            services = [this._embeddingService];
+        }
+
+        if (services.length === 0) {
             const errorMessage = "EmbeddingService is not initialized.";
             console.error(`[IndexingMessageHandler] ${errorMessage}`);
             notify.error("embedding.service.not.initialized");
             return;
         }
+
         try {
             console.log("[IndexingMessageHandler] Clearing index...");
-            await this._embeddingService.clearIndex();
+            for (const service of services) {
+                await service.clearIndex();
+            }
             console.log("[IndexingMessageHandler] Index cleared successfully.");
             notify.info("index.clear.success");
             webview.postMessage({ command: ExtensionResponse.IndexingCleared, data: { isIndexed: 0 } });
@@ -237,9 +272,28 @@ export class IndexingMessageHandler {
         console.log(
             `[IndexingMessageHandler] startIndexing called with startIndex: ${startIndex}, clearIndex: ${clearIndex}`
         );
-        // 检查 EmbeddingService 是否存在
-        if (!this._embeddingService) {
-            const errorMessage = "EmbeddingService 未初始化，无法执行索引操作。";
+
+        const manager = EmbeddingServiceManager.getInstance();
+        const settings = this._settingsManager.getSettings();
+        let services: EmbeddingService[] = [];
+
+        if (settings.enableMultiRepoIndexing) {
+            console.log("[IndexingMessageHandler] Multi-repo indexing enabled.");
+            let serviceMap = manager.getAllServices();
+            if (serviceMap.size === 0) {
+                console.log("[IndexingMessageHandler] No services found, attempting to initialize...");
+                await manager.initialize();
+                serviceMap = manager.getAllServices();
+            }
+            services = Array.from(serviceMap.values());
+            console.log(`[IndexingMessageHandler] Found ${services.length} repositories to index.`);
+        } else if (this._embeddingService) {
+            services = [this._embeddingService];
+        }
+
+        // 检查服务是否存在
+        if (services.length === 0) {
+            const errorMessage = "EmbeddingService 未初始化或未检测到仓库，无法执行索引操作。";
             console.error(`[IndexingMessageHandler] ${errorMessage}`);
             webview.postMessage({
                 command: ExtensionResponse.IndexingFailed,
@@ -253,7 +307,9 @@ export class IndexingMessageHandler {
                 console.log(
                     "[IndexingMessageHandler] Clearing index before starting new indexing."
                 );
-                await this._embeddingService.clearIndex(); // Assuming this method exists.
+                for (const service of services) {
+                    await service.clearIndex();
+                }
             } catch (error) {
                 const errorMessage =
                     error instanceof Error ? error.message : String(error);
@@ -272,45 +328,77 @@ export class IndexingMessageHandler {
             }
         }
 
-        // 调用 EmbeddingService 的方法，并将 startIndex 传递给它
-        try {
-            console.log("[IndexingMessageHandler] Starting file scan...");
-            await this._embeddingService.scanProjectFiles(startIndex, webview);
-            const isIndexed = await this._embeddingService.isIndexed();
-            console.log(
-                `[IndexingMessageHandler] Indexing finished. isIndexed: ${isIndexed}`
-            );
-            webview.postMessage({
-                command: ExtensionResponse.IndexingFinished,
-                data: { isIndexed },
-            });
-        } catch (error) {
-            console.error(
-                `[IndexingMessageHandler] Error during indexing:`,
-                error
-            );
+        // 串行执行索引
+        let failureCount = 0;
+        let lastError: any = null;
 
-            if (error instanceof EmbeddingServiceError) {
-                // Forward the structured error to the webview
+        for (const service of services) {
+            try {
+                console.log(`[IndexingMessageHandler] Starting file scan for ${service.projectName}...`);
+                // 发送进度消息通知 UI 正在处理哪个仓库
                 webview.postMessage({
-                    command: ExtensionResponse.IndexingFailed,
+                    command: ExtensionResponse.IndexingProgress,
                     data: {
-                        message: error.message,
-                        source: error.context.source,
-                        type: error.context.type,
-                        context: error.context, // Send the whole context
+                        message: `Starting indexing for ${service.projectName}...`,
+                        current: 0,
+                        total: 0
+                    }
+                });
+
+                await service.scanProjectFiles(0, webview);
+                console.log(`[IndexingMessageHandler] Finished indexing ${service.projectName}`);
+            } catch (error) {
+                console.error(
+                    `[IndexingMessageHandler] Error during indexing ${service.projectName}:`,
+                    error
+                );
+                failureCount++;
+                lastError = error;
+
+                // 如果是 EmbeddingServiceError，尝试发送详细错误
+                if (error instanceof EmbeddingServiceError) {
+                    webview.postMessage({
+                        command: ExtensionResponse.IndexingFailed,
+                        data: {
+                            message: `索引 ${service.projectName} 失败: ${error.message}`,
+                            source: error.context.source,
+                            type: error.context.type,
+                            context: error.context,
+                        },
+                    });
+                }
+            }
+        }
+
+        // 汇总结果
+        if (failureCount > 0 && failureCount === services.length) {
+            // 全部失败
+            const errorMessage = lastError instanceof Error ? lastError.message : String(lastError);
+            webview.postMessage({
+                command: ExtensionResponse.IndexingFailed,
+                data: {
+                    message: `索引完全失败: ${errorMessage}`,
+                    source: "unknown",
+                },
+            });
+        } else {
+            // 至少部分成功，获取新的总统计
+            try {
+                const reposStatus = await manager.getRepositoriesStatus();
+                const totalIndexed = reposStatus.reduce((sum, item) => sum + item.isIndexed, 0);
+
+                webview.postMessage({
+                    command: ExtensionResponse.IndexingFinished,
+                    data: {
+                        isIndexed: totalIndexed,
+                        warning: failureCount > 0 ? `索引完成，但有 ${failureCount} 个仓库失败。` : undefined
                     },
                 });
-            } else {
-                // Handle generic errors
-                const errorMessage =
-                    error instanceof Error ? error.message : String(error);
+            } catch (e) {
+                console.warn("Failed to get final stats", e);
                 webview.postMessage({
-                    command: ExtensionResponse.IndexingFailed,
-                    data: {
-                        message: `索引失败: ${errorMessage}`,
-                        source: "unknown",
-                    },
+                    command: ExtensionResponse.IndexingFinished,
+                    data: { isIndexed: 0 }, // Should ideally not happen
                 });
             }
         }

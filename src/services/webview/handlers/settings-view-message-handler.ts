@@ -3,6 +3,7 @@ import { ConnectionMessageHandler } from "@/services/webview/handlers/settings/c
 import { FeaturesMessageHandler } from "@/services/webview/handlers/settings/features-message-handler";
 import { IndexingMessageHandler } from "@/services/webview/handlers/settings/indexing-message-handler";
 import { NotificationMessageHandler } from "@/services/webview/handlers/settings/notification-message-handler";
+import { OnboardingMessageHandler } from "@/services/webview/handlers/settings/onboarding-message-handler";
 import { ProfileMessageHandler } from "@/services/webview/handlers/settings/profile-message-handler";
 import { PromptMessageHandler } from "@/services/webview/handlers/settings/prompt-message-handler";
 import { StorageMessageHandler } from "@/services/webview/handlers/settings/storage-message-handler";
@@ -26,6 +27,7 @@ export class SettingsViewMessageHandler {
   private _featuresHandler: FeaturesMessageHandler;
   private _usageHandler: UsageMessageHandler;
   private _storageHandler: StorageMessageHandler;
+  private _onboardingHandler: OnboardingMessageHandler;
 
   constructor(
     extensionId: string,
@@ -48,7 +50,9 @@ export class SettingsViewMessageHandler {
     this._featuresHandler = new FeaturesMessageHandler(_extensionContext);
     this._usageHandler = new UsageMessageHandler(_extensionContext);
     this._storageHandler = new StorageMessageHandler(_extensionContext);
+    this._onboardingHandler = new OnboardingMessageHandler(_extensionContext);
   }
+
 
   public async handleMessage(
     message: any,
@@ -160,6 +164,16 @@ export class SettingsViewMessageHandler {
       case UIRequest.SystemGetAllStorage:
       case UIRequest.SystemClearAllStorage:
         await this._storageHandler.handle(message, webview);
+        break;
+
+      // ===== Onboarding Module =====
+      case UIRequest.OnboardingDetectEnvironment:
+      case UIRequest.OnboardingGetTemplates:
+      case UIRequest.OnboardingApplyTemplate:
+      case UIRequest.OnboardingValidateConfig:
+      case UIRequest.OnboardingSetCompleted:
+      case UIRequest.OnboardingGetStatus:
+        await this._onboardingHandler.handle(message, webview);
         break;
 
       // ===== System Lifecycle Messages =====

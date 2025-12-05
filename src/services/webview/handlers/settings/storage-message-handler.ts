@@ -72,16 +72,35 @@ export class StorageMessageHandler {
               "dish.settings.features",
               "notificationSettings",
               // Keys with provider prefixes
+              "providers.openai",
+              "providers.lmstudio",
+              "providers.deepseek",
+              "providers.ollama",
+              "providers.ollama.baseUrl",
+              "dish_config_indexing_settings",
               "providers.mistral",
               "providers.vertexai",
               "providers.cloudflare-workersai",
               "providers.vscode",
-              // New keys (prefixed)
+              // Other legacy keys
+              "workspaceConfig",
+              "experimental.codeIndex.enabled",
+              "experimental.codeIndex.embeddingProvider",
+              "experimental.codeIndex.embeddingModel",
+               "experimental.codeIndex.qdrantUrl",
+              // New keys (prefixed) - explicitly list them to be safe
+               "dish_config_api_config",
+              "dish_config_indexing_settings",
+              // Also explicitly add the key that was missed before
+              "providers.ollama.baseUrl",
               ...this._extensionContext.globalState
                 .keys()
                 .filter((k) => k.startsWith(DISH_CONFIG_PREFIX)),
             ],
             workspace: [
+              "experimental.codeIndex.enabled",
+              "experimental.codeIndex.embeddingProvider",
+              "experimental.codeIndex.qdrantUrl",
               // Clear any prefixed keys in workspace state
               ...this._extensionContext.workspaceState
                 .keys()
