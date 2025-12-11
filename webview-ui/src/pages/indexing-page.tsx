@@ -1,11 +1,13 @@
 import { PageHeader, PageLayout } from "@/components/layout/PageLayout";
 import { AdvancedIndexingSettings } from "@/components/settings/indexing/advanced-indexing-settings";
 import { GeminiSettings } from "@/components/settings/indexing/gemini-settings";
+import { IndexingLog } from "@/components/settings/indexing/IndexingLog";
 import { MistralSettings } from "@/components/settings/indexing/mistral-settings";
 import { OllamaSettings } from "@/components/settings/indexing/ollama-settings";
 import { OpenAICompatibleSettings } from "@/components/settings/indexing/openai-compatible-settings";
 import { OpenAISettings } from "@/components/settings/indexing/openai-settings";
 import { ProviderSelector } from "@/components/settings/indexing/provider-selector";
+import { RepositoryStatus } from "@/components/settings/indexing/repository-status";
 import { VercelAIGatewaySettings } from "@/components/settings/indexing/vercel-ai-gateway-settings";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -23,6 +25,12 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { ProgressStages, type Stage } from "@/components/ui/ProgressStages";
+import {
+  StatusIndicator,
+  type StatusType,
+} from "@/components/ui/StatusIndicator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useVSCodeMessage } from "@/hooks/use-vscode-message";
 import { postMessage } from "@/utils/vscode";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -55,6 +63,19 @@ interface IndexingStats {
   failedFiles: Array<{ path: string; error: string }>;
 }
 
+// 仓库信息类型
+interface RepositoryInfo {
+  path: string;
+  name: string;
+  type: "git" | "svn" | "unknown";
+}
+
+interface RepositoryStatusItem {
+  repository: RepositoryInfo;
+  isIndexed: number;
+  lastIndexed?: Date;
+}
+
 // Define the form schema using Zod
 const formSchema = z.object({
   enabled: z.boolean(),
@@ -63,6 +84,8 @@ const formSchema = z.object({
   qdrantApiKey: z.string().optional(),
   searchScoreThreshold: z.number().optional(),
   maxSearchResults: z.number().optional(),
+  minBlockChars: z.number().min(10).max(500).optional(),
+  enableMultiRepoIndexing: z.boolean().optional(),
   embeddingModel: z.string().optional(), // Keep this to track active model if needed, or rely on provider config
   providers: z
     .object({
@@ -152,6 +175,25 @@ export const IndexingPage: React.FC = () => {
     null,
   );
   const [showDetails, setShowDetails] = useState(false);
+  const [logEntries, setLogEntries] = useState<
+    Array<{ id: number; message: string; timestamp: string }>
+  >([]);
+  const logIdRef = React.useRef(0);
+  const [currentStageIndex, setCurrentStageIndex] = useState(0);
+  const [overallStatus, setOverallStatus] = useState<StatusType>("idle");
+  const [repositories, setRepositories] = useState<RepositoryStatusItem[]>([]);
+  const [activeTab, setActiveTab] = useState("general");
+
+  // 索引阶段定义
+  const indexingStages: Stage[] = React.useMemo(
+    () => [
+      { id: "init", labelKey: "common:indexing.stage.initializing" },
+      { id: "scan", labelKey: "common:indexing.stage.scanning" },
+      { id: "embed", labelKey: "common:indexing.stage.embedding" },
+      { id: "complete", labelKey: "common:indexing.stage.completed" },
+    ],
+    [],
+  );
 
   const selectedProvider = useWatch({
     control: form.control,
@@ -182,6 +224,8 @@ export const IndexingPage: React.FC = () => {
     setStatusInfo(null);
     setIndexingProgress({ current: 0, total: 0 });
     setIndexingStats(null);
+    setLogEntries([]);
+    logIdRef.current = 0;
 
     console.log("save value", values);
 
@@ -206,6 +250,32 @@ export const IndexingPage: React.FC = () => {
         current: payload.data.current,
         total: payload.data.total,
       });
+      setOverallStatus("loading");
+
+      // 根据进度更新阶段
+      const progress =
+        payload.data.total > 0 ? payload.data.current / payload.data.total : 0;
+      if (progress === 0) {
+        setCurrentStageIndex(0);
+      } else if (progress < 0.3) {
+        setCurrentStageIndex(1);
+      } else if (progress < 1) {
+        setCurrentStageIndex(2);
+      } else {
+        setCurrentStageIndex(3);
+      }
+
+      // Add to log entries
+      const now = new Date();
+      const timestamp = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}:${now.getSeconds().toString().padStart(2, "0")}`;
+      setLogEntries((prev) => {
+        const newEntries = [
+          ...prev,
+          { id: logIdRef.current++, message: payload.data.message, timestamp },
+        ];
+        // Keep only the last 50 entries
+        return newEntries.slice(-50);
+      });
     },
   );
 
@@ -224,6 +294,8 @@ export const IndexingPage: React.FC = () => {
       if (payload.data.stats) {
         setIndexingStats(payload.data.stats);
       }
+      setCurrentStageIndex(3);
+      setOverallStatus(payload.data.warning ? "warning" : "success");
     },
   );
 
@@ -242,6 +314,7 @@ export const IndexingPage: React.FC = () => {
         key: "indexing-page:status.indexingFailed",
         message: payload.data.error,
       });
+      setOverallStatus("error");
     },
   );
 
@@ -253,9 +326,13 @@ export const IndexingPage: React.FC = () => {
   useVSCodeMessage(
     ExtensionResponse.IndexingSettingsLoaded,
     (payload: {
-      data: { config: Partial<IndexingFormValues>; isIndexed: number };
+      data: {
+        config: Partial<IndexingFormValues>;
+        isIndexed: number;
+        repositories?: RepositoryStatusItem[];
+      };
     }) => {
-      const { config, isIndexed } = payload.data;
+      const { config, isIndexed, repositories: repos } = payload.data;
       console.log("config", config);
 
       // 更新表单值 - 合并现有值和新加载的设置以保持表单状态
@@ -275,6 +352,11 @@ export const IndexingPage: React.FC = () => {
       if (isIndexed > 0) {
         setStatusInfo({ key: "indexing-page:status.upToDate" });
       }
+
+      // 更新仓库列表
+      if (repos) {
+        setRepositories(repos);
+      }
     },
   );
 
@@ -290,7 +372,8 @@ export const IndexingPage: React.FC = () => {
         description={t("indexing-page:description")}
       />
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          {/* 启用索引开关 - 始终显示在顶部 */}
           <FormField
             control={form.control}
             name="enabled"
@@ -311,13 +394,34 @@ export const IndexingPage: React.FC = () => {
               </FormItem>
             )}
           />
+
+          {/* 索引状态 - 始终显示在顶部 */}
           <div>
             <h2 className="text-lg font-medium text-gray-900">
               {t("indexing-page:status.title")}
             </h2>
 
             {/* 状态概览 */}
-            <div className="mt-2 space-y-2">
+            <div className="mt-2 space-y-3">
+              {/* 总体状态指示器 */}
+              {overallStatus !== "idle" && (
+                <StatusIndicator
+                  status={overallStatus}
+                  message={indexingStatus || undefined}
+                />
+              )}
+
+              {/* 阶段进度指示器 */}
+              {indexingProgress.total > 0 && (
+                <div className="py-2">
+                  <ProgressStages
+                    stages={indexingStages}
+                    currentStageIndex={currentStageIndex}
+                    compact
+                  />
+                </div>
+              )}
+
               {/* 进度条和状态 */}
               <div className="w-full">
                 <div className="flex justify-between text-sm mb-1 min-h-[20px]">
@@ -340,6 +444,16 @@ export const IndexingPage: React.FC = () => {
                   />
                 )}
               </div>
+
+              {/* Activity Log */}
+              {logEntries.length > 0 && (
+                <div className="mt-4">
+                  <h3 className="text-sm font-medium text-gray-700 mb-2">
+                    {t("indexing-page:log.title")}
+                  </h3>
+                  <IndexingLog entries={logEntries} maxHeight="150px" />
+                </div>
+              )}
 
               {/* 统计信息 */}
               {indexingStats && (
@@ -433,34 +547,70 @@ export const IndexingPage: React.FC = () => {
               </Dialog>
             </div>
           </div>
-          <div className="space-y-4">
-            <FormField
-              control={form.control}
-              name="provider"
-              render={({ field }) => (
-                <FormItem className="flex flex-col">
-                  <FormLabel>{t("indexing-page:embeddingProvider")}</FormLabel>
-                  <FormControl>
-                    <ProviderSelector
-                      selectedProvider={field.value}
-                      onProviderChange={(value) =>
-                        form.setValue("provider", value)
-                      }
-                    />
-                  </FormControl>
-                  <FormMessage />
-                </FormItem>
-              )}
-            />
-            {ProviderComponent && (
-              <ProviderComponent
+
+          {/* Tabs 导航 */}
+          <Tabs
+            value={activeTab}
+            onValueChange={setActiveTab}
+            defaultValue="general"
+          >
+            <TabsList>
+              <TabsTrigger value="general">
+                {t("indexing-page:tabs.general")}
+              </TabsTrigger>
+              <TabsTrigger value="advanced">
+                {t("indexing-page:tabs.advanced")}
+              </TabsTrigger>
+              <TabsTrigger value="repositories">
+                {t("indexing-page:tabs.repositories")}
+              </TabsTrigger>
+            </TabsList>
+
+            {/* 基础设置 Tab */}
+            <TabsContent value="general">
+              <div className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="provider"
+                  render={({ field }) => (
+                    <FormItem className="flex flex-col">
+                      <FormLabel>
+                        {t("indexing-page:embeddingProvider")}
+                      </FormLabel>
+                      <FormControl>
+                        <ProviderSelector
+                          selectedProvider={field.value}
+                          onProviderChange={(value) =>
+                            form.setValue("provider", value)
+                          }
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                {ProviderComponent && (
+                  <ProviderComponent
+                    control={form.control as Control<IndexingFormValues>}
+                  />
+                )}
+              </div>
+            </TabsContent>
+
+            {/* 高级设置 Tab */}
+            <TabsContent value="advanced">
+              <AdvancedIndexingSettings
                 control={form.control as Control<IndexingFormValues>}
               />
-            )}
-          </div>
-          <AdvancedIndexingSettings
-            control={form.control as Control<IndexingFormValues>}
-          />
+            </TabsContent>
+
+            {/* 仓库管理 Tab */}
+            <TabsContent value="repositories">
+              <RepositoryStatus repositories={repositories} />
+            </TabsContent>
+          </Tabs>
+
+          {/* 保存按钮 */}
           <div className="flex justify-end space-x-2">
             <Button
               type="button"
