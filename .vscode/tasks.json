@@ -37,9 +37,31 @@
       }
     },
     {
+      "label": "watch:webview-build",
+      "type": "shell",
+      "command": "pnpm --filter @dish-ai-commit/webview-ui watch:bundle",
+      "group": "build",
+      "problemMatcher": {
+        "owner": "vite",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*watching for file changes.*",
+          "endsPattern": ".*built in.*"
+        }
+      },
+      "isBackground": true,
+      "presentation": {
+        "group": "watch",
+        "reveal": "always"
+      }
+    },
+    {
       "label": "watch:bundle",
       "type": "shell",
-      "command": "npx turbo watch:bundle",
+      "command": "pnpm --filter dish-ai-commit watch:bundle",
       "group": "build",
       "problemMatcher": {
         "owner": "esbuild",
@@ -56,7 +78,9 @@
       "presentation": {
         "group": "watch",
         "reveal": "always"
-      }
+      },
+      "dependsOn": ["watch:webview-build"],
+      "dependsOrder": "sequence"
     },
     {
       "label": "watch:tsc",
