@@ -47,13 +47,15 @@ export const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
           {value.map((tag) => (
             <Badge key={tag} variant="secondary">
               {tag}
-              <button
+              <Button
                 type="button"
-                className="ml-2 rounded-full outline-none hover:bg-muted-foreground/20"
+                variant="ghost"
+                size="icon"
+                className="ml-2 h-4 w-4 rounded-full"
                 onClick={() => removeTag(tag)}
               >
                 <X className="h-3 w-3" />
-              </button>
+              </Button>
             </Badge>
           ))}
         </div>

@@ -1,5 +1,6 @@
 import "@vscode/webview-ui-toolkit/dist/toolkit";
 import React from "react";
+import { Button } from "./button";
 
 interface DialogProps extends React.HTMLAttributes<HTMLElement> {
   open?: boolean;
@@ -69,19 +70,15 @@ const DialogContent: React.FC<DialogContentProps> = ({
           boxShadow: "var(--vscode-widget-shadow)",
         }}
       >
-        <button
-          className="absolute right-4 top-4 text-xl leading-none w-6 h-6 flex items-center justify-center"
-          style={{
-            color: "var(--vscode-foreground)",
-            border: "none",
-            background: "none",
-            cursor: "pointer",
-          }}
+        <Button
+          variant="ghost"
+          size="icon"
+          className="absolute right-4 top-4"
           onClick={onClose}
           aria-label="Close dialog"
         >
           ×
-        </button>
+        </Button>
         {children}
       </div>
     </div>

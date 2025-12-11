@@ -1,5 +1,6 @@
 import React from "react";
 import "@vscode/webview-ui-toolkit/dist/toolkit";
+import { Button } from "./button";
 
 interface PopoverProps extends React.HTMLAttributes<HTMLElement> {
   children: React.ReactNode;
@@ -35,7 +36,7 @@ const PopoverTrigger: React.FC<PopoverTriggerProps> = ({
     return <>{children}</>;
   }
 
-  return <button {...props}>{children}</button>;
+  return <Button {...props}>{children}</Button>;
 };
 
 const PopoverContent: React.FC<PopoverContentProps> = ({

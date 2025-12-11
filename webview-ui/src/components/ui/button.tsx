@@ -6,7 +6,7 @@ interface ButtonProps {
   disabled?: boolean;
   appearance?: "primary" | "secondary" | "icon";
   type?: "button" | "submit" | "reset";
-  onClick?: () => void;
+  onClick?: React.MouseEventHandler<HTMLElement>;
   size?: "small" | "medium" | "large" | "sm" | "icon";
   variant?:
     | "primary"
@@ -14,9 +14,11 @@ interface ButtonProps {
     | "outline"
     | "ghost"
     | "destructive"
-    | "default";
+    | "default"
+    | "link";
   className?: string;
   title?: string;
+  style?: React.CSSProperties;
 }
 
 interface ButtonVariantsProps {
@@ -117,6 +119,7 @@ const Button: React.FC<ButtonProps> = ({
   variant,
   className,
   title,
+  style,
   ...props
 }) => {
   // Map variant to appearance if provided
@@ -129,7 +132,9 @@ const Button: React.FC<ButtonProps> = ({
           ? "primary"
           : variant === "default"
             ? "primary"
-            : appearance;
+            : variant === "link"
+              ? "secondary"
+              : appearance;
 
   // Map size values (currently not used in VSCodeButton)
   // const finalSize = size === 'sm' ? 'small' :
@@ -144,6 +149,7 @@ const Button: React.FC<ButtonProps> = ({
       type={type}
       className={className}
       title={title}
+      style={style}
       {...props}
     >
       {children}

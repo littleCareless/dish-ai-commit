@@ -1,5 +1,6 @@
 import "@vscode/webview-ui-toolkit/dist/toolkit";
 import React, { createContext, useContext, useState } from "react";
+import { Button } from "./button";
 
 interface TabsContextType {
   activeTab: string;
@@ -98,7 +99,9 @@ const TabsTrigger: React.FC<TabsTriggerProps> = ({
     : "border-transparent border-b-2";
 
   return (
-    <button
+    <Button
+      type="button"
+      variant="ghost"
       className={`${baseClasses} ${activeClasses} ${className}`}
       style={{
         borderColor: isActive
@@ -108,12 +111,12 @@ const TabsTrigger: React.FC<TabsTriggerProps> = ({
           ? "var(--vscode-tab-activeForeground)"
           : "var(--vscode-tab-inactiveForeground)",
       }}
-      onMouseEnter={(e) => {
+      onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
         if (!isActive) {
           e.currentTarget.style.color = "var(--vscode-tab-hoverForeground)";
         }
       }}
-      onMouseLeave={(e) => {
+      onMouseLeave={(e: React.MouseEvent<HTMLButtonElement>) => {
         if (!isActive) {
           e.currentTarget.style.color = "var(--vscode-tab-inactiveForeground)";
         }
@@ -122,7 +125,7 @@ const TabsTrigger: React.FC<TabsTriggerProps> = ({
       {...props}
     >
       {children}
-    </button>
+    </Button>
   );
 };
 

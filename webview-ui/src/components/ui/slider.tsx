@@ -15,10 +15,31 @@ const Slider = React.forwardRef<
     )}
     {...props}
   >
-    <SliderPrimitive.Track className="relative h-2 w-full grow overflow-hidden rounded-full bg-secondary">
-      <SliderPrimitive.Range className="absolute h-full bg-primary" />
+    <SliderPrimitive.Track
+      className="relative h-2 w-full grow overflow-hidden rounded-full"
+      style={{
+        backgroundColor:
+          "var(--vscode-input-background, hsl(var(--secondary)))",
+        border: "1px solid var(--vscode-input-border, hsl(var(--border)))",
+      }}
+    >
+      <SliderPrimitive.Range
+        className="absolute h-full"
+        style={{
+          backgroundColor:
+            "var(--vscode-progressBar-background, hsl(var(--primary)))",
+        }}
+      />
     </SliderPrimitive.Track>
-    <SliderPrimitive.Thumb className="block h-5 w-5 rounded-full border-2 border-primary bg-background ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50" />
+    <SliderPrimitive.Thumb
+      className="block h-5 w-5 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50"
+      style={{
+        backgroundColor: "var(--vscode-button-background, hsl(var(--primary)))",
+        border:
+          "2px solid var(--vscode-button-background, hsl(var(--primary)))",
+        boxShadow: "0 2px 4px rgba(0, 0, 0, 0.2)",
+      }}
+    />
   </SliderPrimitive.Root>
 ));
 Slider.displayName = SliderPrimitive.Root.displayName;
