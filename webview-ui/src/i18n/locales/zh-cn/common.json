@@ -1,0 +1,40 @@
+{
+  "status": {
+    "idle": "就绪",
+    "loading": "处理中...",
+    "success": "成功",
+    "error": "失败",
+    "warning": "警告",
+    "info": "提示"
+  },
+  "stage": {
+    "initializing": "初始化",
+    "initializing.description": "准备执行环境",
+    "analyzing": "分析变更",
+    "analyzing.description": "检测代码变更",
+    "buildingContext": "构建上下文",
+    "buildingContext.description": "构建 AI 上下文",
+    "generating": "生成中",
+    "generating.description": "AI 正在生成内容",
+    "completed": "完成",
+    "completed.description": "操作已成功完成"
+  },
+  "indexing": {
+    "stage": {
+      "initializing": "初始化",
+      "initializing.description": "准备索引环境",
+      "scanning": "扫描文件",
+      "scanning.description": "扫描代码库文件",
+      "embedding": "生成嵌入",
+      "embedding.description": "创建向量嵌入",
+      "completed": "完成",
+      "completed.description": "索引完成"
+    }
+  },
+  "actions": {
+    "retry": "重试",
+    "cancel": "取消",
+    "confirm": "确认",
+    "close": "关闭"
+  }
+}

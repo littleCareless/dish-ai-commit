@@ -42,7 +42,18 @@
     "selectProvider": "选择 AI 提供商",
     "moreProviders": "更多提供商",
     "configureProvider": "配置 {{provider}}",
+    "quickStart": "快速开始",
+    "quickStartDesc": "使用模板快速开始",
+    "customSetup": "自定义配置",
+    "customSetupDesc": "选择提供商并手动配置",
+    "detectingEnvironment": "正在检测本地 AI 服务...",
+    "localServiceDetected": "检测到本地 AI 服务！",
+    "noLocalService": "未检测到本地 AI 服务",
     "steps": {
+      "template": {
+        "title": "选择配置方式",
+        "description": "选择快速开始模板或自定义配置"
+      },
       "provider": {
         "title": "选择 AI 提供商",
         "description": "选择并配置您的 AI 服务提供商"
@@ -56,7 +67,9 @@
       "previous": "上一步",
       "next": "下一步",
       "saving": "保存中...",
-      "complete": "完成配置"
+      "complete": "完成配置",
+      "skip": "稍后配置",
+      "testConnection": "测试连接"
     },
     "import": "导入已有配置",
     "summary": {
@@ -68,6 +81,55 @@
       "baseUrl": "Base URL",
       "default": "默认",
       "hint": "配置将保存在 VS Code 安全存储中，您可以随时在设置页面修改"
+    }
+  },
+  "connection": {
+    "testing": "正在测试连接...",
+    "success": "连接成功",
+    "error": {
+      "auth": "API 密钥无效，请检查您的凭据。",
+      "network": "网络错误，请检查您的网络连接。",
+      "timeout": "连接超时，服务可能不可用。",
+      "unknown": "连接失败，请重试。"
+    }
+  },
+  "service": {
+    "detected": "可用",
+    "notDetected": "未检测到"
+  },
+  "templates": {
+    "loading": "正在加载模板...",
+    "free": "免费",
+    "noApiKey": "无需 API Key",
+    "badge": {
+      "recommended": "推荐",
+      "free": "免费",
+      "local": "本地",
+      "fastest": "最快"
+    },
+    "ollama": {
+      "name": "本地 Ollama",
+      "description": "使用 Ollama 在本地运行 AI - 免费且私密"
+    },
+    "lmstudio": {
+      "name": "LM Studio",
+      "description": "使用 LM Studio 进行本地 AI 推理"
+    },
+    "gemini": {
+      "name": "Google Gemini",
+      "description": "Google AI，提供免费额度"
+    },
+    "zhipu": {
+      "name": "智谱 AI",
+      "description": "国产 AI 服务，提供免费额度"
+    },
+    "deepseek": {
+      "name": "DeepSeek",
+      "description": "高质量 AI，价格实惠"
+    },
+    "openai": {
+      "name": "OpenAI",
+      "description": "GPT-4 及其他 OpenAI 模型"
     }
   },
   "quickStart": {

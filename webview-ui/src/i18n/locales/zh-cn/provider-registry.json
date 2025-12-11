@@ -522,5 +522,6 @@
   "notSet": "未设置",
   "debugInfo": "此信息仅用于调试，可在正式版中移除",
   "enterApiKeyOrBaseUrl": "请先输入 API Key 或 Base URL",
-  "selectModel": "选择模型"
+  "selectModel": "选择模型",
+  "detectModels": "检测模型"
 }

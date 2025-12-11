@@ -19,7 +19,11 @@
     "searchScoreThreshold": "搜索分数阈值",
     "searchScoreThresholdPlaceholder": "0.40",
     "maxSearchResults": "最大搜索结果数",
-    "maxSearchResultsPlaceholder": "50"
+    "maxSearchResultsPlaceholder": "50",
+    "minBlockChars": "最小块字符数",
+    "minBlockCharsDescription": "小于此阈值的代码块将使用回退策略处理。降低此值可索引更多小文件。",
+    "enableMultiRepoIndexing": "启用多仓库索引",
+    "enableMultiRepoIndexingDescription": "检测工作区内的所有仓库并分别建立索引。"
   },
   "gemini": {
     "apiKey": "Gemini API 密钥",

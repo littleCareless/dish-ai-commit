@@ -522,5 +522,6 @@
   "notSet": "Not Set",
   "debugInfo": "This information is for debugging only and can be removed in the final version",
   "enterApiKeyOrBaseUrl": "Please enter API Key or Base URL first",
-  "selectModel": "Select a model"
+  "selectModel": "Select a model",
+  "detectModels": "Detect Models"
 }

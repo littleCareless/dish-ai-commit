@@ -16,7 +16,11 @@
     "searchScoreThreshold": "Search Score Threshold",
     "searchScoreThresholdPlaceholder": "0.40",
     "maxSearchResults": "Max Search Results",
-    "maxSearchResultsPlaceholder": "50"
+    "maxSearchResultsPlaceholder": "50",
+    "minBlockChars": "Min Block Characters",
+    "minBlockCharsDescription": "Code blocks smaller than this threshold will use a fallback strategy. Lower this value to index more small files.",
+    "enableMultiRepoIndexing": "Enable Multi-Repository Indexing",
+    "enableMultiRepoIndexingDescription": "Detect all repositories within the workspace and index them separately."
   },
   "gemini": {
     "apiKey": "Gemini API Key",

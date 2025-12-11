@@ -1,0 +1,40 @@
+{
+  "status": {
+    "idle": "Ready",
+    "loading": "Processing...",
+    "success": "Success",
+    "error": "Failed",
+    "warning": "Warning",
+    "info": "Info"
+  },
+  "stage": {
+    "initializing": "Initializing",
+    "initializing.description": "Preparing execution environment",
+    "analyzing": "Analyzing Changes",
+    "analyzing.description": "Detecting code changes",
+    "buildingContext": "Building Context",
+    "buildingContext.description": "Constructing AI context",
+    "generating": "Generating",
+    "generating.description": "AI is generating content",
+    "completed": "Complete",
+    "completed.description": "Operation completed successfully"
+  },
+  "indexing": {
+    "stage": {
+      "initializing": "Initializing",
+      "initializing.description": "Preparing indexing environment",
+      "scanning": "Scanning Files",
+      "scanning.description": "Scanning codebase files",
+      "embedding": "Generating Embeddings",
+      "embedding.description": "Creating vector embeddings",
+      "completed": "Complete",
+      "completed.description": "Indexing completed"
+    }
+  },
+  "actions": {
+    "retry": "Retry",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "close": "Close"
+  }
+}

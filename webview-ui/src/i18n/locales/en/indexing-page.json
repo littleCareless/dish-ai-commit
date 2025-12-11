@@ -3,6 +3,11 @@
   "description": "Configure codebase indexing settings to enable semantic search for your project.",
   "learnMore": "Learn more",
   "enableIndexing": "Enable Codebase Indexing",
+  "tabs": {
+    "general": "General",
+    "advanced": "Advanced",
+    "repositories": "Repositories"
+  },
   "status": {
     "title": "Indexing Status",
     "current": "Current Status",
@@ -10,7 +15,8 @@
     "settingsSaved": "Settings saved",
     "indexingComplete": "Indexing complete",
     "indexingFailed": "Indexing failed",
-    "indexCleared": "Index cleared"
+    "indexCleared": "Index cleared",
+    "repositorySummary": "{{indexed}}/{{total}} repositories indexed, {{vectors}} vectors total"
   },
   "stats": {
     "succeeded": "Succeeded",
@@ -29,5 +35,23 @@
   },
   "embeddingProvider": "Embedding Model Provider",
   "clearIndex": "Clear Index",
-  "save": "Save Settings"
+  "save": "Save Settings",
+  "log": {
+    "title": "Activity Log",
+    "empty": "No indexing activity yet"
+  },
+  "repositories": {
+    "title": "Detected Repositories",
+    "description": "The following repositories were detected in your workspace. Each will be indexed independently.",
+    "noRepositories": "No repositories detected",
+    "indexed": "Indexed",
+    "notIndexed": "Not Indexed",
+    "indexButton": "Index",
+    "reindexButton": "Re-index",
+    "type": {
+      "git": "Git",
+      "svn": "SVN",
+      "unknown": "Unknown"
+    }
+  }
 }

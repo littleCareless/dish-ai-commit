@@ -42,7 +42,18 @@
     "selectProvider": "Select AI Provider",
     "moreProviders": "More Providers",
     "configureProvider": "Configure {{provider}}",
+    "quickStart": "Quick Start",
+    "quickStartDesc": "Get started quickly with a template",
+    "customSetup": "Custom Setup",
+    "customSetupDesc": "Choose your own provider and configure manually",
+    "detectingEnvironment": "Detecting local AI services...",
+    "localServiceDetected": "Local AI service detected!",
+    "noLocalService": "No local AI service detected",
     "steps": {
+      "template": {
+        "title": "Choose Setup Method",
+        "description": "Select a quick start template or customize"
+      },
       "provider": {
         "title": "Select AI Provider",
         "description": "Select and configure your AI service provider"
@@ -56,7 +67,9 @@
       "previous": "Previous",
       "next": "Next",
       "saving": "Saving...",
-      "complete": "Complete Setup"
+      "complete": "Complete Setup",
+      "skip": "Skip for now",
+      "testConnection": "Test Connection"
     },
     "import": "Import existing configuration",
     "summary": {
@@ -68,6 +81,55 @@
       "baseUrl": "Base URL",
       "default": "Default",
       "hint": "Configuration will be saved in VS Code secure storage, you can modify it anytime in settings"
+    }
+  },
+  "connection": {
+    "testing": "Testing connection...",
+    "success": "Connection successful",
+    "error": {
+      "auth": "Invalid API key. Please check your credentials.",
+      "network": "Network error. Please check your connection.",
+      "timeout": "Connection timed out. Service may be unavailable.",
+      "unknown": "Connection failed. Please try again."
+    }
+  },
+  "service": {
+    "detected": "Available",
+    "notDetected": "Not found"
+  },
+  "templates": {
+    "loading": "Loading templates...",
+    "free": "Free",
+    "noApiKey": "No API Key",
+    "badge": {
+      "recommended": "Recommended",
+      "free": "Free",
+      "local": "Local",
+      "fastest": "Fastest"
+    },
+    "ollama": {
+      "name": "Local Ollama",
+      "description": "Run AI locally with Ollama - free and private"
+    },
+    "lmstudio": {
+      "name": "LM Studio",
+      "description": "Use LM Studio for local AI inference"
+    },
+    "gemini": {
+      "name": "Google Gemini",
+      "description": "Google's AI with free tier available"
+    },
+    "zhipu": {
+      "name": "Zhipu AI",
+      "description": "Chinese AI provider with free tier"
+    },
+    "deepseek": {
+      "name": "DeepSeek",
+      "description": "High-quality AI at affordable prices"
+    },
+    "openai": {
+      "name": "OpenAI",
+      "description": "GPT-4 and other OpenAI models"
     }
   },
   "quickStart": {
