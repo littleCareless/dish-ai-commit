@@ -1,3 +1,4 @@
+import { Button } from "@/components/ui/button";
 import { FieldConfig } from "@/types/provider-metadata";
 import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react";
 import { TFunction } from "i18next";
@@ -73,11 +74,13 @@ export const KeyValueField: React.FC<KeyValueFieldProps> = ({
     <div className="space-y-3">
       <div className="flex items-center justify-between">
         <span className="text-sm font-medium">{t(field.label)}</span>
-        <button
+        <Button
           type="button"
           onClick={handleAddRow}
           disabled={disabled}
-          className="flex items-center justify-center w-6 h-6 text-blue-600 hover:text-blue-800 hover:bg-blue-50 dark:text-blue-400 dark:hover:text-blue-300 dark:hover:bg-blue-950 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+          variant="ghost"
+          size="icon"
+          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
           title={field.placeholder ? t(field.placeholder) : "添加请求头"}
         >
           <svg
@@ -94,7 +97,7 @@ export const KeyValueField: React.FC<KeyValueFieldProps> = ({
               strokeLinecap="round"
             />
           </svg>
-        </button>
+        </Button>
       </div>
 
       {localHeaders.length === 0 ? (
@@ -131,11 +134,13 @@ export const KeyValueField: React.FC<KeyValueFieldProps> = ({
                 className="flex-1"
                 disabled={disabled}
               />
-              <button
+              <Button
                 type="button"
                 onClick={() => handleRemove(index)}
                 disabled={disabled}
-                className="flex items-center justify-center w-6 h-6 text-red-600 hover:text-red-800 hover:bg-red-50 dark:text-red-400 dark:hover:text-red-300 dark:hover:bg-red-950 rounded disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                variant="ghost"
+                size="icon"
+                className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
                 title="删除"
               >
                 <svg
@@ -152,7 +157,7 @@ export const KeyValueField: React.FC<KeyValueFieldProps> = ({
                     strokeLinecap="round"
                   />
                 </svg>
-              </button>
+              </Button>
             </div>
           ))}
         </div>

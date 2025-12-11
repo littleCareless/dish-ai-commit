@@ -214,7 +214,7 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
             setModels(modelsList);
             setModelError(null);
 
-            const currentModel = watchedValues.model;
+            const currentModel = form.getValues("model");
             if (modelsList.length > 0 && currentModel) {
               const foundModel = modelsList.find((m) => m.id === currentModel);
               if (foundModel) {
@@ -249,7 +249,7 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
           }
         }
       },
-      [provider.id, watchedValues, config, form, t],
+      [provider.id, form, t],
     ),
   );
 
@@ -420,18 +420,19 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
                 )}
                 <Button
                   type="button"
-                  variant="ghost"
-                  size="icon"
+                  variant="secondary"
+                  size="sm"
                   onClick={() => {
                     fetchModelsRef.current();
                   }}
                   disabled={isLoadingModels}
                   title={t("refreshModels")}
-                  className="shrink-0 hover:bg-transparent"
+                  className="shrink-0"
                 >
                   <RefreshCw
-                    className={`h-3.5 w-3.5 ${isLoadingModels ? "animate-spin" : ""}`}
+                    className={`h-3.5 w-3.5 mr-2 ${isLoadingModels ? "animate-spin" : ""}`}
                   />
+                  {t("detectModels")}
                 </Button>
               </div>
             </div>
