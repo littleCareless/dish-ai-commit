@@ -16,8 +16,14 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { Select, SelectOption } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import {
+  CATEGORY_DISPLAY_NAMES,
+  CATEGORY_VARIABLES,
+  PromptCategory,
+  PromptVariable,
+} from "@/types/prompts";
 import { postMessage } from "@/utils/vscode";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { UIRequest } from "@shared/types/messages";
@@ -25,10 +31,18 @@ import React from "react";
 import { useForm } from "react-hook-form";
 import * as z from "zod";
 
+const selectableCategories = [
+  PromptCategory.Commit,
+  PromptCategory.CodeReview,
+  PromptCategory.PR,
+  PromptCategory.Report,
+  PromptCategory.Git,
+];
+
 const formSchema = z.object({
   key: z.string().min(1, { message: "提示词名称不能为空" }),
   content: z.string().min(1, { message: "提示词内容不能为空" }),
-  saveTarget: z.enum(["workspace", "global"]),
+  category: z.nativeEnum(PromptCategory),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -47,15 +61,19 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
     defaultValues: {
       key: "",
       content: "",
-      saveTarget: "workspace",
+      category: PromptCategory.Commit,
     },
   });
+
+  const selectedCategory = form.watch("category");
+  const availableVariables: PromptVariable[] =
+    CATEGORY_VARIABLES[selectedCategory] || [];
 
   const onSubmit = (values: FormValues) => {
     postMessage(UIRequest.PromptCreate, {
       key: values.key,
       content: values.content,
-      target: values.saveTarget,
+      category: values.category,
     });
     onClose();
     form.reset();
@@ -63,16 +81,38 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[425px] bg-[var(--vscode-editor-background)] text-[var(--vscode-foreground)] border-[var(--vscode-panel-border)]">
+      <DialogContent className="sm:max-w-[525px] bg-[var(--vscode-editor-background)] text-[var(--vscode-foreground)] border-[var(--vscode-panel-border)]">
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <DialogHeader>
               <DialogTitle>新建提示词</DialogTitle>
               <DialogDescription className="text-[var(--vscode-descriptionForeground)]">
-                在这里创建新的提示词，以便在以后快速使用。
+                选择功能分类并创建新的提示词。每个分类有不同的可用变量。
               </DialogDescription>
             </DialogHeader>
             <div className="grid gap-4 py-4">
+              <FormField
+                control={form.control}
+                name="category"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>功能分类</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={field.value}
+                        onValueChange={field.onChange}
+                      >
+                        {selectableCategories.map((cat) => (
+                          <SelectOption key={cat} value={cat}>
+                            {CATEGORY_DISPLAY_NAMES[cat]}
+                          </SelectOption>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
               <FormField
                 control={form.control}
                 name="key"
@@ -81,7 +121,7 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
                     <FormLabel>提示词名称 (Key)</FormLabel>
                     <FormControl>
                       <Input
-                        placeholder="例如：my-custom-prompt"
+                        placeholder="例如：my-commit-prompt"
                         {...field}
                         className="bg-[var(--vscode-input-background)] text-[var(--vscode-input-foreground)] border-[var(--vscode-input-border)] focus-visible:ring-offset-0 focus-visible:ring-0"
                       />
@@ -98,7 +138,7 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
                     <FormLabel>提示词内容</FormLabel>
                     <FormControl>
                       <Textarea
-                        placeholder="输入你的提示词内容"
+                        placeholder="输入你的提示词内容，使用 {{变量名}} 插入变量"
                         className="h-40 bg-[var(--vscode-input-background)] text-[var(--vscode-input-foreground)] border-[var(--vscode-input-border)] focus-visible:ring-offset-0 focus-visible:ring-0"
                         {...field}
                       />
@@ -107,41 +147,26 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
                   </FormItem>
                 )}
               />
-              <FormField
-                control={form.control}
-                name="saveTarget"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>保存到:</FormLabel>
-                    <FormControl>
-                      <RadioGroup
-                        onValueChange={field.onChange}
-                        defaultValue={field.value}
-                        className="flex items-center space-x-4"
+              {availableVariables.length > 0 && (
+                <div className="p-3 bg-[var(--vscode-editor-inactiveSelectionBackground)] rounded-md">
+                  <div className="text-sm font-medium mb-2">可用变量：</div>
+                  <div className="flex flex-wrap gap-2">
+                    {availableVariables.map((v) => (
+                      <span
+                        key={v.name}
+                        className="px-2 py-1 text-xs bg-[var(--vscode-badge-background)] text-[var(--vscode-badge-foreground)] rounded cursor-pointer hover:opacity-80"
+                        onClick={() => {
+                          const current = form.getValues("content");
+                          form.setValue("content", current + `{{${v.name}}}`);
+                        }}
+                        title={v.description}
                       >
-                        <FormItem className="flex items-center space-x-2">
-                          <FormControl>
-                            <RadioGroupItem
-                              value="workspace"
-                              className="text-[var(--vscode-button-background)] border-[var(--vscode-input-border)]"
-                            />
-                          </FormControl>
-                          <FormLabel className="font-normal">工作区</FormLabel>
-                        </FormItem>
-                        <FormItem className="flex items-center space-x-2">
-                          <FormControl>
-                            <RadioGroupItem
-                              value="global"
-                              className="text-[var(--vscode-button-background)] border-[var(--vscode-input-border)]"
-                            />
-                          </FormControl>
-                          <FormLabel className="font-normal">全局</FormLabel>
-                        </FormItem>
-                      </RadioGroup>
-                    </FormControl>
-                  </FormItem>
-                )}
-              />
+                        {`{{${v.name}}}`}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
             <DialogFooter>
               <Button

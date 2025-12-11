@@ -1,13 +1,15 @@
 import { CreatePromptModal } from "@/components/prompts/create-prompt-modal";
-import { VariablePicker } from "@/components/prompts/variable-picker";
+import { Button } from "@/components/ui/button";
 import {
   CATEGORY_DISPLAY_NAMES,
+  CATEGORY_VARIABLES,
   PROMPT_CATEGORIES,
   PROMPT_DISPLAY_NAMES,
   PROMPT_VARIABLES,
   PromptCategory,
   PromptDetail,
   PromptKey,
+  PromptVariable,
 } from "@/types/prompts";
 import { postMessage } from "@/utils/vscode";
 import { ExtensionResponse, UIRequest } from "@shared/types/messages";
@@ -24,9 +26,6 @@ export const PromptsPage: React.FC = () => {
   const [prompts, setPrompts] = useState<Prompts>({});
   const [selectedKey, setSelectedKey] = useState<string | null>(null);
   const [currentContent, setCurrentContent] = useState<string>("");
-  const [saveTarget, setSaveTarget] = useState<"workspace" | "global">(
-    "workspace",
-  );
   const [activePromptKey, setActivePromptKey] =
     useState<string>("generate-commit");
 
@@ -58,14 +57,33 @@ export const PromptsPage: React.FC = () => {
     }
   };
 
+  const getAvailableVariables = useCallback(
+    (key: string | null): PromptVariable[] => {
+      if (!key) return [];
+
+      // First try to get variables specific to this prompt key
+      const promptVars = PROMPT_VARIABLES[key as PromptKey];
+      if (promptVars) return promptVars;
+
+      // Fall back to category-level variables
+      const category = PROMPT_CATEGORIES[key as PromptKey];
+      if (category) return CATEGORY_VARIABLES[category] || [];
+
+      // For custom prompts, try to infer category from the prompt detail
+      const promptDetail = prompts[key];
+      if (promptDetail?.category) {
+        return (
+          CATEGORY_VARIABLES[promptDetail.category as PromptCategory] || []
+        );
+      }
+
+      return [];
+    },
+    [prompts],
+  );
+
   const fetchPrompts = useCallback(() => {
     postMessage(UIRequest.PromptGetAll);
-    // Also fetch active prompt key - we might need a new message type or piggyback
-    // For now, let's assume we can get it via a separate message or part of GetAllPrompts payload if we modified backend
-    // Since we didn't modify GetAllPrompts payload structure in backend yet to include active key,
-    // we should probably add a way to get it.
-    // Actually, let's add a new message type "GetActivePromptKey" in backend or just use "loadFeaturesSettings"
-    // since we added it to features settings.
     postMessage(UIRequest.FeaturesLoadSettings);
   }, []);
 
@@ -76,14 +94,6 @@ export const PromptsPage: React.FC = () => {
 
       setSelectedKey(key);
       setCurrentContent(selectedPrompt.content);
-      if (
-        selectedPrompt.source !== "default" &&
-        selectedPrompt.source !== "project"
-      ) {
-        setSaveTarget(selectedPrompt.source as "workspace" | "global");
-      } else {
-        setSaveTarget("workspace"); // Default to workspace if not customized
-      }
     },
     [prompts],
   );
@@ -105,12 +115,6 @@ export const PromptsPage: React.FC = () => {
               const firstPrompt = receivedPrompts[firstKey];
               if (firstPrompt) {
                 setCurrentContent(firstPrompt.content);
-                setSaveTarget(
-                  firstPrompt.source !== "default" &&
-                    firstPrompt.source !== "project"
-                    ? (firstPrompt.source as "workspace" | "global")
-                    : "workspace",
-                );
                 return firstKey;
               }
             }
@@ -126,7 +130,7 @@ export const PromptsPage: React.FC = () => {
         // The current backend implementation of "loadFeaturesSettings" sends what's in the config.
         // We added "dish-ai-commit.features.commitMessage.activePromptKey" to package.json
         // So it should be available in the settings object if we update the backend handler.
-        const settings = message.data as any;
+        const settings = message.data as { activePromptKey?: string };
         if (settings.activePromptKey) {
           setActivePromptKey(settings.activePromptKey);
         }
@@ -145,7 +149,6 @@ export const PromptsPage: React.FC = () => {
     postMessage(UIRequest.PromptUpdate, {
       key: selectedKey,
       content: currentContent,
-      target: saveTarget,
     });
   };
 
@@ -153,14 +156,11 @@ export const PromptsPage: React.FC = () => {
     if (!selectedKey) return;
     postMessage(UIRequest.PromptReset, {
       key: selectedKey,
-      target: saveTarget,
     });
   };
 
   const handleResetAll = () => {
-    postMessage(UIRequest.PromptResetAll, {
-      target: saveTarget,
-    });
+    postMessage(UIRequest.PromptResetAll);
   };
 
   const handleCreateNew = () => {
@@ -206,23 +206,15 @@ export const PromptsPage: React.FC = () => {
       />
       <div className="flex justify-between items-center p-4 border-b border-[var(--vscode-panel-border)]">
         <h1 className="text-xl font-bold">{t("title")}</h1>
-        <button
-          onClick={handleResetAll}
-          className="font-bold py-1 px-3 rounded text-[var(--vscode-button-foreground)] bg-[var(--vscode-button-background)] hover:bg-[var(--vscode-button-hoverBackground)]"
-        >
-          {t("resetAll")}
-        </button>
+        <Button onClick={handleResetAll}>{t("resetAll")}</Button>
       </div>
 
       <div className="flex flex-grow overflow-hidden p-4 gap-4">
         {/* Left Sidebar for prompt list */}
         <div className="w-1/3 flex flex-col gap-4">
-          <button
-            onClick={handleCreateNew}
-            className="w-full font-bold py-2 px-4 rounded text-[var(--vscode-button-foreground)] bg-[var(--vscode-button-background)] hover:bg-[var(--vscode-button-hoverBackground)]"
-          >
+          <Button onClick={handleCreateNew} className="w-full">
             {t("createNew")}
-          </button>
+          </Button>
           <div className="flex-grow overflow-y-auto border border-[var(--vscode-panel-border)] rounded-md">
             {Object.values(PromptCategory).map((category) => {
               const categoryPrompts = Object.entries(prompts).filter(
@@ -277,24 +269,28 @@ export const PromptsPage: React.FC = () => {
                       </div>
                       {detail.isNew && (
                         <div className="flex space-x-2">
-                          <button
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleRename(key);
                             }}
-                            className="p-1 text-xs hover:text-[var(--vscode-foreground)]"
+                            className="h-6 w-6"
                           >
                             ✏️
-                          </button>
-                          <button
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
                             onClick={(e) => {
                               e.stopPropagation();
                               handleDelete(key);
                             }}
-                            className="p-1 text-xs hover:text-[var(--vscode-foreground)]"
+                            className="h-6 w-6 text-red-500"
                           >
                             🗑️
-                          </button>
+                          </Button>
                         </div>
                       )}
                     </div>
@@ -316,12 +312,13 @@ export const PromptsPage: React.FC = () => {
                       <CheckCircle2 className="w-4 h-4" /> Active Prompt
                     </span>
                   ) : (
-                    <button
+                    <Button
+                      variant="link"
                       onClick={handleSetActive}
-                      className="flex items-center gap-1 text-[var(--vscode-textLink-foreground)] hover:underline"
+                      className="p-0 h-auto"
                     >
-                      <Circle className="w-4 h-4" /> Set as Active
-                    </button>
+                      <Circle className="w-4 h-4 mr-1" /> Set as Active
+                    </Button>
                   )}
                 </div>
               </div>
@@ -345,77 +342,48 @@ export const PromptsPage: React.FC = () => {
                   prompts[selectedKey]?.isSystemGenerated
                 }
               />
-              <VariablePicker
-                variables={
-                  selectedKey
-                    ? PROMPT_VARIABLES[selectedKey as PromptKey] ||
-                      PROMPT_VARIABLES[PromptKey.GenerateCommitSystem]
-                    : []
-                }
-                onInsert={handleInsertVariable}
-              />
-              <div className="flex justify-between items-center">
-                <div className="flex items-center space-x-4">
-                  <span>{t("saveTo")}:</span>
-                  <label className="flex items-center space-x-1 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="saveTarget"
-                      value="workspace"
-                      checked={saveTarget === "workspace"}
-                      onChange={() => setSaveTarget("workspace")}
-                      className="h-4 w-4 accent-[var(--vscode-button-background)]"
-                      disabled={
-                        prompts[selectedKey]?.source === "project" ||
-                        prompts[selectedKey]?.isSystemGenerated
-                      }
-                    />
-                    <span>{t("workspace")}</span>
-                  </label>
-                  <label className="flex items-center space-x-1 cursor-pointer">
-                    <input
-                      type="radio"
-                      name="saveTarget"
-                      value="global"
-                      checked={saveTarget === "global"}
-                      onChange={() => setSaveTarget("global")}
-                      className="h-4 w-4 accent-[var(--vscode-button-background)]"
-                      disabled={
-                        prompts[selectedKey]?.source === "project" ||
-                        prompts[selectedKey]?.isSystemGenerated
-                      }
-                    />
-                    <span>{t("global")}</span>
-                  </label>
-                </div>
-
-                <div className="space-x-2">
-                  <button
-                    onClick={handleSave}
-                    className="font-bold py-1 px-3 rounded text-[var(--vscode-button-foreground)] bg-[var(--vscode-button-background)] hover:bg-[var(--vscode-button-hoverBackground)]"
-                    disabled={
-                      prompts[selectedKey]?.source === "project" ||
-                      prompts[selectedKey]?.isSystemGenerated
-                    }
-                  >
-                    {t("save")}
-                  </button>
-                  {selectedKey &&
-                    prompts[selectedKey] &&
-                    !prompts[selectedKey].isNew &&
-                    prompts[selectedKey].isCustomized && (
-                      <button
-                        onClick={handleReset}
-                        className="font-bold py-1 px-3 rounded text-[var(--vscode-button-secondaryForeground)] bg-[var(--vscode-button-secondaryBackground)] hover:bg-[var(--vscode-button-secondaryHoverBackground)]"
-                        disabled={
-                          prompts[selectedKey]?.source === "project" ||
-                          prompts[selectedKey]?.isSystemGenerated
-                        }
+              {getAvailableVariables(selectedKey).length > 0 && (
+                <div className="p-3 bg-[var(--vscode-editor-inactiveSelectionBackground)] rounded-md">
+                  <div className="text-sm font-medium mb-2">可用变量：</div>
+                  <div className="flex flex-wrap gap-2">
+                    {getAvailableVariables(selectedKey).map((v) => (
+                      <span
+                        key={v.name}
+                        className="px-2 py-1 text-xs bg-[var(--vscode-badge-background)] text-[var(--vscode-badge-foreground)] rounded cursor-pointer hover:opacity-80"
+                        onClick={() => handleInsertVariable(v.name)}
+                        title={v.description}
                       >
-                        {t("reset")}
-                      </button>
-                    )}
+                        {`{{${v.name}}}`}
+                      </span>
+                    ))}
+                  </div>
                 </div>
+              )}
+              <div className="flex justify-end items-center space-x-2">
+                <Button
+                  onClick={handleSave}
+                  disabled={
+                    prompts[selectedKey]?.source === "project" ||
+                    prompts[selectedKey]?.isSystemGenerated
+                  }
+                >
+                  {t("save")}
+                </Button>
+                {selectedKey &&
+                  prompts[selectedKey] &&
+                  !prompts[selectedKey].isNew &&
+                  prompts[selectedKey].isCustomized && (
+                    <Button
+                      variant="secondary"
+                      onClick={handleReset}
+                      disabled={
+                        prompts[selectedKey]?.source === "project" ||
+                        prompts[selectedKey]?.isSystemGenerated
+                      }
+                    >
+                      {t("reset")}
+                    </Button>
+                  )}
               </div>
             </div>
           ) : (
