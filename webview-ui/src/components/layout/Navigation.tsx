@@ -100,6 +100,12 @@ export const Navigation: React.FC = () => {
         icon: Info,
         description: t("nav.about_description"),
       },
+      {
+        path: routes.storage,
+        label: t("nav.storage"),
+        icon: Archive,
+        description: t("nav.storage_description"),
+      },
     ];
 
     // 开发模式下添加调试页面
