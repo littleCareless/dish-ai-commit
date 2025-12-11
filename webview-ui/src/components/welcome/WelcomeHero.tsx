@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { GitCommit, Sparkles, Zap } from "lucide-react";
+import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Sparkles, Zap, GitCommit } from "lucide-react";
 
 declare global {
   interface Window {
@@ -90,19 +91,15 @@ const WelcomeHero = ({ onGetStarted }: WelcomeHeroProps) => {
 
       {/* CTA Button */}
       {onGetStarted && (
-        <button
+        <Button
           onClick={onGetStarted}
-          className="group relative px-6 py-2.5 rounded-lg font-medium text-sm transition-all duration-300 hover:scale-105 active:scale-95"
-          style={{
-            background: "var(--vscode-button-background)",
-            color: "var(--vscode-button-foreground)",
-          }}
+          className="group relative px-6 py-2.5 font-medium text-sm transition-all duration-300 hover:scale-105 active:scale-95"
         >
           <span className="relative z-10 flex items-center gap-2">
             {t("hero.getStarted")}
             <Sparkles className="w-4 h-4 transition-transform group-hover:rotate-12" />
           </span>
-        </button>
+        </Button>
       )}
     </div>
   );

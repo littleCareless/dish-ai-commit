@@ -1,17 +1,9 @@
-import { useState, useCallback, useEffect, useMemo } from "react";
-import { useTranslation } from "react-i18next";
-import { VSCodeButton, VSCodeLink } from "@vscode/webview-ui-toolkit/react";
-import {
-  ChevronRight,
-  ChevronLeft,
-  Check,
-  AlertCircle,
-  Loader2,
-  Upload,
-} from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ProviderConfigForm } from "@/components/settings/ProviderConfigForm";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ConnectionStatusIndicator } from "@/components/welcome/ConnectionStatusIndicator";
+import { TemplateGrid } from "@/components/welcome/TemplateCard";
 import { providerRegistry } from "@/config/provider-registry";
+import { useOnboarding, type QuickStartTemplate } from "@/hooks/useOnboarding";
 import {
   ExtendedProviderConfig,
   ProviderMetadata,
@@ -19,6 +11,20 @@ import {
 import { getFieldDefaultValue } from "@/utils/validation-helpers";
 import { postMessage } from "@/utils/vscode";
 import { UIRequest } from "@shared/types/messages";
+import { VSCodeButton, VSCodeLink } from "@vscode/webview-ui-toolkit/react";
+import {
+  AlertCircle,
+  Check,
+  ChevronLeft,
+  ChevronRight,
+  Loader2,
+  Server,
+  Upload,
+  Wifi,
+} from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslation } from "react-i18next";
+import { Button } from "@/components/ui/button";
 
 interface SetupWizardProps {
   initialConfig?: Record<string, unknown>;
@@ -35,6 +41,11 @@ interface Step {
 }
 
 const stepConfigs: Step[] = [
+  {
+    id: "template",
+    titleKey: "setup.steps.template.title",
+    descriptionKey: "setup.steps.template.description",
+  },
   {
     id: "provider",
     titleKey: "setup.steps.provider.title",
@@ -61,6 +72,20 @@ const SetupWizard = ({
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | undefined>();
   const [isVisible, setIsVisible] = useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = useState<string | null>(
+    null,
+  );
+  const [useCustomSetup, setUseCustomSetup] = useState(false);
+
+  // Use onboarding hook for environment detection and templates
+  const {
+    isDetecting,
+    templates,
+    hasLocalService,
+    validationResult,
+    isValidating,
+    validateConfig,
+  } = useOnboarding();
 
   const steps = useMemo(
     () =>
@@ -90,6 +115,32 @@ const SetupWizard = ({
     const timer = setTimeout(() => setIsVisible(true), 300);
     return () => clearTimeout(timer);
   }, []);
+
+  // Handle template selection
+  const handleTemplateSelect = useCallback((template: QuickStartTemplate) => {
+    setSelectedTemplateId(template.id);
+    setSelectedProviderId(template.providerId);
+    setApiConfiguration(template.config);
+    setUseCustomSetup(false);
+  }, []);
+
+  // Handle test connection
+  const handleTestConnection = useCallback(() => {
+    if (selectedProviderId) {
+      const apiKey = apiConfiguration.apiKey as string | undefined;
+      const baseUrl = apiConfiguration.baseUrl as string | undefined;
+      validateConfig(selectedProviderId, apiKey, baseUrl);
+    }
+  }, [selectedProviderId, apiConfiguration, validateConfig]);
+
+  // Get connection status for indicator
+  const getConnectionStatus = useCallback(() => {
+    if (isValidating) return "connecting";
+    if (validationResult) {
+      return validationResult.isValid ? "success" : "error";
+    }
+    return "idle";
+  }, [isValidating, validationResult]);
 
   const selectedProviderMeta = selectedProviderId
     ? providerRegistry[selectedProviderId]
@@ -180,7 +231,12 @@ const SetupWizard = ({
   };
 
   const canProceed = () => {
+    // Step 0: Template selection - always can proceed (user can skip or select)
     if (currentStep === 0) {
+      return selectedTemplateId !== null || useCustomSetup;
+    }
+    // Step 1: Provider configuration
+    if (currentStep === 1) {
       if (!selectedProviderId || !providerConfig) return false;
       const apiKey = apiConfiguration.apiKey as string;
       const needsApiKey = selectedProviderMeta?.fields.some(
@@ -242,7 +298,90 @@ const SetupWizard = ({
           </p>
         </CardHeader>
         <CardContent>
+          {/* Step 0: Template Selection */}
           {currentStep === 0 && (
+            <div className="space-y-4">
+              {/* Environment Detection Status */}
+              {isDetecting ? (
+                <div
+                  className="flex items-center gap-2 text-sm"
+                  style={{ color: "var(--vscode-descriptionForeground)" }}
+                >
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {t("setup.detectingEnvironment")}
+                </div>
+              ) : hasLocalService ? (
+                <div
+                  className="flex items-center gap-2 text-sm"
+                  style={{ color: "var(--vscode-charts-green)" }}
+                >
+                  <Wifi className="w-4 h-4" />
+                  {t("setup.localServiceDetected")}
+                </div>
+              ) : null}
+
+              {/* Quick Start Templates */}
+              <div className="space-y-3">
+                <p
+                  className="text-sm font-medium"
+                  style={{ color: "var(--vscode-foreground)" }}
+                >
+                  {t("setup.quickStart")}
+                </p>
+                <TemplateGrid
+                  templates={templates}
+                  selectedTemplateId={selectedTemplateId}
+                  onSelect={handleTemplateSelect}
+                />
+              </div>
+
+              {/* Custom Setup Option */}
+              <div
+                className="pt-3 border-t"
+                style={{ borderColor: "var(--vscode-panel-border)" }}
+              >
+                <Button
+                  onClick={() => {
+                    setUseCustomSetup(true);
+                    setSelectedTemplateId(null);
+                  }}
+                  variant="outline"
+                  className={`w-full h-auto p-3 text-left transition-all ${useCustomSetup ? "ring-2" : ""}`}
+                  style={{
+                    borderColor: useCustomSetup
+                      ? "var(--vscode-button-background)"
+                      : "var(--vscode-panel-border)",
+                    backgroundColor: useCustomSetup
+                      ? "var(--vscode-list-activeSelectionBackground)"
+                      : "var(--vscode-editor-background)",
+                    // @ts-expect-error ringColor is valid
+                    "--tw-ring-color": "var(--vscode-button-background)",
+                  }}
+                >
+                  <div className="flex items-center gap-2">
+                    <Server
+                      className="w-5 h-5"
+                      style={{ color: "var(--vscode-textLink-foreground)" }}
+                    />
+                    <div>
+                      <div className="font-medium">
+                        {t("setup.customSetup")}
+                      </div>
+                      <div
+                        className="text-sm"
+                        style={{ color: "var(--vscode-descriptionForeground)" }}
+                      >
+                        {t("setup.customSetupDesc")}
+                      </div>
+                    </div>
+                  </div>
+                </Button>
+              </div>
+            </div>
+          )}
+
+          {/* Step 1: Provider Configuration */}
+          {currentStep === 1 && (
             <div className="space-y-4">
               {/* Provider Selection */}
               <div className="space-y-3">
@@ -311,9 +450,43 @@ const SetupWizard = ({
                     provider={providerConfig}
                     config={apiConfiguration}
                     onConfigChange={setApiConfigurationField}
-                    onTestProvider={() => {}}
+                    onTestProvider={handleTestConnection}
                     onOpenSettings={() => {}}
                   />
+
+                  {/* Connection Status */}
+                  <div className="mt-3">
+                    <ConnectionStatusIndicator
+                      status={
+                        getConnectionStatus() as
+                          | "idle"
+                          | "connecting"
+                          | "success"
+                          | "error"
+                      }
+                      errorType={validationResult?.errorType}
+                      message={validationResult?.message}
+                      duration={validationResult?.duration}
+                    />
+                  </div>
+
+                  {/* Test Connection Button */}
+                  <div className="mt-3 flex justify-end">
+                    <VSCodeButton
+                      appearance="secondary"
+                      onClick={handleTestConnection}
+                      disabled={isValidating}
+                    >
+                      <span className="flex items-center gap-1">
+                        {isValidating ? (
+                          <Loader2 className="w-4 h-4 animate-spin" />
+                        ) : (
+                          <Wifi className="w-4 h-4" />
+                        )}
+                        {t("setup.buttons.testConnection")}
+                      </span>
+                    </VSCodeButton>
+                  </div>
                 </div>
               )}
 
@@ -430,10 +603,11 @@ const ProviderCard = ({
   t,
 }: ProviderCardProps) => {
   return (
-    <button
+    <Button
       onClick={onClick}
-      className={`p-3 rounded-lg border text-left transition-all duration-200 ${
-        isSelected ? "ring-2" : "hover:opacity-80"
+      variant="outline"
+      className={`w-full h-auto p-3 text-left transition-all duration-200 ${
+        isSelected ? "ring-2" : ""
       }`}
       style={{
         borderColor: isSelected
@@ -454,7 +628,7 @@ const ProviderCard = ({
       >
         {t(provider.description)}
       </div>
-    </button>
+    </Button>
   );
 };
 
