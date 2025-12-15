@@ -1,6 +1,6 @@
-import * as path from "path";
-import { loadRequiredLanguageParsers, LanguageParser } from "@/core/tree-sitter/languageParser";
+import { loadRequiredLanguageParsers } from "@/core/tree-sitter/languageParser";
 import { Logger } from "@/utils/logger";
+import * as path from "path";
 
 /**
  * 文件变更摘要接口
@@ -29,7 +29,10 @@ export class DiffStructureExtractor {
    * @param filePath - 文件路径
    * @returns 文件变更摘要
    */
-  static async extractStructuralSummary(diff: string, filePath: string): Promise<FileSummary> {
+  static async extractStructuralSummary(
+    diff: string,
+    filePath: string
+  ): Promise<FileSummary> {
     try {
       const language = this.getLanguageFromPath(filePath);
       const parsers = await loadRequiredLanguageParsers([filePath]);
@@ -214,7 +217,9 @@ export class DiffStructureExtractor {
         }
         // 递归查找
         const name = this.extractNodeName(child);
-        if (name) return name;
+        if (name) {
+          return name;
+        }
       }
     } catch (error) {
       this.logger.warn(`Error extracting node name: ${error}`);
@@ -229,7 +234,9 @@ export class DiffStructureExtractor {
     try {
       // 简化实现：只返回函数名和参数列表的概览
       const name = this.extractNodeName(node);
-      if (!name) return "function()";
+      if (!name) {
+        return "function()";
+      }
 
       // 查找参数列表
       for (let i = 0; i < node.childCount; i++) {
