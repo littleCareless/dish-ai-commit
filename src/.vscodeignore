@@ -1,36 +1,47 @@
-.vscode/**
-.vscode-test/**
-src/**
+# Ignore everything by default
+*
+
+# Whitelist files to include
+!package.json
+!package.nls*.json
+!README.md
+!CHANGELOG.md
+!CHANGELOG.zh-CN.md
+!LICENSE
+!SECURITY.md
+
+# Whitelist directories to include
+!dist/**
+!i18n/**
+!images/**
+
+# Explicitly ignore development configs (just in case they were matched by whitelist)
+tsconfig.json
+esbuild.mjs
+vite.config.ts
+eslint.config.js
+.eslintrc.json
+.vscodeignore
 .gitignore
-.yarnrc
-vsc-extension-quickstart.md
-**/tsconfig.json
-**/.eslintrc.json
-**/*.map
-**/*.ts
-**/.vscode-test.*
-
-**/node_modules
-
-# 额外排除的文件和目录
-.github/**
-.husky/**
-commitlint.config.mjs
-eslint.config.mjs
+.npmrc
 .versionrc
-pnpm-lock.yaml
-SECURITY.md
-CHANGELOG.zh-CN.md
-README.zh-CN.md
-README.cursor.md
+turbo.json
 
-out/
+# Ignore source directories (redundant due to *, but for clarity)
+ai/
+commands/
+services/
+scm/
+utils/
+scripts/
+test/
+__tests__/
+config/
+core/
+prompt/
+types/
+webview/
 webview-ui/
-openspec/
-.roo/
-.cursor/
-.claude/
-
-
-# 保留 changelog.md 和 readme.md 作为主要文档
-images/demo.gif
+docs/
+.turbo/
+out/

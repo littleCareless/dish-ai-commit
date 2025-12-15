@@ -1,23 +1,24 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "module": "commonjs",
+    "composite": true,
+    "module": "CommonJS",
     "target": "ES2022",
-    "outDir": "out",
-    "lib": ["ES2022", "DOM"],
-    "sourceMap": false,
-    "rootDir": "..",
-    "baseUrl": "..",
+    "outDir": "../out",
+    "lib": ["ES2022"],
+    "sourceMap": true,
+    "rootDir": ".",
+    "baseUrl": ".",
     "skipLibCheck": true,
     "strict": true,
     "esModuleInterop": true,
     "resolveJsonModule": true,
     "paths": {
-      "@/*": ["src/*"],
-      "@shared/*": ["shared/*"]
-    },
-    "jsx": "react-jsx"
+      "@/*": ["./*"],
+      "@shared/*": ["../shared/*"]
+    }
   },
-  "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["node_modules", "out", "dist", "../webview-ui"]
+  "references": [{ "path": "../shared" }],
+  "include": ["./**/*", "package.json"],
+  "exclude": ["node_modules", "out", "dist", "webview-ui"]
 }
