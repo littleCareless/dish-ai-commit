@@ -57,11 +57,29 @@ jobs:
       # =================================================================
       # 1. 代码质量保证 (Code Quality Assurance)
       # =================================================================
-      # - name: Lint code
-      #   run: pnpm lint
+      - name: Lint code
+        run: pnpm lint
 
-      # - name: Run tests
-      #   run: pnpm test
+      - name: Build and Package
+        id: package
+        run: |
+          mkdir -p release-artifacts
+          pnpm build
+          pnpm vsix
+
+          # Move VSIX to a known location
+          mv src/*.vsix release-artifacts/extension.vsix
+
+          VSIX_FILE="release-artifacts/extension.vsix"
+
+          # Verify VSIX existence (Fail-fast)
+          if [ ! -f "$VSIX_FILE" ]; then
+            echo "::error::VSIX file not found at $VSIX_FILE"
+            exit 1
+          fi
+
+          echo "Found VSIX: $VSIX_FILE"
+          echo "vsix_path=$VSIX_FILE" >> $GITHUB_OUTPUT
 
       # =================================================================
       # 2. 确定发布类型 (Determine Release Type)
@@ -147,6 +165,7 @@ jobs:
         id: publishToOpenVSX
         with:
           pat: ${{ secrets.OPEN_VSX_TOKEN }}
+          extensionFile: ${{ steps.package.outputs.vsix_path }}
           preRelease: ${{ steps.determine_prerelease.outputs.is_prerelease }}
           skipDuplicate: true
 
@@ -156,7 +175,7 @@ jobs:
         with:
           pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
           registryUrl: https://marketplace.visualstudio.com
-          extensionFile: ${{ steps.publishToOpenVSX.outputs.vsixPath }}
+          extensionFile: ${{ steps.package.outputs.vsix_path }}
           preRelease: ${{ steps.determine_prerelease.outputs.is_prerelease }}
           skipDuplicate: true
 
@@ -169,7 +188,7 @@ jobs:
         with:
           body: ${{ steps.extract_changelog.outputs.body }}
           files: |
-            ${{ steps.publishToOpenVSX.outputs.vsixPath }}
+            ${{ steps.package.outputs.vsix_path }}
           prerelease: ${{ steps.determine_prerelease.outputs.is_prerelease }}
           name: Release ${{ github.ref_name }}
           tag_name: ${{ github.ref_name }}
