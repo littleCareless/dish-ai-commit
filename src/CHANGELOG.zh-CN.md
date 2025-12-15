@@ -5,6 +5,8 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
+### [0.55.5](https://github.com/littleCareless/dish-ai-commit/compare/v0.55.3...v0.55.5) (2025-12-15)
+
 ### [0.55.2](https://github.com/littleCareless/dish-ai-commit/compare/v0.55.3...v0.55.2) (2025-12-15)
 
 # 0.55.0 (2025-12-03)
