@@ -1,47 +1,15 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
-  "compilerOptions": {
-    "target": "ES2022",
-    "lib": ["ES2022", "DOM"],
-    "module": "ESNext",
-    "moduleResolution": "bundler",
-    "allowSyntheticDefaultImports": true,
-    "esModuleInterop": true,
-    "allowJs": true,
-    "skipLibCheck": true,
-    "strict": true,
-    "forceConsistentCasingInFileNames": true,
-    "resolveJsonModule": true,
-    "isolatedModules": true,
-    "noEmit": true,
-    "jsx": "react-jsx",
-    "baseUrl": ".",
-    "paths": {
-      "@/*": ["./src/*"],
-      "@webview-ui/*": ["./webview-ui/src/*"]
-    }
-  },
   "files": [],
   "references": [
+    {
+      "path": "./shared"
+    },
     {
       "path": "./src"
     },
     {
       "path": "./webview-ui"
     }
-  ],
-  "exclude": [
-    "node_modules",
-    "dist",
-    "out",
-    "webview-ui/dist",
-    "esbuild.ts",
-    "vitest.config.ts"
-  ],
-  "ts-node": {
-    "compilerOptions": {
-      "module": "CommonJS"
-    },
-    "files": true
-  }
+  ]
 }
