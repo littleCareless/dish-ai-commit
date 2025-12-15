@@ -79,7 +79,10 @@ export class EmbeddingServiceManager {
    * 检查是否启用多仓库索引
    */
   public isMultiRepoEnabled(): boolean {
-    return this._indexingSettingsManager?.getSettings().enableMultiRepoIndexing ?? true;
+    return (
+      this._indexingSettingsManager?.getSettings().enableMultiRepoIndexing ??
+      true
+    );
   }
 
   /**
@@ -103,11 +106,13 @@ export class EmbeddingServiceManager {
   /**
    * 获取所有仓库的索引状态
    */
-  public async getRepositoriesStatus(): Promise<Array<{
-    repository: RepositoryInfo;
-    isIndexed: number;
-    lastIndexed?: Date;
-  }>> {
+  public async getRepositoriesStatus(): Promise<
+    Array<{
+      repository: RepositoryInfo;
+      isIndexed: number;
+      lastIndexed?: Date;
+    }>
+  > {
     const statuses: Array<{
       repository: RepositoryInfo;
       isIndexed: number;
@@ -123,7 +128,10 @@ export class EmbeddingServiceManager {
           lastIndexed: state.lastIndexed,
         });
       } catch (error) {
-        console.warn(`[EmbeddingServiceManager] Failed to get status for ${state.repository.name}:`, error);
+        console.warn(
+          `[EmbeddingServiceManager] Failed to get status for ${state.repository.name}:`,
+          error
+        );
         statuses.push({
           repository: state.repository,
           isIndexed: 0,
@@ -151,8 +159,10 @@ export class EmbeddingServiceManager {
     }
 
     this._detectedRepositories = repositories;
-    console.log(`[EmbeddingServiceManager] Detected ${repositories.length} repositories`);
-    repositories.forEach(repo => {
+    console.log(
+      `[EmbeddingServiceManager] Detected ${repositories.length} repositories`
+    );
+    repositories.forEach((repo) => {
       console.log(`  - ${repo.name} (${repo.type}): ${repo.path}`);
     });
 
@@ -162,7 +172,9 @@ export class EmbeddingServiceManager {
   /**
    * 在指定目录中发现仓库
    */
-  private async discoverRepositories(rootPath: string): Promise<RepositoryInfo[]> {
+  private async discoverRepositories(
+    rootPath: string
+  ): Promise<RepositoryInfo[]> {
     const repositories: RepositoryInfo[] = [];
 
     try {
@@ -182,7 +194,10 @@ export class EmbeddingServiceManager {
         }
       }
     } catch (error) {
-      console.warn(`[EmbeddingServiceManager] Error discovering repositories in ${rootPath}:`, error);
+      console.warn(
+        `[EmbeddingServiceManager] Error discovering repositories in ${rootPath}:`,
+        error
+      );
     }
 
     return repositories;
@@ -191,19 +206,27 @@ export class EmbeddingServiceManager {
   /**
    * 检查目录是否是仓库
    */
-  private async checkRepository(dirPath: string): Promise<RepositoryInfo | undefined> {
+  private async checkRepository(
+    dirPath: string
+  ): Promise<RepositoryInfo | undefined> {
     // 检查 Git 仓库
     const gitRepo = await this.checkGitRepository(dirPath);
-    if (gitRepo) return gitRepo;
+    if (gitRepo) {
+      return gitRepo;
+    }
 
     // 检查 SVN 仓库
     const svnRepo = await this.checkSvnRepository(dirPath);
-    if (svnRepo) return svnRepo;
+    if (svnRepo) {
+      return svnRepo;
+    }
 
     return undefined;
   }
 
-  private async checkGitRepository(dirPath: string): Promise<RepositoryInfo | undefined> {
+  private async checkGitRepository(
+    dirPath: string
+  ): Promise<RepositoryInfo | undefined> {
     try {
       const { stdout } = await execAsync("git rev-parse --show-toplevel", {
         cwd: dirPath,
@@ -220,7 +243,9 @@ export class EmbeddingServiceManager {
     }
   }
 
-  private async checkSvnRepository(dirPath: string): Promise<RepositoryInfo | undefined> {
+  private async checkSvnRepository(
+    dirPath: string
+  ): Promise<RepositoryInfo | undefined> {
     try {
       const svnDir = path.join(dirPath, ".svn");
       const stat = await statAsync(svnDir);
@@ -243,7 +268,9 @@ export class EmbeddingServiceManager {
       const subdirs: string[] = [];
 
       for (const entry of entries) {
-        if (entry.startsWith(".")) continue;
+        if (entry.startsWith(".")) {
+          continue;
+        }
         const entryPath = path.join(dirPath, entry);
         try {
           const stat = await statAsync(entryPath);
@@ -264,7 +291,9 @@ export class EmbeddingServiceManager {
   /**
    * 为指定仓库创建 EmbeddingService
    */
-  private createServiceForRepository(repository: RepositoryInfo): EmbeddingService {
+  private createServiceForRepository(
+    repository: RepositoryInfo
+  ): EmbeddingService {
     const settings = this._indexingSettingsManager?.getSettings();
     const qdrantUrl = settings?.qdrantUrl || "http://localhost:6333";
 
@@ -282,9 +311,12 @@ export class EmbeddingServiceManager {
       const providerSettings = settings?.providers?.["openai-compatible"];
       vectorSize = providerSettings?.modelDimensions || 1536;
     } else {
-      const embeddingModel = settings?.embeddingModel || "text-embedding-3-small";
+      const embeddingModel =
+        settings?.embeddingModel || "text-embedding-3-small";
       const modelProfile =
-        EMBEDDING_MODEL_PROFILES[embeddingProvider.toLowerCase()]?.[embeddingModel];
+        EMBEDDING_MODEL_PROFILES[embeddingProvider.toLowerCase()]?.[
+          embeddingModel
+        ];
       vectorSize = modelProfile?.dimension || 1536;
     }
 
@@ -341,7 +373,8 @@ export class EmbeddingServiceManager {
 
       // 使用第一个仓库的服务作为默认服务（向后兼容）
       const firstRepo = repositories[0];
-      this._embeddingService = this._repositoryServices.get(firstRepo.path)?.embeddingService || null;
+      this._embeddingService =
+        this._repositoryServices.get(firstRepo.path)?.embeddingService || null;
 
       console.log(
         `[EmbeddingServiceManager] Initialized ${repositories.length} repository services in multi-repo mode`
@@ -380,9 +413,12 @@ export class EmbeddingServiceManager {
         const providerSettings = settings?.providers?.["openai-compatible"];
         vectorSize = providerSettings?.modelDimensions || 1536;
       } else {
-        const embeddingModel = settings?.embeddingModel || "text-embedding-3-small";
+        const embeddingModel =
+          settings?.embeddingModel || "text-embedding-3-small";
         const modelProfile =
-          EMBEDDING_MODEL_PROFILES[embeddingProvider.toLowerCase()]?.[embeddingModel];
+          EMBEDDING_MODEL_PROFILES[embeddingProvider.toLowerCase()]?.[
+            embeddingModel
+          ];
         vectorSize = modelProfile?.dimension || 1536;
       }
 
@@ -413,7 +449,9 @@ export class EmbeddingServiceManager {
   /**
    * 获取指定仓库的 EmbeddingService
    */
-  public getServiceForRepository(repoPath: string): EmbeddingService | undefined {
+  public getServiceForRepository(
+    repoPath: string
+  ): EmbeddingService | undefined {
     return this._repositoryServices.get(repoPath)?.embeddingService;
   }
 

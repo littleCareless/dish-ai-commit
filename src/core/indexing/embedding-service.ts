@@ -3,9 +3,7 @@ import { ConfigKey } from "@/config/types";
 import { CodeIndexer } from "@/core/indexing/code-indexer";
 import { FileNode, FileScanner } from "@/core/indexing/file-scanner";
 import { QdrantPoint, VectorStore } from "@/core/indexing/vector-store";
-import {
-  IndexingSettings
-} from "@/services/settings/indexing-settings-manager";
+import { IndexingSettings } from "@/services/settings/indexing-settings-manager";
 import { formatMessage } from "@/utils/i18n/localization-manager";
 import * as crypto from "crypto";
 import OpenAI from "openai";
@@ -158,7 +156,7 @@ async function generateOllamaEmbeddings(
         );
       }
 
-      const result = await response.json();
+      const result: any = await response.json();
       if (result.embedding && Array.isArray(result.embedding)) {
         embeddings.push(result.embedding);
       } else {
@@ -278,10 +276,7 @@ export class EmbeddingService {
       "  OpenAI Compatible Model:",
       this.openaiCompatibleModel || "NOT SET"
     );
-    console.log(
-      "  Min Block Chars:",
-      minBlockChars || "DEFAULT (100)"
-    );
+    console.log("  Min Block Chars:", minBlockChars || "DEFAULT (100)");
   }
 
   /**
@@ -292,7 +287,9 @@ export class EmbeddingService {
   private getIndexingSettings(): IndexingSettings | null {
     try {
       // 优先使用 EmbeddingServiceManager 获取设置，避免创建未初始化的 IndexingSettingsManager 实例
-      const { EmbeddingServiceManager } = require("@/core/indexing/embedding-service-manager");
+      const {
+        EmbeddingServiceManager,
+      } = require("@/core/indexing/embedding-service-manager");
       const settings = EmbeddingServiceManager.getInstance().getSettings();
       if (settings) {
         return settings;
@@ -553,8 +550,9 @@ export class EmbeddingService {
       const textsToEmbed = semanticBlocks.map((block) => {
         // Construct a meaningful string from the block for embedding
         // Example: combine name, signature, and documentation
-        return `${block.name}\n${block.signature || ""}\n${block.doc || ""
-          }\n${block.code.substring(0, 500)}`; // Truncate code for embedding
+        return `${block.name}\n${block.signature || ""}\n${
+          block.doc || ""
+        }\n${block.code.substring(0, 500)}`; // Truncate code for embedding
       });
 
       const indexingSettings = this.getIndexingSettings();
@@ -892,9 +890,9 @@ export class EmbeddingService {
       throw new EmbeddingServiceError(
         isFetchError
           ? formatMessage("embedding.qdrant.connectFailed", [
-            qdUrl,
-            error.message,
-          ])
+              qdUrl,
+              error.message,
+            ])
           : error instanceof Error
             ? error.message
             : formatMessage("embedding.vectorStore.statusCheck.unknownError"),
@@ -921,10 +919,7 @@ export class EmbeddingService {
         indexedFiles,
       };
     } catch (error) {
-      console.error(
-        "[EmbeddingService] Error getting indexing stats:",
-        error
-      );
+      console.error("[EmbeddingService] Error getting indexing stats:", error);
       return {
         totalVectors: 0,
         indexedFiles: [],
