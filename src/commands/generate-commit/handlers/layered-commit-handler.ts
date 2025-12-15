@@ -1,20 +1,20 @@
-import { AIModel, AIProvider, AIRequestParams } from "@/ai/types"
-import { getSystemPrompt } from "@/ai/utils/generate-helper"
-import { CommitContextBuilder } from "@/commands/generate-commit/builders/context-builder"
-import { CommitMessageBuilder } from "@/commands/generate-commit/builders/message-builder"
-import { GlobalContextExtractor } from "@/commands/generate-commit/services/global-context-extractor"
-import { filterCodeBlockMarkers } from "@/commands/generate-commit/utils/commit-formatter"
-import { getLayeredCommitBatchVariables } from "@/prompt/layered-commit-batch"
-import { ISCMProvider } from "@/scm/scm-provider"
-import { PromptManagerService } from "@/services/core/prompt-manager-service"
-import { RateLimiterService } from "@/services/core/rate-limiter-service"
-import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service"
-import { PromptKey } from "@/types/prompts"
-import { getMessage } from "@/utils/i18n"
-import { Logger } from "@/utils/logger"
-import { notify } from "@/utils/notification/notification-manager"
-import { processPromptTemplate } from "@/utils/prompt-template"
-import * as vscode from "vscode"
+import { AIModel, AIProvider, AIRequestParams } from "@/ai/types";
+import { getSystemPrompt } from "@/ai/utils/generate-helper";
+import { CommitContextBuilder } from "@/commands/generate-commit/builders/context-builder";
+import { CommitMessageBuilder } from "@/commands/generate-commit/builders/message-builder";
+import { GlobalContextExtractor } from "@/commands/generate-commit/services/global-context-extractor";
+import { filterCodeBlockMarkers } from "@/commands/generate-commit/utils/commit-formatter";
+import { getLayeredCommitBatchVariables } from "@/prompt/layered-commit-batch";
+import { ISCMProvider } from "@/scm/scm-provider";
+import { PromptManagerService } from "@/services/core/prompt-manager-service";
+import { RateLimiterService } from "@/services/core/rate-limiter-service";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
+import { PromptKey } from "@/types/prompts";
+import { getMessage } from "@/utils/i18n";
+import { Logger } from "@/utils/logger";
+import { notify } from "@/utils/notification/notification-manager";
+import { processPromptTemplate } from "@/utils/prompt-template";
+import * as vscode from "vscode";
 
 /**
  * 分层提交处理器类，负责处理分层提交信息生成
@@ -55,8 +55,8 @@ export class LayeredCommitHandler {
       data: {
         provider: aiProvider.getId(),
         model: selectedModel.id,
-        fileCount: selectedFiles?.length || 0
-      }
+        fileCount: selectedFiles?.length || 0,
+      },
     });
 
     progress.report({
@@ -65,7 +65,7 @@ export class LayeredCommitHandler {
 
     if (!selectedFiles || selectedFiles.length === 0) {
       this.logger.warn("未选择文件", {
-        operation: "handleLayeredCommit"
+        operation: "handleLayeredCommit",
       });
       notify.warn("no.files.selected.for.layered.commit");
       return;
@@ -76,36 +76,39 @@ export class LayeredCommitHandler {
     this.logger.debug("获取配置完成", {
       data: {
         enableMergeCommit: config.features.commitFormat.enableMergeCommit,
-        enableEmoji: config.features.commitFormat.enableEmoji
-      }
+        enableEmoji: config.features.commitFormat.enableEmoji,
+      },
     });
 
     // === 新增: 阶段0 - 全局上下文提取 ===
-    progress.report({ message: getMessage("progress.extracting.global.context") });
-
-    this.logger.info("开始提取全局上下文", {
-      data: { fileCount: selectedFiles.length }
+    progress.report({
+      message: getMessage("progress.extracting.global.context"),
     });
 
-    const globalContext = await this.globalContextExtractor.extractGlobalContext(
-      selectedFiles,
-      scmProvider,
-      selectedModel,
-      aiProvider
-    );
+    this.logger.info("开始提取全局上下文", {
+      data: { fileCount: selectedFiles.length },
+    });
+
+    const globalContext =
+      await this.globalContextExtractor.extractGlobalContext(
+        selectedFiles,
+        scmProvider,
+        selectedModel,
+        aiProvider
+      );
 
     this.logger.debug("全局上下文提取完成", {
-      data: { contextLength: globalContext?.length || 0 }
+      data: { contextLength: globalContext?.length || 0 },
     });
 
     // === 增强: 阶段1 - 为每个文件生成描述 (带全局上下文) ===
     this.logger.info("开始为每个文件生成描述", {
-      data: { fileCount: selectedFiles.length }
+      data: { fileCount: selectedFiles.length },
     });
 
     // === 增强: 阶段1 - 批量生成文件描述 ===
     this.logger.info("开始批量生成文件描述", {
-      data: { fileCount: selectedFiles.length }
+      data: { fileCount: selectedFiles.length },
     });
 
     const fileDescriptions = await this.processFilesInBatches(
@@ -124,8 +127,8 @@ export class LayeredCommitHandler {
       data: {
         totalFiles: selectedFiles.length,
         successCount: fileDescriptions.length,
-        failedCount: selectedFiles.length - fileDescriptions.length
-      }
+        failedCount: selectedFiles.length - fileDescriptions.length,
+      },
     });
 
     if (fileDescriptions.length > 0) {
@@ -139,11 +142,11 @@ export class LayeredCommitHandler {
       );
 
       this.logger.logOperationEnd("handleLayeredCommit", undefined, {
-        data: { fileCount: fileDescriptions.length }
+        data: { fileCount: fileDescriptions.length },
       });
     } else {
       this.logger.warn("未生成任何文件描述", {
-        operation: "handleLayeredCommit"
+        operation: "handleLayeredCommit",
       });
       notify.warn("warn.no.file.descriptions.generated");
     }
@@ -167,7 +170,7 @@ export class LayeredCommitHandler {
     progress: vscode.Progress<{ message?: string; increment?: number }>
   ): Promise<void> {
     this.logger.logOperationStart("generateAndApplyLayeredSummary", {
-      data: { fileCount: fileChanges.length }
+      data: { fileCount: fileChanges.length },
     });
 
     progress.report({
@@ -203,19 +206,20 @@ export class LayeredCommitHandler {
 
     const summarySystemPrompt = await getSystemPrompt(summaryParams);
 
-    const summaryContextManager = await this.contextBuilder.buildLayeredSummaryContextManager(
-      requestParams.model as AIModel,
-      summarySystemPrompt,
-      scmProvider,
-      formattedFileChanges,
-      config
-    );
+    const summaryContextManager =
+      await this.contextBuilder.buildLayeredSummaryContextManager(
+        requestParams.model as AIModel,
+        summarySystemPrompt,
+        scmProvider,
+        formattedFileChanges,
+        config
+      );
 
     const messages = summaryContextManager.buildMessages();
 
     if (!aiProvider.generateCommit) {
       this.logger.error("Provider 不支持非流式生成", {
-        data: { provider: aiProvider.getId() }
+        data: { provider: aiProvider.getId() },
       });
       throw new Error(
         `Provider ${aiProvider.getId()} does not support non-streaming for layered commit summary.`
@@ -223,7 +227,7 @@ export class LayeredCommitHandler {
     }
 
     this.logger.debug("生成分层摘要", {
-      data: { messageCount: messages.length }
+      data: { messageCount: messages.length },
     });
 
     const summaryResponse = await aiProvider.generateCommit({
@@ -239,20 +243,19 @@ export class LayeredCommitHandler {
       const filteredMessage = filterCodeBlockMarkers(finalMessage);
 
       this.logger.debug("应用分层摘要到 SCM", {
-        data: { messageLength: filteredMessage?.length || 0 }
+        data: { messageLength: filteredMessage?.length || 0 },
       });
 
       await scmProvider.startStreamingInput(filteredMessage?.trim());
 
       this.logger.logOperationEnd("generateAndApplyLayeredSummary", undefined, {
-        data: { fileCount: fileChanges.length }
+        data: { fileCount: fileChanges.length },
       });
     } catch (error) {
-      this.logger.logError(
-        error as Error,
-        "应用分层提交摘要失败",
-        { operation: "generateAndApplyLayeredSummary", data: { fileCount: fileChanges.length } }
-      );
+      this.logger.logError(error as Error, "应用分层提交摘要失败", {
+        operation: "generateAndApplyLayeredSummary",
+        data: { fileCount: fileChanges.length },
+      });
       // Fallback to showing raw details if applying fails
       await this.messageBuilder.showLayeredCommitDetails(fileChanges, true);
       notify.error("error.applying.layered.summary");
@@ -272,7 +275,7 @@ export class LayeredCommitHandler {
 
     if (!profile) {
       this.logger.error("未找到 profile", {
-        operation: "getConfiguration"
+        operation: "getConfiguration",
       });
       throw new Error(getMessage("profile.not.found"));
     }
@@ -280,8 +283,8 @@ export class LayeredCommitHandler {
     this.logger.debug("配置获取成功", {
       data: {
         hasPreferences: !!profile.preferences,
-        enableMergeCommit: featureSettings.enableMergeCommit
-      }
+        enableMergeCommit: featureSettings.enableMergeCommit,
+      },
     });
 
     // 构建配置对象，兼容旧的配置结构
@@ -297,7 +300,8 @@ export class LayeredCommitHandler {
           enableLayeredCommit: featureSettings.enableLayeredCommit,
         },
         commitMessage: {
-          useRecentCommitsAsReference: featureSettings.useRecentCommitsAsReference,
+          useRecentCommitsAsReference:
+            featureSettings.useRecentCommitsAsReference,
         },
         codeAnalysis: {
           diffTarget: featureSettings.diffTarget || "auto",
@@ -305,12 +309,12 @@ export class LayeredCommitHandler {
           fallbackToAll: featureSettings.fallbackToAll,
           simplifyDiff: featureSettings.simplifyDiff,
         },
-        suppressNonCriticalWarnings: featureSettings.suppressNonCriticalWarnings ?? true,
+        suppressNonCriticalWarnings:
+          featureSettings.suppressNonCriticalWarnings ?? true,
       },
       preferences: profile.preferences || {},
     };
   }
-
 
   /**
    * 批量处理文件以生成描述
@@ -335,7 +339,9 @@ export class LayeredCommitHandler {
     // 1. Create Batches
     for (const file of files) {
       const diff = await scmProvider.getDiff([file]);
-      if (!diff) continue;
+      if (!diff) {
+        continue;
+      }
 
       const diffSize = diff.length;
 
@@ -350,7 +356,10 @@ export class LayeredCommitHandler {
         continue;
       }
 
-      if (currentBatchSize + diffSize > MAX_BATCH_SIZE || currentBatch.length >= MAX_FILES_PER_BATCH) {
+      if (
+        currentBatchSize + diffSize > MAX_BATCH_SIZE ||
+        currentBatch.length >= MAX_FILES_PER_BATCH
+      ) {
         batches.push(currentBatch);
         currentBatch = [];
         currentBatchSize = 0;
@@ -372,7 +381,9 @@ export class LayeredCommitHandler {
 
       // === Rate Limiting ===
       const providerId = aiProvider.getId();
-      const providerConfig = vscode.workspace.getConfiguration("dish-ai-commit.providers").get<any>(providerId);
+      const providerConfig = vscode.workspace
+        .getConfiguration("dish-ai-commit.providers")
+        .get<any>(providerId);
 
       if (providerConfig && providerConfig.rateLimitEnabled) {
         const rateLimiter = RateLimiterService.getInstance();
@@ -382,7 +393,7 @@ export class LayeredCommitHandler {
           providerConfig.rateLimitWindow || 60,
           (waitTimeMs) => {
             progress.report({
-              message: `Rate limit reached. Waiting ${Math.ceil(waitTimeMs / 1000)}s...`
+              message: `Rate limit reached. Waiting ${Math.ceil(waitTimeMs / 1000)}s...`,
             });
           }
         );
@@ -395,18 +406,25 @@ export class LayeredCommitHandler {
 
       try {
         const batchDiff = await scmProvider.getDiff(batch);
-        if (!batchDiff) continue;
+        if (!batchDiff) {
+          continue;
+        }
 
         const promptManager = PromptManagerService.getInstance();
-        const activePromptContent = await promptManager.getActivePromptContent(PromptKey.LayeredCommitBatch);
+        const activePromptContent = await promptManager.getActivePromptContent(
+          PromptKey.LayeredCommitBatch
+        );
 
         const variables = getLayeredCommitBatchVariables({
           config: config.features.commitFormat,
           language: config.base.language,
-          globalContext: globalContext
+          globalContext: globalContext,
         });
 
-        const systemPrompt = processPromptTemplate(activePromptContent, variables);
+        const systemPrompt = processPromptTemplate(
+          activePromptContent,
+          variables
+        );
 
         const contextManager = await this.contextBuilder.buildContextManager(
           selectedModel,
@@ -415,7 +433,7 @@ export class LayeredCommitHandler {
           batchDiff,
           config,
           {
-            globalContext: globalContext
+            globalContext: globalContext,
           }
         );
 
@@ -444,7 +462,9 @@ export class LayeredCommitHandler {
             parsed = JSON.parse(content);
           }
         } catch (e) {
-          this.logger.warn("Failed to parse batch response", { data: { batch, content: response.content } });
+          this.logger.warn("Failed to parse batch response", {
+            data: { batch, content: response.content },
+          });
           continue;
         }
 
@@ -453,12 +473,11 @@ export class LayeredCommitHandler {
             if (item.filePath && item.description) {
               results.push({
                 filePath: item.filePath,
-                description: item.description
+                description: item.description,
               });
             }
           }
         }
-
       } catch (error) {
         this.logger.error("Batch processing failed", { error: error as Error });
       }
@@ -474,10 +493,9 @@ export class LayeredCommitHandler {
   private throwIfCancelled(token: vscode.CancellationToken): void {
     if (token.isCancellationRequested) {
       this.logger.warn("用户取消了操作", {
-        operation: "handleLayeredCommit"
+        operation: "handleLayeredCommit",
       });
       throw new Error(getMessage("user.cancelled.operation.error"));
     }
   }
 }
-

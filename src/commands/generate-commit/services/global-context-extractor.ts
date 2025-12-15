@@ -1,12 +1,11 @@
-import * as path from "path";
-import { ISCMProvider } from "@/scm/scm-provider";
 import { AIModel, AIProvider } from "@/ai/types";
-import { Logger } from "@/utils/logger";
+import { ISCMProvider } from "@/scm/scm-provider";
 import {
   DiffStructureExtractor,
   FileSummary,
 } from "@/utils/diff/diff-structure-extractor";
-import { tokenizerService } from "@/utils/tokenizer";
+import { Logger } from "@/utils/logger";
+import * as path from "path";
 
 /**
  * 全局上下文提取器
@@ -99,10 +98,11 @@ export class GlobalContextExtractor {
       try {
         const fileDiff = await scmProvider.getDiff([filePath]);
         if (fileDiff) {
-          const overview = await DiffStructureExtractor.extractStructuralSummary(
-            fileDiff,
-            filePath
-          );
+          const overview =
+            await DiffStructureExtractor.extractStructuralSummary(
+              fileDiff,
+              filePath
+            );
           overviews.push(overview);
         }
       } catch (error) {
@@ -151,11 +151,11 @@ export class GlobalContextExtractor {
         ],
         diff: formattedOverviews,
         additionalContext: "",
-        model: { 
-          id: "gpt-4", 
+        model: {
+          id: "gpt-4",
           name: "GPT-4",
           provider: "openai" as any,
-          maxTokens: { input: 8192, output: 2048 } 
+          maxTokens: { input: 8192, output: 2048 },
         }, // 临时模型对象
         feature: "commit-generation",
       });
@@ -253,12 +253,20 @@ export class GlobalContextExtractor {
         /manager/i,
         /index\.(ts|js)/i,
       ];
-      if (keyPatterns.some((p) => p.test(a.filePath))) scoreA += 5;
-      if (keyPatterns.some((p) => p.test(b.filePath))) scoreB += 5;
+      if (keyPatterns.some((p) => p.test(a.filePath))) {
+        scoreA += 5;
+      }
+      if (keyPatterns.some((p) => p.test(b.filePath))) {
+        scoreB += 5;
+      }
 
       // 维度4: 类型定义文件降权
-      if (/types?\.ts|\.d\.ts|interface/i.test(a.filePath)) scoreA -= 3;
-      if (/types?\.ts|\.d\.ts|interface/i.test(b.filePath)) scoreB -= 3;
+      if (/types?\.ts|\.d\.ts|interface/i.test(a.filePath)) {
+        scoreA -= 3;
+      }
+      if (/types?\.ts|\.d\.ts|interface/i.test(b.filePath)) {
+        scoreB -= 3;
+      }
 
       return scoreB - scoreA;
     });
@@ -291,10 +299,13 @@ export class GlobalContextExtractor {
       .map((w) => w.toLowerCase())
       .filter((w) => w.length > 3);
 
-    const wordFreq = words.reduce((acc, word) => {
-      acc[word] = (acc[word] || 0) + 1;
-      return acc;
-    }, {} as Record<string, number>);
+    const wordFreq = words.reduce(
+      (acc, word) => {
+        acc[word] = (acc[word] || 0) + 1;
+        return acc;
+      },
+      {} as Record<string, number>
+    );
 
     const topWord = Object.entries(wordFreq).sort(([, a], [, b]) => b - a)[0];
 

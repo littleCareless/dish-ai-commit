@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { BaseCommand } from "./base-command";
 import { ConfigurationManager } from "../config/configuration-manager";
+import { ModelPickerService } from "../services/core/model-picker-service";
 import { notify } from "../utils/notification/notification-manager";
 
 /**
@@ -31,7 +32,7 @@ export class SelectModelCommand extends BaseCommand {
     );
 
     // 显示模型选择器并获取用户选择
-    const modelSelection = await this.showModelPicker(
+    const modelSelection = await ModelPickerService.showModelPicker(
       currentProvider,
       currentModel
     );
