@@ -2,11 +2,11 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { promisify } from "util";
 import * as childProcess from "child_process";
-import { Logger } from "../../utils/logger";
-import { formatMessage } from "../../utils/i18n";
-import { notify } from "../../utils/notification/notification-manager";
-import { GitRepositoryHelper, GitRepository } from "./helpers/git-repository-helper";
-import { ImprovedPathUtils } from "../utils/improved-path-utils";
+import { Logger } from "@/utils/logger";
+import { formatMessage } from "@/utils/i18n";
+import { notify } from "@/utils/notification/notification-manager";
+import { GitRepositoryHelper, GitRepository } from "@/scm/git/helpers/git-repository-helper";
+import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils";
 
 const exec = promisify(childProcess.exec);
 

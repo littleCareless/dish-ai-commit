@@ -1,8 +1,5 @@
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { getMessage } from "../../utils/i18n";
-import { notify } from "../../utils/notification/notification-manager";
-import { type AIModel } from "../types";
-import { BaseOpenAIProvider } from "./base-openai-provider";
+import { BaseOpenAIProvider } from "@/ai/providers/base-openai-provider";
+import { type AIModel } from "@/ai/types";
 
 /** OpenAI服务提供者标识信息 */
 const provider = { id: "openai", name: "OpenAI" } as const;
@@ -99,12 +96,11 @@ export class OpenAIProvider extends BaseOpenAIProvider {
    * 创建OpenAI提供者实例
    * 从配置管理器获取必要的配置信息并初始化基类
    */
-  constructor() {
-    const configManager = ConfigurationManager.getInstance();
+  constructor(config?: any) {
     super({
-      apiKey: configManager.getConfig("PROVIDERS_OPENAI_APIKEY"),
-      baseURL: configManager.getConfig("PROVIDERS_OPENAI_BASEURL"),
-      apiVersion: configManager.getConfig("BASE_MODEL"),
+      apiKey: config?.apiKey,
+      baseUrl: config?.baseUrl,
+      apiVersion: config?.apiVersion,
       providerId: "openai",
       providerName: "OpenAI",
       models: models,
@@ -159,15 +155,9 @@ export class OpenAIProvider extends BaseOpenAIProvider {
    * @throws 如果API调用失败会记录错误并返回空数组
    */
   async refreshModels(): Promise<string[]> {
-    try {
-      const models = await this.openai.models.list();
-      notify.info("openai.models.update.success");
-      return models.data.map((model) => model.id);
-    } catch (error) {
-      console.error("Failed to fetch OpenAI models:", error);
-      notify.error("openai.models.fetch.failed");
-      return [];
-    }
+    const models = await this.openai.models.list();
+
+    return models.data.map((model) => model.id);
   }
 
   /**

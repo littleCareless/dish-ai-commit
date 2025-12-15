@@ -1,17 +1,44 @@
 // Place your settings in this file to overwrite default and user settings.
 {
   "files.exclude": {
-    "out": false // set this to true to hide the "out" folder with the compiled JS files
+    "out": false, // set this to true to hide the "out" folder with the compiled JS files
+    "dist": false, // set this to true to hide the "dist" folder with the compiled JS files
+    "webview-ui/dist": false, // set this to true to hide the "webview-ui/dist" folder
+    "node_modules": true, // hide node_modules
+    ".turbo": true, // hide turbo cache
+    "*.vsix": true // hide packaged extension files
   },
   "search.exclude": {
-    "out": true // set this to false to include "out" folder in search results
+    "out": true, // set this to false to include "out" folder in search results
+    "dist": true, // set this to false to include "dist" folder in search results
+    "webview-ui/dist": true, // set this to false to include "webview-ui/dist" folder in search results
+    "node_modules": true, // exclude node_modules from search
+    ".turbo": true, // exclude turbo cache from search
+    "*.vsix": true // exclude packaged extension files from search
   },
   // Turn off tsc task auto detection since we have the necessary tasks as npm scripts
   "typescript.tsc.autoDetect": "off",
-  "i18n-ally.localesPaths": [
-    "i18n",
-    "out/i18n",
-    "src/i18n"
-  ],
-  "svn.ignoreMissingSvnWarning": true
+  "vitest.disableWorkspaceWarning": true,
+  "i18n-ally.localesPaths": ["i18n", "out/i18n", "src/i18n"],
+  "svn.ignoreMissingSvnWarning": true,
+  // ESLint configuration
+  "eslint.workingDirectories": ["src", "webview-ui"],
+  // TypeScript configuration
+  "typescript.preferences.includePackageJsonAutoImports": "auto",
+  "typescript.suggest.autoImports": true,
+  // File associations
+  "files.associations": {
+    "*.mdc": "markdown"
+  },
+  // Editor configuration
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit",
+    "source.organizeImports": "explicit"
+  },
+  // Emmet configuration for webview
+  "emmet.includeLanguages": {
+    "typescript": "html",
+    "typescriptreact": "html"
+  }
 }

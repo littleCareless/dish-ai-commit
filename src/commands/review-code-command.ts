@@ -1,14 +1,13 @@
-import * as vscode from "vscode";
-import { BaseCommand } from "./base-command";
-import { SCMDetectorService } from "../services/scm-detector-service";
-import { getMessage, formatMessage } from "../utils/i18n";
+import { addSimilarCodeContext } from "@/ai/utils/embedding-helper";
+import { BaseCommand } from "@/commands/base-command";
+import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
+import { formatMessage, getMessage } from "@/utils/i18n";
 import {
   notify,
   withProgress,
-} from "../utils/notification/notification-manager";
+} from "@/utils/notification/notification-manager";
 import * as path from "path";
-import { validateAndGetModel } from "../utils/ai/model-validation";
-import { addSimilarCodeContext } from "../ai/utils/embedding-helper";
+import * as vscode from "vscode";
 
 /**
  * 代码审查命令类
@@ -23,46 +22,31 @@ export class ReviewCodeCommand extends BaseCommand {
    */
   async execute(resources?: vscode.SourceControlResourceState[]) {
     this.logger.info("Executing ReviewCodeCommand...");
-    if ((await this.showConfirmAIProviderToS()) === false) {
-      this.logger.warn("User did not confirm AI provider ToS.");
-      return;
-    }
-    // 处理配置
-    const configResult = await this.handleConfiguration();
-    if (!configResult) {
-      this.logger.warn("Configuration is not valid.");
-      return;
-    }
-    this.logger.info(
-      `Configuration handled. Provider: ${configResult.provider}, Model: ${configResult.model}`
-    );
 
     try {
       await withProgress(getMessage("reviewing.code"), async (progress) => {
-        progress.report({
-          increment: 5,
-          message: getMessage("checking.selected.files"),
+        const context = await this.prepare(resources, {
+          requireSelectedFiles: true,
+          validateModel: true,
+          progress,
         });
-        // 检查是否有选中的文件
-        const selectedFiles = SCMDetectorService.getSelectedFiles(resources);
-        if (!selectedFiles || selectedFiles.length === 0) {
-          this.logger.warn("No files selected for review.");
-          await notify.warn("no.changes.selected");
-          return;
-        }
-        this.logger.info(`Selected files for review: ${selectedFiles.join(", ")}`);
 
-        progress.report({
-          increment: 5,
-          message: getMessage("detecting.scm.provider"),
-        });
-        // 检测SCM提供程序
-        const result = await this.detectSCMProvider(selectedFiles);
-        if (!result) {
-          this.logger.warn("SCM provider not detected.");
+        if (!context) {
           return;
         }
-        const { scmProvider } = result;
+
+        const {
+          scmProvider,
+          selectedFiles,
+          aiProvider,
+          selectedModel,
+          repositoryPath,
+        } = context;
+
+        // selectedFiles is guaranteed to be defined and non-empty because requireSelectedFiles is true
+        const files = selectedFiles!;
+
+        this.logger.info(`Selected files for review: ${files.join(", ")}`);
         this.logger.info(`SCM provider detected: ${scmProvider.type}`);
 
         const currentInput = await scmProvider.getCommitInput();
@@ -70,36 +54,21 @@ export class ReviewCodeCommand extends BaseCommand {
           this.logger.info("Custom instructions found in SCM input.");
         }
 
-        // 获取配置信息
-        const { config, configuration } = this.getExtConfig();
-        let { provider, model } = configResult;
-
-        progress.report({
-          increment: 5,
-          message: getMessage("validating.model"),
-        });
-        const { aiProvider, selectedModel } = await validateAndGetModel(
-          provider,
-          model
-        );
-        this.logger.info(
-          `Model validated. AI Provider: ${aiProvider.getId()}, Model: ${selectedModel?.id}`
-        );
-
         // 获取所有选中文件的差异
         const fileReviews = new Map<string, string>();
         const diffs = new Map<string, string>();
+
         // 并行收集所有差异 - 15% 进度 (5 initial + 15 = 20 total for setup)
         progress.report({
           message: getMessage("getting.file.changes"),
         });
-        const diffPromises = selectedFiles.map(async (filePath) => {
+
+        const diffPromises = files.map(async (filePath) => {
           try {
             const diff = await scmProvider.getDiff([filePath]);
             if (diff) {
               diffs.set(filePath, diff);
             }
-            // Individual progress for each file diff is small, overall progress updated after Promise.all
             return { success: true };
           } catch (error) {
             this.logger.logError(error as Error, "获取文件差异失败");
@@ -130,21 +99,24 @@ export class ReviewCodeCommand extends BaseCommand {
                 ]),
               });
 
+              // Get configuration from profile and preferences
+              const preferences =
+                PreferencesSettingsManager.getInstance().getSettings();
+
               const requestParams = {
-                ...configuration.base,
-                ...configuration.features.codeAnalysis,
+                language: preferences.language,
                 diff,
                 model: selectedModel,
                 scm: scmProvider.type ?? "git",
                 changeFiles: [filePath],
                 additionalContext: currentInput,
+                feature: "code-review",
               };
 
               await addSimilarCodeContext(requestParams);
 
-              const reviewResult = await aiProvider?.generateCodeReview?.(
-                requestParams
-              );
+              const reviewResult =
+                await aiProvider?.generateCodeReview?.(requestParams);
 
               if (reviewResult?.content) {
                 fileReviews.set(filePath, reviewResult.content);
@@ -157,10 +129,14 @@ export class ReviewCodeCommand extends BaseCommand {
 
               return { success: true, filePath };
             } catch (error) {
+              console.log("error", error);
               await notify.warn(
                 formatMessage("review.file.failed", [path.basename(filePath)])
               );
-              this.logger.logError(error as Error, `评审文件失败: ${path.basename(filePath)}`);
+              this.logger.logError(
+                error as Error,
+                `评审文件失败: ${path.basename(filePath)}`
+              );
               progress.report({
                 // Still report increment even if failed to keep progress accurate
                 increment: progressPerFile,

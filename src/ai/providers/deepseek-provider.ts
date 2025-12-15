@@ -1,6 +1,5 @@
-import { BaseOpenAIProvider } from "./base-openai-provider";
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { AIModel } from "../types";
+import { BaseOpenAIProvider } from "@/ai/providers/base-openai-provider";
+import { AIModel } from "@/ai/types";
 
 /**
  * Deepseek AI模型配置列表
@@ -8,32 +7,22 @@ import { AIModel } from "../types";
  */
 const deepseekModels: AIModel[] = [
   {
-    id: "deepseek-chat",
-    name: "Deepseek Chat - 通用大语言模型: 对话流畅自然,知识面广",
-    maxTokens: { input: 65536, output: 8192 },
+    id: "deepseek-v3-1-terminus",
+    name: "deepseek-v3.1-terminus - 深度思考/文本",
+    maxTokens: { input: 96 * 1024, output: 32 * 1024 },
     provider: { id: "deepseek", name: "deepseek" },
     default: true,
     capabilities: {
-      streaming: true,
       functionCalling: true,
-    },
-    cost: {
-      input: 0.000001,
-      output: 0.000002,
     },
   },
   {
-    id: "deepseek-reasoner",
-    name: "Deepseek Reasoner - 强化推理能力的大模型",
-    maxTokens: { input: 65536, output: 8192 },
+    id: "deepseek-v3-1-250821",
+    name: "deepseek-v3.1-250821 - 深度思考/文本",
+    maxTokens: { input: 96 * 1024, output: 32 * 1024 },
     provider: { id: "deepseek", name: "deepseek" },
     capabilities: {
-      streaming: true,
       functionCalling: true,
-    },
-    cost: {
-      input: 0.000004,
-      output: 0.000016,
     },
   },
 ];
@@ -47,15 +36,18 @@ export class DeepseekAIProvider extends BaseOpenAIProvider {
    * 创建Deepseek AI提供者实例
    * 从配置管理器获取API密钥，初始化基类
    */
-  constructor() {
-    const configManager = ConfigurationManager.getInstance();
+  constructor(config?: any) {
+    const apiKey = config?.apiKey;
+    const apiVersion = config?.apiVersion;
+
     super({
-      apiKey: configManager.getConfig("PROVIDERS_DEEPSEEK_APIKEY"),
-      baseURL: "https://api.deepseek.com/v1/",
+      apiKey: apiKey,
+      baseUrl: "https://api.deepseek.com/v1",
+      apiVersion: apiVersion,
       providerId: "deepseek",
-      providerName: "deepseek",
+      providerName: "Deepseek",
       models: deepseekModels,
-      defaultModel: "deepseek-chat",
+      defaultModel: "deepseek-v3-1-terminus",
     });
   }
 
@@ -64,42 +56,61 @@ export class DeepseekAIProvider extends BaseOpenAIProvider {
    * 主要验证API密钥是否已配置
    */
   async isAvailable(): Promise<boolean> {
+    if (!this.config.apiKey) {
+      return false;
+    }
     try {
-      if (!this.config.apiKey) {
-        return false;
-      }
-
-      const checkPromise = this.withTimeout(
+      await this.withTimeout(
         this.withRetry(async () => {
-          try {
-            // 执行一个轻量的API调用来验证可用性
-            await this.openai.models.list();
-            return true;
-          } catch {
-            return false;
-          }
+          // 执行一个轻量的API调用来验证可用性
+          await this.openai.models.list();
         })
       );
-
-      setTimeout(async () => {
-        try {
-          await checkPromise;
-        } catch (error) {
-          console.error("Background availability check failed:", error);
-        }
-      });
-
       return true;
-    } catch {
+    } catch (error) {
+      console.error(`[DeepseekAIProvider] Availability check failed:`, error);
       return false;
     }
   }
 
   /**
-   * 刷新可用模型列表
-   * 由于Deepseek AI模型列表是静态的，直接返回预定义模型ID列表
+   * 覆盖基础的API错误处理方法，以处理Deepseek特定的错误码
+   * @param error - 捕获到的错误对象
    */
-  async refreshModels(): Promise<string[]> {
-    return Promise.resolve(deepseekModels.map((m) => m.id));
+  protected handleApiError(error: any): void {
+    if (error.status) {
+      const errorMessage = this.mapHttpStatusToMessage(error.status);
+      console.error(
+        `[DeepseekAIProvider] HTTP Error: ${errorMessage} (Status: ${error.status})`
+      );
+      throw new Error(errorMessage);
+    }
+    super.handleApiError(error);
+  }
+
+  /**
+   * 将HTTP状态码映射到可读的错误消息
+   * @param status - HTTP状态码
+   * @returns 对应的错误消息字符串
+   */
+  private mapHttpStatusToMessage(status: number): string {
+    switch (status) {
+      case 400:
+        return "请求体格式错误，请根据错误信息提示修改请求体";
+      case 401:
+        return "认证失败，请检查您的 API key 是否正确";
+      case 402:
+        return "账号余额不足，请确认账户余额并充值";
+      case 422:
+        return "请求体参数错误，请根据错误信息提示修改相关参数";
+      case 429:
+        return "请求速率达到上限，请合理规划您的请求速率";
+      case 500:
+        return "服务器内部故障，请等待后重试";
+      case 503:
+        return "服务器负载过高，请稍后重试您的请求";
+      default:
+        return `发生未知的HTTP错误 (状态码: ${status})`;
+    }
   }
 }

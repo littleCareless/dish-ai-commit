@@ -1,5 +1,5 @@
 import { encoding_for_model, Tiktoken } from "tiktoken";
-import { AIModel } from "../ai/types";
+import { AIModel } from "@/ai/types";
 
 class TokenizerService {
   private static instance: TokenizerService;

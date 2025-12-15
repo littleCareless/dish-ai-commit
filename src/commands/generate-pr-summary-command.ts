@@ -1,21 +1,18 @@
+import { AIProviderFactory } from "@/ai/ai-provider-factory";
+import { AIRequestParams } from "@/ai/types";
+import { BaseCommand } from "@/commands/base-command";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
+import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
+import { formatMessage, getMessage } from "@/utils/i18n";
+import { notify } from "@/utils/notification";
+import { ProgressHandler } from "@/utils/notification/progress-handler";
 import * as vscode from "vscode";
-import { BaseCommand } from "./base-command";
-import { ConfigurationManager } from "../config/configuration-manager";
-import { AIProviderFactory } from "../ai/ai-provider-factory";
-import { SCMFactory } from "../scm/scm-provider";
-import { notify } from "../utils/notification";
-import { getMessage, formatMessage } from "../utils/i18n";
-import { ProgressHandler } from "../utils/notification/progress-handler";
-import {
-  AIRequestParams,
-  AIProvider,
-  AIModel,
-  AIProviders,
-  ModelNames,
-} from "../ai/types";
 
 export class GeneratePRSummaryCommand extends BaseCommand {
-  constructor(context: vscode.ExtensionContext) {
+  constructor(
+    context: vscode.ExtensionContext,
+    private readonly profileManager: ProfileManagerService
+  ) {
     super(context);
   }
 
@@ -31,9 +28,9 @@ export class GeneratePRSummaryCommand extends BaseCommand {
       this.logger.warn("Configuration is not valid.");
       return;
     }
-    const { provider, model } = configResult;
+    const { provider, model, config } = configResult;
     this.logger.info(
-      `Configuration handled. Provider: ${provider}, Model: ${model}`
+      `Configuration handled. Provider: ${provider}, Model: ${model}, Config: ${JSON.stringify(config)}`
     );
 
     try {
@@ -58,14 +55,23 @@ export class GeneratePRSummaryCommand extends BaseCommand {
           this.logger.info(`SCM provider detected: ${scmProvider.type}`);
 
           if (scmProvider.type !== "git") {
-            this.logger.error("PR summary generation is only supported for Git.");
+            this.logger.error(
+              "PR summary generation is only supported for Git."
+            );
             notify.error("pr.summary.git.only");
             return;
           }
 
           // 获取配置信息
-          const config = ConfigurationManager.getInstance();
-          const configuration = config.getConfiguration();
+          const featureSettings = this.profileManager.getFeatureSettings();
+          const preferences =
+            PreferencesSettingsManager.getInstance().getSettings();
+          const configuration = {
+            base: { language: preferences.language },
+            features: {
+              prSummary: { baseBranch: "origin/main", headBranch: "HEAD" },
+            },
+          };
           let baseBranch =
             configuration.features.prSummary?.baseBranch || "origin/main";
           const headBranch =
@@ -146,34 +152,30 @@ export class GeneratePRSummaryCommand extends BaseCommand {
             return;
           }
 
-          progress.report({
-            increment: 5,
-            message: getMessage("validating.model"),
-          });
-          const {
-            provider: newProvider,
-            model: newModel,
-            aiProvider,
-            selectedModel,
-          } = await this.selectAndUpdateModelConfiguration(provider, model);
+          // Model is already validated by handleConfiguration
+          // 🔥 关键修复：传递 config 以确保 API key 等配置被正确传递
+          const aiProvider = AIProviderFactory.getProvider(provider, config);
+          // 确保设置全局配置（包含 preferences 等）
+          if (aiProvider && typeof aiProvider.setGlobalConfig === "function") {
+            aiProvider.setGlobalConfig(config);
+          }
+          const selectedModel: any = { id: model, name: model }; // Simplified, type assertion to bypass strict checking
 
-          if (!selectedModel || !aiProvider) {
-            this.logger.error("No model selected or AI provider not found.");
-            notify.error("no.model.selected");
+          if (!aiProvider) {
+            this.logger.error("AI provider not found.");
+            notify.error("ai.provider.not.found");
             return;
           }
-          this.logger.info(
-            `Model validated. AI Provider: ${aiProvider.getId()}, Model: ${selectedModel?.id}`
-          );
+          this.logger.info(`Using AI Provider: ${provider}, Model: ${model}`);
 
           // 检查AI Provider是否支持生成PR摘要的方法
           if (!aiProvider.generatePRSummary) {
             this.logger.error(
-              `Provider ${newProvider} does not support PR Summary Generation.`
+              `Provider ${provider} does not support PR Summary Generation.`
             );
             notify.error(
               formatMessage("provider.does.not.support.feature", [
-                newProvider,
+                provider,
                 "PR Summary Generation",
               ])
             );
@@ -187,20 +189,18 @@ export class GeneratePRSummaryCommand extends BaseCommand {
             increment: 40,
             message: getMessage("analyzing.commits"),
           });
-          const requestParams: AIRequestParams = {
-            // 这里需要根据aiProvider.generatePRSummary的参数进行调整
-            // 目前AIRequestParams没有直接对应PR摘要的字段，可能需要扩展或复用现有字段
-            diff: "", // PR摘要通常不需要diff，而是commit列表
+          const params: AIRequestParams = {
+            diff: "", // PR summary uses commit messages, not diff
             model: selectedModel,
             additionalContext: commitMessages.join("\n"), // 将commit列表作为额外上下文
             language: configuration.base.language,
-            // 其他可能需要的参数，例如PR模板等
+            feature: "pr-summary",
           };
           // 确保 aiProvider.generatePRSummary 存在
           if (!aiProvider.generatePRSummary) {
             const errorMessage = formatMessage(
               "provider.does.not.support.feature",
-              [newProvider, "PR Summary Generation"]
+              [provider, "PR Summary Generation"]
             );
             this.logger.error(errorMessage);
             notify.error(errorMessage);
@@ -208,7 +208,7 @@ export class GeneratePRSummaryCommand extends BaseCommand {
           }
 
           const prSummary = await aiProvider.generatePRSummary(
-            requestParams,
+            params,
             commitMessages
           );
 

@@ -1,0 +1,58 @@
+{
+  "ollama": {
+    "modelName": "模型名称",
+    "baseUrl": "基础 URL",
+    "baseUrlPlaceholder": "http://localhost:11434",
+    "modelDimensions": "模型维度",
+    "modelDimensionsPlaceholder": "4096",
+    "modelPlaceholder": "例如 nomic-embed-text"
+  },
+  "qdrant": {
+    "title": "Qdrant 设置",
+    "url": "Qdrant URL",
+    "urlPlaceholder": "http://localhost:6333",
+    "apiKey": "Qdrant API 密钥",
+    "apiKeyPlaceholder": "您的 Qdrant API 密钥"
+  },
+  "advanced": {
+    "title": "高级配置",
+    "searchScoreThreshold": "搜索分数阈值",
+    "searchScoreThresholdPlaceholder": "0.40",
+    "maxSearchResults": "最大搜索结果数",
+    "maxSearchResultsPlaceholder": "50",
+    "minBlockChars": "最小块字符数",
+    "minBlockCharsDescription": "小于此阈值的代码块将使用回退策略处理。降低此值可索引更多小文件。",
+    "enableMultiRepoIndexing": "启用多仓库索引",
+    "enableMultiRepoIndexingDescription": "检测工作区内的所有仓库并分别建立索引。"
+  },
+  "gemini": {
+    "apiKey": "Gemini API 密钥",
+    "model": "模型"
+  },
+  "mistral": {
+    "apiKey": "Mistral API 密钥",
+    "model": "模型"
+  },
+  "openaiCompatible": {
+    "baseUrl": "基础 URL",
+    "apiKey": "API 密钥",
+    "model": "模型",
+    "modelDimensions": "模型维度"
+  },
+  "openai": {
+    "apiKey": "OpenAI API 密钥",
+    "model": "模型"
+  },
+  "providers": {
+    "openai": "OpenAI",
+    "ollama": "Ollama",
+    "openaiCompatible": "OpenAI 兼容",
+    "gemini": "Gemini",
+    "mistral": "Mistral",
+    "vercelAIGateway": "Vercel AI 网关"
+  },
+  "vercelAIGateway": {
+    "apiKey": "Vercel AI Gateway API 密钥",
+    "model": "模型"
+  }
+}

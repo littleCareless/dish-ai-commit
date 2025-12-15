@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
 import { promisify } from "util";
 import { exec } from "child_process";
-import { SvnUtilsHelper } from "./svn/helpers/svn-utils-helper";
-import { getMessage } from "../utils/i18n";
+import { SvnUtilsHelper } from "@/scm/svn/helpers/svn-utils-helper";
+import { getMessage } from "@/utils/i18n";
 
 const execAsync = promisify(exec);
 

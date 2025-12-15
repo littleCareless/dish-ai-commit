@@ -1,8 +1,8 @@
 import * as vscode from "vscode";
-import { API, GitExtension } from "../../types/git";
-import { Logger } from "../logger";
-import { notify } from "../notification/notification-manager";
-import { getMessage } from "../i18n";
+import { API, GitExtension } from "@/types/git";
+import { Logger } from "@/utils/logger";
+import { notify } from "@/utils/notification/notification-manager";
+import { getMessage } from "@/utils/i18n";
 
 /**
  * 获取 VS Code 内置的 Git 扩展 API

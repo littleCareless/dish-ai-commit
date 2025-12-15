@@ -1,4 +1,4 @@
-import { CommitSuggestion } from '@/components/commit-chat/CommitTextArea';
+import { CommitSuggestion } from '@shared/types/messages';
 
 export interface CommitTemplate {
   name: string;

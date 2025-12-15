@@ -1,8 +1,9 @@
-import * as vscode from "vscode";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 
 export interface DiffChunk {
   filename: string;
   content: string;
+  isNonCodeFile?: boolean;
 }
 
 export enum FilePathMode {
@@ -19,19 +20,27 @@ export interface DiffConfig {
 }
 
 /**
- * 从 VSCode 配置中获取差异简化的相关设置
+ * 从 profile 系统获取差异简化的相关设置
  */
 export function getDiffConfig(): DiffConfig {
-  const config = vscode.workspace.getConfiguration("dish-ai-commit");
-  return {
-    enabled: config.get<boolean>("features.codeAnalysis.simplifyDiff") ?? false,
-    contextLines: config.get<number>("features.codeAnalysis.contextLines") ?? 3,
-    filePathMode:
-      config.get<FilePathMode>("features.codeAnalysis.filePathMode") ??
-      FilePathMode.AsComment,
-    lineNumberStyle:
-      config.get<"legacy" | "default">(
-        "features.codeAnalysis.lineNumberStyle"
-      ) ?? "default",
-  };
+  try {
+    const profileManager = ProfileManagerService.getInstance();
+    const featureSettings = profileManager.getFeatureSettings();
+    
+    // 从 featureSettings 获取配置，如果没有则使用默认值
+    return {
+      enabled: featureSettings.simplifyDiff ?? false,
+      contextLines: 3, // 这个配置项暂时不在 FeatureSettings 中，使用默认值
+      filePathMode: FilePathMode.AsComment, // 这个配置项暂时不在 FeatureSettings 中，使用默认值
+      lineNumberStyle: "default", // 这个配置项暂时不在 FeatureSettings 中，使用默认值
+    };
+  } catch (error) {
+    // 如果获取失败，返回默认值
+    return {
+      enabled: false,
+      contextLines: 3,
+      filePathMode: FilePathMode.AsComment,
+      lineNumberStyle: "default",
+    };
+  }
 }

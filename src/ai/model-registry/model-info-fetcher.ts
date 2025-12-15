@@ -3,9 +3,9 @@
  * 负责从各个AI提供商的API动态获取最新的模型信息
  */
 
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { ModelSpec, findModelSpec, getDefaultTokenLimits } from "./model-specs";
-import { AIModel } from "../types";
+import { ModelSpec, findModelSpec, getDefaultTokenLimits } from "@/ai/model-registry/model-specs";
+import { AIModel } from "@/ai/types";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 
 export interface ModelInfoCache {
   [modelId: string]: {
@@ -23,7 +23,7 @@ export class ModelInfoFetcher {
   private cache: ModelInfoCache = {};
   private readonly CACHE_TTL = 24 * 60 * 60 * 1000; // 24小时缓存
 
-  private constructor() {}
+  private constructor() { }
 
   public static getInstance(): ModelInfoFetcher {
     if (!ModelInfoFetcher.instance) {
@@ -131,23 +131,64 @@ export class ModelInfoFetcher {
   }
 
   /**
+   * 从 profile 获取 provider 配置
+   */
+  private async getProviderConfig(providerId: string): Promise<{ apiKey?: string; baseUrl?: string } | null> {
+    try {
+      const profileManager = ProfileManagerService.getInstance();
+      const profile = await profileManager.getProfileForMode();
+      
+      if (!profile) {
+        return null;
+      }
+
+      if (profile.providers && typeof profile.providers === "object") {
+        const providers = profile.providers as Record<string, any>;
+        const providerConfig = providers[providerId];
+        
+        if (providerConfig) {
+          return {
+            apiKey: providerConfig.apiKey,
+            baseUrl: providerConfig.baseUrl,
+          };
+        }
+      }
+      
+      // 兼容旧的配置结构
+      if (providerId === "openai" && profile.apiProvider === "openai") {
+        return {
+          apiKey: profile.apiKey,
+          baseUrl: profile.baseUrl,
+        };
+      }
+      
+      return null;
+    } catch (error) {
+      console.warn(`Failed to get provider config for ${providerId}:`, error);
+      return null;
+    }
+  }
+
+  /**
    * 从OpenAI API获取模型信息
    */
   private async fetchOpenAIModelInfo(
     model: AIModel
   ): Promise<ModelSpec | null> {
     try {
-      const config = ConfigurationManager.getInstance();
-      const apiKey = config.getConfig("PROVIDERS_OPENAI_APIKEY");
-      const baseURL =
-        config.getConfig("PROVIDERS_OPENAI_BASEURL") ||
-        "https://api.openai.com/v1";
+      const providerConfig = await this.getProviderConfig("openai");
+      if (!providerConfig || !providerConfig.apiKey) {
+        return null;
+      }
+      
+      const apiKey = providerConfig.apiKey;
+      const baseUrl = providerConfig.baseUrl || "https://api.openai.com/v1";
 
       if (!apiKey) {
         return null;
       }
 
-      const response = await fetch(`${baseURL}/models/${model.id}`, {
+      const response = await fetch(`${baseUrl}/models/${model.id}`, {
         headers: {
           Authorization: `Bearer ${apiKey}`,
           "Content-Type": "application/json",
@@ -254,8 +295,13 @@ export class ModelInfoFetcher {
     model: AIModel
   ): Promise<ModelSpec | null> {
     try {
-      const config = ConfigurationManager.getInstance();
-      const apiKey = config.getConfig("PROVIDERS_OPENAI_APIKEY"); // 暂时使用OpenAI的配置，后续需要添加GitHub配置
+      // GitHub Models API 暂时使用 OpenAI 的配置，后续需要添加 GitHub 配置
+      const providerConfig = await this.getProviderConfig("openai");
+      if (!providerConfig || !providerConfig.apiKey) {
+        return null;
+      }
+      
+      const apiKey = providerConfig.apiKey;
 
       if (!apiKey) {
         return null;

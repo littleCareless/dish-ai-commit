@@ -1,4 +1,4 @@
-import { ExtensionConfiguration } from "../config/types";
+import { ExtensionConfiguration } from "@/config/types";
 
 interface SystemPromptParams {
   config: ExtensionConfiguration; // 配置项
@@ -22,7 +22,7 @@ const typeDescriptions: { [key: string]: string } = {
   i18n: "Internationalization",
 };
 
-function getDefaultTypeReference(enableEmoji: boolean): string {
+export function getDefaultTypeReference(enableEmoji: boolean): string {
   return enableEmoji
     ? `| Type     | Emoji | Description          | Example Scopes      |
 | -------- | ----- | -------------------- | ------------------- |
@@ -52,7 +52,7 @@ function getDefaultTypeReference(enableEmoji: boolean): string {
 | i18n     | Internationalization | locale, translation |`;
 }
 
-function generateTypeReferenceFromConfig(
+export function generateTypeReferenceFromConfig(
   commitlintConfig: any,
   enableEmoji: boolean
 ): string {
@@ -94,7 +94,7 @@ function generateTypeReferenceFromConfig(
   return `${headers}\n${separator}\n${rows}`;
 }
 
-function getMergeCommitsSection(
+export function getMergeCommitsSection(
   enableMergeCommit: boolean,
   enableEmoji: boolean,
   enableBody: boolean
@@ -153,7 +153,7 @@ ${formatExample}
 `;
 }
 
-function getVCSExamples(
+export function getVCSExamples(
   vcsType: "svn" | "git",
   enableMergeCommit: boolean,
   enableEmoji: boolean,
@@ -499,7 +499,9 @@ function getSeparateSVNExample(useEmoji: boolean, useBody: boolean) {
  *   step is omitted and subsequent steps are renumbered.
  * @returns {string} The formatted prompt string.
  */
-function generateThinkingProcessPrompt(useRecentCommitsAsReference = false) {
+export function generateThinkingProcessPrompt(
+  useRecentCommitsAsReference = false
+) {
   // Base steps that are always included
   const baseSteps = [
     "Analyze the CODE CHANGES thoroughly to understand what's been modified.",
@@ -620,3 +622,7 @@ export function getCommitMessageTools(
     },
   ];
 }
+
+export const generateCommitSystem = generateCommitMessageSystemPrompt;
+
+export default generateCommitSystem;

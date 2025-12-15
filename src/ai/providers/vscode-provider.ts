@@ -1,18 +1,19 @@
-import * as vscode from "vscode";
+import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
 import {
   type AIModel,
   type AIProviders,
   type AIRequestParams,
   type AIResponse,
   type ModelNames,
-} from "../types";
-import { AbstractAIProvider } from "./abstract-ai-provider";
-import { getMessage } from "../../utils/i18n";
+} from "@/ai/types";
+import { getSystemPrompt } from "@/ai/utils/generate-helper"; // Import getSystemPrompt
 import {
-  getPRSummarySystemPrompt,
-  getPRSummaryUserPrompt,
-} from "../../prompt/pr-summary";
-import { getSystemPrompt } from "../utils/generate-helper"; // Import getSystemPrompt
+  PR_SUMMARY_SYSTEM_TEMPLATE,
+  PR_SUMMARY_USER_TEMPLATE,
+} from "@/prompt/pr-summary";
+import { getMessage } from "@/utils/i18n";
+import { processPromptTemplate } from "@/utils/prompt-template";
+import * as vscode from "vscode";
 
 export class VSCodeProvider extends AbstractAIProvider {
   private readonly provider = {
@@ -20,7 +21,7 @@ export class VSCodeProvider extends AbstractAIProvider {
     name: "VS Code Provided",
   } as const;
 
-  constructor() {
+  constructor(config?: any) {
     super();
   }
 
@@ -212,8 +213,13 @@ export class VSCodeProvider extends AbstractAIProvider {
     commitMessages: string[]
   ): Promise<AIResponse> {
     const systemPrompt =
-      params.systemPrompt || getPRSummarySystemPrompt(params.language);
-    const userPrompt = getPRSummaryUserPrompt(params.language);
+      params.systemPrompt ||
+      processPromptTemplate(PR_SUMMARY_SYSTEM_TEMPLATE, {
+        language: params.language,
+      });
+    const userPrompt = processPromptTemplate(PR_SUMMARY_USER_TEMPLATE, {
+      language: params.language,
+    });
     const userContent = `- ${commitMessages.join("\n- ")}`;
 
     const response = await this.executeAIRequest(

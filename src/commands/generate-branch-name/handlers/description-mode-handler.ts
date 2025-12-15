@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
-import { Logger } from "../../../utils/logger";
-import { notify } from "../../../utils/notification/notification-manager";
-import { getMessage } from "../../../utils/i18n";
+import { Logger } from "@/utils/logger";
+import { notify } from "@/utils/notification/notification-manager";
+import { getMessage } from "@/utils/i18n";
 
 /**
  * 描述模式处理器
@@ -45,6 +45,7 @@ export class DescriptionModeHandler {
         diff: description, // 使用用户描述作为输入
         model: model,
         scm: "git", // 描述模式默认使用 git
+        feature: "branch-name",
       });
 
       if (!branchNameResult?.content) {

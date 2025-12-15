@@ -1,6 +1,6 @@
-import { ChatMessage } from '@/components/commit-chat/CommitChatView';
-import { CommandParser, CommandContext, CommandResult } from './command-parser';
-import { SuggestionEngine, UserPreference, ProjectContext } from './suggestion-engine';
+import { ChatMessage } from '@shared/types/messages';
+import { CommandParser, CommandContext, CommandResult } from '@/services/commit-chat/command-parser';
+import { SuggestionEngine, UserPreference, ProjectContext } from '@/services/commit-chat/suggestion-engine';
 
 export interface CommitChatRequest {
   message: string;

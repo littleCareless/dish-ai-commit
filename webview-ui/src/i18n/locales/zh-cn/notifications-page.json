@@ -1,0 +1,29 @@
+{
+  "loading": "加载中...",
+  "title": "通知设置",
+  "description": "配置 Dish 的通知和语音功能",
+  "textToSpeech": {
+    "title": "文本转语音",
+    "description": "启用后，Dish 将使用文本转语音功能朗读其响应。",
+    "enableLabel": "启用文本转语音",
+    "enableDescription": "当 AI 生成响应时，自动使用语音朗读内容"
+  },
+  "soundNotifications": {
+    "title": "声音通知",
+    "description": "启用后，Dish 将为通知和事件播放音效。",
+    "enableLabel": "启用声音通知",
+    "enableDescription": "在收到通知或完成操作时播放提示音"
+  },
+  "systemNotifications": {
+    "title": "系统弹窗通知",
+    "description": "启用后，Dish 将显示系统级别的弹窗通知。",
+    "enableLabel": "启用系统通知",
+    "enableDescription": "在系统通知中心显示弹窗通知（如 commit 生成完成、周报生成完成等）",
+    "macOsAlertTitle": "macOS 用户请注意",
+    "macOsAlertDescription": "请确保 VS Code 在“系统设置 > 通知”中具有发送通知的权限。此功能依赖 'terminal-notifier'，可通过 Homebrew 安装：<code>brew install terminal-notifier</code>。",
+    "linuxAlertTitle": "Linux 用户请注意",
+    "linuxAlertDescription": "此功能依赖 'node-notifier'。如果通知不显示，请尝试安装 <code>libnotify-bin</code>（例如，在 Debian/Ubuntu 上使用 <code>sudo apt-get install libnotify-bin</code>）。",
+    "windowsAlertTitle": "Windows 用户请注意",
+    "windowsAlertDescription": "此功能在 Windows 8/10 及更高版本上效果最佳。它依赖 'SnoreToast' 进行通知。"
+  }
+}

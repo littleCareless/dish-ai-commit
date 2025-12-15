@@ -1,6 +1,5 @@
-import * as vscode from "vscode";
-import { BaseCommand } from "./base-command";
-import { WeeklyReportPanel } from "../webview/weekly-report-panel";
+import { WeeklyReportPanel } from "@/services/webview/weekly-report-panel";
+import { BaseCommand } from "@/commands/base-command";
 
 /**
  * 生成周报命令类

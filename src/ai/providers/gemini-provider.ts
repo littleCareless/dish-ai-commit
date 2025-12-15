@@ -1,13 +1,13 @@
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { AIModel, AIRequestParams, type AIProviders } from "../types";
-import { AbstractAIProvider } from "./abstract-ai-provider";
-import { GoogleGenAI, Part, Content } from "@google/genai";
-import type { OpenAIProviderConfig } from "./base-openai-provider";
+import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
+import type { OpenAIProviderConfig } from "@/ai/providers/base-openai-provider";
+import { AIModel, AIRequestParams, type AIProviders } from "@/ai/types";
+import { getSystemPrompt } from "@/ai/utils/generate-helper"; // Import getSystemPrompt
 import {
-  getPRSummarySystemPrompt,
-  getPRSummaryUserPrompt,
-} from "../../prompt/pr-summary";
-import { getSystemPrompt } from "../utils/generate-helper"; // Import getSystemPrompt
+  PR_SUMMARY_SYSTEM_TEMPLATE,
+  PR_SUMMARY_USER_TEMPLATE,
+} from "@/prompt/pr-summary";
+import { processPromptTemplate } from "@/utils/prompt-template";
+import { Content, GoogleGenAI, Part } from "@google/genai";
 
 /**
  * Gemini支持的AI模型配置列表
@@ -141,12 +141,12 @@ export class GeminiAIProvider extends AbstractAIProvider {
    * 创建Gemini AI提供者实例
    * 从配置管理器获取API密钥，初始化Google Generative AI
    */
-  constructor() {
+  constructor(config?: any) {
     super();
-    const configManager = ConfigurationManager.getInstance();
+
     this.config = {
-      apiKey: configManager.getConfig("PROVIDERS_GEMINI_APIKEY"),
-      baseURL: "https://api.gemini.com/",
+      apiKey: config?.apiKey,
+      baseUrl: "https://api.gemini.com/",
       providerId: "gemini",
       providerName: "Gemini",
       models: geminiModels,
@@ -391,10 +391,25 @@ export class GeminiAIProvider extends AbstractAIProvider {
 
   /**
    * 刷新可用的Gemini模型列表
-   * @returns 返回预定义的模型ID列表
+   * @returns 返回模型ID列表
    */
   async refreshModels(): Promise<string[]> {
-    return Promise.resolve(this.config.models.map((m) => m.id));
+    if (!this.genAI) {
+      throw new Error(
+        "Gemini API client not initialized. Please check your API key."
+      );
+    }
+    const pager = await this.genAI.models.list({
+      config: { pageSize: 20 },
+    });
+    const models: string[] = [];
+    for await (const model of pager) {
+      const modelId = model.name ? model.name.replace(/^models\//, "") : "";
+      if (modelId) {
+        models.push(modelId);
+      }
+    }
+    return models;
   }
 
   /**
@@ -425,8 +440,13 @@ export class GeminiAIProvider extends AbstractAIProvider {
       "generatePRSummary is not fully implemented for GeminiAIProvider and will return an empty response."
     );
     const systemPrompt =
-      params.systemPrompt || getPRSummarySystemPrompt(params.language);
-    const userPrompt = getPRSummaryUserPrompt(params.language);
+      params.systemPrompt ||
+      processPromptTemplate(PR_SUMMARY_SYSTEM_TEMPLATE, {
+        language: params.language,
+      });
+    const userPrompt = processPromptTemplate(PR_SUMMARY_USER_TEMPLATE, {
+      language: params.language,
+    });
     const userContent = commitMessages.join("\n- ");
 
     // Gemini的executeAIRequest会将userPrompt和userContent合并

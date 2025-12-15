@@ -1,10 +1,10 @@
 import * as vscode from "vscode";
-import { ISCMProvider } from "./scm-provider";
-import { Logger } from "../utils/logger";
-import { getMessage, formatMessage } from "../utils/i18n";
-import { ISvnProvider } from "./svn/svn-provider-interface";
-import { SvnProvider as SvnProviderImpl, SvnRepositoryManager, SvnProviderFactory } from "./svn";
-import { notify } from "../utils/notification/notification-manager";
+import { ISCMProvider } from "@/scm/scm-provider";
+import { Logger } from "@/utils/logger";
+import { getMessage, formatMessage } from "@/utils/i18n";
+import { ISvnProvider } from "@/scm/svn/svn-provider-interface";
+import { SvnProvider as SvnProviderImpl, SvnRepositoryManager, SvnProviderFactory } from "@/scm/svn";
+import { notify } from "@/utils/notification/notification-manager";
 
 /**
  * SVN源代码管理提供者实现

@@ -4,7 +4,7 @@
  */
 
 // 导出路径帮助工具
-export { SvnPathHelper } from './svn-path-helper';
+export { SvnPathHelper } from '@/scm/svn/helpers/svn-path-helper';
 
 // 导出测试帮助工具
-export { SvnTestHelper } from './svn-test-helper';
+export { SvnTestHelper } from '@/scm/svn/helpers/svn-test-helper';

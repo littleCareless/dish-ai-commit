@@ -1,0 +1,37 @@
+{
+  "nav": {
+    "settings": "设置",
+    "settings_description": "配置 AI 提供商和偏好设置",
+    "profiles": "配置",
+    "profiles_description": "管理配置方案",
+    "migration": "迁移",
+    "migration_description": "将旧设置迁移到新的配置系统",
+    "notifications": "通知",
+    "notifications_description": "查看最新通知",
+    "context": "上下文",
+    "context_description": "管理上下文信息",
+    "prompts": "提示词",
+    "prompts_description": "管理和使用提示词",
+    "experimental": "实验性",
+    "experimental_description": "尝试实验性功能",
+    "indexing": "代码索引",
+    "indexing_description": "配置代码库索引",
+    "about": "关于",
+    "about_description": "了解应用信息",
+    "usage": "用量",
+    "usage_description": "监控 Token 用量",
+    "storage": "存储",
+    "storage_description": "检查内部存储",
+    "language": "语言"
+  },
+  "openai": {
+    "fields": {
+      "apiKey": {
+        "validation": {
+          "required": "API Key 是必需的",
+          "pattern": "OpenAI API Key 应以 sk- 开头"
+        }
+      }
+    }
+  }
+}

@@ -17,9 +17,9 @@
  * 特别是在AI提供商配置变更时进行适当的重新初始化，以确保系统使用更新后的设置。
  */
 import * as vscode from "vscode";
-import { ConfigurationChangeHandler } from "./configuration-change-handler";
-import { ConfigurationService } from "./configuration-service";
-import { AIProviderFactory } from "../../ai/ai-provider-factory";
+import { ConfigurationChangeHandler } from "@/config/services/configuration-change-handler";
+import { ConfigurationService } from "@/config/services/configuration-service";
+import { AIProviderFactory } from "@/ai/ai-provider-factory";
 
 /**
  * 监控配置变更并触发相应操作

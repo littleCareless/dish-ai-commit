@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
-import { IGitProvider } from "./git-provider-interface";
-import { GitApiProvider } from "./git-api-provider";
-import { GitCommandProvider } from "./git-command-provider";
-import { GitRepositoryManager, GitRepositoryInfo } from "./git-repository-manager";
-import { Logger } from "../../utils/logger";
-import { notify } from "../../utils/notification/notification-manager";
-import { formatMessage } from "../../utils/i18n";
+import { IGitProvider } from "@/scm/git/git-provider-interface";
+import { GitApiProvider } from "@/scm/git/git-api-provider";
+import { GitCommandProvider } from "@/scm/git/git-command-provider";
+import { GitRepositoryManager, GitRepositoryInfo } from "@/scm/git/git-repository-manager";
+import { Logger } from "@/utils/logger";
+import { notify } from "@/utils/notification/notification-manager";
+import { formatMessage } from "@/utils/i18n";
 
 /**
  * Git 提供者类型

@@ -1,6 +1,6 @@
 import * as path from "path";
-import { loadRequiredLanguageParsers, LanguageParser } from "../../core/tree-sitter/languageParser";
-import { Logger } from "../logger";
+import { loadRequiredLanguageParsers, LanguageParser } from "@/core/tree-sitter/languageParser";
+import { Logger } from "@/utils/logger";
 
 /**
  * 文件变更摘要接口

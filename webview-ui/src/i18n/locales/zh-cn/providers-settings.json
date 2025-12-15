@@ -1,0 +1,40 @@
+{
+  "apiProviders": "API 提供商",
+  "providerDocs": "{{name}} 文档",
+  "dialogs": {
+    "confirmDelete": {
+      "title": "确认删除配置文件",
+      "description": "确定要删除配置文件 “{{name}}” 吗？此操作无法撤销。",
+      "cancel": "取消",
+      "delete": "删除"
+    }
+  },
+  "OpenAI": "OpenAI",
+  "DeepSeek": "DeepSeek",
+  "Together AI": "Together AI",
+  "xAI (Grok)": "xAI (Grok)",
+  "Google Vertex AI": "Google Vertex AI",
+  "Azure OpenAI": "Azure OpenAI",
+  "Mistral AI": "Mistral AI",
+  "Groq": "Groq",
+  "Anthropic": "Anthropic",
+  "Google Gemini": "Google Gemini",
+  "百度千帆": "百度千帆",
+  "Cloudflare Workers AI": "Cloudflare Workers AI",
+  "OpenRouter": "OpenRouter",
+  "Perplexity": "Perplexity",
+  "阿里云通义千问": "阿里云通义千问",
+  "字节豆包": "字节豆包",
+  "智谱 AI": "智谱 AI",
+  "SiliconFlow": "SiliconFlow",
+  "PremAI": "PremAI",
+  "Amazon Bedrock": "Amazon Bedrock",
+  "Cohere": "Cohere",
+  "Fireworks AI": "Fireworks AI",
+  "DeepInfra": "DeepInfra",
+  "Cerebras": "Cerebras",
+  "Ollama": "Ollama",
+  "LM Studio": "LM Studio",
+  "VSCode 内置 AI": "VSCode 内置 AI",
+  "OpenAI 兼容 API": "OpenAI 兼容 API"
+}

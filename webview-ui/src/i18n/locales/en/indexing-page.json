@@ -1,0 +1,57 @@
+{
+  "title": "Codebase Indexing",
+  "description": "Configure codebase indexing settings to enable semantic search for your project.",
+  "learnMore": "Learn more",
+  "enableIndexing": "Enable Codebase Indexing",
+  "tabs": {
+    "general": "General",
+    "advanced": "Advanced",
+    "repositories": "Repositories"
+  },
+  "status": {
+    "title": "Indexing Status",
+    "current": "Current Status",
+    "upToDate": "Index is up-to-date",
+    "settingsSaved": "Settings saved",
+    "indexingComplete": "Indexing complete",
+    "indexingFailed": "Indexing failed",
+    "indexCleared": "Index cleared",
+    "repositorySummary": "{{indexed}}/{{total}} repositories indexed, {{vectors}} vectors total"
+  },
+  "stats": {
+    "succeeded": "Succeeded",
+    "failed": "Failed",
+    "viewFailureDetails": "View failure details"
+  },
+  "buttons": {
+    "updateIndex": "Update Index",
+    "startIndexing": "Start Indexing",
+    "viewDetails": "View Details"
+  },
+  "dialog": {
+    "failedFilesTitle": "Failed to Index Files ({{count}})",
+    "errorLabel": "Error",
+    "noFailedFiles": "No failed files recorded"
+  },
+  "embeddingProvider": "Embedding Model Provider",
+  "clearIndex": "Clear Index",
+  "save": "Save Settings",
+  "log": {
+    "title": "Activity Log",
+    "empty": "No indexing activity yet"
+  },
+  "repositories": {
+    "title": "Detected Repositories",
+    "description": "The following repositories were detected in your workspace. Each will be indexed independently.",
+    "noRepositories": "No repositories detected",
+    "indexed": "Indexed",
+    "notIndexed": "Not Indexed",
+    "indexButton": "Index",
+    "reindexButton": "Re-index",
+    "type": {
+      "git": "Git",
+      "svn": "SVN",
+      "unknown": "Unknown"
+    }
+  }
+}

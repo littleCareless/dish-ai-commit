@@ -1,4 +1,4 @@
-import { DIRS_TO_IGNORE } from "./constants";
+import { DIRS_TO_IGNORE } from "@/core/glob/constants";
 
 /**
  * Checks if a file path should be ignored based on the DIRS_TO_IGNORE patterns.

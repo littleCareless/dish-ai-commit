@@ -4,18 +4,139 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "type": "npm",
-      "script": "watch:esbuild-bundle",
-      "problemMatcher": "$esbuild-watch",
-      "label": "npm: bundle",
-      "detail": "esbuild src/extension.ts --bundle --outdir=dist --external:vscode --platform=node --target=node12.18 --minify --sourcemap",
-      "isBackground": true,
+      "label": "watch",
+      "dependsOn": ["watch:webview", "watch:bundle", "watch:tsc"],
       "presentation": {
         "reveal": "never"
       },
       "group": {
         "kind": "build",
         "isDefault": true
+      }
+    },
+    {
+      "label": "watch:webview",
+      "type": "shell",
+      "command": "pnpm --filter @dish-ai-commit/webview-ui dev",
+      "group": "build",
+      "problemMatcher": {
+        "owner": "vite",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*VITE.*",
+          "endsPattern": ".*Local:.*"
+        }
+      },
+      "isBackground": true,
+      "presentation": {
+        "group": "watch",
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "watch:webview-build",
+      "type": "shell",
+      "command": "pnpm --filter @dish-ai-commit/webview-ui watch:bundle",
+      "group": "build",
+      "problemMatcher": {
+        "owner": "vite",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": ".*watching for file changes.*",
+          "endsPattern": ".*built in.*"
+        }
+      },
+      "isBackground": true,
+      "presentation": {
+        "group": "watch",
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "watch:bundle",
+      "type": "shell",
+      "command": "pnpm --filter dish-ai-commit watch:bundle",
+      "group": "build",
+      "problemMatcher": {
+        "owner": "esbuild",
+        "pattern": {
+          "regexp": "^$"
+        },
+        "background": {
+          "activeOnStart": true,
+          "beginsPattern": "esbuild-problem-matcher#onStart",
+          "endsPattern": "esbuild-problem-matcher#onEnd"
+        }
+      },
+      "isBackground": true,
+      "presentation": {
+        "group": "watch",
+        "reveal": "always"
+      },
+      "dependsOn": ["watch:webview-build"],
+      "dependsOrder": "sequence"
+    },
+    {
+      "label": "watch:tsc",
+      "type": "shell",
+      "command": "npx turbo watch:tsc",
+      "group": "build",
+      "problemMatcher": "$tsc-watch",
+      "isBackground": true,
+      "presentation": {
+        "group": "watch",
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "test",
+      "type": "shell",
+      "command": "pnpm run test",
+      "group": "test",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "lint",
+      "type": "shell",
+      "command": "pnpm run lint",
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "format",
+      "type": "shell",
+      "command": "pnpm run format",
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "package",
+      "type": "shell",
+      "command": "pnpm run package",
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
+      }
+    },
+    {
+      "label": "clean",
+      "type": "shell",
+      "command": "pnpm run clean",
+      "group": "build",
+      "presentation": {
+        "reveal": "always"
       }
     }
   ]

@@ -1,0 +1,14 @@
+{
+  "title": "Usage Management",
+  "description": "Monitor and manage your token usage.",
+  "totalTokens": "Total Tokens Used",
+  "totalTokensDescription": "Across all models and sessions",
+  "reset": "Reset Statistics",
+  "dailyUsage": "Daily Usage (Last 7 Days)",
+  "byModel": "Usage by Model",
+  "byFeature": "Usage by Feature",
+  "tokens": "Tokens",
+  "noUsageData": "No usage data available.",
+  "noModelData": "No model usage data available.",
+  "noFeatureData": "No feature usage data available."
+}

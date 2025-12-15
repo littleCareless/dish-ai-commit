@@ -1,12 +1,12 @@
 import * as path from "path";
-import { ISCMProvider } from "../../../scm/scm-provider";
-import { AIModel, AIProvider } from "../../../ai/types";
-import { Logger } from "../../../utils/logger";
+import { ISCMProvider } from "@/scm/scm-provider";
+import { AIModel, AIProvider } from "@/ai/types";
+import { Logger } from "@/utils/logger";
 import {
   DiffStructureExtractor,
   FileSummary,
-} from "../../../utils/diff/diff-structure-extractor";
-import { tokenizerService } from "../../../utils/tokenizer";
+} from "@/utils/diff/diff-structure-extractor";
+import { tokenizerService } from "@/utils/tokenizer";
 
 /**
  * 全局上下文提取器
@@ -156,7 +156,8 @@ export class GlobalContextExtractor {
           name: "GPT-4",
           provider: "openai" as any,
           maxTokens: { input: 8192, output: 2048 } 
-        } // 临时模型对象
+        }, // 临时模型对象
+        feature: "commit-generation",
       });
 
       return response.content;

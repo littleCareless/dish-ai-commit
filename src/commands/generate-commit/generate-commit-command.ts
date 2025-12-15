@@ -1,12 +1,12 @@
+import { BaseCommand } from "@/commands/base-command";
+import { CrossRepositoryHandler } from "@/commands/generate-commit/handlers/cross-repository-handler";
+import { StreamingGenerationHelper } from "@/commands/generate-commit/utils/streaming-generation-helper";
+import { SCMFactory } from "@/scm/scm-provider";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
+import { formatMessage, getMessage } from "@/utils/i18n";
+import { notify } from "@/utils/notification/notification-manager";
+import { ProgressHandler } from "@/utils/notification/progress-handler";
 import * as vscode from "vscode";
-import { BaseCommand } from "../base-command";
-import { notify } from "../../utils/notification/notification-manager";
-import { getMessage, formatMessage } from "../../utils/i18n";
-import { ProgressHandler } from "../../utils/notification/progress-handler";
-import { multiRepositoryContextManager } from "../../scm/multi-repository-context-manager";
-import { SCMFactory } from "../../scm/scm-provider";
-import { CrossRepositoryHandler } from "./handlers/cross-repository-handler";
-import { StreamingGenerationHelper } from "./utils/streaming-generation-helper";
 
 /**
  * 提交信息生成命令类 - 遵循单一职责原则的简洁版本
@@ -20,10 +20,16 @@ export class GenerateCommitCommand extends BaseCommand {
    * 创建命令实例
    * @param context - VSCode扩展上下文
    */
-  constructor(context: vscode.ExtensionContext) {
+  constructor(
+    context: vscode.ExtensionContext,
+    private readonly profileManager: ProfileManagerService
+  ) {
     super(context);
     this.crossRepoHandler = new CrossRepositoryHandler(this.logger);
-    this.streamingHelper = new StreamingGenerationHelper(this.logger);
+    this.streamingHelper = new StreamingGenerationHelper(
+      this.logger,
+      this.profileManager
+    );
   }
 
   /**
@@ -36,19 +42,19 @@ export class GenerateCommitCommand extends BaseCommand {
   async execute(arg?: any): Promise<void> {
     this.logger.info("Executing GenerateCommitCommand...");
 
-    // 步骤1: 验证AI提供商服务条款
-    if ((await this.showConfirmAIProviderToS()) === false) {
-      this.logger.warn("User did not confirm AI provider ToS.");
+    // 使用 prepare 方法进行前置检查
+    // 注意：GenerateCommitCommand 的参数 arg 比较特殊，可能是 resourceStates 数组，也可能是 sourceControl 对象
+    // prepare 方法已经处理了这两种情况
+    const context = await this.prepare(arg, {
+      requireSelectedFiles: false, // 提交生成不一定强制需要选中的文件（比如可能是全部更改）
+      validateModel: true,
+    });
+
+    if (!context) {
       return;
     }
 
-    // 步骤2: 验证配置
-    const configResult = await this.handleConfiguration();
-    if (!configResult) {
-      this.logger.warn("Configuration is not valid.");
-      return;
-    }
-    const { provider, model } = configResult;
+    const { provider, model } = context;
     this.logger.info(`Using AI provider: ${provider}, model: ${model}`);
 
     // 步骤3: 处理具体执行逻辑
@@ -122,7 +128,7 @@ export class GenerateCommitCommand extends BaseCommand {
     if (resourceStates && resourceStates.length > 0) {
       // 这里需要异步处理，但我们先简化处理
       // 实际实现中需要await multiRepositoryContextManager.groupFilesByRepository(resourceStates)
-      isCrossRepository = false; // 暂时设为false，避免异步问题
+      isCrossRepository = false;
     }
 
     return {
@@ -171,8 +177,7 @@ export class GenerateCommitCommand extends BaseCommand {
           scmProvider,
           selectedFiles,
           resources,
-          repoPath,
-          this.selectAndUpdateModelConfiguration.bind(this)
+          repoPath
         )
     );
   }
@@ -233,8 +238,7 @@ export class GenerateCommitCommand extends BaseCommand {
           scmProvider,
           selectedFiles,
           parsedArgs.resourceStates || [],
-          finalRepoPath,
-          this.selectAndUpdateModelConfiguration.bind(this)
+          finalRepoPath
         );
       }
     );

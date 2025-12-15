@@ -14,8 +14,8 @@
  * 在扩展架构中，作为配置变更事件的分发中心，确保配置变更能够被正确地传递给需要响应的组件
  */
 import * as vscode from "vscode";
-import { EXTENSION_NAME } from "../../constants";
-import { ConfigObject, CONFIG_SCHEMA, isConfigValue } from "../config-schema";
+import { EXTENSION_NAME } from "@/constants";
+import { ConfigObject, CONFIG_SCHEMA, isConfigValue } from "@/config/config-schema";
 
 /**
  * 处理配置变更事件和回调注册

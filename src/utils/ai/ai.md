@@ -90,7 +90,7 @@ interface ValidatedModelResult {
    如果用户取消了选择（返回 `undefined` 或 `null`），则直接返回。
 
 3. **更新配置**  
-   获取配置管理器单例 `ConfigurationManager.getInstance()`，并调用 `updateAIConfiguration` 方法，将选择的 `provider` 和 `model` 更新到全局配置中。
+   使用 `ProfileManagerService.getInstance()` 获取当前激活的 profile，并更新 profile 中的 `provider` 和 `model` 配置，然后调用 `saveProfile` 方法保存更新。
 
 4. **返回选择结果**  
    返回包含新的 `provider` 和 `model` 的对象。

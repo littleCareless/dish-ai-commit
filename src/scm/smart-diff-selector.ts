@@ -10,9 +10,10 @@ import {
   DiffTarget,
   DiffResult,
   AutoDetectionConfig,
-} from "./staged-detector-types";
-import { ISCMProvider } from "./scm-provider";
-import { notify } from "../utils/notification/notification-manager";
+} from "@/scm/staged-detector-types";
+import { ISCMProvider } from "@/scm/scm-provider";
+import { notify } from "@/utils/notification/notification-manager";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 
 /**
  * Provides intelligent diff target selection based on detection results and user preferences
@@ -141,24 +142,14 @@ export class SmartDiffSelector implements ISmartDiffSelector {
    * @private
    */
   private getAutoDetectionConfig(): AutoDetectionConfig {
-    const config = vscode.workspace.getConfiguration("dish-ai-commit");
+    const profileManager = ProfileManagerService.getInstance();
+    const featureSettings = profileManager.getFeatureSettings();
 
     return {
-      enabled: config.get<boolean>(
-        "features.codeAnalysis.autoDetectStaged",
-        true
-      ),
-      fallbackToAll: config.get<boolean>(
-        "features.codeAnalysis.fallbackToAll",
-        true
-      ),
-      preferredTarget: config.get<string>(
-        "features.codeAnalysis.diffTarget",
-        "auto"
-      ) as DiffTarget,
-      showNotifications:
-        config.get<boolean>("features.suppressNonCriticalWarnings", true) ===
-        false,
+      enabled: featureSettings.autoDetectStaged ?? true,
+      fallbackToAll: featureSettings.fallbackToAll ?? true,
+      preferredTarget: (featureSettings.diffTarget || "auto") as DiffTarget,
+      showNotifications: !(featureSettings.suppressNonCriticalWarnings ?? true),
     };
   }
 

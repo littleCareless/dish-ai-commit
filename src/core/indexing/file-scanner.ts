@@ -1,6 +1,6 @@
 import * as fs from "fs/promises";
-import * as path from "path";
 import ignore from "ignore"; // For handling .gitignore patterns
+import * as path from "path";
 
 export interface FileNode {
   // Added export
@@ -29,16 +29,20 @@ export class FileScanner {
   private async loadGitignore(): Promise<void> {
     try {
       const gitignorePath = path.join(this.projectRoot, ".gitignore");
-      const gitignoreContent = await fs.readFile(gitignorePath, "utf-8");
-      this.ig.add(gitignoreContent);
+      try {
+        const gitignoreContent = await fs.readFile(gitignorePath, "utf-8");
+        this.ig.add(gitignoreContent);
+      } catch (error: any) {
+        if (error.code !== "ENOENT") {
+          console.warn(
+            `Could not load .gitignore, proceeding without it. Error: ${error.message}`
+          );
+        }
+      }
       // Add common patterns to ignore by default, even if not in .gitignore
       this.ig.add(["node_modules", ".git", "dist", "build", "*.log", "*.lock"]);
     } catch (error) {
       // If .gitignore doesn't exist, or other error, proceed without it
-      console.warn(
-        "Could not load .gitignore, proceeding without it. Common patterns still ignored.",
-        error
-      );
       this.ig.add(["node_modules", ".git", "dist", "build", "*.log", "*.lock"]);
     }
   }

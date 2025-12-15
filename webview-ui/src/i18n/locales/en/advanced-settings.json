@@ -1,0 +1,39 @@
+{
+  "loggingLevel": {
+    "title": "Logging Level",
+    "verbosity": "Verbosity: {{value}}",
+    "minimal": "Minimal logging",
+    "standard": "Standard logging",
+    "verbose": "Verbose logging",
+    "unknown": "Unknown",
+    "description": "Controls the detail level of logging and debug information."
+  },
+  "rateLimiting": {
+    "title": "Rate Limiting",
+    "delay": "Delay Between Requests: {{value}}s",
+    "description": "Minimum delay between API requests to avoid rate limiting."
+  },
+  "errorHandling": {
+    "title": "Error Handling",
+    "maxRetries": "Max Retry Attempts: {{value}}",
+    "description": "Maximum number of consecutive retry attempts before giving up."
+  },
+  "advancedConfiguration": {
+    "title": "Advanced Configuration",
+    "maxTokens": {
+      "label": "Max Tokens",
+      "placeholder": "4000",
+      "description": "Maximum tokens for AI responses."
+    },
+    "timeout": {
+      "label": "Timeout (ms)",
+      "placeholder": "30000",
+      "description": "Request timeout in milliseconds."
+    },
+    "retryAttempts": {
+      "label": "Retry Attempts",
+      "placeholder": "3",
+      "description": "Number of retry attempts for failed requests."
+    }
+  }
+}

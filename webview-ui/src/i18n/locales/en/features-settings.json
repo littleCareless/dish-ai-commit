@@ -1,0 +1,65 @@
+{
+  "title": "Feature Settings",
+  "description": "Enable or disable various features of the extension. These settings correspond to the configurations in your `settings.json`.",
+  "commitMessageGeneration": {
+    "title": "Commit Message Generation",
+    "enableEmoji": {
+      "label": "Enable Emoji",
+      "description": "Include an emoji in the commit message subject."
+    },
+    "enableMergeCommit": {
+      "label": "Enable Merge Commit",
+      "description": "Handle merge commits."
+    },
+    "enableBody": {
+      "label": "Enable Commit Body",
+      "description": "Generate a detailed commit message body."
+    },
+    "enableLayeredCommit": {
+      "label": "Enable Layered Commit",
+      "description": "Generate commit messages in layers for complex changes."
+    },
+    "enableGlobalContext": {
+      "label": "Enable Global Context",
+      "description": "Use global context from the codebase for better messages."
+    },
+    "useRecentCommitsAsReference": {
+      "label": "Use Recent Commits as Reference",
+      "description": "Learn from recent commits to match the project's style."
+    }
+  },
+  "codeAnalysis": {
+    "title": "Code Analysis",
+    "simplifyDiff": {
+      "label": "Simplify Diff",
+      "description": "Use a simplified diff for analysis."
+    },
+    "autoDetectStaged": {
+      "label": "Auto Detect Staged Changes",
+      "description": "Automatically use staged changes if available."
+    },
+    "fallbackToAll": {
+      "label": "Fallback to All Changes",
+      "description": "If no staged changes, fallback to all changes in the repository."
+    }
+  },
+  "otherFeatures": {
+    "title": "Additional Features",
+    "weeklyReport": {
+      "label": "Weekly Report",
+      "description": "Enable the 'Generate Weekly Report' command."
+    },
+    "codeReview": {
+      "label": "Code Review",
+      "description": "Enable the 'Review Code' command."
+    },
+    "generateBranchName": {
+      "label": "Branch Name Generation",
+      "description": "Enable the 'Generate Branch Name' command."
+    },
+    "generatePRSummary": {
+      "label": "PR Summary Generation",
+      "description": "Enable the 'Generate PR Summary' command."
+    }
+  }
+}

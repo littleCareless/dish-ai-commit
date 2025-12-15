@@ -1,12 +1,8 @@
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { getMessage } from "../../utils/i18n";
-import { notify } from "../../utils/notification/notification-manager";
+import { BaseOpenAIProvider } from "@/ai/providers/base-openai-provider";
 import {
   type AIModel,
-  type AIProviders,
-  type SiliconFlowModels,
-} from "../types";
-import { BaseOpenAIProvider } from "./base-openai-provider";
+  type SiliconFlowModels
+} from "@/ai/types";
 
 /** 硅基流动服务提供者标识信息 */
 const provider = { id: "siliconflow", name: "SiliconFlow" } as const;
@@ -136,12 +132,12 @@ export class SiliconFlowProvider extends BaseOpenAIProvider {
    * 创建硅基流动提供者实例
    * 从配置管理器获取必要的配置信息并初始化基类
    */
-  constructor() {
-    const configManager = ConfigurationManager.getInstance();
+  constructor(config?: any) {
+
     super({
-      apiKey: configManager.getConfig("PROVIDERS_SILICONFLOW_APIKEY"),
-      baseURL: "https://api.siliconflow.cn/v1", // 硅基流动API端点
-      apiVersion: configManager.getConfig("BASE_MODEL"),
+      apiKey: config?.apiKey,
+      baseUrl: "https://api.siliconflow.cn/v1", // 硅基流动API端点
+      apiVersion: config?.apiVersion,
       providerId: "siliconflow",
       providerName: "SiliconFlow",
       models: models,
@@ -196,14 +192,7 @@ export class SiliconFlowProvider extends BaseOpenAIProvider {
    * @throws 如果API调用失败会记录错误并返回空数组
    */
   async refreshModels(): Promise<string[]> {
-    try {
-      const models = await this.openai.models.list();
-      notify.info("siliconflow.models.update.success");
-      return models.data.map((model) => model.id);
-    } catch (error) {
-      console.error("Failed to fetch SiliconFlow models:", error);
-      notify.error("siliconflow.models.fetch.failed");
-      return [];
-    }
+    const models = await this.openai.models.list();
+    return models.data.map((model) => model.id);
   }
 }

@@ -15,7 +15,8 @@ import {
   DetectionErrorType,
   StagedDetectionError,
   DetectionCacheEntry,
-} from "./staged-detector-types";
+} from "@/scm/staged-detector-types";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 
 const execAsync = promisify(exec);
 
@@ -206,11 +207,9 @@ export class StagedContentDetector implements IStagedContentDetector {
       recommendedTarget = DiffTarget.STAGED;
     } else {
       // Check if fallbackToAll is enabled in configuration
-      const config = vscode.workspace.getConfiguration("dish-ai-commit");
-      const fallbackToAll = config.get<boolean>(
-        "features.codeAnalysis.fallbackToAll",
-        true
-      );
+      const profileManager = ProfileManagerService.getInstance();
+      const featureSettings = profileManager.getFeatureSettings();
+      const fallbackToAll = featureSettings.fallbackToAll ?? true;
       recommendedTarget = fallbackToAll ? DiffTarget.ALL : DiffTarget.STAGED;
     }
 

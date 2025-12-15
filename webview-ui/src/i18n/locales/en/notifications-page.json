@@ -1,0 +1,29 @@
+{
+  "loading": "Loading...",
+  "title": "Notification Settings",
+  "description": "Configure notification and voice features for Dish.",
+  "textToSpeech": {
+    "title": "Text-to-Speech",
+    "description": "When enabled, Dish will read its responses aloud using text-to-speech.",
+    "enableLabel": "Enable Text-to-Speech",
+    "enableDescription": "Automatically read content aloud using voice when the AI generates a response."
+  },
+  "soundNotifications": {
+    "title": "Sound Notifications",
+    "description": "When enabled, Dish will play sound effects for notifications and events.",
+    "enableLabel": "Enable Sound Notifications",
+    "enableDescription": "Play a sound when a notification is received or an action is completed."
+  },
+  "systemNotifications": {
+    "title": "System Pop-up Notifications",
+    "description": "When enabled, Dish will display system-level pop-up notifications.",
+    "enableLabel": "Enable System Notifications",
+    "enableDescription": "Display pop-up notifications in the system notification center (e.g., when a commit or weekly report is generated).",
+    "macOsAlertTitle": "Note for macOS Users",
+    "macOsAlertDescription": "Please ensure VS Code has permission to send notifications in 'System Settings > Notifications'. This feature relies on 'terminal-notifier', which can be installed via Homebrew: <code>brew install terminal-notifier</code>.",
+    "linuxAlertTitle": "Note for Linux Users",
+    "linuxAlertDescription": "This feature relies on 'node-notifier'. If notifications do not appear, try installing <code>libnotify-bin</code> (e.g., <code>sudo apt-get install libnotify-bin</code> on Debian/Ubuntu).",
+    "windowsAlertTitle": "Note for Windows Users",
+    "windowsAlertDescription": "This feature works best on Windows 8/10 and above. It relies on 'SnoreToast' for notifications."
+  }
+}

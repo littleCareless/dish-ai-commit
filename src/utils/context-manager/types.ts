@@ -1,4 +1,4 @@
-import { AIModel } from "../../ai/types";
+import { AIModel } from "@/ai/types";
 
 /**
  * 定义上下文区块的截断策略

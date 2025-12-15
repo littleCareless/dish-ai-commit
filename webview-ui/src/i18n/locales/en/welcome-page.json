@@ -1,0 +1,157 @@
+{
+  "title": "Welcome!",
+  "description": "Welcome to this application. Please select an option from the left menu to get started.",
+  "hero": {
+    "title": "Dish AI Commit",
+    "subtitle": "Intelligent Git Commit Message Generator",
+    "getStarted": "Get Started",
+    "badges": {
+      "aiPowered": "AI Powered",
+      "fastGeneration": "Fast Generation",
+      "standardCommit": "Standard Commits"
+    }
+  },
+  "features": {
+    "title": "Core Features",
+    "smartCommit": {
+      "title": "Smart Commit Messages",
+      "description": "Automatically generate semantic, standardized commit messages based on code changes"
+    },
+    "multiRepo": {
+      "title": "Multi-Repository Support",
+      "description": "Manage commits across multiple Git repositories, supports monorepo projects"
+    },
+    "fastResponse": {
+      "title": "Fast Response",
+      "description": "Optimized API calls and caching strategy for millisecond-level response"
+    },
+    "secure": {
+      "title": "Secure & Reliable",
+      "description": "Local processing of sensitive information, secure API key storage"
+    },
+    "multiLanguage": {
+      "title": "Multi-Language Support",
+      "description": "Generate commit messages in Chinese, English, and other languages"
+    },
+    "customizable": {
+      "title": "Highly Customizable",
+      "description": "Custom prompt templates to match team conventions"
+    }
+  },
+  "setup": {
+    "selectProvider": "Select AI Provider",
+    "moreProviders": "More Providers",
+    "configureProvider": "Configure {{provider}}",
+    "quickStart": "Quick Start",
+    "quickStartDesc": "Get started quickly with a template",
+    "customSetup": "Custom Setup",
+    "customSetupDesc": "Choose your own provider and configure manually",
+    "detectingEnvironment": "Detecting local AI services...",
+    "localServiceDetected": "Local AI service detected!",
+    "noLocalService": "No local AI service detected",
+    "steps": {
+      "template": {
+        "title": "Choose Setup Method",
+        "description": "Select a quick start template or customize"
+      },
+      "provider": {
+        "title": "Select AI Provider",
+        "description": "Select and configure your AI service provider"
+      },
+      "confirm": {
+        "title": "Confirm Configuration",
+        "description": "Review settings and start using"
+      }
+    },
+    "buttons": {
+      "previous": "Previous",
+      "next": "Next",
+      "saving": "Saving...",
+      "complete": "Complete Setup",
+      "skip": "Skip for now",
+      "testConnection": "Test Connection"
+    },
+    "import": "Import existing configuration",
+    "summary": {
+      "providerType": "Provider",
+      "apiKey": "API Key",
+      "apiKeyHidden": "••••••••",
+      "notSet": "Not set",
+      "model": "Model",
+      "baseUrl": "Base URL",
+      "default": "Default",
+      "hint": "Configuration will be saved in VS Code secure storage, you can modify it anytime in settings"
+    }
+  },
+  "connection": {
+    "testing": "Testing connection...",
+    "success": "Connection successful",
+    "error": {
+      "auth": "Invalid API key. Please check your credentials.",
+      "network": "Network error. Please check your connection.",
+      "timeout": "Connection timed out. Service may be unavailable.",
+      "unknown": "Connection failed. Please try again."
+    }
+  },
+  "service": {
+    "detected": "Available",
+    "notDetected": "Not found"
+  },
+  "templates": {
+    "loading": "Loading templates...",
+    "free": "Free",
+    "noApiKey": "No API Key",
+    "badge": {
+      "recommended": "Recommended",
+      "free": "Free",
+      "local": "Local",
+      "fastest": "Fastest"
+    },
+    "ollama": {
+      "name": "Local Ollama",
+      "description": "Run AI locally with Ollama - free and private"
+    },
+    "lmstudio": {
+      "name": "LM Studio",
+      "description": "Use LM Studio for local AI inference"
+    },
+    "gemini": {
+      "name": "Google Gemini",
+      "description": "Google's AI with free tier available"
+    },
+    "zhipu": {
+      "name": "Zhipu AI",
+      "description": "Chinese AI provider with free tier"
+    },
+    "deepseek": {
+      "name": "DeepSeek",
+      "description": "High-quality AI at affordable prices"
+    },
+    "openai": {
+      "name": "OpenAI",
+      "description": "GPT-4 and other OpenAI models"
+    }
+  },
+  "quickStart": {
+    "title": "Quick Start",
+    "links": {
+      "gettingStarted": {
+        "title": "Getting Started",
+        "description": "Get up and running in 5 minutes"
+      },
+      "github": {
+        "title": "GitHub",
+        "description": "View source code and feedback"
+      },
+      "community": {
+        "title": "Community",
+        "description": "Join the user community"
+      }
+    }
+  },
+  "footer": {
+    "title": "Dish AI Commit Message Generator",
+    "madeWith": "Made with ❤️ by"
+  },
+  "scrollHint": "Scroll down"
+}

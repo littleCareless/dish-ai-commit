@@ -1,6 +1,6 @@
-import { ContextBlock, TruncationStrategy, HunkInfo } from "./types";
-import { TokenCalculator } from "./token-calculator";
-import { TRUNCATION_RATIO } from "./constants";
+import { ContextBlock, TruncationStrategy, HunkInfo } from "@/utils/context-manager/types";
+import { TokenCalculator } from "@/utils/context-manager/token-calculator";
+import { TRUNCATION_RATIO } from "@/utils/context-manager/constants";
 
 /**
  * 内容截断器

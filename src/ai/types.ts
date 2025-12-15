@@ -1,4 +1,5 @@
-import type { AIGenerationErrorType } from "./utils/generate-helper";
+import type { AIGenerationErrorType } from "@/ai/utils/generate-helper";
+import { PROVIDER_DEFINITIONS } from "@/config/provider-definitions";
 
 /**
  * AI请求选项接口，定义了向AI模型发送请求时的基本参数
@@ -77,6 +78,8 @@ export interface AIRequestParams {
   language?: string;
   /** 目标语言列表 */
   languages?: string;
+  /** 功能标识 (e.g., "commit-generation", "pr-summary") */
+  feature?: string;
 
   /** 代码分析相关选项 */
   simplifyDiff?: boolean;
@@ -117,7 +120,7 @@ export class ContextLengthExceededError extends Error {
  */
 export interface AIModel<
   Provider extends AIProviders = AIProviders,
-  Model extends AIModels<Provider> = AIModels<Provider>
+  Model extends AIModels<Provider> | string = string,
 > {
   /** 模型唯一标识符 */
   readonly id: Model;
@@ -130,6 +133,8 @@ export interface AIModel<
     id: Provider;
     name: string;
   };
+  /** 每个模型自定义的 baseUrl */
+  readonly baseUrl?: string;
   /** 是否为默认模型 */
   readonly default?: boolean;
   /** 是否在界面上隐藏 */
@@ -140,6 +145,10 @@ export interface AIModel<
     streaming?: boolean;
     /** 是否支持函数调用 */
     functionCalling?: boolean;
+    /** 是否支持视觉能力 */
+    vision?: boolean;
+    /** 是否支持JSON模式输出 */
+    jsonMode?: boolean;
   };
   /** 嵌入模型的维度 */
   readonly dimension?: number;
@@ -213,13 +222,15 @@ export interface AIProvider {
   /** 刷新可用模型列表 */
   refreshModels(): Promise<string[]>;
   /** 获取支持的模型列表 */
-  getModels(): Promise<AIModel[]>;
+  getModels(): Promise<AIModel<any, any>[]>;
   /** 获取支持的嵌入式模型列表 */
-  getEmbeddingModels?(): Promise<AIModel[]>;
+  getEmbeddingModels?(): Promise<AIModel<any, any>[]>;
   /** 获取提供者名称 */
   getName(): string;
   /** 获取提供者ID */
   getId(): string;
+  getConfig(): any;
+  setGlobalConfig?(config: any): void;
   /**
    * 计算文本的token数量
    * @param params - AI请求参数，主要使用其中的消息内容
@@ -319,17 +330,14 @@ export type DashScopeModels =
   | "qwen-coder-turbo-latest"; // 最新版本
 
 export type DoubaoModels =
-  | "doubao-lite-4k"
-  | "doubao-lite-character"
-  | "doubao-lite-32k"
-  | "doubao-lite-128k"
-  | "doubao-pro-4k"
-  | "doubao-pro-character"
-  | "doubao-pro-functioncall"
-  | "doubao-pro-32k"
-  | "doubao-pro-128k"
-  | "doubao-pro-256k"
-  | "doubao-vision-pro-32k";
+  | "doubao-seed-code-preview-251028"
+  | "doubao-seed-1-6-250615"
+  | "doubao-seed-1-6-251015"
+  | "doubao-seed-1-6-lite-251015"
+  | "doubao-seed-translation-250915"
+  | "doubao-seed-1-6-flash-250828"
+  | "doubao-seed-1-6-vision-250815"
+  | "doubao-1-5-pro-32k-character-250715";
 
 export type GeminiAIModels =
   | "gemini-2.5-flash-preview"
@@ -351,7 +359,7 @@ export type BaiduQianfanModels =
   | "ERNIE-3.5-8K"
   | "ERNIE-Speed-8K";
 
-export type DeepseekModels = "deepseek-chat" | "deepseek-reasoner";
+export type DeepseekModels = "deepseek-v3-1-terminus" | "deepseek-v3-1-250821";
 
 export type SiliconFlowModels =
   // Qwen系列
@@ -464,30 +472,12 @@ export type ModelNames =
 export type PremAIModels = string;
 export type PremAIModelID = PremAIModels;
 
-export type AIProviders =
-  | "anthropic"
-  | "github"
-  | "openai"
-  | "perplexity"
-  | "vscode"
-  | "zhipu"
-  | "dashscope"
-  | "doubao"
-  | "deepseek"
-  | "gemini"
-  | "google-ai"
-  | "openrouter"
-  | "premai"
-  | "together" // Add Together AI
-  | "xai"
-  | "mistral"
-  | "baidu-qianfan"
-  | "azure-openai"
-  | "cloudflare"
-  | "vertexai"
-  | "groq"
-  | "siliconflow"
-  | "lmstudio";
+/**
+ * 从中心化定义生成 AIProviders 类型
+ * 这确保类型定义与实际提供商列表同步
+ */
+export type AIProviders = keyof typeof PROVIDER_DEFINITIONS;
+
 export type AnthropicAIModels =
   | "claude-3-opus-20240229"
   | "claude-3-sonnet-20240229"
@@ -495,50 +485,50 @@ export type AnthropicAIModels =
 
 export type AIModels<Provider extends AIProviders = AIProviders> =
   Provider extends "github"
-    ? GitHubModels
-    : Provider extends "openai"
-    ? OpenAIModels
-    : Provider extends "vscode"
-    ? VSCodeAIModels
-    : Provider extends "zhipu"
-    ? ZhipuAIModels
-    : Provider extends "dashscope"
-    ? DashScopeModels
-    : Provider extends "doubao"
-    ? DoubaoModels
-    : Provider extends "deepseek"
-    ? DeepseekModels
-    : Provider extends "gemini"
-    ? GeminiAIModels
-    : Provider extends "google-ai"
-    ? GoogleAIModels
-    : Provider extends "baidu-qianfan"
-    ? BaiduQianfanModels
-    : Provider extends "siliconflow"
-    ? SiliconFlowModels
-    : Provider extends "openrouter"
-    ? OpenRouterModels
-    : Provider extends "perplexity"
-    ? PerplexityAIModels
-    : Provider extends "premai"
-    ? PremAIModels
-    : Provider extends "together"
-    ? TogetherAIModels
-    : Provider extends "xai"
-    ? XAIModels
-    : Provider extends "anthropic"
-    ? AnthropicAIModels
-    : Provider extends "mistral"
-    ? MistralAIModels
-    : Provider extends "cloudflare"
-    ? CloudflareWorkersAIModels
-    : Provider extends "vertexai"
-    ? VertexAIModels
-    : Provider extends "groq"
-    ? "mixtral-8x7b-32768"
-    : Provider extends "lmstudio"
-    ? LMStudioModels
-    : OpenAIModels;
+  ? GitHubModels
+  : Provider extends "openai"
+  ? OpenAIModels
+  : Provider extends "vscode"
+  ? VSCodeAIModels
+  : Provider extends "zhipu"
+  ? ZhipuAIModels
+  : Provider extends "dashscope"
+  ? DashScopeModels
+  : Provider extends "doubao"
+  ? DoubaoModels
+  : Provider extends "deepseek"
+  ? DeepseekModels
+  : Provider extends "gemini"
+  ? GeminiAIModels
+  : Provider extends "google-ai"
+  ? GoogleAIModels
+  : Provider extends "baidu-qianfan"
+  ? BaiduQianfanModels
+  : Provider extends "siliconflow"
+  ? SiliconFlowModels
+  : Provider extends "openrouter"
+  ? OpenRouterModels
+  : Provider extends "perplexity"
+  ? PerplexityAIModels
+  : Provider extends "premai"
+  ? PremAIModels
+  : Provider extends "together"
+  ? TogetherAIModels
+  : Provider extends "xai"
+  ? XAIModels
+  : Provider extends "anthropic"
+  ? AnthropicAIModels
+  : Provider extends "mistral"
+  ? MistralAIModels
+  : Provider extends "cloudflare"
+  ? CloudflareWorkersAIModels
+  : Provider extends "vertexai"
+  ? VertexAIModels
+  : Provider extends "groq"
+  ? "mixtral-8x7b-32768"
+  : Provider extends "lmstudio"
+  ? LMStudioModels
+  : OpenAIModels;
 
 export type SupportedAIModels =
   | `github:${AIModels<"github">}`

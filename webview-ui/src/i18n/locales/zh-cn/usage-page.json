@@ -1,0 +1,14 @@
+{
+  "title": "用量管理",
+  "description": "监控和管理您的 Token 用量。",
+  "totalTokens": "已用 Token 总数",
+  "totalTokensDescription": "跨所有模型和会话",
+  "reset": "重置统计",
+  "dailyUsage": "每日用量(最近 7 天)",
+  "byModel": "按模型统计",
+  "byFeature": "按功能统计",
+  "tokens": "Token",
+  "noUsageData": "暂无用量数据",
+  "noModelData": "暂无模型用量数据",
+  "noFeatureData": "暂无功能用量数据"
+}

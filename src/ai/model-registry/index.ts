@@ -3,14 +3,14 @@
  * 提供统一的模型信息获取接口，支持增强的模型验证和代理检测
  */
 
-export { ModelSpec, findModelSpec, getModelSpecsByProvider, getDefaultTokenLimits } from './model-specs';
-export { ModelInfoFetcher, ModelInfoCache } from './model-info-fetcher';
-export { EnhancedModelFetcher, EnhancedModelSpec, ModelFetchOptions } from './enhanced-model-fetcher';
-export { ModelValidator, ModelValidationResult, ProxyDetectionResult } from './model-validator';
+export { ModelSpec, findModelSpec, getModelSpecsByProvider, getDefaultTokenLimits } from '@/ai/model-registry/model-specs';
+export { ModelInfoFetcher, ModelInfoCache } from '@/ai/model-registry/model-info-fetcher';
+export { EnhancedModelFetcher, EnhancedModelSpec, ModelFetchOptions } from '@/ai/model-registry/enhanced-model-fetcher';
+export { ModelValidator, ModelValidationResult, ProxyDetectionResult } from '@/ai/model-registry/model-validator';
 
-import { ModelInfoFetcher } from './model-info-fetcher';
-import { EnhancedModelFetcher } from './enhanced-model-fetcher';
-import { AIModel } from '../types';
+import { ModelInfoFetcher } from '@/ai/model-registry/model-info-fetcher';
+import { EnhancedModelFetcher } from '@/ai/model-registry/enhanced-model-fetcher';
+import { AIModel } from '@/ai/types';
 
 /**
  * 获取模型的准确token限制信息（增强版）

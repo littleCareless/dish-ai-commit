@@ -1,14 +1,14 @@
 import * as vscode from "vscode";
 import * as childProcess from "child_process";
 import { promisify } from "util";
-import { ISvnProvider, SvnRepository, SvnAPI } from "./svn-provider-interface";
-import { formatMessage, getMessage } from "../../utils/i18n";
-import { notify } from "../../utils/notification/notification-manager";
-import { Logger } from "../../utils/logger";
-import { SvnPathHelper } from "./helpers/svn-path-helper";
-import { SvnRepositoryManager } from "./svn-repository-manager";
-import { SvnDiffHelper } from "./helpers/svn-diff-helper";
-import { SvnLogHelper } from "./helpers/svn-log-helper";
+import { ISvnProvider, SvnRepository, SvnAPI } from "@/scm/svn/svn-provider-interface";
+import { formatMessage, getMessage } from "@/utils/i18n";
+import { notify } from "@/utils/notification/notification-manager";
+import { Logger } from "@/utils/logger";
+import { SvnPathHelper } from "@/scm/svn/helpers/svn-path-helper";
+import { SvnRepositoryManager } from "@/scm/svn/svn-repository-manager";
+import { SvnDiffHelper } from "@/scm/svn/helpers/svn-diff-helper";
+import { SvnLogHelper } from "@/scm/svn/helpers/svn-log-helper";
 
 const exec = promisify(childProcess.exec);
 

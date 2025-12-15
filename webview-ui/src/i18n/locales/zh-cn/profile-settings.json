@@ -1,0 +1,30 @@
+{
+  "selectProfile": "选择配置",
+  "loading": "加载中...",
+  "editingActive": "✓ 编辑中 (当前活跃配置)",
+  "editingInactive": "✎ 编辑中 (点击“完成”激活)",
+  "currentActive": "★ 当前活跃",
+  "editing": "✎ 编辑中",
+  "addProfile": "新增配置",
+  "editProfile": "编辑配置",
+  "deleteProfile": "删除配置",
+  "usageInstructions": "使用说明:",
+  "selectToEdit": "• 从下拉菜单<strong>选择</strong>要编辑的配置文件",
+  "autoSave": "• 在修改设置后会<strong>自动保存</strong>到编辑中的配置",
+  "clickDone": "• 点击顶部“<strong>完成</strong>”按钮将当前编辑的配置设为<strong>活跃</strong>配置",
+  "currentProfileInfo": "当前配置信息 (JSON)",
+  "profileEditDialog": {
+    "titleEdit": "编辑配置",
+    "titleNew": "新建配置",
+    "nameLabel": "配置名称",
+    "namePlaceholder": "请输入配置名称...",
+    "descriptionLabel": "描述 (可选)",
+    "descriptionPlaceholder": "请输入配置描述...",
+    "createButton": "创建配置",
+    "validation": {
+      "nameMin": "配置名称至少需要 2 个字符",
+      "nameMax": "配置名称不能超过 50 个字符",
+      "descriptionMax": "描述不能超过 200 个字符"
+    }
+  }
+}

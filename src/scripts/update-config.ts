@@ -10,7 +10,7 @@ import {
   isConfigValue,
   ConfigObject,
   generateConfigKeys,
-} from "../config/config-schema";
+} from "@/config/config-schema";
 
 /**
  * 更新所有配置文件

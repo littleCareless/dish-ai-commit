@@ -1,7 +1,3 @@
-// {{CHENGQI:
-// Action: Modified; Timestamp: 2025-09-09T02:28:33.871Z; Reason: Refactor to use cosmiconfig for robust config loading, as per commitlint docs.; Principle_Applied: Engineering Excellence;
-// }}
-// {{START MODIFICATIONS}}
 import * as vscode from "vscode";
 import { cosmiconfig, cosmiconfigSync } from "cosmiconfig";
 import type { UserConfig } from "@commitlint/types";

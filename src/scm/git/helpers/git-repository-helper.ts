@@ -1,6 +1,6 @@
 import * as vscode from "vscode";
-import { ImprovedPathUtils } from "../../utils/improved-path-utils";
-import { Logger } from "../../../utils/logger";
+import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils";
+import { Logger } from "@/utils/logger";
 
 /**
  * Git仓库接口

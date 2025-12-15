@@ -1,7 +1,7 @@
 import * as vscode from "vscode";
 import * as fs from "fs";
 import * as path from "path";
-import { Logger } from "../utils/logger";
+import { Logger } from "@/utils/logger";
 
 /**
  * 文档接口

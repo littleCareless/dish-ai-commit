@@ -1,4 +1,4 @@
-import { ChatMessage } from '@/components/commit-chat/CommitChatView';
+import { ChatMessage } from '@shared/types/messages';
 
 export interface ResponseProcessingOptions {
   enableFormatting: boolean;

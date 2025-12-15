@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
-import { ISCMProvider } from "./scm-provider";
-import { Logger } from "../utils/logger";
-import { getMessage, formatMessage } from "../utils/i18n";
-import { IGitProvider } from "./git/git-provider-interface";
-import { GitProviderFactory, GitProviderType } from "./git/git-provider-factory";
-import { GitRepositoryManager } from "./git/git-repository-manager";
-import { notify } from "../utils/notification/notification-manager";
+import { ISCMProvider } from "@/scm/scm-provider";
+import { Logger } from "@/utils/logger";
+import { getMessage, formatMessage } from "@/utils/i18n";
+import { IGitProvider } from "@/scm/git/git-provider-interface";
+import { GitProviderFactory, GitProviderType } from "@/scm/git/git-provider-factory";
+import { GitRepositoryManager } from "@/scm/git/git-repository-manager";
+import { notify } from "@/utils/notification/notification-manager";
 
 /**
  * Git源代码管理提供者实现

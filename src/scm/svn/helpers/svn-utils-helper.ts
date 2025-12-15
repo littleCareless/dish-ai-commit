@@ -3,8 +3,8 @@ import { promisify } from "util";
 import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
-import { getMessage, formatMessage } from "../../../utils/i18n";
-import { notify } from "../../../utils/notification/notification-manager";
+import { getMessage, formatMessage } from "@/utils/i18n";
+import { notify } from "@/utils/notification/notification-manager";
 
 const execAsync = promisify(exec);
 

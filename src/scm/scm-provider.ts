@@ -1,14 +1,12 @@
-import * as vscode from "vscode";
-import * as fs from "fs";
-import * as path from "path";
+import { SvnProvider } from "@/scm/svn-provider";
+import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils";
 import { exec } from "child_process";
+import * as path from "path";
+import * as vscode from "vscode";
 import { GitProvider } from "./git-provider";
-import { SvnProvider } from "./svn-provider";
-import { ImprovedPathUtils } from "./utils/improved-path-utils";
 import { multiRepositoryContextManager } from "./multi-repository-context-manager";
 
 /**
- * 最近提交信息
  */
 export interface RecentCommitMessages {
   /** 仓库最近提交信息 */
@@ -471,9 +469,8 @@ export class SCMFactory {
           );
         } else {
           // 多个仓库，让用户选择
-          const selected = await this.promptUserToSelectRepository(
-            repositories
-          );
+          const selected =
+            await this.promptUserToSelectRepository(repositories);
           if (!selected) {
             // 用户取消选择
             return undefined;

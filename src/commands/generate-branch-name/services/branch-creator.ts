@@ -1,9 +1,9 @@
 import * as vscode from "vscode";
-import { getGitApi, hasValidRepository, getFirstRepository } from "../../../utils/git/git-api";
-import { RefQuickPickItem } from "../../../utils/git/types";
-import { Logger } from "../../../utils/logger";
-import { notify } from "../../../utils/notification/notification-manager";
-import { getMessage, formatMessage } from "../../../utils/i18n";
+import { getGitApi, hasValidRepository, getFirstRepository } from "@/utils/git/git-api";
+import { RefQuickPickItem } from "@/utils/git/types";
+import { Logger } from "@/utils/logger";
+import { notify } from "@/utils/notification/notification-manager";
+import { getMessage, formatMessage } from "@/utils/i18n";
 
 /**
  * 分支创建服务

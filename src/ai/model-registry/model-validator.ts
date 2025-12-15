@@ -3,7 +3,7 @@
  * 负责验证API返回的模型信息是否与请求的模型匹配
  */
 
-import { AIModel } from "../types";
+import { AIModel } from "@/ai/types";
 
 export interface ModelValidationResult {
   /** 验证是否通过 */

@@ -1,0 +1,57 @@
+{
+  "title": "代码库索引",
+  "description": "配置代码库索引设置以启用项目的语义搜索。",
+  "learnMore": "了解更多",
+  "enableIndexing": "启用代码库索引",
+  "tabs": {
+    "general": "基础设置",
+    "advanced": "高级设置",
+    "repositories": "仓库管理"
+  },
+  "status": {
+    "title": "索引状态",
+    "current": "当前状态",
+    "upToDate": "索引已是最新",
+    "settingsSaved": "设置已保存",
+    "indexingComplete": "索引完成",
+    "indexingFailed": "索引失败",
+    "indexCleared": "索引已清除",
+    "repositorySummary": "{{indexed}}/{{total}} 仓库已索引，共 {{vectors}} 向量"
+  },
+  "stats": {
+    "succeeded": "成功",
+    "failed": "失败",
+    "viewFailureDetails": "查看失败详情原因"
+  },
+  "buttons": {
+    "updateIndex": "更新索引",
+    "startIndexing": "开始索引",
+    "viewDetails": "查看详情"
+  },
+  "dialog": {
+    "failedFilesTitle": "索引失败文件列表 ({{count}})",
+    "errorLabel": "错误",
+    "noFailedFiles": "无失败文件记录"
+  },
+  "embeddingProvider": "嵌入模型提供商",
+  "clearIndex": "清除索引",
+  "save": "保存设置",
+  "log": {
+    "title": "活动日志",
+    "empty": "暂无索引活动"
+  },
+  "repositories": {
+    "title": "检测到的仓库",
+    "description": "以下是在工作区中检测到的仓库，每个仓库将被独立索引。",
+    "noRepositories": "未检测到仓库",
+    "indexed": "已索引",
+    "notIndexed": "未索引",
+    "indexButton": "索引",
+    "reindexButton": "重新索引",
+    "type": {
+      "git": "Git",
+      "svn": "SVN",
+      "unknown": "未知"
+    }
+  }
+}

@@ -1,6 +1,6 @@
-export * from "./diff";
-export * from "./i18n";
-export * from "./notification";
-export * from "./webview";
+export * from "@/utils/diff";
+export * from "@/utils/i18n";
+export * from "@/utils/notification";
+export * from "@/utils/webview";
 
-export * from "./validation";
+export * from "@/utils/validation";

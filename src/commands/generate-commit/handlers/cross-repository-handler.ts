@@ -1,12 +1,12 @@
 import * as vscode from "vscode";
 import * as path from "path";
-import { ISCMProvider } from "../../../scm/scm-provider";
-import { SCMFactory } from "../../../scm/scm-provider";
-import { multiRepositoryContextManager } from "../../../scm/multi-repository-context-manager";
-import { ProgressHandler } from "../../../utils/notification/progress-handler";
-import { getMessage, formatMessage } from "../../../utils/i18n";
-import { notify } from "../../../utils/notification/notification-manager";
-import { Logger } from "../../../utils/logger";
+import { ISCMProvider } from "@/scm/scm-provider";
+import { SCMFactory } from "@/scm/scm-provider";
+import { multiRepositoryContextManager } from "@/scm/multi-repository-context-manager";
+import { ProgressHandler } from "@/utils/notification/progress-handler";
+import { getMessage, formatMessage } from "@/utils/i18n";
+import { notify } from "@/utils/notification/notification-manager";
+import { Logger } from "@/utils/logger";
 
 /**
  * 跨仓库处理器类，负责处理跨多个仓库的提交信息生成

@@ -1,9 +1,8 @@
-import { ConfigurationManager } from "../../config/configuration-manager";
-import { AIModel, type AIProviders, type PremAIModelID } from "../types";
 import {
   BaseOpenAIProvider,
   OpenAIProviderConfig,
-} from "./base-openai-provider";
+} from "@/ai/providers/base-openai-provider";
+import { AIModel, type PremAIModelID } from "@/ai/types";
 
 /**
  * PremAI支持的AI模型配置列表
@@ -32,17 +31,18 @@ export class PremAIProvider extends BaseOpenAIProvider {
    * 创建PremAI AI提供者实例
    * 从配置管理器获取API密钥，并设置PremAI的特定baseURL
    */
-  constructor() {
-    const configManager = ConfigurationManager.getInstance();
-    const config: OpenAIProviderConfig = {
-      apiKey: configManager.getConfig("PROVIDERS_PREMAI_APIKEY") as string,
-      baseURL: "https://studio.premai.io/api/v1/",
+  constructor(config?: any) {
+
+    const apiKey = config?.apiKey as string;
+    const providerConfig: OpenAIProviderConfig = {
+      apiKey: apiKey,
+      baseUrl: "https://studio.premai.io/api/v1/",
       providerId: "premai",
       providerName: "PremAI",
       models: premaiModels,
       defaultModel: "llama3.2-3b",
     };
-    super(config);
+    super(providerConfig);
   }
 
   /**

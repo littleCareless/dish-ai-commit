@@ -1,5 +1,5 @@
-import { ChatMessage } from '@/components/commit-chat/CommitChatView';
-import { CommitSuggestion } from '@/components/commit-chat/CommitTextArea';
+import { ChatMessage } from '@shared/types/messages';
+import { CommitSuggestion } from '@shared/types/messages';
 
 export interface UserPreference {
   id: string;

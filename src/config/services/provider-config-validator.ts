@@ -19,9 +19,9 @@
  * 当验证失败时，引导用户完成配置过程，简化配置体验。
  */
 import * as vscode from "vscode";
-import { PROVIDER_REQUIRED_FIELDS, ExtensionConfiguration } from "../types";
-import { getMessage } from "../../utils/i18n";
-import { notify } from "../../utils/notification/notification-manager";
+import { PROVIDER_REQUIRED_FIELDS, ExtensionConfiguration } from "@/config/types";
+import { getMessage } from "@/utils/i18n";
+import { notify } from "@/utils/notification/notification-manager";
 
 /**
  * 验证AI提供商配置

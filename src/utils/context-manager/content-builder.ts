@@ -1,5 +1,5 @@
-import { ContextBlock } from "./types";
-import { FINAL_BLOCK_ORDER } from "./constants";
+import { ContextBlock } from "@/utils/context-manager/types";
+import { FINAL_BLOCK_ORDER } from "@/utils/context-manager/constants";
 
 /**
  * 内容构建器

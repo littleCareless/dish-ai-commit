@@ -1,4 +1,4 @@
-import { LayeredCommitMessage } from "../../../ai/types";
+import { LayeredCommitMessage } from "@/ai/types";
 
 /**
  * 将分层提交信息格式化为结构化的提交信息文本

@@ -1,9 +1,9 @@
-import { ContextBlock, BlockPartitionResult, BlockProcessingResult } from "./types";
-import { TokenCalculator } from "./token-calculator";
-import { FORCE_RETAIN_BLOCKS, MIN_BLOCK_SIZE_FOR_TRUNCATION } from "./constants";
-import { ContentTruncator } from "./content-truncator";
-import { notify } from "../notification";
-import { formatMessage } from "../i18n";
+import { ContextBlock, BlockPartitionResult, BlockProcessingResult } from "@/utils/context-manager/types";
+import { TokenCalculator } from "@/utils/context-manager/token-calculator";
+import { FORCE_RETAIN_BLOCKS, MIN_BLOCK_SIZE_FOR_TRUNCATION } from "@/utils/context-manager/constants";
+import { ContentTruncator } from "@/utils/context-manager/content-truncator";
+import { notify } from "@/utils/notification";
+import { formatMessage } from "@/utils/i18n";
 
 /**
  * 上下文区块处理器

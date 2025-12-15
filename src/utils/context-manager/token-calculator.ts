@@ -1,6 +1,6 @@
-import { AIModel, AIMessage } from "../../ai/types";
-import { tokenizerService } from "../tokenizer";
-import { TokenCalculationResult } from "./types";
+import { AIModel, AIMessage } from "@/ai/types";
+import { tokenizerService } from "@/utils/tokenizer";
+import { TokenCalculationResult } from "@/utils/context-manager/types";
 
 /**
  * Token 计算工具类

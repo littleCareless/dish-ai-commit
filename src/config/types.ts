@@ -3,31 +3,40 @@ import {
   generateConfigKeys,
   generateConfigMetadata,
   type ConfigObject,
-  type ConfigValueTypeString,
   type ConfigValueTypeBoolean,
   type ConfigValueTypeNumber,
-} from "./config-schema";
+  type ConfigValueTypeString,
+} from "@/config/config-schema";
+import {
+  PROVIDER_DEFINITIONS,
+  getAllProviderIds,
+} from "@/config/provider-definitions";
 
 /**
- * 从 CONFIG_SCHEMA 生成 AI 提供商枚举对象
- * @returns {Record<string, string>} 返回大写键名映射到小写值的提供商枚举对象
+ * 从中心化的提供商定义生成 AI 提供商枚举对象
+ * 这确保了所有系统中的提供商标识符都来自同一来源
+ * @returns {Record<string, string>} 返回大写下划线键名映射到小写 ID 值的提供商枚举对象
  */
 function generateProviderEnum() {
-  const providers = CONFIG_SCHEMA.base.provider.enum;
-  // 校验 providers 是否存在
-  if (!providers) {
-    return {};
+  const result: Record<string, string> = {};
+
+  // 遍历所有提供商定义，生成枚举
+  for (const providerId of getAllProviderIds()) {
+    const def = PROVIDER_DEFINITIONS[providerId as keyof typeof PROVIDER_DEFINITIONS];
+    if (def) {
+      // 大写下划线键 -> 小写 ID 值
+      result[def.enumKey] = def.id;
+    }
   }
 
-  // 将每个提供商名转换为大写键并映射到小写值
-  return providers.reduce((acc, provider) => {
-    acc[provider.toUpperCase().replace(/\s+/g, "_")] = provider.toLowerCase();
-    return acc;
-  }, {} as Record<string, string>);
+  return result;
 }
 
-/** AI 提供商枚举常量 */
-export const AIProvider = generateProviderEnum();
+/** AI 提供商枚举常量 - 从中心化定义生成 */
+export const AIProvider: Record<string, string> = {
+  ...generateProviderEnum(),
+  OPENAI_COMPATIBLE: 'openai-compatible',
+};
 
 /**
  * 从配置值类型定义中提取实际类型
@@ -55,10 +64,10 @@ type FilterNever<T> = {
 
 type GenerateConfigType<T> = FilterNever<{
   [K in keyof T]: T[K] extends { type: string; default: any }
-    ? ExtractConfigValueType<T[K]>
-    : T[K] extends ConfigObject
-    ? GenerateConfigType<T[K]>
-    : never;
+  ? ExtractConfigValueType<T[K]>
+  : T[K] extends ConfigObject
+  ? GenerateConfigType<T[K]>
+  : never;
 }>;
 
 /** 扩展配置接口类型 */
@@ -71,14 +80,14 @@ export type ExtensionConfiguration = GenerateConfigType<typeof CONFIG_SCHEMA>;
  */
 type RecursiveConfigPath<T, P extends string = ""> = {
   [K in keyof T]: T[K] extends { type: string }
-    ? P extends ""
-      ? `${K & string}`
-      : `${P}_${K & string}`
-    : T[K] extends ConfigObject
-    ? P extends ""
-      ? `${K & string}` | RecursiveConfigPath<T[K], `${K & string}`>
-      : `${P}_${K & string}` | RecursiveConfigPath<T[K], `${P}_${K & string}`>
-    : never;
+  ? P extends ""
+  ? `${K & string}`
+  : `${P}_${K & string}`
+  : T[K] extends ConfigObject
+  ? P extends ""
+  ? `${K & string}` | RecursiveConfigPath<T[K], `${K & string}`>
+  : `${P}_${K & string}` | RecursiveConfigPath<T[K], `${P}_${K & string}`>
+  : never;
 }[keyof T];
 
 /** 配置路径类型 */
@@ -104,8 +113,8 @@ type GetSchemaType<
   P extends string
 > = P extends `${infer Head}.${infer Rest}`
   ? Head extends keyof T
-    ? GetSchemaType<T[Head], Rest>
-    : never
+  ? GetSchemaType<T[Head], Rest>
+  : never
   : P extends keyof T
   ? T[P]
   : never;

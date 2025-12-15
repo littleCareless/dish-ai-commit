@@ -1,20 +1,18 @@
-import * as vscode from "vscode";
-import { ExtensionConfiguration } from "../config/types";
-
-interface WeeklyReportPromptParams {
-  config: ExtensionConfiguration;
-  startDate?: string; // Weekly report start date
-  endDate?: string; // Weekly report end date
-}
-
-export const defaultWeeklyReportPrompt = `
-# Technical Weekly Report Generation Guide
+/**
+ * Weekly Report Prompt Template
+ * 使用 {{variable}} 语法表示可替换变量
+ * 
+ * 可用变量:
+ * - {{language}} - 输出语言
+ * - {{date_range}} - 日期范围 (YYYY/MM/DD - YYYY/MM/DD)
+ */
+export const WEEKLY_REPORT_TEMPLATE = `# Technical Weekly Report Generation Guide
 
 ## Role and Purpose
 
 You are a professional technical weekly report generation assistant. When receiving Git/SVN commit records, you need to analyze these records and generate a structured, professional technical weekly report.
 
-IMPORTANT: ALL content including section titles, headers and subheaders (like "Weekly Work Summary", "Main Accomplishments", etc.) MUST be translated to $\{language\}.
+IMPORTANT: ALL content including section titles, headers and subheaders (like "Weekly Work Summary", "Main Accomplishments", etc.) MUST be translated to {{language}}.
 
 
 ## Output Format
@@ -22,12 +20,12 @@ IMPORTANT: ALL content including section titles, headers and subheaders (like "W
 IMPORTANT: You must strictly follow the format requirements below. Your response must be identical in structure to what is shown below, with the only difference being the content itself And Language.
 
 Remember: 
-  - ALL content, including section titles, headers, and subheaders (such as “Weekly Work Summary”, “Main Accomplishments”, etc.), MUST be translated to $\{language\}, regardless of the original language.
+  - ALL content, including section titles, headers, and subheaders (such as "Weekly Work Summary", "Main Accomplishments", etc.), MUST be translated to {{language}}, regardless of the original language.
   - Examples are provided for formatting reference only. You MUST NOT copy, mimic, or reuse their language or phrasing.
   - The commit message must be complete and properly formatted, and no part of the original language or English content may remain.
 
 \`\`\`
-# Weekly Work Summary (YYYY/MM/DD - YYYY/MM/DD)
+# Weekly Work Summary {{date_range}}
 
 ## Main Accomplishments
 
@@ -133,7 +131,7 @@ When analyzing commit records, please categorize content according to the follow
 IMPORTANT: You must strictly follow the format requirements below. Your response must be identical in structure to what is shown below, with the only difference being the content itself And Language.
 
 Remember: 
-  - ALL content, including section titles, headers, and subheaders (such as “Weekly Work Summary”, “Main Accomplishments”, etc.), MUST be translated to $\{language\}, regardless of the original language.
+  - ALL content, including section titles, headers, and subheaders (such as "Weekly Work Summary", "Main Accomplishments", etc.), MUST be translated to {{language}}, regardless of the original language.
   - Examples are provided for formatting reference only. You MUST NOT copy, mimic, or reuse their language or phrasing.
   - The commit message must be complete and properly formatted, and no part of the original language or English content may remain.
 
@@ -195,65 +193,30 @@ Commit records may contain content from multiple time periods. Please filter rel
 Please present the final output in HTML format, using appropriate tags such as <h1>, <h2>, <ul>, <li>, and <strong> for clear formatting and structure.
 `;
 
+// Default export for PromptManagerService to load
+export default () => WEEKLY_REPORT_TEMPLATE;
+
 /**
- * Generate weekly report prompt
- * @param params - Prompt parameters, including configuration information
- * @returns Formatted prompt
+ * 获取周报模板的变量
  */
-export function generateWeeklyReportPrompt({
-  config,
-  startDate,
-  endDate,
-}: WeeklyReportPromptParams): string {
-  const {
-    base: { language },
-  } = config;
-
-  // Adjust based on language and date parameters
-  let prompt = defaultWeeklyReportPrompt;
-
-  // Replace language marker
-  prompt = prompt.replaceAll(/\$\{language\}/g, language);
-
-  // Replace date markers if specific dates are provided
-  if (startDate && endDate) {
-    prompt = prompt.replace(
-      "(YYYY/MM/DD - YYYY/MM/DD)",
-      `(${startDate} - ${endDate})`
-    );
-  }
-
-  // Translation logic could be added here if language is not English
-  return prompt;
+export interface WeeklyReportVariables {
+  language: string;
+  date_range: string;
 }
 
-export function getWeeklyReportPrompt(period: {
-  startDate: string;
-  endDate: string;
-}): string {
-  const config = vscode.workspace.getConfiguration("dish-ai-commit");
-  const customPrompt = config.get<string>("features.weeklyReport.systemPrompt");
-
-  // If there's a custom prompt, use it
-  if (customPrompt) {
-    return customPrompt;
-  }
-
-  // Get current extension configuration
-  const baseLanguage = config.get<string>("base.language") || "English";
-
-  // Create configuration object with actual user settings
-  const extensionConfig = {
-    base: {
-      language: baseLanguage,
-    },
-    // Add other configuration properties as needed
-  } as ExtensionConfiguration;
-
-
-  return generateWeeklyReportPrompt({
-    config: extensionConfig,
-    startDate: period.startDate,
-    endDate: period.endDate,
-  });
+export function getWeeklyReportVariables(params: {
+  language: string;
+  startDate?: string;
+  endDate?: string;
+}): WeeklyReportVariables {
+  const { language, startDate, endDate } = params;
+  
+  const dateRange = startDate && endDate 
+    ? `(${startDate} - ${endDate})`
+    : "(YYYY/MM/DD - YYYY/MM/DD)";
+  
+  return {
+    language,
+    date_range: dateRange,
+  };
 }

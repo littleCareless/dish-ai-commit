@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
-import { IGitProvider } from "./git-provider-interface";
-import { GitRepositoryHelper } from "./helpers/git-repository-helper";
-import { GitDiffHelper } from "./helpers/git-diff-helper";
-import { GitLogHelper } from "./helpers/git-log-helper";
-import { Logger } from "../../utils/logger";
-import { formatMessage } from "../../utils/i18n";
-import { notify } from "../../utils/notification/notification-manager";
+import { IGitProvider } from "@/scm/git/git-provider-interface";
+import { GitRepositoryHelper } from "@/scm/git/helpers/git-repository-helper";
+import { GitDiffHelper } from "@/scm/git/helpers/git-diff-helper";
+import { GitLogHelper } from "@/scm/git/helpers/git-log-helper";
+import { Logger } from "@/utils/logger";
+import { formatMessage } from "@/utils/i18n";
+import { notify } from "@/utils/notification/notification-manager";
 
 /**
  * 基于 VS Code Git API 的 Git 提供者实现

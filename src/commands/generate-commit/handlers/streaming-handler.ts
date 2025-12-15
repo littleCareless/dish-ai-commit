@@ -1,11 +1,11 @@
 import * as vscode from "vscode";
-import { ISCMProvider } from "../../../scm/scm-provider";
-import { AIRequestParams } from "../../../ai/types";
-import { AbstractAIProvider } from "../../../ai/providers/abstract-ai-provider";
-import { ContextManager } from "../../../utils/context-manager";
-import { filterCodeBlockMarkers } from "../utils/commit-formatter";
-import { getMessage } from "../../../utils/i18n";
-import { Logger } from "../../../utils/logger";
+import { ISCMProvider } from "@/scm/scm-provider";
+import { AIRequestParams } from "@/ai/types";
+import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
+import { ContextManager } from "@/utils/context-manager";
+import { filterCodeBlockMarkers } from "@/commands/generate-commit/utils/commit-formatter";
+import { getMessage } from "@/utils/i18n";
+import { Logger } from "@/utils/logger";
 
 /**
  * 流式处理器类，负责处理流式提交信息生成

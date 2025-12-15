@@ -1,27 +1,43 @@
 {
   "$schema": "https://json.schemastore.org/tsconfig",
   "compilerOptions": {
-    "module": "es2022",
-    "moduleResolution": "bundler",
     "target": "ES2022",
-    "outDir": "out",
     "lib": ["ES2022", "DOM"],
-    "sourceMap": false,
-    "rootDir": "src",
-    "skipLibCheck": true,
-    "strict": true /* enable all strict type-checking options */,
-    /* Additional Checks */
-    // "noImplicitReturns": true, /* Report error when not all code paths in function return a value. */
-    // "noFallthroughCasesInSwitch": true, /* Report errors for fallthrough cases in switch statement. */
-    // "noUnusedParameters": true,  /* Report errors on unused parameters. */
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "allowSyntheticDefaultImports": true,
     "esModuleInterop": true,
+    "allowJs": true,
+    "skipLibCheck": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
     "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": true,
+    "jsx": "react-jsx",
+    "baseUrl": ".",
     "paths": {
-      "@/*": ["./src/webview-ui/src/*"]
-    },
-    "jsx": "react-jsx"
+      "@/*": ["./src/*"],
+      "@webview-ui/*": ["./webview-ui/src/*"]
+    }
   },
-  "exclude": ["node_modules", "esbuild.ts", "vitest.config.ts"],
+  "files": [],
+  "references": [
+    {
+      "path": "./src"
+    },
+    {
+      "path": "./webview-ui"
+    }
+  ],
+  "exclude": [
+    "node_modules",
+    "dist",
+    "out",
+    "webview-ui/dist",
+    "esbuild.ts",
+    "vitest.config.ts"
+  ],
   "ts-node": {
     "compilerOptions": {
       "module": "CommonJS"
