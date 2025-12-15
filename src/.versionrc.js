@@ -1,0 +1,66 @@
+const gitmoji = require("conventional-changelog-gitmoji-config");
+
+module.exports = {
+  ...gitmoji,
+  header:
+    "# Changelog \n\n[English](CHANGELOG.md) | [简体中文](CHANGELOG.zh-CN.md) \n\nAll notable changes to this project will be documented in this file. \n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。",
+  types: [
+    {
+      type: "feat",
+      section: "✨ Features",
+    },
+    {
+      type: "fix",
+      section: "🐛 Bug Fixes",
+    },
+    {
+      type: "init",
+      section: "🎉 Init",
+    },
+    {
+      type: "docs",
+      section: "📝 Documentation",
+    },
+    {
+      type: "style",
+      section: "💄 Styles",
+      hidden: true,
+    },
+    {
+      type: "refactor",
+      section: "♻️ Code Refactoring",
+    },
+    {
+      type: "perf",
+      section: "⚡ Performance Improvements",
+    },
+    {
+      type: "test",
+      section: "✅ Tests",
+    },
+    {
+      type: "revert",
+      section: "⏪ Revert",
+      hidden: true,
+    },
+    {
+      type: "build",
+      section: "️‍📦️ Build System",
+    },
+    {
+      type: "chore",
+      section: "🚀 Chore",
+    },
+    {
+      type: "ci",
+      section: "👷 Continuous Integration",
+    },
+  ],
+  skip: {
+    bump: false,
+    changelog: false,
+    commit: false,
+    tag: false,
+  },
+  releaseCommitMessageFormat: "🚀 chore(release): {{currentTag}}",
+};
