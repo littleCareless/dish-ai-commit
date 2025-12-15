@@ -52,7 +52,7 @@ jobs:
           git fetch --tags
 
       - name: Install dependencies
-        run: npm ci
+        run: npm ci --legacy-peer-deps
 
       # =================================================================
       # 1. 代码质量保证 (Code Quality Assurance)

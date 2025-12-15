@@ -18,7 +18,7 @@ jobs:
           node-version: 20
       - name: Install pnpm
         run: npm install -g pnpm
-      - run: npm ci
+      - run: npm ci --legacy-peer-deps
       - name: Publish to Open VSX Registry (Pre-release)
         uses: HaaLeo/publish-vscode-extension@v2
         id: publishToOpenVSX
@@ -47,7 +47,7 @@ jobs:
           node-version: 20
       - name: Install pnpm
         run: npm install -g pnpm
-      - run: npm ci
+      - run: npm ci --legacy-peer-deps
       - name: Bump version, commit, and push tag
         run: |
           git config --global user.name 'github-actions[bot]'
