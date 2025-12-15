@@ -87,7 +87,6 @@
     "@ai-sdk/fireworks": "^1.0.28",
     "@ai-sdk/google": "^2.0.36",
     "@ai-sdk/openai": "^2.0.68",
-    "@simonorzel26/ai-models": "^2.0.6",
     "ai": "^5.0.95",
     "ollama-ai-provider-v2": "^1.5.4",
     "proper-lockfile": "^4.1.2",

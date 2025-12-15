@@ -634,7 +634,6 @@
     "@google-cloud/vertexai": "^1.10.0",
     "@google/genai": "^1.21.0",
     "@mistralai/mistralai": "^1.10.0",
-    "@dish-ai-commit/webview-ui": "workspace:*",
     "@qdrant/js-client-rest": "^1.15.1",
     "@types/node-notifier": "^8.0.5",
     "cosmiconfig": "^9.0.0",
@@ -648,7 +647,8 @@
     "tiktoken": "^1.0.22",
     "tree-sitter-wasms": "^0.1.12",
     "uuid": "^13.0.0",
-    "web-tree-sitter": "^0.22.6"
+    "web-tree-sitter": "^0.22.6",
+    "zod": "^4.2.0"
   },
   "overrides": {
     "glob": "10.3.10",
