@@ -33,7 +33,7 @@ type NavigationItem = {
 
 export const Navigation: React.FC = () => {
   // 使用 react-i18next 的标准 hook，它会自动响应语言变化
-  const { t, i18n } = useTranslation("translation");
+  const { t } = useTranslation("translation");
   const { setLanguage } = useExtensionState();
 
   // 使用 useMemo 确保语言变化时重新计算
@@ -119,7 +119,7 @@ export const Navigation: React.FC = () => {
     }
 
     return items;
-  }, [t, i18n.language]);
+  }, [t]);
 
   const handleLanguageChange = (lang: string) => {
     setLanguage(lang);

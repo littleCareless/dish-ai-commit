@@ -1,3 +1,4 @@
+// cspell:ignore Glama
 // Provider 类型定义
 export type ProviderType =
   | "first-party" // Anthropic, OpenAI, Gemini
@@ -46,7 +47,7 @@ export interface ProviderConfig {
   accountId?: string;
 
   // 动态字段存储
-  customFields?: Record<string, any>;
+  customFields?: Record<string, unknown>;
 
   // 高级设置
   timeout?: number;
@@ -245,7 +246,7 @@ export type ProfileValidator = (profile: Profile) => ConfigValidationResult;
 export type ProviderValidator = (
   provider: ProviderConfig,
 ) => ConfigValidationResult;
-export type ConfigMigrator = (oldConfig: any) => Profile;
+export type ConfigMigrator = (oldConfig: unknown) => Profile;
 
 // 事件回调类型
 export type ProfileChangeCallback = (profile: Profile) => void;

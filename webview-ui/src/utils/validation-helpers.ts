@@ -3,14 +3,14 @@
  * 将 provider-registry.ts 中的验证规则转换为 Zod schema
  */
 
-import i18next, { TFunction } from "i18next";
-import { z } from "zod";
 import {
   FieldConfig,
   FieldType,
   ValidationRule,
   ValidationRuleType,
 } from "@/types/provider-metadata";
+import i18next, { TFunction } from "i18next";
+import { z } from "zod";
 
 /**
  * 根据字段类型获取基础 Zod schema
@@ -122,7 +122,7 @@ export function createZodValidator(
 export function createProviderSchema(
   fields: FieldConfig[],
   t: TFunction,
-): z.ZodObject<any> {
+): z.ZodObject<Record<string, z.ZodTypeAny>> {
   const schemaObject = fields.reduce(
     (acc, field) => {
       acc[field.key] = createZodValidator(field, t);
@@ -139,7 +139,7 @@ export function createProviderSchema(
  */
 export function validateFieldValue(
   field: FieldConfig,
-  value: any,
+  value: unknown,
 ): { isValid: boolean; error?: string } {
   try {
     const validator = createZodValidator(field, i18next.t);
@@ -164,7 +164,7 @@ export function validateFieldValue(
  */
 export function shouldShowField(
   field: FieldConfig,
-  formValues: Record<string, any>,
+  formValues: Record<string, unknown>,
 ): boolean {
   if (!field.conditional) {
     return true;
@@ -189,7 +189,7 @@ export function shouldShowField(
 /**
  * 获取字段的默认值
  */
-export function getFieldDefaultValue(field: FieldConfig): any {
+export function getFieldDefaultValue(field: FieldConfig): unknown {
   if (field.defaultValue !== undefined) {
     return field.defaultValue;
   }

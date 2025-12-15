@@ -9,7 +9,7 @@ export class DebugHelper {
     timestamp: string;
     level: string;
     message: string;
-    data?: any;
+    data?: unknown;
   }> = [];
 
   static getInstance(): DebugHelper {
@@ -22,7 +22,7 @@ export class DebugHelper {
   /**
    * 记录调试信息
    */
-  log(level: "info" | "warn" | "error", message: string, data?: any): void {
+  log(level: "info" | "warn" | "error", message: string, data?: unknown): void {
     const entry = {
       timestamp: new Date().toISOString(),
       level,
@@ -42,28 +42,28 @@ export class DebugHelper {
   /**
    * 记录配置创建过程
    */
-  logProfileCreation(step: string, data?: any): void {
+  logProfileCreation(step: string, data?: unknown): void {
     this.log("info", `Profile Creation - ${step}`, data);
   }
 
   /**
    * 记录配置保存过程
    */
-  logProfileSave(step: string, data?: any): void {
+  logProfileSave(step: string, data?: unknown): void {
     this.log("info", `Profile Save - ${step}`, data);
   }
 
   /**
    * 记录验证过程
    */
-  logValidation(field: string, result: any): void {
+  logValidation(field: string, result: unknown): void {
     this.log("info", `Validation - ${field}`, result);
   }
 
   /**
    * 记录错误
    */
-  logError(context: string, error: any): void {
+  logError(context: string, error: unknown): void {
     this.log("error", `Error in ${context}`, {
       message: error instanceof Error ? error.message : String(error),
       stack: error instanceof Error ? error.stack : undefined,
@@ -78,7 +78,7 @@ export class DebugHelper {
     timestamp: string;
     level: string;
     message: string;
-    data?: any;
+    data?: unknown;
   }> {
     return [...this.debugLog];
   }
@@ -109,8 +109,8 @@ export class DebugHelper {
   /**
    * 获取 localStorage 信息
    */
-  private getLocalStorageInfo(): Record<string, any> {
-    const info: Record<string, any> = {};
+  private getLocalStorageInfo(): Record<string, unknown> {
+    const info: Record<string, unknown> = {};
     try {
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
@@ -130,7 +130,7 @@ export class DebugHelper {
           }
         }
       }
-    } catch (error) {
+    } catch {
       info.error = "Failed to read localStorage";
     }
     return info;
@@ -139,9 +139,9 @@ export class DebugHelper {
   /**
    * 获取内存信息
    */
-  private getMemoryInfo(): any {
+  private getMemoryInfo(): unknown {
     if ("memory" in performance) {
-      return (performance as any).memory;
+      return (performance as unknown as { memory: unknown }).memory;
     }
     return { available: "Memory API not available" };
   }
@@ -153,7 +153,10 @@ export class DebugHelper {
     const issues: string[] = [];
 
     // 检查 VSCode API
-    if (typeof window !== "undefined" && !(window as any).vscode) {
+    if (
+      typeof window !== "undefined" &&
+      !(window as unknown as { vscode: unknown }).vscode
+    ) {
       issues.push("VSCode API not available - using localStorage fallback");
     }
 
@@ -161,7 +164,7 @@ export class DebugHelper {
     try {
       localStorage.setItem("debug-test", "test");
       localStorage.removeItem("debug-test");
-    } catch (error) {
+    } catch {
       issues.push("localStorage not available");
     }
 
@@ -184,17 +187,17 @@ export const debugHelper = DebugHelper.getInstance();
 export const logDebug = (
   level: "info" | "warn" | "error",
   message: string,
-  data?: any,
+  data?: unknown,
 ) => debugHelper.log(level, message, data);
 
-export const logProfileCreation = (step: string, data?: any) =>
+export const logProfileCreation = (step: string, data?: unknown) =>
   debugHelper.logProfileCreation(step, data);
 
-export const logProfileSave = (step: string, data?: any) =>
+export const logProfileSave = (step: string, data?: unknown) =>
   debugHelper.logProfileSave(step, data);
 
-export const logValidation = (field: string, result: any) =>
+export const logValidation = (field: string, result: unknown) =>
   debugHelper.logValidation(field, result);
 
-export const logError = (context: string, error: any) =>
+export const logError = (context: string, error: unknown) =>
   debugHelper.logError(context, error);

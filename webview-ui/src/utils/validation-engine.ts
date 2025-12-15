@@ -28,7 +28,7 @@ export class ValidationEngine {
    */
   async validateField(
     field: FieldMetadata,
-    value: any,
+    value: unknown,
   ): Promise<ValidationResult> {
     const cacheKey = `${field.key}-${JSON.stringify(value)}`;
 
@@ -78,7 +78,7 @@ export class ValidationEngine {
     if (field.validation) {
       for (const rule of field.validation) {
         try {
-          const ruleResult = await this.validateRule(rule, value, field);
+          const ruleResult = await this.validateRule(rule, value);
           if (!ruleResult.valid) {
             errors.push(ruleResult.message);
             isValid = false;
@@ -108,8 +108,7 @@ export class ValidationEngine {
    */
   private async validateRule(
     rule: ValidationRule,
-    value: any,
-    _field: FieldMetadata,
+    value: unknown,
   ): Promise<{ valid: boolean; message: string }> {
     switch (rule.type) {
       case ValidationRuleType.REQUIRED:
@@ -147,12 +146,13 @@ export class ValidationEngine {
         }
         return { valid: true, message: "" };
 
-      case ValidationRuleType.EMAIL:
+      case ValidationRuleType.EMAIL: {
         const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
         return {
           valid: emailPattern.test(String(value)),
           message: rule.message,
         };
+      }
 
       case ValidationRuleType.URL:
         try {
@@ -211,14 +211,17 @@ export class ValidationEngine {
   private getValueFromConfig(
     field: FieldMetadata,
     config: ExtendedProviderConfig,
-  ): any {
+  ): unknown {
     // 优先从 customFields 获取
-    if (config.customFields && config.customFields.hasOwnProperty(field.key)) {
+    if (
+      config.customFields &&
+      Object.prototype.hasOwnProperty.call(config.customFields, field.key)
+    ) {
       return config.customFields[field.key];
     }
 
     // 从配置对象的直接属性获取
-    return (config as any)[field.key];
+    return (config as unknown as Record<string, unknown>)[field.key];
   }
 
   /**
@@ -315,7 +318,7 @@ export class ValidationEngine {
 export const validationEngine = ValidationEngine.getInstance();
 
 // 导出便捷函数
-export const validateField = (field: FieldMetadata, value: any) =>
+export const validateField = (field: FieldMetadata, value: unknown) =>
   validationEngine.validateField(field, value);
 
 export const validateAll = (

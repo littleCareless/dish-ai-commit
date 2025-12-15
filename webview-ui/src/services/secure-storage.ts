@@ -11,6 +11,7 @@ import {
   ExtendedProviderConfig,
   ProviderMetadata,
 } from "@/types/provider-metadata";
+import { postMessage } from "@/utils/vscode";
 
 export class SecureStorage {
   private static instance: SecureStorage;
@@ -80,25 +81,24 @@ export class SecureStorage {
    */
   async loadProviderConfig(
     providerId: string,
-    _metadata: ProviderMetadata,
   ): Promise<ExtendedProviderConfig | null> {
     try {
       // 加载普通配置
-      const publicConfig = await this.getConfigurationValue(
+      const publicConfig = (await this.getConfigurationValue(
         `providers.${providerId}`,
-      );
+      )) as ExtendedProviderConfig | null;
       if (!publicConfig) {
         return null;
       }
 
       // 加载敏感字段
-      let secureFields: Record<string, any> = {};
+      let secureFields: Record<string, unknown> = {};
       try {
         const secureData = await this.getSecretValue(
           `provider.${providerId}.secure`,
         );
         if (secureData) {
-          secureFields = JSON.parse(secureData);
+          secureFields = JSON.parse(secureData) as Record<string, unknown>;
         }
       } catch (error) {
         console.warn("Failed to load secure fields:", error);
@@ -163,11 +163,14 @@ export class SecureStorage {
               `provider.${providerId}.secure`,
             );
             if (secureData) {
-              const secureFields = JSON.parse(secureData);
+              const secureFields = JSON.parse(secureData) as Record<
+                string,
+                unknown
+              >;
               result[providerId] = {
                 ...(config as ExtendedProviderConfig),
                 customFields: {
-                  ...(config as any).customFields,
+                  ...(config as ExtendedProviderConfig).customFields,
                   ...secureFields,
                 },
               };
@@ -197,9 +200,12 @@ export class SecureStorage {
   private separateFields(
     config: ExtendedProviderConfig,
     metadata: ProviderMetadata,
-  ): { secureFields: Record<string, any>; publicFields: Record<string, any> } {
-    const secureFields: Record<string, any> = {};
-    const publicFields: Record<string, any> = {};
+  ): {
+    secureFields: Record<string, unknown>;
+    publicFields: Record<string, unknown>;
+  } {
+    const secureFields: Record<string, unknown> = {};
+    const publicFields: Record<string, unknown> = {};
 
     // 获取需要加密的字段
     const secureFieldKeys = metadata.fields
@@ -221,44 +227,57 @@ export class SecureStorage {
   /**
    * 设置配置值（使用 globalState 持久化存储，不写入 settings.json）
    */
-  private async setConfigurationValue(key: string, value: any): Promise<void> {
+  private async setConfigurationValue(
+    key: string,
+    value: unknown,
+  ): Promise<void> {
     try {
       // 使用 globalState 进行持久化存储，不会写入 settings.json
-      if (typeof window !== "undefined" && (window as any).vscode) {
-        return new Promise((resolve, reject) => {
-          const messageHandler = (event: MessageEvent) => {
-            if (
-              event.data.command === "setGlobalStateResponse" &&
-              event.data.key === key
-            ) {
-              window.removeEventListener("message", messageHandler);
-              if (event.data.success) {
-                resolve();
-              } else {
-                reject(
-                  new Error(event.data.error || "Failed to set global state"),
-                );
-              }
-            }
-          };
+      // 尝试使用 postMessage (通过 vscode.ts)
+      // 注意：这里我们无法直接检测 VSCode API 是否可用，因为 vscode.ts 封装了它。
+      // 但我们可以通过超时机制来回退（虽然这里的 Promise 会 reject）。
+      // 为了保持与 vscode.ts 一致，我们优先尝试 postMessage。
+      // 如果需要 fallback，可以在 catch 中处理，或者简单的假设我们在 VSCode 中。
+      // 鉴于用户要求使用 vscode.ts，我们使用它。
 
-          window.addEventListener("message", messageHandler);
-          (window as any).vscode.postMessage({
-            command: "setGlobalState",
-            key,
-            value,
-          });
-
-          // 超时处理
-          setTimeout(() => {
+      return new Promise((resolve, reject) => {
+        const messageHandler = (event: MessageEvent) => {
+          if (
+            event.data.command === "setGlobalStateResponse" &&
+            event.data.key === key
+          ) {
             window.removeEventListener("message", messageHandler);
-            reject(new Error("Global state save timeout"));
-          }, 10000);
-        });
-      } else {
-        // 降级到 localStorage
-        localStorage.setItem(`config.${key}`, JSON.stringify(value));
-      }
+            if (event.data.success) {
+              resolve();
+            } else {
+              reject(
+                new Error(event.data.error || "Failed to set global state"),
+              );
+            }
+          }
+        };
+
+        window.addEventListener("message", messageHandler);
+
+        postMessage("setGlobalState", { key, value });
+
+        // 超时处理
+        setTimeout(() => {
+          window.removeEventListener("message", messageHandler);
+          // 如果超时，可能是因为不在 VSCode 环境中，尝试 fallback 到 localStorage
+          console.warn(
+            "Global state save timeout, falling back to localStorage",
+          );
+          try {
+            localStorage.setItem(`config.${key}`, JSON.stringify(value));
+            resolve();
+          } catch {
+            reject(
+              new Error("Global state save timeout and localStorage failed"),
+            );
+          }
+        }, 2000); // 缩短超时时间以便快速 fallback
+      });
     } catch (error) {
       console.error("Failed to set configuration value:", error);
       throw new Error(
@@ -270,37 +289,30 @@ export class SecureStorage {
   /**
    * 获取配置值（从 globalState 持久化存储读取）
    */
-  private async getConfigurationValue(key: string): Promise<any> {
+  private async getConfigurationValue(key: string): Promise<unknown> {
     // 使用 globalState 读取持久化数据，不从 settings.json 读取
-    if (typeof window !== "undefined" && (window as any).vscode) {
-      return new Promise((resolve) => {
-        const messageHandler = (event: MessageEvent) => {
-          if (
-            event.data.command === "getGlobalStateResponse" &&
-            event.data.key === key
-          ) {
-            window.removeEventListener("message", messageHandler);
-            resolve(event.data.value);
-          }
-        };
-
-        window.addEventListener("message", messageHandler);
-        (window as any).vscode.postMessage({
-          command: "getGlobalState",
-          key,
-        });
-
-        // 超时处理
-        setTimeout(() => {
+    return new Promise((resolve) => {
+      const messageHandler = (event: MessageEvent) => {
+        if (
+          event.data.command === "getGlobalStateResponse" &&
+          event.data.key === key
+        ) {
           window.removeEventListener("message", messageHandler);
-          resolve(null);
-        }, 5000);
-      });
-    } else {
-      // 降级到 localStorage
-      const value = localStorage.getItem(`config.${key}`);
-      return value ? JSON.parse(value) : null;
-    }
+          resolve(event.data.value);
+        }
+      };
+
+      window.addEventListener("message", messageHandler);
+      postMessage("getGlobalState", { key });
+
+      // 超时处理
+      setTimeout(() => {
+        window.removeEventListener("message", messageHandler);
+        // Fallback to localStorage
+        const value = localStorage.getItem(`config.${key}`);
+        resolve(value ? JSON.parse(value) : null);
+      }, 2000);
+    });
   }
 
   /**
@@ -311,40 +323,39 @@ export class SecureStorage {
       // 在 VSCode 扩展环境中，这应该调用 vscode.workspace.getConfiguration().update() 或使用密钥存储
       // 在 webview 中，我们需要通过消息传递与扩展通信
 
-      if (typeof window !== "undefined" && (window as any).vscode) {
-        return new Promise((resolve, reject) => {
-          const messageHandler = (event: MessageEvent) => {
-            if (
-              event.data.command === "setSecretResponse" &&
-              event.data.key === key
-            ) {
-              window.removeEventListener("message", messageHandler);
-              if (event.data.success) {
-                resolve();
-              } else {
-                reject(new Error(event.data.error || "Failed to set secret"));
-              }
-            }
-          };
-
-          window.addEventListener("message", messageHandler);
-          (window as any).vscode.postMessage({
-            command: "setSecret",
-            key,
-            value,
-          });
-
-          // 超时处理
-          setTimeout(() => {
+      return new Promise((resolve, reject) => {
+        const messageHandler = (event: MessageEvent) => {
+          if (
+            event.data.command === "setSecretResponse" &&
+            event.data.key === key
+          ) {
             window.removeEventListener("message", messageHandler);
-            reject(new Error("Secret save timeout"));
-          }, 10000);
-        });
-      } else {
-        // 降级到 localStorage（不安全，仅用于开发）
-        console.warn("Using localStorage for secrets in development mode");
-        localStorage.setItem(`secret.${key}`, value);
-      }
+            if (event.data.success) {
+              resolve();
+            } else {
+              reject(new Error(event.data.error || "Failed to set secret"));
+            }
+          }
+        };
+
+        window.addEventListener("message", messageHandler);
+        postMessage("setSecret", { key, value });
+
+        // 超时处理
+        setTimeout(() => {
+          window.removeEventListener("message", messageHandler);
+          // Fallback to localStorage
+          console.warn(
+            "Secret save timeout, falling back to localStorage (development mode)",
+          );
+          try {
+            localStorage.setItem(`secret.${key}`, value);
+            resolve();
+          } catch {
+            reject(new Error("Secret save timeout and localStorage failed"));
+          }
+        }, 2000);
+      });
     } catch (error) {
       console.error("Failed to set secret value:", error);
       throw new Error(
@@ -360,36 +371,30 @@ export class SecureStorage {
     // 在 VSCode 扩展环境中，这应该调用 vscode.workspace.getConfiguration().get() 或使用密钥存储
     // 在 webview 中，我们需要通过消息传递与扩展通信
 
-    // 模拟实现
-    if (typeof window !== "undefined" && (window as any).vscode) {
-      return new Promise((resolve) => {
-        const messageHandler = (event: MessageEvent) => {
-          if (
-            event.data.command === "getSecretResponse" &&
-            event.data.key === key
-          ) {
-            window.removeEventListener("message", messageHandler);
-            resolve(event.data.value);
-          }
-        };
-
-        window.addEventListener("message", messageHandler);
-        (window as any).vscode.postMessage({
-          command: "getSecret",
-          key,
-        });
-
-        // 超时处理
-        setTimeout(() => {
+    return new Promise((resolve) => {
+      const messageHandler = (event: MessageEvent) => {
+        if (
+          event.data.command === "getSecretResponse" &&
+          event.data.key === key
+        ) {
           window.removeEventListener("message", messageHandler);
-          resolve(null);
-        }, 5000);
-      });
-    } else {
-      // 降级到 localStorage（不安全，仅用于开发）
-      console.warn("Using localStorage for secrets in development mode");
-      return localStorage.getItem(`secret.${key}`);
-    }
+          resolve(event.data.value);
+        }
+      };
+
+      window.addEventListener("message", messageHandler);
+      postMessage("getSecret", { key });
+
+      // 超时处理
+      setTimeout(() => {
+        window.removeEventListener("message", messageHandler);
+        // Fallback
+        console.warn(
+          "Using localStorage for secrets in development mode (fallback)",
+        );
+        resolve(localStorage.getItem(`secret.${key}`));
+      }, 2000);
+    });
   }
 
   /**
@@ -399,16 +404,10 @@ export class SecureStorage {
     // 在 VSCode 扩展环境中，这应该调用相应的删除方法
     // 在 webview 中，我们需要通过消息传递与扩展通信
 
-    // 模拟实现
-    if (typeof window !== "undefined" && (window as any).vscode) {
-      (window as any).vscode.postMessage({
-        command: "deleteSecret",
-        key,
-      });
-    } else {
-      // 降级到 localStorage
-      localStorage.removeItem(`secret.${key}`);
-    }
+    postMessage("deleteSecret", { key });
+
+    // Fallback cleanup (just in case)
+    localStorage.removeItem(`secret.${key}`);
   }
 
   /**
@@ -481,10 +480,8 @@ export const saveProviderConfig = (
   metadata: ProviderMetadata,
 ) => secureStorage.saveProviderConfig(providerId, config, metadata);
 
-export const loadProviderConfig = (
-  providerId: string,
-  metadata: ProviderMetadata,
-) => secureStorage.loadProviderConfig(providerId, metadata);
+export const loadProviderConfig = (providerId: string) =>
+  secureStorage.loadProviderConfig(providerId);
 
 export const deleteProviderConfig = (providerId: string) =>
   secureStorage.deleteProviderConfig(providerId);

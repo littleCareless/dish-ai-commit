@@ -68,13 +68,16 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
   const providerMeta = ProviderRegistry[provider.id];
 
   // 4. 创建 schema 和类型（必须无条件调用）
-  const providerSchema = useMemo(
-    () =>
-      providerMeta
-        ? createProviderSchema(providerMeta.fields, t)
-        : z.object({}),
-    [providerMeta, t],
-  );
+  const providerSchema = useMemo(() => {
+    const baseSchema = providerMeta
+      ? createProviderSchema(providerMeta.fields, t)
+      : z.object({});
+
+    // 始终添加 model 字段作为可选字符串，以解决类型错误
+    return baseSchema.extend({
+      model: z.string().optional(),
+    });
+  }, [providerMeta, t]);
 
   type ProviderConfigFormData = z.infer<typeof providerSchema>;
 
@@ -109,6 +112,7 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
   const prevProviderIdRef = useRef<string | null>(null);
 
   // When config truly changes (e.g., switching profiles or providers), reset form
+  const configModel = (config as Record<string, unknown>).model;
   useEffect(() => {
     console.log(
       `[ProviderConfigForm] Config/Provider changed, resetting form for provider: ${provider.id}`,
@@ -121,10 +125,7 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
     prevConfigRef.current = config as Record<string, unknown>;
     prevProviderIdRef.current = provider.id;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [
-    provider.id,
-    (config as ExtendedProviderConfig & { model?: string }).model,
-  ]); // Depends on provider.id and model field
+  }, [provider.id, configModel]); // Depends on provider.id and model field
 
   // 7. 获取监听的值
   const watchedValues = form.watch();
@@ -259,7 +260,7 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
 
     // 关键修复：直接从 form 中获取最新值，而不是依赖 watchedValues
     // 这使得 fetchModels 函数本身更稳定，不会在每次输入时都重新创建
-    const currentValues = form.getValues();
+    const currentValues = form.getValues() as Record<string, unknown>;
     const apiKey = (currentValues.apiKey as string | undefined)?.trim();
     const baseUrl =
       (currentValues.baseUrl as string | undefined)?.trim() ||
@@ -321,7 +322,7 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
         error instanceof Error ? error.message : t("fetchModelsFailed"),
       );
     }
-  }, [provider.id, providerMeta, form]);
+  }, [provider.id, providerMeta, form, t]);
 
   const fetchModelsRef = useRef(fetchModels);
   fetchModelsRef.current = fetchModels;
@@ -345,6 +346,8 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
   }, [provider.id]);
 
   // 10.2 Auto-fetch when API Key or Base URL changes (Debounced)
+  const watchedApiKey = (watchedValues as Record<string, unknown>).apiKey;
+  const watchedBaseUrl = (watchedValues as Record<string, unknown>).baseUrl;
   useEffect(() => {
     if (!providerMeta?.features.streaming) return;
 
@@ -359,12 +362,7 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
     }, 1000); // 1 second debounce
 
     return () => clearTimeout(timer);
-  }, [
-    watchedValues.apiKey,
-    watchedValues.baseUrl,
-    watchedValues.baseUrl,
-    providerMeta?.features.streaming,
-  ]);
+  }, [watchedApiKey, watchedBaseUrl, providerMeta?.features.streaming]);
 
   // 11. 清理资源
   useEffect(() => {
