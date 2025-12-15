@@ -201,7 +201,7 @@ export class ModelValidator {
         }
 
         // 检查模型列表
-        const data = await response.json();
+        const data: any = await response.json();
         const models = data.data || [];
 
         if (models.length > 0) {

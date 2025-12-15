@@ -136,7 +136,7 @@ export class CloudflareWorkersAIProvider extends AbstractAIProvider {
       );
     }
 
-    const result = await response.json();
+    const result: any = await response.json();
     const content = result.result?.response || "";
 
     // Cloudflare does not provide token usage in the response

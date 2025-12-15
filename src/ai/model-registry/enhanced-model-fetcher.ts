@@ -3,7 +3,11 @@
  * 集成模型验证和智能匹配功能
  */
 
-import { ModelSpec, findModelSpec, getDefaultTokenLimits } from "@/ai/model-registry/model-specs";
+import {
+  ModelSpec,
+  findModelSpec,
+  getDefaultTokenLimits,
+} from "@/ai/model-registry/model-specs";
 import {
   ModelValidationResult,
   ModelValidator,
@@ -20,16 +24,16 @@ export interface EnhancedModelSpec extends ModelSpec {
     actualModelId?: string;
     proxyDetected?: boolean;
     validationMethod:
-    | "exact_match"
-    | "known_mapping"
-    | "fuzzy_match"
-    | "local_spec"
-    | "fallback";
+      | "exact_match"
+      | "known_mapping"
+      | "fuzzy_match"
+      | "local_spec"
+      | "fallback";
     reason?: string;
     suggestion?:
-    | "use_local_spec"
-    | "retry_with_mapping"
-    | "fallback_to_default";
+      | "use_local_spec"
+      | "retry_with_mapping"
+      | "fallback_to_default";
   };
   /** 代理信息 */
   proxyInfo?: ProxyDetectionResult;
@@ -152,11 +156,13 @@ export class EnhancedModelFetcher {
   /**
    * 从 profile 获取 provider 配置
    */
-  private async getProviderConfig(providerId: string): Promise<{ apiKey?: string; baseUrl?: string } | null> {
+  private async getProviderConfig(
+    providerId: string
+  ): Promise<{ apiKey?: string; baseUrl?: string } | null> {
     try {
       const profileManager = ProfileManagerService.getInstance();
       const profile = await profileManager.getProfileForMode();
-      
+
       if (!profile) {
         return null;
       }
@@ -164,7 +170,7 @@ export class EnhancedModelFetcher {
       if (profile.providers && typeof profile.providers === "object") {
         const providers = profile.providers as Record<string, any>;
         const providerConfig = providers[providerId];
-        
+
         if (providerConfig) {
           return {
             apiKey: providerConfig.apiKey,
@@ -172,7 +178,7 @@ export class EnhancedModelFetcher {
           };
         }
       }
-      
+
       // 兼容旧的配置结构
       if (providerId === "openai" && profile.apiProvider === "openai") {
         return {
@@ -180,7 +186,7 @@ export class EnhancedModelFetcher {
           baseUrl: profile.baseUrl,
         };
       }
-      
+
       return null;
     } catch (error) {
       console.warn(`Failed to get provider config for ${providerId}:`, error);
@@ -204,7 +210,7 @@ export class EnhancedModelFetcher {
       if (!providerConfig || !providerConfig.apiKey) {
         return null;
       }
-      
+
       const apiKey = providerConfig.apiKey;
       const baseUrl = providerConfig.baseUrl || "https://api.openai.com/v1";
 
@@ -232,7 +238,7 @@ export class EnhancedModelFetcher {
         );
       }
 
-      const modelsData = await response.json();
+      const modelsData: any = await response.json();
       const models = modelsData.data || [];
 
       if (models.length === 0) {
@@ -346,7 +352,7 @@ export class EnhancedModelFetcher {
       if (!providerConfig || !providerConfig.apiKey) {
         return null;
       }
-      
+
       const apiKey = providerConfig.apiKey;
 
       if (!apiKey) {
@@ -372,7 +378,7 @@ export class EnhancedModelFetcher {
         return null;
       }
 
-      const modelsData = await response.json();
+      const modelsData: any = await response.json();
       const models = modelsData.data || [];
       const targetModel = models.find((m: any) => m.id === model.id);
 
@@ -492,7 +498,8 @@ export class EnhancedModelFetcher {
 
     if (similarities[0]?.score > 0.6) {
       console.log(
-        `模糊匹配: ${requestedId} -> ${similarities[0].model.id
+        `模糊匹配: ${requestedId} -> ${
+          similarities[0].model.id
         } (相似度: ${similarities[0].score.toFixed(2)})`
       );
       return similarities[0].model;

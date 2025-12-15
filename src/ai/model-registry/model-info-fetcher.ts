@@ -3,7 +3,11 @@
  * 负责从各个AI提供商的API动态获取最新的模型信息
  */
 
-import { ModelSpec, findModelSpec, getDefaultTokenLimits } from "@/ai/model-registry/model-specs";
+import {
+  ModelSpec,
+  findModelSpec,
+  getDefaultTokenLimits,
+} from "@/ai/model-registry/model-specs";
 import { AIModel } from "@/ai/types";
 import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 
@@ -23,7 +27,7 @@ export class ModelInfoFetcher {
   private cache: ModelInfoCache = {};
   private readonly CACHE_TTL = 24 * 60 * 60 * 1000; // 24小时缓存
 
-  private constructor() { }
+  private constructor() {}
 
   public static getInstance(): ModelInfoFetcher {
     if (!ModelInfoFetcher.instance) {
@@ -133,11 +137,13 @@ export class ModelInfoFetcher {
   /**
    * 从 profile 获取 provider 配置
    */
-  private async getProviderConfig(providerId: string): Promise<{ apiKey?: string; baseUrl?: string } | null> {
+  private async getProviderConfig(
+    providerId: string
+  ): Promise<{ apiKey?: string; baseUrl?: string } | null> {
     try {
       const profileManager = ProfileManagerService.getInstance();
       const profile = await profileManager.getProfileForMode();
-      
+
       if (!profile) {
         return null;
       }
@@ -145,7 +151,7 @@ export class ModelInfoFetcher {
       if (profile.providers && typeof profile.providers === "object") {
         const providers = profile.providers as Record<string, any>;
         const providerConfig = providers[providerId];
-        
+
         if (providerConfig) {
           return {
             apiKey: providerConfig.apiKey,
@@ -153,7 +159,7 @@ export class ModelInfoFetcher {
           };
         }
       }
-      
+
       // 兼容旧的配置结构
       if (providerId === "openai" && profile.apiProvider === "openai") {
         return {
@@ -161,7 +167,7 @@ export class ModelInfoFetcher {
           baseUrl: profile.baseUrl,
         };
       }
-      
+
       return null;
     } catch (error) {
       console.warn(`Failed to get provider config for ${providerId}:`, error);
@@ -180,7 +186,7 @@ export class ModelInfoFetcher {
       if (!providerConfig || !providerConfig.apiKey) {
         return null;
       }
-      
+
       const apiKey = providerConfig.apiKey;
       const baseUrl = providerConfig.baseUrl || "https://api.openai.com/v1";
 
@@ -199,7 +205,7 @@ export class ModelInfoFetcher {
         return null;
       }
 
-      const modelData = await response.json();
+      const modelData: any = await response.json();
 
       // OpenAI API 通常不直接返回token限制，需要根据模型ID推断
       const tokenLimits = this.inferOpenAITokenLimits(model.id);
@@ -300,7 +306,7 @@ export class ModelInfoFetcher {
       if (!providerConfig || !providerConfig.apiKey) {
         return null;
       }
-      
+
       const apiKey = providerConfig.apiKey;
 
       if (!apiKey) {
@@ -322,7 +328,7 @@ export class ModelInfoFetcher {
         return null;
       }
 
-      const modelsData = await response.json();
+      const modelsData: any = await response.json();
       const modelInfo = modelsData.data?.find((m: any) => m.id === model.id);
 
       if (!modelInfo) {

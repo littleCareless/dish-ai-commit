@@ -1,34 +1,34 @@
-import { AnthropicAIProvider } from "@/ai/providers/anthropic-provider"
-import { AzureOpenAIProvider } from "@/ai/providers/azure-openai-provider"
-import { BaiduQianfanProvider } from "@/ai/providers/baidu-qianfan-provider"
-import { CloudflareWorkersAIProvider } from "@/ai/providers/cloudflare-workersai-provider"
-import { DashScopeProvider } from "@/ai/providers/dashscope-provider"
-import { DeepseekAIProvider } from "@/ai/providers/deepseek-provider"
-import { DoubaoProvider } from "@/ai/providers/doubao-provider"
-import { GeminiAIProvider } from "@/ai/providers/gemini-provider"
-import { GroqAIProvider } from "@/ai/providers/groq-provider"
-import { LMStudioProvider } from "@/ai/providers/lmstudio-provider"
-import { MistralAIProvider } from "@/ai/providers/mistral-provider"
-import { OllamaProvider } from "@/ai/providers/ollama-provider"
-import { OpenAICompatibleProvider } from "@/ai/providers/openai-compatible-provider"
-import { OpenAIProvider } from "@/ai/providers/openai-provider"
-import { OpenRouterProvider } from "@/ai/providers/openrouter-provider"
-import { SiliconFlowProvider } from "@/ai/providers/siliconflow-provider"
+import { AnthropicAIProvider } from "@/ai/providers/anthropic-provider";
+import { AzureOpenAIProvider } from "@/ai/providers/azure-openai-provider";
+import { BaiduQianfanProvider } from "@/ai/providers/baidu-qianfan-provider";
+import { CloudflareWorkersAIProvider } from "@/ai/providers/cloudflare-workersai-provider";
+import { DashScopeProvider } from "@/ai/providers/dashscope-provider";
+import { DeepseekAIProvider } from "@/ai/providers/deepseek-provider";
+import { DoubaoProvider } from "@/ai/providers/doubao-provider";
+import { GeminiAIProvider } from "@/ai/providers/gemini-provider";
+import { GroqAIProvider } from "@/ai/providers/groq-provider";
+import { LMStudioProvider } from "@/ai/providers/lmstudio-provider";
+import { MistralAIProvider } from "@/ai/providers/mistral-provider";
+import { OllamaProvider } from "@/ai/providers/ollama-provider";
+import { OpenAICompatibleProvider } from "@/ai/providers/openai-compatible-provider";
+import { OpenAIProvider } from "@/ai/providers/openai-provider";
+import { OpenRouterProvider } from "@/ai/providers/openrouter-provider";
+import { SiliconFlowProvider } from "@/ai/providers/siliconflow-provider";
 import { TogetherAIProvider } from "@/ai/providers/together-provider"; // Import TogetherAIProvider
-import { VertexAIProvider } from "@/ai/providers/vertexai-provider"
-import { VSCodeProvider } from "@/ai/providers/vscode-provider"
-import { XAIProvider } from "@/ai/providers/xai-provider"
-import { ZhipuAIProvider } from "@/ai/providers/zhipu-provider"
-import { AIModel, AIProvider as AIProviderInterface } from "@/ai/types"
+import { VertexAIProvider } from "@/ai/providers/vertexai-provider";
+import { VSCodeProvider } from "@/ai/providers/vscode-provider";
+import { XAIProvider } from "@/ai/providers/xai-provider";
+import { ZhipuAIProvider } from "@/ai/providers/zhipu-provider";
+import { AIModel, AIProvider as AIProviderInterface } from "@/ai/types";
 
 import {
   getProviderByEnumKey,
-  normalizeProviderType
-} from "@/config/provider-definitions"
-import { AIProvider } from "@/config/types"
-import { formatMessage } from "@/utils/i18n/localization-manager"
-import { PerplexityAIProvider } from "./providers/perplexity-provider"
-import { PremAIProvider } from "./providers/premai-provider"
+  normalizeProviderType,
+} from "@/config/provider-definitions";
+import { AIProvider } from "@/config/types";
+import { formatMessage } from "@/utils/i18n/localization-manager";
+import { PerplexityAIProvider } from "./providers/perplexity-provider";
+import { PremAIProvider } from "./providers/premai-provider";
 
 /**
  * AI提供者工厂类，负责创建和管理不同AI服务提供者的实例
@@ -100,13 +100,14 @@ export class AIProviderFactory {
     }
   }
 
-
-
   /**
    * 获取特定提供者的相关配置
    * @private
    */
-  private static getProviderSpecificConfig(providerType: string, config: any): any {
+  private static getProviderSpecificConfig(
+    providerType: string,
+    config: any
+  ): any {
     const lowerType = providerType.toLowerCase();
     const baseConfig = {
       provider: config.base?.provider,
@@ -162,8 +163,6 @@ export class AIProviderFactory {
     }
   }
 
-
-
   /**
    * 清除指定提供者的缓存实例
    * @private
@@ -210,77 +209,79 @@ export class AIProviderFactory {
 
     if (!provider) {
       switch (providerId) {
-        case 'anthropic':
+        case "anthropic":
           provider = new AnthropicAIProvider(config);
           break;
-        case 'openai':
+        case "openai":
           provider = new OpenAIProvider(config);
           break;
-        case 'ollama':
+        case "ollama":
           provider = new OllamaProvider(config);
           break;
-        case 'vscode':
+        case "vscode":
           provider = new VSCodeProvider(config);
           break;
-        case 'zhipu':
+        case "zhipu":
           provider = new ZhipuAIProvider(config);
           break;
-        case 'dashscope':
+        case "dashscope":
           provider = new DashScopeProvider(config);
           break;
-        case 'doubao':
+        case "doubao":
           provider = new DoubaoProvider(config);
           break;
-        case 'gemini':
+        case "gemini":
           provider = new GeminiAIProvider(config);
           break;
-        case 'deepseek':
+        case "deepseek":
           provider = new DeepseekAIProvider(config);
           break;
-        case 'siliconflow':
+        case "siliconflow":
           provider = new SiliconFlowProvider(config);
           break;
-        case 'openrouter':
+        case "openrouter":
           provider = new OpenRouterProvider(config);
           break;
-        case 'premai':
+        case "premai":
           provider = new PremAIProvider(config);
           break;
-        case 'together':
+        case "together":
           provider = new TogetherAIProvider(config);
           break;
-        case 'xai':
+        case "xai":
           provider = new XAIProvider(config);
           break;
-        case 'azure-openai':
+        case "azure-openai":
           provider = new AzureOpenAIProvider(config);
           break;
-        case 'cloudflare':
+        case "cloudflare":
           provider = new CloudflareWorkersAIProvider(config);
           break;
-        case 'vertexai':
+        case "vertexai":
           provider = new VertexAIProvider(config);
           break;
-        case 'groq':
+        case "groq":
           provider = new GroqAIProvider(config);
           break;
-        case 'mistral':
+        case "mistral":
           provider = new MistralAIProvider(config);
           break;
-        case 'baidu-qianfan':
+        case "baidu-qianfan":
           provider = new BaiduQianfanProvider(config);
           break;
-        case 'lmstudio':
+        case "lmstudio":
           provider = new LMStudioProvider(config);
           break;
-        case 'openai-compatible':
+        case "openai-compatible":
           provider = new OpenAICompatibleProvider(config);
           break;
-        case 'perplexity':
+        case "perplexity":
           provider = new PerplexityAIProvider(config);
           break;
         default:
-          throw new Error(formatMessage("provider.type.unknown", [providerType]));
+          throw new Error(
+            formatMessage("provider.type.unknown", [providerType])
+          );
       }
 
       // 只有在没有 config 的情况下才缓存 (兼容旧逻辑)
@@ -291,7 +292,7 @@ export class AIProviderFactory {
     }
 
     // 注入全局配置 (如果 provider 支持)
-    if (provider && config && typeof provider.setGlobalConfig === 'function') {
+    if (provider && config && typeof provider.setGlobalConfig === "function") {
       provider.setGlobalConfig(config);
     }
 
