@@ -1,19 +1,19 @@
 import * as vscode from "vscode";
+import { AIProviderFactory } from "../../ai/ai-provider-factory";
+import { AIProvider } from "../../ai/types";
+import { CONFIG_SCHEMA } from "../../config/config-schema";
+import { isConfigValue } from "../../config/utils/config-validation";
+import {
+  WORKSPACE_CONFIG_PATHS,
+  WORKSPACE_CONFIG_SCHEMA,
+} from "../../config/workspace-config-schema";
 import {
   EmbeddingService,
   EmbeddingServiceError,
 } from "../../core/indexing/embedding-service";
 import { EmbeddingServiceManager } from "../../core/indexing/embedding-service-manager";
-import { AIProvider } from "../../ai/types";
-import { AIProviderFactory } from "../../ai/ai-provider-factory";
-import { stateManager } from "../../utils/state/state-manager";
-import {
-  WORKSPACE_CONFIG_SCHEMA,
-  WORKSPACE_CONFIG_PATHS,
-} from "../../config/workspace-config-schema";
-import { CONFIG_SCHEMA } from "../../config/config-schema";
-import { isConfigValue } from "../../config/utils/config-validation";
 import { notify } from "../../utils/notification/notification-manager";
+import { stateManager } from "../../utils/state/state-manager";
 
 export class SettingsViewMessageHandler {
   private readonly _extensionId: string;
@@ -196,7 +196,8 @@ export class SettingsViewMessageHandler {
                   `Qdrant URL changed from "${oldValue}" to "${setting.value}". Reinitializing EmbeddingService.`
                 );
                 this._embeddingService =
-                  EmbeddingServiceManager.getInstance().reinitialize() || null;
+                  (await EmbeddingServiceManager.getInstance().reinitialize()) ||
+                  null;
               }
             }
           });

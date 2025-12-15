@@ -1,14 +1,19 @@
-import { DISH_CONFIG_PREFIX } from "@/config/constants"
-import { ExtensionConfiguration } from "@/config/types"
-import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service"
-import { PromptDetail, PromptKey, PromptSource, SYSTEM_GENERATED_PROMPTS } from "@/types/prompts"
-import { Logger } from "@/utils/logger"
-import { stateManager } from "@/utils/state/state-manager"
-import * as fs from "fs"
-import * as path from "path"
-import * as vscode from "vscode"
+import { DISH_CONFIG_PREFIX } from "@/config/constants";
+import { ExtensionConfiguration } from "@/config/types";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
+import {
+  PromptDetail,
+  PromptKey,
+  PromptSource,
+  SYSTEM_GENERATED_PROMPTS,
+} from "@/types/prompts";
+import { Logger } from "@/utils/logger";
+import { stateManager } from "@/utils/state/state-manager";
+import * as fs from "fs";
+import * as path from "path";
+import * as vscode from "vscode";
 
-const logger = Logger.getInstance("Dish AI Commit Gen")
+const logger = Logger.getInstance("Dish AI Commit Gen");
 
 export class PromptManagerService {
   private static instance: PromptManagerService;
@@ -31,18 +36,20 @@ export class PromptManagerService {
 
     // __dirname 在 VSCode 扩展中指向源码目录，但实际运行的是打包后的代码
     // 使用扩展的实际安装路径来定位 prompt 目录
-    const extensionPath = vscode.extensions.getExtension("littleCareless.dish-ai-commit")?.extensionPath || __dirname;
+    const extensionPath =
+      vscode.extensions.getExtension("littleCareless.dish-ai-commit")
+        ?.extensionPath || __dirname;
     const promptDir = path.join(extensionPath, "dist", "prompt");
 
     logger.debug("加载默认 prompts", {
-      data: { extensionPath, promptDir }
+      data: { extensionPath, promptDir },
     });
 
     try {
       const files = await fs.promises.readdir(promptDir);
 
       logger.debug("读取 prompt 目录", {
-        data: { fileCount: files.length }
+        data: { fileCount: files.length },
       });
 
       const profileService = ProfileManagerService.getInstance();
@@ -68,7 +75,8 @@ export class PromptManagerService {
             enableBody: featureSettings.enableBody,
           },
           commitMessage: {
-            useRecentCommitsAsReference: featureSettings.useRecentCommitsAsReference,
+            useRecentCommitsAsReference:
+              featureSettings.useRecentCommitsAsReference,
           },
         },
       } as ExtensionConfiguration;
@@ -91,41 +99,57 @@ export class PromptManagerService {
                   file,
                   keys: Object.keys(module),
                   defaultType: typeof module.default,
-                  defaultIsFunction: typeof module.default === "function"
-                }
+                  defaultIsFunction: typeof module.default === "function",
+                },
               });
 
               let promptContent: string | undefined;
 
               // Helper to execute prompt function
-              const executePromptFunction = async (func: any, funcName: string) => {
+              const executePromptFunction = async (
+                func: any,
+                funcName: string
+              ) => {
                 try {
-                  logger.debug(`Attempting to execute prompt function: ${funcName}`, {
-                    data: { file, funcName, length: func.length }
-                  });
+                  logger.debug(
+                    `Attempting to execute prompt function: ${funcName}`,
+                    {
+                      data: { file, funcName, length: func.length },
+                    }
+                  );
 
                   let result: unknown;
                   if (func.length === 0) {
                     result = await Promise.resolve(func());
                   } else {
-                    result = await Promise.resolve(func({ config: extensionConfig, vcsType: "git" }));
+                    result = await Promise.resolve(
+                      func({ config: extensionConfig, vcsType: "git" })
+                    );
                   }
 
                   logger.debug(`Prompt function ${funcName} executed`, {
-                    data: { file, resultType: typeof result, resultLength: typeof result === 'string' ? result.length : 'N/A' }
+                    data: {
+                      file,
+                      resultType: typeof result,
+                      resultLength:
+                        typeof result === "string" ? result.length : "N/A",
+                    },
                   });
 
                   if (typeof result === "string" && result.length > 0) {
                     return result;
                   } else {
-                    logger.warn(`Prompt function ${funcName} returned invalid result`, {
-                      data: { file, type: typeof result }
-                    });
+                    logger.warn(
+                      `Prompt function ${funcName} returned invalid result`,
+                      {
+                        data: { file, type: typeof result },
+                      }
+                    );
                   }
                 } catch (error) {
                   logger.warn(`Failed to execute prompt function ${funcName}`, {
                     error: error as Error,
-                    data: { file }
+                    data: { file },
                   });
                 }
                 return undefined;
@@ -133,7 +157,10 @@ export class PromptManagerService {
 
               // 策略1: 优先查找 default export（如果是函数）
               if (module.default && typeof module.default === "function") {
-                promptContent = await executePromptFunction(module.default, "default");
+                promptContent = await executePromptFunction(
+                  module.default,
+                  "default"
+                );
               }
 
               // 策略1.5: 如果 default export 失败，尝试查找与文件名匹配的具名导出
@@ -142,23 +169,33 @@ export class PromptManagerService {
                 // generate-commit -> generateCommitSystem (special case mapping in getPromptKeyFromFile)
                 // Let's try to find a named export that matches the promptKey (camelCase)
                 const expectedExportName = promptKey;
-                if (expectedExportName && typeof module[expectedExportName] === "function") {
-                  logger.debug(`Fallback: Found named export matching prompt key`, {
-                    data: { file, exportName: expectedExportName }
-                  });
-                  promptContent = await executePromptFunction(module[expectedExportName], expectedExportName);
+                if (
+                  expectedExportName &&
+                  typeof module[expectedExportName] === "function"
+                ) {
+                  logger.debug(
+                    `Fallback: Found named export matching prompt key`,
+                    {
+                      data: { file, exportName: expectedExportName },
+                    }
+                  );
+                  promptContent = await executePromptFunction(
+                    module[expectedExportName],
+                    expectedExportName
+                  );
                 }
               }
 
               // 策略2: 如果 default export 失败，查找以 _TEMPLATE 结尾的导出常量
               if (!promptContent) {
                 const templateKey = Object.keys(module).find(
-                  (key) => key.endsWith("_TEMPLATE") && typeof module[key] === "string"
+                  (key) =>
+                    key.endsWith("_TEMPLATE") && typeof module[key] === "string"
                 );
                 if (templateKey) {
                   promptContent = module[templateKey] as string;
                   logger.debug("使用 _TEMPLATE 常量作为模板", {
-                    data: { file, key: promptKey, templateKey }
+                    data: { file, key: promptKey, templateKey },
                   });
                 }
               }
@@ -171,7 +208,7 @@ export class PromptManagerService {
                 if (templateConstant) {
                   promptContent = templateConstant;
                   logger.debug("使用模块中的字符串常量作为模板", {
-                    data: { file, key: promptKey }
+                    data: { file, key: promptKey },
                   });
                 }
               }
@@ -180,33 +217,34 @@ export class PromptManagerService {
               if (promptContent) {
                 this.defaultPrompts.set(promptKey, promptContent);
                 logger.debug("加载 prompt 成功", {
-                  data: { key: promptKey, contentLength: promptContent.length }
+                  data: { key: promptKey, contentLength: promptContent.length },
                 });
               } else {
                 logger.warn(`未找到有效的 prompt 函数或模板`, {
-                  data: { file, key: promptKey, moduleKeys: Object.keys(module) }
+                  data: {
+                    file,
+                    key: promptKey,
+                    moduleKeys: Object.keys(module),
+                  },
                 });
               }
             } catch (error) {
-              logger.logError(
-                error as Error,
-                `加载 prompt 失败: ${file}`,
-                { operation: "loadDefaultPrompts", data: { file } }
-              );
+              logger.logError(error as Error, `加载 prompt 失败: ${file}`, {
+                operation: "loadDefaultPrompts",
+                data: { file },
+              });
             }
           }
         }
       }
 
       logger.logOperationEnd("loadDefaultPrompts", undefined, {
-        data: { loadedCount: this.defaultPrompts.size }
+        data: { loadedCount: this.defaultPrompts.size },
       });
     } catch (error) {
-      logger.logError(
-        error as Error,
-        "读取默认 prompts 目录失败",
-        { operation: "loadDefaultPrompts" }
-      );
+      logger.logError(error as Error, "读取默认 prompts 目录失败", {
+        operation: "loadDefaultPrompts",
+      });
     }
   }
 
@@ -231,7 +269,9 @@ export class PromptManagerService {
     // 匹配 export const xxx = `...` 或 export function xxx() { return `...` }
     const match =
       content.match(/export const \w+ = `([\s\S]*)`;/) ||
-      content.match(/export function \w+\s*\([^)]*\)\s*\{[\s\S]*return\s*`([\s\S]*)`[\s\S]*\}/);
+      content.match(
+        /export function \w+\s*\([^)]*\)\s*\{[\s\S]*return\s*`([\s\S]*)`[\s\S]*\}/
+      );
     return match ? (match[1] || match[2]).trim() : null;
   }
 
@@ -242,9 +282,12 @@ export class PromptManagerService {
    * 2. Active Prompt Configuration (User selected)
    * 3. Default Prompt
    */
-  public async getActivePromptContent(key: string, scope?: vscode.ConfigurationScope): Promise<string> {
+  public async getActivePromptContent(
+    key: string,
+    scope?: vscode.ConfigurationScope
+  ): Promise<string> {
     logger.debug("获取活动 prompt 内容", {
-      data: { key, hasScope: !!scope }
+      data: { key, hasScope: !!scope },
     });
 
     await this.initializationPromise;
@@ -254,11 +297,13 @@ export class PromptManagerService {
     let targetKey = key;
     if (key === PromptKey.GenerateCommitSystem) {
       // 从 globalState 获取 activePromptKey
-      const activeKey = stateManager.getGlobal<string>(`${DISH_CONFIG_PREFIX}_active_prompt_key`);
+      const activeKey = stateManager.getGlobal<string>(
+        `${DISH_CONFIG_PREFIX}_active_prompt_key`
+      );
       if (activeKey && activeKey !== key) {
         targetKey = activeKey;
         logger.debug("使用重定向的 prompt key", {
-          data: { originalKey: key, targetKey: activeKey }
+          data: { originalKey: key, targetKey: activeKey },
         });
       }
     }
@@ -269,11 +314,16 @@ export class PromptManagerService {
       : vscode.workspace.workspaceFolders?.[0];
 
     if (workspaceFolder) {
-      const dishPromptPath = path.join(workspaceFolder.uri.fsPath, ".dish", "prompts", `${targetKey}.md`);
+      const dishPromptPath = path.join(
+        workspaceFolder.uri.fsPath,
+        ".dish",
+        "prompts",
+        `${targetKey}.md`
+      );
       try {
         if (fs.existsSync(dishPromptPath)) {
           logger.debug("从项目文件读取 prompt", {
-            data: { key: targetKey, path: dishPromptPath }
+            data: { key: targetKey, path: dishPromptPath },
           });
           const content = await fs.promises.readFile(dishPromptPath, "utf-8");
           return content;
@@ -281,7 +331,7 @@ export class PromptManagerService {
       } catch (error) {
         logger.warn(`读取项目 prompt 文件失败`, {
           error: error instanceof Error ? error : new Error(String(error)),
-          data: { path: dishPromptPath }
+          data: { path: dishPromptPath },
         });
       }
     }
@@ -308,8 +358,8 @@ export class PromptManagerService {
         key: targetKey,
         source: detail.source,
         isCustomized: detail.isCustomized,
-        contentLength: detail.content.length
-      }
+        contentLength: detail.content.length,
+      },
     });
 
     return detail.content;
@@ -352,7 +402,7 @@ export class PromptManagerService {
       }
       // 如果配置中存储的是对象，记录警告并回退到默认值
       logger.warn(`配置中的 prompt ${key} 不是字符串类型，将使用默认值`, {
-        data: { key, valueType: typeof value, value }
+        data: { key, valueType: typeof value, value },
       });
       return "";
     };
@@ -390,83 +440,88 @@ export class PromptManagerService {
     target: vscode.ConfigurationTarget
   ) {
     logger.logOperationStart("updatePrompt", {
-      data: { key, contentLength: content.length, target }
+      data: { key, contentLength: content.length, target },
     });
 
     try {
-      const config = vscode.workspace.getConfiguration("dish-ai-commit.prompts");
+      const config = vscode.workspace.getConfiguration(
+        "dish-ai-commit.prompts"
+      );
       await config.update(key, content, target);
 
       logger.logOperationEnd("updatePrompt", undefined, {
-        data: { key, target }
+        data: { key, target },
       });
     } catch (error) {
-      logger.logError(
-        error as Error,
-        `更新 prompt 失败: ${key}`,
-        { operation: "updatePrompt", data: { key, target } }
-      );
+      logger.logError(error as Error, `更新 prompt 失败: ${key}`, {
+        operation: "updatePrompt",
+        data: { key, target },
+      });
       throw error;
     }
   }
 
   public async deletePrompt(key: string, target: vscode.ConfigurationTarget) {
     logger.logOperationStart("deletePrompt", {
-      data: { key, target }
+      data: { key, target },
     });
 
     try {
-      const config = vscode.workspace.getConfiguration("dish-ai-commit.prompts");
+      const config = vscode.workspace.getConfiguration(
+        "dish-ai-commit.prompts"
+      );
       await config.update(key, undefined, target);
 
       logger.logOperationEnd("deletePrompt", undefined, {
-        data: { key, target }
+        data: { key, target },
       });
     } catch (error) {
-      logger.logError(
-        error as Error,
-        `删除 prompt 失败: ${key}`,
-        { operation: "deletePrompt", data: { key, target } }
-      );
+      logger.logError(error as Error, `删除 prompt 失败: ${key}`, {
+        operation: "deletePrompt",
+        data: { key, target },
+      });
       throw error;
     }
   }
 
   public async resetPrompt(key: string, target: vscode.ConfigurationTarget) {
     logger.logOperationStart("resetPrompt", {
-      data: { key, target }
+      data: { key, target },
     });
 
     try {
-      const config = vscode.workspace.getConfiguration("dish-ai-commit.prompts");
+      const config = vscode.workspace.getConfiguration(
+        "dish-ai-commit.prompts"
+      );
       await config.update(key, undefined, target);
 
       logger.logOperationEnd("resetPrompt", undefined, {
-        data: { key, target }
+        data: { key, target },
       });
     } catch (error) {
-      logger.logError(
-        error as Error,
-        `重置 prompt 失败: ${key}`,
-        { operation: "resetPrompt", data: { key, target } }
-      );
+      logger.logError(error as Error, `重置 prompt 失败: ${key}`, {
+        operation: "resetPrompt",
+        data: { key, target },
+      });
       throw error;
     }
   }
 
   public async resetAllPrompts(target: vscode.ConfigurationTarget) {
     logger.logOperationStart("resetAllPrompts", {
-      data: { target }
+      data: { target },
     });
 
     try {
       const config = vscode.workspace.getConfiguration("dish-ai-commit");
-      const promptsConfig = vscode.workspace.getConfiguration("dish-ai-commit.prompts");
+      const promptsConfig = vscode.workspace.getConfiguration(
+        "dish-ai-commit.prompts"
+      );
 
       const allKeys = promptsConfig.keys();
 
       logger.debug("重置所有 prompts", {
-        data: { keyCount: allKeys.length }
+        data: { keyCount: allKeys.length },
       });
 
       for (const key of allKeys) {
@@ -477,14 +532,13 @@ export class PromptManagerService {
       await config.update("prompts", undefined, target);
 
       logger.logOperationEnd("resetAllPrompts", undefined, {
-        data: { target, resetCount: allKeys.length }
+        data: { target, resetCount: allKeys.length },
       });
     } catch (error) {
-      logger.logError(
-        error as Error,
-        "重置所有 prompts 失败",
-        { operation: "resetAllPrompts", data: { target } }
-      );
+      logger.logError(error as Error, "重置所有 prompts 失败", {
+        operation: "resetAllPrompts",
+        data: { target },
+      });
       throw error;
     }
   }
@@ -501,15 +555,22 @@ export class PromptManagerService {
     }
 
     // 2. 读取并合并工作区和全局的 prompts
-    const promptsConfig = vscode.workspace.getConfiguration("dish-ai-commit.prompts", scope);
+    const promptsConfig = vscode.workspace.getConfiguration(
+      "dish-ai-commit.prompts",
+      scope
+    );
     const inspection = promptsConfig.inspect<any>("");
     const workspaceConfig = inspection?.workspaceValue || {};
     const globalConfig = inspection?.globalValue || {};
 
-    const allCustomKeys = [...Object.keys(workspaceConfig), ...Object.keys(globalConfig)];
+    const allCustomKeys = [
+      ...Object.keys(workspaceConfig),
+      ...Object.keys(globalConfig),
+    ];
 
     for (const key of allCustomKeys) {
-      if (!allPrompts[key]) { // 只添加新的、非默认的 prompts
+      if (!allPrompts[key]) {
+        // 只添加新的、非默认的 prompts
         allPrompts[key] = this.getPromptDetail(key, scope);
       }
     }
@@ -521,21 +582,28 @@ export class PromptManagerService {
       : vscode.workspace.workspaceFolders?.[0];
 
     if (workspaceFolder) {
-      const dishPromptsDir = path.join(workspaceFolder.uri.fsPath, ".dish", "prompts");
+      const dishPromptsDir = path.join(
+        workspaceFolder.uri.fsPath,
+        ".dish",
+        "prompts"
+      );
       try {
         if (fs.existsSync(dishPromptsDir)) {
           const files = await fs.promises.readdir(dishPromptsDir);
           for (const file of files) {
             if (file.endsWith(".md")) {
               const key = path.parse(file).name;
-              const content = await fs.promises.readFile(path.join(dishPromptsDir, file), "utf-8");
+              const content = await fs.promises.readFile(
+                path.join(dishPromptsDir, file),
+                "utf-8"
+              );
 
               // Override or add
               allPrompts[key] = {
                 content,
                 source: "project", // New source type, need to update types
                 isCustomized: true,
-                isNew: !this.defaultPrompts.has(key as PromptKey)
+                isNew: !this.defaultPrompts.has(key as PromptKey),
               };
             }
           }
@@ -543,14 +611,14 @@ export class PromptManagerService {
       } catch (error) {
         logger.warn("读取 .dish/prompts 目录失败", {
           error: error instanceof Error ? error : new Error(String(error)),
-          data: { dishPromptsDir }
+          data: { dishPromptsDir },
         });
         // Ignore error if .dish/prompts doesn't exist or can't be read
       }
     }
 
     logger.debug("获取所有 prompts 完成", {
-      data: { totalCount: Object.keys(allPrompts).length }
+      data: { totalCount: Object.keys(allPrompts).length },
     });
 
     return allPrompts;

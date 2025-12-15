@@ -1,7 +1,7 @@
-import { AIProviderFactory } from "@/ai/ai-provider-factory"
-import { ModelPickerService } from "@/services/core/model-picker-service"
-import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service"
-import { getMessage } from "@/utils/i18n"
+import { AIProviderFactory } from "@/ai/ai-provider-factory";
+import { ModelPickerService } from "@/services/core/model-picker-service";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
+import { getMessage } from "@/utils/i18n";
 
 export class ModelConfigurationManager {
   public async getModelAndProvider() {
@@ -19,7 +19,7 @@ export class ModelConfigurationManager {
     if (profile.providers && typeof profile.providers === "object") {
       const providers = profile.providers as Record<string, any>;
       const activeProviderId = profile.activeProviderId;
-      
+
       if (activeProviderId && providers[activeProviderId]) {
         provider = activeProviderId;
         model = providers[activeProviderId].model;
@@ -52,7 +52,11 @@ export class ModelConfigurationManager {
 
     let aiProvider = AIProviderFactory.getProvider(provider, providerConfig);
     // 确保设置全局配置（包含 preferences 等）
-    if (aiProvider && typeof aiProvider.setGlobalConfig === 'function' && providerConfig) {
+    if (
+      aiProvider &&
+      typeof aiProvider.setGlobalConfig === "function" &&
+      providerConfig
+    ) {
       const featureSettings = profileManager.getFeatureSettings();
       const fullConfig = {
         ...providerConfig,
@@ -93,19 +97,28 @@ export class ModelConfigurationManager {
     // 🔥 关键修复：从更新后的 profile 中获取 provider 配置并传递
     const updatedProfile = await profileManager.getProfileForMode();
     let updatedProviderConfig: any = undefined;
-    if (updatedProfile?.providers && typeof updatedProfile.providers === "object") {
+    if (
+      updatedProfile?.providers &&
+      typeof updatedProfile.providers === "object"
+    ) {
       const providers = updatedProfile.providers as Record<string, any>;
       updatedProviderConfig = providers[provider];
     }
 
     aiProvider = AIProviderFactory.getProvider(provider, updatedProviderConfig);
     // 确保设置全局配置（包含 preferences 等）
-    if (aiProvider && typeof aiProvider.setGlobalConfig === 'function' && updatedProviderConfig && updatedProfile) {
+    if (
+      aiProvider &&
+      typeof aiProvider.setGlobalConfig === "function" &&
+      updatedProviderConfig &&
+      updatedProfile
+    ) {
       const featureSettings = profileManager.getFeatureSettings();
       const fullConfig = {
         ...updatedProviderConfig,
         base: {
-          language: updatedProfile.preferences?.language || "Simplified Chinese",
+          language:
+            updatedProfile.preferences?.language || "Simplified Chinese",
         },
         features: {
           commitFormat: {
@@ -158,10 +171,13 @@ export class ModelConfigurationManager {
       ...profile,
       updatedAt: new Date().toISOString(),
     };
-    
-    if (updatedProfile.providers && typeof updatedProfile.providers === "object") {
+
+    if (
+      updatedProfile.providers &&
+      typeof updatedProfile.providers === "object"
+    ) {
       const providers = { ...updatedProfile.providers } as Record<string, any>;
-      
+
       // 如果选择的 provider 已存在，更新其 model（保留其他配置）
       if (providers[modelSelection.provider]) {
         providers[modelSelection.provider] = {
@@ -173,9 +189,11 @@ export class ModelConfigurationManager {
         // 从 AIProviderFactory 获取 provider 信息
         // 注意：这里只是获取 provider 的默认配置，不需要实际的 API key
         try {
-          const aiProvider = AIProviderFactory.getProvider(modelSelection.provider);
+          const aiProvider = AIProviderFactory.getProvider(
+            modelSelection.provider
+          );
           const providerConfig = aiProvider.getConfig();
-          
+
           // 创建完整的 provider 配置
           providers[modelSelection.provider] = {
             id: modelSelection.provider,
@@ -196,7 +214,7 @@ export class ModelConfigurationManager {
           };
         }
       }
-      
+
       // 设置 activeProviderId
       updatedProfile.activeProviderId = modelSelection.provider;
       updatedProfile.providers = providers;
