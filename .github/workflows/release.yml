@@ -21,6 +21,23 @@ on:
     tags:
       - "v*.*.*"
   workflow_dispatch:
+    inputs:
+      publish:
+        description: "是否执行真实发布（默认仅打包与验证）"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "false"
+          - "true"
+      dry_run_publish:
+        description: "手动触发时是否对发布步骤做 dry-run（仅在未真实发布时生效）"
+        required: false
+        default: "true"
+        type: choice
+        options:
+          - "false"
+          - "true"
 
 jobs:
   release:
@@ -51,8 +68,44 @@ jobs:
           git tag -d $(git tag -l) 2>/dev/null || true
           git fetch --tags
 
-      - name: Install dependencies
-        run: npm ci --legacy-peer-deps
+      - name: Install workspace dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Install extension dependencies for VSIX (src)
+        run: pnpm --filter dish-ai-commit install --frozen-lockfile
+
+      - name: Compute publish flags
+        id: flags
+        run: |
+          IS_TAG=false
+          if [[ "${GITHUB_REF}" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            IS_TAG=true
+          fi
+
+          INPUT_PUBLISH="${{ github.event.inputs.publish || 'false' }}"
+          INPUT_DRYRUN="${{ github.event.inputs.dry_run_publish || 'true' }}"
+
+          if [[ "${GITHUB_EVENT_NAME}" != "workflow_dispatch" ]]; then
+            INPUT_PUBLISH="false"
+            INPUT_DRYRUN="true"
+          fi
+
+          DO_PUBLISH=false
+          DO_DRYRUN=false
+
+          if [[ "$IS_TAG" == "true" ]]; then
+            DO_PUBLISH=true
+          elif [[ "$INPUT_PUBLISH" == "true" ]]; then
+            DO_PUBLISH=true
+          fi
+
+          if [[ "$DO_PUBLISH" != "true" && "$INPUT_DRYRUN" == "true" ]]; then
+            DO_DRYRUN=true
+          fi
+
+          echo "is_tag=$IS_TAG" >> $GITHUB_OUTPUT
+          echo "do_publish=$DO_PUBLISH" >> $GITHUB_OUTPUT
+          echo "do_dry_run=$DO_DRYRUN" >> $GITHUB_OUTPUT
 
       # =================================================================
       # 1. 代码质量保证 (Code Quality Assurance)
@@ -60,32 +113,44 @@ jobs:
       - name: Lint code
         run: pnpm lint
 
-      - name: Build and Package
+      - name: Build and Package (turbo)
         id: package
+        env:
+          TURBO_TELEMETRY_DISABLED: "1"
         run: |
           mkdir -p release-artifacts
-          pnpm build
-          pnpm vsix
+          pnpm turbo run package --filter dish-ai-commit --filter @dish-ai-commit/webview-ui --log-order grouped --output-logs new-only
 
-          # Move VSIX to a known location
-          mv src/*.vsix release-artifacts/extension.vsix
-
-          VSIX_FILE="release-artifacts/extension.vsix"
+          VSIX_FILE=$(ls src/*.vsix | head -n 1 || true)
 
           # Verify VSIX existence (Fail-fast)
-          if [ ! -f "$VSIX_FILE" ]; then
-            echo "::error::VSIX file not found at $VSIX_FILE"
+          if [ -z "$VSIX_FILE" ] || [ ! -f "$VSIX_FILE" ]; then
+            echo "::error::VSIX file not found under src/"
             exit 1
           fi
 
-          echo "Found VSIX: $VSIX_FILE"
-          echo "vsix_path=$VSIX_FILE" >> $GITHUB_OUTPUT
+          # Move VSIX to a known location
+          mv "$VSIX_FILE" release-artifacts/extension.vsix
+
+          echo "Found VSIX: release-artifacts/extension.vsix"
+          echo "vsix_path=release-artifacts/extension.vsix" >> $GITHUB_OUTPUT
+
+      - name: Dry-run publish (vsce/ovsx)
+        if: steps.flags.outputs.do_dry_run == 'true'
+        env:
+          VSIX_FILE: ${{ steps.package.outputs.vsix_path }}
+        run: |
+          echo "Dry-run vsce publish..."
+          pnpm dlx vsce publish --packagePath "$VSIX_FILE" --pre-release --dry-run
+          echo "Dry-run ovsx publish（模拟执行，若不支持 --dry-run 则跳过）"
+          pnpm dlx ovsx publish "$VSIX_FILE" --pre-release --skip-duplicate --pat "${OVSX_PAT:-dummy}" --dry-run 2>/dev/null || echo "ovsx dry-run skipped"
 
       # =================================================================
       # 2. 确定发布类型 (Determine Release Type)
       # =================================================================
       - name: Determine if pre-release
         id: determine_prerelease
+        if: steps.flags.outputs.do_publish == 'true'
         run: |
           # 安全地获取远程信息，避免标签冲突
           git fetch origin --prune --prune-tags
@@ -163,6 +228,7 @@ jobs:
       - name: Publish to Open VSX Registry
         uses: HaaLeo/publish-vscode-extension@v2
         id: publishToOpenVSX
+        if: steps.flags.outputs.do_publish == 'true'
         with:
           pat: ${{ secrets.OPEN_VSX_TOKEN }}
           extensionFile: ${{ steps.package.outputs.vsix_path }}
@@ -172,6 +238,7 @@ jobs:
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v2
         id: publishToVSMarketplace
+        if: steps.flags.outputs.do_publish == 'true'
         with:
           pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
           registryUrl: https://marketplace.visualstudio.com
@@ -185,6 +252,7 @@ jobs:
       - name: Create GitHub Release
         id: create_release
         uses: softprops/action-gh-release@v2
+        if: steps.flags.outputs.do_publish == 'true'
         with:
           body: ${{ steps.extract_changelog.outputs.body }}
           files: |
