@@ -1,4 +1,4 @@
-import { ChatMessage } from '@shared/types/messages';
+import { ChatMessage } from "@shared/types/messages";
 
 export interface ResponseProcessingOptions {
   enableFormatting: boolean;
@@ -43,7 +43,10 @@ const defaultOptions: ResponseProcessingOptions = {
 
 export class ResponseProcessor {
   private options: ResponseProcessingOptions;
-  private cache: Map<string, { response: ProcessedResponse; timestamp: number }> = new Map();
+  private cache: Map<
+    string,
+    { response: ProcessedResponse; timestamp: number }
+  > = new Map();
 
   constructor(options: Partial<ResponseProcessingOptions> = {}) {
     this.options = { ...defaultOptions, ...options };
@@ -59,7 +62,7 @@ export class ResponseProcessor {
     }
   ): Promise<ProcessedResponse> {
     const startTime = Date.now();
-    
+
     // 检查缓存
     const cacheKey = this.generateCacheKey(rawResponse, context);
     if (this.options.enableCaching) {
@@ -70,7 +73,7 @@ export class ResponseProcessor {
     }
 
     let processedContent = rawResponse;
-    const metadata: ProcessedResponse['metadata'] = {};
+    const metadata: ProcessedResponse["metadata"] = {};
 
     // 格式化响应
     if (this.options.enableFormatting) {
@@ -110,22 +113,25 @@ export class ResponseProcessor {
   // 格式化响应
   private formatResponse(content: string): string {
     // 移除多余的空行
-    content = content.replace(/\n\s*\n\s*\n/g, '\n\n');
-    
+    content = content.replace(/\n\s*\n\s*\n/g, "\n\n");
+
     // 确保段落之间有适当的间距
-    content = content.replace(/\n([^\n])/g, '\n\n$1');
-    
+    content = content.replace(/\n([^\n])/g, "\n\n$1");
+
     // 格式化代码块
-    content = content.replace(/```(\w+)?\n([\s\S]*?)```/g, (match, lang, code) => {
-      return `\`\`\`${lang || ''}\n${code.trim()}\n\`\`\``;
-    });
-    
+    content = content.replace(
+      /```(\w+)?\n([\s\S]*?)```/g,
+      (match, lang, code) => {
+        return `\`\`\`${lang || ""}\n${code.trim()}\n\`\`\``;
+      }
+    );
+
     // 格式化内联代码
-    content = content.replace(/`([^`]+)`/g, '`$1`');
-    
+    content = content.replace(/`([^`]+)`/g, "`$1`");
+
     // 格式化列表
-    content = content.replace(/^(\s*)(\d+\.|\*|\-)\s+/gm, '$1$2 ');
-    
+    content = content.replace(/^(\s*)(\d+\.|\*|\-)\s+/gm, "$1$2 ");
+
     return content.trim();
   }
 
@@ -133,37 +139,37 @@ export class ResponseProcessor {
   private beautifyResponse(content: string): string {
     // 添加表情符号
     content = this.addEmojis(content);
-    
+
     // 改善标点符号
     content = this.improvePunctuation(content);
-    
+
     // 优化句子结构
     content = this.optimizeSentenceStructure(content);
-    
+
     return content;
   }
 
   // 添加表情符号
   private addEmojis(content: string): string {
     const emojiMap: Record<string, string> = {
-      '成功': '✅',
-      '错误': '❌',
-      '警告': '⚠️',
-      '信息': 'ℹ️',
-      '建议': '💡',
-      '注意': '📝',
-      '重要': '⭐',
-      '完成': '🎉',
-      '修复': '🔧',
-      '新增': '✨',
-      '删除': '🗑️',
-      '更新': '🔄',
-      '优化': '⚡',
-      '重构': '♻️',
+      成功: "✅",
+      错误: "❌",
+      警告: "⚠️",
+      信息: "ℹ️",
+      建议: "💡",
+      注意: "📝",
+      重要: "⭐",
+      完成: "🎉",
+      修复: "🔧",
+      新增: "✨",
+      删除: "🗑️",
+      更新: "🔄",
+      优化: "⚡",
+      重构: "♻️",
     };
 
     for (const [keyword, emoji] of Object.entries(emojiMap)) {
-      const regex = new RegExp(`\\b${keyword}\\b`, 'g');
+      const regex = new RegExp(`\\b${keyword}\\b`, "g");
       content = content.replace(regex, `${emoji} ${keyword}`);
     }
 
@@ -173,37 +179,44 @@ export class ResponseProcessor {
   // 改善标点符号
   private improvePunctuation(content: string): string {
     // 确保句子以适当的标点符号结尾
-    content = content.replace(/([^.!?。！？])\n/g, '$1。\n');
-    
+    content = content.replace(/([^.!?。！？])\n/g, "$1。\n");
+
     // 修复中文标点符号
-    content = content.replace(/,/g, '，');
-    content = content.replace(/;/g, '；');
-    content = content.replace(/:/g, '：');
-    content = content.replace(/!/g, '！');
-    content = content.replace(/\?/g, '？');
-    
+    content = content.replace(/,/g, "，");
+    content = content.replace(/;/g, "；");
+    content = content.replace(/:/g, "：");
+    content = content.replace(/!/g, "！");
+    content = content.replace(/\?/g, "？");
+
     return content;
   }
 
   // 优化句子结构
   private optimizeSentenceStructure(content: string): string {
     // 确保句子开头大写
-    content = content.replace(/(^|[.!?。！？]\s+)([a-z])/g, (match, prefix, letter) => {
-      return prefix + letter.toUpperCase();
-    });
-    
+    content = content.replace(
+      /(^|[.!?。！？]\s+)([a-z])/g,
+      (match, prefix, letter) => {
+        return prefix + letter.toUpperCase();
+      }
+    );
+
     // 移除重复的词汇
-    content = content.replace(/\b(\w+)\s+\1\b/g, '$1');
-    
+    content = content.replace(/\b(\w+)\s+\1\b/g, "$1");
+
     return content;
   }
 
   // 提取元数据
   private extractMetadata(
     content: string,
-    context: { userInput: string; conversationHistory: ChatMessage[]; userPreferences: any }
-  ): Partial<ProcessedResponse['metadata']> {
-    const metadata: Partial<ProcessedResponse['metadata']> = {};
+    context: {
+      userInput: string;
+      conversationHistory: ChatMessage[];
+      userPreferences: any;
+    }
+  ): Partial<ProcessedResponse["metadata"]> {
+    const metadata: Partial<ProcessedResponse["metadata"]> = {};
 
     // 提取 commit message
     const commitMessageMatch = content.match(/commit message[：:]\s*(.+)/i);
@@ -215,8 +228,8 @@ export class ResponseProcessor {
     const suggestions: string[] = [];
     const suggestionMatches = content.match(/建议[：:]\s*(.+)/gi);
     if (suggestionMatches) {
-      suggestionMatches.forEach(match => {
-        const suggestion = match.replace(/建议[：:]\s*/i, '').trim();
+      suggestionMatches.forEach((match) => {
+        const suggestion = match.replace(/建议[：:]\s*/i, "").trim();
         if (suggestion) {
           suggestions.push(suggestion);
         }
@@ -236,23 +249,37 @@ export class ResponseProcessor {
   // 计算置信度
   private calculateConfidence(
     content: string,
-    context: { userInput: string; conversationHistory: ChatMessage[]; userPreferences: any }
+    context: {
+      userInput: string;
+      conversationHistory: ChatMessage[];
+      userPreferences: any;
+    }
   ): number {
     let confidence = 0.5;
 
     // 基于内容长度
-    if (content.length > 50) confidence += 0.1;
-    if (content.length > 100) confidence += 0.1;
+    if (content.length > 50) {
+      confidence += 0.1;
+    }
+    if (content.length > 100) {
+      confidence += 0.1;
+    }
 
     // 基于关键词匹配
-    const positiveKeywords = ['建议', '推荐', '可以', '应该', '需要'];
-    const hasPositiveKeywords = positiveKeywords.some(keyword => content.includes(keyword));
-    if (hasPositiveKeywords) confidence += 0.1;
+    const positiveKeywords = ["建议", "推荐", "可以", "应该", "需要"];
+    const hasPositiveKeywords = positiveKeywords.some((keyword) =>
+      content.includes(keyword)
+    );
+    if (hasPositiveKeywords) {
+      confidence += 0.1;
+    }
 
     // 基于用户输入的相关性
     const userInputWords = context.userInput.toLowerCase().split(/\s+/);
     const contentWords = content.toLowerCase().split(/\s+/);
-    const commonWords = userInputWords.filter(word => contentWords.includes(word));
+    const commonWords = userInputWords.filter((word) =>
+      contentWords.includes(word)
+    );
     const relevance = commonWords.length / Math.max(userInputWords.length, 1);
     confidence += relevance * 0.2;
 
@@ -267,7 +294,11 @@ export class ResponseProcessor {
   // 评估响应质量
   private assessQuality(
     content: string,
-    context: { userInput: string; conversationHistory: ChatMessage[]; userPreferences: any }
+    context: {
+      userInput: string;
+      conversationHistory: ChatMessage[];
+      userPreferences: any;
+    }
   ): ResponseQuality {
     const factors = {
       clarity: this.assessClarity(content),
@@ -276,7 +307,12 @@ export class ResponseProcessor {
       grammar: this.assessGrammar(content),
     };
 
-    const score = (factors.clarity + factors.completeness + factors.relevance + factors.grammar) / 4;
+    const score =
+      (factors.clarity +
+        factors.completeness +
+        factors.relevance +
+        factors.grammar) /
+      4;
     const suggestions = this.generateQualitySuggestions(factors);
 
     return {
@@ -292,18 +328,28 @@ export class ResponseProcessor {
 
     // 检查句子长度
     const sentences = content.split(/[.!?。！？]/);
-    const avgSentenceLength = sentences.reduce((sum, sentence) => sum + sentence.length, 0) / sentences.length;
-    
-    if (avgSentenceLength > 10 && avgSentenceLength < 50) score += 0.2;
-    if (avgSentenceLength > 50) score -= 0.1;
+    const avgSentenceLength =
+      sentences.reduce((sum, sentence) => sum + sentence.length, 0) /
+      sentences.length;
+
+    if (avgSentenceLength > 10 && avgSentenceLength < 50) {
+      score += 0.2;
+    }
+    if (avgSentenceLength > 50) {
+      score -= 0.1;
+    }
 
     // 检查词汇复杂度
     const words = content.split(/\s+/);
-    const complexWords = words.filter(word => word.length > 6);
+    const complexWords = words.filter((word) => word.length > 6);
     const complexityRatio = complexWords.length / words.length;
-    
-    if (complexityRatio > 0.1 && complexityRatio < 0.3) score += 0.2;
-    if (complexityRatio > 0.5) score -= 0.1;
+
+    if (complexityRatio > 0.1 && complexityRatio < 0.3) {
+      score += 0.2;
+    }
+    if (complexityRatio > 0.5) {
+      score -= 0.1;
+    }
 
     return Math.max(0, Math.min(1, score));
   }
@@ -313,9 +359,15 @@ export class ResponseProcessor {
     let score = 0.5;
 
     // 检查是否回答了用户的问题
-    if (content.includes('建议') || content.includes('推荐')) score += 0.2;
-    if (content.includes('commit message') || content.includes('提交信息')) score += 0.2;
-    if (content.length > 100) score += 0.1;
+    if (content.includes("建议") || content.includes("推荐")) {
+      score += 0.2;
+    }
+    if (content.includes("commit message") || content.includes("提交信息")) {
+      score += 0.2;
+    }
+    if (content.length > 100) {
+      score += 0.1;
+    }
 
     return Math.max(0, Math.min(1, score));
   }
@@ -327,9 +379,11 @@ export class ResponseProcessor {
     // 检查与用户输入的相关性
     const userInputWords = context.userInput.toLowerCase().split(/\s+/);
     const contentWords = content.toLowerCase().split(/\s+/);
-    const commonWords = userInputWords.filter((word: string) => contentWords.includes(word));
+    const commonWords = userInputWords.filter((word: string) =>
+      contentWords.includes(word)
+    );
     const relevance = commonWords.length / Math.max(userInputWords.length, 1);
-    
+
     score += relevance * 0.5;
 
     return Math.max(0, Math.min(1, score));
@@ -340,28 +394,36 @@ export class ResponseProcessor {
     let score = 0.8; // 假设大部分内容语法正确
 
     // 检查基本语法错误
-    if (content.includes('  ')) score -= 0.1; // 多余空格
-    if (content.match(/[a-z][A-Z]/)) score -= 0.1; // 大小写错误
-    if (content.includes('。。')) score -= 0.1; // 重复标点
+    if (content.includes("  ")) {
+      score -= 0.1;
+    } // 多余空格
+    if (content.match(/[a-z][A-Z]/)) {
+      score -= 0.1;
+    } // 大小写错误
+    if (content.includes("。。")) {
+      score -= 0.1;
+    } // 重复标点
 
     return Math.max(0, Math.min(1, score));
   }
 
   // 生成质量建议
-  private generateQualitySuggestions(factors: ResponseQuality['factors']): string[] {
+  private generateQualitySuggestions(
+    factors: ResponseQuality["factors"]
+  ): string[] {
     const suggestions: string[] = [];
 
     if (factors.clarity < 0.6) {
-      suggestions.push('建议使用更简洁的句子结构');
+      suggestions.push("建议使用更简洁的句子结构");
     }
     if (factors.completeness < 0.6) {
-      suggestions.push('建议提供更完整的回答');
+      suggestions.push("建议提供更完整的回答");
     }
     if (factors.relevance < 0.6) {
-      suggestions.push('建议更紧密地围绕用户问题回答');
+      suggestions.push("建议更紧密地围绕用户问题回答");
     }
     if (factors.grammar < 0.8) {
-      suggestions.push('建议检查语法和标点符号');
+      suggestions.push("建议检查语法和标点符号");
     }
 
     return suggestions;
@@ -380,7 +442,9 @@ export class ResponseProcessor {
   // 获取缓存的响应
   private getCachedResponse(cacheKey: string): ProcessedResponse | null {
     const cached = this.cache.get(cacheKey);
-    if (!cached) return null;
+    if (!cached) {
+      return null;
+    }
 
     // 检查是否过期
     if (Date.now() - cached.timestamp > this.options.cacheExpiration) {
