@@ -1,6 +1,6 @@
+import * as fs from "fs";
 import { platform } from "os";
 import * as path from "path";
-import * as fs from "fs";
 
 /**
  * SVN路径处理帮助类
@@ -13,8 +13,10 @@ export class SvnPathHelper {
    * @returns 标准化后的路径
    */
   static normalizePath(filePath: string): string {
-    if (!filePath) return filePath;
-    
+    if (!filePath) {
+      return filePath;
+    }
+
     // 替换路径分隔符为当前系统格式
     return filePath.replace(/[\\/]/g, path.sep);
   }
@@ -25,8 +27,10 @@ export class SvnPathHelper {
    * @returns 转义后的字符串
    */
   static escapeShellPath(input: string): string {
-    if (!input) return input;
-    
+    if (!input) {
+      return input;
+    }
+
     if (platform() === "win32") {
       // Windows: 使用双引号包围路径，并转义其中的双引号
       return `"${input.replace(/"/g, '\\"')}"`;
@@ -44,7 +48,7 @@ export class SvnPathHelper {
   static createExecOptions(cwd: string): { cwd: string; maxBuffer?: number } {
     return {
       cwd,
-      maxBuffer: 10 * 1024 * 1024 // 10MB 缓冲区，处理大型仓库
+      maxBuffer: 10 * 1024 * 1024, // 10MB 缓冲区，处理大型仓库
     };
   }
 
@@ -57,7 +61,7 @@ export class SvnPathHelper {
   static async getSvnPath(operation = "operation"): Promise<string> {
     // 默认的SVN可执行文件路径
     const defaultSvnPath = platform() === "win32" ? "svn.exe" : "svn";
-    
+
     // 可能的SVN安装位置
     const possiblePaths = [
       defaultSvnPath,
@@ -65,7 +69,7 @@ export class SvnPathHelper {
       "/opt/homebrew/bin/svn",
       "C:\\Program Files\\TortoiseSVN\\bin\\svn.exe",
     ];
-    
+
     // 尝试找到可用的SVN路径
     for (const svnPath of possiblePaths) {
       try {
@@ -78,7 +82,7 @@ export class SvnPathHelper {
         // 继续尝试下一个路径
       }
     }
-    
+
     // 如果没有找到，返回默认路径
     return defaultSvnPath;
   }
@@ -88,20 +92,23 @@ export class SvnPathHelper {
    * @param config 环境配置
    * @returns 处理后的环境配置对象
    */
-  static getEnvironmentConfig(config: { path: string[], locale: string }): NodeJS.ProcessEnv {
+  static getEnvironmentConfig(config: {
+    path: string[];
+    locale: string;
+  }): NodeJS.ProcessEnv {
     if (!config || !Array.isArray(config.path) || !config.locale) {
       throw new Error("无效的环境配置");
     }
-    
+
     // 获取合适的PATH环境变量名
     const pathKey = platform() === "win32" ? "Path" : "PATH";
     const currentPath = process.env[pathKey] || "";
-    
+
     return {
       ...process.env,
       [pathKey]: `${currentPath}${path.delimiter}${config.path.join(path.delimiter)}`,
       LC_ALL: config.locale,
-      LANG: config.locale
+      LANG: config.locale,
     };
   }
 }
