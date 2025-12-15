@@ -5,212 +5,173 @@
 All notable changes to this project will be documented in this file. 
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。
-### [0.54.1](https://github.com/littleCareless/dish-ai-commit/compare/v0.55.3...v0.54.1) (2025-12-15)
+### [0.55.2](https://github.com/littleCareless/dish-ai-commit/compare/v0.55.3...v0.55.2) (2025-12-15)
+
+# 0.55.0 (2025-12-03)
+
+### ✨ Features
+
+- **scm**: 支持在多仓库工作区中选择仓库 ([0014fc4](https://github.com/littleCareless/dish-ai-commit/commit/0014fc4))
+
+## 0.50.2 (2025-09-23)
+
+### 🎫 Chores
+
+- **deps**: 更新依赖项 ([0bf0e2a](https://github.com/littleCareless/dish-ai-commit/commit/0bf0e2a))
+- **release**: 0.50.2 ([f1d680c](https://github.com/littleCareless/dish-ai-commit/commit/f1d680c))
+
+## 0.50.1 (2025-09-23)
+
+### 🎫 Chores
+
+- **docs**: Fix incorrect directory name in installation instructions ([08fd60d](https://github.com/littleCareless/dish-ai-commit/commit/08fd60d))
+- **release**: 0.50.1 ([efa774a](https://github.com/littleCareless/dish-ai-commit/commit/efa774a))
 
 # 0.54.0 (2025-10-24)
 
-
 ### ♻ Code Refactoring
 
-* **commit-chat**: 清理组件中未使用的导入 ([cc673cb](https://github.com/littleCareless/dish-ai-commit/commit/cc673cb))
-* **context**: 调整上下文块优先级与保留顺序 ([caf690d](https://github.com/littleCareless/dish-ai-commit/commit/caf690d))
-* **guide**: 优化引导与故障排查组件代码 ([1a565a9](https://github.com/littleCareless/dish-ai-commit/commit/1a565a9))
-* **logger**: 重构日志工具以支持结构化日志记录 ([2981d3c](https://github.com/littleCareless/dish-ai-commit/commit/2981d3c))
-
+- **commit-chat**: 清理组件中未使用的导入 ([cc673cb](https://github.com/littleCareless/dish-ai-commit/commit/cc673cb))
+- **context**: 调整上下文块优先级与保留顺序 ([caf690d](https://github.com/littleCareless/dish-ai-commit/commit/caf690d))
+- **guide**: 优化引导与故障排查组件代码 ([1a565a9](https://github.com/littleCareless/dish-ai-commit/commit/1a565a9))
+- **logger**: 重构日志工具以支持结构化日志记录 ([2981d3c](https://github.com/littleCareless/dish-ai-commit/commit/2981d3c))
 
 ### ✨ Features
 
-* **ai**: 添加 User-Agent 头部以增强请求兼容性 ([dcd3934](https://github.com/littleCareless/dish-ai-commit/commit/dcd3934))
-* **commit-chat**: 新增 Commit Chat 前端视图组件 ([13c34db](https://github.com/littleCareless/dish-ai-commit/commit/13c34db))
-* **commit-chat**: 新增 Commit Chat 组件与服务以生成和优化 commit message ([d4d7930](https://github.com/littleCareless/dish-ai-commit/commit/d4d7930))
-* **error-handling**: 引入智能错误诊断与处理框架 ([a61d255](https://github.com/littleCareless/dish-ai-commit/commit/a61d255))
-* **guide**: 引入全面的用户引导与帮助系统 ([824e1a4](https://github.com/littleCareless/dish-ai-commit/commit/824e1a4))
-* **layered-commit**: 引入全局上下文以提升分层提交质量 ([6238d50](https://github.com/littleCareless/dish-ai-commit/commit/6238d50))
-
+- **ai**: 添加 User-Agent 头部以增强请求兼容性 ([dcd3934](https://github.com/littleCareless/dish-ai-commit/commit/dcd3934))
+- **commit-chat**: 新增 Commit Chat 前端视图组件 ([13c34db](https://github.com/littleCareless/dish-ai-commit/commit/13c34db))
+- **commit-chat**: 新增 Commit Chat 组件与服务以生成和优化 commit message ([d4d7930](https://github.com/littleCareless/dish-ai-commit/commit/d4d7930))
+- **error-handling**: 引入智能错误诊断与处理框架 ([a61d255](https://github.com/littleCareless/dish-ai-commit/commit/a61d255))
+- **guide**: 引入全面的用户引导与帮助系统 ([824e1a4](https://github.com/littleCareless/dish-ai-commit/commit/824e1a4))
+- **layered-commit**: 引入全局上下文以提升分层提交质量 ([6238d50](https://github.com/littleCareless/dish-ai-commit/commit/6238d50))
 
 ### 👷 Build System
 
-* **webview-ui**: 更新构建产物以包含 Commit Chat 功能 ([6ef3710](https://github.com/littleCareless/dish-ai-commit/commit/6ef3710))
-
+- **webview-ui**: 更新构建产物以包含 Commit Chat 功能 ([6ef3710](https://github.com/littleCareless/dish-ai-commit/commit/6ef3710))
 
 ### 📝 Documentation
 
-* **enhanced-error-messages**: 添加增强错误信息和用户引导实施文档 ([43b2bf8](https://github.com/littleCareless/dish-ai-commit/commit/43b2bf8))
-* **openspec**: 添加 OpenSpec 指南与命令文档 ([8655cd8](https://github.com/littleCareless/dish-ai-commit/commit/8655cd8))
-* **readme**: 重构并丰富 README，全面展示核心功能与优势 ([2359565](https://github.com/littleCareless/dish-ai-commit/commit/2359565))
-
+- **enhanced-error-messages**: 添加增强错误信息和用户引导实施文档 ([43b2bf8](https://github.com/littleCareless/dish-ai-commit/commit/43b2bf8))
+- **openspec**: 添加 OpenSpec 指南与命令文档 ([8655cd8](https://github.com/littleCareless/dish-ai-commit/commit/8655cd8))
+- **readme**: 重构并丰富 README，全面展示核心功能与优势 ([2359565](https://github.com/littleCareless/dish-ai-commit/commit/2359565))
 
 ### 🔧 Continuous Integration
 
-* **release-please**: 切换 release-please Action 来源 ([84cbacc](https://github.com/littleCareless/dish-ai-commit/commit/84cbacc))
-
-
-
-
+- **release-please**: 切换 release-please Action 来源 ([84cbacc](https://github.com/littleCareless/dish-ai-commit/commit/84cbacc))
 
 # 0.53.0 (2025-10-17)
 
-
 ### ♻ Code Refactoring
 
-* **generate-branch-name**: 重构分支名生成命令与注册逻辑 ([3dc4b20](https://github.com/littleCareless/dish-ai-commit/commit/3dc4b20))
-* **generate-commit**: 移除旧的 GenerateCommitCommand 实现并新增重构文档 ([6f441f8](https://github.com/littleCareless/dish-ai-commit/commit/6f441f8))
-
+- **generate-branch-name**: 重构分支名生成命令与注册逻辑 ([3dc4b20](https://github.com/littleCareless/dish-ai-commit/commit/3dc4b20))
+- **generate-commit**: 移除旧的 GenerateCommitCommand 实现并新增重构文档 ([6f441f8](https://github.com/littleCareless/dish-ai-commit/commit/6f441f8))
 
 ### ✨ Features
 
-* **generate-branch-name**: 新增分支建议、格式化与创建服务 ([9ae1f14](https://github.com/littleCareless/dish-ai-commit/commit/9ae1f14))
-* **generate-branch-name**: 新增基于变更与描述的分支名生成处理器 ([e92dd25](https://github.com/littleCareless/dish-ai-commit/commit/e92dd25))
-* **generate-commit**: 新增 GenerateCommitCommand 命令入口与流程编排 ([65e4d72](https://github.com/littleCareless/dish-ai-commit/commit/65e4d72))
-* **generate-commit**: 新增流式、分层与跨仓库提交生成处理器 ([b15cfa6](https://github.com/littleCareless/dish-ai-commit/commit/b15cfa6))
-* **generate-commit**: 新增生成提交的上下文与流式辅助工具 ([5d9207c](https://github.com/littleCareless/dish-ai-commit/commit/5d9207c))
-* **generate-commit**: 新增提交上下文与消息构建器 ([368d865](https://github.com/littleCareless/dish-ai-commit/commit/368d865))
-* **git**: 新增 Git API 工具模块 ([036bedb](https://github.com/littleCareless/dish-ai-commit/commit/036bedb))
-
+- **generate-branch-name**: 新增分支建议、格式化与创建服务 ([9ae1f14](https://github.com/littleCareless/dish-ai-commit/commit/9ae1f14))
+- **generate-branch-name**: 新增基于变更与描述的分支名生成处理器 ([e92dd25](https://github.com/littleCareless/dish-ai-commit/commit/e92dd25))
+- **generate-commit**: 新增 GenerateCommitCommand 命令入口与流程编排 ([65e4d72](https://github.com/littleCareless/dish-ai-commit/commit/65e4d72))
+- **generate-commit**: 新增流式、分层与跨仓库提交生成处理器 ([b15cfa6](https://github.com/littleCareless/dish-ai-commit/commit/b15cfa6))
+- **generate-commit**: 新增生成提交的上下文与流式辅助工具 ([5d9207c](https://github.com/littleCareless/dish-ai-commit/commit/5d9207c))
+- **generate-commit**: 新增提交上下文与消息构建器 ([368d865](https://github.com/littleCareless/dish-ai-commit/commit/368d865))
+- **git**: 新增 Git API 工具模块 ([036bedb](https://github.com/littleCareless/dish-ai-commit/commit/036bedb))
 
 ### 🐛 Bug Fixes
 
-* **git**: 修复重命名文件检测不准确的问题 ([8a9e660](https://github.com/littleCareless/dish-ai-commit/commit/8a9e660))
-
+- **git**: 修复重命名文件检测不准确的问题 ([8a9e660](https://github.com/littleCareless/dish-ai-commit/commit/8a9e660))
 
 ### 📝 Documentation
 
-* **cursor**: 添加基础编码审视规则与建议 ([c48af23](https://github.com/littleCareless/dish-ai-commit/commit/c48af23))
-* **generate-branch-name**: 添加 generate-branch-name 模块重构文档 ([4373792](https://github.com/littleCareless/dish-ai-commit/commit/4373792))
-
-
-
-
+- **cursor**: 添加基础编码审视规则与建议 ([c48af23](https://github.com/littleCareless/dish-ai-commit/commit/c48af23))
+- **generate-branch-name**: 添加 generate-branch-name 模块重构文档 ([4373792](https://github.com/littleCareless/dish-ai-commit/commit/4373792))
 
 # 0.52.0 (2025-10-16)
 
-
 ### ♻ Code Refactoring
 
-* **scm**: 移除因重构而废弃的单元测试 ([97ab187](https://github.com/littleCareless/dish-ai-commit/commit/97ab187))
-* **scm**: 重构 SCM 模块以增强多仓库支持 ([df765c9](https://github.com/littleCareless/dish-ai-commit/commit/df765c9))
-* **svn**: 重构 SVN 提供者以提升模块化和可维护性 ([5bffb7b](https://github.com/littleCareless/dish-ai-commit/commit/5bffb7b))
-
+- **scm**: 移除因重构而废弃的单元测试 ([97ab187](https://github.com/littleCareless/dish-ai-commit/commit/97ab187))
+- **scm**: 重构 SCM 模块以增强多仓库支持 ([df765c9](https://github.com/littleCareless/dish-ai-commit/commit/df765c9))
+- **svn**: 重构 SVN 提供者以提升模块化和可维护性 ([5bffb7b](https://github.com/littleCareless/dish-ai-commit/commit/5bffb7b))
 
 ### ✨ Features
 
-* **git**: 重构 GitProvider 以支持新的提供者模式和增强功能 ([8723e3c](https://github.com/littleCareless/dish-ai-commit/commit/8723e3c))
-* **git**: 重构创建分支功能以集成 VS Code Git API ([1d9bdcd](https://github.com/littleCareless/dish-ai-commit/commit/1d9bdcd))
-* **scm**: 增强 SCM 提供程序以支持精细化 diff 范围 ([6f4d96d](https://github.com/littleCareless/dish-ai-commit/commit/6f4d96d))
-* **scm**: 支持跨多个仓库生成提交信息 ([66507ff](https://github.com/littleCareless/dish-ai-commit/commit/66507ff))
-* **scm**: 支持文件重命名操作的差异检测与消息生成 ([9498700](https://github.com/littleCareless/dish-ai-commit/commit/9498700))
-* **svn**: 新增对 SVN 版本控制系统的支持 ([18bd54d](https://github.com/littleCareless/dish-ai-commit/commit/18bd54d))
-* **svn**: 新增对 SVN 的全面支持及优雅降级机制 ([87178c3](https://github.com/littleCareless/dish-ai-commit/commit/87178c3))
-* **token**: 实现 Token 使用量统计与管理功能 ([f13c6a2](https://github.com/littleCareless/dish-ai-commit/commit/f13c6a2))
-
+- **git**: 重构 GitProvider 以支持新的提供者模式和增强功能 ([8723e3c](https://github.com/littleCareless/dish-ai-commit/commit/8723e3c))
+- **git**: 重构创建分支功能以集成 VS Code Git API ([1d9bdcd](https://github.com/littleCareless/dish-ai-commit/commit/1d9bdcd))
+- **scm**: 增强 SCM 提供程序以支持精细化 diff 范围 ([6f4d96d](https://github.com/littleCareless/dish-ai-commit/commit/6f4d96d))
+- **scm**: 支持跨多个仓库生成提交信息 ([66507ff](https://github.com/littleCareless/dish-ai-commit/commit/66507ff))
+- **scm**: 支持文件重命名操作的差异检测与消息生成 ([9498700](https://github.com/littleCareless/dish-ai-commit/commit/9498700))
+- **svn**: 新增对 SVN 版本控制系统的支持 ([18bd54d](https://github.com/littleCareless/dish-ai-commit/commit/18bd54d))
+- **svn**: 新增对 SVN 的全面支持及优雅降级机制 ([87178c3](https://github.com/littleCareless/dish-ai-commit/commit/87178c3))
+- **token**: 实现 Token 使用量统计与管理功能 ([f13c6a2](https://github.com/littleCareless/dish-ai-commit/commit/f13c6a2))
 
 ### 🎫 Chores
 
-* **i18n**: 为多仓库生成功能添加本地化文本 ([0944ec8](https://github.com/littleCareless/dish-ai-commit/commit/0944ec8))
-* **scm**: 删除过时的 SCM 测试文档和任务计划 ([494d4c9](https://github.com/littleCareless/dish-ai-commit/commit/494d4c9))
-
+- **i18n**: 为多仓库生成功能添加本地化文本 ([0944ec8](https://github.com/littleCareless/dish-ai-commit/commit/0944ec8))
+- **scm**: 删除过时的 SCM 测试文档和任务计划 ([494d4c9](https://github.com/littleCareless/dish-ai-commit/commit/494d4c9))
 
 ### 🔧 Continuous Integration
 
-* **release**: 移除发布成功后的 Slack 通知 ([f7fbd9a](https://github.com/littleCareless/dish-ai-commit/commit/f7fbd9a))
-
-
-
-
+- **release**: 移除发布成功后的 Slack 通知 ([f7fbd9a](https://github.com/littleCareless/dish-ai-commit/commit/f7fbd9a))
 
 ## 0.51.5 (2025-09-30)
 
-
 ### 🎫 Chores
 
-* **deps**: 调整依赖版本以解决兼容性问题 ([0f9eb83](https://github.com/littleCareless/dish-ai-commit/commit/0f9eb83))
-
+- **deps**: 调整依赖版本以解决兼容性问题 ([0f9eb83](https://github.com/littleCareless/dish-ai-commit/commit/0f9eb83))
 
 ### 🔧 Continuous Integration
 
-* **pre-push**: 增加 VS Code 扩展打包验证 ([642cb9f](https://github.com/littleCareless/dish-ai-commit/commit/642cb9f))
-
-
-
-
+- **pre-push**: 增加 VS Code 扩展打包验证 ([642cb9f](https://github.com/littleCareless/dish-ai-commit/commit/642cb9f))
 
 ## 0.51.4 (2025-09-30)
 
-
 ### 🎫 Chores
 
-* **deps**: 升级项目依赖并优化 pnpm 配置 ([27997fd](https://github.com/littleCareless/dish-ai-commit/commit/27997fd))
-
-
-
-
+- **deps**: 升级项目依赖并优化 pnpm 配置 ([27997fd](https://github.com/littleCareless/dish-ai-commit/commit/27997fd))
 
 ## 0.51.3 (2025-09-30)
 
-
 ### ♻ Code Refactoring
 
-* **logger**: 迁移至 LogOutputChannel 以利用原生日志功能 ([da5e63b](https://github.com/littleCareless/dish-ai-commit/commit/da5e63b))
-* **logging**: 统一错误日志记录方式以显示完整堆栈跟踪 ([b721f7f](https://github.com/littleCareless/dish-ai-commit/commit/b721f7f))
-
-
-
-
+- **logger**: 迁移至 LogOutputChannel 以利用原生日志功能 ([da5e63b](https://github.com/littleCareless/dish-ai-commit/commit/da5e63b))
+- **logging**: 统一错误日志记录方式以显示完整堆栈跟踪 ([b721f7f](https://github.com/littleCareless/dish-ai-commit/commit/b721f7f))
 
 ## 0.51.2 (2025-09-29)
 
-
 ### ♻ Code Refactoring
 
-* **scm**: 简化差异获取逻辑，移除临时配置修改 ([04bf7d3](https://github.com/littleCareless/dish-ai-commit/commit/04bf7d3))
-
-
-
-
+- **scm**: 简化差异获取逻辑，移除临时配置修改 ([04bf7d3](https://github.com/littleCareless/dish-ai-commit/commit/04bf7d3))
 
 ## 0.51.1 (2025-09-24)
 
-
 ### ♻ Code Refactoring
 
-* **commands**: 改进确认逻辑以增强代码健壮性 ([ac91759](https://github.com/littleCareless/dish-ai-commit/commit/ac91759))
-* **core**: 为字符串分割操作添加空值安全检查 ([4942160](https://github.com/littleCareless/dish-ai-commit/commit/4942160))
-* **provider**: 重构 AI 提供程序以移除不安全的非空断言 ([567b1da](https://github.com/littleCareless/dish-ai-commit/commit/567b1da))
-* **scm**: 增强多仓库环境下的仓库上下文识别 ([d542e8e](https://github.com/littleCareless/dish-ai-commit/commit/d542e8e))
-
-
-
-
+- **commands**: 改进确认逻辑以增强代码健壮性 ([ac91759](https://github.com/littleCareless/dish-ai-commit/commit/ac91759))
+- **core**: 为字符串分割操作添加空值安全检查 ([4942160](https://github.com/littleCareless/dish-ai-commit/commit/4942160))
+- **provider**: 重构 AI 提供程序以移除不安全的非空断言 ([567b1da](https://github.com/littleCareless/dish-ai-commit/commit/567b1da))
+- **scm**: 增强多仓库环境下的仓库上下文识别 ([d542e8e](https://github.com/littleCareless/dish-ai-commit/commit/d542e8e))
 
 # 0.51.0 (2025-09-24)
 
-
 ### ♻ Code Refactoring
 
-* **commands**: 重构所有命令以集成结构化日志系统 ([946a78f](https://github.com/littleCareless/dish-ai-commit/commit/946a78f))
-* **provider**: 在抽象 AI 提供者中添加结构化日志 ([bdc8e8d](https://github.com/littleCareless/dish-ai-commit/commit/bdc8e8d))
-* **scm**: 移除生成差异时不必要的文件数量通知 ([ee994d8](https://github.com/littleCareless/dish-ai-commit/commit/ee994d8))
-* **scm**: 重构 SCM 提供程序以使用结构化日志 ([dec05ad](https://github.com/littleCareless/dish-ai-commit/commit/dec05ad))
-
+- **commands**: 重构所有命令以集成结构化日志系统 ([946a78f](https://github.com/littleCareless/dish-ai-commit/commit/946a78f))
+- **provider**: 在抽象 AI 提供者中添加结构化日志 ([bdc8e8d](https://github.com/littleCareless/dish-ai-commit/commit/bdc8e8d))
+- **scm**: 移除生成差异时不必要的文件数量通知 ([ee994d8](https://github.com/littleCareless/dish-ai-commit/commit/ee994d8))
+- **scm**: 重构 SCM 提供程序以使用结构化日志 ([dec05ad](https://github.com/littleCareless/dish-ai-commit/commit/dec05ad))
 
 ### ✨ Features
 
-* **context-manager**: 添加 getBlocks 方法以获取上下文区块 ([79cb4a1](https://github.com/littleCareless/dish-ai-commit/commit/79cb4a1))
-* **log**: 引入结构化日志系统以增强调试能力 ([c62829a](https://github.com/littleCareless/dish-ai-commit/commit/c62829a))
-
+- **context-manager**: 添加 getBlocks 方法以获取上下文区块 ([79cb4a1](https://github.com/littleCareless/dish-ai-commit/commit/79cb4a1))
+- **log**: 引入结构化日志系统以增强调试能力 ([c62829a](https://github.com/littleCareless/dish-ai-commit/commit/c62829a))
 
 ### 🐛 Bug Fixes
 
-* **scm**: 修复获取仓库路径时潜在的空指针错误 ([f108049](https://github.com/littleCareless/dish-ai-commit/commit/f108049))
-
+- **scm**: 修复获取仓库路径时潜在的空指针错误 ([f108049](https://github.com/littleCareless/dish-ai-commit/commit/f108049))
 
 ### 📝 Documentation
 
-* **changelog**: 更新变更日志至 v0.50.2 ([591b325](https://github.com/littleCareless/dish-ai-commit/commit/591b325))
-
-
-
-
+- **changelog**: 更新变更日志至 v0.50.2 ([591b325](https://github.com/littleCareless/dish-ai-commit/commit/591b325))
 
 ## 0.50.2 (2025-09-23)
 
