@@ -177,8 +177,7 @@ export class GenerateCommitCommand extends BaseCommand {
           scmProvider,
           selectedFiles,
           resources,
-          repoPath,
-          this.selectAndUpdateModelConfiguration.bind(this)
+          repoPath
         )
     );
   }
@@ -240,7 +239,6 @@ export class GenerateCommitCommand extends BaseCommand {
           selectedFiles,
           parsedArgs.resourceStates || [],
           finalRepoPath
-          this.selectAndUpdateModelConfiguration.bind(this)
         );
       }
     );
