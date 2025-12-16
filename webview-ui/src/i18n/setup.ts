@@ -9,7 +9,7 @@ if (i18next.isInitialized) {
   initPromise = Promise.resolve(i18next.t);
 } else {
   // Build translations object
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+
   const resources: Record<string, Record<string, any>> = {};
 
   // Dynamically load locale files
