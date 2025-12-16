@@ -23,7 +23,7 @@
     "publish": "turbo publish --log-order grouped --output-logs new-only",
     "vsix": "turbo vsix --log-order grouped --output-logs new-only",
     "clean": "turbo clean --log-order grouped --output-logs new-only && rimraf dist out webview-ui/dist .turbo",
-    "clean:all": "npm run clean && rimraf node_modules **/node_modules pnpm-lock.yaml package-lock.json yarn.lock *.vsix",
+    "clean:all": "npm run clean && rimraf node_modules **/node_modules **/pnpm-lock.yaml **/package-lock.json **/yarn.lock pnpm-lock.yaml package-lock.json yarn.lock *.vsix",
     "quality-gate": "turbo quality-gate --log-order grouped --output-logs new-only"
   },
   "devDependencies": {
@@ -92,5 +92,8 @@
     "proper-lockfile": "^4.1.2",
     "stream-json": "^1.9.1",
     "zod": "^4.1.12"
+  },
+  "volta": {
+    "node": "20.19.6"
   }
 }

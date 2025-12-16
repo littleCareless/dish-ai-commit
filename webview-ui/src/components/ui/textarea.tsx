@@ -3,7 +3,7 @@ import * as React from "react";
 
 export type TextareaProps = Omit<
   React.TextareaHTMLAttributes<HTMLTextAreaElement>,
-  "draggable"
+  "draggable" | "translate"
 > & {
   draggable?: boolean;
 };
@@ -42,7 +42,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         onKeyDown={onKeyDown}
         className={className}
         ref={ref as any}
-        {...props}
+        {...(props as any)}
       />
     );
   },
