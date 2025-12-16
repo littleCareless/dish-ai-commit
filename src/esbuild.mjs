@@ -260,6 +260,9 @@ function copyPaths(copyPaths, srcDir, dstDir) {
 
 
 function copyWasms(srcDir, distDir) {
+  const wasmDistDir = path.join(distDir, "wasm");
+  fs.mkdirSync(wasmDistDir, { recursive: true });
+  // Ensure distDir exists for tiktoken
   fs.mkdirSync(distDir, { recursive: true });
 
   // 1. Copy web-tree-sitter/tree-sitter.wasm
@@ -281,7 +284,7 @@ function copyWasms(srcDir, distDir) {
     );
   }
 
-  const treeSitterWasmDest = path.join(distDir, "tree-sitter.wasm");
+  const treeSitterWasmDest = path.join(wasmDistDir, "tree-sitter.wasm");
   if (fs.existsSync(treeSitterWasmSource)) {
     fs.copyFileSync(treeSitterWasmSource, treeSitterWasmDest);
     console.log(`[copyWasms] Copied tree-sitter.wasm to ${treeSitterWasmDest}`);
@@ -292,6 +295,8 @@ function copyWasms(srcDir, distDir) {
   }
 
   // 2. Copy tiktoken/tiktoken_bg.wasm
+  // NOTE: tiktoken usually expects the wasm next to the JS, keeping it in dist/ root if possible or needing specific handling.
+  // We keep it in dist root as per original logic.
   let tiktokenWasmSource;
   try {
     // require.resolve("tiktoken") -> usually .../tiktoken/tiktoken.cjs
@@ -348,11 +353,11 @@ function copyWasms(srcDir, distDir) {
     if (wasmFiles.length > 0) {
       wasmFiles.forEach((filename) => {
         const sourceFile = path.join(languageWasmDir, filename);
-        const destFile = path.join(distDir, filename);
+        const destFile = path.join(wasmDistDir, filename);
         fs.copyFileSync(sourceFile, destFile);
       });
       console.log(
-        `[copyWasms] Copied ${wasmFiles.length} tree-sitter language WASM(s) from ${languageWasmDir} to ${distDir}`
+        `[copyWasms] Copied ${wasmFiles.length} tree-sitter language WASM(s) from ${languageWasmDir} to ${wasmDistDir}`
       );
     } else {
       console.log(`[copyWasms] No .wasm files found in ${languageWasmDir}.`);

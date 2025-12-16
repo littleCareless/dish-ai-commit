@@ -1,5 +1,3 @@
-import * as path from "path";
-import Parser from "web-tree-sitter";
 import {
   cppQuery,
   cQuery,
@@ -29,6 +27,8 @@ import {
   vueQuery,
   zigQuery,
 } from "@/core/tree-sitter/queries";
+import * as path from "path";
+import Parser from "web-tree-sitter";
 
 export interface LanguageParser {
   [key: string]: {
@@ -39,7 +39,7 @@ export interface LanguageParser {
 
 async function loadLanguage(langName: string) {
   return await Parser.Language.load(
-    path.join(__dirname, `tree-sitter-${langName}.wasm`)
+    path.join(__dirname, "wasm", `tree-sitter-${langName}.wasm`)
   );
 }
 
@@ -47,7 +47,11 @@ let isParserInitialized = false;
 
 async function initializeParser() {
   if (!isParserInitialized) {
-    await Parser.init();
+    await Parser.init({
+      locateFile(scriptName: string, scriptDirectory: string) {
+        return path.join(__dirname, "wasm", scriptName);
+      },
+    });
     isParserInitialized = true;
   }
 }
