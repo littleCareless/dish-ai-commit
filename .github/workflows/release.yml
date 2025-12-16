@@ -160,7 +160,7 @@ jobs:
           VSIX_FILE: ${{ steps.package.outputs.vsix_path }}
         run: |
           echo "Dry-run vsce publish..."
-          pnpm dlx vsce publish --packagePath "$VSIX_FILE" --pre-release --dry-run
+          pnpm dlx @vscode/vsce publish --packagePath "$VSIX_FILE" --pre-release --dry-run
           echo "Dry-run ovsx publish（模拟执行，若不支持 --dry-run 则跳过）"
           pnpm dlx ovsx publish "$VSIX_FILE" --pre-release --skip-duplicate --pat "${OVSX_PAT:-dummy}" --dry-run 2>/dev/null || echo "ovsx dry-run skipped"
 

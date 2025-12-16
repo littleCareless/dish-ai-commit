@@ -4,8 +4,11 @@ import process from "node:process"
 import * as path from "path"
 import { fileURLToPath } from "url"
 
+import { createRequire } from "module"
+
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const require = createRequire(import.meta.url);
 
 async function main() {
   const name = "extension";
@@ -255,17 +258,29 @@ function copyPaths(copyPaths, srcDir, dstDir) {
   });
 }
 
-function copyWasms(srcDir, distDir) {
-  const nodeModulesDir = path.join(srcDir, "node_modules");
 
+function copyWasms(srcDir, distDir) {
   fs.mkdirSync(distDir, { recursive: true });
 
-  // Main tree-sitter WASM file.
-  const treeSitterWasmSource = path.join(
-    nodeModulesDir,
-    "web-tree-sitter",
-    "tree-sitter.wasm"
-  );
+  // 1. Copy web-tree-sitter/tree-sitter.wasm
+  let treeSitterWasmSource;
+  try {
+    // Try to resolve via package.json -> location
+    const pkgPath = require.resolve("web-tree-sitter/package.json");
+    treeSitterWasmSource = path.join(path.dirname(pkgPath), "tree-sitter.wasm");
+  } catch (e) {
+    console.warn(
+      `[copyWasms] Could not resolve web-tree-sitter/package.json: ${e.message}. Fallback to default path.`
+    );
+    // Fallback: assume node_modules/web-tree-sitter/tree-sitter.wasm
+    treeSitterWasmSource = path.join(
+      srcDir,
+      "node_modules",
+      "web-tree-sitter",
+      "tree-sitter.wasm"
+    );
+  }
+
   const treeSitterWasmDest = path.join(distDir, "tree-sitter.wasm");
   if (fs.existsSync(treeSitterWasmSource)) {
     fs.copyFileSync(treeSitterWasmSource, treeSitterWasmDest);
@@ -276,12 +291,30 @@ function copyWasms(srcDir, distDir) {
     );
   }
 
-  // Copy tiktoken WASM file.
-  const tiktokenWasmSource = path.join(
-    nodeModulesDir,
-    "tiktoken",
-    "tiktoken_bg.wasm"
-  );
+  // 2. Copy tiktoken/tiktoken_bg.wasm
+  let tiktokenWasmSource;
+  try {
+    // require.resolve("tiktoken") -> usually .../tiktoken/tiktoken.cjs
+    // The wapm file is usually in the same dir or relative to it.
+    // Based on previous check: .../tiktoken/tiktoken.cjs
+    // And wasm is likely at .../tiktoken/tiktoken_bg.wasm
+    const tiktokenEntry = require.resolve("tiktoken");
+    tiktokenWasmSource = path.join(
+      path.dirname(tiktokenEntry),
+      "tiktoken_bg.wasm"
+    );
+  } catch (e) {
+    console.warn(
+      `[copyWasms] Could not resolve tiktoken: ${e.message}. Fallback to default path.`
+    );
+    tiktokenWasmSource = path.join(
+      srcDir,
+      "node_modules",
+      "tiktoken",
+      "tiktoken_bg.wasm"
+    );
+  }
+
   const tiktokenWasmDest = path.join(distDir, "tiktoken_bg.wasm");
   if (fs.existsSync(tiktokenWasmSource)) {
     fs.copyFileSync(tiktokenWasmSource, tiktokenWasmDest);
@@ -292,8 +325,22 @@ function copyWasms(srcDir, distDir) {
     );
   }
 
-  // Copy language-specific WASM files.
-  const languageWasmDir = path.join(nodeModulesDir, "tree-sitter-wasms", "out");
+  // 3. Copy tree-sitter-wasms (optional languages)
+  // This package exports languages. finding the "out" dir might be tricky if not standard.
+  // We can try to resolve "tree-sitter-wasms/package.json"
+  let languageWasmDir;
+  try {
+    const pkgPath = require.resolve("tree-sitter-wasms/package.json");
+    languageWasmDir = path.join(path.dirname(pkgPath), "out");
+  } catch (e) {
+    languageWasmDir = path.join(
+      srcDir,
+      "node_modules",
+      "tree-sitter-wasms",
+      "out"
+    );
+  }
+
   if (fs.existsSync(languageWasmDir)) {
     const wasmFiles = fs
       .readdirSync(languageWasmDir)
