@@ -3,7 +3,7 @@ import * as React from "react";
 
 export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 
-const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
+const Textarea = React.forwardRef<any, TextareaProps>(
   (
     {
       className,
@@ -22,12 +22,12 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
     return (
       <VSCodeTextArea
         id={id}
-        value={value}
+        value={value as string}
         placeholder={placeholder}
         disabled={disabled}
         readOnly={readOnly}
         rows={rows}
-        onInput={onChange}
+        onInput={onChange as any}
         onKeyDown={onKeyDown}
         className={className}
         ref={ref}

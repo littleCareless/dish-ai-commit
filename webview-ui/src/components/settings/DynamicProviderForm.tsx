@@ -190,8 +190,9 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
           return (
             <VSCodeDropdown
               value={String(value)}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                handleFieldChange(field, e.target.value)
+              onChange={
+                ((e: React.ChangeEvent<HTMLInputElement>) =>
+                  handleFieldChange(field, e.target.value)) as any
               }
               disabled={disabled || field.disabled}
             >
@@ -236,8 +237,9 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
           return (
             <VSCodeCheckbox
               checked={Boolean(value)}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-                handleFieldChange(field, e.target.checked)
+              onChange={
+                ((e: React.ChangeEvent<HTMLInputElement>) =>
+                  handleFieldChange(field, e.target.checked)) as any
               }
               disabled={disabled || field.disabled}
             >

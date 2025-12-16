@@ -266,8 +266,11 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
           <div className="flex flex-col space-y-2">
             <VSCodeDropdown
               value={selectedProvider}
-              onChange={(e: Event) =>
-                handleProviderChange((e.target as HTMLSelectElement).value)
+              onChange={
+                ((e: Event) =>
+                  handleProviderChange(
+                    (e.target as HTMLSelectElement).value,
+                  )) as any
               }
             >
               {Object.values(ProviderRegistry).map(
