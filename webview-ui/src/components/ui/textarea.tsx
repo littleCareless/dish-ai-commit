@@ -31,6 +31,9 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         onInput={(e: any) => {
           onInput?.(e);
         }}
+        onChange={(e: any) => {
+          onChange?.(e);
+        }}
         onKeyDown={onKeyDown}
         className={className}
         ref={ref as any}
