@@ -1,7 +1,12 @@
 import { VSCodeTextArea } from "@vscode/webview-ui-toolkit/react";
 import * as React from "react";
 
-export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
+export type TextareaProps = Omit<
+  React.TextareaHTMLAttributes<HTMLTextAreaElement>,
+  "draggable"
+> & {
+  draggable?: boolean;
+};
 
 const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   (
