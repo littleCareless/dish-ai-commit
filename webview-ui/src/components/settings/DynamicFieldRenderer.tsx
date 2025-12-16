@@ -22,7 +22,7 @@ import {
 } from "@vscode/webview-ui-toolkit/react";
 import { TFunction } from "i18next";
 import { AlertCircle, Loader } from "lucide-react";
-import React, { ChangeEvent, useMemo } from "react";
+import React, { useMemo } from "react";
 import { KeyValueField } from "./KeyValueField";
 
 type FieldValue =
@@ -134,12 +134,8 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
             return (
               <VSCodeTextField
                 value={String(value || "")}
-                onChange={(e: React.FormEvent<HTMLInputElement>) =>
-                  onChange((e.target as HTMLInputElement).value)
-                }
-                onInput={(e: React.FormEvent<HTMLInputElement>) =>
-                  onChange((e.target as HTMLInputElement).value)
-                }
+                onChange={(e: any) => onChange(e.target.value)}
+                onInput={(e: any) => onChange(e.target.value)}
                 placeholder={
                   field.placeholder ? t(field.placeholder) : `${t(field.label)}`
                 }
@@ -152,12 +148,8 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
             return (
               <VSCodeTextField
                 value={String(value || "")}
-                onChange={(e: React.FormEvent<HTMLInputElement>) =>
-                  onChange((e.target as HTMLInputElement).value)
-                }
-                onInput={(e: React.FormEvent<HTMLInputElement>) =>
-                  onChange((e.target as HTMLInputElement).value)
-                }
+                onChange={(e: any) => onChange(e.target.value)}
+                onInput={(e: any) => onChange(e.target.value)}
                 placeholder={
                   field.placeholder ? t(field.placeholder) : `${t(field.label)}`
                 }
@@ -169,12 +161,8 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
             return (
               <VSCodeTextField
                 value={String(value || "")}
-                onChange={(e: React.FormEvent<HTMLInputElement>) =>
-                  onChange((e.target as HTMLInputElement).value)
-                }
-                onInput={(e: React.FormEvent<HTMLInputElement>) =>
-                  onChange((e.target as HTMLInputElement).value)
-                }
+                onChange={(e: any) => onChange(e.target.value)}
+                onInput={(e: any) => onChange(e.target.value)}
                 placeholder={
                   field.placeholder
                     ? t(field.placeholder)
@@ -188,16 +176,12 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
             return (
               <VSCodeTextField
                 value={String(value?.toString() || "")}
-                onChange={(e: React.FormEvent<HTMLInputElement>) => {
-                  const numValue = parseFloat(
-                    (e.target as HTMLInputElement).value,
-                  );
+                onChange={(e: any) => {
+                  const numValue = parseFloat(e.target.value);
                   onChange(isNaN(numValue) ? 0 : numValue);
                 }}
-                onInput={(e: React.FormEvent<HTMLInputElement>) => {
-                  const numValue = parseFloat(
-                    (e.target as HTMLInputElement).value,
-                  );
+                onInput={(e: any) => {
+                  const numValue = parseFloat(e.target.value);
                   onChange(isNaN(numValue) ? 0 : numValue);
                 }}
                 placeholder={field.placeholder ? t(field.placeholder) : "0"}
@@ -209,9 +193,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
             return (
               <VSCodeDropdown
                 value={String(value || "")}
-                onChange={(e: React.FormEvent<HTMLInputElement>) =>
-                  onChange((e.target as HTMLInputElement).value)
-                }
+                onChange={(e: any) => onChange(e.target.value)}
                 disabled={isFieldDisabled}
               >
                 <VSCodeOption value="">
@@ -235,9 +217,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
                   <input
                     type="checkbox"
                     checked={!!checkboxValue}
-                    onChange={(e: ChangeEvent<HTMLInputElement>) =>
-                      onChange(e.target.checked)
-                    }
+                    onChange={(e: any) => onChange(e.target.checked)}
                     disabled={isCheckboxDisabled}
                     className="h-4 w-4 rounded border-gray-300 text-indigo-600 focus:ring-indigo-500"
                   />
@@ -345,12 +325,8 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
             return (
               <VSCodeTextField
                 value={String(value || "")}
-                onChange={(e: React.FormEvent<HTMLInputElement>) =>
-                  onChange((e.target as HTMLInputElement).value)
-                }
-                onInput={(e: React.FormEvent<HTMLInputElement>) =>
-                  onChange((e.target as HTMLInputElement).value)
-                }
+                onChange={(e: any) => onChange(e.target.value)}
+                onInput={(e: any) => onChange(e.target.value)}
                 placeholder={
                   field.placeholder ? t(field.placeholder) : `${t(field.label)}`
                 }

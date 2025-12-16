@@ -273,10 +273,8 @@ export const NotificationsPage: React.FC = () => {
               </div>
               <VSCodeCheckbox
                 checked={settings.systemNotifications}
-                onChange={(e: React.FormEvent<HTMLInputElement>) =>
-                  handleSystemNotificationsChange(
-                    (e.target as HTMLInputElement).checked,
-                  )
+                onChange={(e: any) =>
+                  handleSystemNotificationsChange(e.target.checked)
                 }
               />
             </div>

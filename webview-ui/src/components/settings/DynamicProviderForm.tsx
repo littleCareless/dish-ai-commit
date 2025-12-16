@@ -153,7 +153,7 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
               {...commonProps}
               type={field.type === FieldType.URL ? "url" : "text"}
               value={String(value)}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              onChange={(e: any) =>
                 handleFieldChange(field, (e.target as HTMLInputElement).value)
               }
             />
@@ -165,7 +165,7 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
               {...commonProps}
               type="password"
               value={String(value)}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              onChange={(e: any) =>
                 handleFieldChange(field, (e.target as HTMLInputElement).value)
               }
             />
@@ -177,7 +177,7 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
               {...commonProps}
               type="text"
               value={String(value)}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              onChange={(e: any) =>
                 handleFieldChange(
                   field,
                   Number((e.target as HTMLInputElement).value),
@@ -217,7 +217,7 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
               </div>
               <Slider
                 value={[Number(value)]}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                onChange={(e: any) =>
                   handleFieldChange(
                     field,
                     Number((e.target as HTMLInputElement).value),
@@ -236,7 +236,7 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
           return (
             <VSCodeCheckbox
               checked={Boolean(value)}
-              onChange={(e: React.FormEvent<HTMLInputElement>) =>
+              onChange={(e: any) =>
                 handleFieldChange(field, (e.target as HTMLInputElement).checked)
               }
               disabled={disabled || field.disabled}
@@ -252,7 +252,7 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
                 {...commonProps}
                 type="text"
                 value={String(value)}
-                onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+                onChange={(e: any) =>
                   handleFieldChange(field, (e.target as HTMLInputElement).value)
                 }
               />
@@ -294,7 +294,7 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
               {...commonProps}
               type="text"
               value={value as string}
-              onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+              onChange={(e: any) =>
                 handleFieldChange(field, (e.target as HTMLInputElement).value)
               }
             />

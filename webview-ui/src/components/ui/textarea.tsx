@@ -27,7 +27,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         disabled={disabled}
         readOnly={readOnly}
         rows={rows}
-        onInput={(e: Event) => {
+        onInput={(e: any) => {
           // Adapt CustomEvent/Event to React.ChangeEvent structure that consumers expect
           onChange?.(e as unknown as React.ChangeEvent<HTMLTextAreaElement>);
         }}

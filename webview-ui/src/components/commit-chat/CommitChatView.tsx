@@ -295,10 +295,10 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 ref={textareaRef as any}
                 value={state.inputValue}
-                onInput={(e: React.FormEvent<HTMLTextAreaElement>) =>
-                  handleInputChange(
-                    e as unknown as React.ChangeEvent<HTMLTextAreaElement>,
-                  )
+                onInput={(e: any) =>
+                  handleInputChange({
+                    target: { value: e.target.value },
+                  } as React.ChangeEvent<HTMLTextAreaElement>)
                 }
                 onKeyDown={handleKeyDown}
                 placeholder="描述你的代码变更，或者告诉我你想要的 commit message 风格..."
