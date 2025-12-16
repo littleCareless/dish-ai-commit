@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc -b && vite build",
     "compile:webview": "tsc -b && vite build",
+    "package": "npm run build",
     "dev": "vite",
     "watch": "vite build --watch",
     "watch:tsc": "tsc --noEmit --watch",

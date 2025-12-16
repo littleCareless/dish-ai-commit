@@ -1,19 +1,31 @@
 {
   "$schema": "https://turbo.build/schema.json",
-  "globalDependencies": ["**/.env.*local"],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
       "outputs": ["dist/**", "out/**"]
     },
-    "@dish-ai-commit/webview-ui#build": {
-      "dependsOn": [],
-      "outputs": ["dist/**"],
+    "lint": {},
+    "check-types": {},
+    "test": {},
+    "format": {},
+    "clean": {
       "cache": false
     },
-    "dish-ai-commit#build": {
-      "dependsOn": ["@dish-ai-commit/webview-ui#build"],
-      "outputs": ["dist/**"]
+    "compile": {
+      "outputs": ["out/**", "dist/**"]
+    },
+    "compile:webview": {
+      "outputs": ["webview-ui/dist/**"]
+    },
+    "package": {
+      "outputs": ["*.vsix"]
+    },
+    "vsix": {
+      "outputs": ["*.vsix"]
+    },
+    "publish": {},
+    "quality-gate": {
+      "dependsOn": ["test", "lint", "check-types"]
     },
     "dev": {
       "cache": false,
@@ -30,41 +42,6 @@
     "watch:bundle": {
       "cache": false,
       "persistent": true
-    },
-    "lint": {
-      "dependsOn": ["^build"]
-    },
-    "check-types": {
-      "dependsOn": ["^build"]
-    },
-    "test": {
-      "dependsOn": ["^build"]
-    },
-    "format": {},
-    "clean": {
-      "cache": false
-    },
-    "compile": {
-      "dependsOn": ["^build"],
-      "outputs": ["out/**", "dist/**"]
-    },
-    "compile:webview": {
-      "dependsOn": ["^build"],
-      "outputs": ["webview-ui/dist/**"]
-    },
-    "package": {
-      "dependsOn": ["^build", "@dish-ai-commit/webview-ui#build"],
-      "outputs": ["*.vsix"]
-    },
-    "vsix": {
-      "dependsOn": ["build", "compile:webview"],
-      "outputs": ["*.vsix"]
-    },
-    "publish": {
-      "dependsOn": ["package"]
-    },
-    "quality-gate": {
-      "dependsOn": ["test", "lint", "check-types"]
     }
   }
 }

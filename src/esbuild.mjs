@@ -1,8 +1,8 @@
-import * as esbuild from "esbuild";
-import * as fs from "fs";
-import process from "node:process";
-import * as path from "path";
-import { fileURLToPath } from "url";
+import * as esbuild from "esbuild"
+import * as fs from "fs"
+import process from "node:process"
+import * as path from "path"
+import { fileURLToPath } from "url"
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -55,7 +55,6 @@ async function main() {
               ["src/license", "LICENSE", { optional: true }],
               ["SECURITY.md", "SECURITY.md", { optional: true }],
               ["webview-ui/dist", "webview-ui-dist"],
-              // 移除: ["src/out/prompt", "dist/prompt"] - 现在由 esbuild 直接编译
             ],
             srcDir,
             distDir

@@ -138,7 +138,7 @@ jobs:
           TURBO_TELEMETRY_DISABLED: "1"
         run: |
           mkdir -p release-artifacts
-          pnpm turbo run package --filter dish-ai-commit --filter @dish-ai-commit/webview-ui --log-order grouped --output-logs new-only
+          pnpm turbo run package --filter dish-ai-commit
 
           VSIX_FILE=$(ls src/*.vsix | head -n 1 || true)
 
