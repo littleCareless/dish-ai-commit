@@ -33,7 +33,8 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         }}
         onKeyDown={onKeyDown}
         className={className}
-        ref={ref}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        ref={ref as any}
         {...props}
       />
     );

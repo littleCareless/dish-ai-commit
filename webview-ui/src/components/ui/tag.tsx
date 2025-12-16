@@ -4,6 +4,7 @@ import React from "react";
 const Tag = React.forwardRef<
   HTMLElement,
   React.ComponentProps<typeof VSCodeTag>
->((props, ref) => <VSCodeTag {...props} ref={ref} />);
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+>((props, ref) => <VSCodeTag {...props} ref={ref as any} />);
 
 export { Tag };

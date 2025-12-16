@@ -110,10 +110,10 @@ export const KeyValueField: React.FC<KeyValueFieldProps> = ({
             <div key={index} className="flex items-center gap-2">
               <VSCodeTextField
                 value={key}
-                onChange={(e: Event) =>
+                onChange={(e: React.FormEvent<HTMLInputElement>) =>
                   handleUpdate(index, (e.target as HTMLInputElement).value, val)
                 }
-                onInput={(e: Event) =>
+                onInput={(e: React.FormEvent<HTMLInputElement>) =>
                   handleUpdate(index, (e.target as HTMLInputElement).value, val)
                 }
                 placeholder={
@@ -126,10 +126,10 @@ export const KeyValueField: React.FC<KeyValueFieldProps> = ({
               />
               <VSCodeTextField
                 value={val}
-                onChange={(e: Event) =>
+                onChange={(e: React.FormEvent<HTMLInputElement>) =>
                   handleUpdate(index, key, (e.target as HTMLInputElement).value)
                 }
-                onInput={(e: Event) =>
+                onInput={(e: React.FormEvent<HTMLInputElement>) =>
                   handleUpdate(index, key, (e.target as HTMLInputElement).value)
                 }
                 placeholder={

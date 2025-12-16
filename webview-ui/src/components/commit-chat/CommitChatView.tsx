@@ -292,9 +292,10 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
           <div className="flex gap-3">
             <div className="flex-1 relative">
               <VSCodeTextArea
-                ref={textareaRef}
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                ref={textareaRef as any}
                 value={state.inputValue}
-                onInput={(e: Event) =>
+                onInput={(e: React.FormEvent<HTMLTextAreaElement>) =>
                   handleInputChange(
                     e as unknown as React.ChangeEvent<HTMLTextAreaElement>,
                   )
