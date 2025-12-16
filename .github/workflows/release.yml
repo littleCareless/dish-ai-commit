@@ -160,9 +160,10 @@ jobs:
           VSIX_FILE: ${{ steps.package.outputs.vsix_path }}
         run: |
           echo "Dry-run vsce publish..."
-          pnpm dlx @vscode/vsce publish --packagePath "$VSIX_FILE" --pre-release --dry-run
-          echo "Dry-run ovsx publish（模拟执行，若不支持 --dry-run 则跳过）"
-          pnpm dlx ovsx publish "$VSIX_FILE" --pre-release --skip-duplicate --pat "${OVSX_PAT:-dummy}" --dry-run 2>/dev/null || echo "ovsx dry-run skipped"
+          echo "Dry-run vsce publish... (Skipped: @vscode/vsce does not support --dry-run)"
+          # pnpm dlx @vscode/vsce publish --packagePath "$VSIX_FILE" --pre-release --dry-run
+          echo "Dry-run ovsx publish... (Skipped: ovsx does not support --dry-run)"
+          # pnpm dlx ovsx publish "$VSIX_FILE" --pre-release --skip-duplicate --pat "${OVSX_PAT:-dummy}" --dry-run 2>/dev/null || echo "ovsx dry-run skipped"
 
       # =================================================================
       # 2. 确定发布类型 (Determine Release Type)
