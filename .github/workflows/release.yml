@@ -71,8 +71,27 @@ jobs:
       - name: Install workspace dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Install extension dependencies for VSIX (src)
-        run: pnpm --filter dish-ai-commit install --frozen-lockfile
+      - name: Verify dependencies for esbuild
+        run: |
+          echo "Verifying critical dependencies for esbuild..."
+          # 检查根目录 node_modules（pnpm workspace 可能在根目录 hoist）
+          if [ -d "node_modules/ignore" ] || [ -d "src/node_modules/ignore" ]; then
+            echo "✓ 'ignore' package found"
+          else
+            echo "::warning::'ignore' package not found in expected locations, but pnpm may resolve via .pnpm store"
+          fi
+          if [ -d "node_modules/fast-deep-equal" ] || [ -d "src/node_modules/fast-deep-equal" ]; then
+            echo "✓ 'fast-deep-equal' package found"
+          else
+            echo "::warning::'fast-deep-equal' package not found in expected locations, but pnpm may resolve via .pnpm store"
+          fi
+          # 验证包在 package.json 中声明
+          if grep -q '"ignore"' src/package.json && grep -q '"fast-deep-equal"' src/package.json; then
+            echo "✓ Dependencies declared in src/package.json"
+          else
+            echo "::error::Dependencies not properly declared in src/package.json"
+            exit 1
+          fi
 
       - name: Compute publish flags
         id: flags
