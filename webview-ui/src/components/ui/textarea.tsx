@@ -28,12 +28,10 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         readOnly={readOnly}
         rows={rows}
         onInput={(e: any) => {
-          // Adapt CustomEvent/Event to React.ChangeEvent structure that consumers expect
-          onChange?.(e as unknown as React.ChangeEvent<HTMLTextAreaElement>);
+          onChange?.(e);
         }}
         onKeyDown={onKeyDown}
         className={className}
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         ref={ref as any}
         {...props}
       />
