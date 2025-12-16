@@ -648,7 +648,7 @@
     "node-notifier": "^10.0.1",
     "ollama": "^0.6.0",
     "ollama-ai-provider-v2": "^1.5.4",
-    "openai": "^5.23.1",
+    "openai": "^6.13.0",
     "tiktoken": "^1.0.22",
     "tree-sitter-wasms": "^0.1.12",
     "uuid": "^13.0.0",
