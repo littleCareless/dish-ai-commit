@@ -23,6 +23,7 @@
     "publish": "turbo publish --log-order grouped --output-logs new-only",
     "vsix": "turbo vsix --log-order grouped --output-logs new-only",
     "clean": "turbo clean --log-order grouped --output-logs new-only && rimraf dist out webview-ui/dist .turbo",
+    "clean:all": "npm run clean && rimraf node_modules **/node_modules pnpm-lock.yaml package-lock.json yarn.lock *.vsix",
     "quality-gate": "turbo quality-gate --log-order grouped --output-logs new-only"
   },
   "devDependencies": {
@@ -38,7 +39,6 @@
     "@types/jest": "^30.0.0",
     "@types/mocha": "^10.0.10",
     "@types/node": "~24.6.0",
-    "@types/uuid": "^11.0.0",
     "@types/vscode": "^1.90.0",
     "@typescript-eslint/eslint-plugin": "^8.45.0",
     "@typescript-eslint/parser": "^8.45.0",

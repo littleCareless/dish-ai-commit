@@ -15,6 +15,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
       rows = 4,
       onChange,
       onKeyDown,
+      onInput,
       ...props
     },
     ref,
@@ -28,7 +29,7 @@ const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
         readOnly={readOnly}
         rows={rows}
         onInput={(e: any) => {
-          onChange?.(e);
+          onInput?.(e);
         }}
         onKeyDown={onKeyDown}
         className={className}
