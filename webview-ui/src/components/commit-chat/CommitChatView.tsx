@@ -292,9 +292,13 @@ const CommitChatView: React.FC<CommitChatViewProps> = ({
           <div className="flex gap-3">
             <div className="flex-1 relative">
               <VSCodeTextArea
-                ref={textareaRef as any}
+                ref={textareaRef}
                 value={state.inputValue}
-                onInput={handleInputChange as any}
+                onInput={(e: Event) =>
+                  handleInputChange(
+                    e as unknown as React.ChangeEvent<HTMLTextAreaElement>,
+                  )
+                }
                 onKeyDown={handleKeyDown}
                 placeholder="描述你的代码变更，或者告诉我你想要的 commit message 风格..."
                 className="min-h-[60px] max-h-[120px] resize-none pr-12"

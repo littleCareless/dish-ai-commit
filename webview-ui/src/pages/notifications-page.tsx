@@ -152,11 +152,10 @@ export const NotificationsPage: React.FC = () => {
               </div>
               <VSCodeCheckbox
                 checked={settings.textToSpeech}
-                onChange={
-                  ((e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleTextToSpeechChange(
-                      (e.target as HTMLInputElement).checked,
-                    )) as any
+                onChange={(e: Event) =>
+                  handleTextToSpeechChange(
+                    (e.target as HTMLInputElement).checked,
+                  )
                 }
               />
             </div>
@@ -192,11 +191,10 @@ export const NotificationsPage: React.FC = () => {
               </div>
               <VSCodeCheckbox
                 checked={settings.soundNotifications}
-                onChange={
-                  ((e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleSoundNotificationsChange(
-                      (e.target as HTMLInputElement).checked,
-                    )) as any
+                onChange={(e: Event) =>
+                  handleSoundNotificationsChange(
+                    (e.target as HTMLInputElement).checked,
+                  )
                 }
               />
             </div>
@@ -275,11 +273,10 @@ export const NotificationsPage: React.FC = () => {
               </div>
               <VSCodeCheckbox
                 checked={settings.systemNotifications}
-                onChange={
-                  ((e: React.ChangeEvent<HTMLInputElement>) =>
-                    handleSystemNotificationsChange(
-                      (e.target as HTMLInputElement).checked,
-                    )) as any
+                onChange={(e: Event) =>
+                  handleSystemNotificationsChange(
+                    (e.target as HTMLInputElement).checked,
+                  )
                 }
               />
             </div>

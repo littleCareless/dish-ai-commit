@@ -3,7 +3,7 @@ import * as React from "react";
 
 export type TextareaProps = React.TextareaHTMLAttributes<HTMLTextAreaElement>;
 
-const Textarea = React.forwardRef<any, TextareaProps>(
+const Textarea = React.forwardRef<HTMLTextAreaElement, TextareaProps>(
   (
     {
       className,
@@ -27,7 +27,10 @@ const Textarea = React.forwardRef<any, TextareaProps>(
         disabled={disabled}
         readOnly={readOnly}
         rows={rows}
-        onInput={onChange as any}
+        onInput={(e: Event) => {
+          // Adapt CustomEvent/Event to React.ChangeEvent structure that consumers expect
+          onChange?.(e as unknown as React.ChangeEvent<HTMLTextAreaElement>);
+        }}
         onKeyDown={onKeyDown}
         className={className}
         ref={ref}

@@ -6,17 +6,17 @@ import {
 import React from "react";
 
 const DataGrid = React.forwardRef<
-  any,
+  HTMLElement,
   React.ComponentProps<typeof VSCodeDataGrid>
 >((props, ref) => <VSCodeDataGrid {...props} ref={ref} />);
 
 const DataGridRow = React.forwardRef<
-  any,
+  HTMLElement,
   React.ComponentProps<typeof VSCodeDataGridRow>
 >((props, ref) => <VSCodeDataGridRow {...props} ref={ref} />);
 
 const DataGridCell = React.forwardRef<
-  any,
+  HTMLElement,
   React.ComponentProps<typeof VSCodeDataGridCell>
 >((props, ref) => <VSCodeDataGridCell {...props} ref={ref} />);
 
