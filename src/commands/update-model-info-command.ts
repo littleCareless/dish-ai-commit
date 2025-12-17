@@ -4,14 +4,14 @@
  */
 
 import * as vscode from "vscode";
-import { BaseCommand } from "./base-command";
 import {
   ModelUpdateService,
   checkModelUpdates,
 } from "../ai/model-registry/model-update-service";
+import { ProfileManagerService } from "../services/profile-manager/profile-manager-service";
 import { notify } from "../utils/notification/notification-manager";
-import { getMessage, formatMessage } from "../utils/i18n";
 import { ProgressHandler } from "../utils/notification/progress-handler";
+import { BaseCommand } from "./base-command";
 
 /**
  * 更新模型信息命令类
@@ -93,16 +93,36 @@ export class UpdateModelInfoCommand extends BaseCommand {
 
       switch (selectedOption) {
         case "更新所有模型":
-          await this.updateAllModels(service);
+          const profileManager = await ProfileManagerService.create(
+            this.context
+          );
+          const profile = profileManager.getProfileForMode();
+          await this.updateAllModels(service, profile);
           break;
         case "更新 OpenAI 模型":
-          await this.updateProviderModels(service, "openai");
+          const profileManagerOpenAI = await ProfileManagerService.create(
+            this.context
+          );
+          const profileOpenAI = profileManagerOpenAI.getProfileForMode();
+          await this.updateProviderModels(service, "openai", profileOpenAI);
           break;
         case "更新 Anthropic 模型":
-          await this.updateProviderModels(service, "anthropic");
+          const profileManagerAnthropic = await ProfileManagerService.create(
+            this.context
+          );
+          const profileAnthropic = profileManagerAnthropic.getProfileForMode();
+          await this.updateProviderModels(
+            service,
+            "anthropic",
+            profileAnthropic
+          );
           break;
         case "更新 GitHub 模型":
-          await this.updateProviderModels(service, "github");
+          const profileManagerGitHub = await ProfileManagerService.create(
+            this.context
+          );
+          const profileGitHub = profileManagerGitHub.getProfileForMode();
+          await this.updateProviderModels(service, "github", profileGitHub);
           break;
         case "查看模型统计信息":
           await this.showModelStats(service);
@@ -119,14 +139,17 @@ export class UpdateModelInfoCommand extends BaseCommand {
   /**
    * 更新所有模型信息
    */
-  private async updateAllModels(service: ModelUpdateService): Promise<void> {
+  private async updateAllModels(
+    service: ModelUpdateService,
+    profile: any
+  ): Promise<void> {
     await ProgressHandler.withProgress(
       "正在更新所有模型信息...",
       async (progress, token) => {
         progress.report({ message: "开始更新模型信息" });
         this.logger.info("Updating all models...");
 
-        const result = await service.updateAllModels();
+        const result = await service.updateAllModels(profile);
         this.logger.info(
           `Update all models result: ${result.updatedModels.length} updated, ${result.failedModels.length} failed.`
         );
@@ -154,7 +177,8 @@ export class UpdateModelInfoCommand extends BaseCommand {
    */
   private async updateProviderModels(
     service: ModelUpdateService,
-    providerId: string
+    providerId: string,
+    profile: any
   ): Promise<void> {
     await ProgressHandler.withProgress(
       `正在更新 ${providerId.toUpperCase()} 模型信息...`,
@@ -162,7 +186,7 @@ export class UpdateModelInfoCommand extends BaseCommand {
         progress.report({ message: `开始更新 ${providerId} 模型信息` });
         this.logger.info(`Updating models for provider: ${providerId}...`);
 
-        const result = await service.updateProviderModels(providerId);
+        const result = await service.updateProviderModels(providerId, profile);
         this.logger.info(
           `Update models for ${providerId} result: ${result.updatedModels.length} updated, ${result.failedModels.length} failed.`
         );

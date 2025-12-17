@@ -61,26 +61,13 @@ export abstract class BaseCommand {
   }
 
   /**
-   * 获取当前配置概要
-   * @returns 配置概要
-   */
-  protected async getProfile() {
-    const profileManager = await ProfileManagerService.create(this.context);
-    return profileManager.getProfileForMode();
-  }
-
-  /**
    * 处理AI配置
    * @returns AI提供商和模型信息,如果配置无效则返回undefined
    */
-  protected async handleConfiguration(): Promise<
-    { provider: string; model: string; config: any } | undefined
-  > {
-    const profileManager = await ProfileManagerService.create(this.context);
-
-    // Step 1: 获取当前激活的 profile
-    const profile = await profileManager.getProfileForMode();
-
+  protected handleConfiguration(
+    profile: any,
+    featureSettings: any
+  ): { provider: string; model: string; config: any } | undefined {
     if (!profile) {
       this.logger.error("未找到配置");
       throw new Error(getMessage("profile.not.found"));
@@ -89,68 +76,24 @@ export abstract class BaseCommand {
     this.logger.debug(`获取到配置: ${JSON.stringify(profile, null, 2)}`);
 
     // Step 2: 从 profile 中提取配置信息
-    // 新的配置结构:
-    // profile.activeProviderId -> profile.providers[activeProviderId] -> { model, baseUrl, ... }
-    let provider: string | undefined;
-    let model: string | undefined;
-    let config: any = {};
+    // 使用统一的 ProviderSelectionService 选择 provider
+    const { ProviderSelectionService } =
+      require("@/services/core/provider-selection-service") as typeof import("@/services/core/provider-selection-service");
 
-    if (profile.providers && typeof profile.providers === "object") {
-      const providers = profile.providers as Record<string, any>;
+    const selection = ProviderSelectionService.selectProvider(profile);
+    const provider = selection.provider;
+    const model = selection.model;
+    let config = selection.config as any;
 
-      this.logger.debug(
-        `配置中的 providers: ${JSON.stringify(Object.keys(providers))}`
-      );
-      this.logger.debug(`activeProviderId: ${profile.activeProviderId}`);
-
-      // 策略1: 使用 activeProviderId (优先)
-      if (profile.activeProviderId && providers[profile.activeProviderId]) {
-        const providerConfig = providers[profile.activeProviderId];
-        provider = profile.activeProviderId;
-        model = providerConfig.model;
-        config = providerConfig;
-
-        this.logger.info(
-          `使用 activeProviderId: provider=${provider}, model=${model}`
-        );
-      }
-
-      // 策略2: 找第一个有 model 的提供商
-      if (!provider || !model) {
-        const providerWithModel = Object.entries(providers).find(
-          ([_, config]) => config.model
-        );
-
-        if (providerWithModel) {
-          const [providerId, providerConfig] = providerWithModel;
-          provider = providerId;
-          model = providerConfig.model;
-          config = providerConfig;
-
-          this.logger.info(
-            `使用第一个有模型的 provider: provider=${provider}, model=${model}`
-          );
-        }
-      }
-
-      // 策略3: 使用第一个提供商
-      if (!provider && Object.keys(providers).length > 0) {
-        const firstProviderId = Object.keys(providers)[0];
-        const providerConfig = providers[firstProviderId];
-        provider = firstProviderId;
-        model = providerConfig.model;
-        config = providerConfig;
-
-        this.logger.warn(
-          `未设置 activeProviderId,使用第一个 provider: provider=${provider}, model=${model}`
-        );
-      }
-    } else {
-      // 兼容旧的配置结构
-      provider = profile.apiProvider;
-      model = profile.apiModelId;
-      this.logger.info(`使用旧配置结构: provider=${provider}, model=${model}`);
-    }
+    this.logger.debug("Provider 选择完成", {
+      data: {
+        provider,
+        model,
+        hasConfig: !!config,
+        configKeys: Object.keys(config || {}),
+        apiKey: config?.apiKey,
+      },
+    });
 
     // Step 3: 验证配置完整性
     if (!provider || !model) {
@@ -162,21 +105,31 @@ export abstract class BaseCommand {
     }
 
     // 构建完整配置
-    const featureSettings = profileManager.getFeatureSettings();
     const fullConfig = {
       ...config,
       base: {
         language: profile.preferences.language || "Simplified Chinese",
       },
       features: {
+        suppressNonCriticalWarnings:
+          featureSettings.suppressNonCriticalWarnings,
         commitFormat: {
           enableMergeCommit: featureSettings.enableMergeCommit,
           enableEmoji: featureSettings.enableEmoji,
           enableBody: featureSettings.enableBody,
+          enableLayeredCommit: featureSettings.enableLayeredCommit,
+          enableGlobalContext: featureSettings.enableGlobalContext,
         },
         commitMessage: {
           useRecentCommitsAsReference:
             featureSettings.useRecentCommitsAsReference,
+          systemPrompt: undefined,
+        },
+        codeAnalysis: {
+          diffTarget: featureSettings.diffTarget,
+          autoDetectStaged: featureSettings.autoDetectStaged,
+          fallbackToAll: featureSettings.fallbackToAll,
+          simplifyDiff: featureSettings.simplifyDiff,
         },
         codeReview: {
           systemPrompt: undefined,
@@ -184,12 +137,20 @@ export abstract class BaseCommand {
         branchName: {
           systemPrompt: undefined,
         },
+        weeklyReport: {
+          systemPrompt: undefined,
+        },
+        prSummary: {
+          systemPrompt: undefined,
+          baseBranch: undefined,
+          headBranch: undefined,
+        },
       },
       preferences: profile.preferences,
     };
 
     this.logger.info(
-      `最终配置 - Provider: ${provider}, Model: ${model}, Config: ${JSON.stringify(config)}`
+      `最终配置 - Provider: ${provider}, Model: ${model}, FullConfig Keys: ${Object.keys(fullConfig).join(", ")}, ApiKey: ${fullConfig.apiKey ? "***" : "undefined"}`
     );
 
     return { provider, model, config: fullConfig };
@@ -206,33 +167,14 @@ export abstract class BaseCommand {
     model: string,
     config?: any
   ): Promise<void> {
-    try {
-      const aiProvider = AIProviderFactory.getProvider(provider, config);
-      const models = await aiProvider.getModels();
-
-      // 检查模型是否在可用模型列表中
-      const selectedModel = models.find((m: AIModel) => m.id === model);
-      this.logger.debug("验证模型可用性", {
-        data: { provider, model, found: !!selectedModel, availableModels: models.map(m => m.id) }
-      });
-      if (!selectedModel) {
-        this.logger.error("模型未找到", {
-          operation: "verifyModelAvailability",
-          data: { provider, model, availableModels: models.map(m => m.id) }
-        });
-        throw new Error(getMessage("model.not.found"));
-      }
-
-      this.logger.info(
-        `Model ${model} from provider ${provider} is available.`
-      );
-    } catch (error) {
-      this.logger.logError(
-        error as Error,
-        `Model verification failed for ${provider}/${model}`
-      );
-      throw new Error(getMessage("model.verification.failed"));
-    }
+    const { ModelValidationService } =
+      await import("@/services/core/model-validation-service");
+    return ModelValidationService.verifyModelExists(
+      provider,
+      model,
+      config,
+      config
+    );
   }
 
   /**
@@ -335,14 +277,27 @@ export abstract class BaseCommand {
     }
 
     // 2. 验证配置
-    const configResult = await this.handleConfiguration();
+    const profileManager = await ProfileManagerService.create(this.context);
+    const activeProfileId = profileManager.getActiveProfileId();
+    const profile = activeProfileId
+      ? profileManager.getProfileById(activeProfileId)
+      : null;
+
+    if (!profile) {
+      this.logger.error("未找到配置");
+      await notify.error(getMessage("profile.not.found"));
+      return;
+    }
+    const featureSettings = profileManager.getFeatureSettings();
+
+    const configResult = this.handleConfiguration(profile, featureSettings);
     if (!configResult) {
       this.logger.warn("Configuration is not valid.");
       return;
     }
     const { provider, model, config } = configResult;
     this.logger.debug("配置处理完成", {
-      data: { provider, model, hasConfig: !!config }
+      data: { provider, model, hasConfig: !!config },
     });
     // 验证模型可用性
     if (options.progress) {
@@ -393,9 +348,9 @@ export abstract class BaseCommand {
       // 模型验证逻辑已移除
       // 我们假设ProfileManager返回的配置是有效的，或者在执行时处理错误
       // 🔥 关键修复：传递 config 以确保 API key 等配置被正确传递
-      const aiProvider = AIProviderFactory.getProvider(provider, config);
+      const aiProvider = await AIProviderFactory.getProvider(provider, config);
       // 确保设置全局配置（包含 preferences 等）
-      if (aiProvider && typeof aiProvider.setGlobalConfig === 'function') {
+      if (aiProvider && typeof aiProvider.setGlobalConfig === "function") {
         aiProvider.setGlobalConfig(config);
       }
       aiContext = {

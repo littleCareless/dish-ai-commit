@@ -8,7 +8,6 @@ import { getLayeredCommitBatchVariables } from "@/prompt/layered-commit-batch";
 import { ISCMProvider } from "@/scm/scm-provider";
 import { PromptManagerService } from "@/services/core/prompt-manager-service";
 import { RateLimiterService } from "@/services/core/rate-limiter-service";
-import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 import { PromptKey } from "@/types/prompts";
 import { getMessage } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
@@ -49,7 +48,8 @@ export class LayeredCommitHandler {
     selectedFiles: string[] | undefined,
     token: vscode.CancellationToken,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
-    selectedModel: AIModel
+    selectedModel: AIModel,
+    config: any
   ): Promise<void> {
     this.logger.logOperationStart("handleLayeredCommit", {
       data: {
@@ -70,8 +70,6 @@ export class LayeredCommitHandler {
       notify.warn("no.files.selected.for.layered.commit");
       return;
     }
-
-    const config = await this.getConfiguration();
 
     this.logger.debug("获取配置完成", {
       data: {
@@ -138,7 +136,8 @@ export class LayeredCommitHandler {
         scmProvider,
         fileDescriptions,
         token,
-        progress
+        progress,
+        config
       );
 
       this.logger.logOperationEnd("handleLayeredCommit", undefined, {
@@ -167,7 +166,8 @@ export class LayeredCommitHandler {
     scmProvider: ISCMProvider,
     fileChanges: { filePath: string; description: string }[],
     token: vscode.CancellationToken,
-    progress: vscode.Progress<{ message?: string; increment?: number }>
+    progress: vscode.Progress<{ message?: string; increment?: number }>,
+    config: any
   ): Promise<void> {
     this.logger.logOperationStart("generateAndApplyLayeredSummary", {
       data: { fileCount: fileChanges.length },
@@ -176,8 +176,6 @@ export class LayeredCommitHandler {
     progress.report({
       message: getMessage("progress.generating.layered.summary"),
     });
-
-    const config = await this.getConfiguration();
 
     const formattedFileChanges = fileChanges
       .map(
@@ -260,60 +258,6 @@ export class LayeredCommitHandler {
       await this.messageBuilder.showLayeredCommitDetails(fileChanges, true);
       notify.error("error.applying.layered.summary");
     }
-  }
-
-  /**
-   * 获取配置对象
-   * 使用 ProfileManagerService 从 profile 中获取配置
-   */
-  private async getConfiguration(): Promise<any> {
-    this.logger.debug("获取配置");
-
-    const profileManager = ProfileManagerService.getInstance();
-    const profile = await profileManager.getProfileForMode();
-    const featureSettings = profileManager.getFeatureSettings();
-
-    if (!profile) {
-      this.logger.error("未找到 profile", {
-        operation: "getConfiguration",
-      });
-      throw new Error(getMessage("profile.not.found"));
-    }
-
-    this.logger.debug("配置获取成功", {
-      data: {
-        hasPreferences: !!profile.preferences,
-        enableMergeCommit: featureSettings.enableMergeCommit,
-      },
-    });
-
-    // 构建配置对象，兼容旧的配置结构
-    return {
-      base: {
-        language: profile.preferences?.language || "Simplified Chinese",
-      },
-      features: {
-        commitFormat: {
-          enableMergeCommit: featureSettings.enableMergeCommit,
-          enableEmoji: featureSettings.enableEmoji,
-          enableBody: featureSettings.enableBody,
-          enableLayeredCommit: featureSettings.enableLayeredCommit,
-        },
-        commitMessage: {
-          useRecentCommitsAsReference:
-            featureSettings.useRecentCommitsAsReference,
-        },
-        codeAnalysis: {
-          diffTarget: featureSettings.diffTarget || "auto",
-          autoDetectStaged: featureSettings.autoDetectStaged,
-          fallbackToAll: featureSettings.fallbackToAll,
-          simplifyDiff: featureSettings.simplifyDiff,
-        },
-        suppressNonCriticalWarnings:
-          featureSettings.suppressNonCriticalWarnings ?? true,
-      },
-      preferences: profile.preferences || {},
-    };
   }
 
   /**

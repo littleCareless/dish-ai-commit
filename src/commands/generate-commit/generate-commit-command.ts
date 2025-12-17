@@ -2,7 +2,6 @@ import { BaseCommand } from "@/commands/base-command";
 import { CrossRepositoryHandler } from "@/commands/generate-commit/handlers/cross-repository-handler";
 import { StreamingGenerationHelper } from "@/commands/generate-commit/utils/streaming-generation-helper";
 import { SCMFactory } from "@/scm/scm-provider";
-import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 import { formatMessage, getMessage } from "@/utils/i18n";
 import { notify } from "@/utils/notification/notification-manager";
 import { ProgressHandler } from "@/utils/notification/progress-handler";
@@ -20,16 +19,10 @@ export class GenerateCommitCommand extends BaseCommand {
    * 创建命令实例
    * @param context - VSCode扩展上下文
    */
-  constructor(
-    context: vscode.ExtensionContext,
-    private readonly profileManager: ProfileManagerService
-  ) {
+  constructor(context: vscode.ExtensionContext) {
     super(context);
     this.crossRepoHandler = new CrossRepositoryHandler(this.logger);
-    this.streamingHelper = new StreamingGenerationHelper(
-      this.logger,
-      this.profileManager
-    );
+    this.streamingHelper = new StreamingGenerationHelper(this.logger);
   }
 
   /**
@@ -54,12 +47,12 @@ export class GenerateCommitCommand extends BaseCommand {
       return;
     }
 
-    const { provider, model } = context;
+    const { provider, model, providerConfig } = context;
     this.logger.info(`Using AI provider: ${provider}, model: ${model}`);
 
     // 步骤3: 处理具体执行逻辑
     try {
-      await this.executeCommitGeneration(arg, provider, model);
+      await this.executeCommitGeneration(arg, provider, model, providerConfig);
     } catch (error) {
       this.logger.logError(error as Error, "生成提交信息失败");
       if (error instanceof Error) {
@@ -74,7 +67,8 @@ export class GenerateCommitCommand extends BaseCommand {
   private async executeCommitGeneration(
     arg: any,
     provider: string,
-    model: string
+    model: string,
+    providerConfig: any
   ): Promise<void> {
     // 解析参数
     const parsedArgs = this.parseArguments(arg);
@@ -84,13 +78,19 @@ export class GenerateCommitCommand extends BaseCommand {
       await this.handleCrossRepositoryScenario(
         parsedArgs.filesByRepository,
         provider,
-        model
+        model,
+        providerConfig
       );
       return;
     }
 
     // 处理单仓库场景
-    await this.handleSingleRepositoryScenario(parsedArgs, provider, model);
+    await this.handleSingleRepositoryScenario(
+      parsedArgs,
+      provider,
+      model,
+      providerConfig
+    );
   }
 
   /**
@@ -146,7 +146,8 @@ export class GenerateCommitCommand extends BaseCommand {
   private async handleCrossRepositoryScenario(
     filesByRepository: Map<string, string[]> | undefined,
     provider: string,
-    model: string
+    model: string,
+    providerConfig: any
   ): Promise<void> {
     if (!filesByRepository) {
       this.logger.warn(
@@ -177,7 +178,8 @@ export class GenerateCommitCommand extends BaseCommand {
           scmProvider,
           selectedFiles,
           resources,
-          repoPath
+          repoPath,
+          providerConfig
         )
     );
   }
@@ -188,7 +190,8 @@ export class GenerateCommitCommand extends BaseCommand {
   private async handleSingleRepositoryScenario(
     parsedArgs: any,
     provider: string,
-    model: string
+    model: string,
+    providerConfig: any
   ): Promise<void> {
     let result: any;
 
@@ -238,7 +241,8 @@ export class GenerateCommitCommand extends BaseCommand {
           scmProvider,
           selectedFiles,
           parsedArgs.resourceStates || [],
-          finalRepoPath
+          finalRepoPath,
+          providerConfig
         );
       }
     );

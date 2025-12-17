@@ -10,7 +10,6 @@ import { ISCMProvider } from "@/scm/scm-provider";
 import { smartDiffSelector } from "@/scm/smart-diff-selector";
 import { stagedContentDetector } from "@/scm/staged-content-detector";
 import { DiffTarget } from "@/scm/staged-detector-types";
-import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 import { ContextManager, RequestTooLargeError } from "@/utils/context-manager";
 import { getMessage } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
@@ -29,10 +28,7 @@ export class StreamingGenerationHelper {
   private streamingHandler: StreamingHandler;
   private functionCallingHandler: FunctionCallingHandler;
 
-  constructor(
-    private logger: Logger,
-    private profileManager: ProfileManagerService
-  ) {
+  constructor(private logger: Logger) {
     this.contextBuilder = new CommitContextBuilder();
     this.layeredCommitHandler = new LayeredCommitHandler(logger);
     this.streamingHandler = new StreamingHandler(logger);
@@ -50,7 +46,8 @@ export class StreamingGenerationHelper {
     scmProvider: ISCMProvider,
     selectedFiles: string[] | undefined,
     resources: vscode.SourceControlResourceState[],
-    repositoryPath: string | undefined
+    repositoryPath: string | undefined,
+    providerConfig: any
   ): Promise<void> {
     this.logger.info("Performing streaming generation...");
 
@@ -65,7 +62,8 @@ export class StreamingGenerationHelper {
         progress,
         scmProvider,
         selectedFiles,
-        resources
+        resources,
+        providerConfig
       );
 
     if (!diffContent) {
@@ -79,12 +77,14 @@ export class StreamingGenerationHelper {
     const modelConfig = await this.processModelConfiguration(
       progress,
       provider,
-      model
+      model,
+      providerConfig
     );
 
     // 阶段3: 构建上下文
     progress.report({
-      message: getMessage("progress.stage.buildingContext") || "[3/4] 构建上下文...",
+      message:
+        getMessage("progress.stage.buildingContext") || "[3/4] 构建上下文...",
     });
     const { contextManager, requestParams } =
       await this.preparePromptAndContext(
@@ -105,7 +105,8 @@ export class StreamingGenerationHelper {
 
     // 阶段4: 生成提交消息
     progress.report({
-      message: getMessage("progress.stage.generating") || "[4/4] 生成提交消息...",
+      message:
+        getMessage("progress.stage.generating") || "[4/4] 生成提交消息...",
     });
     await this.executeGenerationFlow(
       modelConfig.aiProvider,
@@ -129,43 +130,15 @@ export class StreamingGenerationHelper {
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     scmProvider: ISCMProvider,
     selectedFiles: string[] | undefined,
-    resources: vscode.SourceControlResourceState[]
+    resources: vscode.SourceControlResourceState[],
+    providerConfig: any
   ): Promise<{ configuration: any; diffContent: string | undefined }> {
-    // 使用 ProfileManagerService 获取配置
-    const profile = await this.profileManager.getProfileForMode();
-    const featureSettings = this.profileManager.getFeatureSettings();
-
-    if (!profile) {
+    if (!providerConfig) {
       throw new Error(getMessage("profile.not.found"));
     }
 
-    // 构建配置对象，兼容旧的配置结构
-    const configuration = {
-      base: {
-        language: profile.preferences?.language || "Simplified Chinese",
-      },
-      features: {
-        commitFormat: {
-          enableMergeCommit: featureSettings.enableMergeCommit,
-          enableEmoji: featureSettings.enableEmoji,
-          enableBody: featureSettings.enableBody,
-          enableLayeredCommit: featureSettings.enableLayeredCommit,
-        },
-        commitMessage: {
-          useRecentCommitsAsReference:
-            featureSettings.useRecentCommitsAsReference,
-        },
-        codeAnalysis: {
-          diffTarget: featureSettings.diffTarget || "auto",
-          autoDetectStaged: featureSettings.autoDetectStaged,
-          fallbackToAll: featureSettings.fallbackToAll,
-          simplifyDiff: featureSettings.simplifyDiff,
-        },
-        suppressNonCriticalWarnings:
-          featureSettings.suppressNonCriticalWarnings ?? true,
-      },
-      preferences: profile.preferences || {},
-    };
+    // 直接使用传入的 providerConfig 作为 configuration
+    const configuration = providerConfig;
 
     // 设置当前文件
     if (scmProvider.setCurrentFiles && selectedFiles) {
@@ -255,7 +228,8 @@ export class StreamingGenerationHelper {
   private async processModelConfiguration(
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     provider: string,
-    model: string
+    model: string,
+    providerConfig: any
   ): Promise<{
     provider: string;
     model: string;
@@ -264,14 +238,15 @@ export class StreamingGenerationHelper {
   }> {
     progress.report({ message: getMessage("progress.updating.model.config") });
 
-    // 直接使用validateAndGetModel获取配置
-    const { validateAndGetModel } = await import("@/utils/ai/model-validation");
-    const {
-      provider: newProvider,
-      model: newModel,
-      aiProvider,
-      selectedModel,
-    } = await validateAndGetModel(provider, model);
+    // 使用统一的模型验证服务
+    const { ModelValidationService } =
+      await import("@/services/core/model-validation-service");
+    const { aiProvider, selectedModel } =
+      await ModelValidationService.validateModel(
+        provider,
+        model,
+        providerConfig
+      );
 
     if (!selectedModel) {
       this.logger.error("No model selected.");
@@ -279,14 +254,14 @@ export class StreamingGenerationHelper {
     }
 
     if (!aiProvider.generateCommitStream) {
-      this.logger.error(`Provider ${newProvider} does not support streaming.`);
-      notify.error("provider.does.not.support.streaming", [newProvider]);
-      throw new Error(`Provider ${newProvider} does not support streaming.`);
+      this.logger.error(`Provider ${provider} does not support streaming.`);
+      notify.error("provider.does.not.support.streaming", [provider]);
+      throw new Error(`Provider ${provider} does not support streaming.`);
     }
 
     return {
-      provider: newProvider,
-      model: newModel,
+      provider,
+      model,
       aiProvider,
       selectedModel,
     };
@@ -353,7 +328,10 @@ export class StreamingGenerationHelper {
     const promptLength = contextManager.getEstimatedRawTokenCount();
     this.logger.info(`Estimated prompt length: ${promptLength} tokens.`);
 
-    const tokenLimits = await getAccurateTokenLimits(selectedModel);
+    const tokenLimits = await getAccurateTokenLimits(
+      selectedModel,
+      configuration
+    );
     const maxTokens = tokenLimits.input;
 
     if (
@@ -526,7 +504,8 @@ export class StreamingGenerationHelper {
         selectedFiles,
         token,
         progress,
-        selectedModel
+        selectedModel,
+        configuration
       );
     } else {
       this.logger.info("Performing standard streaming generation.");
