@@ -281,6 +281,14 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
    * @returns Promise<AIModel[]> 支持的模型配置数组
    */
   async getModels(): Promise<AIModel[]> {
+    // 如果没有提供API密钥，立即返回静态模型列表，避免不必要的API调用
+    if (!this.config.apiKey) {
+      console.warn(
+        `[BaseOpenAIProvider] No API key for ${this.config.providerName}, returning static model list.`
+      );
+      return this.config.models as AIModel[];
+    }
+
     try {
       const response = await this._fetchModelsFromApi();
       const models = response.data;

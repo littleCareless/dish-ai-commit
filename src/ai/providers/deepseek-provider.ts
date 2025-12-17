@@ -7,20 +7,20 @@ import { AIModel } from "@/ai/types";
  */
 const deepseekModels: AIModel[] = [
   {
-    id: "deepseek-v3-1-terminus",
-    name: "deepseek-v3.1-terminus - 深度思考/文本",
-    maxTokens: { input: 96 * 1024, output: 32 * 1024 },
-    provider: { id: "deepseek", name: "deepseek" },
+    id: "deepseek-chat",
+    name: "DeepSeek Chat (V3)",
+    maxTokens: { input: 128 * 1024, output: 8 * 1024 },
+    provider: { id: "deepseek", name: "DeepSeek" },
     default: true,
     capabilities: {
       functionCalling: true,
     },
   },
   {
-    id: "deepseek-v3-1-250821",
-    name: "deepseek-v3.1-250821 - 深度思考/文本",
-    maxTokens: { input: 96 * 1024, output: 32 * 1024 },
-    provider: { id: "deepseek", name: "deepseek" },
+    id: "deepseek-reasoner",
+    name: "DeepSeek Reasoner (R1)",
+    maxTokens: { input: 128 * 1024, output: 64 * 1024 },
+    provider: { id: "deepseek", name: "DeepSeek" },
     capabilities: {
       functionCalling: true,
     },
@@ -37,17 +37,35 @@ export class DeepseekAIProvider extends BaseOpenAIProvider {
    * 从配置管理器获取API密钥，初始化基类
    */
   constructor(config?: any) {
-    const apiKey = config?.apiKey;
-    const apiVersion = config?.apiVersion;
+    // 🔧 修复: 为 apiKey 提供默认值以支持 getAllProviders() 等元数据获取场景
+    // 当没有 config 或 apiKey 时,使用空字符串作为占位符
+    // 实际的 API 调用会在 isAvailable() 和具体方法中进行验证
+    const deepseekConfig = config?.providers?.deepseek;
+    const apiKey = deepseekConfig?.apiKey || "";
+    const apiVersion = deepseekConfig?.apiVersion;
+
+    // 仅在开发模式下输出详细调试信息
+    if (process.env.NODE_ENV === "development" || !apiKey) {
+      console.log("[DeepseekAIProvider] Constructor called:", {
+        hasConfig: !!config,
+        hasApiKey: !!apiKey,
+        apiVersion: apiVersion || "not set",
+        // 如果没有 apiKey,输出调用栈以便调试
+        ...(!apiKey && {
+          purpose: "Likely called from getAllProviders() for metadata",
+          stack: new Error().stack?.split("\n").slice(1, 3).join("\n"),
+        }),
+      });
+    }
 
     super({
       apiKey: apiKey,
-      baseUrl: "https://api.deepseek.com/v1",
+      baseUrl: "https://api.deepseek.com",
       apiVersion: apiVersion,
       providerId: "deepseek",
-      providerName: "Deepseek",
+      providerName: "DeepSeek",
       models: deepseekModels,
-      defaultModel: "deepseek-v3-1-terminus",
+      defaultModel: "deepseek-chat",
     });
   }
 

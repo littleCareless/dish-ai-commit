@@ -3,7 +3,10 @@ import {
   BRANCH_NAME_SYSTEM_TEMPLATE,
   BRANCH_NAME_USER_TEMPLATE,
 } from "@/prompt/branch-name";
-import { CODE_REVIEW_SYSTEM_TEMPLATE, getCodeReviewVariables } from "@/prompt/code-review";
+import {
+  CODE_REVIEW_SYSTEM_TEMPLATE,
+  getCodeReviewVariables,
+} from "@/prompt/code-review";
 import {
   generateCommitMessageSystemPrompt,
   generateThinkingProcessPrompt,
@@ -17,8 +20,6 @@ import {
   getFallbackCommitVariables,
 } from "@/prompt/generate-commit-fallback";
 import { PromptManagerService } from "@/services/core/prompt-manager-service";
-import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
-import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
 import { PromptKey } from "@/types/prompts";
 import { loadCommitlintConfig } from "@/utils/commitlint";
 import { getMessage } from "@/utils/i18n";
@@ -181,7 +182,8 @@ export async function* generateStreamWithRetry(
 
       // 达到最大重试次数或遇到不可重试的错误, 抛出异常
       throw new Error(
-        `Stream generation failed after ${retries} retries: ${error.message || String(error)
+        `Stream generation failed after ${retries} retries: ${
+          error.message || String(error)
         }`
       );
     }
@@ -265,8 +267,8 @@ export async function getSystemPrompt(
   try {
     isGeneratingPrompt = true;
 
-    const featureSettings = ProfileManagerService.getInstance().getFeatureSettings();
-    const preferences = PreferencesSettingsManager.getInstance().getSettings();
+    const featureSettings = config?.features || {};
+    const preferences = config?.preferences || {};
     const commitlintConfig = await loadCommitlintConfig(params.workspaceRoot);
 
     // 1. 优先使用params中提供的系统提示
@@ -276,7 +278,9 @@ export async function getSystemPrompt(
 
     // 2. 获取 Active Prompt (支持 .dish/prompts, Config, Default)
     const promptManager = PromptManagerService.getInstance();
-    const activePromptContent = await promptManager.getActivePromptContent(PromptKey.GenerateCommitSystem);
+    const activePromptContent = await promptManager.getActivePromptContent(
+      PromptKey.GenerateCommitSystem
+    );
 
     if (activePromptContent) {
       const {
@@ -327,9 +331,13 @@ export async function getSystemPrompt(
     if (useFallback) {
       const variables = getFallbackCommitVariables({
         vcsType: (params.scm === "svn" ? "svn" : "git") as "git" | "svn",
-        useRecentCommitsAsReference: featureSettings.useRecentCommitsAsReference,
+        useRecentCommitsAsReference:
+          featureSettings.useRecentCommitsAsReference,
       });
-      prompt = processPromptTemplate(GENERATE_COMMIT_FALLBACK_TEMPLATE, variables);
+      prompt = processPromptTemplate(
+        GENERATE_COMMIT_FALLBACK_TEMPLATE,
+        variables
+      );
     } else {
       // Construct a config object that mimics the old structure for the generator
       // This is a temporary bridge until we refactor the generators to accept FeatureSettings
@@ -342,7 +350,8 @@ export async function getSystemPrompt(
             enableBody: featureSettings.enableBody,
           },
           commitMessage: {
-            useRecentCommitsAsReference: featureSettings.useRecentCommitsAsReference,
+            useRecentCommitsAsReference:
+              featureSettings.useRecentCommitsAsReference,
           },
         },
       } as any;
@@ -379,14 +388,14 @@ export async function getCodeReviewPrompt(
 
   // 2. 检查 PromptManager 是否有自定义 prompt
   const promptManager = PromptManagerService.getInstance();
-  const promptDetail = promptManager.getPromptDetail(PromptKey.CodeReviewSystem);
-  
+  const promptDetail = promptManager.getPromptDetail(
+    PromptKey.CodeReviewSystem
+  );
+
   // 3. 获取语言配置
-  const profileManager = ProfileManagerService.getInstance();
-  const profile = await profileManager.getProfileForMode();
-  const language = profile?.preferences?.language || "English";
+  const language = config?.base?.language || "English";
   const variables = getCodeReviewVariables(language);
-  
+
   if (promptDetail.isCustomized && promptDetail.content.trim() !== "") {
     // 自定义 prompt 也需要替换变量
     const customPrompt = processPromptTemplate(promptDetail.content, variables);

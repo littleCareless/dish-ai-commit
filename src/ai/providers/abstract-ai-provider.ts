@@ -27,7 +27,6 @@ import {
 } from "@/prompt/weekly-report";
 import { PromptManagerService } from "@/services/core/prompt-manager-service";
 import { TokenStatsService } from "@/services/core/token-stats-service";
-import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
 import { PromptKey } from "@/types/prompts";
 import { formatMessage } from "@/utils/i18n/localization-manager";
@@ -222,8 +221,6 @@ export abstract class AbstractAIProvider implements AIProvider {
       // Let's check getCommitMessageTools signature.
       // Assuming we can pass a mock config or update getCommitMessageTools.
       // For now, let's construct a minimal config object from FeatureSettings.
-      const featureSettings =
-        ProfileManagerService.getInstance().getFeatureSettings();
       const preferences =
         this.globalConfig.preferences ||
         PreferencesSettingsManager.getInstance().getSettings();
@@ -234,8 +231,8 @@ export abstract class AbstractAIProvider implements AIProvider {
         },
         features: {
           commitFormat: {
-            enableBody: featureSettings.enableBody,
-            enableEmoji: featureSettings.enableEmoji,
+            enableBody: this.globalConfig.features?.commitFormat?.enableBody,
+            enableEmoji: this.globalConfig.features?.commitFormat?.enableEmoji,
           },
         },
       } as any;
@@ -251,7 +248,8 @@ export abstract class AbstractAIProvider implements AIProvider {
         const toolCall = result.tool_calls[0];
         if (toolCall.function.name === "generate_commit_message") {
           const args = JSON.parse(toolCall.function.arguments);
-          const { enableBody, enableEmoji } = featureSettings;
+          const { enableBody, enableEmoji } =
+            this.globalConfig.features?.commitFormat || {};
           const scope = args.scope ? `(${args.scope})` : "";
           const emoji = enableEmoji && args.emoji ? `${args.emoji} ` : "";
           const body = enableBody && args.body ? `\n\n${args.body}` : "";
@@ -422,9 +420,8 @@ export abstract class AbstractAIProvider implements AIProvider {
         systemPrompt = promptDetail.content;
       } else {
         // 使用默认模板
-        const profileManager = ProfileManagerService.getInstance();
-        const profile = await profileManager.getProfileForMode();
-        const baseLanguage = profile?.preferences?.language || "English";
+        const baseLanguage =
+          this.globalConfig.preferences?.language || "English";
 
         const variables = getWeeklyReportVariables({
           language: baseLanguage,

@@ -7,7 +7,7 @@ import {
   type AIProviders,
 } from "@/ai/types";
 import { getSystemPrompt } from "@/ai/utils/generate-helper"; // Import getSystemPrompt
-import { AIProvider } from "@/config/types";
+import { AIProviderID } from "@/config/types";
 import {
   PR_SUMMARY_SYSTEM_TEMPLATE,
   PR_SUMMARY_USER_TEMPLATE,
@@ -26,7 +26,7 @@ export class OllamaProvider extends AbstractAIProvider {
 
   /** 提供者标识信息 */
   private readonly provider = {
-    id: AIProvider.OLLAMA as AIProviders,
+    id: AIProviderID.OLLAMA as AIProviders,
     name: "Ollama",
   } as const;
 
@@ -35,28 +35,28 @@ export class OllamaProvider extends AbstractAIProvider {
       id: "nomic-embed-text",
       name: "nomic-embed-text",
       maxTokens: { input: 8192, output: 0 },
-      provider: { id: AIProvider.OLLAMA as AIProviders, name: "Ollama" },
+      provider: { id: AIProviderID.OLLAMA as AIProviders, name: "Ollama" },
       dimension: 768,
     },
     {
       id: "nomic-embed-code",
       name: "nomic-embed-code",
       maxTokens: { input: 8192, output: 0 },
-      provider: { id: AIProvider.OLLAMA as AIProviders, name: "Ollama" },
+      provider: { id: AIProviderID.OLLAMA as AIProviders, name: "Ollama" },
       dimension: 768,
     },
     {
       id: "mxbai-embed-large",
       name: "mxbai-embed-large",
       maxTokens: { input: 8192, output: 0 },
-      provider: { id: AIProvider.OLLAMA as AIProviders, name: "Ollama" },
+      provider: { id: AIProviderID.OLLAMA as AIProviders, name: "Ollama" },
       dimension: 1024,
     },
     {
       id: "all-minilm",
       name: "all-minilm",
       maxTokens: { input: 8192, output: 0 },
-      provider: { id: AIProvider.OLLAMA as AIProviders, name: "Ollama" },
+      provider: { id: AIProviderID.OLLAMA as AIProviders, name: "Ollama" },
       dimension: 384,
     },
   ];
@@ -279,7 +279,7 @@ export class OllamaProvider extends AbstractAIProvider {
   /**
    * 资源释放
    */
-  dispose() { }
+  dispose() {}
 
   /**
    * 生成PR摘要
