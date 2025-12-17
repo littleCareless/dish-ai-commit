@@ -1,6 +1,5 @@
 import { AIProviderFactory } from "@/ai/ai-provider-factory";
 import { AIModel } from "@/ai/types";
-import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 import { getMessage } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
 
@@ -32,7 +31,7 @@ async function getProviderAndModels(
   });
 
   try {
-    const aiProvider = AIProviderFactory.getProvider(provider, config);
+    const aiProvider = await AIProviderFactory.getProvider(provider, config);
     const models = await aiProvider.getModels();
 
     logger.logOperationEnd("getProviderAndModels", undefined, {
@@ -57,7 +56,8 @@ async function getProviderAndModels(
  */
 async function revalidateModel(
   provider: string,
-  model: string
+  model: string,
+  profile: any
 ): Promise<ValidatedModelResult> {
   logger.logOperationStart("revalidateModel", {
     data: { provider, model },
@@ -65,7 +65,7 @@ async function revalidateModel(
 
   try {
     // selectAndUpdateModel 已经从 profile 读取配置并验证了模型
-    const result = await selectAndUpdateModel(provider, model);
+    const result = await selectAndUpdateModel(provider, model, profile);
 
     logger.debug("selectAndUpdateModel 完成", {
       data: { provider: result.provider, model: result.model },
@@ -127,17 +127,14 @@ async function revalidateModel(
  */
 export async function validateAndGetModel(
   provider = "Ollama",
-  model = "Ollama"
+  model = "Ollama",
+  profile?: any
 ): Promise<ValidatedModelResult> {
   logger.logOperationStart("validateAndGetModel", {
     data: { provider, model },
   });
 
   try {
-    // 从 profile 中获取配置，以确保 apiKey 等被正确传递
-    const profileManager = ProfileManagerService.getInstance();
-    const profile = await profileManager.getProfileForMode();
-
     if (!profile) {
       logger.warn("未找到 profile，使用默认配置", {
         operation: "validateAndGetModel",
@@ -148,52 +145,46 @@ export async function validateAndGetModel(
     let providerConfig: any | undefined;
 
     if (profile) {
-      if (profile.providers && typeof profile.providers === "object") {
-        const providers = profile.providers as Record<string, any>;
-        // 优先使用 activeProviderId，否则使用传入的 provider
-        const targetProviderId = profile.activeProviderId || provider;
+      // 使用统一的 ProviderSelectionService（但只获取配置，不改变传入的 provider/model）
+      const { ProviderSelectionService } =
+        await import("@/services/core/provider-selection-service");
 
-        logger.debug("查找 provider 配置", {
-          data: {
-            targetProviderId,
-            provider,
-            availableProviders: Object.keys(providers),
-          },
-        });
+      try {
+        const selection = ProviderSelectionService.selectProvider(profile);
 
-        if (providers[targetProviderId]) {
-          providerConfig = providers[targetProviderId];
-          logger.debug("使用 activeProviderId 的配置", {
-            data: { provider: targetProviderId },
-          });
-        } else if (providers[provider]) {
-          providerConfig = providers[provider];
-          logger.debug("使用传入 provider 的配置", {
-            data: { provider },
+        // 如果传入的 provider 匹配选中的 provider，使用选中的配置
+        if (selection.provider === provider) {
+          providerConfig = selection.config;
+          logger.debug("使用 ProviderSelectionService 选中的配置", {
+            data: { provider: selection.provider },
           });
         } else {
-          logger.warn("未找到匹配的 provider 配置", {
-            data: {
-              targetProviderId,
-              provider,
-              availableProviders: Object.keys(providers),
-            },
-          });
+          // 否则，尝试从 providers 中查找传入的 provider
+          if (profile.providers && typeof profile.providers === "object") {
+            const providers = profile.providers as Record<string, any>;
+            if (providers[provider]) {
+              providerConfig = providers[provider];
+              logger.debug("使用传入 provider 的配置", {
+                data: { provider },
+              });
+            }
+          }
         }
-      } else {
-        // 兼容旧的配置结构
-        logger.debug("使用旧配置结构", {
-          data: {
-            apiProvider: profile.apiProvider,
-            requestedProvider: provider,
-          },
+      } catch (error) {
+        logger.warn("ProviderSelectionService 选择失败，尝试兼容模式", {
+          error: error instanceof Error ? error : new Error(String(error)),
         });
 
-        if (profile.apiProvider === provider) {
+        // 兼容旧的配置结构
+        const legacyProfile = profile as any;
+        if (legacyProfile.apiProvider === provider) {
           providerConfig = {
-            apiKey: profile.apiKey,
-            baseUrl: profile.baseUrl,
+            apiKey: legacyProfile.apiKey,
+            baseUrl: legacyProfile.baseUrl,
           };
+          logger.debug("使用旧配置结构", {
+            data: { provider },
+          });
         }
       }
     }
@@ -208,7 +199,7 @@ export async function validateAndGetModel(
         operation: "validateAndGetModel",
         data: { provider },
       });
-      return revalidateModel(provider, model);
+      return revalidateModel(provider, model, profile);
     }
 
     const selectedModel = models.find((m) => m.id === model);
@@ -217,7 +208,7 @@ export async function validateAndGetModel(
         operation: "validateAndGetModel",
         data: { provider, model, availableModels: models.map((m) => m.id) },
       });
-      return revalidateModel(provider, model);
+      return revalidateModel(provider, model, profile);
     }
 
     logger.logOperationEnd("validateAndGetModel", undefined, {
@@ -246,17 +237,14 @@ export async function validateAndGetModel(
  */
 async function selectAndUpdateModel(
   provider: string,
-  model: string
+  model: string,
+  profile: any
 ): Promise<{ provider: string; model: string; config?: any }> {
   logger.logOperationStart("selectAndUpdateModel", {
     data: { provider, model },
   });
 
   try {
-    // 从 profile 中读取配置的 provider 和 model
-    const profileManager = ProfileManagerService.getInstance();
-    const profile = await profileManager.getProfileForMode();
-
     if (!profile) {
       logger.error("未找到 profile", {
         operation: "selectAndUpdateModel",

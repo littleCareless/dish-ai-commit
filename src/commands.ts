@@ -35,20 +35,14 @@ export class CommandManager implements vscode.Disposable {
   private registerCommands() {
     try {
       // 初始化各个命令处理器
-      const generateCommand = new GenerateCommitCommand(
-        this.context,
-        this.profileManager
-      );
+      const generateCommand = new GenerateCommitCommand(this.context);
       const weeklyReportCommand = new GenerateWeeklyReportCommand(this.context);
       const reviewCodeCommand = new ReviewCodeCommand(this.context);
       const branchNameCommand = new GenerateBranchNameCommand(
         this.context,
         this.profileManager
       );
-      const prSummaryCommand = new GeneratePRSummaryCommand(
-        this.context,
-        this.profileManager
-      );
+      const prSummaryCommand = new GeneratePRSummaryCommand(this.context);
 
       this.disposables.push(
         // 注册生成commit信息命令
@@ -110,9 +104,9 @@ export class CommandManager implements vscode.Disposable {
         // 注册PR摘要生成命令
         vscode.commands.registerCommand(
           COMMANDS.PR_SUMMARY.GENERATE,
-          async () => {
+          async (...args: any[]) => {
             try {
-              await prSummaryCommand.execute();
+              await prSummaryCommand.execute(args);
             } catch (error) {
               // 处理PR摘要生成失败
               notify.error("command.pr.summary.failed", [

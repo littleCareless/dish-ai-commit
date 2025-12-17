@@ -12,11 +12,13 @@ import {
   EmbeddingServiceError,
 } from "../../core/indexing/embedding-service";
 import { EmbeddingServiceManager } from "../../core/indexing/embedding-service-manager";
+import { ProfileManagerService } from "../../services/profile-manager/profile-manager-service";
 import { notify } from "../../utils/notification/notification-manager";
 import { stateManager } from "../../utils/state/state-manager";
 
 export class SettingsViewMessageHandler {
   private readonly _extensionId: string;
+  private profileManager?: ProfileManagerService;
 
   constructor(
     extensionId: string,
@@ -26,10 +28,20 @@ export class SettingsViewMessageHandler {
     this._extensionId = extensionId;
   }
 
+  private async getProfileManager(): Promise<ProfileManagerService> {
+    if (!this.profileManager) {
+      this.profileManager = await ProfileManagerService.create(
+        this._extensionContext
+      );
+    }
+    return this.profileManager;
+  }
+
   public async handleMessage(
     message: any,
     webview: vscode.Webview
   ): Promise<void> {
+    const profileManager = await this.getProfileManager();
     switch (message.command) {
       case "testConnection": {
         const { service, url, key } = message.data;
@@ -240,7 +252,31 @@ export class SettingsViewMessageHandler {
 
           let providerInstance: AIProvider | undefined;
 
-          providerInstance = AIProviderFactory.getProvider(providerId); // 只传递 providerId
+          const profile = profileManager.getProfileForMode();
+          if (!profile) {
+            // 如果没有找到 profile，使用一个临时对象或抛出错误
+            // 这里我们可以尝试只用 providerId 创建一个临时 provider 用于获取模型列表，
+            // 但这取决于 AIProviderFactory 是否支持仅通过 ID 获取实例（通常需要配置）。
+            // 如果 profile 为 null，说明没有活动配置，我们可能无法获取模型列表。
+            // 但根据之前的逻辑，如果 profile 为 null，这里可能应该是一个 empty object 或者抛错。
+            // 考虑到 TS 报错 null 不能赋给 ProviderConfig，我们需要处理 null 情况。
+
+            // 尝试创建一个临时的 ProviderConfig
+            const tempConfig = {
+              id: "temp",
+              name: "temp",
+              provider: providerId,
+            };
+            providerInstance = await AIProviderFactory.getProvider(
+              providerId,
+              tempConfig
+            );
+          } else {
+            providerInstance = await AIProviderFactory.getProvider(
+              providerId,
+              profile
+            );
+          }
 
           if (!providerInstance) {
             throw new Error(

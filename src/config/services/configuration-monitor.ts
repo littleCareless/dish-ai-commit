@@ -16,10 +16,9 @@
  * 在扩展架构中，负责监控配置变更并确保系统各部分能够及时响应新的配置设置，
  * 特别是在AI提供商配置变更时进行适当的重新初始化，以确保系统使用更新后的设置。
  */
-import * as vscode from "vscode";
 import { ConfigurationChangeHandler } from "@/config/services/configuration-change-handler";
 import { ConfigurationService } from "@/config/services/configuration-service";
-import { AIProviderFactory } from "@/ai/ai-provider-factory";
+import * as vscode from "vscode";
 
 /**
  * 监控配置变更并触发相应操作
@@ -33,7 +32,6 @@ export class ConfigurationMonitor {
   ) {
     this.disposables.push(
       vscode.workspace.onDidChangeConfiguration((event) => {
-
         const changedKeys =
           this.changeHandler.getChangedConfigurationKeys(event);
 
@@ -72,34 +70,34 @@ export class ConfigurationMonitor {
   public handleProviderConfigChanges(changedKeys: string[]): void {
     // OpenAI 配置变更
     if (changedKeys.some((key) => key.startsWith("providers.openai"))) {
-      AIProviderFactory.reinitializeProvider("OpenAI");
+      // No longer need to reinitialize providers as they are created on demand.
     }
     // 其他提供商配置变更
     if (changedKeys.some((key) => key.startsWith("providers.ollama"))) {
-      AIProviderFactory.reinitializeProvider("Ollama");
+      // No longer need to reinitialize providers as they are created on demand.
       console.log(
-        "Ollama provider has been reinitialized due to config changes"
+        "Ollama provider config changed. New instance will be created on next use."
       );
     }
 
     if (changedKeys.some((key) => key.startsWith("providers.zhipuai"))) {
-      AIProviderFactory.reinitializeProvider("ZhipuAI");
+      // No longer need to reinitialize providers as they are created on demand.
       console.log(
-        "ZhipuAI provider has been reinitialized due to config changes"
+        "ZhipuAI provider config changed. New instance will be created on next use."
       );
     }
 
     if (changedKeys.some((key) => key.startsWith("providers.dashscope"))) {
-      AIProviderFactory.reinitializeProvider("DashScope");
+      // No longer need to reinitialize providers as they are created on demand.
       console.log(
-        "DashScope provider has been reinitialized due to config changes"
+        "DashScope provider config changed. New instance will be created on next use."
       );
     }
 
     if (changedKeys.some((key) => key.startsWith("providers.doubao"))) {
-      AIProviderFactory.reinitializeProvider("Doubao");
+      // No longer need to reinitialize providers as they are created on demand.
       console.log(
-        "Doubao provider has been reinitialized due to config changes"
+        "Doubao provider config changed. New instance will be created on next use."
       );
     }
   }

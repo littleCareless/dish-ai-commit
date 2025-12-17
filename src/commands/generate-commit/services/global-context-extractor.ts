@@ -57,7 +57,7 @@ export class GlobalContextExtractor {
 
     if (estimatedTokens <= maxTokenBudget) {
       // 级别1: 完整上下文(最佳体验)
-      return this.generateFullContext(fileOverviews, aiProvider);
+      return this.generateFullContext(fileOverviews, aiProvider, selectedModel);
     }
 
     if (estimatedTokens <= maxTokenBudget * 1.5) {
@@ -138,7 +138,8 @@ export class GlobalContextExtractor {
    */
   private async generateFullContext(
     fileOverviews: FileSummary[],
-    aiProvider: AIProvider
+    aiProvider: AIProvider,
+    selectedModel: AIModel
   ): Promise<string> {
     try {
       const prompt = this.buildFullContextPrompt();
@@ -151,12 +152,7 @@ export class GlobalContextExtractor {
         ],
         diff: formattedOverviews,
         additionalContext: "",
-        model: {
-          id: "gpt-4",
-          name: "GPT-4",
-          provider: "openai" as any,
-          maxTokens: { input: 8192, output: 2048 },
-        }, // 临时模型对象
+        model: selectedModel,
         feature: "commit-generation",
       });
 

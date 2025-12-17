@@ -1,7 +1,6 @@
-import { AIProviderFactory } from "../../ai/ai-provider-factory";
 import { ConfigurationManager } from "../../config/configuration-manager";
-import { getMessage } from "../../utils/i18n";
 import { ModelPickerService } from "../../services/model-picker-service";
+import { getMessage } from "../../utils/i18n";
 
 export class ModelConfigurationManager {
   private readonly configManager = ConfigurationManager.getInstance();
@@ -12,41 +11,35 @@ export class ModelConfigurationManager {
     let provider = configuration.base.provider;
     let model = configuration.base.model;
 
-    let aiProvider = AIProviderFactory.getProvider(provider);
-    let models = await aiProvider.getModels();
-
-    if (models && models.length > 0) {
-      const selectedModel = models.find((m) => m.id === model);
-      if (selectedModel) {
-        return { aiProvider, selectedModel };
-      }
-    }
-
-    const result = await this.selectAndUpdateModelConfiguration(
-      provider,
-      model
+    // 使用统一的验证服务
+    const { ModelValidationService } = await import(
+      "../../services/core/model-validation-service"
     );
-    if (!result) {
-      throw new Error(getMessage("model.selection.cancelled"));
+
+    try {
+      // 尝试直接验证模型
+      const result = await ModelValidationService.validateModel(
+        provider,
+        model
+      );
+      return result;
+    } catch (error) {
+      // 如果验证失败，触发重新选择模型的流程
+      const selectionResult = await this.selectAndUpdateModelConfiguration(
+        provider,
+        model
+      );
+
+      if (!selectionResult) {
+        throw new Error(getMessage("model.selection.cancelled"));
+      }
+
+      provider = selectionResult.provider;
+      model = selectionResult.model;
+
+      // 再次验证更新后的模型
+      return ModelValidationService.validateModel(provider, model);
     }
-
-    provider = result.provider;
-    model = result.model;
-
-    aiProvider = AIProviderFactory.getProvider(provider);
-    models = await aiProvider.getModels();
-
-    if (!models || models.length === 0) {
-      throw new Error(getMessage("model.list.empty"));
-    }
-
-    const selectedModel = models.find((m) => m.id === model);
-
-    if (!selectedModel) {
-      throw new Error(getMessage("model.not.found"));
-    }
-
-    return { aiProvider, selectedModel };
   }
 
   private async selectAndUpdateModelConfiguration(

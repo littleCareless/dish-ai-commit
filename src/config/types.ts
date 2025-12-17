@@ -22,7 +22,8 @@ function generateProviderEnum() {
 
   // 遍历所有提供商定义，生成枚举
   for (const providerId of getAllProviderIds()) {
-    const def = PROVIDER_DEFINITIONS[providerId as keyof typeof PROVIDER_DEFINITIONS];
+    const def =
+      PROVIDER_DEFINITIONS[providerId as keyof typeof PROVIDER_DEFINITIONS];
     if (def) {
       // 大写下划线键 -> 小写 ID 值
       result[def.enumKey] = def.id;
@@ -33,9 +34,9 @@ function generateProviderEnum() {
 }
 
 /** AI 提供商枚举常量 - 从中心化定义生成 */
-export const AIProvider: Record<string, string> = {
+export const AIProviderID: Record<string, string> = {
   ...generateProviderEnum(),
-  OPENAI_COMPATIBLE: 'openai-compatible',
+  OPENAI_COMPATIBLE: "openai-compatible",
 };
 
 /**
@@ -45,10 +46,10 @@ export const AIProvider: Record<string, string> = {
 type ExtractConfigValueType<T> = T extends ConfigValueTypeString
   ? string
   : T extends ConfigValueTypeBoolean
-  ? boolean
-  : T extends ConfigValueTypeNumber
-  ? number
-  : never;
+    ? boolean
+    : T extends ConfigValueTypeNumber
+      ? number
+      : never;
 
 /**
  * 递归生成配置对象的类型定义
@@ -64,10 +65,10 @@ type FilterNever<T> = {
 
 type GenerateConfigType<T> = FilterNever<{
   [K in keyof T]: T[K] extends { type: string; default: any }
-  ? ExtractConfigValueType<T[K]>
-  : T[K] extends ConfigObject
-  ? GenerateConfigType<T[K]>
-  : never;
+    ? ExtractConfigValueType<T[K]>
+    : T[K] extends ConfigObject
+      ? GenerateConfigType<T[K]>
+      : never;
 }>;
 
 /** 扩展配置接口类型 */
@@ -80,14 +81,14 @@ export type ExtensionConfiguration = GenerateConfigType<typeof CONFIG_SCHEMA>;
  */
 type RecursiveConfigPath<T, P extends string = ""> = {
   [K in keyof T]: T[K] extends { type: string }
-  ? P extends ""
-  ? `${K & string}`
-  : `${P}_${K & string}`
-  : T[K] extends ConfigObject
-  ? P extends ""
-  ? `${K & string}` | RecursiveConfigPath<T[K], `${K & string}`>
-  : `${P}_${K & string}` | RecursiveConfigPath<T[K], `${P}_${K & string}`>
-  : never;
+    ? P extends ""
+      ? `${K & string}`
+      : `${P}_${K & string}`
+    : T[K] extends ConfigObject
+      ? P extends ""
+        ? `${K & string}` | RecursiveConfigPath<T[K], `${K & string}`>
+        : `${P}_${K & string}` | RecursiveConfigPath<T[K], `${P}_${K & string}`>
+      : never;
 }[keyof T];
 
 /** 配置路径类型 */
@@ -110,14 +111,14 @@ export type ConfigurationValueType = {
  */
 type GetSchemaType<
   T,
-  P extends string
+  P extends string,
 > = P extends `${infer Head}.${infer Rest}`
   ? Head extends keyof T
-  ? GetSchemaType<T[Head], Rest>
-  : never
+    ? GetSchemaType<T[Head], Rest>
+    : never
   : P extends keyof T
-  ? T[P]
-  : never;
+    ? T[P]
+    : never;
 
 /**
  * 生成提供商必填字段映射
