@@ -6,6 +6,7 @@ import {
   ProviderType,
   UserPreferences,
 } from "@/types/settings";
+import { formatMessage } from "@/utils/i18n";
 import { v4 as uuidv4 } from "uuid";
 import * as vscode from "vscode";
 
@@ -23,15 +24,48 @@ export interface MigrationPreview {
 
 export class SettingsMigration {
   private profileManager: ProfileManagerService;
+  private readonly MIGRATION_COMPLETED_KEY =
+    "dish.settings.migration.completed";
 
   constructor(profileManager: ProfileManagerService) {
     this.profileManager = profileManager;
   }
 
   /**
+   * Check if migration has already been completed
+   */
+  isMigrationCompleted(): boolean {
+    const context = this.profileManager.getContext();
+    if (!context) {
+      return false;
+    }
+    return !!context.globalState.get<boolean>(this.MIGRATION_COMPLETED_KEY);
+  }
+
+  /**
+   * Mark migration as completed
+   */
+  async markMigrationCompleted(): Promise<void> {
+    const context = this.profileManager.getContext();
+    if (context) {
+      await context.globalState.update(this.MIGRATION_COMPLETED_KEY, true);
+    }
+  }
+
+  /**
    * Detects if there are old configurations in package.json/settings.json
    */
   async detectOldConfiguration(): Promise<MigrationDetectionResult> {
+    // If migration is already completed, we don't need to detect anything
+    if (this.isMigrationCompleted()) {
+      return {
+        hasOldConfig: false,
+        providerCount: 0,
+        hasPreferences: false,
+        detectedProviders: [],
+      };
+    }
+
     const config = vscode.workspace.getConfiguration("dish-ai-commit");
     const detectedProviders: string[] = [];
 
@@ -85,6 +119,7 @@ export class SettingsMigration {
     profile = this.validateAndFixProfile(profile);
     await this.profileManager.saveProfile(profile);
     await this.profileManager.setActiveProfile(profile.id);
+    await this.markMigrationCompleted();
     return { success: true, profileId: profile.id };
   }
 
@@ -212,8 +247,10 @@ export class SettingsMigration {
     // 4. Create Profile
     const profile: Profile = {
       id: uuidv4(),
-      name: "从旧配置迁移",
-      description: `于 ${now.toLocaleString()} 从 VSCode 设置自动迁移`,
+      name: formatMessage("migration.profile.name"),
+      description: formatMessage("migration.profile.description", [
+        now.toLocaleString(),
+      ]),
       providers: providersConfig,
       preferences: preferences,
       createdAt: now,

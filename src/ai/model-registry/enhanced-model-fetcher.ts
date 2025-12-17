@@ -14,6 +14,7 @@ import {
   ProxyDetectionResult,
 } from "@/ai/model-registry/model-validator";
 import { AIModel } from "@/ai/types";
+import * as i18n from "@/utils/i18n";
 
 export interface EnhancedModelSpec extends ModelSpec {
   /** 验证信息 */
@@ -121,7 +122,12 @@ export class EnhancedModelFetcher {
         );
       }
     } catch (error) {
-      console.warn(`API获取失败，降级到本地规格: ${model.id}`, error);
+      console.warn(
+        i18n.formatMessage("enhanced.model.fetcher.api.fetch.failed", [
+          model.id,
+        ]),
+        error
+      );
       enhancedSpec = await this.fallbackToLocalSpec(model);
     }
 
@@ -234,7 +240,10 @@ export class EnhancedModelFetcher {
 
       if (!response.ok) {
         throw new Error(
-          `API请求失败: ${response.status} ${response.statusText}`
+          i18n.formatMessage("enhanced.model.fetcher.api.request.failed", [
+            response.status,
+            response.statusText,
+          ])
         );
       }
 
@@ -242,7 +251,9 @@ export class EnhancedModelFetcher {
       const models = modelsData.data || [];
 
       if (models.length === 0) {
-        throw new Error("API返回空的模型列表");
+        throw new Error(
+          i18n.formatMessage("enhanced.model.fetcher.api.empty.list")
+        );
       }
 
       // 3. 查找目标模型
@@ -269,9 +280,10 @@ export class EnhancedModelFetcher {
           validation = {
             isValid: false,
             confidence: 0,
-            reason: `未找到匹配的模型，可用模型: ${models
-              .map((m: any) => m.id)
-              .join(", ")}`,
+            reason: i18n.formatMessage(
+              "enhanced.model.fetcher.match.not.found.reason",
+              [models.map((m: any) => m.id).join(", ")]
+            ),
             suggestion: "use_local_spec",
           };
         }
@@ -279,7 +291,10 @@ export class EnhancedModelFetcher {
         validation = {
           isValid: false,
           confidence: 0,
-          reason: `模型 ${model.id} 不在API返回的模型列表中`,
+          reason: i18n.formatMessage(
+            "enhanced.model.fetcher.match.not.in.list",
+            [model.id]
+          ),
           suggestion: "use_local_spec",
         };
       }
@@ -289,7 +304,11 @@ export class EnhancedModelFetcher {
         !validation.isValid ||
         validation.confidence < options.minConfidence
       ) {
-        console.warn(`模型验证失败: ${validation.reason}`);
+        console.warn(
+          i18n.formatMessage("enhanced.model.fetcher.validation.failed", [
+            validation.reason,
+          ])
+        );
         return null;
       }
 
@@ -330,7 +349,11 @@ export class EnhancedModelFetcher {
 
       return enhancedSpec;
     } catch (error) {
-      console.warn(`OpenAI API获取失败: ${error}`);
+      console.warn(
+        i18n.formatMessage("enhanced.model.fetcher.openai.fetch.failed", [
+          error,
+        ])
+      );
       return null;
     }
   }
@@ -426,7 +449,11 @@ export class EnhancedModelFetcher {
 
       return enhancedSpec;
     } catch (error) {
-      console.warn("GitHub Models API获取失败:", error);
+      console.warn(
+        i18n.formatMessage("enhanced.model.fetcher.github.fetch.failed", [
+          error,
+        ])
+      );
       return null;
     }
   }
@@ -499,9 +526,11 @@ export class EnhancedModelFetcher {
 
     if (similarities[0]?.score > 0.6) {
       console.log(
-        `模糊匹配: ${requestedId} -> ${
-          similarities[0].model.id
-        } (相似度: ${similarities[0].score.toFixed(2)})`
+        i18n.formatMessage("enhanced.model.fetcher.fuzzy.match.log", [
+          requestedId,
+          similarities[0].model.id,
+          similarities[0].score.toFixed(2),
+        ])
       );
       return similarities[0].model;
     }

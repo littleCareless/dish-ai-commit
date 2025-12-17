@@ -4,6 +4,7 @@
  */
 
 import { AIModel } from "@/ai/types";
+import { formatMessage } from "@/utils/i18n/localization-manager";
 
 export interface ModelValidationResult {
   /** 验证是否通过 */
@@ -77,7 +78,7 @@ export class ModelValidator {
       result.isValid = true;
       result.actualModel = apiResponse.id;
       result.confidence = 0.9;
-      result.reason = "通过已知映射匹配";
+      result.reason = formatMessage("model.validation.reason.mapping");
       return result;
     }
 
@@ -102,7 +103,10 @@ export class ModelValidator {
 
         if (isSuspicious) {
           result.confidence = 0.1;
-          result.reason = `检测到可能的模型类型错误: 请求 ${requestedModel.id}, 返回 ${apiResponse.id}`;
+          result.reason = formatMessage(
+            "model.validation.reason.typeMismatch",
+            [requestedModel.id, apiResponse.id]
+          );
           result.suggestion = "use_local_spec";
           return result;
         }
@@ -117,14 +121,20 @@ export class ModelValidator {
         result.isValid = true;
         result.actualModel = apiResponse.id;
         result.confidence = similarity * 0.7; // 代理环境降低置信度
-        result.reason = `代理环境模糊匹配，相似度: ${similarity.toFixed(2)}`;
+        result.reason = formatMessage(
+          "model.validation.reason.proxyFuzzyMatch",
+          [similarity.toFixed(2)]
+        );
         return result;
       }
     }
 
     // 4. 最终判断
     result.confidence = 0.2;
-    result.reason = `模型不匹配: 请求 ${requestedModel.id}, 返回 ${apiResponse.id}`;
+    result.reason = formatMessage("model.validation.reason.mismatch", [
+      requestedModel.id,
+      apiResponse.id,
+    ]);
     result.suggestion = "use_local_spec";
 
     return result;

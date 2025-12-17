@@ -34,6 +34,9 @@ export class ProfileManagerService {
       logger.info("Creating new ProfileManagerService instance.");
       const instance = new ProfileManagerService(context);
       // Profiles are loaded by the ProviderStore's constructor.
+      // Wait for ProviderStore to be fully initialized
+      await instance.providerStore.waitForInitialization();
+
       ProfileManagerService.instance = instance;
       logger.info("ProfileManagerService instance created successfully.");
     } else {
@@ -49,6 +52,10 @@ export class ProfileManagerService {
       );
     }
     return ProfileManagerService.instance;
+  }
+
+  public getContext(): vscode.ExtensionContext {
+    return this.context;
   }
 
   async getAllProfiles(): Promise<any[]> {

@@ -26,6 +26,7 @@ export class ProviderStore {
 
   private profiles: ProviderProfiles | null = null;
   private subscribers: Subscriber[] = [];
+  private initPromise: Promise<void>;
 
   private constructor(context: ExtensionContext) {
     const defaultProviderProfiles = this.getDefaultProfiles();
@@ -35,7 +36,11 @@ export class ProviderStore {
     );
     this.cloudSyncService = new CloudSyncService(this.repository);
     this.capabilityService = ModelCapabilityService.instance;
-    this.initialize().catch(console.error);
+    this.initPromise = this.initialize().catch(console.error);
+  }
+
+  public async waitForInitialization(): Promise<void> {
+    await this.initPromise;
   }
 
   public static getInstance(context: ExtensionContext): ProviderStore {

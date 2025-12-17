@@ -27,6 +27,7 @@ export {
 import { EnhancedModelFetcher } from "@/ai/model-registry/enhanced-model-fetcher";
 import { ModelInfoFetcher } from "@/ai/model-registry/model-info-fetcher";
 import { AIModel } from "@/ai/types";
+import { formatMessage, getMessage } from "@/utils/i18n";
 
 /**
  * 获取模型的准确token限制信息（增强版）
@@ -67,7 +68,11 @@ export async function getAccurateTokenLimits(
     // 如果验证置信度过低，记录警告
     if (modelInfo.validation && modelInfo.validation.confidence < 0.7) {
       console.warn(
-        `模型信息验证置信度较低: ${model.id}, 置信度: ${modelInfo.validation.confidence.toFixed(2)}, 方法: ${modelInfo.validation.validationMethod}`
+        formatMessage("model.registry.validation.low.confidence.log", [
+          model.id,
+          modelInfo.validation.confidence.toFixed(2),
+          modelInfo.validation.validationMethod,
+        ])
       );
     }
 
@@ -149,20 +154,34 @@ export async function validateModelInfo(
     // 检查验证置信度
     if (result.confidence < 0.5) {
       result.isValid = false;
-      result.issues.push(`模型验证置信度过低: ${result.confidence.toFixed(2)}`);
-      result.recommendations.push("建议检查模型ID是否正确或更新模型规格数据");
+      result.issues.push(
+        formatMessage("model.registry.validation.low.confidence.issue", [
+          result.confidence.toFixed(2),
+        ])
+      );
+      result.recommendations.push(
+        getMessage("model.registry.validation.check.model.id")
+      );
     }
 
     // 检查代理检测结果
     if (enhancedSpec.proxyInfo?.isProxy) {
-      result.issues.push(`检测到代理服务: ${enhancedSpec.proxyInfo.proxyType}`);
-      result.recommendations.push("在代理环境中，建议定期验证模型信息的准确性");
+      result.issues.push(
+        formatMessage("model.registry.proxy.detected", [
+          enhancedSpec.proxyInfo.proxyType,
+        ])
+      );
+      result.recommendations.push(
+        getMessage("model.registry.proxy.check.accuracy")
+      );
     }
 
     // 检查验证方法
     if (enhancedSpec.validation?.validationMethod === "fallback") {
-      result.issues.push("使用了降级的默认配置");
-      result.recommendations.push("建议更新模型规格数据库或检查API连接");
+      result.issues.push(getMessage("model.registry.validation.fallback.used"));
+      result.recommendations.push(
+        getMessage("model.registry.validation.update.db")
+      );
     }
 
     return result;
@@ -171,9 +190,11 @@ export async function validateModelInfo(
       isValid: false,
       confidence: 0,
       issues: [
-        `验证过程出错: ${error instanceof Error ? error.message : String(error)}`,
+        formatMessage("model.registry.validation.error", [
+          error instanceof Error ? error.message : String(error),
+        ]),
       ],
-      recommendations: ["请检查网络连接和API配置"],
+      recommendations: [getMessage("model.registry.check.network")],
     };
   }
 }
@@ -248,7 +269,10 @@ export async function validateMultipleModels(
       }
     } else {
       // 处理验证失败的情况
-      console.error("模型验证失败:", result.reason);
+      console.error(
+        `${getMessage("model.registry.validation.failed")}:`,
+        result.reason
+      );
     }
   }
 

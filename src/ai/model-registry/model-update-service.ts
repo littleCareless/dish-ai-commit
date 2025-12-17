@@ -7,7 +7,9 @@ import { ModelInfoFetcher } from "@/ai/model-registry/model-info-fetcher";
 import { ALL_MODEL_SPECS } from "@/ai/model-registry/model-specs";
 import { AIModel } from "@/ai/types";
 import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
+import * as i18n from "@/utils/i18n";
 import { notify } from "@/utils/notification/notification-manager";
+
 export interface UpdateResult {
   success: boolean;
   updatedModels: string[];
@@ -39,7 +41,7 @@ export class ModelUpdateService {
    */
   async updateAllModels(profile: any): Promise<UpdateResult> {
     if (this.updateInProgress) {
-      throw new Error("模型更新正在进行中，请稍后再试");
+      throw new Error(i18n.formatMessage("model.update.inProgress"));
     }
 
     this.updateInProgress = true;
@@ -112,7 +114,7 @@ export class ModelUpdateService {
     profile: any
   ): Promise<UpdateResult> {
     if (this.updateInProgress) {
-      throw new Error("模型更新正在进行中，请稍后再试");
+      throw new Error(i18n.formatMessage("model.update.inProgress"));
     }
 
     this.updateInProgress = true;
@@ -129,7 +131,9 @@ export class ModelUpdateService {
       );
 
       if (providerSpecs.length === 0) {
-        throw new Error(`未找到提供商 ${providerId} 的模型规格`);
+        throw new Error(
+          i18n.formatMessage("model.update.providerSpecsNotFound", [providerId])
+        );
       }
 
       for (const spec of providerSpecs) {
@@ -206,7 +210,7 @@ export class ModelUpdateService {
     if (cacheStats.expired > 0) {
       result.needsUpdate = true;
       result.recommendations.push(
-        `有 ${cacheStats.expired} 个模型的缓存信息已过期，建议更新`
+        i18n.formatMessage("model.update.cacheExpired", [cacheStats.expired])
       );
     }
 
@@ -220,7 +224,9 @@ export class ModelUpdateService {
 
     if (result.outdatedModels.length > 0) {
       result.recommendations.push(
-        `以下模型使用了默认配置，建议更新获取准确信息: ${result.outdatedModels.join(", ")}`
+        i18n.formatMessage("model.update.usingFallback", [
+          result.outdatedModels.join(", "),
+        ])
       );
     }
 
