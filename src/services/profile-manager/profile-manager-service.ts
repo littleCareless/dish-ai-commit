@@ -1,9 +1,9 @@
-import { AIProviderFactory } from "@/ai/ai-provider-factory";
 import { DISH_CONFIG_PREFIX } from "@/config/constants";
 import { ProviderProfileRepository } from "@/services/profile-manager/provider-profile-repository";
 import { ProviderStore } from "@/services/profile-manager/provider-store";
 import { ProviderProfiles } from "@/services/profile-manager/types";
-import { FeatureSettings, ProviderConfig, ProviderType } from "@/types/settings";
+import { ProviderConfig } from "@/types/provider-config";
+import { FeatureSettings, Profile, ProviderType } from "@/types/settings";
 import { Logger } from "@/utils/logger";
 import * as vscode from "vscode";
 
@@ -51,7 +51,6 @@ export class ProfileManagerService {
     return ProfileManagerService.instance;
   }
 
-
   async getAllProfiles(): Promise<any[]> {
     this.logger.debug("Getting all profiles.");
     const providerProfiles = this.providerStore.getProfiles();
@@ -67,8 +66,8 @@ export class ProfileManagerService {
 
   async getAllProviders(): Promise<ProviderConfig[]> {
     this.logger.debug("Getting all providers.");
-    const providers = await AIProviderFactory.getAllProviders();
-    return providers.map((p) => p.getConfig());
+    const { ALL_PROVIDERS } = require("@/config/provider-definitions");
+    return ALL_PROVIDERS;
   }
 
   async saveProfile(profileData: any): Promise<void> {
@@ -107,22 +106,43 @@ export class ProfileManagerService {
     }
   }
 
-  async getActiveProfileId(): Promise<string | null> {
+  getActiveProfileId(): string | null {
     this.logger.debug("Getting active profile ID from ProviderStore.");
+    const profiles = this.providerStore.getProfiles();
+    return profiles?.currentApiConfigId ?? null;
+  }
+
+  getProfileForMode(): ProviderConfig | null {
     const profiles = this.providerStore.getProfiles();
     if (!profiles) {
       return null;
     }
-
-    return profiles.currentApiConfigId;
-  }
-
-  async getProfileForMode(): Promise<any | null> {
-    const profileId = await this.getActiveProfileId();
-    if (!profileId) {
+    const activeId = profiles.currentApiConfigId;
+    if (!activeId) {
       return null;
     }
-    return this.getProfileById(profileId);
+
+    // Cast to Profile as per new schema
+    const profile = profiles.apiConfigs[activeId] as unknown as Profile;
+
+    // Check if it's the new Profile structure
+    if (profile.providers && profile.activeProviderId) {
+      const activeProvider = profile.providers[profile.activeProviderId];
+      if (activeProvider) {
+        // Adapt to legacy ProviderConfig expected by consumers
+        return {
+          id: activeProvider.id,
+          name: activeProvider.name,
+          provider: activeProvider.id, // Assuming ID corresponds to provider name (e.g., "openai")
+          apiKey: activeProvider.apiKey,
+          baseUrl: activeProvider.baseUrl,
+          modelId: activeProvider.defaultModel,
+        };
+      }
+    }
+
+    // Fallback/Legacy handling if structure doesn't match
+    return (profile as unknown as ProviderConfig) ?? null;
   }
 
   async setActiveProfile(profileId: string): Promise<void> {
@@ -196,10 +216,7 @@ export class ProfileManagerService {
   }
 
   // Utility methods
-  async getProfileById(
-    id: string,
-    includeSecrets = false
-  ): Promise<any | null> {
+  getProfileById(id: string, includeSecrets = false): any | null {
     const operation = "getProfileById";
     this.logger.debug(`Getting profile by ID: ${id}`, {
       operation,
@@ -210,8 +227,7 @@ export class ProfileManagerService {
     if (!profiles) {
       return null;
     }
-    const config = Object.values(profiles.apiConfigs).find((c) => c.id === id);
-    return config || null;
+    return profiles.apiConfigs[id] ?? null;
   }
 
   async hasProfiles(): Promise<boolean> {

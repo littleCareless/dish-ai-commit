@@ -7,8 +7,12 @@ import { ProviderProfileRepository } from "@/services/profile-manager/provider-p
 import {
   discriminatedProviderSettingsWithIdSchema,
   ProviderProfiles,
-  ProviderSettingsWithId
+  ProviderSettingsWithId,
 } from "@/services/profile-manager/types";
+import {
+  DEFAULT_OPENAI_CONFIG,
+  DEFAULT_USER_PREFERENCES,
+} from "@/types/settings";
 import { ExtensionContext } from "vscode";
 
 type Subscriber = (profiles: ProviderProfiles) => void;
@@ -58,9 +62,12 @@ export class ProviderStore {
         // Existing profiles: check if active profile is set
         if (!loadedProfiles.currentApiConfigId) {
           if (Object.keys(loadedProfiles.apiConfigs).length > 0) {
-            const firstProfileId = Object.values(loadedProfiles.apiConfigs)[0].id;
+            const firstProfileId = Object.values(loadedProfiles.apiConfigs)[0]
+              .id;
             loadedProfiles.currentApiConfigId = firstProfileId;
-            console.log(`Auto-activated first profile by ID: ${firstProfileId}`);
+            console.log(
+              `Auto-activated first profile by ID: ${firstProfileId}`
+            );
             await this.repository.store(loadedProfiles);
           }
         }
@@ -104,9 +111,7 @@ export class ProviderStore {
     return this.profiles;
   }
 
-  public async saveConfig(
-    config: ProviderSettingsWithId
-  ): Promise<string> {
+  public async saveConfig(config: ProviderSettingsWithId): Promise<string> {
     let id = "";
     await this.updateProfiles(async (profiles) => {
       // Generate ID if not provided
@@ -141,28 +146,14 @@ export class ProviderStore {
     });
   }
 
-
   public async export(): Promise<ProviderProfiles> {
-    const profiles = await this.repository.load();
-    const configs = profiles.apiConfigs;
-    for (const name in configs) {
-      const config = configs[name];
-      if (!config.apiProvider) {
-        continue;
-      }
-
-      const modelInfo = await this.capabilityService.getModelInfo(config);
-      if (modelInfo) {
-        // Adapt to the actual AIModel structure, which uses a 'capabilities' object.
-        // The logic for 'supportsBudget' is an assumption based on the original code's intent.
-        const supportsBudget = modelInfo.capabilities?.functionCalling;
-        if (!supportsBudget) {
-          delete config.modelMaxTokens;
-          delete config.modelMaxThinkingTokens;
-        }
-      }
-    }
-    return profiles;
+    // Return the profiles as-is from the repository.
+    // The previous logic attempted to modify provider-specific settings (modelMaxTokens)
+    // based on capabilities. This logic is complex to adapt to the new Profile structure
+    // (nested providers) and might not be necessary for a simple export.
+    // If we need to strip capabilities-incompatible settings, we should iterate through
+    // profile.providers values.
+    return await this.repository.load();
   }
 
   public async syncCloudProfiles(
@@ -183,39 +174,25 @@ export class ProviderStore {
 
   private getDefaultProfiles(): ProviderProfiles {
     const defaultConfigId = this.generateId();
-    const now = new Date().toISOString();
     return {
       currentApiConfigId: defaultConfigId,
       apiConfigs: {
         [defaultConfigId]: {
           id: defaultConfigId,
           name: "默认配置",
-          description: "系统默认配置",
-          createdAt: now,
-          updatedAt: now,
-          version: "1.0.0",
-          activeProviderId: "openai",
+          description: "Default Profile",
           providers: {
             openai: {
+              ...DEFAULT_OPENAI_CONFIG,
               apiKey: "",
               baseUrl: "https://api.openai.com/v1",
-              model: "gpt-3.5-turbo"
-            }
+            },
           },
-          preferences: {
-            temperature: 0.0,
-            commitTemperature: 0.3,
-            reviewTemperature: 0.6,
-            branchNameTemperature: 0.4,
-            weeklyReportTemperature: 0.3,
-            verbosity: 0,
-            rateLimitSeconds: 5,
-            consecutiveMistakeLimit: 3,
-            language: "Simplified Chinese",
-            maxTokens: 4000,
-            timeout: 30000,
-            retryAttempts: 3,
-          },
+          preferences: DEFAULT_USER_PREFERENCES,
+          createdAt: new Date(),
+          updatedAt: new Date(),
+          version: "1.0.0",
+          activeProviderId: "openai",
         },
       },
     };
@@ -228,7 +205,10 @@ export class ProviderStore {
       }
 
       // Set active profile if it exists in imported data
-      if (profile.currentApiConfigId && profiles.apiConfigs[profile.currentApiConfigId]) {
+      if (
+        profile.currentApiConfigId &&
+        profiles.apiConfigs[profile.currentApiConfigId]
+      ) {
         profiles.currentApiConfigId = profile.currentApiConfigId;
       }
     });

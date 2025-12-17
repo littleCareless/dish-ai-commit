@@ -12,7 +12,6 @@ import { z, ZodError } from "zod";
 export class ProviderProfileRepository {
   private readonly context: ExtensionContext;
   private readonly defaultProviderProfiles: ProviderProfiles;
-
   // Synchronize readConfig/writeConfig operations to avoid data loss.
   private _lock = Promise.resolve();
 
@@ -36,7 +35,6 @@ export class ProviderProfileRepository {
 
   public async load(): Promise<ProviderProfiles> {
     try {
-      console.log("this.secretsKey", this.secretsKey);
       const content = await this.context.secrets.get(this.secretsKey);
 
       if (!content) {
@@ -52,12 +50,28 @@ export class ProviderProfileRepository {
       const apiConfigs = Object.entries(providerProfiles.apiConfigs).reduce(
         (acc, [key, apiConfig]) => {
           const result = providerSettingsWithIdSchema.safeParse(apiConfig);
-          return result.success ? { ...acc, [key]: result.data } : acc;
+          if (result.success) {
+            return { ...acc, [key]: result.data };
+          } else {
+            console.error(
+              `[ProviderProfileRepository] Failed to parse API config with key '${key}'. Skipping.`,
+              {
+                error: result.error.flatten(),
+                data: apiConfig,
+              }
+            );
+            TelemetryService.instance.captureSchemaValidationError({
+              schemaName: `ProviderSettingsWithId:${key}`,
+              error: result.error,
+              data: apiConfig,
+            });
+            return acc;
+          }
         },
         {} as Record<string, ProviderSettingsWithId>
       );
 
-      return {
+      const loaded = {
         ...providerProfiles,
         apiConfigs: Object.fromEntries(
           Object.entries(apiConfigs).filter(
@@ -65,6 +79,8 @@ export class ProviderProfileRepository {
           )
         ),
       };
+
+      return loaded;
     } catch (error) {
       if (error instanceof ZodError) {
         TelemetryService.instance.captureSchemaValidationError({
