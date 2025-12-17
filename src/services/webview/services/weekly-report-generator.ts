@@ -1,18 +1,17 @@
-import { getMessage } from "@/utils/i18n";
-import { ProgressHandler } from "@/utils/notification";
+import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 import {
   WeeklyReportService,
   type Period,
 } from "@/services/reporting/weekly-report";
 import { ModelConfigurationManager } from "@/services/webview/config/model-configuration-manager";
+import { getMessage } from "@/utils/i18n";
+import { ProgressHandler } from "@/utils/notification";
 
 export class WeeklyReportGenerator {
   private readonly weeklyReportService: WeeklyReportService;
-  private readonly configManager: ModelConfigurationManager;
 
   constructor() {
     this.weeklyReportService = new WeeklyReportService();
-    this.configManager = new ModelConfigurationManager();
   }
 
   public async generateReport(period: Period): Promise<string> {
@@ -24,8 +23,14 @@ export class WeeklyReportGenerator {
         const workItems = await this.weeklyReportService.generate(
           period as unknown as Period
         );
+        const profileManager = ProfileManagerService.getInstance();
+        const profile = profileManager.getProfileForMode();
+        const featureSettings = profileManager.getFeatureSettings();
         const { aiProvider, selectedModel } =
-          await this.configManager.getModelAndProvider();
+          await ModelConfigurationManager.getModelAndProvider(
+            profile,
+            featureSettings
+          );
 
         const response = await aiProvider.generateWeeklyReport(
           workItems.map((item) => item.content),
@@ -66,8 +71,14 @@ export class WeeklyReportGenerator {
           period as unknown as Period, // Period 类型在 weeklyReportService 中已定义
           users
         );
+        const profileManager = ProfileManagerService.getInstance();
+        const profile = profileManager.getProfileForMode();
+        const featureSettings = profileManager.getFeatureSettings();
         const { aiProvider, selectedModel } =
-          await this.configManager.getModelAndProvider();
+          await ModelConfigurationManager.getModelAndProvider(
+            profile,
+            featureSettings
+          );
 
         // aiProvider.generateWeeklyReport 需要 string[] 类型的 commits
         // workItems已经是 WorkItem[] 类型，我们需要提取其 content 属性
