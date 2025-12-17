@@ -10,6 +10,7 @@ import * as vscode from "vscode";
 
 import { SettingsViewProvider } from "@/services/webview/settings-view-provider";
 import { EmbeddingServiceManager } from "./core/indexing/embedding-service-manager";
+import { getSettingsMigration } from "./services/core/settings-migration";
 import { TokenStatsService } from "./services/core/token-stats-service";
 import { IndexingSettingsManager } from "./services/settings/indexing-settings-manager";
 import { PreferencesSettingsManager } from "./services/settings/preferences-settings-manager";
@@ -46,6 +47,32 @@ export async function activate(context: vscode.ExtensionContext) {
     logger.info("Initializing profile manager service...");
     const profileManager = await ProfileManagerService.create(context);
 
+    // 自动迁移旧配置
+    // 如果存在旧配置且没有 Profile，则自动迁移
+    const settingsMigration = getSettingsMigration();
+    const migrationDetection = await settingsMigration.detectOldConfiguration();
+    const hasProfiles = await profileManager.hasProfiles();
+
+    if (migrationDetection.hasOldConfig && !hasProfiles) {
+      logger.info(
+        "Detected old configuration and no profiles. Performing automatic migration..."
+      );
+      try {
+        const result = await settingsMigration.performMigration();
+        if (result.success) {
+          notify.info(
+            "Dish AI Commit: Your settings have been automatically migrated to the new Profile system."
+          );
+          logger.info(
+            `Migration successful. Created and activated profile: ${result.profileId}`
+          );
+        }
+      } catch (error) {
+        logger.error(`Automatic migration failed: ${error}`);
+        // 不打断启动流程，只是记录错误
+      }
+    }
+
     // 初始化索引设置管理器（需要在 EmbeddingServiceManager 之前初始化）
     logger.info("Initializing indexing settings manager...");
     const indexingSettingsManager =
@@ -59,7 +86,8 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // 初始化 EmbeddingServiceManager（现在是异步的，支持多仓库检测）
     logger.info("Initializing embedding service...");
-    const embeddingService = await EmbeddingServiceManager.getInstance().initialize();
+    const embeddingService =
+      await EmbeddingServiceManager.getInstance().initialize();
 
     // 初始化 TokenStatsService
     logger.info("Initializing token stats service...");

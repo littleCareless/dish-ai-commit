@@ -43,9 +43,7 @@ export class SettingsMigration {
       // Some providers might use other keys like secretKey, endpoint, etc.
       // We check for the most common ones or specific ones.
       const hasConfig =
-        apiKey ||
-        baseUrl ||
-        config.get(`providers.${providerId}.endpoint`);
+        apiKey || baseUrl || config.get(`providers.${providerId}.endpoint`);
 
       if (hasConfig && String(hasConfig).trim().length > 0) {
         detectedProviders.push(providerId);
@@ -80,17 +78,65 @@ export class SettingsMigration {
 
   /**
    * Performs the actual migration: creates a new profile and saves it.
-   * Does NOT activate it automatically unless requested (but per user request, we just create it).
+   * Automatically activates the new profile.
    */
   async performMigration(): Promise<{ success: boolean; profileId: string }> {
-    const profile = await this.createProfileFromConfig();
+    let profile = await this.createProfileFromConfig();
+    profile = this.validateAndFixProfile(profile);
     await this.profileManager.saveProfile(profile);
+    await this.profileManager.setActiveProfile(profile.id);
     return { success: true, profileId: profile.id };
+  }
+
+  /**
+   * Validates the profile and attempts to fix issues, such as an invalid active provider.
+   */
+  private validateAndFixProfile(profile: Profile): Profile {
+    let activeProviderId = profile.activeProviderId;
+
+    // Safety check: if no active provider ID is set, try to find one
+    if (!activeProviderId) {
+      const firstId = Object.keys(profile.providers)[0];
+      if (firstId) {
+        activeProviderId = firstId;
+        profile.activeProviderId = activeProviderId;
+      } else {
+        // No providers at all? Return as is.
+        return profile;
+      }
+    }
+
+    const activeConfig = profile.providers[activeProviderId];
+    const isLocal =
+      activeProviderId === "ollama" || activeProviderId === "lmstudio";
+
+    // If active provider is valid (has API key or is local), return as is
+    if (activeConfig && (activeConfig.apiKey || isLocal)) {
+      return profile;
+    }
+
+    // Try to find a better active provider
+    let bestProviderId = activeProviderId;
+    for (const [id, config] of Object.entries(profile.providers)) {
+      if (config.apiKey || id === "ollama" || id === "lmstudio") {
+        bestProviderId = id;
+        break; // Found one, use it
+      }
+    }
+
+    if (bestProviderId !== activeProviderId) {
+      profile.activeProviderId = bestProviderId;
+    }
+
+    return profile;
   }
 
   private async createProfileFromConfig(): Promise<Profile> {
     const config = vscode.workspace.getConfiguration("dish-ai-commit");
     const now = new Date();
+
+    // Global model from old config
+    const globalModel = config.get<string>("base.model");
 
     // 1. Map Preferences
     const preferences: UserPreferences = {
@@ -143,7 +189,25 @@ export class SettingsMigration {
     // 3. Determine Active Provider
     // Map the display name from config to the internal ID
     const configProviderName = config.get("base.provider", "OpenAI");
-    const activeProviderId = this.mapProviderNameToId(configProviderName);
+    let activeProviderId = this.mapProviderNameToId(configProviderName);
+
+    // Smart fallback: if the configured provider has no config (and is not local), try to find one that has config
+    const activeProviderConfig = providersConfig[activeProviderId];
+    const isLocalProvider =
+      activeProviderId === "ollama" || activeProviderId === "lmstudio";
+
+    if (!activeProviderConfig && !isLocalProvider) {
+      // Try to find the first available provider with config
+      const availableProviderId = Object.keys(providersConfig)[0];
+      if (availableProviderId) {
+        activeProviderId = availableProviderId;
+      }
+    }
+
+    // Apply global model to active provider if it exists
+    if (globalModel && providersConfig[activeProviderId]) {
+      providersConfig[activeProviderId].defaultModel = globalModel;
+    }
 
     // 4. Create Profile
     const profile: Profile = {
