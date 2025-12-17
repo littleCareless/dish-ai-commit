@@ -1,6 +1,5 @@
 import "@vscode/webview-ui-toolkit/dist/toolkit";
 import React, { createContext, useContext, useState } from "react";
-import { Button } from "./button";
 
 interface TabsContextType {
   activeTab: string;
@@ -93,23 +92,25 @@ const TabsTrigger: React.FC<TabsTriggerProps> = ({
   const { activeTab, onTabChange } = context;
   const isActive = activeTab === value;
 
-  const baseClasses = "px-4 py-2 text-sm font-medium transition-colors";
-  const activeClasses = isActive
-    ? "border-b-2"
-    : "border-transparent border-b-2";
+  const baseClasses =
+    "px-4 py-2 text-sm font-medium transition-colors focus:outline-none";
 
   return (
-    <Button
+    <button
       type="button"
-      variant="ghost"
-      className={`${baseClasses} ${activeClasses} ${className}`}
+      className={`${baseClasses} ${className}`}
       style={{
+        backgroundColor: "transparent",
+        border: "none",
+        borderBottom: "2px solid",
         borderColor: isActive
-          ? "var(--vscode-tab-activeBorder)"
+          ? "var(--vscode-panelTitle-activeBorder)"
           : "transparent",
         color: isActive
           ? "var(--vscode-tab-activeForeground)"
           : "var(--vscode-tab-inactiveForeground)",
+        cursor: "pointer",
+        ...props.style,
       }}
       onMouseEnter={(e: React.MouseEvent<HTMLButtonElement>) => {
         if (!isActive) {
@@ -121,11 +122,14 @@ const TabsTrigger: React.FC<TabsTriggerProps> = ({
           e.currentTarget.style.color = "var(--vscode-tab-inactiveForeground)";
         }
       }}
-      onClick={() => onTabChange(value)}
-      {...props}
+      onClick={(e) => {
+        onTabChange(value);
+        props.onClick?.(e);
+      }}
+      {...(props as React.ButtonHTMLAttributes<HTMLButtonElement>)}
     >
       {children}
-    </Button>
+    </button>
   );
 };
 

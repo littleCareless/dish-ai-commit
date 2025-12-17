@@ -1,0 +1,44 @@
+{
+  "page": {
+    "title": "Settings Migration",
+    "subtitle": "Migrate configuration from old version to new profile format"
+  },
+  "detecting": {
+    "title": "Detecting configuration...",
+    "description": "Scanning your workspace for legacy configuration"
+  },
+  "noConfig": {
+    "title": "No legacy configuration detected",
+    "description": "We didn't find any legacy configuration. You can go directly to the Settings page to configure."
+  },
+  "success": {
+    "title": "Migration Successful!",
+    "description": "Your configuration has been successfully migrated to the new profile format.",
+    "manualActivationHint": "You can view and manage new profiles in the Settings page."
+  },
+  "error": {
+    "title": "Migration Failed"
+  },
+  "preview": {
+    "sourceConfig": "Source Configuration",
+    "sourceDescription": "Detected legacy configuration",
+    "detectedProviders": "Detected Providers",
+    "details": "Details",
+    "userPreferences": "User Preferences",
+    "targetProfile": "Target Profile",
+    "targetDescription": "New profile to be created",
+    "profileName": "Profile Name",
+    "providerCount": "Provider Count"
+  },
+  "note": {
+    "title": "Note",
+    "content": "The migration process will not delete your old configuration, but we recommend manually cleaning it up after confirming the new configuration works correctly."
+  },
+  "common": {
+    "goToSettings": "Go to Settings",
+    "backToHome": "Back to Home",
+    "migrating": "Migrating...",
+    "startMigration": "Start Migration",
+    "skip": "Skip"
+  }
+}
