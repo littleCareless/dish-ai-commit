@@ -341,5 +341,6 @@
   "model.validation.reason.mapping": "Matched by known mapping",
   "model.validation.reason.typeMismatch": "Detected possible model type mismatch: requested {0}, returned {1}",
   "model.validation.reason.proxyFuzzyMatch": "Proxy environment fuzzy match, similarity: {0}",
-  "model.validation.reason.mismatch": "Model mismatch: requested {0}, returned {1}"
+  "model.validation.reason.mismatch": "Model mismatch: requested {0}, returned {1}",
+  "commit.message.generated.from.cache": "Commit message restored from cache"
 }

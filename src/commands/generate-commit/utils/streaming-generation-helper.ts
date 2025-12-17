@@ -10,6 +10,7 @@ import { ISCMProvider } from "@/scm/scm-provider";
 import { smartDiffSelector } from "@/scm/smart-diff-selector";
 import { stagedContentDetector } from "@/scm/staged-content-detector";
 import { DiffTarget } from "@/scm/staged-detector-types";
+import { commitCacheService } from "@/services/cache/commit-cache-service";
 import { ContextManager, RequestTooLargeError } from "@/utils/context-manager";
 import { getMessage } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
@@ -108,6 +109,7 @@ export class StreamingGenerationHelper {
       message:
         getMessage("progress.stage.generating") || "[4/4] 生成提交消息...",
     });
+
     await this.executeGenerationFlow(
       modelConfig.aiProvider,
       requestParams,
@@ -398,8 +400,42 @@ export class StreamingGenerationHelper {
           "experimental.commitWithFunctionCalling.enabled"
         ) ?? false;
 
+      // === 缓存检查 ===
+      // 目前只支持标准生成和函数调用生成的缓存，分层提交因复杂性暂不支持
+      // 使用 requestParams.diff 作为缓存的 diff 内容
+      const shouldUseLayeredCommit =
+        configuration.features.commitFormat.enableLayeredCommit &&
+        selectedFiles &&
+        selectedFiles.length > 1;
+
+      let cacheKey: string | undefined;
+
+      // 只有非分层提交才使用缓存
+      if (!shouldUseLayeredCommit) {
+        cacheKey = commitCacheService.generateKey(
+          requestParams.diff || "", // 核心是 Diff 内容
+          configuration,
+          selectedModel.id
+        );
+
+        const cachedMessage = commitCacheService.get(cacheKey);
+
+        if (cachedMessage) {
+          this.logger.info("Cache hit! Using cached commit message.");
+          // 直接填充，模拟瞬间完成
+          await scmProvider.startStreamingInput(cachedMessage);
+
+          notify.info("commit.message.generated.from.cache"); // 提示用户使用了缓存
+          showCommitSuccessNotification();
+          return;
+        }
+      }
+      // =================
+
+      let generatedMessage: string | undefined;
+
       if (useFunctionCalling) {
-        await this.handleFunctionCallingGeneration(
+        generatedMessage = await this.handleFunctionCallingGeneration(
           aiProvider,
           requestParams,
           scmProvider,
@@ -410,7 +446,7 @@ export class StreamingGenerationHelper {
           newProvider
         );
       } else {
-        await this.handleStandardGeneration(
+        generatedMessage = await this.handleStandardGeneration(
           aiProvider,
           requestParams,
           scmProvider,
@@ -423,6 +459,13 @@ export class StreamingGenerationHelper {
           repositoryPath
         );
       }
+
+      // === 写入缓存 ===
+      if (cacheKey && generatedMessage && !shouldUseLayeredCommit) {
+        this.logger.info("Caching generated commit message.");
+        commitCacheService.set(cacheKey, generatedMessage);
+      }
+      // ================
 
       notify.info("commit.message.generated.stream", [
         scmProvider.type.toUpperCase(),
@@ -448,7 +491,7 @@ export class StreamingGenerationHelper {
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     repositoryPath: string | undefined,
     newProvider: string
-  ): Promise<void> {
+  ): Promise<string> {
     this.logger.info("Using function calling generation.");
 
     if (!aiProvider.generateCommitWithFunctionCalling) {
@@ -465,7 +508,7 @@ export class StreamingGenerationHelper {
       `Built messages for function calling. Total messages: ${messages.length}`
     );
 
-    await this.functionCallingHandler.handle(
+    return await this.functionCallingHandler.handle(
       aiProvider,
       { ...requestParams, messages },
       scmProvider,
@@ -489,7 +532,7 @@ export class StreamingGenerationHelper {
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     configuration: any,
     repositoryPath: string | undefined
-  ): Promise<void> {
+  ): Promise<string | undefined> {
     const shouldUseLayeredCommit =
       configuration.features.commitFormat.enableLayeredCommit &&
       selectedFiles &&
@@ -507,9 +550,10 @@ export class StreamingGenerationHelper {
         selectedModel,
         configuration
       );
+      return undefined; // Layered commit handler manages its own output and doesn't return a single string
     } else {
       this.logger.info("Performing standard streaming generation.");
-      await this.streamingHandler.handle(
+      return await this.streamingHandler.handle(
         aiProvider as any,
         requestParams,
         scmProvider,

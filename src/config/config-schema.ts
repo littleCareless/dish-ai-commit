@@ -393,6 +393,28 @@ export const CONFIG_SCHEMA = {
         description: "Time Window (seconds) / 时间窗口 (秒)",
       },
     },
+    xiaomi: {
+      apiKey: {
+        type: "string",
+        default: "",
+        description: "Xiaomi MiMo API Key / Xiaomi MiMo API 密钥",
+      },
+      rateLimitEnabled: {
+        type: "boolean",
+        default: false,
+        description: "Enable Rate Limiting / 启用速率限制",
+      },
+      rateLimitMax: {
+        type: "number",
+        default: 20,
+        description: "Max Requests per Window / 窗口内最大请求数",
+      },
+      rateLimitWindow: {
+        type: "number",
+        default: 60,
+        description: "Time Window (seconds) / 时间窗口 (秒)",
+      },
+    },
     anthropic: {
       apiKey: {
         type: "string",
@@ -608,7 +630,8 @@ export const CONFIG_SCHEMA = {
       enableR1Models: {
         type: "boolean",
         default: false,
-        description: "Enable R1 Model Parameters (Required for DeepSeek R1 etc.) / 启用 R1 模型参数 (DeepSeek R1 等模型必需)",
+        description:
+          "Enable R1 Model Parameters (Required for DeepSeek R1 etc.) / 启用 R1 模型参数 (DeepSeek R1 等模型必需)",
       },
       useAzure: {
         type: "boolean",
@@ -638,17 +661,20 @@ export const CONFIG_SCHEMA = {
       maxTokens: {
         type: "number",
         default: -1,
-        description: "Max Output Tokens (-1 for default) / 最大输出 Token 数 (-1 表示使用默认值)",
+        description:
+          "Max Output Tokens (-1 for default) / 最大输出 Token 数 (-1 表示使用默认值)",
       },
       enableReasoningEffort: {
         type: "boolean",
         default: false,
-        description: "Enable Reasoning Effort Control (for o1 series models) / 启用推理能力控制（适用于 o1 系列模型）",
+        description:
+          "Enable Reasoning Effort Control (for o1 series models) / 启用推理能力控制（适用于 o1 系列模型）",
       },
       reasoningEffortLevel: {
         type: "string",
         default: "medium",
-        description: "Reasoning Effort Level (low/medium/high) / 推理强度级别（低/中/高）",
+        description:
+          "Reasoning Effort Level (low/medium/high) / 推理强度级别（低/中/高）",
         enum: ["low", "medium", "high"],
       },
       rateLimitEnabled: {
@@ -680,23 +706,27 @@ export const CONFIG_SCHEMA = {
       diffTarget: {
         type: "string",
         default: "auto",
-        description: "Specify the target for git diff: 'staged' for staged changes, 'all' for all changes, 'auto' for automatic detection. / 指定 git diff 的目标：'staged' 表示暂存区的更改，'all' 表示所有更改，'auto' 表示自动检测。",
+        description:
+          "Specify the target for git diff: 'staged' for staged changes, 'all' for all changes, 'auto' for automatic detection. / 指定 git diff 的目标：'staged' 表示暂存区的更改，'all' 表示所有更改，'auto' 表示自动检测。",
         enum: ["staged", "all", "auto"],
       },
       autoDetectStaged: {
         type: "boolean",
         default: true,
-        description: "Automatically detect staged content and prioritize it over all changes when diffTarget is 'auto'. / 当 diffTarget 为 'auto' 时，自动检测暂存区内容并优先使用。",
+        description:
+          "Automatically detect staged content and prioritize it over all changes when diffTarget is 'auto'. / 当 diffTarget 为 'auto' 时，自动检测暂存区内容并优先使用。",
       },
       fallbackToAll: {
         type: "boolean",
         default: true,
-        description: "When staged area is empty, fallback to analyze all working directory changes. / 当暂存区为空时，回退到分析所有工作目录更改。",
+        description:
+          "When staged area is empty, fallback to analyze all working directory changes. / 当暂存区为空时，回退到分析所有工作目录更改。",
       },
       simplifyDiff: {
         type: "boolean",
         default: false,
-        description: "Enable diff content simplification (Warning: Enabling this feature may result in less accurate commit messages) / 启用差异内容简化 (警告：启用此功能可能导致提交信息不够准确)",
+        description:
+          "Enable diff content simplification (Warning: Enabling this feature may result in less accurate commit messages) / 启用差异内容简化 (警告：启用此功能可能导致提交信息不够准确)",
       },
       // useEmbedding: {
       //   type: "boolean",
@@ -730,7 +760,8 @@ export const CONFIG_SCHEMA = {
         description:
           "Generate layered commit messages with global summary and per-file details / 生成分层提交信息，包含全局摘要和每个文件的详细描述",
       },
-      enableGlobalContext: { // ✅ 新增
+      enableGlobalContext: {
+        // ✅ 新增
         type: "boolean",
         default: true,
         description:
@@ -830,11 +861,11 @@ export type ConfigValueTypeString = ConfigValueTypeBase & {
   enum?: readonly string[];
   enumDescriptions?: readonly string[];
   scope?:
-  | "machine"
-  | "window"
-  | "resource"
-  | "application"
-  | "language-overridable";
+    | "machine"
+    | "window"
+    | "resource"
+    | "application"
+    | "language-overridable";
 };
 
 /**
@@ -930,6 +961,8 @@ export type ConfigKey =
   | "PROVIDERS_TOGETHER_BASEURL"
   | "PROVIDERS_XAI"
   | "PROVIDERS_XAI_APIKEY"
+  | "PROVIDERS_XIAOMI"
+  | "PROVIDERS_XIAOMI_APIKEY"
   | "PROVIDERS_MISTRAL"
   | "PROVIDERS_MISTRAL_APIKEY"
   | "PROVIDERS_AZURE_OPENAI"
@@ -971,17 +1004,15 @@ export type ConfigKey =
 
 export type ConfigPath = string; // e.g., "providers.openai.apiKey"
 
-
 // Re-export utility functions from new modules
 export {
   generateConfiguration,
   getAllConfigPaths,
-  getCategoryConfigPaths
+  getCategoryConfigPaths,
 } from "@/config/utils/config-builder";
 export { generateConfigKeys } from "@/config/utils/config-keys-generator";
 export {
   generateConfigMetadata,
-  type ConfigMetadataItem
+  type ConfigMetadataItem,
 } from "@/config/utils/config-metadata-generator";
 export { isConfigValue } from "@/config/utils/config-validation";
-

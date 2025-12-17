@@ -1,9 +1,9 @@
-import * as vscode from "vscode";
-import { ISCMProvider } from "@/scm/scm-provider";
-import { AIProvider, AIRequestParams, AIMessage } from "@/ai/types";
+import { AIMessage, AIProvider, AIRequestParams } from "@/ai/types";
 import { filterCodeBlockMarkers } from "@/commands/generate-commit/utils/commit-formatter";
+import { ISCMProvider } from "@/scm/scm-provider";
 import { getMessage } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
+import * as vscode from "vscode";
 
 /**
  * 函数调用处理器类，负责处理函数调用模式的提交信息生成
@@ -32,7 +32,7 @@ export class FunctionCallingHandler {
     token: vscode.CancellationToken,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     repositoryPath?: string
-  ): Promise<void> {
+  ): Promise<string> {
     this.throwIfCancelled(token);
     progress.report({
       message: getMessage("progress.calling.ai.function"),
@@ -44,14 +44,15 @@ export class FunctionCallingHandler {
       );
     }
 
-    const aiResponse = await aiProvider.generateCommitWithFunctionCalling(
-      requestParams
-    );
+    const aiResponse =
+      await aiProvider.generateCommitWithFunctionCalling(requestParams);
 
     this.throwIfCancelled(token);
 
     const finalMessage = filterCodeBlockMarkers(aiResponse.content)?.trim();
     await scmProvider.startStreamingInput(finalMessage);
+
+    return finalMessage;
   }
 
   /**
@@ -65,4 +66,3 @@ export class FunctionCallingHandler {
     }
   }
 }
-

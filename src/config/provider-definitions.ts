@@ -2,7 +2,7 @@
  * 中心化的 AI 提供商定义文件
  * 这是系统中所有提供商标识符的单一来源
  * 自动生成所有需要的格式和映射表
- * 
+ *
  * 📝 命名约定：
  * - id: 小写，连字符分隔（用于 webview 和规范化目标）
  * - displayName: 大小写混合，空格分隔（用于配置 schema）
@@ -30,148 +30,158 @@ export interface ProviderDefinition {
 export const PROVIDER_DEFINITIONS: Record<string, ProviderDefinition> = {
   // === 第一方提供商 ===
   openai: {
-    id: 'openai',
-    displayName: 'OpenAI',
-    enumKey: 'OPENAI',
-    aliases: ['open-ai'],
+    id: "openai",
+    displayName: "OpenAI",
+    enumKey: "OPENAI",
+    aliases: ["open-ai"],
   },
   anthropic: {
-    id: 'anthropic',
-    displayName: 'Anthropic',
-    enumKey: 'ANTHROPIC',
+    id: "anthropic",
+    displayName: "Anthropic",
+    enumKey: "ANTHROPIC",
   },
   github: {
-    id: 'github',
-    displayName: 'GitHub',
-    enumKey: 'GITHUB',
+    id: "github",
+    displayName: "GitHub",
+    enumKey: "GITHUB",
   },
   gemini: {
-    id: 'gemini',
-    displayName: 'Gemini',
-    enumKey: 'GEMINI',
+    id: "gemini",
+    displayName: "Gemini",
+    enumKey: "GEMINI",
   },
   mistral: {
-    id: 'mistral',
-    displayName: 'Mistral',
-    enumKey: 'MISTRAL',
+    id: "mistral",
+    displayName: "Mistral",
+    enumKey: "MISTRAL",
   },
-  'google-ai': {
-    id: 'google-ai',
-    displayName: 'GoogleAI',
-    enumKey: 'GOOGLE_AI',
-    aliases: ['google_ai', 'googleai'],
+  "google-ai": {
+    id: "google-ai",
+    displayName: "GoogleAI",
+    enumKey: "GOOGLE_AI",
+    aliases: ["google_ai", "googleai"],
   },
   deepseek: {
-    id: 'deepseek',
-    displayName: 'Deepseek',
-    enumKey: 'DEEPSEEK',
+    id: "deepseek",
+    displayName: "Deepseek",
+    enumKey: "DEEPSEEK",
   },
   zhipu: {
-    id: 'zhipu',
-    displayName: 'Zhipu',
-    enumKey: 'ZHIPU',
+    id: "zhipu",
+    displayName: "Zhipu",
+    enumKey: "ZHIPU",
   },
   perplexity: {
-    id: 'perplexity',
-    displayName: 'Perplexity',
-    enumKey: 'PERPLEXITY',
+    id: "perplexity",
+    displayName: "Perplexity",
+    enumKey: "PERPLEXITY",
   },
   xai: {
-    id: 'xai',
-    displayName: 'XAI',
-    enumKey: 'XAI',
+    id: "xai",
+    displayName: "XAI",
+    enumKey: "XAI",
+  },
+  xiaomi: {
+    id: "xiaomi",
+    displayName: "Xiaomi",
+    enumKey: "XIAOMI",
+    aliases: ["mimo", "xiaomi-mimo"],
   },
 
   // === 云服务提供商 ===
-  'azure-openai': {
-    id: 'azure-openai',
-    displayName: 'Azure OpenAI',
-    enumKey: 'AZURE_OPENAI',
-    aliases: ['azure_openai', 'azureopenai'],
+  "azure-openai": {
+    id: "azure-openai",
+    displayName: "Azure OpenAI",
+    enumKey: "AZURE_OPENAI",
+    aliases: ["azure_openai", "azureopenai"],
   },
-  'baidu-qianfan': {
-    id: 'baidu-qianfan',
-    displayName: 'Baidu Qianfan',
-    enumKey: 'BAIDU_QIANFAN',
-    aliases: ['baidu_qianfan', 'baiduqianfan'],
+  "baidu-qianfan": {
+    id: "baidu-qianfan",
+    displayName: "Baidu Qianfan",
+    enumKey: "BAIDU_QIANFAN",
+    aliases: ["baidu_qianfan", "baiduqianfan"],
   },
   dashscope: {
-    id: 'dashscope',
-    displayName: 'DashScope',
-    enumKey: 'DASHSCOPE',
+    id: "dashscope",
+    displayName: "DashScope",
+    enumKey: "DASHSCOPE",
   },
   doubao: {
-    id: 'doubao',
-    displayName: 'Doubao',
-    enumKey: 'DOUBAO',
+    id: "doubao",
+    displayName: "Doubao",
+    enumKey: "DOUBAO",
   },
   cloudflare: {
-    id: 'cloudflare',
-    displayName: 'Cloudflare',
-    enumKey: 'CLOUDFLARE',
-    aliases: ['cloudflare-workersai', 'cloudflare_workersai', 'cloudflare-workers-ai'],
+    id: "cloudflare",
+    displayName: "Cloudflare",
+    enumKey: "CLOUDFLARE",
+    aliases: [
+      "cloudflare-workersai",
+      "cloudflare_workersai",
+      "cloudflare-workers-ai",
+    ],
   },
   vertexai: {
-    id: 'vertexai',
-    displayName: 'VertexAI',
-    enumKey: 'VERTEXAI',
-    aliases: ['vertex-ai', 'vertex_ai'],
+    id: "vertexai",
+    displayName: "VertexAI",
+    enumKey: "VERTEXAI",
+    aliases: ["vertex-ai", "vertex_ai"],
   },
 
   // === 聚合服务 ===
   openrouter: {
-    id: 'openrouter',
-    displayName: 'OpenRouter',
-    enumKey: 'OPENROUTER',
-    aliases: ['open-router', 'open_router'],
+    id: "openrouter",
+    displayName: "OpenRouter",
+    enumKey: "OPENROUTER",
+    aliases: ["open-router", "open_router"],
   },
   groq: {
-    id: 'groq',
-    displayName: 'Groq',
-    enumKey: 'GROQ',
+    id: "groq",
+    displayName: "Groq",
+    enumKey: "GROQ",
   },
   premai: {
-    id: 'premai',
-    displayName: 'PremAI',
-    enumKey: 'PREMAI',
+    id: "premai",
+    displayName: "PremAI",
+    enumKey: "PREMAI",
   },
   together: {
-    id: 'together',
-    displayName: 'Together',
-    enumKey: 'TOGETHER',
+    id: "together",
+    displayName: "Together",
+    enumKey: "TOGETHER",
   },
   siliconflow: {
-    id: 'siliconflow',
-    displayName: 'Siliconflow',
-    enumKey: 'SILICONFLOW',
-    aliases: ['silicon-flow', 'silicon_flow'],
+    id: "siliconflow",
+    displayName: "Siliconflow",
+    enumKey: "SILICONFLOW",
+    aliases: ["silicon-flow", "silicon_flow"],
   },
 
   // === 本地/自托管 ===
   ollama: {
-    id: 'ollama',
-    displayName: 'Ollama',
-    enumKey: 'OLLAMA',
+    id: "ollama",
+    displayName: "Ollama",
+    enumKey: "OLLAMA",
   },
   lmstudio: {
-    id: 'lmstudio',
-    displayName: 'LMStudio',
-    enumKey: 'LMSTUDIO',
-    aliases: ['lm-studio', 'lm_studio'],
+    id: "lmstudio",
+    displayName: "LMStudio",
+    enumKey: "LMSTUDIO",
+    aliases: ["lm-studio", "lm_studio"],
   },
   vscode: {
-    id: 'vscode',
-    displayName: 'VS Code Provided',
-    enumKey: 'VS_CODE_PROVIDED',
-    aliases: ['vs-code', 'vs_code', 'vs-code-provided', 'vs_code_provided'],
+    id: "vscode",
+    displayName: "VS Code Provided",
+    enumKey: "VS_CODE_PROVIDED",
+    aliases: ["vs-code", "vs_code", "vs-code-provided", "vs_code_provided"],
   },
 
   // === 兼容层 ===
-  'openai-compatible': {
-    id: 'openai-compatible',
-    displayName: 'OpenAI Compatible',
-    enumKey: 'OPENAI_COMPATIBLE',
-    aliases: ['openai_compatible', 'openaicompatible'],
+  "openai-compatible": {
+    id: "openai-compatible",
+    displayName: "OpenAI Compatible",
+    enumKey: "OPENAI_COMPATIBLE",
+    aliases: ["openai_compatible", "openaicompatible"],
     custom: true,
   },
 } as const;
@@ -179,7 +189,9 @@ export const PROVIDER_DEFINITIONS: Record<string, ProviderDefinition> = {
 /**
  * 生成小写 ID 到定义的映射
  */
-export function getProviderDefinition(providerId: string): ProviderDefinition | undefined {
+export function getProviderDefinition(
+  providerId: string
+): ProviderDefinition | undefined {
   return PROVIDER_DEFINITIONS[providerId as keyof typeof PROVIDER_DEFINITIONS];
 }
 
@@ -199,7 +211,7 @@ export function generateNormalizationMap(): Record<string, string> {
     // 别名
     if (def.aliases) {
       for (const alias of def.aliases) {
-        const normalized = alias.toLowerCase().replace(/\s+/g, '_');
+        const normalized = alias.toLowerCase().replace(/\s+/g, "_");
         map[normalized] = canonical;
       }
     }
@@ -223,7 +235,7 @@ export function getAllProviderIds(): string[] {
  * 获取所有提供商显示名称列表
  */
 export function getAllProviderDisplayNames(): string[] {
-  return Object.values(PROVIDER_DEFINITIONS).map(def => def.displayName);
+  return Object.values(PROVIDER_DEFINITIONS).map((def) => def.displayName);
 }
 
 /**
@@ -255,7 +267,7 @@ export function normalizeProviderType(type: string): string {
     return type;
   }
 
-  const normalized = type.toLowerCase().replace(/\s+/g, '_');
+  const normalized = type.toLowerCase().replace(/\s+/g, "_");
   const normalizationMap = generateNormalizationMap();
   const canonical = normalizationMap[normalized];
 
@@ -270,7 +282,9 @@ export function normalizeProviderType(type: string): string {
 /**
  * 根据枚举键查找提供商定义
  */
-export function getProviderByEnumKey(enumKey: string): ProviderDefinition | undefined {
+export function getProviderByEnumKey(
+  enumKey: string
+): ProviderDefinition | undefined {
   for (const def of Object.values(PROVIDER_DEFINITIONS)) {
     if (def.enumKey === enumKey) {
       return def;

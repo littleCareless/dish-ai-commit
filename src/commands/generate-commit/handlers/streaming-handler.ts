@@ -1,11 +1,11 @@
-import * as vscode from "vscode";
-import { ISCMProvider } from "@/scm/scm-provider";
-import { AIRequestParams } from "@/ai/types";
 import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
-import { ContextManager } from "@/utils/context-manager";
+import { AIRequestParams } from "@/ai/types";
 import { filterCodeBlockMarkers } from "@/commands/generate-commit/utils/commit-formatter";
+import { ISCMProvider } from "@/scm/scm-provider";
+import { ContextManager } from "@/utils/context-manager";
 import { getMessage } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
+import * as vscode from "vscode";
 
 /**
  * 流式处理器类，负责处理流式提交信息生成
@@ -35,7 +35,7 @@ export class StreamingHandler {
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     contextManager: ContextManager,
     repositoryPath?: string
-  ): Promise<void> {
+  ): Promise<string> {
     this.throwIfCancelled(token);
     progress.report({
       message: getMessage("progress.calling.ai.stream"),
@@ -57,6 +57,8 @@ export class StreamingHandler {
     // After the stream is complete, filter the final message and apply it.
     const finalMessage = filterCodeBlockMarkers(accumulatedMessage);
     await scmProvider.startStreamingInput(finalMessage);
+
+    return finalMessage;
   }
 
   /**
@@ -70,4 +72,3 @@ export class StreamingHandler {
     }
   }
 }
-
