@@ -70,6 +70,19 @@
       }
     }
   },
+  "xiaomi": {
+    "description": "小米 MiMo 模型",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "小米 MiMo API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      }
+    }
+  },
   "google-vertex": {
     "description": "Google Cloud Vertex AI",
     "fields": {

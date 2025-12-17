@@ -34,6 +34,7 @@
   "extension.contributes.configuration.properties.dish-ai-commit.base.model.description": "AI model",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.openai.apiKey.description": "OpenAI API Key",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.openai.baseUrl.description": "OpenAI API Base URL",
+  "extension.contributes.configuration.properties.dish-ai-commit.providers.xiaomi.apiKey.description": "Xiaomi MiMo API Key",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.zhipu.apiKey.description": "Zhipu AI API Key",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.dashscope.apiKey.description": "DashScope API Key",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.doubao.apiKey.description": "Doubao API Key",

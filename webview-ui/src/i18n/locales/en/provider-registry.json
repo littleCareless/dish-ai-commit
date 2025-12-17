@@ -70,6 +70,19 @@
       }
     }
   },
+  "xiaomi": {
+    "description": "Xiaomi MiMo models",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "Xiaomi MiMo API key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      }
+    }
+  },
   "google-vertex": {
     "description": "Google Cloud Vertex AI",
     "fields": {

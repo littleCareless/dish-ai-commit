@@ -281,6 +281,55 @@ export const providerRegistry: ProviderRegistryType = {
     },
   },
 
+  xiaomi: {
+    id: "xiaomi",
+    name: "Xiaomi MiMo",
+    description: "xiaomi.description",
+    website: "https://xiaomimimo.com",
+    type: ProviderType.FIRST_PARTY,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "xiaomi.fields.apiKey.label",
+        required: true,
+        secure: true,
+        placeholder: "xiaomi.fields.apiKey.placeholder",
+        helpText: "xiaomi.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "xiaomi.fields.apiKey.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: true,
+      vision: false,
+      promptCache: false,
+      embeddings: true,
+      tools: true,
+      jsonMode: false,
+    },
+    models: [
+      {
+        id: "mimo-v2-flash",
+        name: "MiMo V2 Flash",
+        contextWindow: 128000,
+        maxOutputTokens: 8192,
+        capabilities: ["text", "function-calling"],
+      },
+    ],
+    documentation: {
+      setup: "https://admin.xiaomimimo.com/console/api-keys",
+      apiReference: "https://admin.xiaomimimo.com/console/api-keys",
+      examples: "https://admin.xiaomimimo.com/console/api-keys",
+    },
+  },
+
   "google-vertex": {
     id: "google-vertex",
     name: "Google Vertex AI",

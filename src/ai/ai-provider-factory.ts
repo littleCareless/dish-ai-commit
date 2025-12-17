@@ -18,6 +18,7 @@ import { TogetherAIProvider } from "@/ai/providers/together-provider"; // Import
 import { VertexAIProvider } from "@/ai/providers/vertexai-provider";
 import { VSCodeProvider } from "@/ai/providers/vscode-provider";
 import { XAIProvider } from "@/ai/providers/xai-provider";
+import { XiaomiProvider } from "@/ai/providers/xiaomi-provider";
 import { ZhipuAIProvider } from "@/ai/providers/zhipu-provider";
 import { AIModel, AIProvider as AIProviderInterface } from "@/ai/types";
 import {
@@ -136,6 +137,9 @@ export class AIProviderFactory {
       case "perplexity":
         provider = new PerplexityAIProvider(effectiveConfig);
         break;
+      case "xiaomi":
+        provider = new XiaomiProvider(effectiveConfig);
+        break;
       default:
         throw new Error(formatMessage("provider.type.unknown", [providerType]));
     }
@@ -178,6 +182,7 @@ export class AIProviderFactory {
       new BaiduQianfanProvider(),
       new LMStudioProvider(),
       new OpenAICompatibleProvider(),
+      new XiaomiProvider(),
     ];
   }
 

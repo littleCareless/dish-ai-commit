@@ -34,6 +34,7 @@
   "extension.contributes.configuration.properties.dish-ai-commit.base.model.description": "AI 模型",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.openai.apiKey.description": "OpenAI API 密钥",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.openai.baseUrl.description": "OpenAI API 基础地址",
+  "extension.contributes.configuration.properties.dish-ai-commit.providers.xiaomi.apiKey.description": "Xiaomi MiMo API 密钥",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.zhipu.apiKey.description": "智谱 AI API 密钥",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.dashscope.apiKey.description": "灵积 API 密钥",
   "extension.contributes.configuration.properties.dish-ai-commit.providers.doubao.apiKey.description": "豆包 API 密钥",

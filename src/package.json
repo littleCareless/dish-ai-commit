@@ -180,7 +180,8 @@
             "Cloudflare",
             "GoogleAI",
             "VertexAI",
-            "LMStudio"
+            "LMStudio",
+            "Xiaomi"
           ]
         },
         "dish-ai-commit.base.model": {
@@ -198,6 +199,11 @@
           "type": "string",
           "default": "https://api.openai.com/v1",
           "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.openai.baseUrl.description%"
+        },
+        "dish-ai-commit.providers.xiaomi.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.xiaomi.apiKey.description%"
         },
         "dish-ai-commit.providers.zhipu.apiKey": {
           "type": "string",
@@ -621,13 +627,6 @@
     "vitest": "^3.2.4"
   },
   "dependencies": {
-    "@ai-sdk/azure": "^2.0.70",
-    "@ai-sdk/deepseek": "^1.0.28",
-    "@ai-sdk/google-vertex": "^3.0.68",
-    "@ai-sdk/groq": "^2.0.29",
-    "@ai-sdk/mistral": "^2.0.24",
-    "@ai-sdk/togetherai": "^1.0.28",
-    "@ai-sdk/xai": "^2.0.33",
     "@anthropic-ai/sdk": "^0.65.0",
     "@azure/identity": "^4.13.0",
     "@baiducloud/qianfan": "^0.2.3",
