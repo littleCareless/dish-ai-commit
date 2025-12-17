@@ -1,6 +1,5 @@
 import { DISH_CONFIG_PREFIX } from "@/config/constants";
 import { ExtensionConfiguration } from "@/config/types";
-import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 import {
   PromptDetail,
   PromptKey,
@@ -52,31 +51,21 @@ export class PromptManagerService {
         data: { fileCount: files.length },
       });
 
-      const profileService = ProfileManagerService.getInstance();
-      const featureSettings = profileService.getFeatureSettings();
-      const activeProfile = await profileService.getProfileForMode();
-
-      let language = "en";
-      if (activeProfile?.preferences?.language) {
-        const lang = activeProfile.preferences.language;
-        if (lang === "zh" || lang === "Simplified Chinese") {
-          language = "zh";
-        }
-      }
-
+      // TODO: Refactor to inject config instead of fetching it here.
+      // For now, using defaults to break the dependency cycle.
+      const language = "en";
       const extensionConfig = {
         base: {
           language: language,
         },
         features: {
           commitFormat: {
-            enableMergeCommit: featureSettings.enableMergeCommit,
-            enableEmoji: featureSettings.enableEmoji,
-            enableBody: featureSettings.enableBody,
+            enableMergeCommit: true,
+            enableEmoji: true,
+            enableBody: true,
           },
           commitMessage: {
-            useRecentCommitsAsReference:
-              featureSettings.useRecentCommitsAsReference,
+            useRecentCommitsAsReference: false,
           },
         },
       } as ExtensionConfiguration;
