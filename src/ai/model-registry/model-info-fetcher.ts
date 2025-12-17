@@ -9,7 +9,6 @@ import {
   getDefaultTokenLimits,
 } from "@/ai/model-registry/model-specs";
 import { AIModel } from "@/ai/types";
-import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 
 export interface ModelInfoCache {
   [modelId: string]: {
@@ -39,7 +38,7 @@ export class ModelInfoFetcher {
   /**
    * 获取模型的详细信息，优先级：缓存 > API > 本地规格 > 默认值
    */
-  async getModelInfo(model: AIModel): Promise<ModelSpec> {
+  async getModelInfo(model: AIModel, profile: any): Promise<ModelSpec> {
     const modelId = model.id;
 
     // 1. 检查缓存
@@ -50,7 +49,7 @@ export class ModelInfoFetcher {
 
     // 2. 尝试从API获取
     try {
-      const apiInfo = await this.fetchModelInfoFromAPI(model);
+      const apiInfo = await this.fetchModelInfoFromAPI(model, profile);
       if (apiInfo) {
         this.cacheModelInfo(modelId, apiInfo);
         return apiInfo;
@@ -118,17 +117,18 @@ export class ModelInfoFetcher {
    * 从API获取模型信息
    */
   private async fetchModelInfoFromAPI(
-    model: AIModel
+    model: AIModel,
+    profile: any
   ): Promise<ModelSpec | null | undefined> {
     const providerId = model.provider.id;
 
     switch (providerId) {
       case "openai":
-        return this.fetchOpenAIModelInfo(model);
+        return this.fetchOpenAIModelInfo(model, profile);
       case "anthropic":
         return this.fetchAnthropicModelInfo(model);
       case "github":
-        return this.fetchGitHubModelInfo(model);
+        return this.fetchGitHubModelInfo(model, profile);
       default:
         return null;
     }
@@ -137,13 +137,11 @@ export class ModelInfoFetcher {
   /**
    * 从 profile 获取 provider 配置
    */
-  private async getProviderConfig(
-    providerId: string
-  ): Promise<{ apiKey?: string; baseUrl?: string } | null> {
+  private getProviderConfig(
+    providerId: string,
+    profile: any
+  ): { apiKey?: string; baseUrl?: string } | null {
     try {
-      const profileManager = ProfileManagerService.getInstance();
-      const profile = await profileManager.getProfileForMode();
-
       if (!profile) {
         return null;
       }
@@ -179,10 +177,11 @@ export class ModelInfoFetcher {
    * 从OpenAI API获取模型信息
    */
   private async fetchOpenAIModelInfo(
-    model: AIModel
+    model: AIModel,
+    profile: any
   ): Promise<ModelSpec | null> {
     try {
-      const providerConfig = await this.getProviderConfig("openai");
+      const providerConfig = this.getProviderConfig("openai", profile);
       if (!providerConfig || !providerConfig.apiKey) {
         return null;
       }
@@ -298,11 +297,12 @@ export class ModelInfoFetcher {
    * 从GitHub Models API获取模型信息
    */
   private async fetchGitHubModelInfo(
-    model: AIModel
+    model: AIModel,
+    profile: any
   ): Promise<ModelSpec | null> {
     try {
       // GitHub Models API 暂时使用 OpenAI 的配置，后续需要添加 GitHub 配置
-      const providerConfig = await this.getProviderConfig("openai");
+      const providerConfig = this.getProviderConfig("openai", profile);
       if (!providerConfig || !providerConfig.apiKey) {
         return null;
       }

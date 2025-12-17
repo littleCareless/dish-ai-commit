@@ -3,14 +3,30 @@
  * 提供统一的模型信息获取接口，支持增强的模型验证和代理检测
  */
 
-export { ModelSpec, findModelSpec, getModelSpecsByProvider, getDefaultTokenLimits } from '@/ai/model-registry/model-specs';
-export { ModelInfoFetcher, ModelInfoCache } from '@/ai/model-registry/model-info-fetcher';
-export { EnhancedModelFetcher, EnhancedModelSpec, ModelFetchOptions } from '@/ai/model-registry/enhanced-model-fetcher';
-export { ModelValidator, ModelValidationResult, ProxyDetectionResult } from '@/ai/model-registry/model-validator';
+export {
+  EnhancedModelFetcher,
+  EnhancedModelSpec,
+  ModelFetchOptions,
+} from "@/ai/model-registry/enhanced-model-fetcher";
+export {
+  ModelInfoCache,
+  ModelInfoFetcher,
+} from "@/ai/model-registry/model-info-fetcher";
+export {
+  findModelSpec,
+  getDefaultTokenLimits,
+  getModelSpecsByProvider,
+  ModelSpec,
+} from "@/ai/model-registry/model-specs";
+export {
+  ModelValidationResult,
+  ModelValidator,
+  ProxyDetectionResult,
+} from "@/ai/model-registry/model-validator";
 
-import { ModelInfoFetcher } from '@/ai/model-registry/model-info-fetcher';
-import { EnhancedModelFetcher } from '@/ai/model-registry/enhanced-model-fetcher';
-import { AIModel } from '@/ai/types';
+import { EnhancedModelFetcher } from "@/ai/model-registry/enhanced-model-fetcher";
+import { ModelInfoFetcher } from "@/ai/model-registry/model-info-fetcher";
+import { AIModel } from "@/ai/types";
 
 /**
  * 获取模型的准确token限制信息（增强版）
@@ -19,6 +35,7 @@ import { AIModel } from '@/ai/types';
  */
 export async function getAccurateTokenLimits(
   model: AIModel,
+  profile: any,
   options?: {
     /** 是否启用增强验证 */
     enhanced?: boolean;
@@ -28,27 +45,37 @@ export async function getAccurateTokenLimits(
     allowFuzzyMatch?: boolean;
   }
 ): Promise<{ input: number; output: number }> {
-  const { enhanced = true, minConfidence = 0.5, allowFuzzyMatch = true } = options || {};
+  const {
+    enhanced = true,
+    minConfidence = 0.5,
+    allowFuzzyMatch = true,
+  } = options || {};
 
   if (enhanced) {
     // 使用增强的获取器
     const enhancedFetcher = EnhancedModelFetcher.getInstance();
-    const modelInfo = await enhancedFetcher.getEnhancedModelInfo(model, {
-      minConfidence,
-      allowFuzzyMatch,
-      enableProxyDetection: true
-    });
-    
+    const modelInfo = await enhancedFetcher.getEnhancedModelInfo(
+      model,
+      profile,
+      {
+        minConfidence,
+        allowFuzzyMatch,
+        enableProxyDetection: true,
+      }
+    );
+
     // 如果验证置信度过低，记录警告
     if (modelInfo.validation && modelInfo.validation.confidence < 0.7) {
-      console.warn(`模型信息验证置信度较低: ${model.id}, 置信度: ${modelInfo.validation.confidence.toFixed(2)}, 方法: ${modelInfo.validation.validationMethod}`);
+      console.warn(
+        `模型信息验证置信度较低: ${model.id}, 置信度: ${modelInfo.validation.confidence.toFixed(2)}, 方法: ${modelInfo.validation.validationMethod}`
+      );
     }
-    
+
     return modelInfo.maxTokens;
   } else {
     // 使用原有的获取器
     const fetcher = ModelInfoFetcher.getInstance();
-    const modelInfo = await fetcher.getModelInfo(model);
+    const modelInfo = await fetcher.getModelInfo(model, profile);
     return modelInfo.maxTokens;
   }
 }
@@ -58,6 +85,7 @@ export async function getAccurateTokenLimits(
  */
 export async function getModelSpec(
   model: AIModel,
+  profile: any,
   options?: {
     enhanced?: boolean;
     minConfidence?: number;
@@ -68,10 +96,10 @@ export async function getModelSpec(
 
   if (enhanced) {
     const enhancedFetcher = EnhancedModelFetcher.getInstance();
-    return await enhancedFetcher.getEnhancedModelInfo(model, options);
+    return await enhancedFetcher.getEnhancedModelInfo(model, profile, options);
   } else {
     const fetcher = ModelInfoFetcher.getInstance();
-    return await fetcher.getModelInfo(model);
+    return await fetcher.getModelInfo(model, profile);
   }
 }
 
@@ -81,6 +109,7 @@ export async function getModelSpec(
  */
 export async function getEnhancedModelSpec(
   model: AIModel,
+  profile: any,
   options?: {
     forceRefresh?: boolean;
     minConfidence?: number;
@@ -89,48 +118,51 @@ export async function getEnhancedModelSpec(
   }
 ) {
   const enhancedFetcher = EnhancedModelFetcher.getInstance();
-  return await enhancedFetcher.getEnhancedModelInfo(model, options);
+  return await enhancedFetcher.getEnhancedModelInfo(model, profile, options);
 }
 
 /**
  * 验证模型信息的准确性
  */
-export async function validateModelInfo(model: AIModel): Promise<{
+export async function validateModelInfo(
+  model: AIModel,
+  profile: any
+): Promise<{
   isValid: boolean;
   confidence: number;
   issues: string[];
   recommendations: string[];
 }> {
   try {
-    const enhancedSpec = await getEnhancedModelSpec(model, {
+    const enhancedSpec = await getEnhancedModelSpec(model, profile, {
       forceRefresh: true,
-      enableProxyDetection: true
+      enableProxyDetection: true,
     });
 
     const result = {
       isValid: true,
       confidence: enhancedSpec.validation?.confidence || 0,
       issues: [] as string[],
-      recommendations: [] as string[]
+      recommendations: [] as string[],
     };
 
     // 检查验证置信度
     if (result.confidence < 0.5) {
       result.isValid = false;
       result.issues.push(`模型验证置信度过低: ${result.confidence.toFixed(2)}`);
-      result.recommendations.push('建议检查模型ID是否正确或更新模型规格数据');
+      result.recommendations.push("建议检查模型ID是否正确或更新模型规格数据");
     }
 
     // 检查代理检测结果
     if (enhancedSpec.proxyInfo?.isProxy) {
       result.issues.push(`检测到代理服务: ${enhancedSpec.proxyInfo.proxyType}`);
-      result.recommendations.push('在代理环境中，建议定期验证模型信息的准确性');
+      result.recommendations.push("在代理环境中，建议定期验证模型信息的准确性");
     }
 
     // 检查验证方法
-    if (enhancedSpec.validation?.validationMethod === 'fallback') {
-      result.issues.push('使用了降级的默认配置');
-      result.recommendations.push('建议更新模型规格数据库或检查API连接');
+    if (enhancedSpec.validation?.validationMethod === "fallback") {
+      result.issues.push("使用了降级的默认配置");
+      result.recommendations.push("建议更新模型规格数据库或检查API连接");
     }
 
     return result;
@@ -138,8 +170,10 @@ export async function validateModelInfo(model: AIModel): Promise<{
     return {
       isValid: false,
       confidence: 0,
-      issues: [`验证过程出错: ${error instanceof Error ? error.message : String(error)}`],
-      recommendations: ['请检查网络连接和API配置']
+      issues: [
+        `验证过程出错: ${error instanceof Error ? error.message : String(error)}`,
+      ],
+      recommendations: ["请检查网络连接和API配置"],
     };
   }
 }
@@ -150,7 +184,7 @@ export async function validateModelInfo(model: AIModel): Promise<{
 export function clearModelCache(): void {
   const fetcher = ModelInfoFetcher.getInstance();
   const enhancedFetcher = EnhancedModelFetcher.getInstance();
-  
+
   fetcher.clearCache();
   enhancedFetcher.clearCache();
 }
@@ -161,24 +195,27 @@ export function clearModelCache(): void {
 export function getModelCacheStats() {
   const fetcher = ModelInfoFetcher.getInstance();
   const enhancedFetcher = EnhancedModelFetcher.getInstance();
-  
+
   const basicStats = fetcher.getCacheStats();
   const enhancedStats = enhancedFetcher.getCacheStats();
-  
+
   return {
     basic: basicStats,
     enhanced: enhancedStats,
     total: {
       cached: basicStats.total + enhancedStats.total,
-      expired: basicStats.expired + enhancedStats.expired
-    }
+      expired: basicStats.expired + enhancedStats.expired,
+    },
   };
 }
 
 /**
  * 批量验证多个模型
  */
-export async function validateMultipleModels(models: AIModel[]): Promise<{
+export async function validateMultipleModels(
+  models: AIModel[],
+  profile: any
+): Promise<{
   valid: AIModel[];
   invalid: Array<{ model: AIModel; issues: string[] }>;
   summary: {
@@ -190,7 +227,7 @@ export async function validateMultipleModels(models: AIModel[]): Promise<{
 }> {
   const results = await Promise.allSettled(
     models.map(async (model) => {
-      const validation = await validateModelInfo(model);
+      const validation = await validateModelInfo(model, profile);
       return { model, validation };
     })
   );
@@ -200,10 +237,10 @@ export async function validateMultipleModels(models: AIModel[]): Promise<{
   let totalConfidence = 0;
 
   for (const result of results) {
-    if (result.status === 'fulfilled') {
+    if (result.status === "fulfilled") {
       const { model, validation } = result.value;
       totalConfidence += validation.confidence;
-      
+
       if (validation.isValid) {
         valid.push(model);
       } else {
@@ -211,7 +248,7 @@ export async function validateMultipleModels(models: AIModel[]): Promise<{
       }
     } else {
       // 处理验证失败的情况
-      console.error('模型验证失败:', result.reason);
+      console.error("模型验证失败:", result.reason);
     }
   }
 
@@ -222,7 +259,7 @@ export async function validateMultipleModels(models: AIModel[]): Promise<{
       total: models.length,
       valid: valid.length,
       invalid: invalid.length,
-      averageConfidence: totalConfidence / models.length
-    }
+      averageConfidence: totalConfidence / models.length,
+    },
   };
 }

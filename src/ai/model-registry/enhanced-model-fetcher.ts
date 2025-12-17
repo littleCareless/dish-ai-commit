@@ -14,7 +14,6 @@ import {
   ProxyDetectionResult,
 } from "@/ai/model-registry/model-validator";
 import { AIModel } from "@/ai/types";
-import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 
 export interface EnhancedModelSpec extends ModelSpec {
   /** 验证信息 */
@@ -78,6 +77,7 @@ export class EnhancedModelFetcher {
    */
   async getEnhancedModelInfo(
     model: AIModel,
+    profile: any,
     options: ModelFetchOptions = {}
   ): Promise<EnhancedModelSpec> {
     const {
@@ -101,7 +101,7 @@ export class EnhancedModelFetcher {
 
     try {
       // 尝试从API获取
-      const apiSpec = await this.fetchFromAPI(model, {
+      const apiSpec = await this.fetchFromAPI(model, profile, {
         enableProxyDetection,
         allowFuzzyMatch,
         minConfidence,
@@ -135,6 +135,7 @@ export class EnhancedModelFetcher {
    */
   private async fetchFromAPI(
     model: AIModel,
+    profile: any,
     options: {
       enableProxyDetection: boolean;
       allowFuzzyMatch: boolean;
@@ -145,9 +146,9 @@ export class EnhancedModelFetcher {
 
     switch (providerId) {
       case "openai":
-        return this.fetchOpenAIModelInfo(model, options);
+        return this.fetchOpenAIModelInfo(model, profile, options);
       case "github":
-        return this.fetchGitHubModelInfo(model, options);
+        return this.fetchGitHubModelInfo(model, profile, options);
       default:
         return null;
     }
@@ -156,13 +157,11 @@ export class EnhancedModelFetcher {
   /**
    * 从 profile 获取 provider 配置
    */
-  private async getProviderConfig(
-    providerId: string
-  ): Promise<{ apiKey?: string; baseUrl?: string } | null> {
+  private getProviderConfig(
+    providerId: string,
+    profile: any
+  ): { apiKey?: string; baseUrl?: string } | null {
     try {
-      const profileManager = ProfileManagerService.getInstance();
-      const profile = await profileManager.getProfileForMode();
-
       if (!profile) {
         return null;
       }
@@ -199,6 +198,7 @@ export class EnhancedModelFetcher {
    */
   private async fetchOpenAIModelInfo(
     model: AIModel,
+    profile: any,
     options: {
       enableProxyDetection: boolean;
       allowFuzzyMatch: boolean;
@@ -206,7 +206,7 @@ export class EnhancedModelFetcher {
     }
   ): Promise<EnhancedModelSpec | null> {
     try {
-      const providerConfig = await this.getProviderConfig("openai");
+      const providerConfig = this.getProviderConfig("openai", profile);
       if (!providerConfig || !providerConfig.apiKey) {
         return null;
       }
@@ -340,6 +340,7 @@ export class EnhancedModelFetcher {
    */
   private async fetchGitHubModelInfo(
     model: AIModel,
+    profile: any,
     options: {
       enableProxyDetection: boolean;
       allowFuzzyMatch: boolean;
@@ -348,7 +349,7 @@ export class EnhancedModelFetcher {
   ): Promise<EnhancedModelSpec | null> {
     try {
       // GitHub Models API 暂时使用 OpenAI 的配置
-      const providerConfig = await this.getProviderConfig("openai");
+      const providerConfig = this.getProviderConfig("openai", profile);
       if (!providerConfig || !providerConfig.apiKey) {
         return null;
       }
