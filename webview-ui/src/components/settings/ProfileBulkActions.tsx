@@ -15,8 +15,8 @@ import {
 } from "@/components/ui/dialog";
 import { AlertCircle, Download, Trash2 } from "lucide-react";
 import React, { useState } from "react";
-import { showInformationMessage } from "../../utils/vscode";
 import { Profile } from "../../types/settings";
+import { showInformationMessage } from "../../utils/vscode";
 
 interface ProfileBulkActionsProps {
   profiles: Profile[];
@@ -129,11 +129,6 @@ export const ProfileBulkActions: React.FC<ProfileBulkActionsProps> = ({
               <div className="flex items-center justify-between">
                 <span className="text-sm font-medium truncate">
                   {profile.name}
-                  {profile.isDefault && (
-                    <span className="ml-2 text-xs text-muted-foreground">
-                      (Default)
-                    </span>
-                  )}
                 </span>
                 <span className="text-xs text-muted-foreground">
                   {Object.keys(profile.providers).length} providers
@@ -175,9 +170,6 @@ export const ProfileBulkActions: React.FC<ProfileBulkActionsProps> = ({
                       className="flex items-center justify-between"
                     >
                       <span>{profile.name}</span>
-                      {profile.isDefault && (
-                        <span className="text-xs text-red-500">(Default)</span>
-                      )}
                     </li>
                   ) : null;
                 })}

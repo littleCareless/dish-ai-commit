@@ -147,7 +147,6 @@ export class ProfileManager {
       createdAt: now,
       updatedAt: now,
       version: "1.0.0",
-      isDefault: true,
     };
   }
 

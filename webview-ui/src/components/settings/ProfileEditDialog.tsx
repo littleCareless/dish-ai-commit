@@ -90,7 +90,7 @@ export const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
         id: isEditing ? profile!.id : createNewProfileId(),
         name: data.name,
         description: data.description || "",
-        isDefault: profile?.isDefault || false,
+
         providers: profile?.providers || {},
         preferences: profile?.preferences || DEFAULT_USER_PREFERENCES,
         createdAt: profile?.createdAt || now,

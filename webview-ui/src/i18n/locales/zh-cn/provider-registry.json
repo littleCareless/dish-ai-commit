@@ -462,7 +462,7 @@
           "required": "API Key 是必需的"
         }
       },
-      "baseURL": {
+      "baseUrl": {
         "label": "API 端点 URL",
         "placeholder": "https://api.example.com/v1",
         "helpText": "OpenAI 兼容的 API 端点",
@@ -506,6 +506,59 @@
       "includeMaxTokens": {
         "label": "包含最大输出 Token 数",
         "helpText": "在 API 请求中发送最大输出 Token 参数。某些提供商可能不支持此功能。"
+      },
+      "enableReasoningEffort": {
+        "label": "启用推理强度配置",
+        "helpText": "为支持的模型启用推理强度参数 (例如 o1, o3-mini)"
+      },
+      "reasoningEffortLevel": {
+        "label": "推理强度等级",
+        "helpText": "设置推理模型的努力程度",
+        "options": {
+          "low": "低",
+          "medium": "中",
+          "high": "高"
+        }
+      },
+      "customModelSupportsPromptCache": {
+        "label": "支持 Prompt 缓存",
+        "helpText": "为此模型启用 Prompt 缓存价格计算"
+      },
+      "customModelConfigNotice": {
+        "title": "自定义模型配置",
+        "point1": "如果您使用的模型不在默认列表中，请配置这些设置。",
+        "point2": "这些设置用于 Token 成本估算和上下文窗口管理。",
+        "point3": "如果不想追踪成本，请将价格留空或设为 0。"
+      },
+      "customModelMaxTokens": {
+        "label": "最大输出 Token",
+        "helpText": "模型可生成的最大 Token 数 (-1 表示可变/未知)",
+        "placeholder": "例如 4096"
+      },
+      "customModelContextWindow": {
+        "label": "上下文窗口",
+        "helpText": "总输入上下文窗口大小",
+        "placeholder": "例如 128000"
+      },
+      "customModelInputPrice": {
+        "label": "输入价格 ($/1M tokens)",
+        "helpText": "每百万输入 Token 的成本",
+        "placeholder": "例如 0.15"
+      },
+      "customModelOutputPrice": {
+        "label": "输出价格 ($/1M tokens)",
+        "helpText": "每百万输出 Token 的成本",
+        "placeholder": "例如 0.60"
+      },
+      "customModelCacheReadsPrice": {
+        "label": "缓存读取价格 ($/1M tokens)",
+        "helpText": "每百万缓存输入 Token 的成本",
+        "placeholder": "例如 0.075"
+      },
+      "customModelCacheWritesPrice": {
+        "label": "缓存写入价格 ($/1M tokens)",
+        "helpText": "每百万写入缓存 Token 的成本 (通常与输入价格相同)",
+        "placeholder": "例如 0.15"
       }
     }
   },

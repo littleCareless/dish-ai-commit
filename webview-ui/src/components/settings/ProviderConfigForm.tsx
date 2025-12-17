@@ -91,11 +91,23 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
         defaults[field.key] =
           configData?.[field.key] ?? getFieldDefaultValue(field);
       });
+
+      // 如果当前 provider 有 baseUrl 设置的话，默认勾选 useCustomUrl
+      // 仅当 config 中未显式设置 useCustomUrl 时才生效，避免覆盖用户的显式取消操作
+      if (
+        configData?.baseUrl &&
+        typeof configData.baseUrl === "string" &&
+        configData.baseUrl.trim() !== "" &&
+        configData?.useCustomUrl === undefined &&
+        providerMeta.fields.some((f) => f.key === "useCustomUrl")
+      ) {
+        defaults["useCustomUrl"] = true;
+      }
     }
 
     // 处理模型选择字段
-    if (configData?.model) {
-      defaults["model"] = configData.model;
+    if (configData?.model || configData?.defaultModel) {
+      defaults["model"] = configData.model || configData.defaultModel;
     }
 
     return defaults as ProviderConfigFormData;
@@ -112,7 +124,9 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
   const prevProviderIdRef = useRef<string | null>(null);
 
   // When config truly changes (e.g., switching profiles or providers), reset form
-  const configModel = (config as Record<string, unknown>).model;
+  const configModel =
+    (config as Record<string, unknown>).model ||
+    (config as Record<string, unknown>).defaultModel;
   useEffect(() => {
     console.log(
       `[ProviderConfigForm] Config/Provider changed, resetting form for provider: ${provider.id}`,
@@ -148,6 +162,8 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
     if (fieldKey === "model") {
       // 确保 model 字段被设置
       (newConfig as Record<string, unknown>)["model"] = value;
+      // 同时更新 defaultModel，以匹配 ProviderConfig 类型定义
+      (newConfig as Record<string, unknown>)["defaultModel"] = value;
       form.setValue("model", value as never);
     }
 
@@ -215,17 +231,30 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
             setModels(modelsList);
             setModelError(null);
 
-            const currentModel = form.getValues("model");
-            if (modelsList.length > 0 && currentModel) {
-              const foundModel = modelsList.find((m) => m.id === currentModel);
-              if (foundModel) {
-                console.log(`[ProviderConfigForm] 恢复模型选择:`, {
-                  modelId: foundModel.id,
-                  modelName: foundModel.name || foundModel.id,
-                });
+            if (modelsList.length > 0) {
+              const currentModel =
+                form.getValues("model") ||
+                (config as any).defaultModel ||
+                (config as any).model; // 多重回退策略
 
-                // 确保 form 中的 model 值是最新的
-                form.setValue("model", foundModel.id as never);
+              if (currentModel) {
+                const foundModel = modelsList.find(
+                  (m) => m.id === currentModel,
+                );
+                if (foundModel) {
+                  console.log(`[ProviderConfigForm] 恢复模型选择:`, {
+                    modelId: foundModel.id,
+                    modelName: foundModel.name || foundModel.id,
+                  });
+
+                  // 延迟设置值，确保 Dropdown 选项已渲染（解决 Web Component 时序问题）
+                  setTimeout(() => {
+                    form.setValue("model", foundModel.id as never, {
+                      shouldValidate: true,
+                      shouldDirty: true,
+                    });
+                  }, 50);
+                }
               }
             }
           } else {
@@ -458,7 +487,7 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
                         );
                       }, 100);
                     }
-                  }) as any // eslint-disable-line @typescript-eslint/no-explicit-any
+                  }) as any
                 }
                 disabled={!canSelectModel}
               >

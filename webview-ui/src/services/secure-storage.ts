@@ -12,6 +12,7 @@ import {
   ProviderMetadata,
 } from "@/types/provider-metadata";
 import { postMessage } from "@/utils/vscode";
+import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 
 export class SecureStorage {
   private static instance: SecureStorage;
@@ -243,7 +244,7 @@ export class SecureStorage {
       return new Promise((resolve, reject) => {
         const messageHandler = (event: MessageEvent) => {
           if (
-            event.data.command === "setGlobalStateResponse" &&
+            event.data.command === ExtensionResponse.SystemGlobalStateUpdated &&
             event.data.key === key
           ) {
             window.removeEventListener("message", messageHandler);
@@ -259,7 +260,7 @@ export class SecureStorage {
 
         window.addEventListener("message", messageHandler);
 
-        postMessage("setGlobalState", { key, value });
+        postMessage(UIRequest.SystemSetGlobalState, { key, value });
 
         // 超时处理
         setTimeout(() => {
@@ -294,7 +295,7 @@ export class SecureStorage {
     return new Promise((resolve) => {
       const messageHandler = (event: MessageEvent) => {
         if (
-          event.data.command === "getGlobalStateResponse" &&
+          event.data.command === ExtensionResponse.SystemGlobalStateLoaded &&
           event.data.key === key
         ) {
           window.removeEventListener("message", messageHandler);
@@ -303,7 +304,7 @@ export class SecureStorage {
       };
 
       window.addEventListener("message", messageHandler);
-      postMessage("getGlobalState", { key });
+      postMessage(UIRequest.SystemGetGlobalState, { key });
 
       // 超时处理
       setTimeout(() => {
@@ -326,7 +327,7 @@ export class SecureStorage {
       return new Promise((resolve, reject) => {
         const messageHandler = (event: MessageEvent) => {
           if (
-            event.data.command === "setSecretResponse" &&
+            event.data.command === ExtensionResponse.SystemSecretUpdated &&
             event.data.key === key
           ) {
             window.removeEventListener("message", messageHandler);
@@ -339,7 +340,7 @@ export class SecureStorage {
         };
 
         window.addEventListener("message", messageHandler);
-        postMessage("setSecret", { key, value });
+        postMessage(UIRequest.SystemSetSecret, { key, value });
 
         // 超时处理
         setTimeout(() => {
@@ -374,7 +375,7 @@ export class SecureStorage {
     return new Promise((resolve) => {
       const messageHandler = (event: MessageEvent) => {
         if (
-          event.data.command === "getSecretResponse" &&
+          event.data.command === ExtensionResponse.SystemSecretLoaded &&
           event.data.key === key
         ) {
           window.removeEventListener("message", messageHandler);
@@ -383,7 +384,7 @@ export class SecureStorage {
       };
 
       window.addEventListener("message", messageHandler);
-      postMessage("getSecret", { key });
+      postMessage(UIRequest.SystemGetSecret, { key });
 
       // 超时处理
       setTimeout(() => {
@@ -404,7 +405,7 @@ export class SecureStorage {
     // 在 VSCode 扩展环境中，这应该调用相应的删除方法
     // 在 webview 中，我们需要通过消息传递与扩展通信
 
-    postMessage("deleteSecret", { key });
+    postMessage(UIRequest.SystemDeleteSecret, { key });
 
     // Fallback cleanup (just in case)
     localStorage.removeItem(`secret.${key}`);
@@ -439,35 +440,6 @@ export class SecureStorage {
       );
     }
   }
-
-  /**
-   * 记住每个 Profile 的上次选中的 Provider
-   */
-  async saveLastSelectedProvider(
-    profileId: string,
-    providerId: string,
-  ): Promise<void> {
-    try {
-      await this.setConfigurationValue(
-        `lastSelectedProvider.${profileId}`,
-        providerId,
-      );
-    } catch (error) {
-      console.error("Failed to save last selected provider:", error);
-    }
-  }
-
-  async loadLastSelectedProvider(profileId: string): Promise<string | null> {
-    try {
-      const value = await this.getConfigurationValue(
-        `lastSelectedProvider.${profileId}`,
-      );
-      return (value as string) || null;
-    } catch (error) {
-      console.error("Failed to load last selected provider:", error);
-      return null;
-    }
-  }
 }
 
 // 导出单例实例
@@ -488,11 +460,3 @@ export const deleteProviderConfig = (providerId: string) =>
 
 export const getAllProviderConfigs = () =>
   secureStorage.getAllProviderConfigs();
-
-export const saveLastSelectedProvider = (
-  profileId: string,
-  providerId: string,
-) => secureStorage.saveLastSelectedProvider(profileId, providerId);
-
-export const loadLastSelectedProvider = (profileId: string) =>
-  secureStorage.loadLastSelectedProvider(profileId);

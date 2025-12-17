@@ -76,7 +76,7 @@ export const SettingsPage: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     loadData();
@@ -161,12 +161,14 @@ export const SettingsPage: React.FC = () => {
     try {
       await profileManager.saveProfile(editingProfile);
       await profileManager.setActiveProfile(editingProfile.id);
-      await loadData(); // Refresh data to update JSON display
-      setHasUnsavedChanges(false);
+
+      // Update active profile in state directly to reflect changes immediately
       setActiveProfile(editingProfile);
-      // Ensure editingProfile remains set to the activated profile
-      // This makes sure the profile selector shows the correct selection
       setEditingProfile(editingProfile);
+      setHasUnsavedChanges(false);
+
+      await loadData(); // Refresh data to ensure everything is in sync
+
       showInformationMessage(
         t("messages.switchedToProfile", { name: editingProfile.name }),
       );

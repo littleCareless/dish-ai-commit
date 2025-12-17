@@ -462,7 +462,7 @@
           "required": "API Key is required"
         }
       },
-      "baseURL": {
+      "baseUrl": {
         "label": "API Endpoint URL",
         "placeholder": "https://api.example.com/v1",
         "helpText": "OpenAI-compatible API endpoint",
@@ -506,6 +506,59 @@
       "includeMaxTokens": {
         "label": "Include Max Output Tokens",
         "helpText": "Send max output tokens parameter in API requests. Some providers may not support this."
+      },
+      "enableReasoningEffort": {
+        "label": "Enable Reasoning Effort",
+        "helpText": "Enable reasoning effort level parameter for supported models (e.g. o1, o3-mini)"
+      },
+      "reasoningEffortLevel": {
+        "label": "Reasoning Effort Level",
+        "helpText": "Set the effort level for reasoning models",
+        "options": {
+          "low": "Low",
+          "medium": "Medium",
+          "high": "High"
+        }
+      },
+      "customModelSupportsPromptCache": {
+        "label": "Support Prompt Caching",
+        "helpText": "Enable prompt caching price calculation for this model"
+      },
+      "customModelConfigNotice": {
+        "title": "Custom Model Configuration",
+        "point1": "Configure these settings if you are using a model not in the default list.",
+        "point2": "These settings are used for token cost estimation and context window management.",
+        "point3": "Leave prices as 0 or empty if you don't want to track costs."
+      },
+      "customModelMaxTokens": {
+        "label": "Max Output Tokens",
+        "helpText": "Maximum tokens the model can generate (-1 for variable/unknown)",
+        "placeholder": "e.g. 4096"
+      },
+      "customModelContextWindow": {
+        "label": "Context Window",
+        "helpText": "Total input context window size",
+        "placeholder": "e.g. 128000"
+      },
+      "customModelInputPrice": {
+        "label": "Input Price ($/1M tokens)",
+        "helpText": "Cost per 1 million input tokens",
+        "placeholder": "e.g. 0.15"
+      },
+      "customModelOutputPrice": {
+        "label": "Output Price ($/1M tokens)",
+        "helpText": "Cost per 1 million output tokens",
+        "placeholder": "e.g. 0.60"
+      },
+      "customModelCacheReadsPrice": {
+        "label": "Cache Read Price ($/1M tokens)",
+        "helpText": "Cost per 1M tokens for cached input",
+        "placeholder": "e.g. 0.075"
+      },
+      "customModelCacheWritesPrice": {
+        "label": "Cache Write Price ($/1M tokens)",
+        "helpText": "Cost per 1M tokens for writing to cache (often same as input)",
+        "placeholder": "e.g. 0.15"
       }
     }
   },

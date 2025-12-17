@@ -232,8 +232,8 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
         const profileToDelete = availableProfiles.find(
           (p) => p.id === profileId,
         );
-        if (profileToDelete?.isDefault) {
-          throw new Error("Cannot delete default profile");
+        if (profileToDelete?.id === activeProfileId) {
+          throw new Error("Cannot delete active profile");
         }
         await profileManager.deleteProfile(profileId);
         // 状态更新将由 'profilesUpdated' 消息触发

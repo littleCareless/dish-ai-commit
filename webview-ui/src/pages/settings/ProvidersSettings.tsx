@@ -1,10 +1,8 @@
 import { ProfileForm } from "@/components/settings/ProfileForm";
 import { ProviderConfigForm } from "@/components/settings/ProviderConfigForm";
 import { providerRegistry } from "@/config/provider-registry";
-import { secureStorage } from "@/services/secure-storage";
 import {
   ExtendedProviderConfig,
-  ModelMetadata,
   ProviderMetadata,
 } from "@/types/provider-metadata";
 import { Profile, ProviderConfig } from "@/types/settings";
@@ -79,30 +77,29 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
         ...newConfig,
       } as ExtendedProviderConfig;
 
+      // 确保 defaultModel 从 model 字段同步 (如果有)
+      if (newConfig.model && !newConfig.defaultModel) {
+        (updatedConfig as any).defaultModel = newConfig.model;
+      }
+      // 或者如果 newConfig 包含 defaultModel (从 ProviderConfigForm 传递)
+      if (newConfig.defaultModel) {
+        (updatedConfig as any).defaultModel = newConfig.defaultModel;
+      }
+
+      // 移除 models 列表，不进行持久化
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { models: _unused, ...configWithoutModels } = updatedConfig;
+
       // 转换 models 从 ModelMetadata 到 ModelConfig
       const providerConfig: ProviderConfig = {
-        ...updatedConfig,
-        models: (updatedConfig.models || []).map((m: ModelMetadata) => ({
-          id: m.id,
-          name: m.name,
-          provider: providerId,
-          maxTokens: { input: m.contextWindow, output: m.maxOutputTokens },
-          deprecated: m.deprecated,
-          capabilities: {
-            streaming: m.capabilities?.includes("streaming"),
-            functionCalling: m.capabilities?.includes("function-calling"),
-          },
-          cost: m.pricing
-            ? {
-                input: m.pricing.input,
-                output: m.pricing.output,
-              }
-            : undefined,
-        })),
-      };
+        ...configWithoutModels,
+        defaultModel:
+          (updatedConfig as any).defaultModel || (updatedConfig as any).model,
+      } as ProviderConfig;
 
       const updatedProfile: Profile = {
         ...editingProfile,
+        activeProviderId: providerId,
         providers: {
           ...editingProfile.providers,
           [providerId]: providerConfig,
@@ -135,8 +132,7 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
 
       const updatedProfile: Profile = {
         ...editingProfile,
-        ...editingProfile,
-        // activeProviderId: providerId, // Removed as it is not in Profile interface
+        activeProviderId: providerId,
         providers: {
           ...editingProfile.providers,
           [providerId]: defaultConfig,
@@ -151,7 +147,6 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
     (providerId: string) => {
       if (!editingProfile) return;
       setSelectedProvider(providerId);
-      secureStorage.saveLastSelectedProvider(editingProfile.id, providerId);
     },
     [editingProfile],
   );
@@ -169,8 +164,7 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
         // 如果 provider 已存在,只需要更新 activeProviderId
         const updatedProfile: Profile = {
           ...editingProfile,
-          ...editingProfile,
-          // activeProviderId: providerId, // Removed as it is not in Profile interface
+          activeProviderId: providerId,
         };
         onChange(updatedProfile);
       }
@@ -204,18 +198,12 @@ export const ProvidersSettings: React.FC<ProvidersSettingsProps> = ({
     const isSelectionValid =
       selectedProvider && providerIdsInProfile.includes(selectedProvider);
     if (!isSelectionValid) {
-      secureStorage
-        .loadLastSelectedProvider(editingProfile.id)
-        .then((lastSelected) => {
-          const providerToSelect =
-            lastSelected && providerIdsInProfile.includes(lastSelected)
-              ? lastSelected
-              : providerIdsInProfile[0];
-          handleProviderSelect(providerToSelect);
-        })
-        .catch(() => {
-          handleProviderSelect(providerIdsInProfile[0]);
-        });
+      const lastSelected = editingProfile.activeProviderId;
+      const providerToSelect =
+        lastSelected && providerIdsInProfile.includes(lastSelected)
+          ? lastSelected
+          : providerIdsInProfile[0];
+      setTimeout(() => handleProviderSelect(providerToSelect), 0);
     }
   }, [
     editingProfile,
