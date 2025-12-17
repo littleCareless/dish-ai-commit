@@ -37,6 +37,7 @@ export enum UIRequest {
 
   // ===== Connection Module =====
   ConnectionTest = "connection.test",
+  ConnectionTestAndSave = "connection.testAndSave",
   ConnectionGetModelsForProvider = "connection.getModelsForProvider",
   ConnectionFetchProviderModels = "connection.fetchProviderModels",
   ConnectionGetAllModels = "connection.getAllModels",
@@ -132,6 +133,7 @@ export enum ExtensionResponse {
 
   // ===== Connection Module =====
   ConnectionTestResult = "connection.testResult",
+  ConnectionAndSaveResult = "connection.testAndSaveResult",
   ConnectionProviderModelsLoaded = "connection.providerModelsLoaded",
   ConnectionProviderModelsError = "connection.providerModelsError",
   ConnectionAllModelsLoaded = "connection.allModelsLoaded",
