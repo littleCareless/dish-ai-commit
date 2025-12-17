@@ -87,9 +87,9 @@ export class StorageMessageHandler {
               "experimental.codeIndex.enabled",
               "experimental.codeIndex.embeddingProvider",
               "experimental.codeIndex.embeddingModel",
-               "experimental.codeIndex.qdrantUrl",
+              "experimental.codeIndex.qdrantUrl",
               // New keys (prefixed) - explicitly list them to be safe
-               "dish_config_api_config",
+              "dish_config_api_config",
               "dish_config_indexing_settings",
               // Also explicitly add the key that was missed before
               "providers.ollama.baseUrl",

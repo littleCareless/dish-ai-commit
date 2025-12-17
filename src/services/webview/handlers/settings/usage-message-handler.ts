@@ -1,9 +1,9 @@
 import { TokenStatsService } from "@/services/core/token-stats-service";
-import { UIRequest, ExtensionResponse } from "@shared/types/messages";
+import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 import * as vscode from "vscode";
 
 export class UsageMessageHandler {
-  constructor(private readonly _extensionContext: vscode.ExtensionContext) { }
+  constructor(private readonly _extensionContext: vscode.ExtensionContext) {}
 
   public async handle(message: any, webview: vscode.Webview): Promise<void> {
     const tokenStatsService = TokenStatsService.getInstance();

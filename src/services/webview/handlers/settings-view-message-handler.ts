@@ -53,7 +53,6 @@ export class SettingsViewMessageHandler {
     this._onboardingHandler = new OnboardingMessageHandler(_extensionContext);
   }
 
-
   public async handleMessage(
     message: any,
     webview: vscode.Webview
@@ -128,6 +127,7 @@ export class SettingsViewMessageHandler {
 
       // ===== Connection Module =====
       case UIRequest.ConnectionTest:
+      case UIRequest.ConnectionTestAndSave:
       case UIRequest.ConnectionGetModelsForProvider:
       case UIRequest.ConnectionFetchProviderModels:
       case UIRequest.ConnectionGetAllModels:
