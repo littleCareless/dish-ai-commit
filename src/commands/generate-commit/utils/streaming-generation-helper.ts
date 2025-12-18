@@ -71,6 +71,39 @@ export class StreamingGenerationHelper {
       return;
     }
 
+    // 步骤1.5: 极速缓存检查 (🔥 优化：在模型验证和构建上下文之前检查)
+    // 只要有 diff 和配置，就不需要等待模型验证，直接尝试命中缓存
+    const shouldUseLayeredCommit =
+      configuration.features.commitFormat.enableLayeredCommit &&
+      selectedFiles &&
+      selectedFiles.length > 1;
+
+    if (!shouldUseLayeredCommit) {
+      // 使用传入的 model 参数作为 ID，跳过模型验证对象的获取
+      const cacheKey = commitCacheService.generateKey(
+        diffContent,
+        configuration,
+        model
+      );
+      const cachedMessage = commitCacheService.get(cacheKey);
+
+      if (cachedMessage) {
+        this.logger.info(
+          "Cache hit! Using cached commit message (ultra-early check)."
+        );
+        progress.report({
+          message:
+            getMessage("progress.stage.generating") || "[4/4] 生成提交消息...",
+          increment: 100,
+        });
+
+        await scmProvider.startStreamingInput(cachedMessage);
+        notify.info("commit.message.generated.from.cache");
+        showCommitSuccessNotification();
+        return;
+      }
+    }
+
     // 阶段2: 分析变更
     progress.report({
       message: getMessage("progress.stage.analyzing") || "[2/4] 分析变更...",
@@ -136,6 +169,12 @@ export class StreamingGenerationHelper {
     providerConfig: any
   ): Promise<{ configuration: any; diffContent: string | undefined }> {
     if (!providerConfig) {
+      this.logger.error(
+        "Provider config not found in prepareConfigurationAndDiff",
+        {
+          operation: "prepareConfigurationAndDiff",
+        }
+      );
       throw new Error(getMessage("profile.not.found"));
     }
 
@@ -402,7 +441,7 @@ export class StreamingGenerationHelper {
 
       // === 缓存检查 ===
       // 目前只支持标准生成和函数调用生成的缓存，分层提交因复杂性暂不支持
-      // 使用 requestParams.diff 作为缓存的 diff 内容
+      // 注意：读取缓存的逻辑已移动到 performStreamingGeneration 以提高性能
       const shouldUseLayeredCommit =
         configuration.features.commitFormat.enableLayeredCommit &&
         selectedFiles &&
@@ -410,25 +449,13 @@ export class StreamingGenerationHelper {
 
       let cacheKey: string | undefined;
 
-      // 只有非分层提交才使用缓存
+      // 只有非分层提交才生成 cacheKey (用于后续写入)
       if (!shouldUseLayeredCommit) {
         cacheKey = commitCacheService.generateKey(
           requestParams.diff || "", // 核心是 Diff 内容
           configuration,
           selectedModel.id
         );
-
-        const cachedMessage = commitCacheService.get(cacheKey);
-
-        if (cachedMessage) {
-          this.logger.info("Cache hit! Using cached commit message.");
-          // 直接填充，模拟瞬间完成
-          await scmProvider.startStreamingInput(cachedMessage);
-
-          notify.info("commit.message.generated.from.cache"); // 提示用户使用了缓存
-          showCommitSuccessNotification();
-          return;
-        }
       }
       // =================
 

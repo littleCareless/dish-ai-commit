@@ -69,7 +69,9 @@ export abstract class BaseCommand {
     featureSettings: any
   ): { provider: string; model: string; config: any } | undefined {
     if (!profile) {
-      this.logger.error("未找到配置");
+      this.logger.error("handleConfiguration: Profile is missing", {
+        operation: "handleConfiguration",
+      });
       throw new Error(getMessage("profile.not.found"));
     }
 
@@ -284,7 +286,9 @@ export abstract class BaseCommand {
       : null;
 
     if (!profile) {
-      this.logger.error("未找到配置");
+      this.logger.error("prepare: Active profile not found", {
+        operation: "prepare",
+      });
       await notify.error(getMessage("profile.not.found"));
       return;
     }
