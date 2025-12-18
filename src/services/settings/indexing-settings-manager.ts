@@ -40,7 +40,7 @@ export class IndexingSettingsManager {
     providers: {},
   };
 
-  private constructor(private context: vscode.ExtensionContext) { }
+  private constructor(private context: vscode.ExtensionContext) {}
 
   public static getInstance(
     context: vscode.ExtensionContext
@@ -79,19 +79,48 @@ export class IndexingSettingsManager {
   }
 
   private async loadSettings(): Promise<void> {
-    const storedSettings = this.context.globalState.get<IndexingSettings>(
+    // 1. Try to load from Secrets first (New Storage)
+    const storedSecrets = await this.context.secrets.get(
       IndexingSettingsManager.STORAGE_KEY
     );
 
-    if (storedSettings) {
-      this._settings = { ...this._settings, ...storedSettings };
+    if (storedSecrets) {
+      try {
+        const parsedSettings = JSON.parse(storedSecrets);
+        this._settings = { ...this._settings, ...parsedSettings };
+      } catch (error) {
+        console.error("Failed to parse indexing settings from secrets:", error);
+      }
+    } else {
+      // 2. Fallback to GlobalState (Old Storage - Migration)
+      const storedSettings = this.context.globalState.get<IndexingSettings>(
+        IndexingSettingsManager.STORAGE_KEY
+      );
+
+      if (storedSettings) {
+        this._settings = { ...this._settings, ...storedSettings };
+        // Migrate to Secrets immediately
+        await this.saveSettings();
+      }
+    }
+
+    // Ensure providers object exists
+    if (!this._settings.providers) {
+      this._settings.providers = {};
     }
   }
 
   private async saveSettings(): Promise<void> {
+    // 1. Save entire object to Secrets
+    await this.context.secrets.store(
+      IndexingSettingsManager.STORAGE_KEY,
+      JSON.stringify(this._settings)
+    );
+
+    // 2. Clear from GlobalState (Cleanup)
     await this.context.globalState.update(
       IndexingSettingsManager.STORAGE_KEY,
-      this._settings
+      undefined
     );
   }
 }

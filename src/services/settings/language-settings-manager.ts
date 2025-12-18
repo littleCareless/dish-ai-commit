@@ -1,4 +1,7 @@
 import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
+import { Logger } from "@/utils/logger";
+
+const logger = Logger.getInstance("Dish AI Commit Gen");
 
 export interface LanguageSettings {
   language: string;
@@ -25,6 +28,9 @@ export class LanguageSettingsManager {
     language: string
   ): Promise<void> {
     if (!profile) {
+      logger.error("Profile not found in updateLanguage", {
+        operation: "updateLanguage",
+      });
       throw new Error("Profile not found");
     }
 

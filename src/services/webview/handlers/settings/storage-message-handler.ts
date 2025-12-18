@@ -2,7 +2,10 @@ import { DISH_CONFIG_PREFIX } from "@/config/constants";
 import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 import * as vscode from "vscode";
 
-const KNOWN_SECRET_KEYS = [`${DISH_CONFIG_PREFIX}_api_config`];
+const KNOWN_SECRET_KEYS = [
+  `${DISH_CONFIG_PREFIX}_api_config`,
+  `${DISH_CONFIG_PREFIX}_indexing_settings`,
+];
 
 export class StorageMessageHandler {
   constructor(private readonly _extensionContext: vscode.ExtensionContext) {}
@@ -58,54 +61,11 @@ export class StorageMessageHandler {
         try {
           // Define all known legacy and current keys to be cleared
           const keysToClear = {
-            global: [
-              // Legacy keys
-              "confirm:dish:ai:tos",
-              "totalTokens",
-              "detailedTokenStats",
-              `${DISH_CONFIG_PREFIX}_confirm_ai_tos`,
-              `${DISH_CONFIG_PREFIX}_detailed_token_stats`,
-              "profiles",
-              "activeProfileId",
-              "config",
-              "dish.settings.indexing",
-              "dish.settings.features",
-              "notificationSettings",
-              // Keys with provider prefixes
-              "providers.openai",
-              "providers.lmstudio",
-              "providers.deepseek",
-              "providers.ollama",
-              "providers.ollama.baseUrl",
-              "dish_config_indexing_settings",
-              "providers.mistral",
-              "providers.vertexai",
-              "providers.cloudflare-workersai",
-              "providers.vscode",
-              // Other legacy keys
-              "workspaceConfig",
-              "experimental.codeIndex.enabled",
-              "experimental.codeIndex.embeddingProvider",
-              "experimental.codeIndex.embeddingModel",
-              "experimental.codeIndex.qdrantUrl",
-              // New keys (prefixed) - explicitly list them to be safe
-              "dish_config_api_config",
-              "dish_config_indexing_settings",
-              // Also explicitly add the key that was missed before
-              "providers.ollama.baseUrl",
-              ...this._extensionContext.globalState
-                .keys()
-                .filter((k) => k.startsWith(DISH_CONFIG_PREFIX)),
-            ],
-            workspace: [
-              "experimental.codeIndex.enabled",
-              "experimental.codeIndex.embeddingProvider",
-              "experimental.codeIndex.qdrantUrl",
-              // Clear any prefixed keys in workspace state
-              ...this._extensionContext.workspaceState
-                .keys()
-                .filter((k) => k.startsWith(DISH_CONFIG_PREFIX)),
-            ],
+            // Clear all global state keys
+            global: this._extensionContext.globalState.keys(),
+            // Clear all workspace state keys
+            workspace: this._extensionContext.workspaceState.keys(),
+            // Clear known secret keys
             secrets: KNOWN_SECRET_KEYS,
           };
 

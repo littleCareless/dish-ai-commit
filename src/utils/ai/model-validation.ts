@@ -136,10 +136,13 @@ export async function validateAndGetModel(
 
   try {
     if (!profile) {
-      logger.warn("未找到 profile，使用默认配置", {
-        operation: "validateAndGetModel",
-        data: { provider, model },
-      });
+      logger.warn(
+        "Profile not found in validateAndGetModel, using default config",
+        {
+          operation: "validateAndGetModel",
+          data: { provider, model },
+        }
+      );
     }
 
     let providerConfig: any | undefined;
@@ -246,8 +249,9 @@ async function selectAndUpdateModel(
 
   try {
     if (!profile) {
-      logger.error("未找到 profile", {
+      logger.error("Profile not found in selectAndUpdateModel", {
         operation: "selectAndUpdateModel",
+        data: { provider, model },
       });
       throw new Error(getMessage("profile.not.found"));
     }

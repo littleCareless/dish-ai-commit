@@ -2,10 +2,16 @@ import { AIProviderFactory } from "@/ai/ai-provider-factory";
 import { ModelPickerService } from "@/services/core/model-picker-service";
 import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 import { getMessage } from "@/utils/i18n";
+import { Logger } from "@/utils/logger";
+
+const logger = Logger.getInstance("Dish AI Commit Gen");
 
 export class ModelConfigurationManager {
   public static async getModelAndProvider(profile: any, featureSettings: any) {
     if (!profile) {
+      logger.error("Profile not found in getModelAndProvider", {
+        operation: "getModelAndProvider",
+      });
       throw new Error(getMessage("profile.not.found"));
     }
 
@@ -57,6 +63,9 @@ export class ModelConfigurationManager {
     }
 
     if (!profile) {
+      logger.error("Profile not found in selectAndUpdateModelConfiguration", {
+        operation: "selectAndUpdateModelConfiguration",
+      });
       throw new Error(getMessage("profile.not.found"));
     }
 

@@ -29,7 +29,7 @@ export function showSystemNotification(
 
     if (!settingsManager.isSystemNotificationsEnabled()) {
       // 如果未启用,只显示 VS Code 内部通知
-      vscode.window.showInformationMessage(`${title}: ${message}`);
+      // vscode.window.showInformationMessage(`${title}: ${message}`);
       return;
     }
 
@@ -59,7 +59,15 @@ export function showSystemNotification(
 
       const terminalNotifierPaths = [
         // 1. Try bundled terminal-notifier (packaged with extension) - PRIORITY
-        path.join(__dirname, "vendor", "mac", "terminal-notifier.app", "Contents", "MacOS", "terminal-notifier"),
+        path.join(
+          __dirname,
+          "vendor",
+          "mac",
+          "terminal-notifier.app",
+          "Contents",
+          "MacOS",
+          "terminal-notifier"
+        ),
         // 2. Try node_modules terminal-notifier (development environment fallback)
         path.join(
           path.dirname(require.resolve("node-notifier")),
