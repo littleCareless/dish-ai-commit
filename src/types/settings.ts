@@ -106,6 +106,7 @@ export const profileSchema = z.object({
   updatedAt: z.date().or(z.string().datetime()),
   version: z.string(),
   activeProviderId: z.string().optional(),
+  isAutoMigrated: z.boolean().optional(),
 });
 export type Profile = z.infer<typeof profileSchema>;
 

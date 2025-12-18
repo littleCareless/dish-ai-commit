@@ -25,7 +25,7 @@ export interface MigrationPreview {
 
 export class SettingsMigration {
   private profileManager: ProfileManagerService;
-  private readonly MIGRATION_COMPLETED_KEY = `${DISH_CONFIG_PREFIX}-settings-migration-completed`;
+  private readonly MIGRATION_COMPLETED_KEY = `${DISH_CONFIG_PREFIX}_settings_migration_completed`;
 
   constructor(profileManager: ProfileManagerService) {
     this.profileManager = profileManager;
@@ -257,6 +257,7 @@ export class SettingsMigration {
       updatedAt: now,
       version: "1.0.0",
       activeProviderId: activeProviderId,
+      isAutoMigrated: true,
     };
 
     return profile;

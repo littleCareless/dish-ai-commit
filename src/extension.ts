@@ -57,10 +57,11 @@ export async function activate(context: vscode.ExtensionContext) {
     const settingsMigration = getSettingsMigration();
     const migrationDetection = await settingsMigration.detectOldConfiguration();
     const hasProfiles = await profileManager.hasProfiles();
+    const hasAutoMigrated = await profileManager.hasAutoMigratedProfile();
 
-    if (migrationDetection.hasOldConfig && !hasProfiles) {
+    if (migrationDetection.hasOldConfig && (!hasProfiles || hasAutoMigrated)) {
       logger.info(
-        "Detected old configuration and no profiles. Performing automatic migration..."
+        "Detected old configuration and no user-created profiles. Performing automatic migration..."
       );
       try {
         const result = await settingsMigration.performMigration();

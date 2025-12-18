@@ -253,6 +253,11 @@ export class ProfileManagerService {
     return count;
   }
 
+  async hasAutoMigratedProfile(): Promise<boolean> {
+    const profiles = await this.getAllProfiles();
+    return profiles.some((p: Profile) => p.isAutoMigrated === true);
+  }
+
   public getFeatureSettings(): FeatureSettings {
     const settings = this.context.globalState.get<FeatureSettings>(
       `${DISH_CONFIG_PREFIX}_features_settings`
