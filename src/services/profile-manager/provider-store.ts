@@ -53,32 +53,46 @@ export class ProviderStore {
   private async initialize(): Promise<void> {
     await this.repository.lock(async () => {
       const loadedProfiles = await this.repository.load();
+      let shouldSave = false;
 
-      // Check if this is the first initialization (no profiles in storage)
-      const isFirstInit = Object.keys(loadedProfiles.apiConfigs).length === 0;
-
-      if (isFirstInit) {
-        // First time initialization: use default profiles and persist them
-        const defaultProfiles = this.getDefaultProfiles();
-        await this.repository.store(defaultProfiles);
-        this.profiles = defaultProfiles;
-        console.log("First initialization: created and saved default profile");
-      } else {
-        // Existing profiles: check if active profile is set
-        if (!loadedProfiles.currentApiConfigId) {
-          if (Object.keys(loadedProfiles.apiConfigs).length > 0) {
-            const firstProfileId = Object.values(loadedProfiles.apiConfigs)[0]
-              .id;
-            loadedProfiles.currentApiConfigId = firstProfileId;
-            console.log(
-              `Auto-activated first profile by ID: ${firstProfileId}`
-            );
-            await this.repository.store(loadedProfiles);
-          }
-        }
-        this.profiles = loadedProfiles;
-        console.log("initialize", loadedProfiles);
+      // 1. Validate Active Profile ID
+      if (
+        loadedProfiles.currentApiConfigId &&
+        !loadedProfiles.apiConfigs[loadedProfiles.currentApiConfigId]
+      ) {
+        console.warn(
+          `Active profile ID '${loadedProfiles.currentApiConfigId}' not found. Resetting.`
+        );
+        loadedProfiles.currentApiConfigId = "";
+        shouldSave = true;
       }
+
+      // 2. Check if we have any profiles
+      const hasProfiles = Object.keys(loadedProfiles.apiConfigs).length > 0;
+
+      if (!hasProfiles) {
+        // No profiles (first init or all deleted): create default
+        const defaultProfiles = this.getDefaultProfiles();
+        loadedProfiles.apiConfigs = defaultProfiles.apiConfigs;
+        loadedProfiles.currentApiConfigId = defaultProfiles.currentApiConfigId;
+        shouldSave = true;
+        console.log("Initialized with default profile");
+      } else {
+        // Has profiles, ensure one is active
+        if (!loadedProfiles.currentApiConfigId) {
+          const firstProfileId = Object.keys(loadedProfiles.apiConfigs)[0];
+          loadedProfiles.currentApiConfigId = firstProfileId;
+          console.log(`Auto-activated first profile by ID: ${firstProfileId}`);
+          shouldSave = true;
+        }
+      }
+
+      if (shouldSave) {
+        await this.repository.store(loadedProfiles);
+      }
+
+      this.profiles = loadedProfiles;
+      console.log("initialize", loadedProfiles);
 
       this.notify();
     });

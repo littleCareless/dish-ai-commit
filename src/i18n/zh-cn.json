@@ -320,6 +320,8 @@
   "scm.repository.type.label": "{0} 仓库",
   "migration.profile.name": "从旧配置迁移",
   "migration.profile.description": "于 {0} 从 VSCode 设置自动迁移",
+  "migration.profile.defaultName": "默认配置",
+  "migration.profile.defaultDescription": "由 Dish AI Commit 创建",
   "enhanced.model.fetcher.api.fetch.failed": "API获取失败，降级到本地规格: {0}",
   "enhanced.model.fetcher.api.request.failed": "API请求失败: {0} {1}",
   "enhanced.model.fetcher.api.empty.list": "API返回空的模型列表",
@@ -347,5 +349,9 @@
   "model.validation.reason.typeMismatch": "检测到可能的模型类型错误: 请求 {0}, 返回 {1}",
   "model.validation.reason.proxyFuzzyMatch": "代理环境模糊匹配，相似度: {0}",
   "model.validation.reason.mismatch": "模型不匹配: 请求 {0}, 返回 {1}",
-  "commit.message.generated.from.cache": "已从缓存恢复提交信息"
+  "commit.message.generated.from.cache": "已从缓存恢复提交信息",
+  "notification.settings.migration.title": "Dish AI Commit: 全新设置界面",
+  "notification.settings.migration.message": "Dish AI Commit 全新设置界面已上线！API 密钥现已通过 VS Code Secrets 安全存储，更加安全可靠。是否立即体验？",
+  "notification.settings.migration.confirm": "打开设置",
+  "notification.settings.migration.cancel": "稍后"
 }

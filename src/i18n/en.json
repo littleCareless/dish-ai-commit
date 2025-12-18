@@ -315,6 +315,8 @@
   "scm.repository.type.label": "{0} Repository",
   "migration.profile.name": "Migrated from old config",
   "migration.profile.description": "Automatically migrated from VSCode settings at {0}",
+  "migration.profile.defaultName": "Default Profile",
+  "migration.profile.defaultDescription": "Created by Dish AI Commit",
   "enhanced.model.fetcher.api.fetch.failed": "API fetch failed, falling back to local spec: {0}",
   "enhanced.model.fetcher.api.request.failed": "API request failed: {0} {1}",
   "enhanced.model.fetcher.api.empty.list": "API returned empty model list",
@@ -342,5 +344,9 @@
   "model.validation.reason.typeMismatch": "Detected possible model type mismatch: requested {0}, returned {1}",
   "model.validation.reason.proxyFuzzyMatch": "Proxy environment fuzzy match, similarity: {0}",
   "model.validation.reason.mismatch": "Model mismatch: requested {0}, returned {1}",
-  "commit.message.generated.from.cache": "Commit message restored from cache"
+  "commit.message.generated.from.cache": "Commit message restored from cache",
+  "notification.settings.migration.title": "Dish AI Commit: New Settings UI",
+  "notification.settings.migration.message": "Dish AI Commit has a new settings UI! API keys are now securely stored in VS Code Secrets for better security. Check it out?",
+  "notification.settings.migration.confirm": "Open Settings",
+  "notification.settings.migration.cancel": "Later"
 }

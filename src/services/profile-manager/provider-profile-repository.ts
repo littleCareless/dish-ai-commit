@@ -24,7 +24,7 @@ export class ProviderProfileRepository {
   }
 
   private get secretsKey(): string {
-    return `${DISH_CONFIG_PREFIX}api_config`;
+    return `${DISH_CONFIG_PREFIX}_api_config`;
   }
 
   public lock<T>(cb: () => Promise<T>): Promise<T> {

@@ -12,6 +12,7 @@ import { SettingsViewProvider } from "@/services/webview/settings-view-provider"
 import { EmbeddingServiceManager } from "./core/indexing/embedding-service-manager";
 import { getSettingsMigration } from "./services/core/settings-migration";
 import { TokenStatsService } from "./services/core/token-stats-service";
+import { NotificationService } from "./services/notification-service";
 import { IndexingSettingsManager } from "./services/settings/indexing-settings-manager";
 import { PreferencesSettingsManager } from "./services/settings/preferences-settings-manager";
 import { NotificationSettingsManager } from "./utils/notification/notification-settings-manager";
@@ -47,6 +48,10 @@ export async function activate(context: vscode.ExtensionContext) {
     logger.info("Initializing profile manager service...");
     const profileManager = await ProfileManagerService.create(context);
 
+    // Initialize Notification Service
+    logger.info("Initializing notification service...");
+    const notificationService = NotificationService.initialize(context);
+
     // 自动迁移旧配置
     // 如果存在旧配置且没有 Profile，则自动迁移
     const settingsMigration = getSettingsMigration();
@@ -70,6 +75,21 @@ export async function activate(context: vscode.ExtensionContext) {
       } catch (error) {
         logger.error(`Automatic migration failed: ${error}`);
         // 不打断启动流程，只是记录错误
+      }
+    } else if (!hasProfiles) {
+      // Fallback: Create default profile if no profiles exist
+      logger.info(
+        "No existing configuration or profiles found. Creating default profile..."
+      );
+      try {
+        const result = await settingsMigration.ensureDefaultProfile();
+        if (result.created) {
+          logger.info(
+            `Default profile created and activated: ${result.profileId}`
+          );
+        }
+      } catch (error) {
+        logger.error(`Failed to create default profile: ${error}`);
       }
     }
 
@@ -122,6 +142,11 @@ export async function activate(context: vscode.ExtensionContext) {
         settingsProvider
       )
     );
+
+    // Check and show migration notification (non-blocking)
+    notificationService.checkAndShowMigrationNotification().catch((error) => {
+      logger.error(`Failed to show migration notification: ${error}`);
+    });
   } catch (e) {
     Logger.getInstance("Dish AI Commit Gen").error(
       `Error activating extension: ${e}`

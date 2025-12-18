@@ -1,3 +1,4 @@
+import { DISH_CONFIG_PREFIX } from "@/config/constants";
 import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 import {
   DEFAULT_USER_PREFERENCES,
@@ -24,8 +25,7 @@ export interface MigrationPreview {
 
 export class SettingsMigration {
   private profileManager: ProfileManagerService;
-  private readonly MIGRATION_COMPLETED_KEY =
-    "dish.settings.migration.completed";
+  private readonly MIGRATION_COMPLETED_KEY = `${DISH_CONFIG_PREFIX}-settings-migration-completed`;
 
   constructor(profileManager: ProfileManagerService) {
     this.profileManager = profileManager;
@@ -441,6 +441,50 @@ export class SettingsMigration {
     const result = await this.performMigration();
     return this.profileManager.getProfileById(result.profileId);
   }
+
+  /**
+   * Ensures a default profile exists if no profiles are present.
+   */
+  async ensureDefaultProfile(): Promise<{
+    created: boolean;
+    profileId?: string;
+  }> {
+    const hasProfiles = await this.profileManager.hasProfiles();
+    if (hasProfiles) {
+      return { created: false };
+    }
+
+    const now = new Date();
+    const profileId = uuidv4();
+    const defaultProfile: Profile = {
+      id: profileId,
+      name: formatMessage("migration.profile.defaultName") || "Default Profile",
+      description:
+        formatMessage("migration.profile.defaultDescription") ||
+        "Created by Dish AI Commit",
+      providers: {},
+      preferences: { ...DEFAULT_USER_PREFERENCES },
+      createdAt: now,
+      updatedAt: now,
+      version: "1.0.0",
+      activeProviderId: undefined,
+    };
+
+    // Add a default OpenAI placeholder
+    defaultProfile.providers["openai"] = {
+      id: "openai",
+      name: "OpenAI",
+      type: "first-party",
+      createdAt: now,
+      updatedAt: now,
+    };
+    defaultProfile.activeProviderId = "openai";
+
+    await this.profileManager.saveProfile(defaultProfile);
+    await this.profileManager.setActiveProfile(profileId);
+
+    return { created: true, profileId };
+  }
 }
 
 // Export singleton instance with lazy initialization
@@ -461,4 +505,5 @@ export const settingsMigration = {
   previewMigration: () => getSettingsMigration().previewMigration(),
   performMigration: () => getSettingsMigration().performMigration(),
   migrateFromPackageJson: () => getSettingsMigration().migrateFromPackageJson(),
+  ensureDefaultProfile: () => getSettingsMigration().ensureDefaultProfile(),
 };
