@@ -1,7 +1,5 @@
-import * as vscode from "vscode";
-import * as fs from "fs";
-import * as path from "path";
 import { Logger } from "@/utils/logger";
+import * as vscode from "vscode";
 
 /**
  * 文档接口
@@ -82,7 +80,7 @@ export class DocumentManager {
       documents: [],
       categories: [],
       tags: [],
-      lastUpdated: new Date()
+      lastUpdated: new Date(),
     };
     this.initializeDocuments();
   }
@@ -90,7 +88,9 @@ export class DocumentManager {
   /**
    * 获取单例实例
    */
-  public static getInstance(context?: vscode.ExtensionContext): DocumentManager {
+  public static getInstance(
+    context?: vscode.ExtensionContext
+  ): DocumentManager {
     if (!DocumentManager.instance && context) {
       DocumentManager.instance = new DocumentManager(context);
     }
@@ -120,7 +120,9 @@ export class DocumentManager {
    * @returns 文档列表
    */
   public getDocumentsByCategory(category: string): Document[] {
-    return Array.from(this.documents.values()).filter(doc => doc.category === category);
+    return Array.from(this.documents.values()).filter(
+      (doc) => doc.category === category
+    );
   }
 
   /**
@@ -129,8 +131,8 @@ export class DocumentManager {
    * @returns 文档列表
    */
   public getDocumentsByTags(tags: string[]): Document[] {
-    return Array.from(this.documents.values()).filter(doc =>
-      tags.some(tag => doc.tags.includes(tag))
+    return Array.from(this.documents.values()).filter((doc) =>
+      tags.some((tag) => doc.tags.includes(tag))
     );
   }
 
@@ -140,48 +142,53 @@ export class DocumentManager {
    * @returns 搜索结果
    */
   public searchDocuments(options: SearchOptions): SearchResult[] {
-    const { query, category, tags, language, limit = 10, fuzzy = true } = options;
-    
+    const {
+      query,
+      category,
+      tags,
+      language,
+      limit = 10,
+      fuzzy = true,
+    } = options;
+
     let documents = Array.from(this.documents.values());
-    
+
     // 应用过滤器
     if (category) {
-      documents = documents.filter(doc => doc.category === category);
+      documents = documents.filter((doc) => doc.category === category);
     }
-    
+
     if (tags && tags.length > 0) {
-      documents = documents.filter(doc =>
-        tags.some(tag => doc.tags.includes(tag))
+      documents = documents.filter((doc) =>
+        tags.some((tag) => doc.tags.includes(tag))
       );
     }
-    
+
     if (language) {
-      documents = documents.filter(doc => doc.language === language);
+      documents = documents.filter((doc) => doc.language === language);
     }
-    
+
     // 执行搜索
     const results: SearchResult[] = [];
-    
+
     for (const document of documents) {
       const score = this.calculateRelevanceScore(document, query, fuzzy);
-      
+
       if (score > 0) {
         const highlights = this.generateHighlights(document, query);
         const matchedFields = this.getMatchedFields(document, query);
-        
+
         results.push({
           document,
           score,
           highlights,
-          matchedFields
+          matchedFields,
         });
       }
     }
-    
+
     // 按相关性排序并限制结果数量
-    return results
-      .sort((a, b) => b.score - a.score)
-      .slice(0, limit);
+    return results.sort((a, b) => b.score - a.score).slice(0, limit);
   }
 
   /**
@@ -206,7 +213,7 @@ export class DocumentManager {
         ...existing,
         ...updates,
         id, // 确保ID不被更改
-        lastModified: new Date()
+        lastModified: new Date(),
       };
       this.documents.set(id, updated);
       this.updateIndex();
@@ -267,7 +274,7 @@ export class DocumentManager {
    * @returns 反馈列表
    */
   public getDocumentFeedback(documentId: string): DocumentFeedback[] {
-    return this.feedback.filter(f => f.documentId === documentId);
+    return this.feedback.filter((f) => f.documentId === documentId);
   }
 
   /**
@@ -280,7 +287,7 @@ export class DocumentManager {
     if (documentFeedback.length === 0) {
       return 0;
     }
-    
+
     const totalRating = documentFeedback.reduce((sum, f) => sum + f.rating, 0);
     return totalRating / documentFeedback.length;
   }
@@ -291,18 +298,21 @@ export class DocumentManager {
    * @param format - 导出格式
    * @returns 导出内容
    */
-  public exportDocument(documentId: string, format: 'markdown' | 'html' | 'json'): string {
+  public exportDocument(
+    documentId: string,
+    format: "markdown" | "html" | "json"
+  ): string {
     const document = this.getDocument(documentId);
     if (!document) {
       throw new Error(`Document not found: ${documentId}`);
     }
-    
+
     switch (format) {
-      case 'markdown':
+      case "markdown":
         return this.exportToMarkdown(document);
-      case 'html':
+      case "html":
         return this.exportToHtml(document);
-      case 'json':
+      case "json":
         return JSON.stringify(document, null, 2);
       default:
         throw new Error(`Unsupported export format: ${format}`);
@@ -315,11 +325,14 @@ export class DocumentManager {
    * @param format - 导入格式
    * @returns 文档对象
    */
-  public importDocument(content: string, format: 'markdown' | 'json'): Document {
+  public importDocument(
+    content: string,
+    format: "markdown" | "json"
+  ): Document {
     switch (format) {
-      case 'markdown':
+      case "markdown":
         return this.importFromMarkdown(content);
-      case 'json':
+      case "json":
         return JSON.parse(content) as Document;
       default:
         throw new Error(`Unsupported import format: ${format}`);
@@ -333,8 +346,8 @@ export class DocumentManager {
     // 创建默认文档
     const defaultDocuments: Document[] = [
       {
-        id: 'getting-started',
-        title: '快速开始指南',
+        id: "getting-started",
+        title: "快速开始指南",
         content: `# 快速开始指南
 
 欢迎使用 Dish AI Commit Gen 扩展！本指南将帮助您快速上手。
@@ -355,20 +368,20 @@ export class DocumentManager {
 ## 获取帮助
 
 如果您遇到问题，请查看帮助文档或联系支持团队。`,
-        category: 'getting-started',
-        tags: ['安装', '配置', '入门'],
-        version: '1.0.0',
+        category: "getting-started",
+        tags: ["安装", "配置", "入门"],
+        version: "1.0.0",
         lastModified: new Date(),
-        author: 'Dish AI Team',
-        language: 'zh-CN',
+        author: "Dish AI Team",
+        language: "Simplified Chinese",
         metadata: {
-          difficulty: 'beginner',
-          estimatedTime: '5分钟'
-        }
+          difficulty: "beginner",
+          estimatedTime: "5分钟",
+        },
       },
       {
-        id: 'api-configuration',
-        title: 'API 配置指南',
+        id: "api-configuration",
+        title: "API 配置指南",
         content: `# API 配置指南
 
 本指南将帮助您配置各种 AI 提供商的 API 密钥。
@@ -392,20 +405,20 @@ export class DocumentManager {
 - 妥善保管您的 API 密钥
 - 不要与他人分享
 - 定期轮换密钥`,
-        category: 'configuration',
-        tags: ['API', '配置', '安全'],
-        version: '1.0.0',
+        category: "configuration",
+        tags: ["API", "配置", "安全"],
+        version: "1.0.0",
         lastModified: new Date(),
-        author: 'Dish AI Team',
-        language: 'zh-CN',
+        author: "Dish AI Team",
+        language: "Simplified Chinese",
         metadata: {
-          difficulty: 'beginner',
-          estimatedTime: '10分钟'
-        }
+          difficulty: "beginner",
+          estimatedTime: "10分钟",
+        },
       },
       {
-        id: 'troubleshooting',
-        title: '故障排除指南',
+        id: "troubleshooting",
+        title: "故障排除指南",
         content: `# 故障排除指南
 
 本指南将帮助您解决使用过程中遇到的常见问题。
@@ -433,21 +446,21 @@ export class DocumentManager {
 1. 查看日志文件
 2. 联系技术支持
 3. 提交问题报告`,
-        category: 'troubleshooting',
-        tags: ['问题', '解决', '支持'],
-        version: '1.0.0',
+        category: "troubleshooting",
+        tags: ["问题", "解决", "支持"],
+        version: "1.0.0",
         lastModified: new Date(),
-        author: 'Dish AI Team',
-        language: 'zh-CN',
+        author: "Dish AI Team",
+        language: "Simplified Chinese",
         metadata: {
-          difficulty: 'intermediate',
-          estimatedTime: '15分钟'
-        }
-      }
+          difficulty: "intermediate",
+          estimatedTime: "15分钟",
+        },
+      },
     ];
 
     // 添加默认文档
-    defaultDocuments.forEach(doc => {
+    defaultDocuments.forEach((doc) => {
       this.documents.set(doc.id, doc);
     });
 
@@ -459,21 +472,25 @@ export class DocumentManager {
    */
   private updateIndex(): void {
     const documents = Array.from(this.documents.values());
-    const categories = [...new Set(documents.map(doc => doc.category))];
-    const tags = [...new Set(documents.flatMap(doc => doc.tags))];
+    const categories = [...new Set(documents.map((doc) => doc.category))];
+    const tags = [...new Set(documents.flatMap((doc) => doc.tags))];
 
     this.index = {
       documents,
       categories,
       tags,
-      lastUpdated: new Date()
+      lastUpdated: new Date(),
     };
   }
 
   /**
    * 计算相关性分数
    */
-  private calculateRelevanceScore(document: Document, query: string, fuzzy: boolean): number {
+  private calculateRelevanceScore(
+    document: Document,
+    query: string,
+    fuzzy: boolean
+  ): number {
     const queryLower = query.toLowerCase();
     let score = 0;
 
@@ -483,11 +500,15 @@ export class DocumentManager {
     }
 
     // 内容匹配
-    const contentMatches = (document.content.toLowerCase().match(new RegExp(queryLower, 'g')) || []).length;
+    const contentMatches = (
+      document.content.toLowerCase().match(new RegExp(queryLower, "g")) || []
+    ).length;
     score += contentMatches * 2;
 
     // 标签匹配
-    const tagMatches = document.tags.filter(tag => tag.toLowerCase().includes(queryLower)).length;
+    const tagMatches = document.tags.filter((tag) =>
+      tag.toLowerCase().includes(queryLower)
+    ).length;
     score += tagMatches * 5;
 
     // 分类匹配
@@ -536,7 +557,7 @@ export class DocumentManager {
     }
 
     // 从内容中提取高亮
-    const contentLines = document.content.split('\n');
+    const contentLines = document.content.split("\n");
     for (const line of contentLines) {
       if (line.toLowerCase().includes(queryLower)) {
         highlights.push(`内容: ${line.trim()}`);
@@ -554,16 +575,16 @@ export class DocumentManager {
     const queryLower = query.toLowerCase();
 
     if (document.title.toLowerCase().includes(queryLower)) {
-      matchedFields.push('title');
+      matchedFields.push("title");
     }
     if (document.content.toLowerCase().includes(queryLower)) {
-      matchedFields.push('content');
+      matchedFields.push("content");
     }
-    if (document.tags.some(tag => tag.toLowerCase().includes(queryLower))) {
-      matchedFields.push('tags');
+    if (document.tags.some((tag) => tag.toLowerCase().includes(queryLower))) {
+      matchedFields.push("tags");
     }
     if (document.category.toLowerCase().includes(queryLower)) {
-      matchedFields.push('category');
+      matchedFields.push("category");
     }
 
     return matchedFields;
@@ -576,7 +597,7 @@ export class DocumentManager {
     return `# ${document.title}
 
 **分类**: ${document.category}  
-**标签**: ${document.tags.join(', ')}  
+**标签**: ${document.tags.join(", ")}  
 **版本**: ${document.version}  
 **最后修改**: ${document.lastModified.toISOString()}  
 **作者**: ${document.author}  
@@ -617,11 +638,11 @@ ${document.content}
         <p><strong>最后修改</strong>: ${document.lastModified.toLocaleString()}</p>
         <p><strong>作者</strong>: ${document.author}</p>
         <div class="tags">
-            ${document.tags.map(tag => `<span class="tag">${tag}</span>`).join('')}
+            ${document.tags.map((tag) => `<span class="tag">${tag}</span>`).join("")}
         </div>
     </div>
     <div class="content">
-        ${document.content.replace(/\n/g, '<br>')}
+        ${document.content.replace(/\n/g, "<br>")}
     </div>
 </body>
 </html>`;
@@ -631,42 +652,44 @@ ${document.content}
    * 从 Markdown 导入
    */
   private importFromMarkdown(content: string): Document {
-    const lines = content.split('\n');
-    const title = lines[0].replace(/^#\s*/, '');
-    
+    const lines = content.split("\n");
+    const title = lines[0].replace(/^#\s*/, "");
+
     // 简单的 Markdown 解析
     const metadata: Record<string, any> = {};
     let contentStart = 1;
-    
+
     // 查找元数据
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i];
-      if (line.startsWith('**') && line.includes('**:')) {
+      if (line.startsWith("**") && line.includes("**:")) {
         const match = line.match(/\*\*(.*?)\*\*:\s*(.*)/);
         if (match) {
-          const key = match[1].toLowerCase().replace(/\s+/g, '');
+          const key = match[1].toLowerCase().replace(/\s+/g, "");
           const value = match[2];
           metadata[key] = value;
         }
-      } else if (line.trim() === '---') {
+      } else if (line.trim() === "---") {
         contentStart = i + 1;
         break;
       }
     }
-    
-    const documentContent = lines.slice(contentStart).join('\n').trim();
-    
+
+    const documentContent = lines.slice(contentStart).join("\n").trim();
+
     return {
       id: this.generateDocumentId(title),
       title,
       content: documentContent,
-      category: metadata.category || 'general',
-      tags: metadata.tags ? metadata.tags.split(',').map((t: string) => t.trim()) : [],
-      version: metadata.version || '1.0.0',
+      category: metadata.category || "general",
+      tags: metadata.tags
+        ? metadata.tags.split(",").map((t: string) => t.trim())
+        : [],
+      version: metadata.version || "1.0.0",
       lastModified: new Date(),
-      author: metadata.author || 'Unknown',
-      language: metadata.language || 'zh-CN',
-      metadata
+      author: metadata.author || "Unknown",
+      language: metadata.language || "Simplified Chinese",
+      metadata,
     };
   }
 
@@ -676,8 +699,8 @@ ${document.content}
   private generateDocumentId(title: string): string {
     return title
       .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, '')
-      .replace(/\s+/g, '-')
+      .replace(/[^a-z0-9\s]/g, "")
+      .replace(/\s+/g, "-")
       .substring(0, 50);
   }
 
@@ -687,9 +710,9 @@ ${document.content}
   private saveFeedback(): void {
     try {
       const feedbackData = JSON.stringify(this.feedback, null, 2);
-      this.context.globalState.update('documentFeedback', feedbackData);
+      this.context.globalState.update("documentFeedback", feedbackData);
     } catch (error) {
-      this.logger.logError(error as Error, 'Failed to save feedback');
+      this.logger.logError(error as Error, "Failed to save feedback");
     }
   }
 
@@ -698,15 +721,16 @@ ${document.content}
    */
   private loadFeedback(): void {
     try {
-      const feedbackData = this.context.globalState.get<string>('documentFeedback');
+      const feedbackData =
+        this.context.globalState.get<string>("documentFeedback");
       if (feedbackData) {
         this.feedback = JSON.parse(feedbackData).map((f: any) => ({
           ...f,
-          timestamp: new Date(f.timestamp)
+          timestamp: new Date(f.timestamp),
         }));
       }
     } catch (error) {
-      this.logger.logError(error as Error, 'Failed to load feedback');
+      this.logger.logError(error as Error, "Failed to load feedback");
     }
   }
 }

@@ -59,7 +59,27 @@ export const userPreferencesSchema = z.object({
   verbosity: z.number(),
   rateLimitSeconds: z.number(),
   consecutiveMistakeLimit: z.number(),
-  language: z.enum(["zh", "en"]),
+  language: z.enum([
+    "Simplified Chinese",
+    "Traditional Chinese",
+    "Japanese",
+    "Korean",
+    "Czech",
+    "German",
+    "French",
+    "Italian",
+    "Dutch",
+    "Portuguese",
+    "Vietnamese",
+    "English",
+    "Spanish",
+    "Swedish",
+    "Russian",
+    "Bahasa",
+    "Polish",
+    "Turkish",
+    "Thai",
+  ]),
   maxTokens: z.number().optional(),
   timeout: z.number().optional(),
   retryAttempts: z.number().optional(),
@@ -104,7 +124,26 @@ export interface ExtensionConfig {
   };
   ui: {
     theme: "light" | "dark" | "auto";
-    language: "zh" | "en";
+    language:
+      | "Simplified Chinese"
+      | "Traditional Chinese"
+      | "Japanese"
+      | "Korean"
+      | "Czech"
+      | "German"
+      | "French"
+      | "Italian"
+      | "Dutch"
+      | "Portuguese"
+      | "Vietnamese"
+      | "English"
+      | "Spanish"
+      | "Swedish"
+      | "Russian"
+      | "Bahasa"
+      | "Polish"
+      | "Turkish"
+      | "Thai";
     fontSize: number;
   };
 }
@@ -184,7 +223,7 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   verbosity: 0,
   rateLimitSeconds: 5,
   consecutiveMistakeLimit: 3,
-  language: "zh",
+  language: "Simplified Chinese",
   maxTokens: 4000,
   timeout: 30000,
   retryAttempts: 3,

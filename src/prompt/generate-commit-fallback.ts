@@ -2,7 +2,7 @@
  * Generate Commit Fallback Prompt Template
  * 简化版 commit 消息生成提示词
  * 使用 {{variable}} 语法表示可替换变量
- * 
+ *
  * 可用变量:
  * - {{vcs_type}} - 版本控制类型 (GIT/SVN)
  * - {{language}} - 输出语言
@@ -39,11 +39,11 @@ export function getFallbackCommitVariables(params: {
   useRecentCommitsAsReference: boolean;
 }): FallbackCommitVariables {
   const { vcsType, useRecentCommitsAsReference } = params;
-  
+
   return {
     vcs_type: vcsType.toUpperCase(),
-    language: "en", // 可以从配置获取
-    recent_commits_instruction: useRecentCommitsAsReference 
+    language: "English", // 可以从配置获取
+    recent_commits_instruction: useRecentCommitsAsReference
       ? ", also considering the optionally provided RECENT USER COMMITS"
       : "",
     recent_commits_step: useRecentCommitsAsReference

@@ -9,33 +9,88 @@ export interface PreferencesSettings {
   weeklyReportTemperature: number;
 
   // === Diff 跳过配置 ===
-  skipDiffFileExtensions: string[];  // 文件扩展名列表
-  maxDiffFileSizeKB: number;  // 文件大小限制（KB），0 = 不限制
-  autoDetectBinaryFiles: boolean;  // 自动检测二进制文件
-  skipDiffPathPatterns: string[];  // 路径模式列表（Glob 格式）
-  respectGitAttributes: boolean;  // 读取 .gitattributes 中的 binary 标记
+  skipDiffFileExtensions: string[]; // 文件扩展名列表
+  maxDiffFileSizeKB: number; // 文件大小限制（KB），0 = 不限制
+  autoDetectBinaryFiles: boolean; // 自动检测二进制文件
+  skipDiffPathPatterns: string[]; // 路径模式列表（Glob 格式）
+  respectGitAttributes: boolean; // 读取 .gitattributes 中的 binary 标记
 }
 
 // 默认的跳过文件扩展名列表
 const DEFAULT_SKIP_DIFF_EXTENSIONS = [
   // 图片
-  '.png', '.jpg', '.jpeg', '.gif', '.bmp', '.ico', '.webp', '.svg',
-  '.tiff', '.tif', '.psd', '.ai', '.eps', '.raw', '.heic', '.avif',
+  ".png",
+  ".jpg",
+  ".jpeg",
+  ".gif",
+  ".bmp",
+  ".ico",
+  ".webp",
+  ".svg",
+  ".tiff",
+  ".tif",
+  ".psd",
+  ".ai",
+  ".eps",
+  ".raw",
+  ".heic",
+  ".avif",
   // 视频
-  '.mp4', '.avi', '.mov', '.mkv', '.webm', '.flv', '.wmv', '.m4v',
-  '.mpg', '.mpeg', '.3gp', '.ogv',
+  ".mp4",
+  ".avi",
+  ".mov",
+  ".mkv",
+  ".webm",
+  ".flv",
+  ".wmv",
+  ".m4v",
+  ".mpg",
+  ".mpeg",
+  ".3gp",
+  ".ogv",
   // 音频
-  '.mp3', '.wav', '.ogg', '.m4a', '.flac', '.aac', '.wma', '.opus',
+  ".mp3",
+  ".wav",
+  ".ogg",
+  ".m4a",
+  ".flac",
+  ".aac",
+  ".wma",
+  ".opus",
   // 字体
-  '.ttf', '.otf', '.woff', '.woff2', '.eot',
+  ".ttf",
+  ".otf",
+  ".woff",
+  ".woff2",
+  ".eot",
   // 压缩包
-  '.zip', '.tar', '.gz', '.rar', '.7z', '.bz2', '.xz',
+  ".zip",
+  ".tar",
+  ".gz",
+  ".rar",
+  ".7z",
+  ".bz2",
+  ".xz",
   // Office & PDF
-  '.pdf', '.doc', '.docx', '.xls', '.xlsx', '.ppt', '.pptx',
+  ".pdf",
+  ".doc",
+  ".docx",
+  ".xls",
+  ".xlsx",
+  ".ppt",
+  ".pptx",
   // 二进制
-  '.exe', '.dll', '.so', '.dylib', '.wasm', '.class', '.pyc',
+  ".exe",
+  ".dll",
+  ".so",
+  ".dylib",
+  ".wasm",
+  ".class",
+  ".pyc",
   // 数据库
-  '.db', '.sqlite', '.sqlite3',
+  ".db",
+  ".sqlite",
+  ".sqlite3",
 ];
 
 export class PreferencesSettingsManager {
@@ -50,19 +105,19 @@ export class PreferencesSettingsManager {
     weeklyReportTemperature: 0.3,
     // Diff 跳过配置默认值
     skipDiffFileExtensions: DEFAULT_SKIP_DIFF_EXTENSIONS,
-    maxDiffFileSizeKB: 500,  // 默认 500KB
+    maxDiffFileSizeKB: 500, // 默认 500KB
     autoDetectBinaryFiles: true,
     skipDiffPathPatterns: [
-      'node_modules/**',
-      'dist/**',
-      'build/**',
-      '**/*.min.js',
-      '**/*.min.css',
+      "node_modules/**",
+      "dist/**",
+      "build/**",
+      "**/*.min.js",
+      "**/*.min.css",
     ],
     respectGitAttributes: true,
   };
 
-  private constructor(private context: vscode.ExtensionContext) { }
+  private constructor(private context: vscode.ExtensionContext) {}
 
   public static getInstance(
     context?: vscode.ExtensionContext
@@ -113,11 +168,11 @@ export class PreferencesSettingsManager {
       }
       if (!storedSettings.skipDiffPathPatterns) {
         storedSettings.skipDiffPathPatterns = [
-          'node_modules/**',
-          'dist/**',
-          'build/**',
-          '**/*.min.js',
-          '**/*.min.css',
+          "node_modules/**",
+          "dist/**",
+          "build/**",
+          "**/*.min.js",
+          "**/*.min.css",
         ];
       }
       if (storedSettings.respectGitAttributes === undefined) {

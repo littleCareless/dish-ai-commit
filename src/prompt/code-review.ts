@@ -1,8 +1,8 @@
 /**
  * Code Review System Prompt Template
- * 
+ *
  * 纯文本模板，使用 {{variable}} 格式的占位符。
- * 
+ *
  * 可用变量：
  * - {{language}} - 输出语言，如 "English", "Simplified Chinese"
  */
@@ -283,7 +283,9 @@ Please provide the code changes for review, and I will conduct a comprehensive a
  * 获取 Code Review 模板变量
  * @param language - 输出语言
  */
-export function getCodeReviewVariables(language: string): Record<string, string> {
+export function getCodeReviewVariables(
+  language: string
+): Record<string, string> {
   return {
     language,
   };

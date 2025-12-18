@@ -66,7 +66,7 @@ export class CommitChatService {
     this.config = { ...defaultConfig, ...config };
     this.userPreferences = {
       style: "conventional",
-      language: "zh",
+      language: "Simplified Chinese",
       maxLength: 50,
       includeScope: false,
       includeBody: false,
@@ -338,7 +338,10 @@ ${conversationContext}
     const action = this.detectAction(message);
     const description = this.extractDescription(message);
 
-    if (language === "zh") {
+    if (
+      language === "Simplified Chinese" ||
+      language === "Traditional Chinese"
+    ) {
       return `${action}${description}`;
     } else {
       return `${action} ${description}`;
@@ -575,7 +578,7 @@ ${conversationContext}
     this.conversationHistory = [];
     this.userPreferences = {
       style: "conventional",
-      language: "zh",
+      language: "Simplified Chinese",
       maxLength: 50,
       includeScope: false,
       includeBody: false,

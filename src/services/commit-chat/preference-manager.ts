@@ -1,10 +1,9 @@
-import { ChatMessage } from '@shared/types/messages';
-import { CommitSuggestion } from '@shared/types/messages';
+import { CommitSuggestion } from "@shared/types/messages";
 
 export interface UserPreference {
   id: string;
-  style: 'conventional' | 'descriptive' | 'emoji' | 'minimal';
-  language: 'zh' | 'en';
+  style: "conventional" | "descriptive" | "emoji" | "minimal";
+  language: string;
   maxLength: number;
   includeScope: boolean;
   includeBody: boolean;
@@ -26,7 +25,7 @@ export interface UserPreference {
   }>;
   feedbackHistory: Array<{
     messageId: string;
-    feedback: 'positive' | 'negative';
+    feedback: "positive" | "negative";
     timestamp: Date;
     context: string;
   }>;
@@ -46,7 +45,7 @@ export interface UserPreference {
 export interface LearningData {
   userInput: string;
   selectedSuggestion?: string;
-  feedback?: 'positive' | 'negative';
+  feedback?: "positive" | "negative";
   context: {
     projectType?: string;
     timeOfDay?: string;
@@ -55,9 +54,9 @@ export interface LearningData {
 }
 
 const defaultPreference: UserPreference = {
-  id: 'default',
-  style: 'conventional',
-  language: 'zh',
+  id: "default",
+  style: "conventional",
+  language: "Simplified Chinese",
   maxLength: 50,
   includeScope: false,
   includeBody: false,
@@ -101,7 +100,7 @@ export class PreferenceManager {
   // 加载用户偏好
   private loadPreference(): UserPreference {
     try {
-      const saved = localStorage.getItem('commit-chat-preference');
+      const saved = localStorage.getItem("commit-chat-preference");
       if (saved) {
         const parsed = JSON.parse(saved);
         return {
@@ -120,9 +119,9 @@ export class PreferenceManager {
         };
       }
     } catch (error) {
-      console.error('加载用户偏好失败:', error);
+      console.error("加载用户偏好失败:", error);
     }
-    
+
     return { ...defaultPreference };
   }
 
@@ -130,10 +129,13 @@ export class PreferenceManager {
   private savePreference(): void {
     try {
       this.preference.updatedAt = new Date();
-      localStorage.setItem('commit-chat-preference', JSON.stringify(this.preference));
+      localStorage.setItem(
+        "commit-chat-preference",
+        JSON.stringify(this.preference)
+      );
       this.notifyListeners();
     } catch (error) {
-      console.error('保存用户偏好失败:', error);
+      console.error("保存用户偏好失败:", error);
     }
   }
 
@@ -151,18 +153,18 @@ export class PreferenceManager {
   // 学习用户行为
   public learnFromInteraction(data: LearningData): void {
     this.learningData.push(data);
-    
+
     // 更新使用统计
     this.updateUsageStats(data);
-    
+
     // 学习模式
     this.learnPatterns(data);
-    
+
     // 限制学习数据大小
     if (this.learningData.length > 1000) {
       this.learningData = this.learningData.slice(-500);
     }
-    
+
     this.savePreference();
   }
 
@@ -170,53 +172,61 @@ export class PreferenceManager {
   private updateUsageStats(data: LearningData): void {
     const stats = this.preference.usageStats;
     stats.totalMessages++;
-    
+
     if (data.selectedSuggestion) {
       stats.totalSuggestions++;
       stats.acceptedSuggestions++;
     }
-    
-    if (data.feedback === 'negative') {
+
+    if (data.feedback === "negative") {
       stats.rejectedSuggestions++;
     }
-    
+
     // 更新平均会话长度
     const recentSessions = this.learningData.slice(-10);
     stats.averageSessionLength = recentSessions.length;
-    
+
     this.preference.usageStats = stats;
   }
 
   // 学习模式
   private learnPatterns(data: LearningData): void {
     const input = data.userInput.toLowerCase();
-    
+
     // 提取关键词模式
     const keywords = this.extractKeywords(input);
-    
+
     for (const keyword of keywords) {
-      const existingPattern = this.preference.learnedPatterns.find(p => p.pattern === keyword);
-      
+      const existingPattern = this.preference.learnedPatterns.find(
+        (p) => p.pattern === keyword
+      );
+
       if (existingPattern) {
         existingPattern.usageCount++;
         existingPattern.lastUsed = new Date();
-        
+
         // 根据反馈调整置信度
-        if (data.feedback === 'positive') {
-          existingPattern.confidence = Math.min(existingPattern.confidence + 0.1, 1.0);
-        } else if (data.feedback === 'negative') {
-          existingPattern.confidence = Math.max(existingPattern.confidence - 0.1, 0.0);
+        if (data.feedback === "positive") {
+          existingPattern.confidence = Math.min(
+            existingPattern.confidence + 0.1,
+            1.0
+          );
+        } else if (data.feedback === "negative") {
+          existingPattern.confidence = Math.max(
+            existingPattern.confidence - 0.1,
+            0.0
+          );
         }
       } else {
         this.preference.learnedPatterns.push({
           pattern: keyword,
-          confidence: data.feedback === 'positive' ? 0.8 : 0.5,
+          confidence: data.feedback === "positive" ? 0.8 : 0.5,
           usageCount: 1,
           lastUsed: new Date(),
         });
       }
     }
-    
+
     // 限制学习模式数量
     if (this.preference.learnedPatterns.length > 100) {
       this.preference.learnedPatterns = this.preference.learnedPatterns
@@ -228,40 +238,68 @@ export class PreferenceManager {
   // 提取关键词
   private extractKeywords(text: string): string[] {
     const keywords: string[] = [];
-    
+
     // 常见动词
-    const verbs = ['添加', '修复', '更新', '删除', '重构', '优化', 'add', 'fix', 'update', 'remove', 'refactor', 'optimize'];
+    const verbs = [
+      "添加",
+      "修复",
+      "更新",
+      "删除",
+      "重构",
+      "优化",
+      "add",
+      "fix",
+      "update",
+      "remove",
+      "refactor",
+      "optimize",
+    ];
     for (const verb of verbs) {
       if (text.includes(verb)) {
         keywords.push(verb);
       }
     }
-    
+
     // 常见名词
-    const nouns = ['功能', 'bug', '文档', '测试', '配置', 'feature', 'documentation', 'test', 'config'];
+    const nouns = [
+      "功能",
+      "bug",
+      "文档",
+      "测试",
+      "配置",
+      "feature",
+      "documentation",
+      "test",
+      "config",
+    ];
     for (const noun of nouns) {
       if (text.includes(noun)) {
         keywords.push(noun);
       }
     }
-    
+
     return keywords;
   }
 
   // 记录反馈
-  public recordFeedback(messageId: string, feedback: 'positive' | 'negative', context: string): void {
+  public recordFeedback(
+    messageId: string,
+    feedback: "positive" | "negative",
+    context: string
+  ): void {
     this.preference.feedbackHistory.push({
       messageId,
       feedback,
       timestamp: new Date(),
       context,
     });
-    
+
     // 限制反馈历史大小
     if (this.preference.feedbackHistory.length > 200) {
-      this.preference.feedbackHistory = this.preference.feedbackHistory.slice(-100);
+      this.preference.feedbackHistory =
+        this.preference.feedbackHistory.slice(-100);
     }
-    
+
     this.savePreference();
   }
 
@@ -269,56 +307,61 @@ export class PreferenceManager {
   public getPersonalizedSuggestions(input: string): CommitSuggestion[] {
     const suggestions: CommitSuggestion[] = [];
     const inputLower = input.toLowerCase();
-    
+
     // 基于学习模式生成建议
     for (const pattern of this.preference.learnedPatterns) {
       if (inputLower.includes(pattern.pattern) && pattern.confidence > 0.6) {
         suggestions.push({
           text: this.generateSuggestionFromPattern(pattern.pattern, input),
-          type: 'custom',
+          type: "custom",
           confidence: pattern.confidence,
           description: `基于您的使用习惯`,
         });
       }
     }
-    
+
     // 基于使用统计生成建议
-    const mostUsedTemplates = Object.entries(this.preference.usageStats.mostUsedTemplates)
+    const mostUsedTemplates = Object.entries(
+      this.preference.usageStats.mostUsedTemplates
+    )
       .sort(([, a], [, b]) => b - a)
       .slice(0, 3);
-    
+
     for (const [template, count] of mostUsedTemplates) {
       if (count > 2) {
         suggestions.push({
           text: `${template}: ${input}`,
-          type: 'template',
+          type: "template",
           confidence: Math.min(count / 10, 0.9),
           description: `您经常使用的模板`,
         });
       }
     }
-    
+
     return suggestions.sort((a, b) => b.confidence - a.confidence).slice(0, 5);
   }
 
   // 从模式生成建议
-  private generateSuggestionFromPattern(pattern: string, input: string): string {
+  private generateSuggestionFromPattern(
+    pattern: string,
+    input: string
+  ): string {
     const patternMap: Record<string, string> = {
-      '添加': 'feat',
-      '修复': 'fix',
-      '更新': 'update',
-      '删除': 'remove',
-      '重构': 'refactor',
-      '优化': 'optimize',
-      'add': 'feat',
-      'fix': 'fix',
-      'update': 'update',
-      'remove': 'remove',
-      'refactor': 'refactor',
-      'optimize': 'optimize',
+      添加: "feat",
+      修复: "fix",
+      更新: "update",
+      删除: "remove",
+      重构: "refactor",
+      优化: "optimize",
+      add: "feat",
+      fix: "fix",
+      update: "update",
+      remove: "remove",
+      refactor: "refactor",
+      optimize: "optimize",
     };
-    
-    const type = patternMap[pattern] || 'feat';
+
+    const type = patternMap[pattern] || "feat";
     return `${type}: ${input}`;
   }
 
@@ -356,49 +399,61 @@ export class PreferenceManager {
 
   // 导出偏好数据
   public exportPreference(): string {
-    return JSON.stringify({
-      preference: this.preference,
-      learningData: this.learningData,
-    }, null, 2);
+    return JSON.stringify(
+      {
+        preference: this.preference,
+        learningData: this.learningData,
+      },
+      null,
+      2
+    );
   }
 
   // 导入偏好数据
   public importPreference(dataJson: string): void {
     try {
       const data = JSON.parse(dataJson);
-      
+
       if (data.preference) {
         this.preference = {
           ...defaultPreference,
           ...data.preference,
-          createdAt: new Date(data.preference.createdAt || defaultPreference.createdAt),
+          createdAt: new Date(
+            data.preference.createdAt || defaultPreference.createdAt
+          ),
           updatedAt: new Date(),
-          learnedPatterns: (data.preference.learnedPatterns || []).map((p: any) => ({
-            ...p,
-            lastUsed: new Date(p.lastUsed),
-          })),
-          feedbackHistory: (data.preference.feedbackHistory || []).map((f: any) => ({
-            ...f,
-            timestamp: new Date(f.timestamp),
-          })),
+          learnedPatterns: (data.preference.learnedPatterns || []).map(
+            (p: any) => ({
+              ...p,
+              lastUsed: new Date(p.lastUsed),
+            })
+          ),
+          feedbackHistory: (data.preference.feedbackHistory || []).map(
+            (f: any) => ({
+              ...f,
+              timestamp: new Date(f.timestamp),
+            })
+          ),
         };
       }
-      
+
       if (data.learningData) {
         this.learningData = data.learningData;
       }
-      
+
       this.savePreference();
     } catch (error) {
-      console.error('导入偏好数据失败:', error);
-      throw new Error('无效的偏好数据格式');
+      console.error("导入偏好数据失败:", error);
+      throw new Error("无效的偏好数据格式");
     }
   }
 
   // 添加偏好变更监听器
-  public addPreferenceListener(listener: (preference: UserPreference) => void): () => void {
+  public addPreferenceListener(
+    listener: (preference: UserPreference) => void
+  ): () => void {
     this.listeners.push(listener);
-    
+
     return () => {
       const index = this.listeners.indexOf(listener);
       if (index > -1) {
@@ -409,11 +464,11 @@ export class PreferenceManager {
 
   // 通知监听器
   private notifyListeners(): void {
-    this.listeners.forEach(listener => {
+    this.listeners.forEach((listener) => {
       try {
         listener(this.preference);
       } catch (error) {
-        console.error('偏好监听器执行失败:', error);
+        console.error("偏好监听器执行失败:", error);
       }
     });
   }
@@ -422,24 +477,26 @@ export class PreferenceManager {
   public getRecommendedConfig(): Partial<UserPreference> {
     const stats = this.preference.usageStats;
     const recommendations: Partial<UserPreference> = {};
-    
+
     // 基于使用统计推荐配置
     if (stats.acceptedSuggestions / Math.max(stats.totalSuggestions, 1) > 0.7) {
       recommendations.enableSuggestions = true;
     }
-    
+
     if (Object.keys(stats.mostUsedCommands).length > 0) {
       recommendations.enableCommands = true;
     }
-    
+
     // 基于反馈历史推荐配置
     const recentFeedback = this.preference.feedbackHistory.slice(-10);
-    const positiveFeedback = recentFeedback.filter(f => f.feedback === 'positive').length;
-    
+    const positiveFeedback = recentFeedback.filter(
+      (f) => f.feedback === "positive"
+    ).length;
+
     if (positiveFeedback / Math.max(recentFeedback.length, 1) > 0.8) {
       recommendations.enablePreview = true;
     }
-    
+
     return recommendations;
   }
 }

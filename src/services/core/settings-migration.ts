@@ -194,7 +194,7 @@ export class SettingsMigration {
       ),
       language: this.mapLanguage(
         config.get("base.language", "Simplified Chinese")
-      ),
+      ) as UserPreferences["language"],
       maxTokens: config.get(
         "base.maxTokens",
         DEFAULT_USER_PREFERENCES.maxTokens
@@ -357,11 +357,16 @@ export class SettingsMigration {
     return baseConfig as ProviderConfig;
   }
 
-  private mapLanguage(lang: string): "zh" | "en" {
-    if (lang === "Simplified Chinese" || lang === "Traditional Chinese") {
-      return "zh";
-    }
-    return "en"; // Default to en for others for now, or we need to expand UserPreferences language type
+  private mapLanguage(lang: string) {
+    const map: Record<string, string> = {
+      zh: "Simplified Chinese",
+      "zh-cn": "Simplified Chinese",
+      "zh-CN": "Simplified Chinese",
+      en: "English",
+      "en-US": "English",
+      // Add other legacy codes if necessary
+    };
+    return map[lang] || lang;
   }
 
   private mapProviderNameToId(name: string): string {

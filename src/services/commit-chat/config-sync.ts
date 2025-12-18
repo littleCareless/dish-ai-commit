@@ -2,7 +2,7 @@ import { vscode } from "@/utils/vscode";
 
 export interface CommitChatConfig {
   style: "conventional" | "descriptive" | "emoji" | "minimal";
-  language: "zh" | "en";
+  language: string;
   maxLength: number;
   includeScope: boolean;
   includeBody: boolean;
@@ -23,7 +23,7 @@ export interface GlobalConfig {
 
 const defaultCommitChatConfig: CommitChatConfig = {
   style: "conventional",
-  language: "zh",
+  language: "Simplified Chinese",
   maxLength: 50,
   includeScope: false,
   includeBody: false,
@@ -347,10 +347,6 @@ export class ConfigSyncService {
       )
     ) {
       errors.push("无效的风格类型");
-    }
-
-    if (config.language && !["zh", "en"].includes(config.language)) {
-      errors.push("无效的语言设置");
     }
 
     if (config.customTemplates) {
