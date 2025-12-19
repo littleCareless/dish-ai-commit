@@ -1,10 +1,12 @@
 <div align="center">
 
-<h1>Dish AI Commit Gen</h1>
+# Dish AI Commit Gen
 
-A powerful VSCode extension that uses AI technology to generate standardized Git/SVN commit messages. Supports multiple AI providers with intelligent code analysis and semantic indexing capabilities.
+🤖 **AI-Powered VSCode Extension for Intelligent Commit Message Generation**
 
-[Report Bug][github-issues-link] · [Request Feature][github-issues-link]
+A powerful VSCode extension that uses AI technology to generate standardized Git/SVN commit messages with intelligent code analysis, semantic indexing, and multi-dimensional generation capabilities.
+
+[Report Bug][github-issues-link] · [Request Feature][github-issues-link] · [View Documentation](#-documentation)
 
 <!-- SHIELD GROUP -->
 
@@ -27,341 +29,206 @@ A powerful VSCode extension that uses AI technology to generate standardized Git
 
 [Deutsch](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=de) |
 [Español](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=es) |
-[français](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=fr) |
+[Français](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=fr) |
 [日本語](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=ja) |
 [한국어](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=ko) |
 [Português](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=pt) |
 [Русский](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=ru) |
 [中文](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=zh)
 
+---
 
-
-> 💡 **Why Choose Us?** Compared to other AI commit tools, we provide the most comprehensive AI provider support, pioneering semantic code analysis, and multi-dimensional intelligent generation features, making us the best choice for developers.
+> 💡 **Why Dish AI Commit Gen?**
+>
+> Unlike other AI commit tools, we provide **the most comprehensive AI provider support** (20+ providers), **pioneering semantic code analysis** (Tree-sitter + Qdrant), and **multi-dimensional intelligent generation** (commits, branches, PR summaries, weekly reports). Built with enterprise-grade architecture following SOLID principles for maximum maintainability and extensibility.
 
 ## 🚀 Core Features Overview
 
-- **AI-Powered Commit Generation**: Intelligent commit message creation from code changes with context-aware analysis
-- **Multi-VCS Support**: Works with both Git and SVN version control systems
-- **20+ AI Providers**: OpenAI, Ollama, GitHub Copilot, Zhipu AI, DashScope, Gemini, Anthropic Claude, Mistral AI, and more (including free options, local deployment with Ollama, and enterprise solutions like Azure OpenAI, Vertex AI, Cloudflare Workers AI)
-- **Semantic Code Analysis**: Tree-sitter + Qdrant vector database to provide precise context for commit message generation
-- **Multi-language Support**: 19 languages including English and Chinese
-- **Standardized Commit Format**: Follows Conventional Commits specification with intelligent emoji matching
-- **PR Summary Generation**: Auto-generate PR titles and descriptions from commit history
+### 🤖 AI-Powered Generation
+
+- **Commit Message Generation**: Intelligent commit messages from code changes with context-aware analysis
 - **Branch Name Generation**: Smart branch naming based on requirements or code changes
+- **PR Summary Generation**: Auto-generate PR titles and descriptions from commit history
 - **Weekly Report Generation**: AI-powered work summaries and progress tracking
 - **Code Review**: AI-assisted code review with detailed feedback
-- **Interactive Chat Interface**: Real-time commit generation through natural language
-- **Dynamic Settings UI**: Auto-generated configuration interface based on schema
-- **Cross-repository Support**: Handle multiple repositories in single workspace
 
-## 🎯 Unique Advantages Over Competitors
+### 🏗️ Advanced Architecture
 
-### 1. **Most Comprehensive AI Provider Support**
-- Support for 10+ mainstream AI services, including free options
-- One-click switching between different AI models to meet various scenario needs
+- **Modular Design**: SOLID principles, core classes < 200 lines
+- **Multi-layer Architecture**: Command → Handler → Builder → Service → Utils
+- **Graceful Degradation**: Multi-level fallback for Git and SVN
+- **Unified AI Interface**: 20+ providers with consistent API
 
-### 2. **Intelligent Semantic Analysis**
-- Pioneering code semantic indexing based on tree-sitter
-- Provides more accurate code change understanding and contextual analysis
+### 🧠 Intelligent Analysis
 
-### 3. **Multi-dimensional Intelligent Generation**
-- Not only generates commit messages, but also supports PR summaries, branch names, and weekly reports
-- One-stop solution for developer documentation needs
+- **Semantic Indexing**: Tree-sitter + Qdrant vector database
+- **Context Collection**: Automatic code change analysis and context building
+- **Framework Detection**: Framework-specific commit suggestions
+- **Smart Caching**: LRU cache for performance optimization
 
-### 4. **Enterprise-grade Features**
-- Support for both SVN and Git version control systems
-- Dynamic configuration interface suitable for team collaboration
-- Comprehensive error handling and user feedback mechanisms
+### 🎨 Modern UI
 
-## ✨ What's New
+- **Interactive Chat**: Real-time commit generation through natural language
+- **Dynamic Settings**: Schema-driven auto-generated configuration UI
+- **Multi-language Support**: 18 languages including English and Chinese
+- **System Notifications**: Cross-platform native notifications
 
-- **PR Summary Generation**: Automatically generate PR titles and descriptions based on Git commit history.
-- **Code Semantic Indexing and Search**: Utilizes `tree-sitter` and a vector database (Qdrant) to index the codebase semantically, providing richer context for generating commit messages and code reviews.
-- **Function Calling Mode**: An experimental feature that generates structured commit messages through the AI's function-calling capabilities.
-- **Dynamic Settings UI**: The plugin's settings interface is now dynamically generated based on configuration definitions, offering more flexible and detailed options.
+## ✨ What's New (v0.56.1)
 
-## Features
+### 🔥 Latest Features
 
-### 🤖 Comprehensive AI Provider Support
+- **Xiaomi MiMo Support**: Added Xiaomi's MiMo as a new AI service provider
+- **Enhanced Settings Migration**: Improved robustness and traceability for settings migration
+- **Framework-Specific Suggestions**: Intelligent commit suggestions based on project type
+- **Commit Caching**: LRU cache mechanism to improve performance
+- **New User Onboarding**: Enhanced guidance and configuration file robustness
+- **Performance Optimizations**: Optimized commit generation and logging
 
-Our extension supports 20+ AI providers, making it the most comprehensive AI-powered commit message generator available:
+### 📊 Recent Major Features
 
-| Category | Providers | Key Features | Best For |
-|----------|-----------|--------------|----------|
-| **Premium AI** | OpenAI (GPT-3.5, GPT-4, GPT-4o, o1-preview, o1-mini) | Highest quality, latest models | Production use, high-quality requirements |
-| **Local Deployment** | Ollama, LM Studio | 100+ open-source models, complete privacy | Data-sensitive environments, offline use |
-| **VSCode Integration** | GitHub Copilot | Built-in VSCode AI service | Copilot subscribers |
-| **Chinese AI Services** | Zhipu AI (GLM-4), DashScope (Alibaba), Doubao (ByteDance), Deepseek, Baidu Qianfan | Excellent Chinese processing, enterprise support | Chinese users, enterprise applications |
-| **International Services** | Gemini AI, Anthropic Claude, Mistral AI, SiliconFlow, OpenRouter | Global reach, diverse model options | International teams, model flexibility |
-| **Enterprise Solutions** | Azure OpenAI, Vertex AI, Cloudflare Workers AI | Enterprise-grade security and compliance | Large organizations, compliance requirements |
-| **Open Source** | Together AI, X.AI (Grok), Groq, Prem AI | Cost-effective, community-driven | Budget-conscious users, open-source projects |
+- **Cross-Repository Support**: Handle multiple repositories in single workspace
+- **Function Calling Mode**: Structured commit messages via AI function calling
+- **Dynamic Settings UI**: Auto-generated configuration interface
+- **System Notifications**: Native notifications (macOS, Windows, Linux)
+- **Layered Commits**: Multi-file commit with detailed descriptions
 
-#### 🆓 Free AI Models
+## 🤖 Comprehensive AI Provider Support
+
+### Provider Categories
+
+| Category                | Providers                                                             | Key Features                     | Best For                    |
+| ----------------------- | --------------------------------------------------------------------- | -------------------------------- | --------------------------- |
+| **Premium AI**          | OpenAI (GPT-3.5/4/4o, o1-preview/mini)                                | Highest quality, latest models   | Production use              |
+| **Local Deployment**    | Ollama, LM Studio                                                     | 100+ open-source models, privacy | Data-sensitive environments |
+| **VSCode Integration**  | GitHub Copilot                                                        | Built-in VSCode AI service       | Copilot subscribers         |
+| **Chinese AI Services** | Zhipu AI, DashScope, Doubao, Deepseek, Baidu Qianfan, **Xiaomi MiMo** | Excellent Chinese processing     | Chinese users               |
+| **International**       | Gemini, Claude, Mistral, SiliconFlow, OpenRouter                      | Global reach, diverse options    | International teams         |
+| **Enterprise**          | Azure OpenAI, Vertex AI, Cloudflare Workers AI                        | Enterprise-grade security        | Large organizations         |
+| **Open Source**         | Together AI, X.AI (Grok), Groq, Prem AI                               | Cost-effective, community-driven | Budget-conscious users      |
+
+### 🆓 Free AI Models
 
 - **Zhipu AI (GLM-4-Flash)**: Fixed monthly free quota ([Get API Key](https://open.bigmodel.cn/usercenter/apikeys))
 - **Gemini AI**: 1,500 free requests per day ([Get API Key](https://makersuite.google.com/app/apikey))
 - **Ollama**: Completely free local deployment with 100+ models
 - **LM Studio**: Free local model hosting and management
+- **Xiaomi MiMo**: Competitive pricing with excellent Chinese support
 
-### 📝 Version Control System Support
+## 📝 Version Control System Support
 
-- **Git**: Full support for Git repositories with advanced features
-- **SVN**: Complete SVN integration with commit message generation
-- **Cross-repository**: Handle multiple repositories in single workspace
-- **Mixed Environments**: Seamlessly work with both Git and SVN projects
+### Git Support
 
-### 📊 Weekly Report Generation
+- **VS Code Git API**: Full integration with VS Code's Git extension
+- **CLI Fallback**: Command-line Git operations when API unavailable
+- **Multi-repository**: Handle multiple Git repositories in workspace
+- **Smart Detection**: Automatic repository detection and switching
 
-- **AI-Powered Summaries**: Automatically generate comprehensive weekly work reports
-- **Progress Tracking**: Analyze commit history and code changes to summarize progress
-- **Customizable Templates**: Create personalized report formats and structures
-- **Multi-Provider Support**: Use any supported AI provider for report generation
-- **Export Options**: Generate reports in various formats for sharing
+### SVN Support
 
-### 🌿 Branch Name Generation
+- **SVN SCM Extension**: Integration with VS Code SVN extension
+- **CLI Implementation**: Direct SVN command-line operations
+- **Graceful Degradation**: 3-level fallback (API → CLI → Simple CLI)
+- **Unified Interface**: Same API as Git for seamless switching
 
-- **Smart Branch Naming**: Automatically generate standardized branch names based on requirements
-- **Multiple Input Modes**: Generate from feature descriptions or code changes
-- **Naming Conventions**: Support various branch naming patterns and formats
-- **AI Integration**: Seamless integration with all supported AI providers
-- **Team Consistency**: Ensure consistent branch naming across development teams
+## 🏗️ Architecture Highlights
 
-### 🧠 Advanced Code Analysis & Semantic Indexing
+### Modular Design (SOLID Principles)
 
-- **Tree-sitter Integration**: Deep code parsing and analysis for 30+ programming languages
-- **Vector Database**: Qdrant-powered semantic code indexing for intelligent context understanding
-- **Semantic Block Extraction**: Identify and extract functions, classes, interfaces, and methods
-- **Intelligent Context Collection**: Automatic code change analysis and context building
-- **Multi-embedding Support**: OpenAI, Ollama, and OpenAI-compatible embedding services
-- **Incremental Indexing**: Smart updates only for changed files, improving performance
-
-### 🎨 Modern WebView Interface
-
-- **Interactive Chat Interface**: Real-time commit message generation through natural language conversation
-- **Dynamic Settings UI**: Auto-generated configuration interface based on schema definitions
-- **Theme Support**: Light/dark theme switching with VS Code integration
-- **Responsive Design**: Modern React-based UI with Tailwind CSS styling
-- **Real-time Preview**: Live commit message preview and editing capabilities
-- **Command Palette Integration**: Quick access to all features through VSCode command palette
-
-### ⚙️ Enterprise-Grade Configuration
-
-- **Dynamic Configuration**: Schema-driven settings with automatic validation
-- **Model Selection**: Quick AI provider and model switching with real-time updates
-- **Token Statistics**: Comprehensive usage tracking and cost monitoring
-- **Custom Prompts**: Personalized system prompts for different scenarios and use cases
-- **Workspace Integration**: Project-specific configuration management and inheritance
-- **Configuration Validation**: Automatic validation of settings and API keys
-
-### 🌍 Multi-language Commit Message Generation
-
-Supports the following 19 languages:
-
-- Simplified Chinese (简体中文)
-- Traditional Chinese (繁體中文)
-- Japanese (日本語)
-- Korean (한국어)
-- Czech (Čeština)
-- German (Deutsch)
-- French (Français)
-- Italian (Italiano)
-- Dutch (Nederlands)
-- Portuguese (Português)
-- Vietnamese (Tiếng Việt)
-- English
-- Spanish (Español)
-- Swedish (Svenska)
-- Russian (Русский)
-- Bahasa Indonesia
-- Polish (Polski)
-- Turkish (Türkçe)
-- Thai (ไทย)
-
-### 🎨 Conventional Commits Compliant
-
-Generates commit messages following the [Conventional Commits](https://www.conventionalcommits.org/) specification:
-
-- Commit Message Format:
-
-  ```
-  <type>[optional scope]: <description>
-
-  [optional body]
-
-  [optional footer(s)]
-  ```
-
-- Supported Commit Types:
-
-  - `feat`: New feature
-  - `fix`: Bug fix
-  - `docs`: Documentation changes
-  - `style`: Code style adjustments
-  - `refactor`: Code refactoring
-  - `perf`: Performance improvements
-  - `test`: Test-related changes
-  - `build`: Build-related changes
-  - `ci`: CI/CD-related changes
-  - `chore`: Other changes
-  - `revert`: Revert commits
-
-- Automatic Scope Detection:
-
-  - Automatically inferred from modified file paths
-  - Smart categorization for multi-file changes
-  - Customizable scope rules via configuration
-
-- Breaking Changes Support:
-
-  - Mark breaking changes with `!`
-  - Detailed impact description in body
-  - Example: `feat!: Restructure authentication system`
-
-- Intelligent Description Generation:
-  - Automatic code change analysis
-  - Key modification point extraction
-  - Clear and concise description generation
-
-### 😄 Automatic Emoji Addition
-
-- Automatically adds emojis to commit messages
-- Can be enabled/disabled through configuration:
-
-```json
-{
-  "dish-ai-commit.features.commitFormat.enableEmoji": true // Enable emoji
-}
+```
+┌─────────────────────────────────────────┐
+│           Command Layer                 │
+│  GenerateCommitCommand (222 lines)      │
+│  GenerateBranchNameCommand (146 lines)  │
+└─────────────────┬───────────────────────┘
+                  │
+┌─────────────────▼───────────────────────┐
+│         Handler Layer                   │
+│  • StreamingHandler                     │
+│  • FunctionCallingHandler              │
+│  • LayeredCommitHandler                │
+│  • CrossRepositoryHandler              │
+└─────────────────┬───────────────────────┘
+                  │
+┌─────────────────▼───────────────────────┐
+│         Builder Layer                   │
+│  • CommitContextBuilder                │
+│  • CommitMessageBuilder                │
+└─────────────────┬───────────────────────┘
+                  │
+┌─────────────────▼───────────────────────┐
+│         Service Layer                   │
+│  • CommitCacheService                  │
+│  • NotificationService                 │
+│  • SettingsMigration                   │
+└─────────────────┬───────────────────────┘
+                  │
+┌─────────────────▼───────────────────────┐
+│         Utils Layer                     │
+│  • StreamingGenerationHelper           │
+│  • ContextCollector                    │
+│  • CommitFormatter                     │
+└─────────────────────────────────────────┘
 ```
 
-- Emojis automatically match commit types:
-  - ✨ feat: New features
-  - 🐛 fix: Bug fixes
-  - 📝 docs: Documentation
-  - 💄 style: Styling
-  - ♻️ refactor: Refactoring
-  - ⚡️ perf: Performance
-  - ✅ test: Testing
-  - 🔧 chore: Other changes
+### Performance Optimizations
 
-### 📊 Code Analysis Features
+- **Smart Caching**: LRU cache with MD5-based keys (50 items max)
+- **Incremental Indexing**: Only updates changed files
+- **Context Management**: Intelligent prompt length optimization
+- **Request Retries**: Automatic retry with exponential backoff
 
-- Intelligent code difference analysis
-- Automatically simplify complex code changes
-- Preserve key context information
+## ⚙️ Configuration
 
-### 🔄 Merge Commit Support
+### Core Settings
 
-By enabling the enableMergeCommit option, you can:
+| Configuration                                            | Type    | Default                | Description              |
+| -------------------------------------------------------- | ------- | ---------------------- | ------------------------ |
+| `dish-ai-commit.base.language`                           | string  | Simplified Chinese     | Commit message language  |
+| `dish-ai-commit.base.provider`                           | string  | OpenAI                 | Active AI provider       |
+| `dish-ai-commit.base.model`                              | string  | gpt-3.5-turbo          | Active AI model          |
+| `dish-ai-commit.providers.openai.apiKey`                 | string  | ""                     | OpenAI API key           |
+| `dish-ai-commit.providers.mimo.apiKey`                   | string  | ""                     | Xiaomi MiMo API key      |
+| `dish-ai-commit.providers.ollama.baseUrl`                | string  | http://localhost:11434 | Ollama API URL           |
+| `dish-ai-commit.features.commitFormat.enableEmoji`       | boolean | true                   | Use emoji in commits     |
+| `dish-ai-commit.features.commitFormat.enableBody`        | boolean | true                   | Include commit body      |
+| `dish-ai-commit.features.commitFormat.enableMergeCommit` | boolean | false                  | Merge multiple files     |
+| `dish-ai-commit.features.codeIndex.enabled`              | boolean | false                  | Enable semantic indexing |
+| `dish-ai-commit.features.codeIndex.provider`             | string  | ollama                 | Embedding provider       |
+| `dish-ai-commit.features.codeIndex.qdrantUrl`            | string  | http://localhost:6333  | Qdrant URL               |
 
-- Merge changes from multiple related files into a single commit message
-- Automatically analyze file associations
-- Generate more concise commit records
+### Available Commands
 
-### 📋 Subject-Only Commit Messages
+| Command ID                             | Title                  | Description                  |
+| -------------------------------------- | ---------------------- | ---------------------------- |
+| `dish-ai-commit.selectModel`           | Select AI Model        | Choose provider and model    |
+| `dish-ai-commit.generateCommitMessage` | Generate Commit        | Generate commit from changes |
+| `dish-ai-commit.generateBranchName`    | Generate Branch Name   | Create standardized branch   |
+| `dish-ai-commit.generateWeeklyReport`  | Generate Weekly Report | AI-powered work summary      |
+| `dish-ai-commit.generatePRSummary`     | Generate PR Summary    | PR title and description     |
+| `dish-ai-commit.reviewCode`            | Code Review            | AI-assisted code review      |
 
-By disabling the enableBody option, you can:
+## 📋 Configuration Examples
 
-- Generate commit messages with only the subject line (without body content)
-- Create more concise commit history
-- Focus on the essential information
-
-Enable/disable through configuration:
-
-```json
-{
-  "dish-ai-commit.features.commitFormat.enableBody": false // Disable commit message body
-}
-```
-
-### 📝 Weekly Report Templates
-
-Weekly report generation supports custom templates:
-
-- Customize prompts via systemPrompt configuration
-- Summarize by project/task
-- Customize report format and key content
-
-### 🚀 PR Summary Generation
-
-- **Automatic PR Summary Generation**: Automatically generate PR titles and descriptions based on Git commit history.
-- **Multi-AI Provider Support**: Supports multiple AI providers for summary generation.
-- **Customizable**: Customizable summary templates.
-
-### 🧠 Code Semantic Indexing and Search
-
-- **Semantic Indexing**: Utilizes `tree-sitter` and a vector database (Qdrant) to index the codebase semantically.
-- **Context Enhancement**: Provides richer context for generating commit messages and code reviews.
-- **Multi-embedding Service Support**: Supports multiple embedding services like Ollama and Qdrant.
-
-### 📞 Function Calling Mode
-
-- **Structured Commits**: An experimental feature that generates structured commit messages through the AI's function-calling capabilities.
-- **Tool Integration**: Allows the AI model to return structured commit message data through specified tools.
-
-### ⚙️ Dynamic Settings UI
-
-- **Dynamic Generation**: The plugin's settings interface is now dynamically generated based on configuration definitions.
-- **Flexible Configuration**: Offers more flexible and detailed configuration options.
-
-### 📢 System Notifications
-
-- **Instant Feedback**: Receive system-level notifications upon successful generation of commit messages or weekly reports.
-- **Cross-Platform**: Utilizes `node-notifier` to support native notifications on macOS, Windows, and Linux.
-- **Dependencies**: This feature relies on native system libraries. Please ensure your system has the necessary components installed for notifications to work correctly (e.g., `SnoreToast` on Windows, `terminal-notifier` on macOS).
-
-## Configuration
-
-| Configuration                                          | Type    | Default                   | Description                                         |
-| ------------------------------------------------------ | ------- | ------------------------- | --------------------------------------------------- |
-| dish-ai-commit.base.language                           | string  | Simplified Chinese        | Commit message language                             |
-| dish-ai-commit.base.systemPrompt                       | string  | ""                        | Custom system prompt                                |
-| dish-ai-commit.base.provider                           | string  | OpenAI                    | AI provider                                         |
-| dish-ai-commit.base.model                              | string  | gpt-3.5-turbo             | AI model                                            |
-| dish-ai-commit.providers.openai.apiKey                 | string  | ""                        | OpenAI API key                                      |
-| dish-ai-commit.providers.openai.baseUrl                | string  | https://api.openai.com/v1 | OpenAI API base URL                                 |
-| dish-ai-commit.providers.zhipu.apiKey                  | string  | ""                        | Zhipu AI API key                                    |
-| dish-ai-commit.providers.dashscope.apiKey              | string  | ""                        | DashScope API key                                   |
-| dish-ai-commit.providers.doubao.apiKey                 | string  | ""                        | Doubao API key                                      |
-| dish-ai-commit.providers.ollama.baseUrl                | string  | http://localhost:11434    | Ollama API base URL                                 |
-| dish-ai-commit.providers.gemini.apiKey                 | string  | ""                        | Gemini AI API key                                   |
-| dish-ai-commit.providers.deepseek.apiKey               | string  | ""                        | Deepseek AI API key                                 |
-| dish-ai-commit.providers.siliconflow.apiKey            | string  | ""                        | SiliconFlow API key                                 |
-| dish-ai-commit.providers.openrouter.apiKey             | string  | ""                        | OpenRouter API key                                  |
-| dish-ai-commit.features.codeAnalysis.simplifyDiff      | boolean | false                     | Enable diff content simplification                  |
-| dish-ai-commit.features.commitFormat.enableMergeCommit | boolean | false                     | Allow merging multiple file changes into one commit |
-| dish-ai-commit.features.commitFormat.enableEmoji       | boolean | true                      | Use emoji in commit messages                        |
-| dish-ai-commit.features.commitFormat.enableBody        | boolean | true                      | Include body content in commit messages             |
-| dish-ai-commit.features.weeklyReport.systemPrompt      | string  | ""                        | Custom system prompt for weekly reports             |
-| dish-ai-commit.features.prSummary.systemPrompt         | string  | ""                        | Custom system prompt for PR summaries               |
-| dish-ai-commit.features.codeIndex.enabled              | boolean | false                     | Enable code semantic indexing                       |
-| dish-ai-commit.features.codeIndex.provider             | string  | "ollama"                  | Embedding provider for code indexing                |
-| dish-ai-commit.features.codeIndex.model                | string  | "nomic-embed-text"        | Embedding model for code indexing                   |
-| dish-ai-commit.features.codeIndex.qdrantUrl            | string  | "http://localhost:6333"   | Qdrant vector database URL                          |
-
-### Commands
-
-| Command ID                           | Category         | Title                                       | Description                                                        |
-| ------------------------------------ | ---------------- | ------------------------------------------- | ------------------------------------------------------------------ |
-| dish-ai-commit.selectModel           | [Dish AI Commit] | Select the AI ​​model for commit generation | Select the AI ​​model for generating commit messages               |
-| dish-ai-commit.generateWeeklyReport  | [Dish AI Commit] | Generate weekly report                      | Generate AI-driven weekly work report                              |
-| dish-ai-commit.generateBranchName    | [Dish AI Commit] | Generate branch name                        | Generate standardized branch name based on requirement description |
-| dish-ai-commit.generateCommitMessage | [Dish AI Commit] | Generate commit message                     | Generate a commit message that complies with the specification     |
-| dish-ai-commit.reviewCode            | [Dish AI Commit] | Code review                                 | AI-assisted code review                                            |
-| dish-ai-commit.generatePRSummary     | [Dish AI Commit] | Generate PR Summary                         | Generate PR summary based on Git commit history                    |
-
-## Configuration Instructions
-
-1. OpenAI Configuration
+### 1. OpenAI Configuration
 
 ```json
 {
   "dish-ai-commit.base.provider": "openai",
-  "dish-ai-commit.providers.openai.apiKey": "your-api-key",
+  "dish-ai-commit.providers.openai.apiKey": "sk-...",
   "dish-ai-commit.providers.openai.baseUrl": "https://api.openai.com/v1"
 }
 ```
 
-2. Ollama Configuration
+### 2. Xiaomi MiMo Configuration
+
+```json
+{
+  "dish-ai-commit.base.provider": "mimo",
+  "dish-ai-commit.providers.mimo.apiKey": "your-mimo-key"
+}
+```
+
+### 3. Ollama Local Configuration
 
 ```json
 {
@@ -370,7 +237,7 @@ Weekly report generation supports custom templates:
 }
 ```
 
-3. VSCode Configuration
+### 4. GitHub Copilot Configuration
 
 ```json
 {
@@ -378,141 +245,209 @@ Weekly report generation supports custom templates:
 }
 ```
 
-4. Deepseek AI Configuration
+## 🚀 Quick Start
 
-```json
-{
-  "dish-ai-commit.base.provider": "deepseek",
-  "dish-ai-commit.providers.deepseek.apiKey": "your-api-key"
-}
-```
+### Installation
 
-5. SiliconFlow Configuration
-
-```json
-{
-  "dish-ai-commit.base.provider": "siliconflow",
-  "dish-ai-commit.providers.siliconflow.apiKey": "your-api-key"
-}
-```
-
-6. OpenRouter Configuration
-
-```json
-{
-  "dish-ai-commit.base.provider": "openrouter",
-  "dish-ai-commit.providers.openrouter.apiKey": "your-api-key"
-}
-```
-
-## 📋 How to use
-
-- Select the file to be submitted from the source code manager
-- Click the "Dish AI Commit" icon in the source code manager title bar
-- Or execute the "Dish AI Commit" command in the command panel
-- AI will automatically generate a submission message that meets the specifications
-
-## 📥 Install
-
-1. Search "Dish AI Commit" from the VS Code extension market
-2. Click to install
+1. Search "Dish AI Commit" in VS Code Extension Marketplace
+2. Click Install
 3. Restart VS Code
-4. Configure AI service parameters according to actual needs
+4. Configure your preferred AI provider
 
-## 📝 Changelog
+### Basic Usage
 
-See [CHANGELOG.md](CHANGELOG.md) for a detailed version history.
+#### Generate Commit Message
 
-## 📋 Dependency Requirements
+1. Open Source Control view (Git or SVN)
+2. Select files to commit
+3. Click "Dish AI Commit" icon in SCM title bar
+4. Or use Command Palette: `Dish AI Commit: Generate Commit Message`
+5. AI generates commit message automatically
 
+#### Generate Branch Name
+
+1. Use Command Palette: `Dish AI Commit: Generate Branch Name`
+2. Choose mode:
+   - **From Description**: Enter feature description
+   - **From Changes**: Use current code changes
+3. Select from suggested branch names
+4. Branch is created automatically
+
+#### Interactive Chat
+
+1. Open Command Palette: `Dish AI Commit: Open Chat Interface`
+2. Type your requirements in natural language
+3. Use commands: `/help`, `/template`, `/style`, `/language`
+4. Get real-time commit suggestions
+
+## 📚 Documentation
+
+### Core Modules
+
+- **[Project Structure](src/README.md)** - Complete architecture overview
+- **[AI Model Registry](src/ai/model-registry/README.md)** - Model management system
+- **[Generate Commit](src/commands/generate-commit/README.md)** - Commit generation architecture
+- **[Generate Branch Name](src/commands/generate-branch-name/README.md)** - Branch generation architecture
+- **[SVN SCM](src/scm/svn/README.md)** - SVN support with graceful degradation
+- **[WebView UI](webview-ui/README.md)** - Modern React-based interface
+- **[Commit Chat](webview-ui/src/components/commit-chat/README.md)** - Interactive chat features
+
+### Architecture Deep Dive
+
+- **Modular Design**: All core commands follow SOLID principles
+- **Graceful Degradation**: Multi-level fallback mechanisms
+- **Performance**: LRU caching, incremental indexing, smart context management
+- **Security**: Secret storage, input validation, error handling
+
+## 🛠️ Development
+
+### Prerequisites
+
+- Node.js 18.20.8+
+- pnpm 10.0.0+
 - VS Code 1.80.0+
-- [SVN Command Line Tool](http://subversion.apache.org/packages.html)
-- SVN SCM (Optional) - Install [SVN SCM v2.18.1+](https://marketplace.visualstudio.com/items?itemName=littleCareless.svn-scm-ai) if you need to enter commit messages in VSCode's SCM input box
-  - Download the latest version of the SVN SCM extension from the [release page](https://marketplace.visualstudio.com/items?itemName=littleCareless.svn-scm-ai)
-- Git SCM (Optional) - Install [Git SCM](https://marketplace.visualstudio.com/items?itemName=vscode.git) if you need to enter commit messages in VSCode's SCM input box
-- Valid AI service configuration (OpenAI API Key or Ollama service)
 
-## 💡 Frequently asked questions
-
-- Ensure that the SVN command line tool is correctly installed and accessible
-- Ensure that the SVN SCM extension is correctly installed and enabled
-- Configure the correct AI service parameters
-- Ensure that the network can access the selected AI service
-
-## 🛠️ Development Guide
-
-You can use Github Codespaces for online development:
-
-[![github-codespace][github-codespace-shield]][github-codespace-link]
-
-Alternatively, you can clone the repository and run the following command for local development:
+### Setup
 
 ```bash
-$ git clone https://github.com/littleCareless/dish-ai-commit
-$ cd dish-ai-commit
-$ npm install
+# Clone repository
+git clone https://github.com/littleCareless/dish-ai-commit
+cd dish-ai-commit
+
+# Install dependencies
+pnpm install
+
+# Start development
+pnpm dev
+
+# Build extension
+pnpm build
+
+# Package extension
+pnpm package
 ```
 
-Open the project folder in VSCode. Press F5 to run the project. A new Extension Development Host window will pop up and start the extension.
+### Project Structure
 
-## 🤝 Contribution Guidelines
+```
+src/
+├── ai/                    # AI providers and model registry
+├── commands/              # Feature commands (commit, branch, etc.)
+├── scm/                   # Git/SVN integration
+├── services/              # Business services (cache, notification)
+├── config/                # Configuration schema
+├── core/                  # Core extension logic
+├── utils/                 # Utility functions
+├── i18n/                  # Internationalization
+├── prompt/                # AI prompt templates
+└── extension.ts           # Extension entry point
 
-We welcome all forms of contributions, including but not limited to:
+webview-ui/
+├── src/                   # React frontend
+│   ├── components/        # UI components
+│   ├── services/          # Webview services
+│   └── hooks/             # React hooks
+└── package.json           # Frontend dependencies
+```
 
-- Submit [Issues][github-issues-link] to report bugs
-- Propose new features
-- Submit Pull Request to improve the code
-- Improve the documentation
+### Code Quality Standards
 
-Please make sure before submitting a PR:
+- ✅ Single file < 500 lines (core classes < 200 lines)
+- ✅ Clear separation of concerns
+- ✅ Comprehensive TypeScript types
+- ✅ Unit tests for critical paths
+- ✅ Documentation for public APIs
 
-1. The code has been tested
+## 🤝 Contributing
 
-2. Update the relevant documents
+We welcome all contributions!
 
-3. Follow the project code specifications
+### How to Contribute
 
-[![][pr-welcome-shield]][pr-welcome-link]
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'feat: add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
 
-### 💗 Thanks to our contributors
+### Contribution Guidelines
 
-[![][github-contrib-shield]][github-contrib-link]
+- Follow existing code style and patterns
+- Add tests for new functionality
+- Update documentation
+- Ensure all checks pass
+- Reference related issues
+
+### Development Workflow
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start development mode
+pnpm dev
+
+# Run tests
+pnpm test
+
+# Check types
+pnpm check-types
+
+# Lint code
+pnpm lint
+
+# Format code
+pnpm format
+```
+
+## 📊 Project Statistics
+
+### Code Metrics
+
+- **Total Files**: 100+ TypeScript files
+- **Core Commands**: 2 main commands (refactored to < 400 lines total)
+- **AI Providers**: 20+ supported
+- **Languages**: 18 supported languages
+- **Test Coverage**: Comprehensive unit tests
+
+### Refactoring Achievements
+
+- **GenerateCommit**: 636 lines → 222 lines (65% reduction)
+- **GenerateBranchName**: 674 lines → 146 lines (78% reduction)
+- **Architecture**: Monolithic → Modular (SOLID principles)
 
 ## 🙏 Acknowledgments
 
 This project is inspired by and references these excellent open source projects:
 
-- [svn-scm](https://github.com/JohnstonCode/svn-scm) - SVN source control management for VSCode
-- [vscode](https://github.com/microsoft/vscode) - Visual Studio Code editor
-- [vscode-gitlens](https://github.com/gitkraken/vscode-gitlens) - Git supercharged for VSCode
-- [ai-commit](https://github.com/Sitoi/ai-commit) - AI assisted Git commit message generation
-- [vscode-copilot-chat](https://github.com/microsoft/vscode-copilot-chat) - AI chat features powered by Copilot
+- [svn-scm](https://github.com/JohnstonCode/svn-scm) - SVN source control management
+- [vscode](https://github.com/microsoft/vscode) - VS Code editor and API
+- [vscode-gitlens](https://github.com/gitkraken/vscode-gitlens) - Git supercharged
+- [ai-commit](https://github.com/Sitoi/ai-commit) - AI commit generation
+- [vscode-copilot-chat](https://github.com/microsoft/vscode-copilot-chat) - AI chat features
 
 ## 📄 License
 
 This project is [MIT](./LICENSE) licensed.
 
-<!-- LINK GROUP -->
+---
 
-[github-codespace-link]: https://codespaces.new/littleCareless/dish-ai-commit
-[github-codespace-shield]: https://github.com/littleCareless/dish-ai-commit/blob/main/images/codespaces.png?raw=true
-[github-contributors-link]: https://github.com/littleCareless/dish-ai-commit/graphs/contributors
-[github-contributors-shield]: https://img.shields.io/github/contributors/littleCareless/dish-ai-commit?color=c4f042&labelColor=black&style=flat-square
-[github-forks-link]: https://github.com/littleCareless/dish-ai-commit/network/members
-[github-forks-shield]: https://img.shields.io/github/forks/littleCareless/dish-ai-commit?color=8ae8ff&labelColor=black&style=flat-square
+**Version**: v0.56.1
+**Last Updated**: December 2024
+**Architecture**: SOLID Principles
+**Status**: ✅ Production Ready
+
 [github-issues-link]: https://github.com/littleCareless/dish-ai-commit/issues
-[github-issues-shield]: https://img.shields.io/github/issues/littleCareless/dish-ai-commit?color=ff80eb&labelColor=black&style=flat-square
-[github-license-link]: https://github.com/littleCareless/dish-ai-commit/blob/main/LICENSE
-[github-license-shield]: https://img.shields.io/github/license/littleCareless/dish-ai-commit?color=white&labelColor=black&style=flat-square
+[github-contributors-link]: https://github.com/littleCareless/dish-ai-commit/graphs/contributors
+[github-forks-link]: https://github.com/littleCareless/dish-ai-commit/network/members
 [github-stars-link]: https://github.com/littleCareless/dish-ai-commit/network/stargazers
-[github-stars-shield]: https://img.shields.io/github/stars/littleCareless/dish-ai-commit?color=ffcb47&labelColor=black&style=flat-square
-[pr-welcome-link]: https://github.com/littleCareless/dish-ai-commit/pulls
-[pr-welcome-shield]: https://img.shields.io/badge/🤯_pr_welcome-%E2%86%92-ffcb47?labelColor=black&style=for-the-badge
-[github-contrib-link]: https://github.com/littleCareless/dish-ai-commit/graphs/contributors
-[github-contrib-shield]: https://contrib.rocks/image?repo=littleCareless%2Fdish-ai-commit
 [vscode-marketplace-link]: https://marketplace.visualstudio.com/items?itemName=littleCareless.dish-ai-commit
+[github-license-link]: https://github.com/littleCareless/dish-ai-commit/blob/main/LICENSE
+[github-contributors-shield]: https://img.shields.io/github/contributors/littleCareless/dish-ai-commit?color=c4f042&labelColor=black&style=flat-square
+[github-forks-shield]: https://img.shields.io/github/forks/littleCareless/dish-ai-commit?color=8ae8ff&labelColor=black&style=flat-square
+[github-stars-shield]: https://img.shields.io/github/stars/littleCareless/dish-ai-commit?color=ffcb47&labelColor=black&style=flat-square
+[github-issues-shield]: https://img.shields.io/github/issues/littleCareless/dish-ai-commit?color=ff80eb&labelColor=black&style=flat-square
 [vscode-marketplace-shield]: https://img.shields.io/vscode-marketplace/v/littleCareless.dish-ai-commit.svg?label=vscode%20marketplace&color=blue&labelColor=black&style=flat-square
-[total-installs-link]: https://marketplace.visualstudio.com/items?itemName=littleCareless.dish-ai-commit
 [total-installs-shield]: https://img.shields.io/vscode-marketplace/d/littleCareless.dish-ai-commit.svg?&color=greeen&labelColor=black&style=flat-square
-[avarage-rating-link]: https://marketplace.visualstudio.com/items?itemName=littleCareless.dish-ai-commit
 [avarage-rating-shield]: https://img.shields.io/vscode-marketplace/r/littleCareless.dish-ai-commit.svg?&color=green&labelColor=black&style=flat-square
+[github-license-shield]: https://img.shields.io/github/license/littleCareless/dish-ai-commit?color=white&labelColor=black&style=flat-square

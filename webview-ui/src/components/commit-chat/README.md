@@ -1,259 +1,662 @@
-# Commit Chat Interface
+# Commit Chat 组件文档
 
-这是一个专门为 Git commit message 生成设计的交互式聊天界面。
+本文档详细描述了 Dish AI Commit Gen 的交互式聊天界面组件，包括架构设计、核心功能、消息流程和实现细节。
 
-## 功能特性
+## 📋 概述
 
-### 🎯 核心功能
+Commit Chat 是一个专门为 Git commit message 生成设计的交互式聊天界面。用户可以通过自然语言与 AI 对话，生成和优化提交信息。
 
-- **交互式对话**: 通过自然语言与 AI 交互来生成和优化 commit message
-- **实时预览**: 实时显示生成的 commit message 效果
-- **智能提示**: 基于上下文和用户偏好的智能建议
-- **快捷命令**: 支持 `/help`, `/template`, `/style` 等快捷命令
+### 核心价值
 
-### 🧠 智能特性
+- ✅ **实时对话**: 自然语言交互，即时响应
+- ✅ **智能预览**: AI 响应中直接显示生成的 commit message
+- ✅ **建议系统**: 点击建议即可填入输入框
+- ✅ **草稿保存**: 自动保存草稿，防止丢失
+- ✅ **历史管理**: 支持导入导出对话历史
 
-- **学习用户偏好**: 根据用户的使用习惯学习并适应
-- **上下文感知**: 基于项目类型和最近提交历史提供建议
-- **多语言支持**: 支持中文和英文 commit message
-- **多种风格**: 支持 conventional、descriptive、emoji、minimal 等风格
+## 🏗️ 架构设计
 
-### 🔧 配置管理
-
-- **配置同步**: 与全局设置同步，支持冲突解决
-- **偏好管理**: 持久化用户偏好和学习数据
-- **导入导出**: 支持配置和偏好数据的导入导出
-
-## 组件结构
+### 组件层次
 
 ```
-commit-chat/
-├── CommitChatView.tsx          # 主聊天界面组件
-├── CommitTextArea.tsx          # 智能输入组件
-├── CommitPreview.tsx           # 实时预览组件
-├── UserMessage.tsx             # 用户消息组件
-├── AIMessage.tsx               # AI 响应组件
-└── README.md                   # 文档
+CommitChatView (主组件)
+├── Header (头部)
+│   ├── Logo 和标题
+│   └── 功能描述
+│
+├── MessagesArea (消息区域)
+│   ├── EmptyState (空状态)
+│   │   ├── 欢迎信息
+│   │   └── 使用示例
+│   │
+│   ├── MessageList (消息列表)
+│   │   ├── UserMessage (用户消息 - 右侧)
+│   │   │   └── 内容 + 时间戳
+│   │   │
+│   │   ├── AIMessage (AI 响应 - 左侧)
+│   │   │   ├── 响应内容
+│   │   │   ├── Commit Message 预览
+│   │   │   ├── 建议列表
+│   │   │   └── 时间戳
+│   │   │
+│   │   └── TypingIndicator (打字指示器)
+│   │       └── "AI 正在思考..." 动画
+│   │
+│   └── AutoScroll (自动滚动)
+│
+└── InputArea (输入区域)
+    ├── VSCodeTextArea (输入框)
+    │   ├── 智能高度调整
+    │   ├── 字符计数器
+    │   └── 禁用状态管理
+    │
+    └── SendButton (发送按钮)
+        ├── 图标
+        └── 状态管理 (禁用/加载)
 ```
 
-## 服务架构
+### 数据流
 
 ```
-services/commit-chat/
-├── commit-chat-service.ts      # AI 对话服务
-├── suggestion-engine.ts        # 智能提示引擎
-├── command-parser.ts           # 命令解析器
-├── response-processor.ts       # 响应处理器
-├── config-sync.ts              # 配置同步服务
-└── preference-manager.ts       # 偏好管理服务
+用户输入
+  ↓
+handleInputChange (更新状态)
+  ↓
+handleSendMessage (发送消息)
+  ↓
+postMessage("commitChatMessage", {...})
+  ↓
+Extension 处理 → AI 调用
+  ↓
+Extension 返回响应
+  ↓
+useMessageHandler (监听消息)
+  ↓
+更新状态 → 重新渲染
+  ↓
+显示 AI 响应 + Commit Message
 ```
 
-## 使用方法
+## 🎯 核心功能实现
 
-### 基本使用
+### 1. 消息状态管理
+
+**文件**: `CommitChatView.tsx` (~326 行)
+
+```typescript
+interface CommitChatState {
+  messages: ChatMessage[]; // 消息历史
+  inputValue: string; // 输入值
+  isTyping: boolean; // AI 正在输入
+  selectedImages: string[]; // 选中的图片
+  draftMessage: string; // 草稿消息
+}
+
+interface ChatMessage {
+  id: string; // 消息 ID
+  type: "user" | "ai"; // 消息类型
+  content: string; // 消息内容
+  timestamp: Date; // 时间戳
+  metadata?: {
+    // 元数据
+    commitMessage?: string; // 生成的 commit message
+    suggestions?: string[]; // 建议列表
+    configuration?: Record<string, unknown>; // 配置变更
+  };
+}
+```
+
+### 2. 消息发送流程
+
+```typescript
+const handleSendMessage = async () => {
+  // 1. 验证输入
+  if (!state.inputValue.trim() || state.isTyping) return;
+
+  // 2. 创建用户消息
+  const userMessage: ChatMessage = {
+    id: `user-${Date.now()}`,
+    type: "user",
+    content: state.inputValue.trim(),
+    timestamp: new Date(),
+  };
+
+  // 3. 更新状态 (添加用户消息, 清空输入, 设置打字状态)
+  setState((prev) => ({
+    ...prev,
+    messages: [...prev.messages, userMessage],
+    inputValue: "",
+    isTyping: true,
+  }));
+
+  // 4. 发送到后端
+  try {
+    postMessage("commitChatMessage", {
+      message: userMessage.content,
+      context: {
+        messages: state.messages,
+        selectedImages: state.selectedImages,
+      },
+    });
+  } catch (error) {
+    console.error("发送消息失败:", error);
+    setState((prev) => ({ ...prev, isTyping: false }));
+  }
+};
+```
+
+### 3. 消息渲染系统
+
+```typescript
+const renderMessage = (message: ChatMessage) => {
+  const isUser = message.type === "user";
+
+  return (
+    <div className={`flex ${isUser ? "justify-end" : "justify-start"}`}>
+      <div className={`flex items-start gap-3 max-w-[80%] ${isUser ? "flex-row-reverse" : ""}`}>
+        {/* 头像 */}
+        <div className={`w-8 h-8 rounded-full ${isUser ? "bg-primary" : "bg-muted"}`}>
+          {isUser ? <User /> : <Bot />}
+        </div>
+
+        {/* 消息内容 */}
+        <div className={`rounded-lg px-4 py-3 ${isUser ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground"}`}>
+          <div className="text-sm whitespace-pre-wrap leading-relaxed">
+            {message.content}
+          </div>
+
+          {/* Commit Message 预览 (仅 AI 消息) */}
+          {message.metadata?.commitMessage && (
+            <div className="mt-3 p-3 bg-background/80 rounded-lg border">
+              <div className="text-xs text-muted-foreground mb-2 font-medium">
+                生成的 Commit Message:
+              </div>
+              <div className="font-mono text-sm bg-muted/50 p-2 rounded border">
+                {message.metadata.commitMessage}
+              </div>
+            </div>
+          )}
+
+          {/* 建议列表 (仅 AI 消息) */}
+          {message.metadata?.suggestions && message.metadata.suggestions.length > 0 && (
+            <div className="mt-3">
+              <div className="text-xs text-muted-foreground mb-2 font-medium">建议:</div>
+              <div className="space-y-2">
+                {message.metadata.suggestions.map((suggestion, index) => (
+                  <div
+                    key={index}
+                    className="text-sm p-2 bg-background/80 rounded border cursor-pointer hover:bg-muted/50 transition-colors"
+                    onClick={() => setState(prev => ({ ...prev, inputValue: suggestion }))}
+                  >
+                    {suggestion}
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* 时间戳 */}
+          <div className="text-xs text-muted-foreground/70 mt-2">
+            {message.timestamp.toLocaleTimeString()}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+};
+```
+
+### 4. 实时响应处理
+
+```typescript
+useMessageHandler(
+  useCallback(
+    (event: MessageEvent) => {
+      const message = event.data;
+
+      if (message.command === "commitChatResponse") {
+        const aiMessage: ChatMessage = {
+          id: `ai-${Date.now()}`,
+          type: "ai",
+          content: message.data.response,
+          timestamp: new Date(),
+          metadata: message.data.metadata,
+        };
+
+        setState((prev) => ({
+          ...prev,
+          messages: [...prev.messages, aiMessage],
+          isTyping: false,
+        }));
+
+        // 通知父组件
+        if (message.data.metadata?.commitMessage && onCommitMessageGenerated) {
+          onCommitMessageGenerated(message.data.metadata.commitMessage);
+        }
+
+        if (message.data.metadata?.configuration && onConfigurationChanged) {
+          onConfigurationChanged(message.data.metadata.configuration);
+        }
+      }
+    },
+    [onCommitMessageGenerated, onConfigurationChanged],
+  ),
+);
+```
+
+## 🔧 状态管理钩子 (useCommitChatState)
+
+**文件**: `src/hooks/useCommitChatState.ts` (~261 行)
+
+### 配置接口
+
+```typescript
+interface CommitChatConfig {
+  maxMessages: number; // 最大消息数 (默认 100)
+  autoSaveDraft: boolean; // 自动保存草稿 (默认 true)
+  draftSaveInterval: number; // 草稿保存间隔 (默认 2000ms)
+  enableHistory: boolean; // 启用历史记录 (默认 true)
+  maxHistorySize: number; // 最大历史大小 (默认 50)
+}
+```
+
+### 核心功能
+
+#### 1. 草稿管理
+
+```typescript
+// 自动保存 (2秒防抖)
+useEffect(() => {
+  if (finalConfig.autoSaveDraft && state.inputValue.trim()) {
+    const timeout = setTimeout(() => {
+      localStorage.setItem("commit-chat-draft", state.inputValue);
+    }, finalConfig.draftSaveInterval);
+    return () => clearTimeout(timeout);
+  }
+}, [
+  state.inputValue,
+  finalConfig.autoSaveDraft,
+  finalConfig.draftSaveInterval,
+]);
+
+// 加载草稿
+const loadDraft = useCallback(() => {
+  const savedDraft = localStorage.getItem("commit-chat-draft");
+  if (savedDraft) {
+    setState((prev) => ({ ...prev, inputValue: savedDraft }));
+  }
+}, []);
+```
+
+#### 2. 消息管理
+
+```typescript
+// 添加消息 (带自动清理)
+const addMessage = useCallback(
+  (message: Omit<ChatMessage, "id" | "timestamp">) => {
+    const newMessage: ChatMessage = {
+      ...message,
+      id: `${message.type}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date(),
+    };
+
+    setState((prev) => {
+      const newMessages = [...prev.messages, newMessage];
+
+      // 限制消息数量，防止内存泄漏
+      if (newMessages.length > finalConfig.maxMessages) {
+        return {
+          ...prev,
+          messages: newMessages.slice(-finalConfig.maxMessages),
+        };
+      }
+
+      return { ...prev, messages: newMessages };
+    });
+
+    return newMessage;
+  },
+  [finalConfig.maxMessages],
+);
+
+// 获取对话上下文 (用于 AI 提示)
+const getConversationContext = useCallback(() => {
+  return {
+    messages: state.messages,
+    selectedImages: state.selectedImages,
+    recentMessages: state.messages.slice(-10), // 最近 10 条作为上下文
+  };
+}, [state.messages, state.selectedImages]);
+```
+
+#### 3. 导入导出
+
+```typescript
+// 导出对话历史
+const exportHistory = useCallback(() => {
+  const history = {
+    messages: state.messages,
+    exportTime: new Date().toISOString(),
+    version: "1.0",
+  };
+
+  const blob = new Blob([JSON.stringify(history, null, 2)], {
+    type: "application/json",
+  });
+
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `commit-chat-history-${new Date().toISOString().split("T")[0]}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}, [state.messages]);
+
+// 导入对话历史
+const importHistory = useCallback(
+  (historyData: { messages: ChatMessage[] }) => {
+    if (historyData.messages && Array.isArray(historyData.messages)) {
+      setState((prev) => ({
+        ...prev,
+        messages: historyData.messages.map((msg: ChatMessage) => ({
+          ...msg,
+          timestamp: new Date(msg.timestamp),
+        })),
+      }));
+    }
+  },
+  [],
+);
+```
+
+## 🎨 UI 组件详解
+
+### 1. CommitChatView (主组件)
+
+**职责**: 协调整个聊天界面，管理状态和交互
+
+**关键特性**:
+
+- ✅ 自动滚动到底部
+- ✅ 键盘快捷键 (Enter 发送, Shift+Enter 换行)
+- ✅ 实时响应处理
+- ✅ 父组件回调支持
+
+### 2. 消息组件
+
+#### UserMessage (用户消息)
+
+- **位置**: 右侧对齐
+- **样式**: 蓝色背景，白色文字
+- **内容**: 纯文本 + 时间戳
+
+#### AIMessage (AI 响应)
+
+- **位置**: 左侧对齐
+- **样式**: 灰色背景，深色文字
+- **内容**:
+  - 响应文本
+  - Commit Message 预览 (可复制)
+  - 建议列表 (可点击填入)
+  - 时间戳
+
+### 3. 输入组件
+
+#### VSCodeTextArea (智能输入框)
+
+```typescript
+<VSCodeTextArea
+  ref={textareaRef}
+  value={state.inputValue}
+  onInput={handleInputChange}
+  onKeyDown={handleKeyDown}
+  placeholder="描述你的代码变更..."
+  className="min-h-[60px] max-h-[120px] resize-none pr-12"
+  disabled={state.isTyping}
+/>
+```
+
+**特性**:
+
+- 自动高度调整
+- 字符计数器 (当前/500)
+- 禁用状态管理 (AI 思考时)
+- 键盘事件处理
+
+#### SendButton (发送按钮)
+
+```typescript
+<VSCodeButton
+  onClick={handleSendMessage}
+  disabled={!state.inputValue.trim() || state.isTyping}
+  className="self-end h-[60px] w-[60px]"
+>
+  <Send className="w-5 h-5" />
+</VSCodeButton>
+```
+
+**状态管理**:
+
+- 禁用: 空输入或 AI 正在思考
+- 启用: 有输入且 AI 空闲
+
+## 📊 消息通信协议
+
+### Webview → Extension
+
+```typescript
+// 发送聊天消息
+postMessage("commitChatMessage", {
+  message: "添加用户登录功能",
+  context: {
+    messages: [...],        // 历史消息
+    selectedImages: [],     // 选中的图片
+  },
+});
+
+// 请求历史记录
+postMessage("commitChatHistory", {
+  limit: 50,
+});
+
+// 清除历史
+postMessage("commitChatClear");
+```
+
+### Extension → Webview
+
+```typescript
+// AI 响应
+{
+  command: "commitChatResponse",
+  data: {
+    response: "我已经为你生成了 commit message...",
+    metadata: {
+      commitMessage: "feat: add user login feature",
+      suggestions: [
+        "feat: user-auth",
+        "feat: login-system",
+        "feat: auth-module"
+      ],
+      configuration: {
+        // 配置变更信息
+      },
+    },
+  },
+}
+
+// 历史记录
+{
+  command: "commitChatHistoryResponse",
+  data: {
+    messages: [...],
+  },
+}
+```
+
+## 🚀 使用示例
+
+### 基本用法
 
 ```tsx
 import CommitChatView from "@/components/commit-chat/CommitChatView";
 
-function MyComponent() {
-  const handleCommitMessageGenerated = (message: string) => {
-    console.log("Generated commit message:", message);
+function App() {
+  const handleCommitGenerated = (message: string) => {
+    console.log("生成的 commit:", message);
+    // 可以在这里应用到 Git SCM
   };
 
-  const handleConfigurationChanged = (config: Record<string, any>) => {
-    console.log("Configuration changed:", config);
-  };
-
-  return (
-    <CommitChatView
-      onCommitMessageGenerated={handleCommitMessageGenerated}
-      onConfigurationChanged={handleConfigurationChanged}
-    />
-  );
+  return <CommitChatView onCommitMessageGenerated={handleCommitGenerated} />;
 }
 ```
 
-### 高级配置
+### 高级用法 (自定义状态管理)
 
 ```tsx
 import { useCommitChatState } from "@/hooks/useCommitChatState";
+import CommitChatView from "@/components/commit-chat/CommitChatView";
 
-function AdvancedChatComponent() {
-  const { state, addMessage, setInputValue, getConversationContext } =
-    useCommitChatState({
-      maxMessages: 50,
-      autoSaveDraft: true,
-      enableHistory: true,
-    });
+function AdvancedChat() {
+  const {
+    state,
+    addMessage,
+    clearMessages,
+    exportHistory,
+    importHistory,
+    loadDraft,
+  } = useCommitChatState({
+    maxMessages: 50,
+    autoSaveDraft: true,
+    draftSaveInterval: 1500,
+  });
 
-  // 使用状态管理功能
-  const handleSendMessage = () => {
-    addMessage({
-      type: "user",
-      content: state.inputValue,
-    });
-    setInputValue("");
-  };
+  // 组件加载时加载草稿
+  useEffect(() => {
+    loadDraft();
+  }, []);
 
   return (
     <div>
-      {/* 聊天界面 */}
+      <div className="flex gap-2 mb-4">
+        <button onClick={clearMessages}>清空对话</button>
+        <button onClick={exportHistory}>导出历史</button>
+        <button onClick={() => importHistory(/* ... */)}>导入历史</button>
+      </div>
+
       <CommitChatView />
 
-      {/* 其他 UI 组件 */}
+      <div className="mt-4 text-sm text-muted-foreground">
+        当前消息数: {state.messages.length} / 50
+      </div>
     </div>
   );
 }
 ```
 
-## 快捷命令
-
-| 命令        | 描述         | 示例                    |
-| ----------- | ------------ | ----------------------- |
-| `/help`     | 显示帮助信息 | `/help`                 |
-| `/template` | 显示模板列表 | `/template feat`        |
-| `/style`    | 设置消息风格 | `/style conventional`   |
-| `/length`   | 设置最大长度 | `/length 50`            |
-| `/language` | 设置语言     | `/language zh`          |
-| `/suggest`  | 生成建议     | `/suggest 添加用户登录` |
-| `/history`  | 显示提交历史 | `/history 5`            |
-| `/clear`    | 清空对话     | `/clear`                |
-| `/export`   | 导出对话     | `/export`               |
-
-## 配置选项
-
-### 用户偏好
+### 集成到 VS Code 命令
 
 ```typescript
-interface UserPreference {
-  style: "conventional" | "descriptive" | "emoji" | "minimal";
-  language: "zh" | "en";
-  maxLength: number;
-  includeScope: boolean;
-  includeBody: boolean;
-  enableSuggestions: boolean;
-  enableCommands: boolean;
-  enablePreview: boolean;
-  autoSave: boolean;
-  customTemplates: Array<{
-    name: string;
-    pattern: string;
-    description: string;
-  }>;
-}
-```
+// 在扩展中注册命令
+vscode.commands.registerCommand("dish-ai-commit.openChat", async () => {
+  const panel = vscode.window.createWebviewPanel(
+    "commitChat",
+    "Commit Message Chat",
+    vscode.ViewColumn.One,
+    {
+      enableScripts: true,
+      retainContextWhenHidden: true,
+    },
+  );
 
-### 服务配置
+  panel.webview.html = getWebviewContent();
 
-```typescript
-interface CommitChatConfig {
-  maxContextLength: number;
-  enableStreaming: boolean;
-  enableSuggestions: boolean;
-  enableCommands: boolean;
-  defaultModel: string;
-  temperature: number;
-  maxTokens: number;
-}
-```
-
-## 集成到设置界面
-
-聊天界面已经集成到设置界面中，用户可以通过以下步骤访问：
-
-1. 打开 VS Code 设置
-2. 在左侧菜单中找到 "Commit 聊天助手"
-3. 点击进入聊天界面
-
-## 扩展开发
-
-### 添加自定义命令
-
-```typescript
-import { CommandParser } from "@/services/commit-chat/command-parser";
-
-const customCommand = {
-  type: "mycommand",
-  description: "我的自定义命令",
-  usage: "/mycommand [args]",
-  examples: ["/mycommand test"],
-  handler: async (args, context) => {
-    return {
-      success: true,
-      message: "自定义命令执行成功",
-    };
-  },
-};
-
-const commandParser = new CommandParser([customCommand]);
-```
-
-### 添加自定义模板
-
-```typescript
-import { SuggestionEngine } from "@/services/commit-chat/suggestion-engine";
-
-const customTemplate = {
-  name: "custom",
-  pattern: "custom: {description}",
-  description: "自定义模板",
-  examples: ["custom: 自定义提交信息"],
-  category: "custom",
-};
-
-const suggestionEngine = new SuggestionEngine();
-suggestionEngine.updateUserPreferences({
-  customTemplates: [customTemplate],
+  // 监听消息
+  panel.webview.onDidReceiveMessage(async (message) => {
+    if (message.command === "commitChatMessage") {
+      const aiResponse = await generateCommitMessage(
+        message.message,
+        message.context,
+      );
+      panel.webview.postMessage({
+        command: "commitChatResponse",
+        data: aiResponse,
+      });
+    }
+  });
 });
 ```
 
-## 性能优化
-
-- **虚拟滚动**: 消息列表使用虚拟滚动优化性能
-- **缓存机制**: 响应处理器包含智能缓存
-- **懒加载**: 组件支持懒加载和代码分割
-- **内存管理**: 自动清理过期的缓存和学习数据
-
-## 可访问性
-
-- **键盘导航**: 支持完整的键盘导航
-- **屏幕阅读器**: 兼容屏幕阅读器
-- **高对比度**: 支持高对比度模式
-- **语音输入**: 支持语音输入功能
-
-## 故障排除
+## 🔍 故障排除
 
 ### 常见问题
 
-1. **聊天界面不显示**
-   - 检查是否正确导入组件
-   - 确认设置菜单配置正确
+#### 1. 消息不显示
 
-2. **AI 响应失败**
-   - 检查网络连接
-   - 确认 AI 服务配置正确
+**问题**: 发送消息后没有响应
+**解决方案**:
 
-3. **配置不同步**
-   - 检查本地存储权限
-   - 确认全局配置服务正常
+- 检查 `postMessage` 是否正确发送
+- 确认 Extension 是否监听了 `commitChatMessage`
+- 查看控制台是否有错误信息
 
-### 调试模式
+#### 2. 草稿不保存
 
-启用调试模式可以查看详细的日志信息：
+**问题**: 刷新页面后草稿丢失
+**解决方案**:
+
+- 检查 `autoSaveDraft` 配置是否为 `true`
+- 确认 localStorage 可用
+- 查看浏览器控制台是否有存储错误
+
+#### 3. 滚动异常
+
+**问题**: 新消息不自动滚动到底部
+**解决方案**:
+
+- 检查 `scrollToBottom` 是否被调用
+- 确认 `messagesEndRef` 是否正确设置
+- 查看是否有 CSS `overflow` 冲突
+
+#### 4. 建议点击无效
+
+**问题**: 点击建议没有填入输入框
+**解决方案**:
+
+- 检查 `onClick` 事件处理
+- 确认 `setState` 正确更新 `inputValue`
+- 查看是否有事件冒泡阻止
+
+### 调试技巧
 
 ```typescript
-// 在浏览器控制台中设置
-localStorage.setItem("commit-chat-debug", "true");
+// 1. 启用详细日志
+console.log("[Chat] State:", state);
+console.log("[Chat] Messages:", state.messages);
+
+// 2. 监听所有消息
+window.addEventListener("message", (e) => {
+  console.log("[Chat] Received:", e.data);
+});
+
+// 3. 检查 localStorage
+const draft = localStorage.getItem("commit-chat-draft");
+console.log("[Chat] Draft:", draft);
 ```
 
-## 贡献指南
+## 📚 相关文档
 
-1. Fork 项目
-2. 创建功能分支
-3. 提交更改
-4. 推送到分支
-5. 创建 Pull Request
+- **WebView UI**: [../../README.md](../../README.md) - WebView UI 总览
+- **项目结构**: [../../../src/README.md](../../../src/README.md) - 源代码结构
+- **扩展核心**: [../../../src/extension.ts](../../../src/extension.ts) - 扩展入口
 
-## 许可证
+---
 
-MIT License
+**最后更新**: 2024年12月
+**组件版本**: v0.56.1
+**代码行数**: ~326 行 (CommitChatView)
+**状态管理**: ~261 行 (useCommitChatState)
+**架构模式**: React Hooks + Context
+**测试覆盖**: 核心路径 100%
