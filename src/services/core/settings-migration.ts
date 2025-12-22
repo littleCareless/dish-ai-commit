@@ -204,6 +204,50 @@ export class SettingsMigration {
         "base.retryAttempts",
         DEFAULT_USER_PREFERENCES.retryAttempts
       ),
+      enableEmoji: config.get(
+        "features.commitFormat.enableEmoji",
+        DEFAULT_USER_PREFERENCES.enableEmoji
+      ),
+      enableMergeCommit: config.get(
+        "features.commitFormat.enableMergeCommit",
+        DEFAULT_USER_PREFERENCES.enableMergeCommit
+      ),
+      enableBody: config.get(
+        "features.commitFormat.enableBody",
+        DEFAULT_USER_PREFERENCES.enableBody
+      ),
+      enableLayeredCommit: config.get(
+        "features.commitFormat.enableLayeredCommit",
+        DEFAULT_USER_PREFERENCES.enableLayeredCommit
+      ),
+      enableGlobalContext: config.get(
+        "features.commitFormat.enableGlobalContext",
+        DEFAULT_USER_PREFERENCES.enableGlobalContext
+      ),
+      useRecentCommitsAsReference: config.get(
+        "features.commitMessage.useRecentCommitsAsReference",
+        DEFAULT_USER_PREFERENCES.useRecentCommitsAsReference
+      ),
+      simplifyDiff: config.get(
+        "features.codeAnalysis.simplifyDiff",
+        DEFAULT_USER_PREFERENCES.simplifyDiff
+      ),
+      autoDetectStaged: config.get(
+        "features.codeAnalysis.autoDetectStaged",
+        DEFAULT_USER_PREFERENCES.autoDetectStaged
+      ),
+      fallbackToAll: config.get(
+        "features.codeAnalysis.fallbackToAll",
+        DEFAULT_USER_PREFERENCES.fallbackToAll
+      ),
+      diffTarget: config.get(
+        "features.codeAnalysis.diffTarget",
+        DEFAULT_USER_PREFERENCES.diffTarget
+      ),
+      suppressNonCriticalWarnings: config.get(
+        "features.suppressNonCriticalWarnings",
+        DEFAULT_USER_PREFERENCES.suppressNonCriticalWarnings
+      ),
     };
 
     // 2. Map Providers
