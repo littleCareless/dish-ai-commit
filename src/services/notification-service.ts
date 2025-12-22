@@ -39,7 +39,7 @@ export class NotificationService {
    */
   public async checkAndShowMigrationNotification(): Promise<void> {
     // Check if notification has been shown
-    const hasShown = this.context.globalState.get<boolean>(
+    const hasShown = this.context.workspaceState.get<boolean>(
       MIGRATION_NOTIFICATION_KEY,
       false
     );
@@ -61,7 +61,10 @@ export class NotificationService {
       );
 
       // Mark as shown regardless of user choice to avoid pestering
-      await this.context.globalState.update(MIGRATION_NOTIFICATION_KEY, true);
+      await this.context.workspaceState.update(
+        MIGRATION_NOTIFICATION_KEY,
+        true
+      );
 
       if (selection === confirmText) {
         // Open the settings view

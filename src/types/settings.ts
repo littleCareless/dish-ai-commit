@@ -36,7 +36,7 @@ export const modelConfigSchema = z.object({
 export type ModelConfig = z.infer<typeof modelConfigSchema>;
 
 // Zod Schema for ProviderConfig
-const providerConfigSchema = z.object({
+export const providerConfigSchema = z.object({
   id: z.string(),
   name: z.string(),
   type: providerTypeSchema,
@@ -50,6 +50,22 @@ const providerConfigSchema = z.object({
   organization: z.string().optional(),
   createdAt: z.date().or(z.string().datetime()).optional(),
   updatedAt: z.date().or(z.string().datetime()).optional(),
+
+  // OpenAI Compatible Custom Settings
+  useAzure: z.boolean().optional(),
+  azureApiVersion: z.string().optional(),
+  enableR1Models: z.boolean().optional(),
+  useLegacyFormat: z.boolean().optional(),
+  includeMaxTokens: z.boolean().optional(),
+  enableReasoningEffort: z.boolean().optional(),
+  reasoningEffortLevel: z.string().optional(),
+  customModelSupportsPromptCache: z.boolean().optional(),
+  customModelMaxTokens: z.number().optional(),
+  customModelContextWindow: z.number().optional(),
+  customModelInputPrice: z.number().optional(),
+  customModelOutputPrice: z.number().optional(),
+  customModelCacheReadsPrice: z.number().optional(),
+  customModelCacheWritesPrice: z.number().optional(),
 });
 export type ProviderConfig = z.infer<typeof providerConfigSchema>;
 

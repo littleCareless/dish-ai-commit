@@ -39,7 +39,7 @@ export class SettingsMigration {
     if (!context) {
       return false;
     }
-    return !!context.globalState.get<boolean>(this.MIGRATION_COMPLETED_KEY);
+    return !!context.workspaceState.get<boolean>(this.MIGRATION_COMPLETED_KEY);
   }
 
   /**
@@ -48,7 +48,7 @@ export class SettingsMigration {
   async markMigrationCompleted(): Promise<void> {
     const context = this.profileManager.getContext();
     if (context) {
-      await context.globalState.update(this.MIGRATION_COMPLETED_KEY, true);
+      await context.workspaceState.update(this.MIGRATION_COMPLETED_KEY, true);
     }
   }
 

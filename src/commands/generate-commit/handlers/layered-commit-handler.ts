@@ -6,6 +6,7 @@ import { GlobalContextExtractor } from "@/commands/generate-commit/services/glob
 import { filterCodeBlockMarkers } from "@/commands/generate-commit/utils/commit-formatter";
 import { getLayeredCommitBatchVariables } from "@/prompt/layered-commit-batch";
 import { ISCMProvider } from "@/scm/scm-provider";
+import { commitCacheService } from "@/services/cache/commit-cache-service";
 import { PromptManagerService } from "@/services/core/prompt-manager-service";
 import { RateLimiterService } from "@/services/core/rate-limiter-service";
 import { PromptKey } from "@/types/prompts";
@@ -274,19 +275,55 @@ export class LayeredCommitHandler {
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     selectedModel: AIModel
   ): Promise<{ filePath: string; description: string }[]> {
-    const batches: string[][] = [];
-    let currentBatch: string[] = [];
-    let currentBatchSize = 0;
+    const results: { filePath: string; description: string }[] = [];
+    const filesToProcess: {
+      filePath: string;
+      diff: string;
+      cacheKey: string;
+    }[] = [];
     const MAX_BATCH_SIZE = 15000; // chars
     const MAX_FILES_PER_BATCH = 10;
 
-    // 1. Create Batches
+    // 1. Check Cache & Filter Files
     for (const file of files) {
       const diff = await scmProvider.getDiff([file]);
       if (!diff) {
         continue;
       }
 
+      // Generate cache key for each individual file
+      const cacheKey = commitCacheService.generateKey(
+        diff,
+        config,
+        selectedModel.id + "-layered-file"
+      );
+
+      const cachedDescription = commitCacheService.get(cacheKey);
+      if (cachedDescription) {
+        results.push({
+          filePath: file,
+          description: cachedDescription,
+        });
+      } else {
+        filesToProcess.push({ filePath: file, diff, cacheKey });
+      }
+    }
+
+    // If all files were cached, return early
+    if (filesToProcess.length === 0) {
+      this.logger.info("All files hit cache", {
+        data: { fileCount: files.length },
+      });
+      return results;
+    }
+
+    // 2. Create Batches from filesToProcess
+    const batches: string[][] = [];
+    let currentBatch: string[] = [];
+    let currentBatchSize = 0;
+
+    for (const fileData of filesToProcess) {
+      const { filePath, diff } = fileData;
       const diffSize = diff.length;
 
       // If single file is too large, process it individually (or in a batch of 1)
@@ -296,7 +333,7 @@ export class LayeredCommitHandler {
           currentBatch = [];
           currentBatchSize = 0;
         }
-        batches.push([file]);
+        batches.push([filePath]);
         continue;
       }
 
@@ -309,16 +346,14 @@ export class LayeredCommitHandler {
         currentBatchSize = 0;
       }
 
-      currentBatch.push(file);
+      currentBatch.push(filePath);
       currentBatchSize += diffSize;
     }
     if (currentBatch.length > 0) {
       batches.push(currentBatch);
     }
 
-    // 2. Process Batches
-    const results: { filePath: string; description: string }[] = [];
-
+    // 3. Process Batches
     for (let i = 0; i < batches.length; i++) {
       const batch = batches[i];
       this.throwIfCancelled(token);
@@ -400,11 +435,12 @@ export class LayeredCommitHandler {
           // Try to find JSON array in the response
           const content = response.content;
           const jsonMatch = content.match(/\[[\s\S]*\]/);
+          let jsonString = content;
           if (jsonMatch) {
-            parsed = JSON.parse(jsonMatch[0]);
-          } else {
-            parsed = JSON.parse(content);
+            jsonString = jsonMatch[0];
           }
+
+          parsed = JSON.parse(jsonString);
         } catch (e) {
           this.logger.warn("Failed to parse batch response", {
             data: { batch, content: response.content },
@@ -419,6 +455,16 @@ export class LayeredCommitHandler {
                 filePath: item.filePath,
                 description: item.description,
               });
+
+              // Cache individual file result
+              // We need to find the cacheKey for this file.
+              // We can look it up in filesToProcess.
+              const fileData = filesToProcess.find(
+                (f) => f.filePath === item.filePath
+              );
+              if (fileData) {
+                commitCacheService.set(fileData.cacheKey, item.description);
+              }
             }
           }
         }
