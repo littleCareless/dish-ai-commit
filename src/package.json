@@ -181,7 +181,18 @@
             "GoogleAI",
             "VertexAI",
             "LMStudio",
-            "Xiaomi"
+            "Xiaomi",
+            "Alibaba iFlow",
+            "ByteDance Volcano",
+            "ModelScope",
+            "Kuaishou KAT",
+            "Meituan LongCat",
+            "Qiniu AI",
+            "NVIDIA NIM",
+            "Cerebras",
+            "Tencent CodeBuddy",
+            "Kuaishou CodeFlicker",
+            "Tongyi Lingma"
           ]
         },
         "dish-ai-commit.base.model": {
@@ -349,6 +360,116 @@
           "type": "string",
           "default": "http://localhost:1234/v1",
           "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.lmstudio.baseUrl.description%"
+        },
+        "dish-ai-commit.providers.iflow.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for Alibaba iFlow"
+        },
+        "dish-ai-commit.providers.iflow.baseUrl": {
+          "type": "string",
+          "default": "https://iflow.alibaba.com/v1",
+          "description": "Base URL for Alibaba iFlow"
+        },
+        "dish-ai-commit.providers.volcano.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for ByteDance Volcano"
+        },
+        "dish-ai-commit.providers.volcano.baseUrl": {
+          "type": "string",
+          "default": "https://ark.cn-beijing.volces.com/api/v3",
+          "description": "Base URL for ByteDance Volcano"
+        },
+        "dish-ai-commit.providers.modelscope.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for ModelScope"
+        },
+        "dish-ai-commit.providers.modelscope.baseUrl": {
+          "type": "string",
+          "default": "https://api-inference.modelscope.cn/v1",
+          "description": "Base URL for ModelScope"
+        },
+        "dish-ai-commit.providers.kat.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for Kuaishou KAT"
+        },
+        "dish-ai-commit.providers.kat.baseUrl": {
+          "type": "string",
+          "default": "https://api.kat.kuaishou.com/v1",
+          "description": "Base URL for Kuaishou KAT"
+        },
+        "dish-ai-commit.providers.longcat.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for Meituan LongCat"
+        },
+        "dish-ai-commit.providers.longcat.baseUrl": {
+          "type": "string",
+          "default": "https://api.longcat.meituan.com/v1",
+          "description": "Base URL for Meituan LongCat"
+        },
+        "dish-ai-commit.providers.qiniu.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for Qiniu AI"
+        },
+        "dish-ai-commit.providers.qiniu.baseUrl": {
+          "type": "string",
+          "default": "https://api.qiniu.com/v1",
+          "description": "Base URL for Qiniu AI"
+        },
+        "dish-ai-commit.providers.nvidia.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for NVIDIA NIM"
+        },
+        "dish-ai-commit.providers.nvidia.baseUrl": {
+          "type": "string",
+          "default": "https://integrate.api.nvidia.com/v1",
+          "description": "Base URL for NVIDIA NIM"
+        },
+        "dish-ai-commit.providers.cerebras.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for Cerebras"
+        },
+        "dish-ai-commit.providers.cerebras.baseUrl": {
+          "type": "string",
+          "default": "https://api.cerebras.ai/v1",
+          "description": "Base URL for Cerebras"
+        },
+        "dish-ai-commit.providers.codebuddy.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for Tencent CodeBuddy"
+        },
+        "dish-ai-commit.providers.codebuddy.baseUrl": {
+          "type": "string",
+          "default": "https://api.codebuddy.tencent.com/v1",
+          "description": "Base URL for Tencent CodeBuddy"
+        },
+        "dish-ai-commit.providers.codeflicker.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for Kuaishou CodeFlicker"
+        },
+        "dish-ai-commit.providers.codeflicker.baseUrl": {
+          "type": "string",
+          "default": "https://api.codeflicker.kuaishou.com/v1",
+          "description": "Base URL for Kuaishou CodeFlicker"
+        },
+        "dish-ai-commit.providers.tongyi.apiKey": {
+          "type": "string",
+          "default": "",
+          "description": "API Key for Tongyi Lingma"
+        },
+        "dish-ai-commit.providers.tongyi.baseUrl": {
+          "type": "string",
+          "default": "https://dashscope.aliyuncs.com/compatible-mode/v1",
+          "description": "Base URL for Tongyi Lingma"
         },
         "dish-ai-commit.features.suppressNonCriticalWarnings": {
           "type": "boolean",

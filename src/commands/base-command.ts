@@ -362,6 +362,7 @@ export abstract class BaseCommand {
         selectedModel: undefined, // 我们不再预先获取模型详情
       };
     }
+    console.log("aiContext", aiContext);
 
     return {
       provider,

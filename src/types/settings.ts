@@ -111,6 +111,25 @@ export const userPreferencesSchema = z.object({
 });
 export type UserPreferences = z.infer<typeof userPreferencesSchema>;
 
+// Zod Schema for Features
+export const featuresSchema = z.object({
+  enableEmoji: z.boolean(),
+  enableMergeCommit: z.boolean(),
+  enableBody: z.boolean(),
+  enableLayeredCommit: z.boolean(),
+  enableGlobalContext: z.boolean(),
+  useRecentCommitsAsReference: z.boolean(),
+  simplifyDiff: z.boolean(),
+  autoDetectStaged: z.boolean(),
+  fallbackToAll: z.boolean(),
+  diffTarget: z.enum(["staged", "all", "auto"]),
+  suppressNonCriticalWarnings: z.boolean(),
+  weeklyReport: z.boolean(),
+  codeReview: z.boolean(),
+  generateBranchName: z.boolean(),
+  generatePRSummary: z.boolean(),
+});
+
 // Zod Schema for Profile
 export const profileSchema = z.object({
   id: z.string(),
@@ -118,6 +137,7 @@ export const profileSchema = z.object({
   description: z.string().optional(),
   providers: z.record(z.string(), providerConfigSchema),
   preferences: userPreferencesSchema,
+  features: featuresSchema.optional(), // 新增features字段
   createdAt: z.date().or(z.string().datetime()),
   updatedAt: z.date().or(z.string().datetime()),
   version: z.string(),

@@ -89,6 +89,66 @@ export const PROVIDER_DEFINITIONS: Record<string, ProviderDefinition> = {
   },
 
   // === 云服务提供商 ===
+  iflow: {
+    id: "iflow",
+    displayName: "Alibaba iFlow",
+    enumKey: "IFLOW",
+    aliases: ["ali-iflow"],
+  },
+  volcano: {
+    id: "volcano",
+    displayName: "ByteDance Volcano",
+    enumKey: "VOLCANO",
+    aliases: ["volcengine", "ark"],
+  },
+  modelscope: {
+    id: "modelscope",
+    displayName: "ModelScope",
+    enumKey: "MODELSCOPE",
+  },
+  kat: {
+    id: "kat",
+    displayName: "Kuaishou KAT",
+    enumKey: "KAT",
+    aliases: ["kuaishou-kat"],
+  },
+  longcat: {
+    id: "longcat",
+    displayName: "Meituan LongCat",
+    enumKey: "LONGCAT",
+  },
+  qiniu: {
+    id: "qiniu",
+    displayName: "Qiniu AI",
+    enumKey: "QINIU",
+  },
+  nvidia: {
+    id: "nvidia",
+    displayName: "NVIDIA NIM",
+    enumKey: "NVIDIA",
+    aliases: ["nvidia-nim"],
+  },
+  cerebras: {
+    id: "cerebras",
+    displayName: "Cerebras",
+    enumKey: "CEREBRAS",
+  },
+  codebuddy: {
+    id: "codebuddy",
+    displayName: "Tencent CodeBuddy",
+    enumKey: "CODEBUDDY",
+  },
+  codeflicker: {
+    id: "codeflicker",
+    displayName: "Kuaishou CodeFlicker",
+    enumKey: "CODEFLICKER",
+  },
+  tongyi: {
+    id: "tongyi",
+    displayName: "Tongyi Lingma",
+    enumKey: "TONGYI",
+    aliases: ["tongyi-lingma"],
+  },
   "azure-openai": {
     id: "azure-openai",
     displayName: "Azure OpenAI",
