@@ -300,8 +300,39 @@ function createGitCommit(version) {
   log(`   - tag: v${version} ✓`, "cyan");
 }
 
+// 显示帮助信息
+function showHelp() {
+  console.log(`
+🚀 Release Script - 统一管理多包版本和 changelog
+
+使用方法:
+  node release.js [选项]
+
+选项:
+  --dry-run, -d    预览模式，不执行实际修改
+  --help, -h       显示帮助信息
+
+示例:
+  node release.js           # 正常执行 release
+  node release.js --dry-run # 预览将要执行的变更
+  node release.js -d        # 同上
+
+功能:
+  1. 统一更新三个 package.json 的版本号
+  2. 为 src 和 webview-ui 生成 changelog
+  3. 合并生成根目录总 changelog
+  4. 创建 git commit 和 tag
+`);
+  process.exit(0);
+}
+
 // 主函数
 function main() {
+  // 检查帮助
+  if (process.argv.includes('--help') || process.argv.includes('-h')) {
+    showHelp();
+  }
+
   // 检查是否为 dry-run 模式
   const isDryRun = process.argv.includes('--dry-run') || process.argv.includes('-d');
 
