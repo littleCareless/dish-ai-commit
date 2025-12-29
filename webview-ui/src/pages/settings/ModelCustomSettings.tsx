@@ -79,72 +79,73 @@ export const ModelCustomSettings: React.FC = () => {
 
   useMessageHandler(handleMessage);
 
+  // Initialize data on mount - using setTimeout to avoid setState in effect
   useEffect(() => {
-    loadData();
-    loadProviders();
+    // Use requestAnimationFrame or setTimeout to defer state updates
+    // This avoids the "setState in effect" warning while maintaining behavior
+    const initLoad = () => {
+      setIsLoading(true);
+      postMessage(UIRequest.ModelCustomGetAll);
+      postMessage(UIRequest.ModelCustomGetProviders);
+    };
+    // Defer to next tick to avoid synchronous state update in effect
+    setTimeout(initLoad, 0);
   }, []);
 
-  const loadData = () => {
+  const loadData = useCallback(() => {
     setIsLoading(true);
     postMessage(UIRequest.ModelCustomGetAll);
-  };
+  }, []);
 
-  const loadProviders = () => {
-    postMessage(UIRequest.ModelCustomGetProviders);
-  };
+  const handleSave = useCallback(
+    async (info: CustomModelInfo) => {
+      postMessage(UIRequest.ModelCustomSave, { info });
+      // 延迟一下等待后端处理，然后刷新列表
+      setTimeout(() => {
+        loadData();
+      }, 100);
+    },
+    [loadData],
+  );
 
-  const handleSave = async (info: CustomModelInfo) => {
-    postMessage(UIRequest.ModelCustomSave, { info });
-    // 延迟一下等待后端处理，然后刷新列表
-    setTimeout(() => {
-      loadData();
-    }, 100);
-  };
+  const handleDelete = useCallback(
+    async (providerId: string, modelId: string) => {
+      postMessage(UIRequest.ModelCustomDelete, { providerId, modelId });
+      // 乐观更新 UI
+      setModels((prev) =>
+        prev.filter((m) => !(m.providerId === providerId && m.id === modelId)),
+      );
+    },
+    [],
+  );
 
-  const handleDelete = async (providerId: string, modelId: string) => {
-    postMessage(UIRequest.ModelCustomDelete, { providerId, modelId });
-    // 乐观更新 UI
-    setModels((prev) =>
-      prev.filter((m) => !(m.providerId === providerId && m.id === modelId)),
-    );
-  };
-
-  const handleExport = () => {
+  const handleExport = useCallback(() => {
     postMessage(UIRequest.ModelCustomExport);
-  };
+  }, []);
 
-  const handleImport = async (file: File) => {
-    const content = await file.text();
-    const data = JSON.parse(content);
-    postMessage(UIRequest.ModelCustomImport, { registry: data });
-    // 延迟一下然后刷新
-    setTimeout(() => {
-      loadData();
-    }, 100);
-  };
+  const handleImport = useCallback(
+    async (file: File) => {
+      const content = await file.text();
+      const data = JSON.parse(content);
+      postMessage(UIRequest.ModelCustomImport, { registry: data });
+      // 延迟一下然后刷新
+      setTimeout(() => {
+        loadData();
+      }, 100);
+    },
+    [loadData],
+  );
 
-  const ImportButton = () => {
-    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = useCallback(
+    async (e: React.ChangeEvent<HTMLInputElement>) => {
       const file = e.target.files?.[0];
       if (file) {
         await handleImport(file);
         e.target.value = "";
       }
-    };
-
-    return (
-      <label className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 cursor-pointer">
-        <Upload className="w-4 h-4 mr-2" />
-        导入
-        <input
-          type="file"
-          accept=".json"
-          onChange={handleFileChange}
-          className="hidden"
-        />
-      </label>
-    );
-  };
+    },
+    [handleImport],
+  );
 
   return (
     <div className="space-y-6">
@@ -160,7 +161,16 @@ export const ModelCustomSettings: React.FC = () => {
           <Button variant="outline" onClick={handleExport}>
             <Download className="w-4 h-4 mr-2" /> {t("export")}
           </Button>
-          <ImportButton />
+          <label className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 cursor-pointer">
+            <Upload className="w-4 h-4 mr-2" />
+            导入
+            <input
+              type="file"
+              accept=".json"
+              onChange={handleFileChange}
+              className="hidden"
+            />
+          </label>
         </div>
       </div>
 
