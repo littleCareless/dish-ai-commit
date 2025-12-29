@@ -4,6 +4,7 @@ import { FeaturesMessageHandler } from "@/services/webview/handlers/settings/fea
 import { IndexingMessageHandler } from "@/services/webview/handlers/settings/indexing-message-handler";
 import { NotificationMessageHandler } from "@/services/webview/handlers/settings/notification-message-handler";
 import { OnboardingMessageHandler } from "@/services/webview/handlers/settings/onboarding-message-handler";
+import { PreferencesMessageHandler } from "@/services/webview/handlers/settings/preferences-message-handler";
 import { ProfileMessageHandler } from "@/services/webview/handlers/settings/profile-message-handler";
 import { PromptMessageHandler } from "@/services/webview/handlers/settings/prompt-message-handler";
 import { StorageMessageHandler } from "@/services/webview/handlers/settings/storage-message-handler";
@@ -28,6 +29,7 @@ export class SettingsViewMessageHandler {
   private _usageHandler: UsageMessageHandler;
   private _storageHandler: StorageMessageHandler;
   private _onboardingHandler: OnboardingMessageHandler;
+  private _preferencesHandler: PreferencesMessageHandler;
 
   constructor(
     extensionId: string,
@@ -51,6 +53,7 @@ export class SettingsViewMessageHandler {
     this._usageHandler = new UsageMessageHandler(_extensionContext);
     this._storageHandler = new StorageMessageHandler(_extensionContext);
     this._onboardingHandler = new OnboardingMessageHandler(_extensionContext);
+    this._preferencesHandler = new PreferencesMessageHandler(_extensionContext);
   }
 
   public async handleMessage(
@@ -151,6 +154,16 @@ export class SettingsViewMessageHandler {
       case UIRequest.FeaturesSaveSettings:
       case UIRequest.FeaturesSetActivePrompt:
         await this._featuresHandler.handle(message, webview);
+        break;
+
+      // ===== Preferences Module =====
+      case UIRequest.PreferencesLoadSettings:
+      case UIRequest.PreferencesSaveSettings:
+        console.log(
+          "[SettingsViewMessageHandler] Routing Preferences message:",
+          message.command
+        );
+        await this._preferencesHandler.handle(message, webview);
         break;
 
       // ===== Usage Module =====

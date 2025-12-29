@@ -56,7 +56,7 @@ export class ModelValidationService {
 
       // 3. 获取模型列表
       const models = await aiProvider.getModels();
-
+      console.log("aiProvider", aiProvider, models);
       // 4. 验证模型列表不为空
       if (!models || models.length === 0) {
         logger.error("模型列表为空", {
@@ -65,6 +65,7 @@ export class ModelValidationService {
         });
         throw new Error(getMessage("model.list.empty"));
       }
+      console.log("models", models);
 
       // 5. 查找指定模型
       const selectedModel = models.find((m: AIModel) => m.id === model);
@@ -119,6 +120,7 @@ export class ModelValidationService {
     });
 
     try {
+      console.log("verifyModelExists", provider, model, config, profile);
       // 复用 validateModel 方法进行验证
       await this.validateModel(provider, model, config, profile);
 

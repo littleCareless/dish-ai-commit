@@ -6,10 +6,12 @@ import {
   ProviderConfig,
   ProviderType,
   UserPreferences,
+  featuresSchema,
 } from "@/types/settings";
 import { formatMessage } from "@/utils/i18n";
 import { v4 as uuidv4 } from "uuid";
 import * as vscode from "vscode";
+import { z } from "zod";
 
 export interface MigrationDetectionResult {
   hasOldConfig: boolean;
@@ -204,50 +206,55 @@ export class SettingsMigration {
         "base.retryAttempts",
         DEFAULT_USER_PREFERENCES.retryAttempts
       ),
-      enableEmoji: config.get(
-        "features.commitFormat.enableEmoji",
-        DEFAULT_USER_PREFERENCES.enableEmoji
-      ),
+      skipDiffFileExtensions: DEFAULT_USER_PREFERENCES.skipDiffFileExtensions,
+      skipDiffPathPatterns: DEFAULT_USER_PREFERENCES.skipDiffPathPatterns,
+      maxDiffFileSizeKB: DEFAULT_USER_PREFERENCES.maxDiffFileSizeKB,
+      autoDetectBinaryFiles: DEFAULT_USER_PREFERENCES.autoDetectBinaryFiles,
+      respectGitAttributes: DEFAULT_USER_PREFERENCES.respectGitAttributes,
+      commitTemperature: DEFAULT_USER_PREFERENCES.commitTemperature,
+      reviewTemperature: DEFAULT_USER_PREFERENCES.reviewTemperature,
+      branchNameTemperature: DEFAULT_USER_PREFERENCES.branchNameTemperature,
+      weeklyReportTemperature: DEFAULT_USER_PREFERENCES.weeklyReportTemperature,
+    };
+
+    // 2. Map Features
+    const features: z.infer<typeof featuresSchema> = {
+      enableEmoji: config.get("features.commitFormat.enableEmoji", true),
       enableMergeCommit: config.get(
         "features.commitFormat.enableMergeCommit",
-        DEFAULT_USER_PREFERENCES.enableMergeCommit
+        false
       ),
-      enableBody: config.get(
-        "features.commitFormat.enableBody",
-        DEFAULT_USER_PREFERENCES.enableBody
-      ),
+      enableBody: config.get("features.commitFormat.enableBody", true),
       enableLayeredCommit: config.get(
         "features.commitFormat.enableLayeredCommit",
-        DEFAULT_USER_PREFERENCES.enableLayeredCommit
+        false
       ),
       enableGlobalContext: config.get(
         "features.commitFormat.enableGlobalContext",
-        DEFAULT_USER_PREFERENCES.enableGlobalContext
+        true
       ),
       useRecentCommitsAsReference: config.get(
         "features.commitMessage.useRecentCommitsAsReference",
-        DEFAULT_USER_PREFERENCES.useRecentCommitsAsReference
+        false
       ),
-      simplifyDiff: config.get(
-        "features.codeAnalysis.simplifyDiff",
-        DEFAULT_USER_PREFERENCES.simplifyDiff
-      ),
+      simplifyDiff: config.get("features.codeAnalysis.simplifyDiff", false),
       autoDetectStaged: config.get(
         "features.codeAnalysis.autoDetectStaged",
-        DEFAULT_USER_PREFERENCES.autoDetectStaged
+        true
       ),
-      fallbackToAll: config.get(
-        "features.codeAnalysis.fallbackToAll",
-        DEFAULT_USER_PREFERENCES.fallbackToAll
-      ),
-      diffTarget: config.get(
-        "features.codeAnalysis.diffTarget",
-        DEFAULT_USER_PREFERENCES.diffTarget
-      ),
+      fallbackToAll: config.get("features.codeAnalysis.fallbackToAll", true),
+      diffTarget: config.get("features.codeAnalysis.diffTarget", "auto") as
+        | "staged"
+        | "all"
+        | "auto",
       suppressNonCriticalWarnings: config.get(
         "features.suppressNonCriticalWarnings",
-        DEFAULT_USER_PREFERENCES.suppressNonCriticalWarnings
+        true
       ),
+      weeklyReport: true,
+      codeReview: true,
+      generateBranchName: true,
+      generatePRSummary: true,
     };
 
     // 2. Map Providers
@@ -297,6 +304,7 @@ export class SettingsMigration {
       ]),
       providers: providersConfig,
       preferences: preferences,
+      features: features,
       createdAt: now,
       updatedAt: now,
       version: "1.0.0",
