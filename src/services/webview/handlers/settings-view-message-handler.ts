@@ -2,6 +2,7 @@ import { EmbeddingService } from "@/core/indexing/embedding-service";
 import { ConnectionMessageHandler } from "@/services/webview/handlers/settings/connection-message-handler";
 import { FeaturesMessageHandler } from "@/services/webview/handlers/settings/features-message-handler";
 import { IndexingMessageHandler } from "@/services/webview/handlers/settings/indexing-message-handler";
+import { ModelCustomMessageHandler } from "@/services/webview/handlers/settings/model-custom-message-handler";
 import { NotificationMessageHandler } from "@/services/webview/handlers/settings/notification-message-handler";
 import { OnboardingMessageHandler } from "@/services/webview/handlers/settings/onboarding-message-handler";
 import { PreferencesMessageHandler } from "@/services/webview/handlers/settings/preferences-message-handler";
@@ -30,6 +31,7 @@ export class SettingsViewMessageHandler {
   private _storageHandler: StorageMessageHandler;
   private _onboardingHandler: OnboardingMessageHandler;
   private _preferencesHandler: PreferencesMessageHandler;
+  private _modelCustomHandler: ModelCustomMessageHandler;
 
   constructor(
     extensionId: string,
@@ -54,6 +56,7 @@ export class SettingsViewMessageHandler {
     this._storageHandler = new StorageMessageHandler(_extensionContext);
     this._onboardingHandler = new OnboardingMessageHandler(_extensionContext);
     this._preferencesHandler = new PreferencesMessageHandler(_extensionContext);
+    this._modelCustomHandler = new ModelCustomMessageHandler(_extensionContext);
   }
 
   public async handleMessage(
@@ -187,6 +190,16 @@ export class SettingsViewMessageHandler {
       case UIRequest.OnboardingSetCompleted:
       case UIRequest.OnboardingGetStatus:
         await this._onboardingHandler.handle(message, webview);
+        break;
+
+      // ===== Model Custom Module =====
+      case UIRequest.ModelCustomGetAll:
+      case UIRequest.ModelCustomSave:
+      case UIRequest.ModelCustomDelete:
+      case UIRequest.ModelCustomExport:
+      case UIRequest.ModelCustomImport:
+      case UIRequest.ModelCustomGetProviders:
+        await this._modelCustomHandler.handle(message, webview);
         break;
 
       // ===== System Lifecycle Messages =====
