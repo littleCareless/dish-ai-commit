@@ -88,6 +88,14 @@ export enum UIRequest {
   OnboardingValidateConfig = "onboarding.validateConfig",
   OnboardingSetCompleted = "onboarding.setCompleted",
   OnboardingGetStatus = "onboarding.getStatus",
+
+  // ===== Model Custom Module =====
+  ModelCustomGetAll = "modelCustom.getAll",
+  ModelCustomSave = "modelCustom.save",
+  ModelCustomDelete = "modelCustom.delete",
+  ModelCustomExport = "modelCustom.export",
+  ModelCustomImport = "modelCustom.import",
+  ModelCustomGetProviders = "modelCustom.getProviders",
 }
 
 // ============================================================================
@@ -182,6 +190,15 @@ export enum ExtensionResponse {
   OnboardingTemplateApplied = "onboarding.templateApplied",
   OnboardingConfigValidated = "onboarding.configValidated",
   OnboardingStatusLoaded = "onboarding.statusLoaded",
+
+  // ===== Model Custom Module =====
+  ModelCustomAllLoaded = "modelCustom.allLoaded",
+  ModelCustomSaved = "modelCustom.saved",
+  ModelCustomDeleted = "modelCustom.deleted",
+  ModelCustomExported = "modelCustom.exported",
+  ModelCustomImported = "modelCustom.imported",
+  ModelCustomProvidersLoaded = "modelCustom.providersLoaded",
+  ModelCustomError = "modelCustom.error",
 }
 
 // ============================================================================
