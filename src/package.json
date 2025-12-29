@@ -688,7 +688,7 @@
     "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
     "watch:bundle": "node esbuild.mjs --watch",
     "lint": "eslint .",
-    "check-types": "tsc -b ../shared && tsc --noEmit",
+    "check-types": "tsc --noEmit",
     "check-types:staged": "tsc-files --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

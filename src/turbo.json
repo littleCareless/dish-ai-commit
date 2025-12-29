@@ -18,6 +18,13 @@
       "dependsOn": ["build"],
       "outputs": ["*.vsix"]
     },
+    "compile": {
+      "dependsOn": ["@dish-ai-commit/shared#compile", "^compile"],
+      "outputs": ["out/**"]
+    },
+    "check-types": {
+      "dependsOn": ["@dish-ai-commit/shared#check-types", "^check-types"]
+    },
     "watch:bundle": {
       "dependsOn": ["@dish-ai-commit/webview-ui#build"],
       "cache": false,
