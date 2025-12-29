@@ -5,11 +5,10 @@ import { cn } from "@/utils/cn";
 import { X } from "lucide-react";
 import React, { useState } from "react";
 
-interface TagInputProps
-  extends Omit<
-    React.InputHTMLAttributes<HTMLInputElement>,
-    "onChange" | "value"
-  > {
+interface TagInputProps extends Omit<
+  React.InputHTMLAttributes<HTMLInputElement>,
+  "onChange" | "value"
+> {
   value: string[];
   onChange: (value: string[]) => void;
 }
@@ -43,15 +42,19 @@ export const TagInput = React.forwardRef<HTMLInputElement, TagInputProps>(
 
     return (
       <div className={cn("w-full", className)}>
-        <div className="flex flex-wrap gap-2 mb-2">
+        <div className="flex flex-wrap gap-2 mb-2 items-center">
           {value.map((tag) => (
-            <Badge key={tag} variant="secondary">
-              {tag}
+            <Badge
+              key={tag}
+              variant="secondary"
+              className="flex items-center gap-1 pr-1 pl-2 py-1"
+            >
+              <span className="text-xs leading-none">{tag}</span>
               <Button
                 type="button"
                 variant="ghost"
                 size="icon"
-                className="ml-2 h-4 w-4 rounded-full"
+                className="h-5 rounded-full hover:bg-muted-foreground/20 p-0 flex items-center justify-center ml-1"
                 onClick={() => removeTag(tag)}
               >
                 <X className="h-3 w-3" />

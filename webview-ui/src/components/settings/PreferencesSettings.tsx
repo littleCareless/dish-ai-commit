@@ -59,16 +59,35 @@ export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
     defaultValues: preferences,
   });
 
-  // 当外部 preferences 变化时更新表单
+  // 当外部 preferences 变化时更新表单（仅当实际变化时）
+  const prevPreferencesRef = React.useRef(preferences);
   useEffect(() => {
-    form.reset(preferences);
+    const prev = prevPreferencesRef.current;
+    const hasChanged = JSON.stringify(prev) !== JSON.stringify(preferences);
+
+    if (hasChanged) {
+      console.log(
+        "[PreferencesSettings] External preferences changed:",
+        preferences,
+      );
+      prevPreferencesRef.current = preferences;
+      form.reset(preferences);
+    }
   }, [preferences, form]);
 
   const values = useWatch({ control: form.control });
 
-  // 监听表单值变化并通知父组件
+  // 监听表单值变化并通知父组件（防抖）
+  const prevValuesRef = React.useRef(values);
   useEffect(() => {
-    onChange(values as UserPreferences);
+    const prev = prevValuesRef.current;
+    const hasChanged = JSON.stringify(prev) !== JSON.stringify(values);
+
+    if (hasChanged) {
+      console.log("[PreferencesSettings] Form values changed:", values);
+      prevValuesRef.current = values;
+      onChange(values as UserPreferences);
+    }
   }, [values, onChange]);
 
   const getTemperatureLabel = (temp: number): string => {
@@ -244,30 +263,38 @@ export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
             <FormField
               control={form.control}
               name="language"
-              render={({ field }) => (
-                <FormItem>
-                  <FormLabel>{t("generatedContentLanguage")}</FormLabel>
-                  <FormControl>
-                    <Select
-                      value={field.value}
-                      onChange={(event: React.FormEvent<HTMLElement>) => {
-                        const value =
-                          (event.target as HTMLSelectElement)?.value || "";
-                        field.onChange(value);
-                      }}
-                    >
-                      {languageOptions.map((option) => (
-                        <SelectOption key={option.value} value={option.value}>
-                          {t(option.labelKey)}
-                        </SelectOption>
-                      ))}
-                    </Select>
-                  </FormControl>
-                  <FormDescription>
-                    {t("generatedContentLanguageDescription")}
-                  </FormDescription>
-                </FormItem>
-              )}
+              render={({ field }) => {
+                console.log(
+                  "[PreferencesSettings] Language field render - value:",
+                  field.value,
+                );
+                return (
+                  <FormItem>
+                    <FormLabel>{t("generatedContentLanguage")}</FormLabel>
+                    <FormControl>
+                      <Select
+                        value={field.value}
+                        onValueChange={(value) => {
+                          console.log(
+                            "[PreferencesSettings] Language changed to:",
+                            value,
+                          );
+                          field.onChange(value);
+                        }}
+                      >
+                        {languageOptions.map((option) => (
+                          <SelectOption key={option.value} value={option.value}>
+                            {t(option.labelKey)}
+                          </SelectOption>
+                        ))}
+                      </Select>
+                    </FormControl>
+                    <FormDescription>
+                      {t("generatedContentLanguageDescription")}
+                    </FormDescription>
+                  </FormItem>
+                );
+              }}
             />
           </CardContent>
         </Card>
@@ -353,30 +380,49 @@ export const PreferencesSettings: React.FC<PreferencesSettingsProps> = ({
                 <FormField
                   control={form.control}
                   name="autoDetectBinaryFiles"
-                  render={({ field }) => (
-                    <div className="flex items-center space-x-2">
-                      <Checkbox
-                        checked={!!field.value}
-                        onCheckedChange={field.onChange}
-                      />
-                      <label
-                        className="text-sm cursor-pointer"
-                        onClick={() => field.onChange(!field.value)}
-                      >
-                        {t("autoDetectBinary")}
-                      </label>
-                      <TooltipProvider>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <Info className="w-4 h-4 text-muted-foreground cursor-help" />
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p>{t("autoDetectBinaryTooltip")}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </TooltipProvider>
-                    </div>
-                  )}
+                  render={({ field }) => {
+                    console.log(
+                      "[PreferencesSettings] autoDetectBinaryFiles render - value:",
+                      field.value,
+                    );
+                    return (
+                      <div className="flex items-center space-x-2">
+                        <Checkbox
+                          checked={!!field.value}
+                          onCheckedChange={(checked) => {
+                            console.log(
+                              "[PreferencesSettings] autoDetectBinaryFiles changed to:",
+                              checked,
+                            );
+                            field.onChange(checked);
+                          }}
+                        />
+                        <label
+                          className="text-sm cursor-pointer"
+                          onClick={() => {
+                            const newValue = !field.value;
+                            console.log(
+                              "[PreferencesSettings] autoDetectBinaryFiles clicked, new value:",
+                              newValue,
+                            );
+                            field.onChange(newValue);
+                          }}
+                        >
+                          {t("autoDetectBinary")}
+                        </label>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="w-4 h-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>{t("autoDetectBinaryTooltip")}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
+                    );
+                  }}
                 />
 
                 <FormField

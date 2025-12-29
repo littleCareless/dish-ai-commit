@@ -24,19 +24,27 @@ const Select: React.FC<SelectProps> = ({
   className,
   ...props
 }) => {
-  const handleInput = (event: React.FormEvent<HTMLElement>) => {
+  const handleChange = (event: React.FormEvent<HTMLElement>) => {
+    console.log("[Select] handleChange called, event:", event);
+    const targetValue = (event.target as HTMLSelectElement)?.value || "";
+    console.log("[Select] New value:", targetValue, "Current value:", value);
+
     if (onChange) {
+      console.log("[Select] Calling onChange");
       onChange(event);
     }
     if (onValueChange) {
-      onValueChange((event.target as HTMLSelectElement)?.value || "");
+      console.log("[Select] Calling onValueChange with:", targetValue);
+      onValueChange(targetValue);
     }
   };
+
+  console.log("[Select] Rendering with value:", value);
 
   return (
     <VSCodeDropdown
       value={value}
-      onInput={handleInput}
+      onChange={handleChange}
       disabled={disabled}
       className={className}
       {...props}
