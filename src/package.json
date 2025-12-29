@@ -2,7 +2,7 @@
   "name": "dish-ai-commit",
   "displayName": "Dish AI Commit Message Gen",
   "description": "🤖 AI-Powered VSCode extension for generating standardized Git/SVN commit messages. ✨ Supports 20+ AI services: OpenAI, Ollama, VS Code AI, Zhipu AI, DashScope, Doubao AI, Gemini, Deepseek, Anthropic, Mistral, Azure OpenAI, VertexAI, LMStudio and more. 🌍 19 languages supported. 📊 Features: AI commit generation, code review, weekly reports, branch naming, PR summaries, token statistics.",
-  "version": "0.56.1",
+  "version": "0.56.2",
   "engines": {
     "node": ">= 18.20.8",
     "pnpm": ">= 10.0.0",
