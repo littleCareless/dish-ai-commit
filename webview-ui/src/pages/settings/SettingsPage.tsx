@@ -19,6 +19,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FeaturesSettings } from "./FeaturesSettings";
 import { ProvidersSettings } from "./ProvidersSettings";
+import { ModelCustomSettings } from "./ModelCustomSettings";
 
 export const SettingsPage: React.FC = () => {
   const { t } = useTranslation("settings-page");
@@ -297,6 +298,9 @@ export const SettingsPage: React.FC = () => {
             <TabsTrigger value="advanced" className="px-2 py-1.5">
               {t("tabs.advanced")}
             </TabsTrigger>
+            <TabsTrigger value="model-custom" className="px-2 py-1.5">
+              {t("tabs.modelCustom")}
+            </TabsTrigger>
           </TabsList>
 
           <div className="flex-1 overflow-y-auto p-6 w-full max-w-5xl mx-auto">
@@ -336,6 +340,10 @@ export const SettingsPage: React.FC = () => {
                 onChange={handlePreferencesChange}
                 isLoading={isLoading}
               />
+            </TabsContent>
+
+            <TabsContent value="model-custom" className="mt-0">
+              <ModelCustomSettings />
             </TabsContent>
           </div>
         </Tabs>

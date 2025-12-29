@@ -2,25 +2,32 @@
   "$schema": "https://turbo.build/schema.json",
   "tasks": {
     "build": {
+      "dependsOn": ["^build"],
       "outputs": ["dist/**", "out/**"]
     },
     "lint": {},
-    "check-types": {},
+    "check-types": {
+      "dependsOn": ["^check-types"]
+    },
     "test": {},
     "format": {},
     "clean": {
       "cache": false
     },
     "compile": {
+      "dependsOn": ["^compile"],
       "outputs": ["out/**", "dist/**"]
     },
     "compile:webview": {
+      "dependsOn": ["^compile:webview"],
       "outputs": ["webview-ui/dist/**"]
     },
     "package": {
+      "dependsOn": ["build"],
       "outputs": ["*.vsix"]
     },
     "vsix": {
+      "dependsOn": ["build"],
       "outputs": ["*.vsix"]
     },
     "publish": {},

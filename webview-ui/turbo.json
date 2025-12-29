@@ -3,11 +3,15 @@
   "extends": ["//"],
   "tasks": {
     "build": {
-      "dependsOn": ["^build"],
+      "dependsOn": ["@dish-ai-commit/shared#build", "^build"],
       "outputs": ["dist/**"]
     },
     "compile:webview": {
+      "dependsOn": ["@dish-ai-commit/shared#compile", "^compile:webview"],
       "outputs": ["dist/**"]
+    },
+    "check-types": {
+      "dependsOn": ["@dish-ai-commit/shared#check-types", "^check-types"]
     },
     "dev": {
       "cache": false,

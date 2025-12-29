@@ -1,0 +1,58 @@
+{
+  "title": "Custom Model Management",
+  "description": "Manage model maxTokens, context window, and other parameters for API-unavailable models",
+  "addModel": "Add Model",
+  "export": "Export",
+  "import": "Import",
+  "provider": "Provider",
+  "modelId": "Model ID",
+  "modelName": "Model Name",
+  "maxTokens": {
+    "input": "Input Token Limit",
+    "output": "Output Token Limit"
+  },
+  "contextWindow": "Context Window",
+  "capabilities": {
+    "title": "Capabilities",
+    "streaming": "Streaming",
+    "functionCalling": "Function Calling",
+    "vision": "Vision"
+  },
+  "pricing": {
+    "title": "Pricing",
+    "input": "Input Price (per 1M tokens)",
+    "output": "Output Price (per 1M tokens)"
+  },
+  "notes": "Notes",
+  "deprecated": "Deprecated",
+  "save": "Save",
+  "cancel": "Cancel",
+  "delete": "Delete",
+  "edit": "Edit",
+  "confirmDelete": "Confirm delete this model?",
+  "importSuccess": "Import successful",
+  "exportSuccess": "Export successful",
+  "validation": {
+    "required": "This field is required",
+    "positiveNumber": "Must be a positive number",
+    "maxTokensExceeded": "Cannot exceed 1,000,000",
+    "invalidProvider": "Please select a provider"
+  },
+  "emptyState": {
+    "title": "No custom models yet",
+    "description": "Click the button above to add custom model info",
+    "importHint": "Or import from file"
+  },
+  "filter": {
+    "label": "Provider Filter",
+    "all": "All"
+  },
+  "table": {
+    "provider": "Provider",
+    "modelId": "Model ID",
+    "name": "Name",
+    "input": "Input",
+    "output": "Output",
+    "actions": "Actions"
+  }
+}

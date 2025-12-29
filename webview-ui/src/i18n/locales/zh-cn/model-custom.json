@@ -1,0 +1,58 @@
+{
+  "title": "自定义模型管理",
+  "description": "管理模型的 maxTokens、上下文窗口等参数，支持 API 无法获取的模型",
+  "addModel": "添加模型",
+  "export": "导出",
+  "import": "导入",
+  "provider": "提供商",
+  "modelId": "模型ID",
+  "modelName": "模型名称",
+  "maxTokens": {
+    "input": "输入Token上限",
+    "output": "输出Token上限"
+  },
+  "contextWindow": "上下文窗口",
+  "capabilities": {
+    "title": "能力",
+    "streaming": "流式输出",
+    "functionCalling": "函数调用",
+    "vision": "视觉能力"
+  },
+  "pricing": {
+    "title": "价格",
+    "input": "输入价格 (每1M tokens)",
+    "output": "输出价格 (每1M tokens)"
+  },
+  "notes": "备注",
+  "deprecated": "已废弃",
+  "save": "保存",
+  "cancel": "取消",
+  "delete": "删除",
+  "edit": "编辑",
+  "confirmDelete": "确认删除此模型信息？",
+  "importSuccess": "导入成功",
+  "exportSuccess": "导出成功",
+  "validation": {
+    "required": "此字段为必填项",
+    "positiveNumber": "必须为正数",
+    "maxTokensExceeded": "不能超过 1,000,000",
+    "invalidProvider": "请选择提供商"
+  },
+  "emptyState": {
+    "title": "暂无自定义模型",
+    "description": "点击上方按钮添加自定义模型信息",
+    "importHint": "或从文件导入现有配置"
+  },
+  "filter": {
+    "label": "提供商筛选",
+    "all": "全部"
+  },
+  "table": {
+    "provider": "提供商",
+    "modelId": "模型ID",
+    "name": "名称",
+    "input": "输入",
+    "output": "输出",
+    "actions": "操作"
+  }
+}

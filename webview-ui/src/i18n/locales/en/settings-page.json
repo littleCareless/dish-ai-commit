@@ -8,7 +8,8 @@
     "apiProviders": "API Providers",
     "preferences": "Preferences",
     "features": "Features",
-    "advanced": "Advanced"
+    "advanced": "Advanced",
+    "modelCustom": "Custom Models"
   },
   "messages": {
     "profileDeleted": "Profile \"{{name}}\" deleted.",

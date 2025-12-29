@@ -24,27 +24,25 @@ const Select: React.FC<SelectProps> = ({
   className,
   ...props
 }) => {
-  const handleChange = (event: React.FormEvent<HTMLElement>) => {
-    console.log("[Select] handleChange called, event:", event);
-    const targetValue = (event.target as HTMLSelectElement)?.value || "";
-    console.log("[Select] New value:", targetValue, "Current value:", value);
+  const handleChange = (event: Event) => {
+    const target = event.target as HTMLSelectElement;
+    const targetValue = target?.value || "";
+
+    // 转换为 React.FormEvent 以兼容 onChange
+    const reactEvent = event as unknown as React.FormEvent<HTMLElement>;
 
     if (onChange) {
-      console.log("[Select] Calling onChange");
-      onChange(event);
+      onChange(reactEvent);
     }
     if (onValueChange) {
-      console.log("[Select] Calling onValueChange with:", targetValue);
       onValueChange(targetValue);
     }
   };
 
-  console.log("[Select] Rendering with value:", value);
-
   return (
     <VSCodeDropdown
       value={value}
-      onChange={handleChange}
+      onChange={handleChange as any}
       disabled={disabled}
       className={className}
       {...props}

@@ -8,7 +8,8 @@
     "apiProviders": "API 提供商",
     "preferences": "偏好设置",
     "features": "功能",
-    "advanced": "高级"
+    "advanced": "高级",
+    "modelCustom": "自定义模型"
   },
   "messages": {
     "profileDeleted": "配置文件 “{{name}}” 已删除。",

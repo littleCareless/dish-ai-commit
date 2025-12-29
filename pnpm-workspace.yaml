@@ -1,3 +1,4 @@
 packages:
+  - 'shared'
   - 'src'
   - 'webview-ui'
