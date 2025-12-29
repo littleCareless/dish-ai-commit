@@ -48,7 +48,14 @@ export abstract class AbstractAIProvider implements AIProvider {
   }
 
   public setGlobalConfig(config: any): void {
+    // 保存全局配置到单独的属性
     this.globalConfig = config;
+    // 合并配置，而不是覆盖，保留构造函数设置的重要属性（如 baseUrl）
+    if (this.config) {
+      this.config = { ...this.config, ...config };
+    } else {
+      this.config = config;
+    }
   }
 
   /**

@@ -140,6 +140,83 @@ export class AIProviderFactory {
       case "xiaomi":
         provider = new XiaomiProvider(effectiveConfig);
         break;
+      case "iflow":
+        provider = new OpenAICompatibleProvider({
+          ...effectiveConfig,
+          providerId: "iflow",
+          providerName: "Alibaba iFlow",
+        });
+        break;
+      case "volcano":
+        provider = new OpenAICompatibleProvider({
+          ...effectiveConfig,
+          providerId: "volcano",
+          providerName: "ByteDance Volcano",
+        });
+        break;
+      case "modelscope":
+        provider = new OpenAICompatibleProvider({
+          ...effectiveConfig,
+          providerId: "modelscope",
+          providerName: "ModelScope",
+        });
+        break;
+      case "kat":
+        provider = new OpenAICompatibleProvider({
+          ...effectiveConfig,
+          providerId: "kat",
+          providerName: "Kuaishou KAT",
+        });
+        break;
+      case "longcat":
+        provider = new OpenAICompatibleProvider({
+          ...effectiveConfig,
+          providerId: "longcat",
+          providerName: "Meituan LongCat",
+        });
+        break;
+      case "qiniu":
+        provider = new OpenAICompatibleProvider({
+          ...effectiveConfig,
+          providerId: "qiniu",
+          providerName: "Qiniu AI",
+        });
+        break;
+      case "nvidia":
+        provider = new OpenAICompatibleProvider({
+          ...effectiveConfig,
+          providerId: "nvidia",
+          providerName: "NVIDIA NIM",
+        });
+        break;
+      case "cerebras":
+        provider = new OpenAICompatibleProvider({
+          ...effectiveConfig,
+          providerId: "cerebras",
+          providerName: "Cerebras",
+        });
+        break;
+      case "codebuddy":
+        provider = new OpenAICompatibleProvider({
+          ...effectiveConfig,
+          providerId: "codebuddy",
+          providerName: "Tencent CodeBuddy",
+        });
+        break;
+      case "codeflicker":
+        provider = new OpenAICompatibleProvider({
+          ...effectiveConfig,
+          providerId: "codeflicker",
+          providerName: "Kuaishou CodeFlicker",
+        });
+        break;
+      case "tongyi":
+        provider = new OpenAICompatibleProvider({
+          ...effectiveConfig,
+          providerId: "tongyi",
+          providerName: "Tongyi Lingma",
+        });
+        break;
       default:
         throw new Error(formatMessage("provider.type.unknown", [providerType]));
     }
@@ -183,6 +260,50 @@ export class AIProviderFactory {
       new LMStudioProvider(),
       new OpenAICompatibleProvider(),
       new XiaomiProvider(),
+      new OpenAICompatibleProvider({
+        providerId: "iflow",
+        providerName: "Alibaba iFlow",
+      }),
+      new OpenAICompatibleProvider({
+        providerId: "volcano",
+        providerName: "ByteDance Volcano",
+      }),
+      new OpenAICompatibleProvider({
+        providerId: "modelscope",
+        providerName: "ModelScope",
+      }),
+      new OpenAICompatibleProvider({
+        providerId: "kat",
+        providerName: "Kuaishou KAT",
+      }),
+      new OpenAICompatibleProvider({
+        providerId: "longcat",
+        providerName: "Meituan LongCat",
+      }),
+      new OpenAICompatibleProvider({
+        providerId: "qiniu",
+        providerName: "Qiniu AI",
+      }),
+      new OpenAICompatibleProvider({
+        providerId: "nvidia",
+        providerName: "NVIDIA NIM",
+      }),
+      new OpenAICompatibleProvider({
+        providerId: "cerebras",
+        providerName: "Cerebras",
+      }),
+      new OpenAICompatibleProvider({
+        providerId: "codebuddy",
+        providerName: "Tencent CodeBuddy",
+      }),
+      new OpenAICompatibleProvider({
+        providerId: "codeflicker",
+        providerName: "Kuaishou CodeFlicker",
+      }),
+      new OpenAICompatibleProvider({
+        providerId: "tongyi",
+        providerName: "Tongyi Lingma",
+      }),
     ];
   }
 

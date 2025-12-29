@@ -26,14 +26,20 @@ export class XiaomiProvider extends BaseOpenAIProvider {
    * 从配置管理器获取API密钥，初始化基类
    */
   constructor(config?: any) {
+    // 支持两种配置结构：
+    // 1. 新结构: config.providers.xiaomi.apiKey
+    // 2. 直接结构: config.apiKey (来自 ProviderSelectionService)
     const xiaomiConfig = config?.providers?.xiaomi;
-    const apiKey = xiaomiConfig?.apiKey || "";
+    const apiKey = xiaomiConfig?.apiKey || config?.apiKey || "";
 
     // 仅在开发模式下输出详细调试信息
     if (process.env.NODE_ENV === "development" || !apiKey) {
       console.log("[XiaomiProvider] Constructor called:", {
         hasConfig: !!config,
         hasApiKey: !!apiKey,
+        configKeys: config ? Object.keys(config) : [],
+        hasProviders: !!config?.providers,
+        hasXiaomiConfig: !!xiaomiConfig,
         // 如果没有 apiKey,输出调用栈以便调试
         ...(!apiKey && {
           purpose: "Likely called from getAllProviders() for metadata",
@@ -79,6 +85,16 @@ export class XiaomiProvider extends BaseOpenAIProvider {
    * @param error - 捕获到的错误对象
    */
   protected handleApiError(error: any): void {
+    console.log("[XiaomiProvider] handleApiError called:", {
+      hasError: !!error,
+      errorType: typeof error,
+      errorKeys: error ? Object.keys(error) : [],
+      status: error?.status,
+      code: error?.code,
+      message: error?.message,
+      type: error?.type,
+      param: error?.param,
+    });
     if (error.status) {
       const errorMessage = this.mapHttpStatusToMessage(error.status);
       console.error(
@@ -95,6 +111,7 @@ export class XiaomiProvider extends BaseOpenAIProvider {
    * @returns 对应的错误消息字符串
    */
   private mapHttpStatusToMessage(status: number): string {
+    console.log("thisconfig", this.config);
     switch (status) {
       case 400:
         return "请求体格式错误，请根据错误信息提示修改请求体或检查模型是否存在";

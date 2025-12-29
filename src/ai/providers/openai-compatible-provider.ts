@@ -13,8 +13,8 @@ export class OpenAICompatibleProvider extends BaseOpenAIProvider {
       apiKey: config?.apiKey,
       baseUrl: config?.baseUrl,
       apiVersion: config?.apiVersion,
-      providerId: "openai-compatible",
-      providerName: "OpenAI Compatible",
+      providerId: config?.providerId || "openai-compatible",
+      providerName: config?.providerName || "OpenAI Compatible",
       models: [], // Models will be fetched dynamically or from config
       defaultModel: config?.model || "gpt-3.5-turbo",
       useAzure: config?.useAzure,
@@ -37,15 +37,13 @@ export class OpenAICompatibleProvider extends BaseOpenAIProvider {
     const isAzureAiInference = this._isAzureAiInference(baseUrl);
     const urlHost = this._getUrlHost(baseUrl);
     const isAzureOpenAi =
-      urlHost === "azure.com" ||
-      urlHost.endsWith(".azure.com") ||
-      useAzure;
+      urlHost === "azure.com" || urlHost.endsWith(".azure.com") || useAzure;
 
     // Get custom headers from config
     // customHeaders is already an object { [key: string]: string }
     const customHeaders: Record<string, string> =
       typeof providerConfig.customHeaders === "object" &&
-        providerConfig.customHeaders !== null
+      providerConfig.customHeaders !== null
         ? (providerConfig.customHeaders as Record<string, string>)
         : {};
 
@@ -109,7 +107,6 @@ export class OpenAICompatibleProvider extends BaseOpenAIProvider {
       maxTokens?: number;
     }
   ): Promise<{ content: string; usage?: any; jsonContent?: any }> {
-
     // Get additional provider-specific settings from globalConfig or default values
     const enableR1Models = this.config.enableR1Models || false;
     const useLegacyFormat = this.config.useLegacyFormat || false;
@@ -268,7 +265,6 @@ export class OpenAICompatibleProvider extends BaseOpenAIProvider {
       maxTokens?: number;
     }
   ): Promise<AsyncIterable<string>> {
-
     const enableR1Models = this.config.enableR1Models || false;
     const useLegacyFormat = this.config.useLegacyFormat || false;
     const customModelSupportsPromptCache =
@@ -392,8 +388,8 @@ export class OpenAICompatibleProvider extends BaseOpenAIProvider {
         this.handleContextLengthError(
           error,
           (params.model && params.model.id) ||
-          this.config.defaultModel ||
-          "gpt-3.5-turbo"
+            this.config.defaultModel ||
+            "gpt-3.5-turbo"
         );
       }
     };
@@ -420,7 +416,8 @@ export class OpenAICompatibleProvider extends BaseOpenAIProvider {
    */
   async getModels(): Promise<AIModel[]> {
     // Get configured model from provider config
-    const configuredModel = this.config.model || this.config.defaultModel || "gpt-3.5-turbo";
+    const configuredModel =
+      this.config.model || this.config.defaultModel || "gpt-3.5-turbo";
 
     try {
       const response = await this.withTimeout(

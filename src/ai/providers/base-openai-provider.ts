@@ -84,12 +84,15 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
         debug: (msg: string) => logger.debug(msg),
       },
     };
+    console.log("config", config, this);
 
     if (this.config.baseUrl) {
       config.baseURL = this.config.baseUrl;
       config.defaultHeaders = {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
+        "api-key": apiKey,
+        Authorization: `Bearer ${apiKey}`,
       };
     }
 
@@ -109,7 +112,12 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       `[BaseOpenAIProvider] Creating OpenAI client with config:`,
       JSON.stringify(loggableConfig, null, 2)
     );
-    console.log("config", config);
+    console.log("[BaseOpenAIProvider] createClient this.config:", {
+      baseUrl: this.config.baseUrl,
+      hasBaseUrl: !!this.config.baseUrl,
+      apiKey: this.config.apiKey ? "***" : undefined,
+      providerId: this.config.providerId,
+    });
 
     return new OpenAI(config);
   }
@@ -134,9 +142,21 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       config.defaultHeaders = {
         "User-Agent":
           "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
+        "api-key": apiKey,
+        Authorization: `Bearer ${apiKey}`,
       };
     }
-    console.log("config", config);
+    console.log("[BaseOpenAIProvider] createClientForModel config:", {
+      hasApiKey: !!apiKey,
+      hasBaseUrl: !!baseUrl,
+      baseUrl: baseUrl,
+      hasDefaultHeaders: !!config.defaultHeaders,
+      defaultHeaders: config.defaultHeaders,
+      modelId: model?.id,
+      modelBaseUrl: model?.baseUrl,
+      configBaseUrl: this.config.baseUrl,
+      thisConfigKeys: Object.keys(this.config),
+    });
     return new OpenAI(config);
   }
 
@@ -249,7 +269,17 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
             yield content;
           }
         }
-      } catch (error) {
+      } catch (error: any) {
+        console.log("[BaseOpenAIProvider] Stream request error:", {
+          error: error,
+          errorType: typeof error,
+          errorKeys: error ? Object.keys(error) : [],
+          status: error?.status,
+          code: error?.code,
+          message: error?.message,
+          hasConfig: !!this.config,
+          configApiKey: this.config?.apiKey ? "***" : undefined,
+        });
         this.handleApiError(error);
       }
     };
@@ -386,7 +416,8 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       if (retries > 0) {
         const delay = Math.min(1000 * (this.MAX_RETRIES - retries + 1), 3000);
         console.warn(
-          `[BaseOpenAIProvider] Attempt for ${operationName} failed. Retrying in ${delay}ms... (${retries - 1
+          `[BaseOpenAIProvider] Attempt for ${operationName} failed. Retrying in ${delay}ms... (${
+            retries - 1
           } retries left). Error:`,
           error
         );
@@ -468,47 +499,6 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
         `[BaseOpenAIProvider] Attempting to fetch models from API for provider: ${this.config.providerName}`
       );
       const response = await this.openai.models.list();
-      console.log(
-        `[BaseOpenAIProvider] Successfully fetched models from API for provider: ${this.config.providerName}`
-      );
-      return response;
-    } catch (error) {
-      console.dir(error);
-      console.error(
-        `[BaseOpenAIProvider] Failed to fetch models for provider: ${this.config.providerName}. Full error:`,
-        error
-      );
-      // 向上抛出错误，由调用方（getModels/refreshModels）决定如何处理
-      throw error;
-    }
-  }
-
-  /**
-   * 私有辅助方法：从API获取模型列表，包含重试和超时逻辑
-   * @returns Promise<OpenAI.Models.ModelsPage>
-   * @private
-   */
-  private async _fetchModelsFromApi2(): Promise<OpenAI.Models.ModelsPage> {
-    try {
-      console.log(
-        `[BaseOpenAIProvider] Attempting to fetch models from API for provider: ${this.config.providerName}`
-      );
-      const response = await this.withTimeout(
-        this.withRetry(
-          async () => {
-            console.log(
-              `[BaseOpenAIProvider] Calling openai.models.list() at ${new Date().toISOString()}`
-            );
-            const result = await this.openai.models.list();
-            console.log(
-              `[BaseOpenAIProvider] openai.models.list() returned successfully at ${new Date().toISOString()}`
-            );
-            return result;
-          },
-          this.MAX_RETRIES,
-          `fetchModels for ${this.config.providerName}`
-        )
-      );
       console.log(
         `[BaseOpenAIProvider] Successfully fetched models from API for provider: ${this.config.providerName}`
       );

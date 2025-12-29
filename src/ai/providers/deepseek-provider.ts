@@ -1,5 +1,6 @@
 import { BaseOpenAIProvider } from "@/ai/providers/base-openai-provider";
 import { AIModel } from "@/ai/types";
+import { extractApiKey, extractApiVersion, logConfigParsing } from "@/ai/providers/utils/config-parser";
 
 /**
  * Deepseek AI模型配置列表
@@ -37,25 +38,18 @@ export class DeepseekAIProvider extends BaseOpenAIProvider {
    * 从配置管理器获取API密钥，初始化基类
    */
   constructor(config?: any) {
-    // 🔧 修复: 为 apiKey 提供默认值以支持 getAllProviders() 等元数据获取场景
-    // 当没有 config 或 apiKey 时,使用空字符串作为占位符
-    // 实际的 API 调用会在 isAvailable() 和具体方法中进行验证
-    const deepseekConfig = config?.providers?.deepseek;
-    const apiKey = deepseekConfig?.apiKey || "";
-    const apiVersion = deepseekConfig?.apiVersion;
+    // 使用统一的配置解析工具
+    const apiKey = extractApiKey(config, "deepseek");
+    const apiVersion = extractApiVersion(config, "deepseek");
 
-    // 仅在开发模式下输出详细调试信息
+    // 调试日志
     if (process.env.NODE_ENV === "development" || !apiKey) {
-      console.log("[DeepseekAIProvider] Constructor called:", {
-        hasConfig: !!config,
-        hasApiKey: !!apiKey,
-        apiVersion: apiVersion || "not set",
-        // 如果没有 apiKey,输出调用栈以便调试
-        ...(!apiKey && {
-          purpose: "Likely called from getAllProviders() for metadata",
+      logConfigParsing(config, "deepseek", { apiKey, apiVersion });
+      if (!apiKey) {
+        console.log("[DeepseekAIProvider] No API key found, likely called for metadata", {
           stack: new Error().stack?.split("\n").slice(1, 3).join("\n"),
-        }),
-      });
+        });
+      }
     }
 
     super({

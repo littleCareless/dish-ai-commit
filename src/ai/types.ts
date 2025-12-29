@@ -361,6 +361,53 @@ export type BaiduQianfanModels =
 
 export type DeepseekModels = "deepseek-v3-1-terminus" | "deepseek-v3-1-250821";
 
+export type IFlowModels =
+  | "kimi-k2-instruct-0905"
+  | "glm-4.6"
+  | "deepseek-v3.2-exp"
+  | "qwen3-coder-plus";
+
+export type VolcanoModels =
+  | "doubao-pro"
+  | "doubao-lite"
+  | "deepseek-v3.2"
+  | "kimi-k2-instruct-0905";
+
+export type ModelScopeModels =
+  | "deepseek-ai/DeepSeek-R1-0528"
+  | "deepseek-ai/DeepSeek-V3.1";
+
+export type KatModels = "KAT-Coder-Pro-V1" | "KAT-Coder-Air-V1";
+
+export type LongCatModels = "longcat-generic";
+
+export type QiniuModels =
+  | "openai-compatible"
+  | "claude-3-opus"
+  | "gemini-1.5-pro";
+
+export type NvidiaModels =
+  | "deepseek-v3.2"
+  | "qwen3-coder-480b"
+  | "kimi-k2-thinking"
+  | "minimax-m2"
+  | "mistral-large"
+  | "devstral";
+
+export type CerebrasModels =
+  | "glm-4.6"
+  | "qwen-3-235b-a22b-instruct-2507"
+  | "gpt-oss-120b";
+
+export type CodeBuddyModels =
+  | "glm-4.6"
+  | "deepseek-v3.1-terminus"
+  | "huyuan-2.0";
+
+export type CodeFlickerModels = "kimi-k2-0905" | "kat-coder-pro";
+
+export type TongyiModels = "qwen-max" | "qwen-plus" | "qwen-turbo";
+
 export type SiliconFlowModels =
   // Qwen系列
   | "Qwen/QwQ-32B"
@@ -485,50 +532,72 @@ export type AnthropicAIModels =
 
 export type AIModels<Provider extends AIProviders = AIProviders> =
   Provider extends "github"
-  ? GitHubModels
-  : Provider extends "openai"
-  ? OpenAIModels
-  : Provider extends "vscode"
-  ? VSCodeAIModels
-  : Provider extends "zhipu"
-  ? ZhipuAIModels
-  : Provider extends "dashscope"
-  ? DashScopeModels
-  : Provider extends "doubao"
-  ? DoubaoModels
-  : Provider extends "deepseek"
-  ? DeepseekModels
-  : Provider extends "gemini"
-  ? GeminiAIModels
-  : Provider extends "google-ai"
-  ? GoogleAIModels
-  : Provider extends "baidu-qianfan"
-  ? BaiduQianfanModels
-  : Provider extends "siliconflow"
-  ? SiliconFlowModels
-  : Provider extends "openrouter"
-  ? OpenRouterModels
-  : Provider extends "perplexity"
-  ? PerplexityAIModels
-  : Provider extends "premai"
-  ? PremAIModels
-  : Provider extends "together"
-  ? TogetherAIModels
-  : Provider extends "xai"
-  ? XAIModels
-  : Provider extends "anthropic"
-  ? AnthropicAIModels
-  : Provider extends "mistral"
-  ? MistralAIModels
-  : Provider extends "cloudflare"
-  ? CloudflareWorkersAIModels
-  : Provider extends "vertexai"
-  ? VertexAIModels
-  : Provider extends "groq"
-  ? "mixtral-8x7b-32768"
-  : Provider extends "lmstudio"
-  ? LMStudioModels
-  : OpenAIModels;
+    ? GitHubModels
+    : Provider extends "openai"
+      ? OpenAIModels
+      : Provider extends "vscode"
+        ? VSCodeAIModels
+        : Provider extends "zhipu"
+          ? ZhipuAIModels
+          : Provider extends "dashscope"
+            ? DashScopeModels
+            : Provider extends "doubao"
+              ? DoubaoModels
+              : Provider extends "deepseek"
+                ? DeepseekModels
+                : Provider extends "gemini"
+                  ? GeminiAIModels
+                  : Provider extends "google-ai"
+                    ? GoogleAIModels
+                    : Provider extends "baidu-qianfan"
+                      ? BaiduQianfanModels
+                      : Provider extends "siliconflow"
+                        ? SiliconFlowModels
+                        : Provider extends "iflow"
+                          ? IFlowModels
+                          : Provider extends "volcano"
+                            ? VolcanoModels
+                            : Provider extends "modelscope"
+                              ? ModelScopeModels
+                              : Provider extends "kat"
+                                ? KatModels
+                                : Provider extends "longcat"
+                                  ? LongCatModels
+                                  : Provider extends "qiniu"
+                                    ? QiniuModels
+                                    : Provider extends "nvidia"
+                                      ? NvidiaModels
+                                      : Provider extends "cerebras"
+                                        ? CerebrasModels
+                                        : Provider extends "codebuddy"
+                                          ? CodeBuddyModels
+                                          : Provider extends "codeflicker"
+                                            ? CodeFlickerModels
+                                            : Provider extends "tongyi"
+                                              ? TongyiModels
+                                              : Provider extends "openrouter"
+                                                ? OpenRouterModels
+                                                : Provider extends "perplexity"
+                                                  ? PerplexityAIModels
+                                                  : Provider extends "premai"
+                                                    ? PremAIModels
+                                                    : Provider extends "together"
+                                                      ? TogetherAIModels
+                                                      : Provider extends "xai"
+                                                        ? XAIModels
+                                                        : Provider extends "anthropic"
+                                                          ? AnthropicAIModels
+                                                          : Provider extends "mistral"
+                                                            ? MistralAIModels
+                                                            : Provider extends "cloudflare"
+                                                              ? CloudflareWorkersAIModels
+                                                              : Provider extends "vertexai"
+                                                                ? VertexAIModels
+                                                                : Provider extends "groq"
+                                                                  ? "mixtral-8x7b-32768"
+                                                                  : Provider extends "lmstudio"
+                                                                    ? LMStudioModels
+                                                                    : OpenAIModels;
 
 export type SupportedAIModels =
   | `github:${AIModels<"github">}`
