@@ -2,6 +2,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { postMessage } from "@/utils/vscode";
+import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 import {
   BarChart3,
   ClipboardCheck,
@@ -69,12 +70,15 @@ export const FeaturesSettings: React.FC = () => {
 
   // Load settings from backend on mount
   useEffect(() => {
-    postMessage("loadFeaturesSettings");
+    postMessage(UIRequest.FeaturesLoadSettings);
 
     // Listen for settings updates from backend
     const handleMessage = (event: MessageEvent) => {
       const message = event.data;
-      if (message.command === "updateFeaturesSettings" && message.settings) {
+      if (
+        message.command === ExtensionResponse.FeaturesSettingsLoaded &&
+        message.settings
+      ) {
         setFeatures(message.settings);
       }
     };
@@ -94,7 +98,7 @@ export const FeaturesSettings: React.FC = () => {
     }));
 
     // Save to backend
-    postMessage("saveFeaturesSettings", {
+    postMessage(UIRequest.FeaturesSaveSettings, {
       ...features,
       [feature]: enabled,
     });

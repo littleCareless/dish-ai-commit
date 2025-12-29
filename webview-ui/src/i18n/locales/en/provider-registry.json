@@ -21,13 +21,6 @@
         "validation": {
           "pattern": "Please enter a valid URL"
         }
-      },
-      "baseURL": {
-        "label": "Custom Base URL",
-        "placeholder": "https://api.openai.com/v1",
-        "validation": {
-          "pattern": "Please enter a valid URL"
-        }
       }
     }
   },
@@ -108,7 +101,7 @@
           "required": "API Key is required"
         }
       },
-      "baseURL": {
+      "baseUrl": {
         "label": "Resource Name",
         "placeholder": "my-resource-name",
         "helpText": "Azure resource name (not the full URL)",
@@ -181,7 +174,7 @@
           "required": "API Key is required"
         }
       },
-      "baseURL": {
+      "baseUrl": {
         "label": "Endpoint URL",
         "placeholder": "https://your-resource.openai.azure.com/",
         "helpText": "Endpoint URL for the Azure OpenAI service",
@@ -358,7 +351,7 @@
           "pattern": "Format should be ACCESS_KEY_ID:SECRET_ACCESS_KEY"
         }
       },
-      "baseURL": {
+      "baseUrl": {
         "label": "AWS Region",
         "placeholder": "us-east-1",
         "helpText": "AWS region code (e.g., us-east-1, us-west-2)",
@@ -416,19 +409,210 @@
       }
     }
   },
+  "iflow": {
+    "description": "Alibaba Cloud Iflow Platform",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "Iflow API Key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      },
+      "baseUrl": {
+        "label": "Base URL",
+        "helpText": "Iflow API base path (e.g. https://iflow.alibaba.com/v1)",
+        "validation": {
+          "required": "Base URL is required"
+        }
+      }
+    }
+  },
+  "volcano": {
+    "description": "ByteDance Volcano Engine",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "Volcano Engine API Key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      },
+      "baseUrl": {
+        "label": "Base URL",
+        "helpText": "Volcano Engine API base path (e.g. https://ark.cn-beijing.volces.com/api/v3)",
+        "validation": {
+          "required": "Base URL is required"
+        }
+      }
+    }
+  },
+  "modelscope": {
+    "description": "Alibaba ModelScope Community",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "ModelScope API Token",
+        "validation": {
+          "required": "API Key is required"
+        }
+      },
+      "baseUrl": {
+        "label": "Base URL",
+        "helpText": "ModelScope API base path (e.g. https://api-inference.modelscope.cn/v1)",
+        "validation": {
+          "required": "Base URL is required"
+        }
+      }
+    }
+  },
+  "kat": {
+    "description": "Kuaishou KAT-Coder Models",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "KAT-Coder API Key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      },
+      "baseUrl": {
+        "label": "Base URL",
+        "helpText": "KAT-Coder API base path (e.g. https://api.kat.kuaishou.com/v1)",
+        "validation": {
+          "required": "Base URL is required"
+        }
+      }
+    }
+  },
+  "longcat": {
+    "description": "Meituan LongCat Models",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "LongCat API Key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      },
+      "baseUrl": {
+        "label": "Base URL",
+        "helpText": "LongCat API base path (e.g. https://api.longcat.meituan.com/v1)",
+        "validation": {
+          "required": "Base URL is required"
+        }
+      }
+    }
+  },
+  "qiniu": {
+    "description": "Qiniu AI Model Service",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "Qiniu API Key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      },
+      "baseUrl": {
+        "label": "Base URL",
+        "helpText": "Qiniu API base path (e.g. https://api.qiniu.com/v1)",
+        "validation": {
+          "required": "Base URL is required"
+        }
+      }
+    }
+  },
+  "nvidia": {
+    "description": "NVIDIA NIM API",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "nvapi-...",
+        "helpText": "NVIDIA NIM API Key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      },
+      "baseUrl": {
+        "label": "Base URL",
+        "helpText": "NVIDIA NIM API base path (e.g. https://integrate.api.nvidia.com/v1)",
+        "validation": {
+          "required": "Base URL is required"
+        }
+      }
+    }
+  },
+  "codebuddy": {
+    "description": "Tencent Cloud CodeBuddy",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "CodeBuddy API Key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      },
+      "baseUrl": {
+        "label": "Base URL",
+        "helpText": "CodeBuddy API base path (e.g. https://api.codebuddy.tencent.com/v1)",
+        "validation": {
+          "required": "Base URL is required"
+        }
+      }
+    }
+  },
+  "codeflicker": {
+    "description": "Kuaishou CodeFlicker",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "CodeFlicker API Key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      },
+      "baseUrl": {
+        "label": "Base URL",
+        "helpText": "CodeFlicker API base path (e.g. https://api.codeflicker.kuaishou.com/v1)",
+        "validation": {
+          "required": "Base URL is required"
+        }
+      }
+    }
+  },
+  "tongyi": {
+    "description": "Alibaba Tongyi Lingma",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "Tongyi Lingma API Key",
+        "validation": {
+          "required": "API Key is required"
+        }
+      },
+      "baseUrl": {
+        "label": "Base URL",
+        "helpText": "Tongyi Lingma API base path (e.g. https://dashscope.aliyuncs.com/compatible-mode/v1)",
+        "validation": {
+          "required": "Base URL is required"
+        }
+      }
+    }
+  },
   "ollama": {
     "description": "Local AI model runtime environment",
     "fields": {
       "baseUrl": {
-        "label": "Ollama Server URL",
-        "placeholder": "http://localhost:11434",
-        "helpText": "Address of the Ollama server",
-        "validation": {
-          "required": "Server URL is required",
-          "pattern": "Please enter a valid URL"
-        }
-      },
-      "baseURL": {
         "label": "Ollama Server URL",
         "placeholder": "http://localhost:11434",
         "helpText": "Address of the Ollama server",
@@ -443,15 +627,6 @@
     "description": "Local AI model management tool",
     "fields": {
       "baseUrl": {
-        "label": "LM Studio Server URL",
-        "placeholder": "http://localhost:1234",
-        "helpText": "Address of the LM Studio server",
-        "validation": {
-          "required": "Server URL is required",
-          "pattern": "Please enter a valid URL"
-        }
-      },
-      "baseURL": {
         "label": "LM Studio Server URL",
         "placeholder": "http://localhost:1234",
         "helpText": "Address of the LM Studio server",

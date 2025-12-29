@@ -208,9 +208,6 @@ importers:
       ollama:
         specifier: ^0.6.0
         version: 0.6.3
-      ollama-ai-provider-v2:
-        specifier: ^1.5.4
-        version: 1.5.5(zod@4.2.1)
       openai:
         specifier: ^6.13.0
         version: 6.13.0(ws@8.18.3)(zod@4.2.1)

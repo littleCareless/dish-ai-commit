@@ -1053,6 +1053,576 @@ export const providerRegistry: ProviderRegistryType = {
   },
 
   // === 中国厂商 ===
+  iflow: {
+    id: "iflow",
+    name: "阿里心流",
+    description: "iflow.description",
+    website: "https://iflow.alibaba.com",
+    type: ProviderType.CLOUD,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "iflow.fields.apiKey.label",
+        required: true,
+        secure: true,
+        helpText: "iflow.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "iflow.fields.apiKey.validation.required",
+          },
+        ],
+      },
+      {
+        key: "baseUrl",
+        type: FieldType.URL,
+        label: "iflow.fields.baseUrl.label",
+        required: true,
+        defaultValue: "https://iflow.alibaba.com/v1",
+        helpText: "iflow.fields.baseUrl.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "iflow.fields.baseUrl.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: true,
+      vision: false,
+      promptCache: false,
+      embeddings: false,
+      tools: false,
+      jsonMode: false,
+    },
+    models: [
+      {
+        id: "kimi-k2-instruct-0905",
+        name: "Kimi K2 Instruct",
+        contextWindow: 128000,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+    ],
+  },
+
+  volcano: {
+    id: "volcano",
+    name: "字节火山引擎",
+    description: "volcano.description",
+    website: "https://www.volcengine.com",
+    type: ProviderType.CLOUD,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "volcano.fields.apiKey.label",
+        required: true,
+        secure: true,
+        helpText: "volcano.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "volcano.fields.apiKey.validation.required",
+          },
+        ],
+      },
+      {
+        key: "baseUrl",
+        type: FieldType.URL,
+        label: "volcano.fields.baseUrl.label",
+        required: true,
+        defaultValue: "https://ark.cn-beijing.volces.com/api/v3",
+        helpText: "volcano.fields.baseUrl.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "volcano.fields.baseUrl.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: true,
+      vision: false,
+      promptCache: false,
+      embeddings: false,
+      tools: false,
+      jsonMode: false,
+    },
+    models: [
+      {
+        id: "doubao-pro",
+        name: "Doubao Pro",
+        contextWindow: 32000,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+    ],
+  },
+
+  modelscope: {
+    id: "modelscope",
+    name: "魔搭社区",
+    description: "modelscope.description",
+    website: "https://modelscope.cn",
+    type: ProviderType.CLOUD,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "modelscope.fields.apiKey.label",
+        required: true,
+        secure: true,
+        helpText: "modelscope.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "modelscope.fields.apiKey.validation.required",
+          },
+        ],
+      },
+      {
+        key: "baseUrl",
+        type: FieldType.URL,
+        label: "modelscope.fields.baseUrl.label",
+        required: true,
+        defaultValue: "https://api-inference.modelscope.cn/v1",
+        helpText: "modelscope.fields.baseUrl.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "modelscope.fields.baseUrl.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: false,
+      vision: false,
+      promptCache: false,
+      embeddings: false,
+      tools: false,
+      jsonMode: false,
+    },
+    models: [
+      {
+        id: "deepseek-ai/DeepSeek-V3.1",
+        name: "DeepSeek V3.1",
+        contextWindow: 32000,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+    ],
+  },
+
+  kat: {
+    id: "kat",
+    name: "快手 KAT",
+    description: "kat.description",
+    website: "https://kat.kuaishou.com",
+    type: ProviderType.CLOUD,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "kat.fields.apiKey.label",
+        required: true,
+        secure: true,
+        helpText: "kat.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "kat.fields.apiKey.validation.required",
+          },
+        ],
+      },
+      {
+        key: "baseUrl",
+        type: FieldType.URL,
+        label: "kat.fields.baseUrl.label",
+        required: true,
+        defaultValue: "https://api.kat.kuaishou.com/v1",
+        helpText: "kat.fields.baseUrl.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "kat.fields.baseUrl.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: false,
+      vision: false,
+      promptCache: false,
+      embeddings: false,
+      tools: false,
+      jsonMode: false,
+    },
+    models: [
+      {
+        id: "KAT-Coder-Pro-V1",
+        name: "KAT Coder Pro V1",
+        contextWindow: 16384,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+    ],
+  },
+
+  longcat: {
+    id: "longcat",
+    name: "美团 LongCat",
+    description: "longcat.description",
+    website: "https://longcat.meituan.com",
+    type: ProviderType.CLOUD,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "longcat.fields.apiKey.label",
+        required: true,
+        secure: true,
+        helpText: "longcat.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "longcat.fields.apiKey.validation.required",
+          },
+        ],
+      },
+      {
+        key: "baseUrl",
+        type: FieldType.URL,
+        label: "longcat.fields.baseUrl.label",
+        required: true,
+        defaultValue: "https://api.longcat.meituan.com/v1",
+        helpText: "longcat.fields.baseUrl.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "longcat.fields.baseUrl.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: false,
+      vision: false,
+      promptCache: false,
+      embeddings: false,
+      tools: false,
+      jsonMode: false,
+    },
+    models: [
+      {
+        id: "longcat-generic",
+        name: "LongCat Generic",
+        contextWindow: 8192,
+        maxOutputTokens: 2048,
+        capabilities: ["text"],
+      },
+    ],
+  },
+
+  qiniu: {
+    id: "qiniu",
+    name: "七牛云 AI",
+    description: "qiniu.description",
+    website: "https://www.qiniu.com",
+    type: ProviderType.CLOUD,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "qiniu.fields.apiKey.label",
+        required: true,
+        secure: true,
+        helpText: "qiniu.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "qiniu.fields.apiKey.validation.required",
+          },
+        ],
+      },
+      {
+        key: "baseUrl",
+        type: FieldType.URL,
+        label: "qiniu.fields.baseUrl.label",
+        required: true,
+        defaultValue: "https://api.qiniu.com/v1",
+        helpText: "qiniu.fields.baseUrl.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "qiniu.fields.baseUrl.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: true,
+      vision: false,
+      promptCache: false,
+      embeddings: false,
+      tools: false,
+      jsonMode: false,
+    },
+    models: [
+      {
+        id: "openai-compatible",
+        name: "OpenAI Compatible",
+        contextWindow: 32000,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+    ],
+  },
+
+  nvidia: {
+    id: "nvidia",
+    name: "NVIDIA NIM",
+    description: "nvidia.description",
+    website: "https://www.nvidia.com",
+    type: ProviderType.CLOUD,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "nvidia.fields.apiKey.label",
+        required: true,
+        secure: true,
+        helpText: "nvidia.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "nvidia.fields.apiKey.validation.required",
+          },
+        ],
+      },
+      {
+        key: "baseUrl",
+        type: FieldType.URL,
+        label: "nvidia.fields.baseUrl.label",
+        required: true,
+        defaultValue: "https://integrate.api.nvidia.com/v1",
+        helpText: "nvidia.fields.baseUrl.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "nvidia.fields.baseUrl.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: true,
+      vision: false,
+      promptCache: false,
+      embeddings: false,
+      tools: false,
+      jsonMode: false,
+    },
+    models: [
+      {
+        id: "deepseek-v3.2",
+        name: "DeepSeek V3.2",
+        contextWindow: 32000,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+    ],
+  },
+
+  codebuddy: {
+    id: "codebuddy",
+    name: "腾讯云 CodeBuddy",
+    description: "codebuddy.description",
+    website: "https://codebuddy.tencent.com",
+    type: ProviderType.CLOUD,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "codebuddy.fields.apiKey.label",
+        required: true,
+        secure: true,
+        helpText: "codebuddy.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "codebuddy.fields.apiKey.validation.required",
+          },
+        ],
+      },
+      {
+        key: "baseUrl",
+        type: FieldType.URL,
+        label: "codebuddy.fields.baseUrl.label",
+        required: true,
+        defaultValue: "https://api.codebuddy.tencent.com/v1",
+        helpText: "codebuddy.fields.baseUrl.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "codebuddy.fields.baseUrl.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: true,
+      vision: false,
+      promptCache: false,
+      embeddings: false,
+      tools: false,
+      jsonMode: false,
+    },
+    models: [
+      {
+        id: "deepseek-v3.1-terminus",
+        name: "DeepSeek V3.1 Terminus",
+        contextWindow: 32000,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+    ],
+  },
+
+  codeflicker: {
+    id: "codeflicker",
+    name: "快手 CodeFlicker",
+    description: "codeflicker.description",
+    website: "https://codeflicker.kuaishou.com",
+    type: ProviderType.CLOUD,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "codeflicker.fields.apiKey.label",
+        required: true,
+        secure: true,
+        helpText: "codeflicker.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "codeflicker.fields.apiKey.validation.required",
+          },
+        ],
+      },
+      {
+        key: "baseUrl",
+        type: FieldType.URL,
+        label: "codeflicker.fields.baseUrl.label",
+        required: true,
+        defaultValue: "https://api.codeflicker.kuaishou.com/v1",
+        helpText: "codeflicker.fields.baseUrl.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "codeflicker.fields.baseUrl.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: false,
+      vision: false,
+      promptCache: false,
+      embeddings: false,
+      tools: false,
+      jsonMode: false,
+    },
+    models: [
+      {
+        id: "kat-coder-pro",
+        name: "KAT Coder Pro",
+        contextWindow: 32000,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+    ],
+  },
+
+  tongyi: {
+    id: "tongyi",
+    name: "阿里通义灵码",
+    description: "tongyi.description",
+    website: "https://tongyi.aliyun.com",
+    type: ProviderType.CLOUD,
+    authMode: AuthMode.API_KEY,
+    fields: [
+      {
+        key: "apiKey",
+        type: FieldType.PASSWORD,
+        label: "tongyi.fields.apiKey.label",
+        required: true,
+        secure: true,
+        helpText: "tongyi.fields.apiKey.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "tongyi.fields.apiKey.validation.required",
+          },
+        ],
+      },
+      {
+        key: "baseUrl",
+        type: FieldType.URL,
+        label: "tongyi.fields.baseUrl.label",
+        required: true,
+        defaultValue: "https://dashscope.aliyuncs.com/compatible-mode/v1",
+        helpText: "tongyi.fields.baseUrl.helpText",
+        validation: [
+          {
+            type: ValidationRuleType.REQUIRED,
+            message: "tongyi.fields.baseUrl.validation.required",
+          },
+        ],
+      },
+    ],
+    features: {
+      streaming: true,
+      functionCalling: true,
+      vision: true,
+      promptCache: false,
+      embeddings: false,
+      tools: false,
+      jsonMode: false,
+    },
+    models: [
+      {
+        id: "qwen-max",
+        name: "Qwen Max",
+        contextWindow: 32000,
+        maxOutputTokens: 4096,
+        capabilities: ["text"],
+      },
+    ],
+  },
+
   dashscope: {
     id: "dashscope",
     name: "阿里云通义千问",

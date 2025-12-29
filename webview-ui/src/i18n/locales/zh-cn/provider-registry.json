@@ -21,13 +21,6 @@
         "validation": {
           "pattern": "请输入有效的 URL"
         }
-      },
-      "baseURL": {
-        "label": "自定义基础 URL",
-        "placeholder": "https://api.openai.com/v1",
-        "validation": {
-          "pattern": "请输入有效的 URL"
-        }
       }
     }
   },
@@ -108,7 +101,7 @@
           "required": "API Key 是必需的"
         }
       },
-      "baseURL": {
+      "baseUrl": {
         "label": "Resource Name",
         "placeholder": "my-resource-name",
         "helpText": "Azure 资源名称 (不是完整的 URL)",
@@ -181,7 +174,7 @@
           "required": "API Key 是必需的"
         }
       },
-      "baseURL": {
+      "baseUrl": {
         "label": "Endpoint URL",
         "placeholder": "https://your-resource.openai.azure.com/",
         "helpText": "Azure OpenAI 服务的端点 URL",
@@ -358,7 +351,7 @@
           "pattern": "格式应为 ACCESS_KEY_ID:SECRET_ACCESS_KEY"
         }
       },
-      "baseURL": {
+      "baseUrl": {
         "label": "AWS Region",
         "placeholder": "us-east-1",
         "helpText": "AWS 区域代码 (例如 us-east-1, us-west-2)",
@@ -416,19 +409,210 @@
       }
     }
   },
+  "iflow": {
+    "description": "阿里心流 (Iflow) 开放平台",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "心流平台 API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      },
+      "baseUrl": {
+        "label": "API 基础 URL",
+        "helpText": "心流 API 的基础路径 (例如 https://iflow.alibaba.com/v1)",
+        "validation": {
+          "required": "Base URL 是必需的"
+        }
+      }
+    }
+  },
+  "volcano": {
+    "description": "字节火山引擎 (Volcano Engine)",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "火山引擎 API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      },
+      "baseUrl": {
+        "label": "API 基础 URL",
+        "helpText": "火山引擎 API 的基础路径 (例如 https://ark.cn-beijing.volces.com/api/v3)",
+        "validation": {
+          "required": "Base URL 是必需的"
+        }
+      }
+    }
+  },
+  "modelscope": {
+    "description": "阿里魔搭社区 (ModelScope)",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "魔搭社区 API Token",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      },
+      "baseUrl": {
+        "label": "API 基础 URL",
+        "helpText": "魔搭社区 API 的基础路径 (例如 https://api-inference.modelscope.cn/v1)",
+        "validation": {
+          "required": "Base URL 是必需的"
+        }
+      }
+    }
+  },
+  "kat": {
+    "description": "快手 KAT-Coder 模型",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "KAT-Coder API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      },
+      "baseUrl": {
+        "label": "API 基础 URL",
+        "helpText": "KAT-Coder API 的基础路径 (例如 https://api.kat.kuaishou.com/v1)",
+        "validation": {
+          "required": "Base URL 是必需的"
+        }
+      }
+    }
+  },
+  "longcat": {
+    "description": "美团 LongCat 模型",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "LongCat API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      },
+      "baseUrl": {
+        "label": "API 基础 URL",
+        "helpText": "LongCat API 的基础路径 (例如 https://api.longcat.meituan.com/v1)",
+        "validation": {
+          "required": "Base URL 是必需的"
+        }
+      }
+    }
+  },
+  "qiniu": {
+    "description": "七牛云 AI 大模型服务",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "七牛云 API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      },
+      "baseUrl": {
+        "label": "API 基础 URL",
+        "helpText": "七牛云 API 的基础路径 (例如 https://api.qiniu.com/v1)",
+        "validation": {
+          "required": "Base URL 是必需的"
+        }
+      }
+    }
+  },
+  "nvidia": {
+    "description": "NVIDIA NIM API",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "nvapi-...",
+        "helpText": "NVIDIA NIM API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      },
+      "baseUrl": {
+        "label": "API 基础 URL",
+        "helpText": "NVIDIA NIM API 的基础路径 (例如 https://integrate.api.nvidia.com/v1)",
+        "validation": {
+          "required": "Base URL 是必需的"
+        }
+      }
+    }
+  },
+  "codebuddy": {
+    "description": "腾讯云代码助手 (CodeBuddy)",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "CodeBuddy API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      },
+      "baseUrl": {
+        "label": "API 基础 URL",
+        "helpText": "CodeBuddy API 的基础路径 (例如 https://api.codebuddy.tencent.com/v1)",
+        "validation": {
+          "required": "Base URL 是必需的"
+        }
+      }
+    }
+  },
+  "codeflicker": {
+    "description": "快手 CodeFlicker",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "CodeFlicker API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      },
+      "baseUrl": {
+        "label": "API 基础 URL",
+        "helpText": "CodeFlicker API 的基础路径 (例如 https://api.codeflicker.kuaishou.com/v1)",
+        "validation": {
+          "required": "Base URL 是必需的"
+        }
+      }
+    }
+  },
+  "tongyi": {
+    "description": "阿里通义灵码",
+    "fields": {
+      "apiKey": {
+        "label": "API Key",
+        "placeholder": "...",
+        "helpText": "通义灵码 API 密钥",
+        "validation": {
+          "required": "API Key 是必需的"
+        }
+      },
+      "baseUrl": {
+        "label": "API 基础 URL",
+        "helpText": "通义灵码 API 的基础路径 (例如 https://dashscope.aliyuncs.com/compatible-mode/v1)",
+        "validation": {
+          "required": "Base URL 是必需的"
+        }
+      }
+    }
+  },
   "ollama": {
     "description": "本地 AI 模型运行环境",
     "fields": {
       "baseUrl": {
-        "label": "Ollama 服务器 URL",
-        "placeholder": "http://localhost:11434",
-        "helpText": "Ollama 服务器的地址",
-        "validation": {
-          "required": "服务器 URL 是必需的",
-          "pattern": "请输入有效的 URL"
-        }
-      },
-      "baseURL": {
         "label": "Ollama 服务器 URL",
         "placeholder": "http://localhost:11434",
         "helpText": "Ollama 服务器的地址",
@@ -443,15 +627,6 @@
     "description": "本地 AI 模型管理工具",
     "fields": {
       "baseUrl": {
-        "label": "LM Studio 服务器 URL",
-        "placeholder": "http://localhost:1234",
-        "helpText": "LM Studio 服务器的地址",
-        "validation": {
-          "required": "服务器 URL 是必需的",
-          "pattern": "请输入有效的 URL"
-        }
-      },
-      "baseURL": {
         "label": "LM Studio 服务器 URL",
         "placeholder": "http://localhost:1234",
         "helpText": "LM Studio 服务器的地址",

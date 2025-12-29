@@ -44,16 +44,24 @@ export const SettingsPage: React.FC = () => {
   const [profileToDelete, setProfileToDelete] = useState<Profile | null>(null);
 
   const loadData = useCallback(async () => {
+    console.log("[SettingsPage] loadData called");
     setIsLoading(true);
     setError(null);
     try {
       const { profiles, activeProfileId } = await profileManager.loadProfiles();
+      console.log(
+        "[SettingsPage] Loaded profiles:",
+        profiles,
+        "activeProfileId:",
+        activeProfileId,
+      );
       if (profiles.length === 0) {
         // No profiles found, create a default one
         const defaultProfile = profileManager.createDefaultProfile(
           t("defaultProfileName"),
           t("defaultProfileDescription"),
         );
+        console.log("[SettingsPage] Creating default profile:", defaultProfile);
         await profileManager.saveProfile(defaultProfile);
         await profileManager.setActiveProfile(defaultProfile.id);
 
@@ -61,15 +69,19 @@ export const SettingsPage: React.FC = () => {
         setAllProfiles([defaultProfile]);
         setActiveProfile(defaultProfile);
         setEditingProfile(defaultProfile);
+        console.log("[SettingsPage] Set default profile as editingProfile");
         return; // Early return to prevent state from being overwritten
       }
 
       setAllProfiles(profiles);
       const active =
         profiles.find((p) => p.id === activeProfileId) || profiles[0];
+      console.log("[SettingsPage] Active profile:", active);
       setActiveProfile(active);
       setEditingProfile(active); // Initially, edit the active profile
+      console.log("[SettingsPage] Set active profile as editingProfile");
     } catch (err) {
+      console.log("[SettingsPage] Error loading profiles:", err);
       setError(
         err instanceof Error ? err.message : t("errors.failedToLoadSettings"),
       );
@@ -156,9 +168,16 @@ export const SettingsPage: React.FC = () => {
   };
 
   const handleDone = async () => {
-    console.log("handleDone triggered with editingProfile:", editingProfile);
-    if (!editingProfile) return;
+    console.log(
+      "[SettingsPage] handleDone triggered with editingProfile:",
+      editingProfile,
+    );
+    if (!editingProfile) {
+      console.log("[SettingsPage] No editingProfile, returning");
+      return;
+    }
     try {
+      console.log("[SettingsPage] Saving profile:", editingProfile);
       await profileManager.saveProfile(editingProfile);
       await profileManager.setActiveProfile(editingProfile.id);
 
@@ -173,6 +192,7 @@ export const SettingsPage: React.FC = () => {
         t("messages.switchedToProfile", { name: editingProfile.name }),
       );
     } catch (err) {
+      console.log("[SettingsPage] Error saving profile:", err);
       showInformationMessage(
         t("errors.failedToApplySettings", {
           message:
@@ -193,13 +213,35 @@ export const SettingsPage: React.FC = () => {
     }
   };
 
+  // Track previous preferences to prevent infinite loops
+  const prevPreferencesRef = React.useRef<
+    typeof DEFAULT_USER_PREFERENCES | null
+  >(null);
+
   const handlePreferencesChange = (
     preferences: typeof DEFAULT_USER_PREFERENCES,
   ) => {
-    if (editingProfile) {
+    const prev = prevPreferencesRef.current;
+    const hasChanged =
+      !prev || JSON.stringify(prev) !== JSON.stringify(preferences);
+
+    console.log(
+      "[SettingsPage] handlePreferencesChange called with:",
+      preferences,
+      "hasChanged:",
+      hasChanged,
+    );
+
+    if (hasChanged && editingProfile) {
+      prevPreferencesRef.current = preferences;
       const newProfile = { ...editingProfile, preferences };
+      console.log("[SettingsPage] New profile:", newProfile);
       setEditingProfile(newProfile);
       setHasUnsavedChanges(true);
+    } else if (!editingProfile) {
+      console.log("[SettingsPage] No editingProfile available");
+    } else {
+      console.log("[SettingsPage] No change detected, skipping update");
     }
   };
 
