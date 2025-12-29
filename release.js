@@ -302,14 +302,37 @@ function createGitCommit(version) {
 
 // 主函数
 function main() {
+  // 检查是否为 dry-run 模式
+  const isDryRun = process.argv.includes('--dry-run') || process.argv.includes('-d');
+
   try {
     log("🚀 开始 Release 流程...", "blue");
+
+    if (isDryRun) {
+      log("⚠️  DRY RUN 模式 - 不会执行实际修改", "yellow");
+    }
 
     // 1. 验证环境
     validateGitStatus();
 
     // 2. 获取新版本号
     const newVersion = getNewVersion();
+
+    if (isDryRun) {
+      log("\n📋 DRY RUN 预览:", "cyan");
+      log(`   - 新版本号: ${newVersion}`, "cyan");
+      log(`   - 将更新文件:`, "cyan");
+      log(`     • package.json (0.56.1 → ${newVersion})`, "cyan");
+      log(`     • src/package.json (0.56.1 → ${newVersion})`, "cyan");
+      log(`     • webview-ui/package.json (0.56.1 → ${newVersion})`, "cyan");
+      log(`     • src/CHANGELOG.zh-CN.md`, "cyan");
+      log(`     • webview-ui/CHANGELOG.zh-CN.md`, "cyan");
+      log(`     • CHANGELOG.zh-CN.md (合并)`, "cyan");
+      log(`     • git commit: chore(release): v${newVersion}`, "cyan");
+      log(`     • git tag: v${newVersion}`, "cyan");
+      log("\n✅ DRY RUN 完成 - 未执行任何修改", "green");
+      return;
+    }
 
     // 确认
     const readline = require("readline").createInterface({
