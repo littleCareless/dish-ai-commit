@@ -145,9 +145,21 @@ importers:
       rimraf:
         specifier: ^6.0.1
         version: 6.1.2
+      standard-version:
+        specifier: ^9.5.0
+        version: 9.5.0
       turbo:
         specifier: ^2.5.8
         version: 2.6.3
+      typescript:
+        specifier: ^5.9.3
+        version: 5.9.3
+
+  shared:
+    devDependencies:
+      rimraf:
+        specifier: ^6.0.1
+        version: 6.1.2
       typescript:
         specifier: ^5.9.3
         version: 5.9.3
@@ -4793,6 +4805,7 @@ packages:
 
   eslint-plugin-react-refresh@0.4.25:
     resolution: {integrity: sha512-dRUD2LOdEqI4zXHqbQ442blQAzdSuShAaiSq5Vtyy6LT08YUf0oOjBDo4VPx0dCPgiPWh1WB4dtbLOd0kOlDPQ==}
+    deprecated: This version introduced false positive. This was reverted in 0.4.26
     peerDependencies:
       eslint: '>=8.40'
 

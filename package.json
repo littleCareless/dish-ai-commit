@@ -57,6 +57,7 @@
     "ovsx": "0.10.4",
     "prettier": "^3.6.2",
     "rimraf": "^6.0.1",
+    "standard-version": "^9.5.0",
     "turbo": "^2.5.8",
     "typescript": "^5.9.3"
   },
