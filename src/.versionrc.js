@@ -56,11 +56,5 @@ module.exports = {
       section: "👷 Continuous Integration",
     },
   ],
-  skip: {
-    bump: false,
-    changelog: false,
-    commit: false,
-    tag: false,
-  },
   releaseCommitMessageFormat: "🚀 chore(release): {{currentTag}}",
 };

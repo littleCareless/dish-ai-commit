@@ -706,8 +706,7 @@
     "vscode:prepublish:esbuild": "npm run compile:esbuild -- --production",
     "prepare": "husky",
     "commit": "git add . && git-cz",
-    "release": "standard-version -i CHANGELOG.zh-CN.md",
-    "changelog": "conventional-changelog -i CHANGELOG.md -s -r 0",
+    "changelog": "standard-version -i CHANGELOG.zh-CN.md",
     "update-config": "ts-node ./scripts/update-config.ts"
   },
   "devDependencies": {

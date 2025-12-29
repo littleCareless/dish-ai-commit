@@ -1,9 +1,10 @@
 {
   "name": "@dish-ai-commit/webview-ui",
   "private": true,
-  "version": "0.54.0",
+  "version": "0.56.1",
   "type": "module",
   "scripts": {
+    "changelog": "standard-version -i CHANGELOG.zh-CN.md",
     "build": "tsc -b && vite build",
     "compile": "tsc -b && vite build",
     "compile:webview": "tsc -b && vite build",
