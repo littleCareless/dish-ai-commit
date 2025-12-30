@@ -1,6 +1,7 @@
 import { FormControl, FormItem, FormLabel } from "@/components/ui/form";
 import { VSCodeTextField } from "@vscode/webview-ui-toolkit/react";
 import { Loader } from "lucide-react";
+import { TFunction } from "i18next";
 import React from "react";
 import { DynamicFieldRenderer } from "./DynamicFieldRenderer";
 import { FieldConfig } from "@/types/provider-metadata";
@@ -20,7 +21,7 @@ interface DynamicFieldRendererProps {
   formValues?: Record<string, FieldValue>;
   disabled?: boolean;
   className?: string;
-  t: (key: string) => string;
+  t: TFunction;
 }
 
 interface LoadingFieldRendererProps extends DynamicFieldRendererProps {

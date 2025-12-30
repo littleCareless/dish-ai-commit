@@ -1,4 +1,5 @@
 import { FieldConfig } from "@/types/provider-metadata";
+import { TFunction } from "i18next";
 
 type FieldValue =
   | string
@@ -15,7 +16,7 @@ interface DynamicFieldRendererProps {
   formValues?: Record<string, FieldValue>;
   disabled?: boolean;
   className?: string;
-  t: (key: string) => string;
+  t: TFunction;
 }
 
 /**
