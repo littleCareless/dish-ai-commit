@@ -6,8 +6,41 @@ import tailwindcss from "@tailwindcss/vite";
 import react from "@vitejs/plugin-react";
 import { defineConfig, type Plugin, type PluginOption } from "vite";
 
-// 导入 build-env 工具
-const buildEnv = require("../scripts/build-env.js");
+/**
+ * 获取构建环境变量
+ */
+function getBuildEnv(mode: string) {
+  const isProd = mode === "production";
+  return {
+    BUILD_MODE: isProd ? "production" : "development",
+    ENABLE_DEBUG_ROUTES: !isProd,
+    ENABLE_DEBUG_LOGS: !isProd,
+  };
+}
+
+/**
+ * 输出构建信息
+ */
+function logBuildInfo(
+  builder: string,
+  mode: string,
+  options: { minify?: boolean; sourcemap?: boolean } = {},
+) {
+  const env = getBuildEnv(mode);
+  const { minify, sourcemap } = options;
+
+  console.log(`[${builder}] ========== 构建环境信息 ==========`);
+  console.log(`[${builder}] BUILD_MODE: ${env.BUILD_MODE}`);
+  console.log(`[${builder}] ENABLE_DEBUG_ROUTES: ${env.ENABLE_DEBUG_ROUTES}`);
+  console.log(`[${builder}] ENABLE_DEBUG_LOGS: ${env.ENABLE_DEBUG_LOGS}`);
+  if (minify !== undefined) {
+    console.log(`[${builder}] minify: ${minify}`);
+  }
+  if (sourcemap !== undefined) {
+    console.log(`[${builder}] sourcemap: ${sourcemap}`);
+  }
+  console.log(`[${builder}] ===================================`);
+}
 
 function getGitSha() {
   let gitSha: string | undefined = undefined;
@@ -66,7 +99,7 @@ export default defineConfig(({ mode }) => {
   const gitSha = getGitSha();
 
   // 获取环境变量配置
-  const viteDefine = buildEnv.getViteDefine(mode);
+  const env = getBuildEnv(mode);
 
   const define: Record<string, string> = {
     "process.platform": JSON.stringify(process.platform),
@@ -78,12 +111,16 @@ export default defineConfig(({ mode }) => {
     "process.env.PKG_OUTPUT_CHANNEL": JSON.stringify("Dish-AI-Commit"),
     ...(gitSha ? { "process.env.PKG_SHA": JSON.stringify(gitSha) } : {}),
     // 注入环境区分变量
-    ...viteDefine,
+    "import.meta.env.BUILD_MODE": JSON.stringify(env.BUILD_MODE),
+    "import.meta.env.ENABLE_DEBUG_ROUTES": JSON.stringify(
+      env.ENABLE_DEBUG_ROUTES,
+    ),
+    "import.meta.env.ENABLE_DEBUG_LOGS": JSON.stringify(env.ENABLE_DEBUG_LOGS),
   };
 
   // 输出构建信息
   if (mode === "production" || mode === "development") {
-    buildEnv.logBuildInfo("webview-ui", mode, {
+    logBuildInfo("webview-ui", mode, {
       minify: mode === "production",
       sourcemap: true,
     });
