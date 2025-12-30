@@ -13,6 +13,7 @@ import {
 import { UIRequest, ExtensionResponse } from "@shared/types/messages";
 import { postMessage } from "@/utils/vscode";
 import { useMessageHandler } from "@/utils/vscode";
+import { themeStyles } from "@/utils/theme";
 
 export const ModelCustomSettings: React.FC = () => {
   const { t } = useTranslation("model-custom");
@@ -152,7 +153,12 @@ export const ModelCustomSettings: React.FC = () => {
       <div className="flex justify-between items-center">
         <div>
           <h2 className="text-lg font-semibold">{t("title")}</h2>
-          <p className="text-sm text-gray-500">{t("description")}</p>
+          <p
+            className="text-sm"
+            style={{ color: themeStyles.mutedForeground() }}
+          >
+            {t("description")}
+          </p>
         </div>
         <div className="flex gap-2">
           <Button onClick={() => setIsDialogOpen(true)}>

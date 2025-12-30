@@ -1,5 +1,6 @@
 import React from "react";
 import "@vscode/webview-ui-toolkit/dist/toolkit";
+import { themeStyles } from "@/utils/theme";
 
 interface BadgeProps extends React.HTMLAttributes<HTMLElement> {
   children: React.ReactNode;
@@ -14,8 +15,8 @@ const Badge: React.FC<BadgeProps> = ({
   const variantStyles: React.CSSProperties =
     variant === "destructive"
       ? {
-          backgroundColor: "var(--vscode-errorForeground)",
-          color: "var(--vscode-button-foreground)",
+          backgroundColor: "var(--destructive)",
+          color: "var(--destructive-foreground)",
           border: "1px solid transparent",
         }
       : variant === "secondary"
@@ -27,8 +28,8 @@ const Badge: React.FC<BadgeProps> = ({
         : variant === "outline"
           ? {
               backgroundColor: "transparent",
-              color: "var(--vscode-foreground)",
-              border: "1px solid var(--vscode-input-border)",
+              color: themeStyles.foreground(),
+              border: `1px solid ${themeStyles.border("normal")}`,
             }
           : {
               backgroundColor: "var(--vscode-button-background)",

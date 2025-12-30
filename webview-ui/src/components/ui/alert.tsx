@@ -1,5 +1,6 @@
 import React from "react";
 import "@vscode/webview-ui-toolkit/dist/toolkit";
+import { themeStyles } from "@/utils/theme";
 
 interface AlertProps extends React.HTMLAttributes<HTMLElement> {
   children: React.ReactNode;
@@ -27,9 +28,9 @@ const Alert: React.FC<AlertProps> = ({
           color: "var(--vscode-errorForeground)",
         }
       : {
-          backgroundColor: "var(--vscode-editor-background)",
-          color: "var(--vscode-foreground)",
-          borderColor: "var(--vscode-panel-border)",
+          backgroundColor: themeStyles.background(),
+          color: themeStyles.foreground(),
+          borderColor: themeStyles.border("normal"),
         };
 
   return (

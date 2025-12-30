@@ -1,6 +1,7 @@
 import "@vscode/webview-ui-toolkit/dist/toolkit";
 import React from "react";
 import { cn } from "../../lib/utils";
+import { themeStyles } from "@/utils/theme";
 
 interface CardProps extends React.HTMLAttributes<HTMLElement> {
   children: React.ReactNode;
@@ -11,8 +12,9 @@ const Card: React.FC<CardProps> = ({ className, children, ...props }) => {
     <div
       className={cn("p-4 border rounded-lg", className)}
       style={{
-        borderColor: "var(--vscode-panel-border)",
-        backgroundColor: "var(--vscode-editor-background)",
+        borderColor: themeStyles.border("normal"),
+        backgroundColor: themeStyles.background(),
+        color: themeStyles.foreground(),
       }}
       {...props}
     >
@@ -33,6 +35,9 @@ const CardTitle: React.FC<CardProps> = ({ className, children, ...props }) => {
   return (
     <h3
       className={cn("text-lg font-semibold tracking-tight", className)}
+      style={{
+        color: themeStyles.foreground(),
+      }}
       {...props}
     >
       {children}

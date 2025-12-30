@@ -1,5 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { ChatMessage } from "@shared/types/messages";
+import { themeStyles } from "@/utils/theme";
 import { Bot, Copy, RefreshCw, ThumbsDown, ThumbsUp } from "lucide-react";
 import React from "react";
 
@@ -94,21 +95,27 @@ const AIMessage: React.FC<AIMessageProps> = ({
 
   const renderConfidence = (confidence: number) => {
     const getConfidenceColor = (conf: number) => {
-      if (conf >= 0.8) return "bg-green-500";
-      if (conf >= 0.6) return "bg-yellow-500";
-      return "bg-red-500";
+      if (conf >= 0.8) return "var(--success)";
+      if (conf >= 0.6) return "var(--warning)";
+      return "var(--destructive)";
     };
 
     return (
       <div className="mt-2 flex items-center space-x-2">
         <div className="text-xs text-muted-foreground">置信度:</div>
         <div className="flex items-center space-x-1">
-          <div className="w-16 h-2 bg-muted rounded-full overflow-hidden">
+          <div
+            className="w-16 h-2 rounded-full overflow-hidden"
+            style={{
+              backgroundColor: themeStyles.background(0.5),
+            }}
+          >
             <div
-              className={`h - full ${getConfidenceColor(
-                confidence,
-              )} transition - all duration - 300`}
-              style={{ width: `${confidence * 100}% ` }}
+              className="h-full transition-all duration-300"
+              style={{
+                width: `${confidence * 100}%`,
+                backgroundColor: getConfidenceColor(confidence),
+              }}
             />
           </div>
           <span className="text-xs text-muted-foreground">

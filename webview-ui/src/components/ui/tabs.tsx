@@ -1,5 +1,6 @@
 import "@vscode/webview-ui-toolkit/dist/toolkit";
 import React, { createContext, useContext, useState } from "react";
+import { themeStyles } from "@/utils/theme";
 
 interface TabsContextType {
   activeTab: string;
@@ -68,7 +69,7 @@ const TabsList: React.FC<TabsListProps> = ({
       style={{
         borderBottom:
           orientation === "horizontal"
-            ? "1px solid var(--vscode-panel-border)"
+            ? `1px solid ${themeStyles.border("normal")}`
             : "none",
       }}
       {...props}

@@ -7,6 +7,7 @@ import { Select, SelectOption } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { ModelFormValues } from "@/types/model-custom";
+import { themeStyles } from "@/utils/theme";
 
 const formSchema = z.object({
   providerId: z.string().min(1, "必填"),
@@ -52,10 +53,16 @@ export function ModelForm({
   });
 
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+      {/* 第一行：提供商和模型ID - 上下排列 */}
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="text-sm font-medium">提供商</label>
+        <div className="flex flex-col gap-2">
+          <label
+            className="text-sm font-medium"
+            style={{ color: themeStyles.foreground() }}
+          >
+            提供商
+          </label>
           <Select
             value={form.watch("providerId")}
             onValueChange={(v) => form.setValue("providerId", v)}
@@ -68,28 +75,50 @@ export function ModelForm({
             ))}
           </Select>
         </div>
-        <div>
-          <label className="text-sm font-medium">模型ID</label>
+        <div className="flex flex-col gap-2">
+          <label
+            className="text-sm font-medium"
+            style={{ color: themeStyles.foreground() }}
+          >
+            模型ID
+          </label>
           <Input {...form.register("modelId")} placeholder="gpt-4-custom" />
         </div>
       </div>
 
-      <div>
-        <label className="text-sm font-medium">模型名称</label>
+      {/* 模型名称 - 单独一行 */}
+      <div className="flex flex-col gap-2">
+        <label
+          className="text-sm font-medium"
+          style={{ color: themeStyles.foreground() }}
+        >
+          模型名称
+        </label>
         <Input {...form.register("modelName")} placeholder="GPT-4 Custom" />
       </div>
 
+      {/* Token 上限 - 上下排列 */}
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="text-sm font-medium">输入Token上限</label>
+        <div className="flex flex-col gap-2">
+          <label
+            className="text-sm font-medium"
+            style={{ color: themeStyles.foreground() }}
+          >
+            输入Token上限
+          </label>
           <Input
             type="number"
             {...form.register("inputTokens", { valueAsNumber: true })}
             placeholder="128000"
           />
         </div>
-        <div>
-          <label className="text-sm font-medium">输出Token上限</label>
+        <div className="flex flex-col gap-2">
+          <label
+            className="text-sm font-medium"
+            style={{ color: themeStyles.foreground() }}
+          >
+            输出Token上限
+          </label>
           <Input
             type="number"
             {...form.register("outputTokens", { valueAsNumber: true })}
@@ -98,21 +127,33 @@ export function ModelForm({
         </div>
       </div>
 
+      {/* 上下文窗口和备注 - 上下排列 */}
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="text-sm font-medium">上下文窗口 (可选)</label>
+        <div className="flex flex-col gap-2">
+          <label
+            className="text-sm font-medium"
+            style={{ color: themeStyles.foreground() }}
+          >
+            上下文窗口 (可选)
+          </label>
           <Input
             type="number"
             {...form.register("contextWindow", { valueAsNumber: true })}
             placeholder="128000"
           />
         </div>
-        <div>
-          <label className="text-sm font-medium">备注</label>
+        <div className="flex flex-col gap-2">
+          <label
+            className="text-sm font-medium"
+            style={{ color: themeStyles.foreground() }}
+          >
+            备注
+          </label>
           <Textarea {...form.register("notes")} placeholder="补充说明..." />
         </div>
       </div>
 
+      {/* 复选框 - 水平排列 */}
       <div className="grid grid-cols-3 gap-4">
         <label className="flex items-center gap-2">
           <Checkbox
@@ -139,17 +180,28 @@ export function ModelForm({
         </label>
       </div>
 
+      {/* 价格 - 上下排列 */}
       <div className="grid grid-cols-2 gap-4">
-        <div>
-          <label className="text-sm font-medium">输入价格 (每1M tokens)</label>
+        <div className="flex flex-col gap-2">
+          <label
+            className="text-sm font-medium"
+            style={{ color: themeStyles.foreground() }}
+          >
+            输入价格 (每1M tokens)
+          </label>
           <Input
             type="number"
             {...form.register("pricingInput", { valueAsNumber: true })}
             placeholder="2.5"
           />
         </div>
-        <div>
-          <label className="text-sm font-medium">输出价格 (每1M tokens)</label>
+        <div className="flex flex-col gap-2">
+          <label
+            className="text-sm font-medium"
+            style={{ color: themeStyles.foreground() }}
+          >
+            输出价格 (每1M tokens)
+          </label>
           <Input
             type="number"
             {...form.register("pricingOutput", { valueAsNumber: true })}
@@ -158,6 +210,7 @@ export function ModelForm({
         </div>
       </div>
 
+      {/* 已废弃 - 单独一行 */}
       <div className="flex items-center gap-2">
         <Checkbox
           checked={form.watch("deprecated")}
@@ -166,7 +219,8 @@ export function ModelForm({
         <span className="text-sm">已废弃</span>
       </div>
 
-      <div className="flex justify-end gap-2 pt-4">
+      {/* 按钮区域 */}
+      <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onCancel}>
           取消
         </Button>

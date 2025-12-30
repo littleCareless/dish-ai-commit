@@ -5,6 +5,7 @@
 
 @layer base {
   :root {
+    /* 基础颜色 - 浅色模式 */
     --background: 0 0% 100%;
     --foreground: 222.2 84% 4.9%;
     --card: 0 0% 100%;
@@ -25,9 +26,32 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
+
+    /* 业务组件颜色 - 浅色模式 */
+    --chat-user-bg: 222.2 47.4% 11.2%; /* 用户消息背景 */
+    --chat-user-fg: 210 40% 98%; /* 用户消息文字 */
+    --chat-ai-bg: 210 40% 96%; /* AI 消息背景 */
+    --chat-ai-fg: 222.2 84% 4.9%; /* AI 消息文字 */
+    --border-subtle: 214.3 31.8% 91.4%; /* 细微边框 */
+    --border-strong: 222.2 84% 4.9%; /* 强边框 */
+    --hover-bg: 210 40% 96%; /* 悬停背景 */
+    --hover-fg: 222.2 84% 4.9%; /* 悬停文字 */
+
+    /* 状态颜色 */
+    --success: 142.1 76.2% 36.3%;
+    --success-foreground: 210 40% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 210 40% 98%;
+    --info: 217.2 91.2% 59.8%;
+    --info-foreground: 210 40% 98%;
+
+    /* 特殊用途 */
+    --backdrop: 222.2 84% 4.9%;
+    --backdrop-opacity: 0.8;
   }
 
   .dark {
+    /* 基础颜色 - 深色模式 */
     --background: 222.2 84% 4.9%;
     --foreground: 210 40% 98%;
     --card: 222.2 84% 4.9%;
@@ -47,15 +71,91 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 212.7 26.8% 83.9%;
+
+    /* 业务组件颜色 - 深色模式 */
+    --chat-user-bg: 210 40% 98%; /* 用户消息背景 */
+    --chat-user-fg: 222.2 47.4% 11.2%; /* 用户消息文字 */
+    --chat-ai-bg: 217.2 32.6% 17.5%; /* AI 消息背景 */
+    --chat-ai-fg: 210 40% 98%; /* AI 消息文字 */
+    --border-subtle: 217.2 32.6% 17.5%; /* 细微边框 */
+    --border-strong: 210 40% 98%; /* 强边框 */
+    --hover-bg: 217.2 32.6% 17.5%; /* 悬停背景 */
+    --hover-fg: 210 40% 98%; /* 悬停文字 */
+
+    /* 状态颜色 */
+    --success: 142.1 76.2% 36.3%;
+    --success-foreground: 210 40% 98%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 210 40% 98%;
+    --info: 217.2 91.2% 59.8%;
+    --info-foreground: 210 40% 98%;
+
+    /* 特殊用途 */
+    --backdrop: 222.2 84% 4.9%;
+    --backdrop-opacity: 0.7;
   }
 }
 
 @layer base {
   * {
     border-color: hsl(var(--border));
+    transition-property: background-color, border-color, color;
+    transition-duration: 0.2s;
+    transition-timing-function: ease;
   }
   body {
     background-color: hsl(var(--background));
     color: hsl(var(--foreground));
   }
+}
+
+/* 主题切换动画 */
+.theme-transition {
+  transition:
+    background-color 0.3s ease,
+    color 0.3s ease,
+    border-color 0.3s ease;
+}
+
+/* Checkbox 深色模式增强 - 使用 VS Code 原生 CSS 变量 */
+
+/*
+  VS Code Webview UI Toolkit 会自动注入主题变量：
+  - --vscode-checkbox-background
+  - --vscode-checkbox-foreground (勾选颜色)
+  - --vscode-checkbox-border
+  - --vscode-checkbox-selectBackground
+  - --vscode-checkbox-selectBorder
+
+  以下样式确保在深色模式下勾选标记足够明显
+*/
+
+/* 深色模式增强 - 确保勾选标记为纯白色 */
+body.dark vscode-checkbox svg,
+.vscode-dark vscode-checkbox svg {
+  fill: #ffffff !important; /* 纯白色填充 */
+  stroke: #ffffff !important; /* 纯白色边框 */
+  color: #ffffff !important; /* 纯白色颜色 */
+}
+
+/* 浅色模式 - 确保勾选标记为纯黑色 */
+body.light vscode-checkbox svg,
+.vscode-light vscode-checkbox svg {
+  fill: #000000 !important; /* 纯黑色填充 */
+  stroke: #000000 !important; /* 纯黑色边框 */
+  color: #000000 !important; /* 纯黑色颜色 */
+}
+
+/* 额外增强：确保深色模式下背景和边框清晰 */
+body.dark vscode-checkbox {
+  --vscode-checkbox-background: #1e1e1e !important;
+  --vscode-checkbox-border: #3c3c3c !important;
+  --vscode-checkbox-selectBackground: #007acc !important;
+  --vscode-checkbox-selectBorder: #007acc !important;
+}
+
+/* 浅色模式保持默认但确保对比度 */
+body.light vscode-checkbox {
+  --vscode-checkbox-background: #ffffff !important;
+  --vscode-checkbox-border: #3c3c3c !important;
 }

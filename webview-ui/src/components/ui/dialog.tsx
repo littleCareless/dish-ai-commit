@@ -53,6 +53,7 @@ const DialogContent: React.FC<DialogContentProps> = ({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center"
       style={{
+        // 深色遮罩层，适配 VS Code 主题
         backgroundColor: "var(--vscode-scrim-background, rgba(0, 0, 0, 0.5))",
       }}
       onClick={(e) => {
@@ -65,9 +66,18 @@ const DialogContent: React.FC<DialogContentProps> = ({
       <div
         className={`rounded-lg p-6 max-w-lg w-full mx-4 relative ${className}`}
         style={{
-          backgroundColor: "var(--vscode-editor-background)",
-          border: "1px solid var(--vscode-panel-border)",
-          boxShadow: "var(--vscode-widget-shadow)",
+          // 使用 card 变量作为基础，确保足够的对比度
+          backgroundColor: "var(--vscode-editor-background, hsl(var(--card)))",
+          // 使用 VS Code 面板边框，确保主题一致性
+          border: "1px solid var(--vscode-panel-border, hsl(var(--border)))",
+          // 使用 VS Code widget shadow
+          boxShadow:
+            "var(--vscode-widget-shadow, 0 4px 12px rgba(0, 0, 0, 0.15))",
+          // 前景色使用 VS Code 前景色
+          color: "var(--vscode-foreground, hsl(var(--foreground)))",
+          // 确保背景完全不透明
+          opacity: 1,
+          backdropFilter: "none",
         }}
       >
         <Button
@@ -103,7 +113,14 @@ const DialogFooter: React.FC<DialogFooterProps> = ({ children, ...props }) => {
 
 const DialogTitle: React.FC<DialogTitleProps> = ({ children, ...props }) => {
   return (
-    <h2 className="text-lg font-semibold" {...props}>
+    <h2
+      className="text-lg font-semibold"
+      style={{
+        // 使用 VS Code 标题颜色，确保主题一致性
+        color: "var(--vscode-title-foreground, hsl(var(--foreground)))",
+      }}
+      {...props}
+    >
       {children}
     </h2>
   );
@@ -116,7 +133,11 @@ const DialogDescription: React.FC<DialogDescriptionProps> = ({
   return (
     <p
       className="text-sm"
-      style={{ color: "var(--vscode-descriptionForeground)" }}
+      style={{
+        // 使用 VS Code 描述前景色
+        color:
+          "var(--vscode-descriptionForeground, hsl(var(--muted-foreground)))",
+      }}
       {...props}
     >
       {children}

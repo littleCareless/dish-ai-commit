@@ -126,7 +126,13 @@ export const Navigation: React.FC = () => {
   };
 
   return (
-    <nav className="h-full flex flex-col">
+    <nav
+      className="h-full flex flex-col"
+      style={{
+        backgroundColor: "var(--vscode-sideBar-background, hsl(var(--card)))",
+        color: "var(--vscode-sideBar-foreground, hsl(var(--foreground)))",
+      }}
+    >
       {/* 导航菜单 */}
       <div className="flex-1 p-2 overflow-y-auto">
         <div className="space-y-2">
@@ -139,12 +145,23 @@ export const Navigation: React.FC = () => {
                 to={item.path}
                 className={({ isActive }: { isActive: boolean }) =>
                   cn(
-                    "group flex items-center gap-2 px-2 py-2 rounded-xl text-sm transition-all duration-300 ease-in-out border border-transparent",
+                    "group flex items-center gap-2 px-2 py-2 rounded-xl text-sm transition-all duration-200 ease-in-out border border-transparent",
                     "hover:bg-accent hover:text-accent-foreground hover:shadow-sm hover:border-accent-foreground/10",
                     isActive &&
                       "bg-accent text-accent-foreground shadow-sm border-accent-foreground/20",
                   )
                 }
+                style={({ isActive }) => ({
+                  // 确保在深色模式下有足够的对比度
+                  ...(isActive
+                    ? {
+                        backgroundColor: "var(--accent)",
+                        color: "var(--accent-foreground)",
+                        borderColor: "var(--accent-foreground)",
+                        opacity: 0.9,
+                      }
+                    : {}),
+                })}
               >
                 {({ isActive }: { isActive: boolean }) => (
                   <>
@@ -155,6 +172,14 @@ export const Navigation: React.FC = () => {
                           ? "bg-primary text-primary-foreground"
                           : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary",
                       )}
+                      style={{
+                        backgroundColor: isActive
+                          ? "var(--primary)"
+                          : "var(--muted)",
+                        color: isActive
+                          ? "var(--primary-foreground)"
+                          : "var(--muted-foreground)",
+                      }}
                     >
                       <Icon className="w-4 h-4" />
                     </div>
@@ -169,11 +194,27 @@ export const Navigation: React.FC = () => {
         </div>
       </div>
       {/* 语言切换器 */}
-      <div className="p-4 border-t border-border">
+      <div
+        className="p-4 border-t"
+        style={{
+          borderColor: "var(--border)",
+        }}
+      >
         <DropdownMenu>
           <DropdownMenuTrigger className="w-full">
-            <div className="group flex items-center gap-1 px-1 py-1 rounded-xl text-sm transition-all duration-300 ease-in-out border border-transparent hover:bg-accent hover:text-accent-foreground hover:shadow-sm hover:border-accent-foreground/10">
-              <div className="w-7 h-7 rounded-lg flex items-center justify-center bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+            <div
+              className="group flex items-center gap-1 px-1 py-1 rounded-xl text-sm transition-all duration-200 ease-in-out border border-transparent hover:bg-accent hover:text-accent-foreground hover:shadow-sm hover:border-accent-foreground/10"
+              style={{
+                borderColor: "var(--border)",
+              }}
+            >
+              <div
+                className="w-7 h-7 rounded-lg flex items-center justify-center transition-colors"
+                style={{
+                  backgroundColor: "var(--muted)",
+                  color: "var(--muted-foreground)",
+                }}
+              >
                 <Globe className="w-4 h-4" />
               </div>
               <div className="flex-1">
@@ -184,7 +225,6 @@ export const Navigation: React.FC = () => {
           <DropdownMenuContent align="end" side="right" className="w-40">
             <DropdownMenuItem
               onSelect={() => {
-                // 只通过 setLanguage 更新状态，让 TranslationProvider 统一处理语言切换
                 handleLanguageChange("en");
               }}
             >
@@ -192,7 +232,6 @@ export const Navigation: React.FC = () => {
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() => {
-                // 只通过 setLanguage 更新状态，让 TranslationProvider 统一处理语言切换
                 handleLanguageChange("zh-cn");
               }}
             >

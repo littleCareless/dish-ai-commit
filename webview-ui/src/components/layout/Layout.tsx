@@ -17,18 +17,33 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   );
 
   return (
-    <div className={`min-h-screen bg-background text-foreground ${theme}`}>
+    <div className={`min-h-screen ${theme}`}>
       <div className="flex flex-col h-screen">
         <div className="flex flex-1 overflow-hidden">
           {/* 侧边导航 */}
           {!hideNavigation && (
-            <div className="w-46 border-r bg-card/50 backdrop-blur supports-[backdrop-filter]:bg-card/60 flex-shrink-0">
+            <div
+              className="w-46 border-r flex-shrink-0"
+              style={{
+                backgroundColor:
+                  "var(--vscode-sideBar-background, hsl(var(--card)))",
+                backdropFilter: "blur(8px)",
+                borderColor: "var(--vscode-sideBar-border, hsl(var(--border)))",
+              }}
+            >
               <Navigation />
             </div>
           )}
 
           {/* 主内容区域 */}
-          <main className="flex-1 overflow-auto bg-background">
+          <main
+            className="flex-1 overflow-auto"
+            style={{
+              backgroundColor:
+                "var(--vscode-editor-background, hsl(var(--background)))",
+              color: "var(--vscode-editor-foreground, hsl(var(--foreground)))",
+            }}
+          >
             <div className="h-full">{children}</div>
           </main>
         </div>

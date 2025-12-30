@@ -1,5 +1,6 @@
 import { VSCodeButton } from "@vscode/webview-ui-toolkit/react";
 import React from "react";
+import { themeStyles } from "@/utils/theme";
 
 interface ButtonProps {
   children: React.ReactNode;
@@ -44,8 +45,9 @@ const buttonVariants = ({
     borderRadius: "var(--vscode-button-border-radius, 2px)",
     fontSize: "var(--vscode-font-size, 13px)",
     fontWeight: "var(--vscode-font-weight, normal)",
-    transition: "colors 0.2s",
+    transition: "all 0.2s ease",
     outline: "none",
+    cursor: "pointer",
   };
 
   const variantStyles: { [key: string]: React.CSSProperties } = {
@@ -55,14 +57,15 @@ const buttonVariants = ({
       border: "1px solid var(--vscode-button-border, transparent)",
     },
     destructive: {
-      backgroundColor: "var(--vscode-errorForeground)",
-      color: "var(--vscode-button-foreground)",
+      backgroundColor: "var(--destructive)",
+      color: "var(--destructive-foreground)",
       border: "1px solid transparent",
     },
     outline: {
-      borderColor: "var(--vscode-input-border)",
-      backgroundColor: "var(--vscode-editor-background)",
-      color: "var(--vscode-foreground)",
+      borderColor: themeStyles.border("normal"),
+      backgroundColor: themeStyles.background(),
+      color: themeStyles.foreground(),
+      border: `1px solid ${themeStyles.border("normal")}`,
     },
     secondary: {
       backgroundColor: "var(--vscode-button-secondaryBackground)",
@@ -71,7 +74,7 @@ const buttonVariants = ({
     },
     ghost: {
       backgroundColor: "transparent",
-      color: "var(--vscode-foreground)",
+      color: themeStyles.foreground(),
       border: "1px solid transparent",
     },
     link: {
@@ -101,10 +104,16 @@ const buttonVariants = ({
     },
   };
 
+  // 添加悬停效果
+  const hoverStyles: React.CSSProperties = {
+    opacity: 0.9,
+  };
+
   return {
     ...baseStyles,
     ...variantStyles[variant],
     ...sizeStyles[size],
+    "&:hover": hoverStyles,
   };
 };
 
@@ -136,10 +145,12 @@ const Button: React.FC<ButtonProps> = ({
               ? "secondary"
               : appearance;
 
-  // Map size values (currently not used in VSCodeButton)
-  // const finalSize = size === 'sm' ? 'small' :
-  //                  size === 'icon' ? 'small' :
-  //                  size;
+  // 应用主题适配的样式
+  const buttonStyle: React.CSSProperties = {
+    ...style,
+    // 确保在深色模式下使用正确的颜色
+    ...(disabled ? { opacity: 0.5, cursor: "not-allowed" } : {}),
+  };
 
   return (
     <VSCodeButton
@@ -149,7 +160,7 @@ const Button: React.FC<ButtonProps> = ({
       type={type}
       className={className}
       title={title}
-      style={style}
+      style={buttonStyle}
       {...props}
     >
       {children}

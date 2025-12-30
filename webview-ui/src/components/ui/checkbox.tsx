@@ -1,14 +1,11 @@
 import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react";
 import React from "react";
 
-interface CheckboxProps extends Omit<
-  React.HTMLAttributes<HTMLElement>,
-  "onChange"
-> {
+interface CheckboxProps {
   checked?: boolean;
   indeterminate?: boolean;
   disabled?: boolean;
-
+  className?: string;
   onChange?: (event: any) => void;
   onCheckedChange?: (checked: boolean) => void;
 }
@@ -19,6 +16,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
   disabled = false,
   onChange,
   onCheckedChange,
+  className = "",
 }) => {
   const handleChange = (event: any) => {
     // VSCodeCheckbox 使用 currentTarget.checked 而不是 target.checked
@@ -37,6 +35,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
       indeterminate={indeterminate}
       disabled={disabled}
       onChange={handleChange}
+      className={className}
     />
   );
 };

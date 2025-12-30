@@ -14,6 +14,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { profileManager } from "@/services/webview/profile-manager";
 import { DEFAULT_USER_PREFERENCES, Profile } from "@/types/settings";
 import { showInformationMessage } from "@/utils/vscode";
+import { themeStyles } from "@/utils/theme";
 import { Settings as SettingsIcon } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -256,15 +257,33 @@ export const SettingsPage: React.FC = () => {
 
   return (
     <div className="h-screen flex flex-col">
-      <div className="border-b bg-background/95 px-6 py-4">
+      <div
+        className="border-b px-6 py-4"
+        style={{
+          backgroundColor: themeStyles.background(0.95),
+          backdropFilter: "blur(8px)",
+          borderColor: themeStyles.border("normal"),
+        }}
+      >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <SettingsIcon className="w-5 h-5" />
-            <h1 className="text-xl font-bold">{t("title")}</h1>
+            <SettingsIcon
+              className="w-5 h-5"
+              style={{ color: themeStyles.foreground() }}
+            />
+            <h1
+              className="text-xl font-bold"
+              style={{ color: themeStyles.foreground() }}
+            >
+              {t("title")}
+            </h1>
           </div>
           <div className="flex gap-2 items-center">
             {hasUnsavedChanges && (
-              <span className="text-amber-600 dark:text-amber-400 text-sm font-medium">
+              <span
+                className="text-sm font-medium"
+                style={{ color: "var(--warning)" }}
+              >
                 {t("unsavedChanges")}
               </span>
             )}
@@ -303,7 +322,13 @@ export const SettingsPage: React.FC = () => {
             </TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 overflow-y-auto p-6 w-full max-w-5xl mx-auto">
+          <div
+            className="flex-1 overflow-y-auto p-6 w-full max-w-5xl mx-auto"
+            style={{
+              backgroundColor: themeStyles.background(),
+              color: themeStyles.foreground(),
+            }}
+          >
             <TabsContent value="providers" className="mt-0">
               <ProvidersSettings
                 profile={editingProfile}
