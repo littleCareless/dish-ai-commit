@@ -12,6 +12,7 @@ import {
   BarChart3,
   Bell,
   BookText,
+  Bug,
   Database,
   FlaskConical,
   Globe,
@@ -19,6 +20,7 @@ import {
   MessageSquare,
   Replace,
   Settings,
+  Users,
 } from "lucide-react";
 import React from "react";
 import { useTranslation } from "react-i18next";
@@ -40,12 +42,7 @@ export const Navigation: React.FC = () => {
   // 现在使用 TranslationContext 的 t 函数，它应该能正确响应语言变化
   const navigationItems = React.useMemo(() => {
     const items: NavigationItem[] = [
-      // {
-      //   path: routes.profiles,
-      //   label: t("nav.profiles"),
-      //   icon: Users,
-      //   description: t("nav.profiles_description"),
-      // },
+      // 核心导航项 - 所有环境都显示
       {
         path: routes.settings,
         label: t("nav.settings"),
@@ -100,22 +97,30 @@ export const Navigation: React.FC = () => {
         icon: Info,
         description: t("nav.about_description"),
       },
-      {
-        path: routes.storage,
-        label: t("nav.storage"),
-        icon: Archive,
-        description: t("nav.storage_description"),
-      },
     ];
 
-    // 开发模式下添加调试页面
-    if (import.meta.env.DEV) {
-      items.push({
-        path: routes.storage,
-        label: t("nav.storage"),
-        icon: Archive,
-        description: t("nav.storage_description"),
-      });
+    // 开发环境添加调试功能
+    if (import.meta.env.ENABLE_DEBUG_ROUTES) {
+      items.push(
+        {
+          path: routes.storage,
+          label: t("nav.storage"),
+          icon: Archive,
+          description: t("nav.storage_description"),
+        },
+        {
+          path: routes.i18nDebug,
+          label: "i18n Debug",
+          icon: Bug,
+          description: "国际化调试工具",
+        },
+        {
+          path: routes.profiles,
+          label: "配置文件",
+          icon: Users,
+          description: "配置文件管理",
+        },
+      );
     }
 
     return items;

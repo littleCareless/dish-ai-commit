@@ -39,7 +39,7 @@
     {
       "label": "watch:webview-build",
       "type": "shell",
-      "command": "pnpm --filter @dish-ai-commit/webview-ui watch:bundle",
+      "command": "pnpm --filter @dish-ai-commit/webview-ui run watch:bundle:dev",
       "group": "build",
       "problemMatcher": {
         "owner": "vite",
@@ -61,7 +61,7 @@
     {
       "label": "watch:bundle",
       "type": "shell",
-      "command": "pnpm --filter dish-ai-commit watch:bundle",
+      "command": "pnpm --filter dish-ai-commit run watch:bundle:dev",
       "group": "build",
       "problemMatcher": {
         "owner": "esbuild",

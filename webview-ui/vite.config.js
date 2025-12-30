@@ -1,13 +1,16 @@
-import tailwindcss from "@tailwindcss/vite";
-import react from "@vitejs/plugin-react";
 import { execSync } from "child_process";
 import fs from "fs";
 import path, { resolve } from "path";
+import tailwindcss from "@tailwindcss/vite";
+import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
+// 导入 build-env 工具
+const buildEnv = require("../scripts/build-env.js");
 function getGitSha() {
   let gitSha = undefined;
   try {
     gitSha = execSync("git rev-parse HEAD").toString().trim();
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
   } catch (_error) {
     // Do nothing.
   }
@@ -50,6 +53,8 @@ export default defineConfig(({ mode }) => {
     fs.readFileSync(path.join(__dirname, "package.json"), "utf8"),
   );
   const gitSha = getGitSha();
+  // 获取环境变量配置
+  const viteDefine = buildEnv.getViteDefine(mode);
   const define = {
     "process.platform": JSON.stringify(process.platform),
     "process.env.VSCODE_TEXTMATE_DEBUG": JSON.stringify(
@@ -59,7 +64,16 @@ export default defineConfig(({ mode }) => {
     "process.env.PKG_VERSION": JSON.stringify(pkg.version),
     "process.env.PKG_OUTPUT_CHANNEL": JSON.stringify("Dish-AI-Commit"),
     ...(gitSha ? { "process.env.PKG_SHA": JSON.stringify(gitSha) } : {}),
+    // 注入环境区分变量
+    ...viteDefine,
   };
+  // 输出构建信息
+  if (mode === "production" || mode === "development") {
+    buildEnv.logBuildInfo("webview-ui", mode, {
+      minify: mode === "production",
+      sourcemap: true,
+    });
+  }
   const plugins = [react(), tailwindcss(), persistPortPlugin(), wasmPlugin()];
   return {
     plugins,

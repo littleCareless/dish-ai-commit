@@ -15,7 +15,10 @@
       "preLaunchTask": "${defaultBuildTask}",
       "env": {
         "NODE_ENV": "development",
-        "VSCODE_DEBUG_MODE": "true"
+        "VSCODE_DEBUG_MODE": "true",
+        "BUILD_MODE": "development",
+        "ENABLE_DEBUG_ROUTES": "true",
+        "ENABLE_DEBUG_LOGS": "true"
       },
       "resolveSourceMapLocations": [
         "${workspaceFolder}/**",
@@ -42,7 +45,10 @@
       "preLaunchTask": "${defaultBuildTask}",
       "env": {
         "NODE_ENV": "development",
-        "VSCODE_DEBUG_MODE": "true"
+        "VSCODE_DEBUG_MODE": "true",
+        "BUILD_MODE": "development",
+        "ENABLE_DEBUG_ROUTES": "true",
+        "ENABLE_DEBUG_LOGS": "true"
       },
       "resolveSourceMapLocations": [
         "${workspaceFolder}/**",

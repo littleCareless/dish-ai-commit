@@ -6,6 +6,8 @@
   "scripts": {
     "changelog": "standard-version -i CHANGELOG.zh-CN.md",
     "build": "tsc -b && vite build",
+    "build:dev": "tsc -b && vite build --mode=development",
+    "build:prod": "tsc -b && vite build --mode=production",
     "compile": "tsc -b && vite build",
     "compile:webview": "tsc -b && vite build",
     "package": "npm run build",
@@ -13,6 +15,7 @@
     "watch": "vite build --watch",
     "watch:tsc": "tsc --noEmit --watch",
     "watch:bundle": "vite build --watch",
+    "watch:bundle:dev": "vite build --mode=development --watch",
     "lint": "eslint .",
     "check-types": "tsc --noEmit",
     "test": "echo 'No tests configured'",

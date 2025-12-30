@@ -5,6 +5,7 @@ import * as path from "path"
 import { fileURLToPath } from "url"
 
 import { createRequire } from "module"
+import buildEnv from "../scripts/build-env.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -12,10 +13,21 @@ const require = createRequire(import.meta.url);
 
 async function main() {
   const name = "extension";
-  const production = process.argv.includes("--production");
+
+  // 解析构建模式
+  const mode = buildEnv.parseMode(process.argv);
+  const isProduction = mode === 'production';
+
   const watch = process.argv.includes("--watch");
-  const minify = production;
-  const sourcemap = !production;
+  const minify = isProduction;
+  const sourcemap = !isProduction;
+
+  // 获取环境变量配置
+  const env = buildEnv.getBuildEnv(mode);
+  const defines = buildEnv.getEsbuildDefine(mode);
+
+  // 输出构建信息
+  buildEnv.logBuildInfo(name, mode, { minify, sourcemap });
 
   /**
    * @type {import('esbuild').BuildOptions}
@@ -28,6 +40,7 @@ async function main() {
     format: "cjs",
     sourcesContent: false,
     platform: "node",
+    define: defines,
   };
 
   const srcDir = path.dirname(__dirname); // 项目根目录
