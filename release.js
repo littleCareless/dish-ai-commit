@@ -112,7 +112,7 @@ function getNewVersion() {
 // 获取当前版本号
 function getCurrentVersion(dir) {
   const pkgPath = path.join(dir, "package.json");
-  const pkg = fs.readJsonSync(pkgPath);
+  const pkg = JSON.parse(fs.readFileSync(pkgPath, "utf8"));
   return pkg.version;
 }
 
