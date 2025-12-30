@@ -43,14 +43,15 @@ function logError(message) {
 }
 
 // 1. 验证 git 状态
-function validateGitStatus() {
+function validateGitStatus(isDryRun = false) {
   log("🔍 检查 git 状态...");
 
   // 检查是否有未提交的变更
   const status = execSync("git status --porcelain", {
     encoding: "utf8",
   }).trim();
-  if (status) {
+
+  if (status && !isDryRun) {
     logError("存在未提交的变更，请先提交或暂存");
   }
 
@@ -59,6 +60,13 @@ function validateGitStatus() {
     encoding: "utf8",
   }).trim();
   log(`当前分支: ${branch}`, "cyan");
+
+  if (status && isDryRun) {
+    log(
+      `⚠️  注意: 存在未提交的变更 (${status.split("\n").length} 个文件)`,
+      "yellow",
+    );
+  }
 }
 
 // 2. 获取新版本号
@@ -161,31 +169,215 @@ function updatePackageJson(dir, version) {
   fs.writeFileSync(pkgPath, JSON.stringify(pkg, null, 2));
 }
 
+// Emoji 到 changelog 类型的映射
+const EMOJI_TO_TYPE = {
+  "✨": "✨ Features",
+  "🎉": "🎉 Init",
+  "🐛": "🐛 Bug Fixes",
+  "♻️": "♻️ Code Refactoring",
+  "🔧": "🔧 Chores",
+  "🚀": "🚀 Chore",
+  "📝": "📝 Documentation",
+  "💄": "💄 Styles",
+  "⚡": "⚡ Performance Improvements",
+  "✅": "✅ Tests",
+  "👷": "👷 Continuous Integration",
+  "📦": "📦 Build System",
+  "⏪": "⏪ Revert",
+};
+
+// 文字类型到 changelog 类型的映射（兼容旧格式）
+const TEXT_TO_TYPE = {
+  feat: "✨ Features",
+  fix: "🐛 Bug Fixes",
+  init: "🎉 Init",
+  docs: "📝 Documentation",
+  style: "💄 Styles",
+  refactor: "♻️ Code Refactoring",
+  perf: "⚡ Performance Improvements",
+  test: "✅ Tests",
+  revert: "⏪ Revert",
+  build: "📦 Build System",
+  chore: "🔧 Chores",
+  ci: "👷 Continuous Integration",
+};
+
+/**
+ * 从 commit message 中提取类型和描述
+ */
+function parseCommitMessage(message) {
+  // 匹配 emoji + 文字混合格式: 🔧 chore(scope): description
+  const mixedMatch = message.match(/^(\S+)\s+(\w+)\(([^)]+)\):\s*(.+)$/);
+  if (mixedMatch) {
+    const [, emoji, textType, scope, description] = mixedMatch;
+    // 优先使用 emoji 作为类型
+    return { type: emoji, scope, description };
+  }
+
+  // 匹配 emoji 格式: ♻️ scope: description
+  const emojiMatch = message.match(/^(\S+)\s+([\w-]+):\s*(.+)$/);
+  if (emojiMatch) {
+    const [, emoji, scope, description] = emojiMatch;
+    return { type: emoji, scope, description };
+  }
+
+  // 匹配 emoji 格式（无 scope）: ♻️ description
+  const emojiNoScopeMatch = message.match(/^(\S+)\s+(.+)$/);
+  if (emojiNoScopeMatch) {
+    const [, emoji, description] = emojiNoScopeMatch;
+    // 检查 description 是否以 scope: 开头
+    const scopeMatch = description.match(/^([\w-]+):\s*(.+)$/);
+    if (scopeMatch) {
+      return { type: emoji, scope: scopeMatch[1], description: scopeMatch[2] };
+    }
+    return { type: emoji, scope: "", description };
+  }
+
+  // 匹配文字格式: refactor(scope): description
+  const textMatch = message.match(/^(\w+)(\([^)]+\))?:\s*(.+)$/);
+  if (textMatch) {
+    const [, type, scopeRaw, description] = textMatch;
+    const scope = scopeRaw ? scopeRaw.slice(1, -1) : "";
+    return { type, scope, description };
+  }
+
+  // 无法解析，返回原始消息
+  return { type: "chore", scope: "", description: message };
+}
+
+/**
+ * 获取 changelog 类型名称
+ */
+function getChangelogType(emojiOrType) {
+  return EMOJI_TO_TYPE[emojiOrType] || TEXT_TO_TYPE[emojiOrType] || "🔧 Chores";
+}
+
+/**
+ * 生成单个包的 changelog
+ */
+function generateChangelogForPackage(packageDir, packageName, version) {
+  const changelogPath = path.join(packageDir, "CHANGELOG.zh-CN.md");
+
+  // 获取自上次版本以来的提交
+  const lastVersion = getPreviousVersion(packageDir);
+  const gitRange = lastVersion ? `v${lastVersion}..HEAD` : "HEAD~10..HEAD";
+
+  let gitLogCmd;
+  if (lastVersion) {
+    gitLogCmd = `git log ${gitRange} --pretty=format:"%h|%an|%s|%ad" --date=short`;
+  } else {
+    gitLogCmd = `git log -10 --pretty=format:"%h|%an|%s|%ad" --date=short`;
+  }
+
+  try {
+    const gitLog = execSync(gitLogCmd, {
+      cwd: packageDir,
+      encoding: "utf8",
+    }).trim();
+
+    if (!gitLog) {
+      log(`   - ${packageName}: 无新提交`, "cyan");
+      return;
+    }
+
+    // 解析并分类提交
+    const commitsByType = {};
+    const lines = gitLog.split("\n").filter((line) => line.trim());
+
+    lines.forEach((line) => {
+      const [hash, , message] = line.split("|"); // 忽略 author 和 date
+      const { type, scope, description } = parseCommitMessage(message);
+      const changelogType = getChangelogType(type);
+
+      if (!commitsByType[changelogType]) {
+        commitsByType[changelogType] = [];
+      }
+
+      const repoUrl = "https://github.com/littleCareless/dish-ai-commit";
+      const commitLink = `([${hash}](${repoUrl}/commit/${hash}))`;
+      const scopePrefix = scope ? `**${scope}**: ` : "";
+      commitsByType[changelogType].push(
+        `- ${scopePrefix}${description} ${commitLink}`,
+      );
+    });
+
+    // 生成 changelog 内容
+    let changelogContent = "";
+
+    // 如果文件不存在，添加头部
+    if (!fs.existsSync(changelogPath)) {
+      changelogContent = `# Changelog\n\n[English](CHANGELOG.md) | [简体中文](CHANGELOG.zh-CN.md)\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。\n\n`;
+    }
+
+    // 添加版本部分
+    const today = new Date().toISOString().split("T")[0];
+    changelogContent += `## ${version} (${today})\n\n`;
+
+    // 按类型顺序添加提交
+    const typeOrder = [
+      "✨ Features",
+      "🐛 Bug Fixes",
+      "♻️ Code Refactoring",
+      "⚡ Performance Improvements",
+      "📝 Documentation",
+      "🔧 Chores",
+      "👷 Continuous Integration",
+      "📦 Build System",
+      "🎉 Init",
+      "💄 Styles",
+      "✅ Tests",
+      "⏪ Revert",
+    ];
+
+    typeOrder.forEach((type) => {
+      if (commitsByType[type] && commitsByType[type].length > 0) {
+        changelogContent += `### ${type}\n\n`;
+        commitsByType[type].forEach((commit) => {
+          changelogContent += `${commit}\n`;
+        });
+        changelogContent += "\n";
+      }
+    });
+
+    // 写入文件
+    fs.writeFileSync(changelogPath, changelogContent);
+    log(`   - ${packageName} ✓`, "cyan");
+  } catch (error) {
+    log(`   ⚠️  ${packageName} 生成警告: ${error.message}`, "yellow");
+  }
+}
+
+/**
+ * 获取上一个版本号
+ */
+function getPreviousVersion(packageDir) {
+  try {
+    const tags = execSync("git tag --sort=-version:refname", {
+      cwd: packageDir,
+      encoding: "utf8",
+    })
+      .trim()
+      .split("\n");
+
+    const versionTags = tags.filter((tag) => tag.match(/^v\d+\.\d+\.\d+$/));
+    return versionTags.length > 1 ? versionTags[1].replace("v", "") : null;
+  } catch {
+    return null;
+  }
+}
+
 // 4. 生成各包 changelog
 function generateChangelogs() {
   logStep("生成 changelog");
 
+  // 读取当前版本号
+  const version = getCurrentVersion(ROOT_DIR);
+
   // 为 src 生成
-  try {
-    execSync("npx standard-version --skip.bump --skip.tag --skip.commit", {
-      cwd: SRC_DIR,
-      stdio: "pipe",
-    });
-    log("   - src/CHANGELOG.zh-CN.md ✓", "cyan");
-  } catch (error) {
-    log(`   ⚠️  src changelog 生成警告: ${error.message}`, "yellow");
-  }
+  generateChangelogForPackage(SRC_DIR, "src", version);
 
   // 为 webview-ui 生成
-  try {
-    execSync("npx standard-version --skip.bump --skip.tag --skip.commit", {
-      cwd: WEBVIEW_DIR,
-      stdio: "pipe",
-    });
-    log("   - webview-ui/CHANGELOG.zh-CN.md ✓", "cyan");
-  } catch (error) {
-    log(`   ⚠️  webview-ui changelog 生成警告: ${error.message}`, "yellow");
-  }
+  generateChangelogForPackage(WEBVIEW_DIR, "webview-ui", version);
 }
 
 // 5. 合并根目录 changelog
@@ -193,11 +385,10 @@ function mergeRootChangelog(version) {
   logStep("合并根目录 changelog");
 
   try {
-    // 先为根目录生成基础 changelog
-    execSync("npx standard-version --skip.bump --skip.tag --skip.commit", {
-      cwd: ROOT_DIR,
-      stdio: "pipe",
-    });
+    const rootChangelogPath = path.join(ROOT_DIR, "CHANGELOG.zh-CN.md");
+
+    // 为根目录生成 changelog（包含所有提交）
+    generateRootChangelog(version);
 
     // 读取各包的最新变更
     const srcChangelog = readLatestChangelog(
@@ -209,7 +400,6 @@ function mergeRootChangelog(version) {
 
     // 如果有子包变更，添加到根目录
     if (srcChangelog || webviewChangelog) {
-      const rootChangelogPath = path.join(ROOT_DIR, "CHANGELOG.zh-CN.md");
       const content = fs.readFileSync(rootChangelogPath, "utf8");
 
       // 找到版本头部位置
@@ -242,6 +432,101 @@ function mergeRootChangelog(version) {
     }
   } catch (error) {
     log(`   ⚠️  合并警告: ${error.message}`, "yellow");
+  }
+}
+
+/**
+ * 为根目录生成 changelog
+ */
+function generateRootChangelog(version) {
+  const changelogPath = path.join(ROOT_DIR, "CHANGELOG.zh-CN.md");
+
+  // 获取自上次版本以来的提交
+  const lastVersion = getPreviousVersion(ROOT_DIR);
+  const gitRange = lastVersion ? `v${lastVersion}..HEAD` : "HEAD~10..HEAD";
+
+  let gitLogCmd;
+  if (lastVersion) {
+    gitLogCmd = `git log ${gitRange} --pretty=format:"%h|%an|%s|%ad" --date=short`;
+  } else {
+    gitLogCmd = `git log -10 --pretty=format:"%h|%an|%s|%ad" --date=short`;
+  }
+
+  try {
+    const gitLog = execSync(gitLogCmd, {
+      cwd: ROOT_DIR,
+      encoding: "utf8",
+    }).trim();
+
+    if (!gitLog) {
+      log("   - 根目录: 无新提交", "cyan");
+      return;
+    }
+
+    // 解析并分类提交
+    const commitsByType = {};
+    const lines = gitLog.split("\n").filter((line) => line.trim());
+
+    lines.forEach((line) => {
+      const [hash, , message] = line.split("|"); // 忽略 author 和 date
+      const { type, scope, description } = parseCommitMessage(message);
+      const changelogType = getChangelogType(type);
+
+      if (!commitsByType[changelogType]) {
+        commitsByType[changelogType] = [];
+      }
+
+      const repoUrl = "https://github.com/littleCareless/dish-ai-commit";
+      const commitLink = `([${hash}](${repoUrl}/commit/${hash}))`;
+      const scopePrefix = scope ? `**${scope}**: ` : "";
+      commitsByType[changelogType].push(
+        `- ${scopePrefix}${description} ${commitLink}`,
+      );
+    });
+
+    // 生成 changelog 内容
+    let changelogContent = "";
+
+    // 如果文件不存在，添加头部
+    if (!fs.existsSync(changelogPath)) {
+      changelogContent = `# Changelog\n\n[English](CHANGELOG.md) | [简体中文](CHANGELOG.zh-CN.md)\n\nAll notable changes to this project will be documented in this file.\n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。\n\n`;
+    }
+
+    // 添加版本部分
+    const today = new Date().toISOString().split("T")[0];
+    changelogContent += `## ${version} (${today})\n\n`;
+
+    // 按类型顺序添加提交
+    const typeOrder = [
+      "✨ Features",
+      "🐛 Bug Fixes",
+      "♻️ Code Refactoring",
+      "⚡ Performance Improvements",
+      "📝 Documentation",
+      "🔧 Chores",
+      "👷 Continuous Integration",
+      "📦 Build System",
+      "🎉 Init",
+      "💄 Styles",
+      "✅ Tests",
+      "⏪ Revert",
+    ];
+
+    typeOrder.forEach((type) => {
+      if (commitsByType[type] && commitsByType[type].length > 0) {
+        changelogContent += `### ${type}\n\n`;
+        commitsByType[type].forEach((commit) => {
+          changelogContent += `${commit}\n`;
+        });
+        changelogContent += "\n";
+      }
+    });
+
+    // 写入文件
+    fs.writeFileSync(changelogPath, changelogContent);
+    log("   - 根目录 CHANGELOG.zh-CN.md ✓", "cyan");
+  } catch (error) {
+    log(`   ⚠️  根目录生成警告: ${error.message}`, "yellow");
   }
 }
 
@@ -329,12 +614,13 @@ function showHelp() {
 // 主函数
 function main() {
   // 检查帮助
-  if (process.argv.includes('--help') || process.argv.includes('-h')) {
+  if (process.argv.includes("--help") || process.argv.includes("-h")) {
     showHelp();
   }
 
   // 检查是否为 dry-run 模式
-  const isDryRun = process.argv.includes('--dry-run') || process.argv.includes('-d');
+  const isDryRun =
+    process.argv.includes("--dry-run") || process.argv.includes("-d");
 
   try {
     log("🚀 开始 Release 流程...", "blue");
@@ -344,7 +630,7 @@ function main() {
     }
 
     // 1. 验证环境
-    validateGitStatus();
+    validateGitStatus(isDryRun);
 
     // 2. 获取新版本号
     const newVersion = getNewVersion();

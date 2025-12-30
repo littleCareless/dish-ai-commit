@@ -6,6 +6,11 @@ echo "🔍 正在进行TypeScript编译验证..."
 turbo run check-types || (echo "❌ TypeScript编译失败，请修复错误后再提交" && exit 1)
 echo "✅ TypeScript编译验证通过"
 
+# 运行代码风格检查
+echo "🔍 正在进行代码风格检查..."
+pnpm lint || (echo "❌ 代码风格检查失败，请修复警告后再提交" && exit 1)
+echo "✅ 代码风格检查通过"
+
 # 运行构建检查
 echo "🔨 正在进行构建验证..."
 turbo run compile:esbuild || (echo "❌ 构建失败，请修复错误后再提交" && exit 1)
