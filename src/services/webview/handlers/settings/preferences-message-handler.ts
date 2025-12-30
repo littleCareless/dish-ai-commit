@@ -1,6 +1,6 @@
-import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager"
-import { ExtensionResponse, UIRequest } from "@shared/types/messages"
-import * as vscode from "vscode"
+import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
+import { ExtensionResponse, UIRequest } from "@shared/types/messages";
+import * as vscode from "vscode";
 
 export class PreferencesMessageHandler {
   private _settingsManager: PreferencesSettingsManager;

@@ -30,74 +30,77 @@ export const ModelCustomSettings: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   // 处理消息响应
-  const handleMessage = useCallback((event: MessageEvent) => {
-    const { command, payload, error } = event.data;
+  const handleMessage = useCallback(
+    (event: MessageEvent) => {
+      const { command, payload, error } = event.data;
 
-    // 处理错误
-    if (command === ExtensionResponse.ModelCustomError) {
-      console.error("Model Custom Error:", error);
-      setIsLoading(false);
-      toast({
-        title: tCommon("status.error"),
-        description: error || tCommon("status.error"),
-        variant: "destructive",
-      });
-      return;
-    }
+      // 处理错误
+      if (command === ExtensionResponse.ModelCustomError) {
+        console.error("Model Custom Error:", error);
+        setIsLoading(false);
+        toast({
+          title: tCommon("status.error"),
+          description: error || tCommon("status.error"),
+          variant: "destructive",
+        });
+        return;
+      }
 
-    // 处理模型列表加载
-    if (command === ExtensionResponse.ModelCustomAllLoaded && payload) {
-      const registry = payload as CustomModelRegistry;
-      const modelList = Object.values(registry.models);
-      setModels(modelList);
-      setIsLoading(false);
-    }
+      // 处理模型列表加载
+      if (command === ExtensionResponse.ModelCustomAllLoaded && payload) {
+        const registry = payload as CustomModelRegistry;
+        const modelList = Object.values(registry.models);
+        setModels(modelList);
+        setIsLoading(false);
+      }
 
-    // 处理提供商列表加载
-    if (command === ExtensionResponse.ModelCustomProvidersLoaded && payload) {
-      setProviders(payload as ProviderInfo[]);
-    }
+      // 处理提供商列表加载
+      if (command === ExtensionResponse.ModelCustomProvidersLoaded && payload) {
+        setProviders(payload as ProviderInfo[]);
+      }
 
-    // 处理保存成功
-    if (command === ExtensionResponse.ModelCustomSaved) {
-      toast({
-        title: t("save"),
-        description: tCommon("status.success"),
-      });
-    }
+      // 处理保存成功
+      if (command === ExtensionResponse.ModelCustomSaved) {
+        toast({
+          title: t("save"),
+          description: tCommon("status.success"),
+        });
+      }
 
-    // 处理删除成功
-    if (command === ExtensionResponse.ModelCustomDeleted) {
-      toast({
-        title: t("delete"),
-        description: tCommon("status.success"),
-      });
-    }
+      // 处理删除成功
+      if (command === ExtensionResponse.ModelCustomDeleted) {
+        toast({
+          title: t("delete"),
+          description: tCommon("status.success"),
+        });
+      }
 
-    // 处理导出
-    if (command === ExtensionResponse.ModelCustomExported && payload) {
-      const json = JSON.stringify(payload, null, 2);
-      const blob = new Blob([json], { type: "application/json" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `custom-models-${new Date().toISOString().slice(0, 10)}.json`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast({
-        title: t("exportSuccess"),
-        description: t("exportSuccess"),
-      });
-    }
+      // 处理导出
+      if (command === ExtensionResponse.ModelCustomExported && payload) {
+        const json = JSON.stringify(payload, null, 2);
+        const blob = new Blob([json], { type: "application/json" });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `custom-models-${new Date().toISOString().slice(0, 10)}.json`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast({
+          title: t("exportSuccess"),
+          description: t("exportSuccess"),
+        });
+      }
 
-    // 处理导入
-    if (command === ExtensionResponse.ModelCustomImported) {
-      toast({
-        title: t("importSuccess"),
-        description: t("importSuccess"),
-      });
-    }
-  }, []);
+      // 处理导入
+      if (command === ExtensionResponse.ModelCustomImported) {
+        toast({
+          title: t("importSuccess"),
+          description: t("importSuccess"),
+        });
+      }
+    },
+    [t, tCommon, toast],
+  );
 
   useMessageHandler(handleMessage);
 

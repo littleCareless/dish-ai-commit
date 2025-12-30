@@ -28,7 +28,7 @@ import { postMessage } from "@/utils/vscode";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { UIRequest } from "@shared/types/messages";
 import React from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import * as z from "zod";
 
 const selectableCategories = [
@@ -65,7 +65,11 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
     },
   });
 
-  const selectedCategory = form.watch("category");
+  // Use useWatch for React Compiler compatibility
+  const selectedCategory = useWatch({
+    name: "category",
+    control: form.control,
+  });
   const availableVariables: PromptVariable[] =
     CATEGORY_VARIABLES[selectedCategory] || [];
 

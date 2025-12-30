@@ -13,7 +13,7 @@ import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { UserPreferences } from "@/types/settings";
 import React, { useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
 interface AdvancedSettingsProps {
@@ -38,13 +38,11 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
     form.reset(preferences);
   }, [preferences, form]);
 
-  // 监听表单值变化并触发 onChange
+  // 监听表单值变化并触发 onChange - using useWatch for React Compiler compatibility
+  const watchedValues = useWatch({ control: form.control });
   useEffect(() => {
-    const subscription = form.watch((value) => {
-      onChange(value as UserPreferences);
-    });
-    return () => subscription.unsubscribe();
-  }, [form, onChange]);
+    onChange(watchedValues as UserPreferences);
+  }, [watchedValues, onChange]);
 
   const getVerbosityDescription = (value: number) => {
     switch (value) {

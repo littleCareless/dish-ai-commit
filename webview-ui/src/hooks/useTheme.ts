@@ -103,16 +103,12 @@ export const useTheme = () => {
       return;
     }
 
-    // 初始设置
-    const initialTheme = getTheme();
-    setThemeState(initialTheme);
-
     // 如果没有明确的类，添加初始类
     if (
       !document.body.classList.contains("vscode-dark") &&
       !document.body.classList.contains("vscode-light")
     ) {
-      if (initialTheme === "dark") {
+      if (theme === "dark") {
         document.body.classList.add("dark");
       } else {
         document.body.classList.add("light");
@@ -172,7 +168,7 @@ export const useTheme = () => {
         mediaQuery.removeListener(handleSystemThemeChange as any);
       }
     };
-  }, []); // 只在组件挂载时执行一次
+  }, [theme]); // Add theme to dependencies
 
   return {
     theme,

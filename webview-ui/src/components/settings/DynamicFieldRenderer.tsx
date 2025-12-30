@@ -21,9 +21,10 @@ import {
   VSCodeTextField,
 } from "@vscode/webview-ui-toolkit/react";
 import { TFunction } from "i18next";
-import { AlertCircle, Loader } from "lucide-react";
-import React, { useMemo } from "react";
+import { AlertCircle } from "lucide-react";
+import React from "react";
 import { KeyValueField } from "./KeyValueField";
+import { fieldPropsEqual } from "./DynamicFieldRenderer.helpers";
 
 type FieldValue =
   | string
@@ -42,22 +43,6 @@ interface DynamicFieldRendererProps {
   className?: string;
   t: TFunction;
 }
-
-const fieldPropsEqual = (
-  prevProps: DynamicFieldRendererProps,
-  nextProps: DynamicFieldRendererProps,
-) => {
-  // ✅ 只在这些属性改变时重新渲染
-  return (
-    prevProps.field.key === nextProps.field.key &&
-    prevProps.value === nextProps.value &&
-    JSON.stringify(prevProps.formValues) ===
-      JSON.stringify(nextProps.formValues) &&
-    prevProps.disabled === nextProps.disabled &&
-    prevProps.className === nextProps.className
-    // onChange 引用可能变化，但不需要比较
-  );
-};
 
 export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
   React.memo(
@@ -352,81 +337,3 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
     },
     fieldPropsEqual,
   );
-
-/**
- * 批量渲染字段组
- */
-interface DynamicFieldGroupProps {
-  fields: FieldConfig[];
-  values: Record<string, FieldValue>;
-  onChange: (fieldKey: string, value: FieldValue) => void;
-  disabled?: boolean;
-  className?: string;
-  t: TFunction;
-}
-
-export const DynamicFieldGroup: React.FC<DynamicFieldGroupProps> = React.memo(
-  ({ fields, values, onChange, disabled = false, className = "", t }) => {
-    // ✅ 仅在开发模式下输出调试信息
-    if (process.env.NODE_ENV === "development") {
-      console.debug(`[DynamicFieldGroup] Rendering ${fields.length} fields`);
-    }
-
-    // ✅ 使用 useMemo 缓存渲染的字段，避免不必要的重新渲染
-    const renderedFields = useMemo(
-      () =>
-        fields.map((field) => (
-          <DynamicFieldRenderer
-            key={field.key}
-            field={field}
-            value={values[field.key]}
-            onChange={(value) => onChange(field.key, value)}
-            formValues={values}
-            disabled={disabled}
-            t={t}
-          />
-        )),
-      [fields, values, onChange, disabled, t],
-    );
-
-    // 如果没有字段，不渲染任何东西
-    if (fields.length === 0) {
-      return null;
-    }
-
-    return <div className={`space-y-4 ${className}`}>{renderedFields}</div>;
-  },
-);
-
-/**
- * 带加载状态的字段渲染器
- */
-interface LoadingFieldRendererProps extends DynamicFieldRendererProps {
-  isLoading?: boolean;
-  loadingText?: string;
-}
-
-export const LoadingFieldRenderer: React.FC<LoadingFieldRendererProps> = ({
-  isLoading = false,
-  loadingText = "加载中...",
-  ...props
-}) => {
-  if (isLoading) {
-    return (
-      <FormItem>
-        <FormLabel className="flex items-center gap-2">
-          {props.field.label}
-          <div className="flex items-center gap-1 text-xs text-muted-foreground">
-            <Loader className="w-3 h-3 animate-spin" />
-            {loadingText}
-          </div>
-        </FormLabel>
-        <FormControl>
-          <VSCodeTextField value="" disabled={true} placeholder="正在加载..." />
-        </FormControl>
-      </FormItem>
-    );
-  }
-
-  return <DynamicFieldRenderer {...props} />;
-};

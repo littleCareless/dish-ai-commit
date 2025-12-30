@@ -1,4 +1,4 @@
-import { useForm } from "react-hook-form";
+import { useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { useTranslation } from "react-i18next";
@@ -62,6 +62,16 @@ export function ModelForm({
     },
   });
 
+  // Use useWatch for React Compiler compatibility
+  const providerId = useWatch({ name: "providerId", control: form.control });
+  const streaming = useWatch({ name: "streaming", control: form.control });
+  const functionCalling = useWatch({
+    name: "functionCalling",
+    control: form.control,
+  });
+  const vision = useWatch({ name: "vision", control: form.control });
+  const deprecated = useWatch({ name: "deprecated", control: form.control });
+
   return (
     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
       {/* 第一行：提供商和模型ID - 上下排列 */}
@@ -74,7 +84,7 @@ export function ModelForm({
             {t("provider")}
           </label>
           <Select
-            value={form.watch("providerId")}
+            value={providerId}
             onValueChange={(v) => form.setValue("providerId", v)}
           >
             <SelectOption value="">
@@ -172,14 +182,14 @@ export function ModelForm({
       <div className="grid grid-cols-3 gap-4">
         <label className="flex items-center gap-2">
           <Checkbox
-            checked={form.watch("streaming")}
+            checked={streaming}
             onCheckedChange={(v) => form.setValue("streaming", v as boolean)}
           />
           <span className="text-sm">{t("capabilities.streaming")}</span>
         </label>
         <label className="flex items-center gap-2">
           <Checkbox
-            checked={form.watch("functionCalling")}
+            checked={functionCalling}
             onCheckedChange={(v) =>
               form.setValue("functionCalling", v as boolean)
             }
@@ -188,7 +198,7 @@ export function ModelForm({
         </label>
         <label className="flex items-center gap-2">
           <Checkbox
-            checked={form.watch("vision")}
+            checked={vision}
             onCheckedChange={(v) => form.setValue("vision", v as boolean)}
           />
           <span className="text-sm">{t("capabilities.vision")}</span>
@@ -228,7 +238,7 @@ export function ModelForm({
       {/* 已废弃 - 单独一行 */}
       <div className="flex items-center gap-2">
         <Checkbox
-          checked={form.watch("deprecated")}
+          checked={deprecated}
           onCheckedChange={(v) => form.setValue("deprecated", v as boolean)}
         />
         <span className="text-sm">{t("deprecated")}</span>

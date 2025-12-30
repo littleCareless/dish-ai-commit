@@ -246,7 +246,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
         throw err;
       }
     },
-    [availableProfiles],
+    [availableProfiles, activeProfileId],
   );
 
   const updatePreferencesHandler = useCallback(

@@ -22,7 +22,7 @@ import React, {
 import { useForm } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 import { z } from "zod";
-import { DynamicFieldGroup } from "./DynamicFieldRenderer";
+import { DynamicFieldGroup } from "./DynamicFieldGroup";
 
 interface ProviderConfigFormProps {
   provider: ExtendedProviderConfig;
@@ -279,7 +279,7 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
           }
         }
       },
-      [provider.id, form, t],
+      [provider.id, form, t, config],
     ),
   );
 

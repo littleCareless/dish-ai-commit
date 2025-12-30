@@ -1,11 +1,11 @@
-import { DISH_CONFIG_PREFIX } from "@/config/constants"
-import { ProviderConfig } from "@/types/settings"
-import * as vscode from "vscode"
-import { AdvancedStorageData } from "./advanced-storage"
-import { ApiConfigStorageData } from "./api-config-storage"
-import { FeaturesStorageData } from "./features-storage"
-import { PreferencesStorageData } from "./preferences-storage"
-import { StorageManager } from "./storage-manager"
+import { DISH_CONFIG_PREFIX } from "@/config/constants";
+import { ProviderConfig } from "@/types/settings";
+import * as vscode from "vscode";
+import { AdvancedStorageData } from "./advanced-storage";
+import { ApiConfigStorageData } from "./api-config-storage";
+import { FeaturesStorageData } from "./features-storage";
+import { PreferencesStorageData } from "./preferences-storage";
+import { StorageManager } from "./storage-manager";
 
 export interface MigrationDetectionResult {
   migrationNeeded: boolean;
