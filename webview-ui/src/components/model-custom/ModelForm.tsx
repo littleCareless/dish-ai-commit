@@ -1,6 +1,7 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
+import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Select, SelectOption } from "@/components/ui/select";
@@ -8,22 +9,6 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { ModelFormValues } from "@/types/model-custom";
 import { themeStyles } from "@/utils/theme";
-
-const formSchema = z.object({
-  providerId: z.string().min(1, "必填"),
-  modelId: z.string().min(1, "必填"),
-  modelName: z.string().min(1, "必填"),
-  inputTokens: z.number().min(1).max(1000000, "不能超过 1,000,000"),
-  outputTokens: z.number().min(1).max(1000000, "不能超过 1,000,000"),
-  contextWindow: z.number().optional(),
-  streaming: z.boolean().optional(),
-  functionCalling: z.boolean().optional(),
-  vision: z.boolean().optional(),
-  pricingInput: z.number().optional(),
-  pricingOutput: z.number().optional(),
-  deprecated: z.boolean().optional(),
-  notes: z.string().optional(),
-});
 
 interface ModelFormProps {
   providers: { id: string; name: string }[];
@@ -40,6 +25,31 @@ export function ModelForm({
   onCancel,
   isLoading,
 }: ModelFormProps) {
+  const { t } = useTranslation("model-custom");
+
+  // Create dynamic schema with i18n validation messages
+  const formSchema = z.object({
+    providerId: z.string().min(1, t("validation.required")),
+    modelId: z.string().min(1, t("validation.required")),
+    modelName: z.string().min(1, t("validation.required")),
+    inputTokens: z
+      .number()
+      .min(1, t("validation.positiveNumber"))
+      .max(1000000, t("validation.maxTokensExceeded")),
+    outputTokens: z
+      .number()
+      .min(1, t("validation.positiveNumber"))
+      .max(1000000, t("validation.maxTokensExceeded")),
+    contextWindow: z.number().optional(),
+    streaming: z.boolean().optional(),
+    functionCalling: z.boolean().optional(),
+    vision: z.boolean().optional(),
+    pricingInput: z.number().optional(),
+    pricingOutput: z.number().optional(),
+    deprecated: z.boolean().optional(),
+    notes: z.string().optional(),
+  });
+
   const form = useForm<ModelFormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -61,13 +71,15 @@ export function ModelForm({
             className="text-sm font-medium"
             style={{ color: themeStyles.foreground() }}
           >
-            提供商
+            {t("provider")}
           </label>
           <Select
             value={form.watch("providerId")}
             onValueChange={(v) => form.setValue("providerId", v)}
           >
-            <SelectOption value="">选择提供商</SelectOption>
+            <SelectOption value="">
+              {t("validation.invalidProvider")}
+            </SelectOption>
             {providers.map((p) => (
               <SelectOption key={p.id} value={p.id}>
                 {p.name}
@@ -80,7 +92,7 @@ export function ModelForm({
             className="text-sm font-medium"
             style={{ color: themeStyles.foreground() }}
           >
-            模型ID
+            {t("modelId")}
           </label>
           <Input {...form.register("modelId")} placeholder="gpt-4-custom" />
         </div>
@@ -92,7 +104,7 @@ export function ModelForm({
           className="text-sm font-medium"
           style={{ color: themeStyles.foreground() }}
         >
-          模型名称
+          {t("modelName")}
         </label>
         <Input {...form.register("modelName")} placeholder="GPT-4 Custom" />
       </div>
@@ -104,7 +116,7 @@ export function ModelForm({
             className="text-sm font-medium"
             style={{ color: themeStyles.foreground() }}
           >
-            输入Token上限
+            {t("maxTokens.input")}
           </label>
           <Input
             type="number"
@@ -117,7 +129,7 @@ export function ModelForm({
             className="text-sm font-medium"
             style={{ color: themeStyles.foreground() }}
           >
-            输出Token上限
+            {t("maxTokens.output")}
           </label>
           <Input
             type="number"
@@ -134,7 +146,7 @@ export function ModelForm({
             className="text-sm font-medium"
             style={{ color: themeStyles.foreground() }}
           >
-            上下文窗口 (可选)
+            {t("contextWindow")}
           </label>
           <Input
             type="number"
@@ -147,9 +159,12 @@ export function ModelForm({
             className="text-sm font-medium"
             style={{ color: themeStyles.foreground() }}
           >
-            备注
+            {t("notes")}
           </label>
-          <Textarea {...form.register("notes")} placeholder="补充说明..." />
+          <Textarea
+            {...form.register("notes")}
+            placeholder={t("notes") + "..."}
+          />
         </div>
       </div>
 
@@ -160,7 +175,7 @@ export function ModelForm({
             checked={form.watch("streaming")}
             onCheckedChange={(v) => form.setValue("streaming", v as boolean)}
           />
-          <span className="text-sm">流式输出</span>
+          <span className="text-sm">{t("capabilities.streaming")}</span>
         </label>
         <label className="flex items-center gap-2">
           <Checkbox
@@ -169,14 +184,14 @@ export function ModelForm({
               form.setValue("functionCalling", v as boolean)
             }
           />
-          <span className="text-sm">函数调用</span>
+          <span className="text-sm">{t("capabilities.functionCalling")}</span>
         </label>
         <label className="flex items-center gap-2">
           <Checkbox
             checked={form.watch("vision")}
             onCheckedChange={(v) => form.setValue("vision", v as boolean)}
           />
-          <span className="text-sm">视觉能力</span>
+          <span className="text-sm">{t("capabilities.vision")}</span>
         </label>
       </div>
 
@@ -187,7 +202,7 @@ export function ModelForm({
             className="text-sm font-medium"
             style={{ color: themeStyles.foreground() }}
           >
-            输入价格 (每1M tokens)
+            {t("pricing.input")}
           </label>
           <Input
             type="number"
@@ -200,7 +215,7 @@ export function ModelForm({
             className="text-sm font-medium"
             style={{ color: themeStyles.foreground() }}
           >
-            输出价格 (每1M tokens)
+            {t("pricing.output")}
           </label>
           <Input
             type="number"
@@ -216,16 +231,16 @@ export function ModelForm({
           checked={form.watch("deprecated")}
           onCheckedChange={(v) => form.setValue("deprecated", v as boolean)}
         />
-        <span className="text-sm">已废弃</span>
+        <span className="text-sm">{t("deprecated")}</span>
       </div>
 
       {/* 按钮区域 */}
       <div className="flex justify-end gap-2 pt-2">
         <Button type="button" variant="outline" onClick={onCancel}>
-          取消
+          {t("cancel")}
         </Button>
         <Button type="submit" disabled={isLoading}>
-          {isLoading ? "保存中..." : "保存"}
+          {isLoading ? t("save") + "..." : t("save")}
         </Button>
       </div>
     </form>

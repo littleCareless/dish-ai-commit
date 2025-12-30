@@ -32,6 +32,9 @@
   "confirmDelete": "确认删除此模型信息？",
   "importSuccess": "导入成功",
   "exportSuccess": "导出成功",
+  "status": {
+    "loading": "加载中..."
+  },
   "validation": {
     "required": "此字段为必填项",
     "positiveNumber": "必须为正数",

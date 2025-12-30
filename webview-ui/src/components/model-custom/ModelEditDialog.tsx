@@ -4,6 +4,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { useTranslation } from "react-i18next";
 import { ModelForm } from "./ModelForm";
 import { CustomModelInfo, ModelFormValues } from "@/types/model-custom";
 
@@ -22,6 +23,8 @@ export function ModelEditDialog({
   providers,
   onSave,
 }: ModelEditDialogProps) {
+  const { t } = useTranslation("model-custom");
+
   const handleSubmit = async (data: ModelFormValues) => {
     const info: CustomModelInfo = {
       id: data.modelId,
@@ -74,7 +77,7 @@ export function ModelEditDialog({
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>{model ? "编辑模型" : "添加模型"}</DialogTitle>
+          <DialogTitle>{model ? t("edit") : t("addModel")}</DialogTitle>
         </DialogHeader>
         <ModelForm
           providers={providers}

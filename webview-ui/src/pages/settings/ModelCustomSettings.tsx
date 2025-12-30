@@ -14,9 +14,12 @@ import { UIRequest, ExtensionResponse } from "@shared/types/messages";
 import { postMessage } from "@/utils/vscode";
 import { useMessageHandler } from "@/utils/vscode";
 import { themeStyles } from "@/utils/theme";
+import { useToast } from "@/hooks/use-toast";
 
 export const ModelCustomSettings: React.FC = () => {
   const { t } = useTranslation("model-custom");
+  const { t: tCommon } = useTranslation("common");
+  const { toast } = useToast();
   const [models, setModels] = useState<CustomModelInfo[]>([]);
   const [providers, setProviders] = useState<ProviderInfo[]>([]);
   const [editingModel, setEditingModel] = useState<CustomModelInfo | null>(
@@ -34,6 +37,11 @@ export const ModelCustomSettings: React.FC = () => {
     if (command === ExtensionResponse.ModelCustomError) {
       console.error("Model Custom Error:", error);
       setIsLoading(false);
+      toast({
+        title: tCommon("status.error"),
+        description: error || tCommon("status.error"),
+        variant: "destructive",
+      });
       return;
     }
 
@@ -52,12 +60,18 @@ export const ModelCustomSettings: React.FC = () => {
 
     // 处理保存成功
     if (command === ExtensionResponse.ModelCustomSaved) {
-      console.log("Model saved successfully");
+      toast({
+        title: t("save"),
+        description: tCommon("status.success"),
+      });
     }
 
     // 处理删除成功
     if (command === ExtensionResponse.ModelCustomDeleted) {
-      console.log("Model deleted successfully");
+      toast({
+        title: t("delete"),
+        description: tCommon("status.success"),
+      });
     }
 
     // 处理导出
@@ -70,11 +84,18 @@ export const ModelCustomSettings: React.FC = () => {
       a.download = `custom-models-${new Date().toISOString().slice(0, 10)}.json`;
       a.click();
       URL.revokeObjectURL(url);
+      toast({
+        title: t("exportSuccess"),
+        description: t("exportSuccess"),
+      });
     }
 
     // 处理导入
     if (command === ExtensionResponse.ModelCustomImported) {
-      console.log("Model imported successfully");
+      toast({
+        title: t("importSuccess"),
+        description: t("importSuccess"),
+      });
     }
   }, []);
 
@@ -169,7 +190,7 @@ export const ModelCustomSettings: React.FC = () => {
           </Button>
           <label className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 cursor-pointer">
             <Upload className="w-4 h-4 mr-2" />
-            导入
+            {t("import")}
             <input
               type="file"
               accept=".json"

@@ -32,6 +32,9 @@
   "confirmDelete": "Confirm delete this model?",
   "importSuccess": "Import successful",
   "exportSuccess": "Export successful",
+  "status": {
+    "loading": "Loading..."
+  },
   "validation": {
     "required": "This field is required",
     "positiveNumber": "Must be a positive number",
