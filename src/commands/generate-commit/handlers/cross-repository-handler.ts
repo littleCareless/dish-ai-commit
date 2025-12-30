@@ -109,7 +109,7 @@ export class CrossRepositoryHandler {
           }
           
           // 最终进度报告
-          progress.report({ message: "完成", increment: 100 });
+          progress.report({ message: getMessage("progress.complete"), increment: 100 });
         }
       );
       

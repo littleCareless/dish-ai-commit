@@ -10,7 +10,7 @@ import { commitCacheService } from "@/services/cache/commit-cache-service";
 import { PromptManagerService } from "@/services/core/prompt-manager-service";
 import { RateLimiterService } from "@/services/core/rate-limiter-service";
 import { PromptKey } from "@/types/prompts";
-import { getMessage } from "@/utils/i18n";
+import { getMessage, formatMessage } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
 import { notify } from "@/utils/notification/notification-manager";
 import { processPromptTemplate } from "@/utils/prompt-template";
@@ -372,7 +372,9 @@ export class LayeredCommitHandler {
           providerConfig.rateLimitWindow || 60,
           (waitTimeMs) => {
             progress.report({
-              message: `Rate limit reached. Waiting ${Math.ceil(waitTimeMs / 1000)}s...`,
+              message: formatMessage("progress.rate.limit.waiting", [
+                String(Math.ceil(waitTimeMs / 1000)),
+              ]),
             });
           }
         );
@@ -380,7 +382,11 @@ export class LayeredCommitHandler {
       // =====================
 
       progress.report({
-        message: `Processing batch ${i + 1}/${batches.length} (${batch.length} files)...`,
+        message: formatMessage("progress.processing.batch", [
+          String(i + 1),
+          String(batches.length),
+          String(batch.length),
+        ]),
       });
 
       try {
