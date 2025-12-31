@@ -8,7 +8,15 @@ export const getTheme = (): Theme => {
     return "light";
   }
 
-  // 优先检查 body 的 class
+  // 优先检查 body 的 class（包括 Tailwind 的 dark/light 类）
+  if (document.body.classList.contains("dark")) {
+    return "dark";
+  }
+  if (document.body.classList.contains("light")) {
+    return "light";
+  }
+
+  // 检查 VS Code 的主题类
   if (document.body.classList.contains("vscode-dark")) {
     return "dark";
   }
@@ -16,7 +24,7 @@ export const getTheme = (): Theme => {
     return "light";
   }
 
-  // 如果没有 VS Code class，检查系统主题
+  // 如果没有明确的类，检查系统主题
   if (
     window.matchMedia &&
     window.matchMedia("(prefers-color-scheme: dark)").matches
@@ -103,17 +111,35 @@ export const useTheme = () => {
       return;
     }
 
-    // 如果没有明确的类，添加初始类
-    if (
-      !document.body.classList.contains("vscode-dark") &&
-      !document.body.classList.contains("vscode-light")
-    ) {
-      if (theme === "dark") {
+    // 确保 body 上同时存在正确的 Tailwind 类和 VS Code 类
+    const syncBodyClasses = () => {
+      const hasVscodeDark = document.body.classList.contains("vscode-dark");
+      const hasVscodeLight = document.body.classList.contains("vscode-light");
+      const hasDark = document.body.classList.contains("dark");
+      const hasLight = document.body.classList.contains("light");
+
+      // 如果有 VS Code 类但没有对应的 Tailwind 类，添加 Tailwind 类
+      if (hasVscodeDark && !hasDark) {
         document.body.classList.add("dark");
-      } else {
+        document.body.classList.remove("light");
+      } else if (hasVscodeLight && !hasLight) {
         document.body.classList.add("light");
+        document.body.classList.remove("dark");
+      } else if (!hasVscodeDark && !hasVscodeLight) {
+        // 如果没有 VS Code 类，确保至少有一个 Tailwind 类
+        if (!hasDark && !hasLight) {
+          const currentTheme = getTheme();
+          if (currentTheme === "dark") {
+            document.body.classList.add("dark");
+          } else {
+            document.body.classList.add("light");
+          }
+        }
       }
-    }
+    };
+
+    // 初始同步
+    syncBodyClasses();
 
     // 监听 body class 变化
     const observer = new MutationObserver((mutations) => {
@@ -122,6 +148,8 @@ export const useTheme = () => {
           mutation.type === "attributes" &&
           mutation.attributeName === "class"
         ) {
+          // 先同步类，再检测主题
+          syncBodyClasses();
           const newTheme = getTheme();
           if (newTheme !== theme) {
             setThemeState(newTheme);
@@ -147,7 +175,9 @@ export const useTheme = () => {
         setThemeState(newTheme);
         if (newTheme === "dark") {
           document.body.classList.add("dark");
+          document.body.classList.remove("light");
         } else {
+          document.body.classList.add("light");
           document.body.classList.remove("dark");
         }
       }

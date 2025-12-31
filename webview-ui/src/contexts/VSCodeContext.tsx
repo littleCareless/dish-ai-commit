@@ -12,15 +12,17 @@ import {
  * @returns An object with:
  *  - `isReady`: A boolean that is true when the initial state has been received from the extension.
  *  - `initialData`: An object containing the full state from the extension.
+ *  - `isFirstInstall`: A boolean indicating if this is the first installation.
  */
 export const useVSCodeContext = () => {
   const state = useExtensionState();
   // Separate the readiness flag from the rest of the state data.
-  const { didHydrateState, ...initialData } = state;
+  const { didHydrateState, isFirstInstall, ...initialData } = state;
 
   return {
     isReady: didHydrateState,
     initialData: initialData as ExtensionState,
+    isFirstInstall,
   };
 };
 

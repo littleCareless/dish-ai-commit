@@ -73,6 +73,7 @@ export interface ExtensionState {
 export interface ExtensionStateContextType extends ExtensionState {
   didHydrateState: boolean;
   showWelcome: boolean;
+  isFirstInstall: boolean; // 是否为首次安装
   theme: HljsTheme | undefined; // The converted TextMate theme for highlighting
   filePaths: string[];
   openedTabs: Array<{ label: string; isActive: boolean; path?: string }>;
@@ -132,6 +133,7 @@ export const ExtensionStateContextProvider: React.FC<{
 
   const [didHydrateState, setDidHydrateState] = useState(false);
   const [showWelcome, setShowWelcome] = useState(false);
+  const [isFirstInstall, setIsFirstInstall] = useState(false);
   const [theme, setTheme] = useState<HljsTheme | undefined>(undefined);
   const [filePaths, setFilePaths] = useState<string[]>([]);
   const [openedTabs, setOpenedTabs] = useState<
@@ -162,11 +164,27 @@ export const ExtensionStateContextProvider: React.FC<{
         case ExtensionResponse.SystemAllStorageLoaded: {
           const newState = message.data as ExtensionState;
           setState((prevState) => mergeExtensionState(prevState, newState));
-          // A simple heuristic for the welcome screen: show if no API keys are configured.
-          const hasApiKeys = Object.values(
-            newState.apiConfiguration || {},
-          ).some((config) => !!config.apiKey);
-          setShowWelcome(!hasApiKeys);
+
+          // 检查是否为首次安装（从 window.initialData 获取）
+          const windowWithInitialData = window as Window & {
+            initialData?: { isFirstInstall?: boolean };
+          };
+          const isFirstInstall =
+            windowWithInitialData.initialData?.isFirstInstall || false;
+
+          // 如果是首次安装，显示欢迎页面
+          if (isFirstInstall) {
+            setIsFirstInstall(true);
+            setShowWelcome(true);
+          } else {
+            // 否则使用原有的逻辑：如果没有 API key 则显示欢迎页面
+            const hasApiKeys = Object.values(
+              newState.apiConfiguration || {},
+            ).some((config) => !!config.apiKey);
+            setShowWelcome(!hasApiKeys);
+            setIsFirstInstall(false);
+          }
+
           setDidHydrateState(true);
           break;
         }
@@ -235,6 +253,7 @@ export const ExtensionStateContextProvider: React.FC<{
     ...state,
     didHydrateState,
     showWelcome,
+    isFirstInstall,
     theme,
     filePaths,
     openedTabs,
