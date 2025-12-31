@@ -128,6 +128,7 @@ export class SettingsViewMessageHandler {
       case UIRequest.ProfileMigrateSettings:
       case UIRequest.ProfileResetDefaults:
       case UIRequest.ProfileGetAllProviders:
+      case UIRequest.UpsertApiConfiguration:
         await this._profileHandler.handle(message, webview);
         break;
 

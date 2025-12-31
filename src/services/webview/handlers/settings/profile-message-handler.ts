@@ -2,6 +2,7 @@ import { settingsMigration } from "@/services/core/settings-migration";
 import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 import { ProviderStore } from "@/services/profile-manager/provider-store";
 import { formatMessage as t } from "@/utils/i18n/localization-manager";
+import { createDefaultPreferences } from "@/utils/i18n/language-mapper";
 import { safeWriteJson } from "@/utils/safe-write-json";
 import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 import * as fs from "fs/promises";
@@ -342,6 +343,87 @@ export class ProfileMessageHandler {
             command: ExtensionResponse.ProfileResetComplete,
             requestId,
             error: errorMessage,
+          });
+        }
+        break;
+      }
+
+      case UIRequest.UpsertApiConfiguration: {
+        console.log("[ProfileMessageHandler] Handling upsertApiConfiguration");
+        const { text, apiConfiguration } = message.data;
+        try {
+          // 获取所有配置文件
+          const profiles = await this.profileManager.getAllProfiles();
+          let targetProfile = profiles.find((p) => p.name === text);
+
+          if (!targetProfile) {
+            // 如果指定名称的配置文件不存在，创建新的
+            const newProfileId = `profile_${Date.now()}`;
+            targetProfile = {
+              id: newProfileId,
+              name: text || "default",
+              providers: {},
+              preferences: createDefaultPreferences(),
+              isActive: true,
+              createdAt: new Date().toISOString(),
+              updatedAt: new Date().toISOString(),
+              version: "1.0.0",
+            };
+          }
+
+          // 确保 providers 对象存在
+          if (!targetProfile.providers) {
+            targetProfile.providers = {};
+          }
+
+          // 更新或创建提供者配置
+          const providerId = apiConfiguration.id;
+          if (providerId) {
+            targetProfile.providers[providerId] = {
+              id: providerId,
+              name: apiConfiguration.name || providerId,
+              type: apiConfiguration.type || "openai-compatible",
+              apiKey: apiConfiguration.apiKey,
+              baseUrl: apiConfiguration.baseUrl,
+              defaultModel: apiConfiguration.model || apiConfiguration.defaultModel,
+              isActive: true,
+              updatedAt: new Date().toISOString(),
+            };
+          }
+
+          // 保存配置文件
+          await this.profileManager.saveProfile(targetProfile);
+
+          // 如果是新创建的配置文件，设置为活跃
+          if (targetProfile.isActive) {
+            await this.profileManager.setActiveProfile(targetProfile.id);
+          }
+
+          webview.postMessage({
+            command: ExtensionResponse.ApiConfigurationUpserted,
+            data: {
+              success: true,
+              profileId: targetProfile.id,
+              providerId,
+            },
+          });
+
+          console.log(
+            `[ProfileMessageHandler] API configuration upserted successfully: ${providerId} in profile ${targetProfile.id}`
+          );
+        } catch (error) {
+          console.error(
+            "[ProfileMessageHandler] Error in upsertApiConfiguration:",
+            error
+          );
+          const errorMessage =
+            error instanceof Error ? error.message : String(error);
+          webview.postMessage({
+            command: ExtensionResponse.ApiConfigurationUpserted,
+            data: {
+              success: false,
+              error: errorMessage,
+            },
           });
         }
         break;

@@ -25,6 +25,7 @@ export class SettingsViewHTMLProvider {
       qdrantUrl?: string;
       qdrantCollectionName?: string;
       language?: string;
+      isFirstInstall?: boolean;
     }
   ): Promise<string> {
     const webviewUiDistPath = vscode.Uri.joinPath(
@@ -73,7 +74,8 @@ export class SettingsViewHTMLProvider {
     qdrantUrl: "${initialData.qdrantUrl || ""}",
     qdrantCollectionName: "${initialData.qdrantCollectionName || ""}",
     language: "${initialData.language?.toLowerCase() || "en"}",
-    localesBaseUri: "${localesBaseUri.toString()}"
+    localesBaseUri: "${localesBaseUri.toString()}",
+    isFirstInstall: ${initialData.isFirstInstall ? "true" : "false"}
   };
   window.initialRoute = "${initialData.initialRoute}";
   console.log('SettingsViewProvider: initialData synchronously set', window.initialData);

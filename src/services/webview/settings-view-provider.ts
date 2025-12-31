@@ -32,6 +32,31 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
     );
   }
 
+  /**
+   * 检测是否为首次安装
+   * 通过检查 onboarding.status 和 API 配置来判断
+   */
+  private isFirstInstall(): boolean {
+    // 检查 onboarding 状态
+    const onboardingStatus = this._extensionContext.globalState.get<{
+      completed: boolean;
+      completedAt?: number;
+      skipped?: boolean;
+    }>("onboarding.status");
+
+    // 如果 onboarding 已完成或跳过，则不是首次安装
+    if (onboardingStatus?.completed || onboardingStatus?.skipped) {
+      return false;
+    }
+
+    // 检查是否有 API 配置（作为备用判断）
+    const apiConfig = this._extensionContext.globalState.get<Record<string, any>>("api.config");
+    const hasApiConfig = apiConfig && Object.keys(apiConfig).length > 0;
+
+    // 如果没有 onboarding 状态且没有 API 配置，则是首次安装
+    return !onboardingStatus && !hasApiConfig;
+  }
+
   public async resolveWebviewView(
     webviewView: vscode.WebviewView,
     context: vscode.WebviewViewResolveContext,
@@ -57,13 +82,20 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
     const hash = createHash("sha256").update(workspacePath).digest("hex");
     const qdrantCollectionName = `dish-${hash.substring(0, 16)}`;
 
+    // 检测是否为首次安装
+    const isFirstInstall = this.isFirstInstall();
+    const initialRoute = isFirstInstall ? "/" : "/settings";
+
+    console.log(`[SettingsViewProvider] First install detected: ${isFirstInstall}, initial route: ${initialRoute}`);
+
     webviewView.webview.html =
       await this._htmlContentProvider.getWebviewContent(webviewView.webview, {
         viewType: "settingsPage",
-        initialRoute: "/settings",
+        initialRoute,
         qdrantUrl,
         qdrantCollectionName,
         language: vscode.env.language,
+        isFirstInstall, // 传递首次安装标志
       });
 
     webviewView.webview.onDidReceiveMessage(
