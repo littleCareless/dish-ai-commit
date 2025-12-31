@@ -764,5 +764,6 @@
   "debugInfo": "This information is for debugging only and can be removed in the final version",
   "enterApiKeyOrBaseUrl": "Please enter API Key or Base URL first",
   "selectModel": "Select a model",
-  "detectModels": "Detect Models"
+  "detectModels": "Detect Models",
+  "refreshModels": "Refresh model list"
 }

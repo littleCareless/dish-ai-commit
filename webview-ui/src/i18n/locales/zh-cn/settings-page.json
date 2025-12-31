@@ -38,5 +38,25 @@
       "cancel": "取消",
       "delete": "删除"
     }
+  },
+  "keyValue": {
+    "addHeader": "添加请求头",
+    "noHeaders": "暂无自定义标头。点击 + 按钮添加。"
+  },
+  "dynamicField": {
+    "selectPlaceholder": "请选择",
+    "customRendererUndefined": "自定义字段渲染器未定义"
+  },
+  "providerForm": {
+    "browse": "浏览",
+    "basicSettings": "基础设置",
+    "advancedSettings": "高级设置",
+    "validationStatus": "验证状态",
+    "validationPassed": "所有字段验证通过",
+    "relatedDocs": "相关文档",
+    "setupGuide": "设置指南",
+    "apiReference": "API 参考",
+    "examples": "示例代码",
+    "updateFailed": "字段更新失败: {{error}}"
   }
 }

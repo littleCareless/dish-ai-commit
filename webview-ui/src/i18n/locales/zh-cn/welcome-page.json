@@ -1,9 +1,17 @@
 {
   "title": "欢迎！",
   "description": "欢迎使用本应用。请从左侧菜单中选择一个选项开始。",
+  "images": {
+    "dishCommitAlt": "Dish AI Commit",
+    "rooLogoAlt": "Roo logo"
+  },
+  "errors": {
+    "saveConfigFailed": "保存配置失败",
+    "requestTimeout": "请求超时"
+  },
   "hero": {
     "title": "Dish AI Commit",
-    "subtitle": "智能 Git 提交消息生成器",
+    "subtitle": "智能 Git SVN 提交消息生成器",
     "getStarted": "开始配置",
     "badges": {
       "aiPowered": "AI 驱动",

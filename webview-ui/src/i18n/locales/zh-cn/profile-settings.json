@@ -13,6 +13,13 @@
   "autoSave": "• 在修改设置后会<strong>自动保存</strong>到编辑中的配置",
   "clickDone": "• 点击顶部“<strong>完成</strong>”按钮将当前编辑的配置设为<strong>活跃</strong>配置",
   "currentProfileInfo": "当前配置信息 (JSON)",
+  "bulkExport": "批量导出",
+  "bulkDelete": "批量删除",
+  "confirmBulkDelete": "确认批量删除",
+  "selectProfileToOperate": "选择 Profile",
+  "selectedCount": "已选择 {{count}} 个 Profile",
+  "deleteConfirmation": "确定要删除选中的 {{count}} 个 Profile 吗？此操作无法撤销。",
+  "profilesToDelete": "将要删除的 Profile：",
   "profileEditDialog": {
     "titleEdit": "编辑配置",
     "titleNew": "新建配置",

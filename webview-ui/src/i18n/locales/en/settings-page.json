@@ -38,5 +38,25 @@
       "cancel": "Cancel",
       "delete": "Delete"
     }
+  },
+  "keyValue": {
+    "addHeader": "Add Header",
+    "noHeaders": "No custom headers. Click + button to add."
+  },
+  "dynamicField": {
+    "selectPlaceholder": "Please select",
+    "customRendererUndefined": "Custom field renderer undefined"
+  },
+  "providerForm": {
+    "browse": "Browse",
+    "basicSettings": "Basic Settings",
+    "advancedSettings": "Advanced Settings",
+    "validationStatus": "Validation Status",
+    "validationPassed": "All fields passed validation",
+    "relatedDocs": "Related Documentation",
+    "setupGuide": "Setup Guide",
+    "apiReference": "API Reference",
+    "examples": "Examples",
+    "updateFailed": "Field update failed: {{error}}"
   }
 }

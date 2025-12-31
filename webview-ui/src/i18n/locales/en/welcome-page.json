@@ -1,6 +1,14 @@
 {
   "title": "Welcome!",
   "description": "Welcome to this application. Please select an option from the left menu to get started.",
+  "images": {
+    "dishCommitAlt": "Dish AI Commit",
+    "rooLogoAlt": "Roo logo"
+  },
+  "errors": {
+    "saveConfigFailed": "Failed to save configuration",
+    "requestTimeout": "Request timeout"
+  },
   "hero": {
     "title": "Dish AI Commit",
     "subtitle": "Intelligent Git Commit Message Generator",

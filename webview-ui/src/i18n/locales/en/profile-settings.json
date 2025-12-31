@@ -13,6 +13,13 @@
   "autoSave": "• Changes are <strong>auto-saved</strong> to the editing profile",
   "clickDone": "• Click the '<strong>Done</strong>' button at the top to set the current editing profile as <strong>active</strong>",
   "currentProfileInfo": "Current Profile Info (JSON)",
+  "bulkExport": "Bulk Export",
+  "bulkDelete": "Bulk Delete",
+  "confirmBulkDelete": "Confirm Bulk Delete",
+  "selectProfileToOperate": "Select Profile",
+  "selectedCount": "{{count}} Profile(s) Selected",
+  "deleteConfirmation": "Are you sure you want to delete the selected {{count}} Profile(s)? This action cannot be undone.",
+  "profilesToDelete": "Profiles to Delete:",
   "profileEditDialog": {
     "titleEdit": "Edit Profile",
     "titleNew": "New Profile",

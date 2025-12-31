@@ -35,6 +35,9 @@
     "retry": "Retry",
     "cancel": "Cancel",
     "confirm": "Confirm",
-    "close": "Close"
+    "close": "Close",
+    "delete": "Delete",
+    "loading": "Loading...",
+    "processing": "Processing..."
   }
 }
