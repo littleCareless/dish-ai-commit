@@ -124,13 +124,19 @@ export const MigrationPage: React.FC = () => {
       <PageLayout maxWidth="md" className="flex items-center justify-center">
         <Card>
           <CardHeader className="text-center">
-            <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-green-100 dark:bg-green-900">
-              <CheckCircle2 className="h-6 w-6 text-green-600 dark:text-green-400" />
+            <div
+              className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full"
+              style={{ backgroundColor: "hsl(var(--accent))" }}
+            >
+              <CheckCircle2
+                className="h-6 w-6"
+                style={{ color: "hsl(var(--accent-foreground))" }}
+              />
             </div>
-            <CardTitle className="text-green-700 dark:text-green-300">
+            <CardTitle style={{ color: "hsl(var(--foreground))" }}>
               {t("success.title")}
             </CardTitle>
-            <CardDescription className="text-green-600/80 dark:text-green-400/80">
+            <CardDescription style={{ color: "hsl(var(--muted-foreground))" }}>
               {t("success.description")}
             </CardDescription>
           </CardHeader>
@@ -192,13 +198,19 @@ export const MigrationPage: React.FC = () => {
                 <ul className="space-y-2 text-sm">
                   {detectionResult?.detectedProviders.map((provider) => (
                     <li key={provider} className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      <CheckCircle2
+                        className="h-4 w-4"
+                        style={{ color: "hsl(var(--success))" }}
+                      />
                       <span className="capitalize">{provider}</span>
                     </li>
                   ))}
                   {detectionResult?.hasPreferences && (
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 className="h-4 w-4 text-green-500" />
+                      <CheckCircle2
+                        className="h-4 w-4"
+                        style={{ color: "hsl(var(--success))" }}
+                      />
                       <span>{t("preview.userPreferences")}</span>
                     </li>
                   )}
@@ -234,7 +246,14 @@ export const MigrationPage: React.FC = () => {
               </div>
             </div>
 
-            <div className="rounded-md bg-yellow-50 p-3 text-xs text-yellow-800 dark:bg-yellow-950/30 dark:text-yellow-200">
+            <div
+              className="rounded-md p-3 text-xs"
+              style={{
+                backgroundColor: "hsl(var(--warning) / 0.1)",
+                color: "hsl(var(--warning))",
+                border: "1px solid hsl(var(--warning) / 0.3)",
+              }}
+            >
               <p className="font-medium">{t("note.title")}</p>
               <p className="mt-1">{t("note.content")}</p>
             </div>

@@ -1,28 +1,29 @@
 import { useCallback, useState, useRef, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
-import { postMessage } from "@/utils/vscode";
 import { useVSCodeContext } from "@/contexts/VSCodeContext";
 import WelcomeHero from "@/components/welcome/WelcomeHero";
 import FeatureShowcase from "@/components/welcome/FeatureShowcase";
 import SetupWizard from "@/components/welcome/SetupWizard";
 import QuickStartGuide from "@/components/welcome/QuickStartGuide";
+import { useNavigate } from "react-router-dom";
+import { routes } from "@/router/routes";
 
 type ViewMode = "welcome" | "setup";
 
 const WelcomePage = () => {
   const { t } = useTranslation("welcome-page");
-  const { initialData } = useVSCodeContext();
+  const { initialData, isFirstInstall } = useVSCodeContext();
   const [viewMode, setViewMode] = useState<ViewMode>("welcome");
   const [showScrollHint, setShowScrollHint] = useState(true);
   const contentRef = useRef<HTMLDivElement>(null);
   const setupRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
 
   const apiConfiguration = useMemo(
     () => initialData?.apiConfiguration || {},
     [initialData?.apiConfiguration],
   );
-  const currentApiConfigName = initialData?.currentApiConfigName || "default";
 
   const handleGetStarted = useCallback(() => {
     setViewMode("setup");
@@ -32,11 +33,10 @@ const WelcomePage = () => {
   }, []);
 
   const handleComplete = useCallback(() => {
-    postMessage("upsertApiConfiguration", {
-      text: currentApiConfigName,
-      apiConfiguration,
-    });
-  }, [apiConfiguration, currentApiConfigName]);
+    console.log("[WelcomePage] Setup completed, navigating to settings...");
+    // 跳转到设置页面
+    navigate(routes.settings);
+  }, [navigate]);
 
   const handleScroll = useCallback(() => {
     if (contentRef.current) {
@@ -46,6 +46,16 @@ const WelcomePage = () => {
       }
     }
   }, []);
+
+  // 首次安装时自动跳转到设置向导（使用 useLayoutEffect 避免级联渲染）
+  useEffect(() => {
+    if (isFirstInstall) {
+      // 使用微任务延迟状态更新，避免级联渲染
+      Promise.resolve().then(() => {
+        setViewMode("setup");
+      });
+    }
+  }, [isFirstInstall]);
 
   useEffect(() => {
     const content = contentRef.current;
@@ -60,7 +70,7 @@ const WelcomePage = () => {
       className="flex flex-col h-screen overflow-hidden"
       style={{ backgroundColor: "var(--vscode-sideBar-background)" }}
     >
-      {/* Main scrollable content */}
+      {/* Main scrollable content - 占满全屏 */}
       <div
         ref={contentRef}
         className="flex-1 overflow-y-auto overflow-x-hidden"
@@ -85,24 +95,28 @@ const WelcomePage = () => {
 
         {/* Content container */}
         <div className="relative z-10 max-w-2xl mx-auto px-4 py-2">
-          {/* Hero section */}
-          <WelcomeHero
-            onGetStarted={viewMode === "welcome" ? handleGetStarted : undefined}
-          />
+          {/* Hero section - 仅在非首次安装或欢迎模式下显示 */}
+          {(!isFirstInstall || viewMode === "welcome") && (
+            <WelcomeHero
+              onGetStarted={
+                viewMode === "welcome" ? handleGetStarted : undefined
+              }
+            />
+          )}
 
-          {/* Feature showcase - always visible */}
-          <FeatureShowcase className="mb-4" />
+          {/* Feature showcase - 仅在非首次安装时显示 */}
+          {!isFirstInstall && <FeatureShowcase className="mb-4" />}
 
           {/* Setup wizard or quick start */}
           <div ref={setupRef}>
             {viewMode === "setup" ? (
               <SetupWizard
                 initialConfig={apiConfiguration}
-                currentApiConfigName={currentApiConfigName}
                 onComplete={handleComplete}
+                isFirstInstall={isFirstInstall}
               />
             ) : (
-              <QuickStartGuide />
+              !isFirstInstall && <QuickStartGuide />
             )}
           </div>
 
@@ -128,8 +142,8 @@ const WelcomePage = () => {
         </div>
       </div>
 
-      {/* Scroll hint indicator */}
-      {viewMode === "welcome" && showScrollHint && (
+      {/* Scroll hint indicator - 仅在欢迎模式下显示 */}
+      {viewMode === "welcome" && showScrollHint && !isFirstInstall && (
         <div
           className="absolute bottom-4 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1 animate-bounce transition-opacity duration-300"
           style={{

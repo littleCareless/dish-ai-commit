@@ -159,3 +159,132 @@ body.light vscode-checkbox {
   --vscode-checkbox-background: #ffffff !important;
   --vscode-checkbox-border: #3c3c3c !important;
 }
+
+/*
+  确保 VS Code 主题类也能触发 Tailwind 深色模式
+  这解决了"系统深色 + VS Code 浅色"时 dark: 前缀不生效的问题
+*/
+.vscode-dark {
+  /* 强制应用深色模式的 CSS 变量 */
+  --background: 222.2 84% 4.9% !important;
+  --foreground: 210 40% 98% !important;
+  --card: 222.2 84% 4.9% !important;
+  --card-foreground: 210 40% 98% !important;
+  --popover: 222.2 84% 4.9% !important;
+  --popover-foreground: 210 40% 98% !important;
+  --primary: 210 40% 98% !important;
+  --primary-foreground: 222.2 47.4% 11.2% !important;
+  --secondary: 217.2 32.6% 17.5% !important;
+  --secondary-foreground: 210 40% 98% !important;
+  --muted: 217.2 32.6% 17.5% !important;
+  --muted-foreground: 215 20.2% 65.1% !important;
+  --accent: 217.2 32.6% 17.5% !important;
+  --accent-foreground: 210 40% 98% !important;
+  --destructive: 0 62.8% 30.6% !important;
+  --destructive-foreground: 210 40% 98% !important;
+  --border: 217.2 32.6% 17.5% !important;
+  --input: 217.2 32.6% 17.5% !important;
+  --ring: 212.7 26.8% 83.9% !important;
+
+  /* 业务组件颜色 */
+  --chat-user-bg: 210 40% 98% !important;
+  --chat-user-fg: 222.2 47.4% 11.2% !important;
+  --chat-ai-bg: 217.2 32.6% 17.5% !important;
+  --chat-ai-fg: 210 40% 98% !important;
+  --border-subtle: 217.2 32.6% 17.5% !important;
+  --border-strong: 210 40% 98% !important;
+  --hover-bg: 217.2 32.6% 17.5% !important;
+  --hover-fg: 210 40% 98% !important;
+}
+
+.vscode-light {
+  /* 强制应用浅色模式的 CSS 变量 */
+  --background: 0 0% 100% !important;
+  --foreground: 222.2 84% 4.9% !important;
+  --card: 0 0% 100% !important;
+  --card-foreground: 222.2 84% 4.9% !important;
+  --popover: 0 0% 100% !important;
+  --popover-foreground: 222.2 84% 4.9% !important;
+  --primary: 222.2 47.4% 11.2% !important;
+  --primary-foreground: 210 40% 98% !important;
+  --secondary: 210 40% 96% !important;
+  --secondary-foreground: 222.2 84% 4.9% !important;
+  --muted: 210 40% 96% !important;
+  --muted-foreground: 215.4 16.3% 46.9% !important;
+  --accent: 210 40% 96% !important;
+  --accent-foreground: 222.2 84% 4.9% !important;
+  --destructive: 0 84.2% 60.2% !important;
+  --destructive-foreground: 210 40% 98% !important;
+  --border: 214.3 31.8% 91.4% !important;
+  --input: 214.3 31.8% 91.4% !important;
+  --ring: 222.2 84% 4.9% !important;
+
+  /* 业务组件颜色 */
+  --chat-user-bg: 222.2 47.4% 11.2% !important;
+  --chat-user-fg: 210 40% 98% !important;
+  --chat-ai-bg: 210 40% 96% !important;
+  --chat-ai-fg: 222.2 84% 4.9% !important;
+  --border-subtle: 214.3 31.8% 91.4% !important;
+  --border-strong: 222.2 84% 4.9% !important;
+  --hover-bg: 210 40% 96% !important;
+  --hover-fg: 222.2 84% 4.9% !important;
+}
+
+/*
+  为 VS Code 主题类添加 Tailwind dark 模式兼容
+  这确保了当 body 有 vscode-dark/vscode-light 类时，
+  Tailwind 的 dark: 和 light: 前缀都能正确工作
+*/
+
+/* 通用规则：当 body 有 VS Code 主题类时，确保 Tailwind 的颜色类能正确映射 */
+.vscode-dark,
+.vscode-dark .dark\:bg-slate-900,
+.vscode-dark .dark\:bg-gray-800,
+.vscode-dark .dark\:bg-green-950,
+.vscode-dark .dark\:bg-blue-950,
+.vscode-dark .dark\:bg-amber-950,
+.vscode-dark .dark\:bg-red-950 {
+  background-color: hsl(var(--background)) !important;
+}
+
+.vscode-light,
+.vscode-light .light\:bg-slate-50,
+.vscode-light .light\:bg-gray-100,
+.vscode-light .light\:bg-green-50,
+.vscode-light .light\:bg-blue-50,
+.vscode-light .light\:bg-amber-50,
+.vscode-light .light\:bg-red-50 {
+  background-color: hsl(var(--background)) !important;
+}
+
+/* 文本颜色修复 */
+.vscode-dark .dark\:text-green-400,
+.vscode-dark .dark\:text-green-500,
+.vscode-dark .dark\:text-blue-400,
+.vscode-dark .dark\:text-blue-500,
+.vscode-dark .dark\:text-amber-500,
+.vscode-dark .dark\:text-red-400,
+.vscode-dark .dark\:text-gray-300,
+.vscode-dark .dark\:text-gray-100 {
+  color: hsl(var(--foreground)) !important;
+}
+
+.vscode-light .light\:text-green-600,
+.vscode-light .light\:text-blue-600,
+.vscode-light .light\:text-amber-600,
+.vscode-light .light\:text-red-600,
+.vscode-light .light\:text-gray-600,
+.vscode-light .light\:text-gray-800 {
+  color: hsl(var(--foreground)) !important;
+}
+
+/* 边框颜色修复 */
+.vscode-dark .dark\:border-\[--border\],
+.vscode-dark .border {
+  border-color: hsl(var(--border)) !important;
+}
+
+.vscode-light .light\:border-\[--border\],
+.vscode-light .border {
+  border-color: hsl(var(--border)) !important;
+}

@@ -1,13 +1,13 @@
 import { PageLayout } from "@/components/layout/PageLayout";
+import { getAppVersion, getGitSha, isDevelopment } from "@/utils/version";
 import React from "react";
 import { useTranslation } from "react-i18next";
 
 const packageInfo = {
   displayName: "Dish AI Commit Message Gen",
-  version: "0.54.0",
   license: "MIT",
   author: "littleCareless",
-  email: "littlecareless@gmail.com",
+  email: "a790554659@gmail.com",
   repository: {
     url: "https://github.com/littleCareless/dish-ai-commit",
   },
@@ -17,11 +17,17 @@ const InfoRow: React.FC<{ label: string; children: React.ReactNode }> = ({
   label,
   children,
 }) => (
-  <div className="grid grid-cols-3 gap-4 py-2 border-b border-gray-200 dark:border-gray-700">
-    <div className="font-semibold text-gray-600 dark:text-gray-300">
+  <div
+    className="grid grid-cols-3 gap-4 py-2 border-b"
+    style={{ borderColor: "hsl(var(--border))" }}
+  >
+    <div
+      className="font-semibold"
+      style={{ color: "hsl(var(--muted-foreground))" }}
+    >
       {label}
     </div>
-    <div className="col-span-2 text-gray-800 dark:text-gray-100">
+    <div className="col-span-2" style={{ color: "hsl(var(--foreground))" }}>
       {children}
     </div>
   </div>
@@ -42,13 +48,14 @@ export const AboutPage: React.FC = () => {
       </div>
 
       <div className="space-y-4">
-        <InfoRow label={t("version")}>{packageInfo.version}</InfoRow>
+        <InfoRow label={t("version")}>{getAppVersion()}</InfoRow>
         <InfoRow label={t("license")}>{packageInfo.license}</InfoRow>
         <InfoRow label={t("author")}>{packageInfo.author}</InfoRow>
         <InfoRow label={t("contact")}>
           <a
             href={`mailto:${packageInfo.email}`}
-            className="text-blue-500 hover:underline"
+            className="hover:underline"
+            style={{ color: "hsl(var(--primary))" }}
           >
             {packageInfo.email}
           </a>
@@ -59,11 +66,37 @@ export const AboutPage: React.FC = () => {
               href={repositoryUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-blue-500 hover:underline"
+              className="hover:underline"
+              style={{ color: "hsl(var(--primary))" }}
             >
               {repositoryUrl}
             </a>
           </InfoRow>
+        )}
+
+        {/* 构建信息 - 仅在开发环境显示 */}
+        {isDevelopment() && (
+          <div
+            className="pt-4 mt-4 border-t"
+            style={{ borderColor: "hsl(var(--border))" }}
+          >
+            <div
+              className="text-xs space-y-1"
+              style={{ color: "hsl(var(--muted-foreground))" }}
+            >
+              <div
+                className="font-semibold"
+                style={{ color: "hsl(var(--foreground))" }}
+              >
+                开发信息
+              </div>
+              <div>版本: {getAppVersion()}</div>
+              {getGitSha() && (
+                <div>Git SHA: {getGitSha?.()?.substring(0, 7)}</div>
+              )}
+              <div>构建模式: 开发环境</div>
+            </div>
+          </div>
         )}
       </div>
     </PageLayout>
