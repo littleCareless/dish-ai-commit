@@ -59,6 +59,8 @@ export enum UIRequest {
   FeaturesLoadSettings = "features.loadSettings",
   FeaturesSaveSettings = "features.saveSettings",
   FeaturesSetActivePrompt = "features.setActivePrompt",
+  FeaturesGetWorkspaceInfo = "features.getWorkspaceInfo",
+  FeaturesGetAllWorkspaceStates = "features.getAllWorkspaceStates",
 
   // ===== Usage Module =====
   UsageGetStats = "usage.getStats",
@@ -166,6 +168,9 @@ export enum ExtensionResponse {
   FeaturesSettingsLoaded = "features.settingsLoaded",
   FeaturesSettingsUpdated = "features.settingsUpdated",
   FeaturesActivePromptChanged = "features.activePromptChanged",
+  FeaturesWorkspaceInfo = "features.workspaceInfo",
+  FeaturesAllWorkspaceStates = "features.allWorkspaceStates",
+  Error = "error",
 
   // ===== Usage Module =====
   UsageStatsLoaded = "usage.statsLoaded",
