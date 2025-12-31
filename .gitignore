@@ -84,3 +84,6 @@ jspm_packages/
 # TernJS port file
 .tern-port
 
+# Dish AI Commit - Workspace identification files
+.dish/workspace-id
+
