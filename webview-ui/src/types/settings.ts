@@ -225,10 +225,10 @@ export const DEFAULT_USER_PREFERENCES: UserPreferences = {
   respectGitAttributes: true,
 
   // Temperature defaults
-  commitTemperature: 0.0,
-  reviewTemperature: 0.0,
-  branchNameTemperature: 0.0,
-  weeklyReportTemperature: 0.0,
+  commitTemperature: 0.3,
+  reviewTemperature: 0.2,
+  branchNameTemperature: 0.1,
+  weeklyReportTemperature: 0.5,
 };
 
 export const DEFAULT_PROVIDER_CONFIG: Omit<
