@@ -18,15 +18,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Select, SelectOption } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { postMessage } from "@/utils/vscode";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { UIRequest } from "@shared/types/messages";
 import {
   CATEGORY_DISPLAY_NAMES,
   CATEGORY_VARIABLES,
   PromptCategory,
   PromptVariable,
-} from "@/types/prompts";
-import { postMessage } from "@/utils/vscode";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { UIRequest } from "@shared/types/messages";
+} from "@shared/types/prompts";
 import React from "react";
 import { useForm, useWatch } from "react-hook-form";
 import * as z from "zod";
