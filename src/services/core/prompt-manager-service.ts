@@ -1,11 +1,14 @@
 import { DISH_CONFIG_PREFIX } from "@/config/constants";
 import { ExtensionConfiguration } from "@/config/types";
 import {
+  PromptCategory,
   PromptDetail,
   PromptKey,
   PromptSource,
   SYSTEM_GENERATED_PROMPTS,
-} from "@/types/prompts";
+} from "@shared/types/prompts";
+import { FeaturesSettingsManager } from "@/services/settings/features-settings-manager";
+import { workspaceManager } from "@/services/core/workspace-manager";
 import { Logger } from "@/utils/logger";
 import { stateManager } from "@/utils/state/state-manager";
 import * as fs from "fs";
@@ -28,6 +31,51 @@ export class PromptManagerService {
       PromptManagerService.instance = new PromptManagerService();
     }
     return PromptManagerService.instance;
+  }
+
+  private static readonly PROMPT_STORAGE_KEY = `${DISH_CONFIG_PREFIX}_prompts`;
+  private static readonly PROMPT_METADATA_KEY = `${DISH_CONFIG_PREFIX}_prompt_metadata`;
+
+  /**
+   * 获取全局提示词存储（使用 stateManager 的公共方法）
+   */
+  private getGlobalPrompts(): Record<string, string> {
+    return stateManager.getGlobal<Record<string, string>>(
+      PromptManagerService.PROMPT_STORAGE_KEY,
+      {}
+    );
+  }
+
+  /**
+   * 设置全局提示词存储（使用 stateManager 的公共方法）
+   */
+  private async setGlobalPrompts(prompts: Record<string, string>): Promise<void> {
+    await stateManager.setGlobal(PromptManagerService.PROMPT_STORAGE_KEY, prompts);
+  }
+
+  /**
+   * 获取提示词元数据（包含 category 等信息）
+   */
+  private getPromptMetadata(): Record<string, { category: PromptCategory }> {
+    return stateManager.getGlobal<Record<string, { category: PromptCategory }>>(
+      PromptManagerService.PROMPT_METADATA_KEY,
+      {}
+    );
+  }
+
+  /**
+   * 设置提示词元数据
+   */
+  private async setPromptMetadata(metadata: Record<string, { category: PromptCategory }>): Promise<void> {
+    await stateManager.setGlobal(PromptManagerService.PROMPT_METADATA_KEY, metadata);
+  }
+
+  /**
+   * 设置 ExtensionContext（用于向后兼容，但不再必需）
+   * 由于现在使用 stateManager，此方法为空实现
+   */
+  public setExtensionContext(context: vscode.ExtensionContext): void {
+    // 保留此方法以保持向后兼容性，但不再需要
   }
 
   private async loadDefaultPrompts() {
@@ -265,11 +313,13 @@ export class PromptManagerService {
   }
 
   /**
-   * 获取当前生效的 Prompt 内容
+   * 获取当前生效的 Prompt 内容（支持多工作区）
    * 优先级:
-   * 1. .dish/prompts/<key>.md (Project Level)
-   * 2. Active Prompt Configuration (User selected)
-   * 3. Default Prompt
+   * 1. .dish/prompts/<key>.md (Project Level - 直接返回内容)
+   * 2. .dish/config.json (Project Level - 活跃选择)
+   * 3. 工作区级活跃选择 (workspaceActivePrompts)
+   * 4. 全局级活跃选择 (activePrompts)
+   * 5. 默认提示词
    */
   public async getActivePromptContent(
     key: string,
@@ -281,23 +331,14 @@ export class PromptManagerService {
 
     await this.initializationPromise;
 
-    // 0. Resolve Active Key Mapping
-    // 如果请求的是功能入口 key (如 generate-commit)，检查是否有配置重定向
-    let targetKey = key;
-    if (key === PromptKey.GenerateCommitSystem) {
-      // 从 globalState 获取 activePromptKey
-      const activeKey = stateManager.getGlobal<string>(
-        `${DISH_CONFIG_PREFIX}_active_prompt_key`
-      );
-      if (activeKey && activeKey !== key) {
-        targetKey = activeKey;
-        logger.debug("使用重定向的 prompt key", {
-          data: { originalKey: key, targetKey: activeKey },
-        });
-      }
+    // 0. 获取分类
+    const category = this.getCategoryFromPromptKey(key);
+    if (!category) {
+      // 不在已知分类中，直接返回默认或配置
+      return this.getPromptDetail(key, scope).content;
     }
 
-    // 1. Check .dish/prompts/<targetKey>.md
+    // 1. 检查项目级提示词文件 (.dish/prompts/<key>.md) - 直接返回内容
     const workspaceFolder = scope
       ? vscode.workspace.getWorkspaceFolder(scope as vscode.Uri)
       : vscode.workspace.workspaceFolders?.[0];
@@ -307,14 +348,14 @@ export class PromptManagerService {
         workspaceFolder.uri.fsPath,
         ".dish",
         "prompts",
-        `${targetKey}.md`
+        `${key}.md`
       );
       try {
         if (fs.existsSync(dishPromptPath)) {
-          logger.debug("从项目文件读取 prompt", {
-            data: { key: targetKey, path: dishPromptPath },
-          });
           const content = await fs.promises.readFile(dishPromptPath, "utf-8");
+          logger.debug("从项目文件读取 prompt", {
+            data: { key, path: dishPromptPath },
+          });
           return content;
         }
       } catch (error) {
@@ -325,32 +366,39 @@ export class PromptManagerService {
       }
     }
 
-    // 2. Check Active Prompt Configuration
-    // 获取当前 key 对应的 active prompt key (例如 generate-commit 可能被配置为使用 custom-prompt-1)
-    // 目前简化设计：我们不搞复杂的映射，而是直接看这个 key 本身是否有自定义配置
-    // 或者，如果用户在 UI 上选择了 "Active"，我们将其存储在 config 中
-    // 让我们沿用现有的 getPromptDetail 逻辑，它已经处理了 Workspace vs Global 的优先级
-    // 但我们需要一个机制来标记 "Active"
+    // 2. 获取工作区 ID（如果存在工作区）
+    let workspaceId: string | undefined;
+    if (workspaceFolder) {
+      workspaceId = workspaceManager.getWorkspaceId(workspaceFolder);
+    }
 
-    // 修正计划：
-    // 我们约定：如果 dish-ai-commit.prompts.<key> 有值，它就是 Active 的。
-    // UI 上的 "Set as Active" 实际上就是把内容写入到 dish-ai-commit.prompts.<key> (Workspace or Global)
-    // 如果用户想用回默认的，就 "Reset"，即删除配置，回退到 Default。
+    // 3. 从 FeaturesSettingsManager 获取活跃提示词配置
+    //    优先级：项目级配置 > 工作区级配置 > 全局配置
+    // 注意：FeaturesSettingsManager 应该已经在 extension.ts 中被初始化
+    // 这里我们创建一个新的实例，但依赖于 stateManager 的全局状态
+    const featuresManager = FeaturesSettingsManager.getInstance(
+      // 通过 stateManager 的私有属性获取 context（临时方案）
+      (stateManager as any)._context || {} as any
+    );
 
-    // 所以，其实 getPromptDetail 已经实现了大部分逻辑。
-    // 唯一缺的是 .dish 文件的支持。
+    // 获取当前工作区的活跃提示词映射
+    const activePrompts = await featuresManager.getActivePrompts(workspaceId);
+    const activeKey = activePrompts[category];
 
-    const detail = this.getPromptDetail(targetKey, scope);
+    if (activeKey && activeKey !== key) {
+      // 使用配置的活跃提示词
+      const detail = this.getPromptDetail(activeKey, scope);
+      logger.debug("使用活跃提示词配置", {
+        data: { originalKey: key, activeKey, category, workspaceId },
+      });
+      return detail.content;
+    }
 
-    logger.debug("获取 prompt 详情", {
-      data: {
-        key: targetKey,
-        source: detail.source,
-        isCustomized: detail.isCustomized,
-        contentLength: detail.content.length,
-      },
+    // 4. 回退到默认提示词
+    const detail = this.getPromptDetail(key, scope);
+    logger.debug("使用默认提示词", {
+      data: { key, category },
     });
-
     return detail.content;
   }
 
@@ -358,58 +406,64 @@ export class PromptManagerService {
     return this.getPromptDetail(key, scope).content;
   }
 
+  /**
+   * 根据提示词key获取对应的分类
+   */
+  private getCategoryFromPromptKey(key: string): PromptCategory | null {
+    // Import PROMPT_CATEGORIES from prompts types
+    // We need to dynamically import or use a mapping here
+    // Since we can't import at method level, let's use a simple mapping
+    const promptKey = key as PromptKey;
+
+    // Mapping from our existing PROMPT_CATEGORIES
+    const categoryMap: Record<PromptKey, PromptCategory> = {
+      [PromptKey.BranchNameSystem]: PromptCategory.Git,
+      [PromptKey.CodeReviewSimple]: PromptCategory.CodeReview,
+      [PromptKey.CodeReviewSystem]: PromptCategory.CodeReview,
+      [PromptKey.GenerateCommitFallbackSystem]: PromptCategory.Commit,
+      [PromptKey.GenerateCommitSimple]: PromptCategory.Commit,
+      [PromptKey.GenerateCommitSystem]: PromptCategory.Commit,
+      [PromptKey.LayeredCommitFile]: PromptCategory.Commit,
+      [PromptKey.LayeredCommitBatch]: PromptCategory.Commit,
+      [PromptKey.PRSummarySystem]: PromptCategory.PR,
+      [PromptKey.WeeklyReport]: PromptCategory.Report,
+    };
+
+    return categoryMap[promptKey] || null;
+  }
+
   public getPromptDetail(
     key: string,
     scope?: vscode.ConfigurationScope
   ): PromptDetail {
-    // 1. Check .dish/prompts/<key>.md (Project Level) - Synchronous check not ideal but needed for this signature
-    // Since this method is synchronous, we might skip file check or use fs.readFileSync if strictly needed.
-    // However, for UI display, we might want to show if it's overridden by file.
-    // Let's stick to Config vs Default for now in this method, as it's used by UI.
-    // The UI can separately query for file existence if needed, or we make this async.
-    // Given the existing signature is synchronous, let's keep it sync for config/default.
-
-    const config = vscode.workspace.getConfiguration(
-      "dish-ai-commit.prompts",
-      scope
-    );
-    const inspection = config.inspect<any>(key);
-
     const defaultValue = this.defaultPrompts.get(key as PromptKey) ?? "";
     let source: PromptSource = "default";
     let content = defaultValue;
     let isCustomized = false;
     let isNew = false;
+    let category: PromptCategory | undefined;
 
-    // 确保 content 始终是字符串
-    const getStringContent = (value: any): string => {
-      if (typeof value === "string") {
-        return value;
-      }
-      if (value === null || value === undefined) {
-        return "";
-      }
-      // 如果配置中存储的是对象，记录警告并回退到默认值
-      logger.warn(`配置中的 prompt ${key} 不是字符串类型，将使用默认值`, {
-        data: { key, valueType: typeof value, value },
-      });
-      return "";
-    };
+    // 1. 从 globalState 获取全局自定义提示词内容
+    const globalPrompts = this.getGlobalPrompts();
+    const globalContent = globalPrompts[key];
 
-    if (inspection?.workspaceValue !== undefined) {
-      const workspaceContent = getStringContent(inspection.workspaceValue);
-      if (workspaceContent) {
-        content = workspaceContent;
-        source = "workspace";
-        isCustomized = true;
-      }
-    } else if (inspection?.globalValue !== undefined) {
-      const globalContent = getStringContent(inspection.globalValue);
-      if (globalContent) {
-        content = globalContent;
-        source = "global";
-        isCustomized = true;
-      }
+    // 2. 从 workspace configuration 获取工作区级提示词内容（向后兼容）
+    const config = vscode.workspace.getConfiguration(
+      "dish-ai-commit.prompts",
+      scope
+    );
+    const inspection = config.inspect<any>(key);
+    const workspaceContent = inspection?.workspaceValue;
+
+    // 3. 确定内容来源（优先级：工作区 > 全局 > 默认）
+    if (workspaceContent && typeof workspaceContent === "string" && workspaceContent) {
+      content = workspaceContent;
+      source = "workspace";
+      isCustomized = true;
+    } else if (globalContent && typeof globalContent === "string" && globalContent) {
+      content = globalContent;
+      source = "global";
+      isCustomized = true;
     }
 
     // 如果一个 key 不在默认 prompts里，那它就是用户新建的
@@ -420,7 +474,20 @@ export class PromptManagerService {
     // 检查是否为系统生成型提示词
     const isSystemGenerated = SYSTEM_GENERATED_PROMPTS.has(key as PromptKey);
 
-    return { content, source, isCustomized, isNew, isSystemGenerated };
+    // 4. 获取分类信息
+    // 优先级：系统映射 > 元数据存储 > 未知
+    const systemCategory = this.getCategoryFromPromptKey(key);
+    if (systemCategory) {
+      category = systemCategory;
+    } else {
+      // 从元数据中获取自定义提示词的分类
+      const metadata = this.getPromptMetadata();
+      if (metadata[key]?.category) {
+        category = metadata[key].category;
+      }
+    }
+
+    return { content, source, isCustomized, isNew, isSystemGenerated, category };
   }
 
   public async updatePrompt(
@@ -433,10 +500,24 @@ export class PromptManagerService {
     });
 
     try {
-      const config = vscode.workspace.getConfiguration(
-        "dish-ai-commit.prompts"
-      );
-      await config.update(key, content, target);
+      if (target === vscode.ConfigurationTarget.Global) {
+        // 使用 globalState 存储全局提示词内容
+        const globalPrompts = this.getGlobalPrompts();
+        globalPrompts[key] = content;
+        await this.setGlobalPrompts(globalPrompts);
+      } else if (target === vscode.ConfigurationTarget.Workspace) {
+        // 工作区级别仍然使用 workspace configuration（向后兼容）
+        const config = vscode.workspace.getConfiguration(
+          "dish-ai-commit.prompts"
+        );
+        await config.update(key, content, target);
+      } else {
+        // 对于 WorkspaceFolder 级别，也使用 workspace configuration
+        const config = vscode.workspace.getConfiguration(
+          "dish-ai-commit.prompts"
+        );
+        await config.update(key, content, target);
+      }
 
       logger.logOperationEnd("updatePrompt", undefined, {
         data: { key, target },
@@ -450,16 +531,48 @@ export class PromptManagerService {
     }
   }
 
+  /**
+   * 更新提示词元数据（保存分类信息）
+   */
+  public async updatePromptMetadata(key: string, category: PromptCategory): Promise<void> {
+    const metadata = this.getPromptMetadata();
+    metadata[key] = { category };
+    await this.setPromptMetadata(metadata);
+  }
+
+  /**
+   * 删除提示词元数据
+   */
+  public async deletePromptMetadata(key: string): Promise<void> {
+    const metadata = this.getPromptMetadata();
+    delete metadata[key];
+    await this.setPromptMetadata(metadata);
+  }
+
   public async deletePrompt(key: string, target: vscode.ConfigurationTarget) {
     logger.logOperationStart("deletePrompt", {
       data: { key, target },
     });
 
     try {
-      const config = vscode.workspace.getConfiguration(
-        "dish-ai-commit.prompts"
-      );
-      await config.update(key, undefined, target);
+      if (target === vscode.ConfigurationTarget.Global) {
+        // 从 globalState 删除全局提示词内容
+        const globalPrompts = this.getGlobalPrompts();
+        delete globalPrompts[key];
+        await this.setGlobalPrompts(globalPrompts);
+      } else if (target === vscode.ConfigurationTarget.Workspace) {
+        // 工作区级别使用 workspace configuration
+        const config = vscode.workspace.getConfiguration(
+          "dish-ai-commit.prompts"
+        );
+        await config.update(key, undefined, target);
+      } else {
+        // WorkspaceFolder 级别
+        const config = vscode.workspace.getConfiguration(
+          "dish-ai-commit.prompts"
+        );
+        await config.update(key, undefined, target);
+      }
 
       logger.logOperationEnd("deletePrompt", undefined, {
         data: { key, target },
@@ -479,10 +592,24 @@ export class PromptManagerService {
     });
 
     try {
-      const config = vscode.workspace.getConfiguration(
-        "dish-ai-commit.prompts"
-      );
-      await config.update(key, undefined, target);
+      if (target === vscode.ConfigurationTarget.Global) {
+        // 从 globalState 重置提示词内容
+        const globalPrompts = this.getGlobalPrompts();
+        delete globalPrompts[key];
+        await this.setGlobalPrompts(globalPrompts);
+      } else if (target === vscode.ConfigurationTarget.Workspace) {
+        // 工作区级别使用 workspace configuration
+        const config = vscode.workspace.getConfiguration(
+          "dish-ai-commit.prompts"
+        );
+        await config.update(key, undefined, target);
+      } else {
+        // WorkspaceFolder 级别
+        const config = vscode.workspace.getConfiguration(
+          "dish-ai-commit.prompts"
+        );
+        await config.update(key, undefined, target);
+      }
 
       logger.logOperationEnd("resetPrompt", undefined, {
         data: { key, target },
@@ -502,26 +629,46 @@ export class PromptManagerService {
     });
 
     try {
-      const config = vscode.workspace.getConfiguration("dish-ai-commit");
-      const promptsConfig = vscode.workspace.getConfiguration(
-        "dish-ai-commit.prompts"
-      );
+      if (target === vscode.ConfigurationTarget.Global) {
+        // 从 globalState 重置所有全局提示词
+        await this.setGlobalPrompts({});
+      } else if (target === vscode.ConfigurationTarget.Workspace) {
+        // 工作区级别使用 workspace configuration
+        const config = vscode.workspace.getConfiguration("dish-ai-commit");
+        const promptsConfig = vscode.workspace.getConfiguration(
+          "dish-ai-commit.prompts"
+        );
 
-      const allKeys = promptsConfig.keys();
+        const allKeys = promptsConfig.keys();
 
-      logger.debug("重置所有 prompts", {
-        data: { keyCount: allKeys.length },
-      });
+        logger.debug("重置所有 prompts", {
+          data: { keyCount: allKeys.length },
+        });
 
-      for (const key of allKeys) {
-        await promptsConfig.update(key, undefined, target);
+        for (const key of allKeys) {
+          await promptsConfig.update(key, undefined, target);
+        }
+
+        // 重置整个 "prompts" 部分
+        await config.update("prompts", undefined, target);
+      } else {
+        // WorkspaceFolder 级别
+        const config = vscode.workspace.getConfiguration("dish-ai-commit");
+        const promptsConfig = vscode.workspace.getConfiguration(
+          "dish-ai-commit.prompts"
+        );
+
+        const allKeys = promptsConfig.keys();
+
+        for (const key of allKeys) {
+          await promptsConfig.update(key, undefined, target);
+        }
+
+        await config.update("prompts", undefined, target);
       }
 
-      // 重置整个 "prompts" 部分
-      await config.update("prompts", undefined, target);
-
       logger.logOperationEnd("resetAllPrompts", undefined, {
-        data: { target, resetCount: allKeys.length },
+        data: { target },
       });
     } catch (error) {
       logger.logError(error as Error, "重置所有 prompts 失败", {
@@ -543,18 +690,21 @@ export class PromptManagerService {
       allPrompts[key] = this.getPromptDetail(key, scope);
     }
 
-    // 2. 读取并合并工作区和全局的 prompts
+    // 2. 从 globalState 读取全局自定义提示词
+    const globalPrompts = this.getGlobalPrompts();
+
+    // 3. 从 workspace configuration 读取工作区级提示词（向后兼容）
     const promptsConfig = vscode.workspace.getConfiguration(
       "dish-ai-commit.prompts",
       scope
     );
     const inspection = promptsConfig.inspect<any>("");
     const workspaceConfig = inspection?.workspaceValue || {};
-    const globalConfig = inspection?.globalValue || {};
 
+    // 4. 合并所有自定义提示词
     const allCustomKeys = [
+      ...Object.keys(globalPrompts),
       ...Object.keys(workspaceConfig),
-      ...Object.keys(globalConfig),
     ];
 
     for (const key of allCustomKeys) {
@@ -564,8 +714,7 @@ export class PromptManagerService {
       }
     }
 
-    // 3. Check for .dish/prompts overrides
-    // This is a bit expensive to do for all prompts, but necessary for UI to show "Project" source
+    // 5. Check for .dish/prompts overrides
     const workspaceFolder = scope
       ? vscode.workspace.getWorkspaceFolder(scope as vscode.Uri)
       : vscode.workspace.workspaceFolders?.[0];
@@ -579,6 +728,8 @@ export class PromptManagerService {
       try {
         if (fs.existsSync(dishPromptsDir)) {
           const files = await fs.promises.readdir(dishPromptsDir);
+          const metadata = this.getPromptMetadata();
+
           for (const file of files) {
             if (file.endsWith(".md")) {
               const key = path.parse(file).name;
@@ -587,12 +738,16 @@ export class PromptManagerService {
                 "utf-8"
               );
 
+              // 获取分类信息（优先从元数据获取）
+              const category = metadata[key]?.category;
+
               // Override or add
               allPrompts[key] = {
                 content,
-                source: "project", // New source type, need to update types
+                source: "project",
                 isCustomized: true,
                 isNew: !this.defaultPrompts.has(key as PromptKey),
+                category,
               };
             }
           }

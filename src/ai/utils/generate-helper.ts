@@ -19,8 +19,16 @@ import {
   GENERATE_COMMIT_FALLBACK_TEMPLATE,
   getFallbackCommitVariables,
 } from "@/prompt/generate-commit-fallback";
+import {
+  PR_SUMMARY_SYSTEM_TEMPLATE,
+  PR_SUMMARY_USER_TEMPLATE,
+} from "@/prompt/pr-summary";
+import {
+  WEEKLY_REPORT_TEMPLATE,
+  getWeeklyReportVariables,
+} from "@/prompt/weekly-report";
 import { PromptManagerService } from "@/services/core/prompt-manager-service";
-import { PromptKey } from "@/types/prompts";
+import { PromptKey } from "@shared/types/prompts";
 import { loadCommitlintConfig } from "@/utils/commitlint";
 import { getMessage } from "@/utils/i18n";
 import { notify } from "@/utils/notification/notification-manager";
@@ -386,9 +394,9 @@ export async function getCodeReviewPrompt(
     return appendConstraints(params.codeReviewPrompt, params, directOutput);
   }
 
-  // 2. 检查 PromptManager 是否有自定义 prompt
+  // 2. 检查 PromptManager 是否有活跃的提示词（支持用户自定义选中）
   const promptManager = PromptManagerService.getInstance();
-  const promptDetail = promptManager.getPromptDetail(
+  const activePromptContent = await promptManager.getActivePromptContent(
     PromptKey.CodeReviewSystem
   );
 
@@ -396,13 +404,13 @@ export async function getCodeReviewPrompt(
   const language = config?.base?.language || "English";
   const variables = getCodeReviewVariables(language);
 
-  if (promptDetail.isCustomized && promptDetail.content.trim() !== "") {
-    // 自定义 prompt 也需要替换变量
-    const customPrompt = processPromptTemplate(promptDetail.content, variables);
-    return directOutput ? appendOutputConstraint(customPrompt) : customPrompt;
+  // 如果有活跃提示词内容，使用它并替换变量
+  if (activePromptContent && activePromptContent.trim() !== "") {
+    const processedPrompt = processPromptTemplate(activePromptContent, variables);
+    return directOutput ? appendOutputConstraint(processedPrompt) : processedPrompt;
   }
 
-  // 4. 使用默认模板并替换变量
+  // 4. 使用默认模板并替换变量（fallback）
   const prompt = processPromptTemplate(CODE_REVIEW_SYSTEM_TEMPLATE, variables);
 
   // 仅当需要直接输出结果时才添加输出约束
@@ -413,29 +421,35 @@ export async function getCodeReviewPrompt(
  * 获取分支名称生成的系统提示文本
  * @param {AIRequestParams} params - AI 请求参数
  * @param {boolean} directOutput - 是否要求直接输出结果，不包含解释
- * @returns {string} 分支名称生成的系统提示文本
+ * @returns {Promise<string>} 分支名称生成的系统提示文本
  */
-export function getBranchNameSystemPrompt(
+export async function getBranchNameSystemPrompt(
   params: AIRequestParams,
   directOutput: boolean = false,
   config?: any
-): string {
-  try {
-    // 1. 优先使用params中提供的分支名称提示
-    if (params.branchNamePrompt) {
-      return appendConstraints(params.branchNamePrompt, params, directOutput);
-    }
-
-    // 2. 检查配置中是否有自定义提示词 (Deprecated)
-
-    // 3. 使用默认生成的提示词
-    // 分支名称提示词固定为英文，不需要语言变量
-    const prompt = BRANCH_NAME_SYSTEM_TEMPLATE;
-
-    // 仅当需要直接输出结果时才添加输出约束
-    return directOutput ? appendOutputConstraint(prompt) : prompt;
-  } finally {
+): Promise<string> {
+  // 1. 优先使用params中提供的分支名称提示
+  if (params.branchNamePrompt) {
+    return appendConstraints(params.branchNamePrompt, params, directOutput);
   }
+
+  // 2. 检查 PromptManager 是否有活跃的提示词（支持用户自定义选中）
+  const promptManager = PromptManagerService.getInstance();
+  const activePromptContent = await promptManager.getActivePromptContent(
+    PromptKey.BranchNameSystem
+  );
+
+  // 如果有活跃提示词内容，使用它
+  if (activePromptContent && activePromptContent.trim() !== "") {
+    return directOutput ? appendOutputConstraint(activePromptContent) : activePromptContent;
+  }
+
+  // 3. 使用默认生成的提示词（fallback）
+  // 分支名称提示词固定为英文，不需要语言变量
+  const prompt = BRANCH_NAME_SYSTEM_TEMPLATE;
+
+  // 仅当需要直接输出结果时才添加输出约束
+  return directOutput ? appendOutputConstraint(prompt) : prompt;
 }
 
 /**
@@ -510,4 +524,93 @@ export function extractModifiedFilePaths(diff: string): string[] {
   }
 
   return [...new Set(filePaths)]; // 去重
+}
+
+/**
+ * 获取 PR 摘要生成的系统提示文本
+ * @param {AIRequestParams} params - AI 请求参数
+ * @param {boolean} directOutput - 是否要求直接输出结果，不包含解释
+ * @param {any} config - 配置对象
+ * @returns {Promise<string>} PR 摘要提示文本
+ */
+export async function getPRSummaryPrompt(
+  params: AIRequestParams,
+  directOutput: boolean = false,
+  config?: any
+): Promise<string> {
+  // 1. 优先使用 params 中提供的 PR 摘要提示
+  if (params.systemPrompt) {
+    return appendConstraints(params.systemPrompt, params, directOutput);
+  }
+
+  // 2. 检查 PromptManager 是否有活跃的提示词（支持用户自定义选中）
+  const promptManager = PromptManagerService.getInstance();
+  const activePromptContent = await promptManager.getActivePromptContent(
+    PromptKey.PRSummarySystem
+  );
+
+  // 3. 获取语言配置
+  const language = config?.base?.language || "English";
+
+  // 如果有活跃提示词内容，使用它并替换变量
+  if (activePromptContent && activePromptContent.trim() !== "") {
+    const variables = { language };
+    const processedPrompt = processPromptTemplate(activePromptContent, variables);
+    return directOutput ? appendOutputConstraint(processedPrompt) : processedPrompt;
+  }
+
+  // 4. 使用默认模板并替换变量（fallback）
+  const variables = { language };
+  const systemPrompt = processPromptTemplate(PR_SUMMARY_SYSTEM_TEMPLATE, variables);
+  const userPrompt = processPromptTemplate(PR_SUMMARY_USER_TEMPLATE, variables);
+
+  const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
+
+  // 仅当需要直接输出结果时才添加输出约束
+  return directOutput ? appendOutputConstraint(fullPrompt) : fullPrompt;
+}
+
+/**
+ * 获取周报生成的系统提示文本
+ * @param {AIRequestParams} params - AI 请求参数
+ * @param {string} startDate - 开始日期
+ * @param {string} endDate - 结束日期
+ * @param {boolean} directOutput - 是否要求直接输出结果，不包含解释
+ * @param {any} config - 配置对象
+ * @returns {Promise<string>} 周报提示文本
+ */
+export async function getWeeklyReportPrompt(
+  params: AIRequestParams,
+  startDate: string,
+  endDate: string,
+  directOutput: boolean = false,
+  config?: any
+): Promise<string> {
+  // 1. 优先使用 params 中提供的周报提示
+  if (params.systemPrompt) {
+    return appendConstraints(params.systemPrompt, params, directOutput);
+  }
+
+  // 2. 检查 PromptManager 是否有活跃的提示词（支持用户自定义选中）
+  const promptManager = PromptManagerService.getInstance();
+  const activePromptContent = await promptManager.getActivePromptContent(
+    PromptKey.WeeklyReport
+  );
+
+  // 3. 获取语言配置
+  const language = config?.base?.language || "English";
+
+  // 如果有活跃提示词内容，使用它并替换变量
+  if (activePromptContent && activePromptContent.trim() !== "") {
+    const variables = getWeeklyReportVariables({ language, startDate, endDate });
+    const processedPrompt = processPromptTemplate(activePromptContent, variables);
+    return directOutput ? appendOutputConstraint(processedPrompt) : processedPrompt;
+  }
+
+  // 4. 使用默认模板并替换变量（fallback）
+  const variables = getWeeklyReportVariables({ language, startDate, endDate });
+  const prompt = processPromptTemplate(WEEKLY_REPORT_TEMPLATE, variables);
+
+  // 仅当需要直接输出结果时才添加输出约束
+  return directOutput ? appendOutputConstraint(prompt) : prompt;
 }

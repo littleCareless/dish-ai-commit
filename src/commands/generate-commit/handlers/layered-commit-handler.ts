@@ -9,7 +9,7 @@ import { ISCMProvider } from "@/scm/scm-provider";
 import { commitCacheService } from "@/services/cache/commit-cache-service";
 import { PromptManagerService } from "@/services/core/prompt-manager-service";
 import { RateLimiterService } from "@/services/core/rate-limiter-service";
-import { PromptKey } from "@/types/prompts";
+import { PromptKey } from "@shared/types/prompts";
 import { getMessage, formatMessage } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
 import { notify } from "@/utils/notification/notification-manager";

@@ -14,25 +14,46 @@ import {
   getCodeReviewPrompt,
   getFileDescriptionPrompt,
   getGlobalSummaryPrompt,
+  getPRSummaryPrompt,
   getSystemPrompt,
+  getWeeklyReportPrompt,
 } from "@/ai/utils/generate-helper";
 import { getCommitMessageTools } from "@/prompt/generate-commit";
-import {
-  PR_SUMMARY_SYSTEM_TEMPLATE,
-  PR_SUMMARY_USER_TEMPLATE,
-} from "@/prompt/pr-summary";
-import {
-  WEEKLY_REPORT_TEMPLATE,
-  getWeeklyReportVariables,
-} from "@/prompt/weekly-report";
 import { PromptManagerService } from "@/services/core/prompt-manager-service";
 import { TokenStatsService } from "@/services/core/token-stats-service";
 import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
-import { PromptKey } from "@/types/prompts";
+import { PromptKey, PromptCategory } from "@shared/types/prompts";
 import { formatMessage } from "@/utils/i18n/localization-manager";
 import { Logger } from "@/utils/logger";
-import { processPromptTemplate } from "@/utils/prompt-template";
 import { tokenizerService } from "@/utils/tokenizer";
+
+/**
+ * AI调用时的提示词信息接口
+ */
+interface PromptLogInfo {
+  /** 提示词标识 */
+  promptKey: PromptKey;
+  /** 提示词分类 */
+  promptCategory?: PromptCategory;
+  /** 提示词内容（截断后） */
+  promptContent: string;
+  /** 提示词来源 */
+  promptSource?: string;
+}
+
+/**
+ * 功能到提示词键的映射
+ */
+const PROMPT_KEY_MAP: Record<string, PromptKey> = {
+  'commit': PromptKey.GenerateCommitSystem,
+  'commit-stream': PromptKey.GenerateCommitSystem,
+  'commit-function-calling': PromptKey.GenerateCommitSystem,
+  'code-review': PromptKey.CodeReviewSystem,
+  'branch-name': PromptKey.BranchNameSystem,
+  'weekly-report': PromptKey.WeeklyReport,
+  'layered-commit': PromptKey.LayeredCommitFile,
+  'pr-summary': PromptKey.PRSummarySystem,
+};
 
 /**
  * AI提供者的抽象基类
@@ -79,9 +100,17 @@ export abstract class AbstractAIProvider implements AIProvider {
         ];
       }
 
+      // 记录提示词使用日志
       const preferences =
         this.globalConfig.preferences ||
         PreferencesSettingsManager.getInstance().getSettings();
+
+      await this.logPromptUsage("commit", params, {
+        temperature: preferences.commitTemperature,
+        diffLength: params.diff.length,
+        messageCount: params.messages?.length,
+      });
+
       const result = await this.executeAIRequest(params, {
         temperature: preferences.commitTemperature,
       });
@@ -136,6 +165,15 @@ export abstract class AbstractAIProvider implements AIProvider {
       const preferences =
         this.globalConfig.preferences ||
         PreferencesSettingsManager.getInstance().getSettings();
+
+      // 记录提示词使用日志（流式）
+      await this.logPromptUsage("commit-stream", params, {
+        temperature: preferences.commitTemperature,
+        diffLength: params.diff.length,
+        messageCount: params.messages?.length,
+        isStreaming: true,
+      });
+
       const stream = await this.executeAIStreamRequest(params, {
         temperature: preferences.commitTemperature,
       });
@@ -246,6 +284,14 @@ export abstract class AbstractAIProvider implements AIProvider {
 
       const tools = getCommitMessageTools(mockConfig, commitlintConfig);
 
+      // 记录提示词使用日志（函数调用）
+      await this.logPromptUsage("commit-function-calling", params, {
+        temperature: preferences.commitTemperature,
+        diffLength: params.diff.length,
+        messageCount: params.messages?.length,
+        hasTools: !!tools,
+      });
+
       const result = await this.executeAIRequest(params, {
         temperature: preferences.commitTemperature,
         tools: tools,
@@ -319,6 +365,14 @@ export abstract class AbstractAIProvider implements AIProvider {
       const preferences =
         this.globalConfig.preferences ||
         PreferencesSettingsManager.getInstance().getSettings();
+
+      // 记录提示词使用日志（代码审查）
+      await this.logPromptUsage("code-review", params, {
+        temperature: preferences.reviewTemperature,
+        diffLength: params.diff.length,
+        messageCount: params.messages?.length,
+      });
+
       const result = await this.executeAIRequest(params, {
         // parseAsJSON: true,
         temperature: preferences.reviewTemperature,
@@ -362,7 +416,7 @@ export abstract class AbstractAIProvider implements AIProvider {
     this.logger.info(`Generating branch name with provider: ${this.getId()}`);
     try {
       if (!params.messages) {
-        const systemPrompt = getBranchNameSystemPrompt(
+        const systemPrompt = await getBranchNameSystemPrompt(
           params,
           false,
           this.globalConfig
@@ -377,6 +431,14 @@ export abstract class AbstractAIProvider implements AIProvider {
       const preferences =
         this.globalConfig.preferences ||
         PreferencesSettingsManager.getInstance().getSettings();
+
+      // 记录提示词使用日志（分支名称）
+      await this.logPromptUsage("branch-name", params, {
+        temperature: preferences.branchNameTemperature,
+        diffLength: params.diff.length,
+        messageCount: params.messages?.length,
+      });
+
       const result = await this.executeAIRequest(params, {
         temperature: preferences.branchNameTemperature,
       });
@@ -416,35 +478,22 @@ export abstract class AbstractAIProvider implements AIProvider {
   ): Promise<AIResponse> {
     this.logger.info(`Generating weekly report with provider: ${this.getId()}`);
     try {
-      // 优先从 prompt-manager-service 获取自定义 prompt
-      const promptManager = PromptManagerService.getInstance();
-      const promptDetail = promptManager.getPromptDetail(
-        PromptKey.WeeklyReport
+      // 使用新的支持活跃提示词的函数
+      const baseLanguage = this.globalConfig.preferences?.language || "English";
+      const systemPrompt = await getWeeklyReportPrompt(
+        { language: baseLanguage } as AIRequestParams,
+        period.startDate,
+        period.endDate,
+        false,
+        this.globalConfig
       );
 
-      let systemPrompt: string;
-      if (promptDetail.isCustomized && promptDetail.content.trim() !== "") {
-        systemPrompt = promptDetail.content;
-      } else {
-        // 使用默认模板
-        const baseLanguage =
-          this.globalConfig.preferences?.language || "English";
-
-        const variables = getWeeklyReportVariables({
-          language: baseLanguage,
-          startDate: period.startDate,
-          endDate: period.endDate,
-        });
-
-        systemPrompt = processPromptTemplate(WEEKLY_REPORT_TEMPLATE, variables);
-      }
+      // 如果有用户信息，可以附加到 systemPrompt
+      let finalSystemPrompt = systemPrompt;
       if (users && users.length > 0) {
-        // 如果有用户信息，可以附加到 systemPrompt 或 userContent
-        // 例如，附加到 systemPrompt
-        systemPrompt += `\nThis weekly report is for the team members: ${users.join(
+        finalSystemPrompt += `\nThis weekly report is for the team members: ${users.join(
           ", "
         )}. Please summarize their collective work.`;
-        // 或者，如果希望AI更关注每个人的贡献，可以在userContent中对commits按用户分组或标记
       }
 
       const userContent = commits.join("\n\n---\n\n"); // 使用更明显的分隔符
@@ -454,19 +503,26 @@ export abstract class AbstractAIProvider implements AIProvider {
         additionalContext: users ? `Team members: ${users.join(", ")}` : "", // 可以用 additionalContext
         feature: "weekly-report",
       };
+
+      // 记录提示词使用日志（周报）
+      const preferences = this.globalConfig.preferences || PreferencesSettingsManager.getInstance().getSettings();
+      await this.logPromptUsage("weekly-report", params, {
+        temperature: preferences.weeklyReportTemperature,
+        commitCount: commits.length,
+        dateRange: `${period.startDate} - ${period.endDate}`,
+        users: users,
+      });
+
       const result = await this.executeAIRequest(
         {
           ...params,
           messages: [
-            { role: "system", content: systemPrompt },
+            { role: "system", content: finalSystemPrompt },
             { role: "user", content: userContent },
           ],
         },
         {
-          temperature: (
-            this.globalConfig.preferences ||
-            PreferencesSettingsManager.getInstance().getSettings()
-          ).weeklyReportTemperature,
+          temperature: preferences.weeklyReportTemperature,
         }
       );
 
@@ -501,6 +557,15 @@ export abstract class AbstractAIProvider implements AIProvider {
     );
     try {
       const modifiedFiles = extractModifiedFilePaths(params.diff);
+      const preferences = this.globalConfig.preferences || PreferencesSettingsManager.getInstance().getSettings();
+
+      // 记录提示词使用日志（分层提交 - 批量）
+      await this.logPromptUsage("layered-commit", params, {
+        temperature: preferences.commitTemperature,
+        diffLength: params.diff.length,
+        modifiedFileCount: modifiedFiles.length,
+        isBatch: true,
+      });
 
       // 步骤1: 生成全局摘要
       this.logger.info("Generating global summary for layered commit...");
@@ -508,6 +573,13 @@ export abstract class AbstractAIProvider implements AIProvider {
         params,
         this.globalConfig
       );
+
+      // 记录全局摘要的详细日志
+      await this.logPromptUsage("layered-commit", params, {
+        step: "global-summary",
+        temperature: preferences.commitTemperature,
+      });
+
       const summaryResult = await this.executeAIRequest(
         {
           ...params,
@@ -517,10 +589,7 @@ export abstract class AbstractAIProvider implements AIProvider {
           ],
         },
         {
-          temperature: (
-            this.globalConfig.preferences ||
-            PreferencesSettingsManager.getInstance().getSettings()
-          ).commitTemperature,
+          temperature: preferences.commitTemperature,
         }
       );
       await this.recordTokenUsage(summaryResult, params);
@@ -597,31 +666,35 @@ export abstract class AbstractAIProvider implements AIProvider {
     params: AIRequestParams,
     commitMessages: string[]
   ): Promise<AIResponse> {
-    const systemPrompt =
-      params.systemPrompt ||
-      processPromptTemplate(PR_SUMMARY_SYSTEM_TEMPLATE, {
-        language: params.language,
-      });
-    const userPrompt = processPromptTemplate(PR_SUMMARY_USER_TEMPLATE, {
-      language: params.language,
-    });
+    // 使用新的支持活跃提示词的函数
+    const fullPrompt = await getPRSummaryPrompt(
+      params,
+      false,
+      this.globalConfig
+    );
 
     const userContent = commitMessages.join("\n- ");
     const commitMessagesString = commitMessages.join("\n- ");
 
+    // 记录提示词使用日志（PR摘要）
+    const prParams = {
+      ...params,
+      diff: commitMessagesString,
+      additionalContext: commitMessagesString,
+    };
+    await this.logPromptUsage("pr-summary", prParams, {
+      temperature: 0.7,
+      commitCount: commitMessages.length,
+    });
+
     return generateWithRetry(
-      {
-        ...params,
-        diff: commitMessagesString,
-        additionalContext: commitMessagesString,
-      },
+      prParams,
       async (_truncatedContent: string) => {
         const response = await this.executeAIRequest(
           {
             ...params,
             messages: [
-              { role: "system", content: systemPrompt },
-              { role: "user", content: userPrompt },
+              { role: "system", content: fullPrompt },
               { role: "user", content: `- ${userContent}` },
             ],
           },
@@ -673,6 +746,95 @@ export abstract class AbstractAIProvider implements AIProvider {
         this.getId(),
         feature
       );
+    }
+  }
+
+  /**
+   * 获取提示词信息用于日志记录
+   * @param feature 功能标识
+   * @param params AI请求参数
+   * @returns 提示词信息对象
+   */
+  protected async getPromptLogInfo(
+    feature: string,
+    params: AIRequestParams
+  ): Promise<PromptLogInfo | null> {
+    try {
+      // 从功能映射获取提示词键
+      const promptKey = PROMPT_KEY_MAP[feature] || PromptKey.GenerateCommitSystem;
+
+      // 获取当前活跃的提示词内容
+      const promptManager = PromptManagerService.getInstance();
+      const promptContent = await promptManager.getActivePromptContent(promptKey);
+
+      // 获取提示词详情（包含来源等信息）
+      const promptDetail = promptManager.getPromptDetail(promptKey);
+
+      // 截断提示词内容，避免日志过长
+      const truncatedContent = promptContent.length > 200
+        ? promptContent.substring(0, 200) + '...'
+        : promptContent;
+
+      // 获取分类信息
+      const promptCategory = promptDetail.category;
+      const promptSource = promptDetail.source;
+
+      return {
+        promptKey,
+        promptCategory,
+        promptContent: truncatedContent,
+        promptSource,
+      };
+    } catch (error) {
+      console.warn('[AbstractAIProvider] Failed to get prompt log info:', error);
+      return null;
+    }
+  }
+
+  /**
+   * 记录AI调用的提示词信息
+   * @param feature 功能标识
+   * @param params AI请求参数
+   * @param additionalInfo 额外的上下文信息
+   */
+  protected async logPromptUsage(
+    feature: string,
+    params: AIRequestParams,
+    additionalInfo: Record<string, any> = {}
+  ): Promise<void> {
+    const promptInfo = await this.getPromptLogInfo(feature, params);
+
+    // 构建日志消息
+    const provider = this.getId();
+    const modelName = params.model?.id || this.getConfig()?.defaultModel || 'unknown-model';
+
+    let logMessage = `[AI调用] 提供者: ${provider} | 模型: ${modelName} | 功能: ${feature}`;
+
+    if (promptInfo) {
+      logMessage += ` | 提示词: ${promptInfo.promptKey}`;
+      if (promptInfo.promptCategory) {
+        logMessage += ` | 分类: ${promptInfo.promptCategory}`;
+      }
+      if (promptInfo.promptSource) {
+        logMessage += ` | 来源: ${promptInfo.promptSource}`;
+      }
+
+      // 记录主日志
+      this.logger.info(logMessage);
+
+      // 单独记录提示词内容（便于查看）
+      this.logger.info(`[提示词内容] ${promptInfo.promptContent}`);
+
+      // 记录额外信息
+      if (Object.keys(additionalInfo).length > 0) {
+        this.logger.info(`[调用详情] ${JSON.stringify(additionalInfo, null, 2)}`);
+      }
+    } else {
+      // 无法获取提示词信息时的降级日志
+      this.logger.info(logMessage);
+      if (Object.keys(additionalInfo).length > 0) {
+        this.logger.info(`[调用详情] ${JSON.stringify(additionalInfo, null, 2)}`);
+      }
     }
   }
 
