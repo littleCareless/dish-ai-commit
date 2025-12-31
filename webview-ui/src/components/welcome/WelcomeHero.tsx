@@ -48,7 +48,7 @@ const WelcomeHero = ({ onGetStarted }: WelcomeHeroProps) => {
           {imagesBaseUri ? (
             <img
               src={`${imagesBaseUri}/icon.svg`}
-              alt="Dish AI Commit"
+              alt={t("images.dishCommitAlt")}
               className="w-12 h-12"
             />
           ) : (
@@ -91,15 +91,15 @@ const WelcomeHero = ({ onGetStarted }: WelcomeHeroProps) => {
 
       {/* CTA Button */}
       {onGetStarted && (
-        <Button
-          onClick={onGetStarted}
-          className="group relative px-6 py-2.5 font-medium text-sm transition-all duration-300 hover:scale-105 active:scale-95"
-        >
-          <span className="relative z-10 flex items-center gap-2">
+        <div className="flex justify-center">
+          <Button
+            onClick={onGetStarted}
+            className="group relative w-fit px-6 py-2.5 font-medium text-sm transition-all duration-300 hover:scale-105 active:scale-95"
+          >
             {t("hero.getStarted")}
             <Sparkles className="w-4 h-4 transition-transform group-hover:rotate-12" />
-          </span>
-        </Button>
+          </Button>
+        </div>
       )}
     </div>
   );

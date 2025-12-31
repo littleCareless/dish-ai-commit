@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { useTranslation } from "react-i18next";
+
 declare global {
   interface Window {
     IMAGES_BASE_URI?: string;
@@ -6,6 +8,7 @@ declare global {
 }
 
 const RooHero = () => {
+  const { t } = useTranslation("welcome-page");
   const [imagesBaseUri] = useState(() => {
     const w = window;
     return w.IMAGES_BASE_URI || "";
@@ -27,7 +30,7 @@ const RooHero = () => {
       >
         <img
           src={imagesBaseUri + "/roo-logo.svg"}
-          alt="Roo logo"
+          alt={t("images.rooLogoAlt")}
           className="h-8 opacity-0"
         />
       </div>

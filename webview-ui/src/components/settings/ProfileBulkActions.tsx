@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { AlertCircle, Download, Trash2 } from "lucide-react";
 import React, { useState } from "react";
+import { useTranslation } from "react-i18next";
 import { Profile } from "../../types/settings";
 import { showInformationMessage } from "../../utils/vscode";
 
@@ -31,6 +32,8 @@ export const ProfileBulkActions: React.FC<ProfileBulkActionsProps> = ({
   onBulkDelete,
   className = "",
 }) => {
+  const { t } = useTranslation("profile-settings");
+  const { t: tCommon } = useTranslation("common");
   const [selectedProfiles, setSelectedProfiles] = useState<Set<string>>(
     new Set(),
   );
@@ -56,7 +59,7 @@ export const ProfileBulkActions: React.FC<ProfileBulkActionsProps> = ({
 
   const handleBulkExport = () => {
     if (selectedProfiles.size === 0) {
-      showInformationMessage("请先选择要导出的 Profile");
+      showInformationMessage(t("selectProfileToOperate"));
       return;
     }
     onBulkExport(Array.from(selectedProfiles));
@@ -65,7 +68,7 @@ export const ProfileBulkActions: React.FC<ProfileBulkActionsProps> = ({
 
   const handleBulkDelete = () => {
     if (selectedProfiles.size === 0) {
-      showInformationMessage("请先选择要删除的 Profile");
+      showInformationMessage(t("selectProfileToOperate"));
       return;
     }
     setShowDeleteDialog(true);
@@ -93,8 +96,8 @@ export const ProfileBulkActions: React.FC<ProfileBulkActionsProps> = ({
           />
           <span className="text-sm font-medium">
             {selectedCount > 0
-              ? `已选择 ${selectedCount} 个 Profile`
-              : "选择 Profile"}
+              ? t("selectedCount", { count: selectedCount })
+              : t("selectProfileToOperate")}
           </span>
         </div>
 
@@ -102,11 +105,11 @@ export const ProfileBulkActions: React.FC<ProfileBulkActionsProps> = ({
           <div className="flex space-x-2">
             <Button onClick={handleBulkExport} size="sm" variant="outline">
               <Download className="h-4 w-4 mr-1" />
-              批量导出
+              {t("bulkExport")}
             </Button>
             <Button onClick={handleBulkDelete} size="sm" variant="destructive">
               <Trash2 className="h-4 w-4 mr-1" />
-              批量删除
+              {t("bulkDelete")}
             </Button>
           </div>
         )}
@@ -148,19 +151,21 @@ export const ProfileBulkActions: React.FC<ProfileBulkActionsProps> = ({
       <Dialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>确认批量删除</DialogTitle>
+            <DialogTitle>{t("confirmBulkDelete")}</DialogTitle>
           </DialogHeader>
 
           <div className="space-y-4">
             <Alert variant="destructive">
               <AlertCircle className="h-4 w-4" />
               <AlertDescription>
-                确定要删除选中的 {selectedCount} 个 Profile 吗？此操作无法撤销。
+                {t("deleteConfirmation", { count: selectedCount })}
               </AlertDescription>
             </Alert>
 
             <div className="max-h-32 overflow-y-auto">
-              <p className="text-sm font-medium mb-2">将要删除的 Profile：</p>
+              <p className="text-sm font-medium mb-2">
+                {t("profilesToDelete")}
+              </p>
               <ul className="text-sm text-muted-foreground space-y-1">
                 {Array.from(selectedProfiles).map((profileId) => {
                   const profile = profiles.find((p) => p.id === profileId);
@@ -182,10 +187,10 @@ export const ProfileBulkActions: React.FC<ProfileBulkActionsProps> = ({
               variant="outline"
               onClick={() => setShowDeleteDialog(false)}
             >
-              取消
+              {tCommon("cancel")}
             </Button>
             <Button variant="destructive" onClick={confirmBulkDelete}>
-              确认删除
+              {tCommon("delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

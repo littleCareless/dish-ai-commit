@@ -1,6 +1,6 @@
 import { FieldConfig } from "@/types/provider-metadata";
 import { TFunction } from "i18next";
-import React, { useMemo } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { DynamicFieldRenderer } from "./DynamicFieldRenderer";
 
 type FieldValue =
@@ -31,6 +31,14 @@ export const DynamicFieldGroup: React.FC<DynamicFieldGroupProps> = React.memo(
     }
 
     // ✅ 使用 useMemo 缓存渲染的字段，避免不必要的重新渲染
+    // 使用 ref 来存储 onChange，避免依赖项变化导致重新渲染
+    const onChangeRef = useRef(onChange);
+
+    // ✅ 使用 useEffect 在 onChange 变化时更新 ref，避免在渲染期间修改 ref
+    useEffect(() => {
+      onChangeRef.current = onChange;
+    }, [onChange]);
+
     const renderedFields = useMemo(
       () =>
         fields.map((field) => (
@@ -38,13 +46,13 @@ export const DynamicFieldGroup: React.FC<DynamicFieldGroupProps> = React.memo(
             key={field.key}
             field={field}
             value={values[field.key]}
-            onChange={(value) => onChange(field.key, value)}
+            onChange={(value) => onChangeRef.current(field.key, value)}
             formValues={values}
             disabled={disabled}
             t={t}
           />
         )),
-      [fields, values, onChange, disabled, t],
+      [fields, values, disabled, t],
     );
 
     // 如果没有字段，不渲染任何东西

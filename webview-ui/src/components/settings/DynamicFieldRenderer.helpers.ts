@@ -26,12 +26,35 @@ export const fieldPropsEqual = (
   prevProps: DynamicFieldRendererProps,
   nextProps: DynamicFieldRendererProps,
 ): boolean => {
-  return (
+  // 比较基本字段
+  const basicEqual =
     prevProps.field.key === nextProps.field.key &&
     prevProps.value === nextProps.value &&
-    JSON.stringify(prevProps.formValues) ===
-      JSON.stringify(nextProps.formValues) &&
     prevProps.disabled === nextProps.disabled &&
-    prevProps.className === nextProps.className
-  );
+    prevProps.className === nextProps.className;
+
+  if (!basicEqual) {
+    return false;
+  }
+
+  // 比较 formValues - 使用更高效的比较方式
+  const prevValues = prevProps.formValues;
+  const nextValues = nextProps.formValues;
+
+  if (!prevValues && !nextValues) return true;
+  if (!prevValues || !nextValues) return false;
+
+  const prevKeys = Object.keys(prevValues);
+  const nextKeys = Object.keys(nextValues);
+
+  if (prevKeys.length !== nextKeys.length) return false;
+
+  // 只比较当前字段相关的值，避免全量比较
+  for (const key of prevKeys) {
+    if (prevValues[key] !== nextValues[key]) {
+      return false;
+    }
+  }
+
+  return true;
 };

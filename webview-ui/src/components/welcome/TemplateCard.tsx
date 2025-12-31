@@ -1,8 +1,55 @@
-import { Button } from "@/components/ui/button";
 import type { QuickStartTemplate } from "@/hooks/useOnboarding";
 import { Gift, Server, Sparkles, Zap } from "lucide-react";
 import { useMemo } from "react";
 import { useTranslation } from "react-i18next";
+
+interface SelectionCardProps {
+  onClick: () => void;
+  isSelected: boolean;
+  children: React.ReactNode;
+  className?: string;
+}
+
+/**
+ * 通用选择卡片组件 - 用于模板选择和自定义设置等可选项
+ */
+export const SelectionCard = ({
+  onClick,
+  isSelected,
+  children,
+  className = "",
+}: SelectionCardProps) => {
+  return (
+    <div
+      onClick={onClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onClick();
+        }
+      }}
+      className={`relative h-auto p-4 text-left transition-all duration-200 w-full cursor-pointer rounded-md border ${
+        isSelected ? "ring-2" : ""
+      } ${className}`}
+      style={{
+        borderColor: isSelected
+          ? "var(--vscode-button-background)"
+          : "var(--vscode-panel-border)",
+        backgroundColor: isSelected
+          ? "var(--vscode-list-activeSelectionBackground)"
+          : "var(--vscode-editor-background)",
+        color: "var(--vscode-foreground)",
+        // @ts-expect-error ringColor is a valid CSS variable for Tailwind
+        "--tw-ring-color": "var(--vscode-button-background)",
+        outline: "none",
+      }}
+    >
+      {children}
+    </div>
+  );
+};
 
 interface TemplateCardProps {
   template: QuickStartTemplate;
@@ -53,24 +100,7 @@ export const TemplateCard = ({
   }, [template.badge, t]);
 
   return (
-    <Button
-      onClick={onClick}
-      variant="outline"
-      className={`relative h-auto p-4 text-left transition-all duration-200 w-full ${
-        isSelected ? "ring-2" : ""
-      }`}
-      style={{
-        borderColor: isSelected
-          ? "var(--vscode-button-background)"
-          : "var(--vscode-panel-border)",
-        backgroundColor: isSelected
-          ? "var(--vscode-list-activeSelectionBackground)"
-          : "var(--vscode-editor-background)",
-        color: "var(--vscode-foreground)",
-        // @ts-expect-error ringColor is a valid CSS variable for Tailwind
-        "--tw-ring-color": "var(--vscode-button-background)",
-      }}
-    >
+    <SelectionCard onClick={onClick} isSelected={isSelected}>
       {/* Badge */}
       {badge && (
         <div
@@ -123,7 +153,7 @@ export const TemplateCard = ({
           )}
         </div>
       </div>
-    </Button>
+    </SelectionCard>
   );
 };
 

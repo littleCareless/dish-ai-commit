@@ -11,8 +11,8 @@ export const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const { theme } = useTheme();
 
-  // 某些页面不需要导航栏
-  const hideNavigation = ["/onboarding", "/vscode-test"].includes(
+  // 某些页面不需要导航栏：欢迎页面（根路径）和其他特定页面
+  const hideNavigation = ["/", "/onboarding", "/vscode-test"].includes(
     location.pathname,
   );
 

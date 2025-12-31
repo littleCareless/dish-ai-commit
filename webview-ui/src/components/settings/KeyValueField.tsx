@@ -80,8 +80,13 @@ export const KeyValueField: React.FC<KeyValueFieldProps> = ({
           disabled={disabled}
           variant="ghost"
           size="icon"
-          className="text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-300"
-          title={field.placeholder ? t(field.placeholder) : "添加请求头"}
+          style={{ color: "hsl(var(--primary))" }}
+          className="hover:opacity-80"
+          title={
+            field.placeholder
+              ? t(field.placeholder)
+              : t("settings-page.keyValue.addHeader", { ns: "settings-page" })
+          }
         >
           <svg
             width="16"
@@ -102,7 +107,7 @@ export const KeyValueField: React.FC<KeyValueFieldProps> = ({
 
       {localHeaders.length === 0 ? (
         <div className="text-sm text-muted-foreground py-2">
-          暂无自定义标头。点击 + 按钮添加。
+          {t("settings-page.keyValue.noHeaders", { ns: "settings-page" })}
         </div>
       ) : (
         <div className="space-y-2">
@@ -138,8 +143,9 @@ export const KeyValueField: React.FC<KeyValueFieldProps> = ({
                 disabled={disabled}
                 variant="ghost"
                 size="icon"
-                className="text-red-600 hover:text-red-800 dark:text-red-400 dark:hover:text-red-300"
-                title="删除"
+                style={{ color: "hsl(var(--destructive))" }}
+                className="hover:opacity-80"
+                title={t("common.delete", { ns: "common" })}
               >
                 <svg
                   width="16"

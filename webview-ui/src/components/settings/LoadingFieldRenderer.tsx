@@ -34,7 +34,7 @@ interface LoadingFieldRendererProps extends DynamicFieldRendererProps {
  */
 export const LoadingFieldRenderer: React.FC<LoadingFieldRendererProps> = ({
   isLoading = false,
-  loadingText = "加载中...",
+  loadingText,
   ...props
 }) => {
   if (isLoading) {
@@ -44,11 +44,15 @@ export const LoadingFieldRenderer: React.FC<LoadingFieldRendererProps> = ({
           {props.field.label}
           <div className="flex items-center gap-1 text-xs text-muted-foreground">
             <Loader className="w-3 h-3 animate-spin" />
-            {loadingText}
+            {loadingText || props.t("common.loading", { ns: "common" })}
           </div>
         </FormLabel>
         <FormControl>
-          <VSCodeTextField value="" disabled={true} placeholder="正在加载..." />
+          <VSCodeTextField
+            value=""
+            disabled={true}
+            placeholder={props.t("common.processing", { ns: "common" })}
+          />
         </FormControl>
       </FormItem>
     );

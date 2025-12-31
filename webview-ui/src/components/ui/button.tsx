@@ -160,7 +160,15 @@ const Button: React.FC<ButtonProps> = ({
       type={type}
       className={className}
       title={title}
-      style={buttonStyle}
+      style={{
+        ...buttonStyle,
+        // 确保宽度自适应，避免 VSCodeButton 的默认宽度样式
+        width:
+          className?.includes("w-fit") || className?.includes("w-")
+            ? "fit-content"
+            : buttonStyle.width,
+        minWidth: "0",
+      }}
       {...props}
     >
       {children}

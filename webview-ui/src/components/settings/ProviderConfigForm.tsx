@@ -64,6 +64,13 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
   const pendingFetchRef = useRef<NodeJS.Timeout | null>(null);
   const responseReceivedRef = useRef<boolean>(false);
 
+  // 新增：跟踪已获取的模型配置，避免重复请求
+  const lastFetchedConfigRef = useRef<{
+    providerId: string;
+    apiKey?: string;
+    baseUrl?: string;
+  } | null>(null);
+
   // 3. 获取提供商元数据（可以为 null）
   const providerMeta = ProviderRegistry[provider.id];
 
@@ -134,6 +141,11 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
 
     const newDefaults = getDefaultValues();
     form.reset(newDefaults);
+
+    // 清空模型列表和错误状态，确保切换 provider 时状态干净
+    setModels([]);
+    setModelError(null);
+    setIsLoadingModels(false);
 
     // We still need to update the prevConfigRef for the initial load.
     prevConfigRef.current = config as Record<string, unknown>;
@@ -231,6 +243,22 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
             setModels(modelsList);
             setModelError(null);
 
+            // 更新最后获取的配置，用于后续去重判断
+            const currentValues = form.getValues() as Record<string, unknown>;
+            const apiKey = (currentValues.apiKey as string | undefined)?.trim();
+            const baseUrl = (
+              currentValues.baseUrl as string | undefined
+            )?.trim();
+            lastFetchedConfigRef.current = {
+              providerId: provider.id,
+              apiKey: apiKey || undefined,
+              baseUrl: baseUrl || undefined,
+            };
+            console.log(
+              `[ProviderConfigForm] 已更新最后获取的配置记录`,
+              lastFetchedConfigRef.current,
+            );
+
             if (modelsList.length > 0) {
               const currentModel =
                 form.getValues("model") ||
@@ -295,6 +323,27 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
       (currentValues.baseUrl as string | undefined)?.trim() ||
       (currentValues.baseUrl as string | undefined)?.trim();
 
+    // 新增：检查是否已获取过相同配置的模型列表
+    const currentConfigKey = {
+      providerId: provider.id,
+      apiKey: apiKey || undefined,
+      baseUrl: baseUrl || undefined,
+    };
+
+    // 如果已有模型数据且配置相同，跳过请求
+    if (
+      models.length > 0 &&
+      lastFetchedConfigRef.current &&
+      lastFetchedConfigRef.current.providerId === currentConfigKey.providerId &&
+      lastFetchedConfigRef.current.apiKey === currentConfigKey.apiKey &&
+      lastFetchedConfigRef.current.baseUrl === currentConfigKey.baseUrl
+    ) {
+      console.log(
+        `[ProviderConfigForm] 已有模型列表且配置未变化，跳过重复请求`,
+      );
+      return;
+    }
+
     if (currentValues.model) {
       console.log(`[ProviderConfigForm] 当前模型选择状态:`, {
         model: currentValues.model,
@@ -351,7 +400,7 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
         error instanceof Error ? error.message : t("fetchModelsFailed"),
       );
     }
-  }, [provider.id, providerMeta, form, t]);
+  }, [provider.id, providerMeta, form, t, models.length]);
 
   const fetchModelsRef = useRef(fetchModels);
   fetchModelsRef.current = fetchModels;
@@ -364,6 +413,13 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
   useEffect(() => {
     if (providerMeta?.features.streaming) {
       console.log(`[ProviderConfigForm] 组件加载/提供商变更，主动触发模型加载`);
+      // 重置最后获取的配置记录，确保新 provider 会触发请求
+      lastFetchedConfigRef.current = null;
+      // 清空当前模型列表，避免显示旧数据
+      setModels([]);
+      setModelError(null);
+      setIsLoadingModels(false);
+
       // 延迟加载，确保组件完全初始化
       const timer = setTimeout(() => {
         fetchModelsRef.current();
@@ -399,6 +455,8 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
       if (pendingFetchRef.current) {
         clearTimeout(pendingFetchRef.current);
       }
+      // 重置配置记录，避免下次组件复用时跳过请求
+      lastFetchedConfigRef.current = null;
     };
   }, []);
 
@@ -521,7 +579,14 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
               </VSCodeDropdown>
             </div>
             {modelError && (
-              <div className="flex items-start gap-2 p-2 bg-red-50 dark:bg-red-950 rounded text-xs text-red-600 dark:text-red-400 break-all whitespace-pre-wrap">
+              <div
+                className="flex items-start gap-2 p-2 rounded text-xs break-all whitespace-pre-wrap"
+                style={{
+                  backgroundColor: "hsl(var(--destructive) / 0.1)",
+                  color: "hsl(var(--destructive))",
+                  border: "1px solid hsl(var(--destructive) / 0.3)",
+                }}
+              >
                 <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
                 <span>{modelError}</span>
               </div>

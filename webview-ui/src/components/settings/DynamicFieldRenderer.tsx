@@ -99,7 +99,14 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
       const renderError = () => {
         if (hasError && validation.error) {
           return (
-            <div className="flex items-start gap-2 p-2 bg-red-50 dark:bg-red-950 rounded text-xs text-red-600 dark:text-red-400">
+            <div
+              className="flex items-start gap-2 p-2 rounded text-xs"
+              style={{
+                backgroundColor: "hsl(var(--destructive) / 0.1)",
+                color: "hsl(var(--destructive))",
+                border: "1px solid hsl(var(--destructive) / 0.3)",
+              }}
+            >
               <AlertCircle className="w-4 h-4 mt-0.5 flex-shrink-0" />
               <span>{t(validation.error)}</span>
             </div>
@@ -182,7 +189,11 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
                 disabled={isFieldDisabled}
               >
                 <VSCodeOption value="">
-                  {field.placeholder ? t(field.placeholder) : "请选择"}
+                  {field.placeholder
+                    ? t(field.placeholder)
+                    : t("settings-page.dynamicField.selectPlaceholder", {
+                        ns: "settings-page",
+                      })}
                 </VSCodeOption>
                 {field.options?.map((option) => (
                   <VSCodeOption key={option.value} value={option.value}>
@@ -302,7 +313,9 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
             }
             return (
               <div className="text-sm text-muted-foreground">
-                自定义字段渲染器未定义
+                {t("settings-page.dynamicField.customRendererUndefined", {
+                  ns: "settings-page",
+                })}
               </div>
             );
 

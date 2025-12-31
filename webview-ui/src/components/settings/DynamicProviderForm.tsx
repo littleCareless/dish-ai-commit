@@ -11,6 +11,7 @@ import {
 } from "@/types/provider-metadata";
 import { validationEngine } from "@/utils/validation-engine";
 import React, { useCallback, useEffect, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 // UI 组件导入
 import { Alert, AlertDescription } from "@/components/ui/alert";
@@ -35,6 +36,7 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
   onValidate,
   disabled = false,
 }) => {
+  const { t } = useTranslation("settings-page");
   const [validationResults, setValidationResults] = useState<
     ValidationResult[]
   >([]);
@@ -89,7 +91,12 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
               field: field.key,
               valid: false,
               errors: [
-                `字段更新失败: ${error instanceof Error ? error.message : "未知错误"}`,
+                t("providerForm.updateFailed", {
+                  error:
+                    error instanceof Error
+                      ? error.message
+                      : t("errors.unknownError", { ns: "settings-page" }),
+                }),
               ],
             },
           ];
@@ -265,7 +272,7 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
                 }}
                 disabled={disabled || field.disabled}
               >
-                浏览
+                {t("providerForm.browse")}
               </Button>
             </div>
           );
@@ -356,7 +363,7 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
-            <span>基础设置</span>
+            <span>{t("providerForm.basicSettings")}</span>
             {isValidating && (
               <div className="animate-spin h-4 w-4 border-2 border-primary border-t-transparent rounded-full" />
             )}
@@ -371,7 +378,7 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
       {advancedFields.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>高级设置</CardTitle>
+            <CardTitle>{t("providerForm.advancedSettings")}</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
             {advancedFields.map(renderField)}
@@ -384,7 +391,7 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center space-x-2">
-              <span>验证状态</span>
+              <span>{t("providerForm.validationStatus")}</span>
               {validationResults.every((r) => r.valid) ? (
                 <CheckCircle className="h-5 w-5 text-green-500" />
               ) : (
@@ -396,7 +403,9 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
             {validationResults.every((r) => r.valid) ? (
               <Alert>
                 <CheckCircle className="h-4 w-4" />
-                <AlertDescription>所有字段验证通过</AlertDescription>
+                <AlertDescription>
+                  {t("providerForm.validationPassed")}
+                </AlertDescription>
               </Alert>
             ) : (
               <div className="space-y-2">
@@ -421,7 +430,7 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
       {metadata.documentation && (
         <Card>
           <CardHeader>
-            <CardTitle>相关文档</CardTitle>
+            <CardTitle>{t("providerForm.relatedDocs")}</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-2">
@@ -435,7 +444,7 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
                   className="w-full justify-start"
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
-                  设置指南
+                  {t("providerForm.setupGuide")}
                 </Button>
               )}
               {metadata.documentation.apiReference && (
@@ -448,7 +457,7 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
                   className="w-full justify-start"
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
-                  API 参考
+                  {t("providerForm.apiReference")}
                 </Button>
               )}
               {metadata.documentation.examples && (
@@ -461,7 +470,7 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
                   className="w-full justify-start"
                 >
                   <ExternalLink className="h-4 w-4 mr-2" />
-                  示例代码
+                  {t("providerForm.examples")}
                 </Button>
               )}
             </div>

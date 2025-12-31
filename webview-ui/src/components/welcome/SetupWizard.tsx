@@ -1,7 +1,7 @@
 import { ProviderConfigForm } from "@/components/settings/ProviderConfigForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConnectionStatusIndicator } from "@/components/welcome/ConnectionStatusIndicator";
-import { TemplateGrid } from "@/components/welcome/TemplateCard";
+import { TemplateGrid, SelectionCard } from "@/components/welcome/TemplateCard";
 import { providerRegistry } from "@/config/provider-registry";
 import { useOnboarding, type QuickStartTemplate } from "@/hooks/useOnboarding";
 import {
@@ -24,12 +24,12 @@ import {
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
-import { Button } from "@/components/ui/button";
 
 interface SetupWizardProps {
   initialConfig?: Record<string, unknown>;
   currentApiConfigName?: string;
   onComplete?: () => void;
+  isFirstInstall?: boolean;
 }
 
 type StepStatus = "pending" | "current" | "completed";
@@ -62,6 +62,7 @@ const SetupWizard = ({
   initialConfig = {},
   currentApiConfigName = "default",
   onComplete,
+  isFirstInstall = false,
 }: SetupWizardProps) => {
   const { t } = useTranslation("welcome-page");
   const { t: tProvider } = useTranslation("provider-registry");
@@ -167,7 +168,15 @@ const SetupWizard = ({
 
   const setApiConfigurationField = useCallback(
     (_providerId: string, config: Record<string, unknown>) => {
-      setApiConfiguration(config);
+      setApiConfiguration((prevConfig) => {
+        // 深度比较，避免不必要的状态更新
+        const prevStr = JSON.stringify(prevConfig);
+        const newStr = JSON.stringify(config);
+        if (prevStr === newStr) {
+          return prevConfig;
+        }
+        return config;
+      });
       setError(undefined);
     },
     [],
@@ -207,16 +216,57 @@ const SetupWizard = ({
       apiConfiguration: finalConfig,
     });
 
+    // 监听响应并处理
+    const handleMessage = (event: MessageEvent) => {
+      const message = event.data;
+      if (message.command === "apiConfiguration.upserted") {
+        window.removeEventListener("message", handleMessage);
+
+        if (message.data?.success) {
+          console.log("[SetupWizard] API configuration upserted successfully");
+
+          // 如果是首次安装，设置 onboarding 完成状态
+          if (isFirstInstall) {
+            postMessage("onboarding.setCompleted", {
+              completed: true,
+              skipped: false,
+            });
+          }
+
+          setTimeout(() => {
+            setIsLoading(false);
+            onComplete?.();
+          }, 500);
+        } else {
+          console.error(
+            "[SetupWizard] Failed to upsert API configuration:",
+            message.data?.error,
+          );
+          setError(message.data?.error || t("errors.saveConfigFailed"));
+          setIsLoading(false);
+        }
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+
+    // 超时处理
     setTimeout(() => {
-      setIsLoading(false);
-      onComplete?.();
-    }, 1000);
+      window.removeEventListener("message", handleMessage);
+      if (isLoading) {
+        setError(t("errors.requestTimeout"));
+        setIsLoading(false);
+      }
+    }, 10000);
   }, [
     apiConfiguration,
     currentApiConfigName,
     onComplete,
     selectedProviderId,
     selectedProviderMeta,
+    isFirstInstall,
+    isLoading,
+    t,
   ]);
 
   const handleImport = useCallback((e: React.MouseEvent) => {
@@ -340,23 +390,12 @@ const SetupWizard = ({
                 className="pt-3 border-t"
                 style={{ borderColor: "var(--vscode-panel-border)" }}
               >
-                <Button
+                <SelectionCard
                   onClick={() => {
                     setUseCustomSetup(true);
                     setSelectedTemplateId(null);
                   }}
-                  variant="outline"
-                  className={`w-full h-auto p-3 text-left transition-all ${useCustomSetup ? "ring-2" : ""}`}
-                  style={{
-                    borderColor: useCustomSetup
-                      ? "var(--vscode-button-background)"
-                      : "var(--vscode-panel-border)",
-                    backgroundColor: useCustomSetup
-                      ? "var(--vscode-list-activeSelectionBackground)"
-                      : "var(--vscode-editor-background)",
-                    // @ts-expect-error ringColor is valid
-                    "--tw-ring-color": "var(--vscode-button-background)",
-                  }}
+                  isSelected={useCustomSetup}
                 >
                   <div className="flex items-center gap-2">
                     <Server
@@ -375,7 +414,7 @@ const SetupWizard = ({
                       </div>
                     </div>
                   </div>
-                </Button>
+                </SelectionCard>
               </div>
             </div>
           )}
@@ -447,6 +486,7 @@ const SetupWizard = ({
                     })}
                   </p>
                   <ProviderConfigForm
+                    key={`${selectedProviderId}-${apiConfiguration.model || "no-model"}`}
                     provider={providerConfig}
                     config={apiConfiguration}
                     onConfigChange={setApiConfigurationField}
@@ -477,14 +517,12 @@ const SetupWizard = ({
                       onClick={handleTestConnection}
                       disabled={isValidating}
                     >
-                      <span className="flex items-center gap-1">
-                        {isValidating ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                          <Wifi className="w-4 h-4" />
-                        )}
-                        {t("setup.buttons.testConnection")}
-                      </span>
+                      {isValidating ? (
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                      ) : (
+                        <Wifi className="w-4 h-4" />
+                      )}
+                      {t("setup.buttons.testConnection")}
                     </VSCodeButton>
                   </div>
                 </div>
@@ -495,13 +533,11 @@ const SetupWizard = ({
                 className="flex items-center justify-center pt-2 border-t"
                 style={{ borderColor: "var(--vscode-panel-border)" }}
               >
-                <VSCodeLink
-                  href="#"
-                  onClick={handleImport}
-                  className="text-sm flex items-center gap-1"
-                >
-                  <Upload className="w-3.5 h-3.5" />
-                  {t("setup.import")}
+                <VSCodeLink href="#" onClick={handleImport}>
+                  <span className="flex items-center gap-1 text-sm">
+                    <Upload className="w-3.5 h-3.5" />
+                    {t("setup.import")}
+                  </span>
                 </VSCodeLink>
               </div>
             </div>
@@ -543,10 +579,8 @@ const SetupWizard = ({
               onClick={handleBack}
               disabled={isLoading}
             >
-              <span className="flex items-center gap-1">
-                <ChevronLeft className="w-4 h-4" />
-                {t("setup.buttons.previous")}
-              </span>
+              <ChevronLeft className="w-4 h-4" />
+              {t("setup.buttons.previous")}
             </VSCodeButton>
           )}
         </div>
@@ -557,10 +591,8 @@ const SetupWizard = ({
               onClick={handleNext}
               disabled={!canProceed()}
             >
-              <span className="flex items-center gap-1">
-                {t("setup.buttons.next")}
-                <ChevronRight className="w-4 h-4" />
-              </span>
+              {t("setup.buttons.next")}
+              <ChevronRight className="w-4 h-4" />
             </VSCodeButton>
           ) : (
             <VSCodeButton
@@ -568,19 +600,17 @@ const SetupWizard = ({
               onClick={handleSubmit}
               disabled={isLoading}
             >
-              <span className="flex items-center gap-1">
-                {isLoading ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    {t("setup.buttons.saving")}
-                  </>
-                ) : (
-                  <>
-                    <Check className="w-4 h-4" />
-                    {t("setup.buttons.complete")}
-                  </>
-                )}
-              </span>
+              {isLoading ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  {t("setup.buttons.saving")}
+                </>
+              ) : (
+                <>
+                  <Check className="w-4 h-4" />
+                  {t("setup.buttons.complete")}
+                </>
+              )}
             </VSCodeButton>
           )}
         </div>
@@ -603,10 +633,9 @@ const ProviderCard = ({
   t,
 }: ProviderCardProps) => {
   return (
-    <Button
+    <div
       onClick={onClick}
-      variant="outline"
-      className={`w-full h-auto p-3 text-left transition-all duration-200 ${
+      className={`w-full h-auto p-3 text-left transition-all duration-200 cursor-pointer ${
         isSelected ? "ring-2" : ""
       }`}
       style={{
@@ -628,7 +657,7 @@ const ProviderCard = ({
       >
         {t(provider.description)}
       </div>
-    </Button>
+    </div>
   );
 };
 

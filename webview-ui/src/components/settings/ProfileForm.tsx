@@ -6,6 +6,7 @@ import {
   FormLabel,
   FormMessage,
 } from "@/components/ui/form";
+import { isDevelopment } from "@/utils/version";
 import { Profile } from "@/types/settings";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -73,15 +74,36 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
           </FormLabel>
           <div className="flex items-center gap-2 text-xs">
             {isLoading ? (
-              <span className="text-blue-600 dark:text-blue-500 px-2 py-1 rounded-full bg-blue-50 dark:bg-blue-950">
+              <span
+                className="px-2 py-1 rounded-full"
+                style={{
+                  backgroundColor: "hsl(var(--muted))",
+                  color: "hsl(var(--foreground))",
+                  border: "1px solid hsl(var(--border))",
+                }}
+              >
                 <span className="animate-pulse">●</span> {t("loading")}
               </span>
             ) : isCurrentActive ? (
-              <span className="text-green-600 dark:text-green-500 px-2 py-1 rounded-full bg-green-50 dark:bg-green-950">
+              <span
+                className="px-2 py-1 rounded-full"
+                style={{
+                  backgroundColor: "hsl(var(--accent))",
+                  color: "hsl(var(--accent-foreground))",
+                  border: "1px solid hsl(var(--border))",
+                }}
+              >
                 {t("editingActive")}
               </span>
             ) : (
-              <span className="text-amber-600 dark:text-amber-500 px-2 py-1 rounded-full bg-amber-50 dark:bg-amber-950">
+              <span
+                className="px-2 py-1 rounded-full"
+                style={{
+                  backgroundColor: "hsl(var(--secondary))",
+                  color: "hsl(var(--secondary-foreground))",
+                  border: "1px solid hsl(var(--border))",
+                }}
+              >
                 {t("editingInactive")}
               </span>
             )}
@@ -148,17 +170,35 @@ export const ProfileForm: React.FC<ProfileFormProps> = ({
             )}
           </div>
         </div>
-        <div className="p-2 bg-slate-50 dark:bg-slate-900 rounded border text-xs text-muted-foreground space-y-1">
-          <div className="font-medium">{t("usageInstructions")}</div>
+        <div
+          className="p-2 rounded border text-xs space-y-1"
+          style={{
+            backgroundColor: "hsl(var(--muted))",
+            borderColor: "hsl(var(--border))",
+            color: "hsl(var(--muted-foreground))",
+          }}
+        >
+          <div
+            className="font-medium"
+            style={{ color: "hsl(var(--foreground))" }}
+          >
+            {t("usageInstructions")}
+          </div>
           <div dangerouslySetInnerHTML={{ __html: t("selectToEdit") }} />
           <div dangerouslySetInnerHTML={{ __html: t("autoSave") }} />
           <div dangerouslySetInnerHTML={{ __html: t("clickDone") }} />
         </div>
 
-        {currentProfile && (
+        {currentProfile && isDevelopment() && (
           <div className="space-y-2 pt-4">
             <h3 className="text-sm font-medium">{t("currentProfileInfo")}</h3>
-            <pre className="p-2 bg-gray-100 dark:bg-gray-800 rounded border text-xs overflow-auto">
+            <pre
+              className="p-2 rounded border text-xs overflow-auto"
+              style={{
+                backgroundColor: "hsl(var(--muted))",
+                borderColor: "hsl(var(--border))",
+              }}
+            >
               {JSON.stringify(currentProfile, null, 2)}
             </pre>
           </div>
