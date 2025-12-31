@@ -34,6 +34,7 @@ export enum UIRequest {
   ProfileMigrateSettings = "profile.migrateSettings",
   ProfileResetDefaults = "profile.resetDefaults",
   ProfileGetAllProviders = "profile.getAllProviders",
+  UpsertApiConfiguration = "upsertApiConfiguration",
 
   // ===== Connection Module =====
   ConnectionTest = "connection.test",
@@ -138,6 +139,7 @@ export enum ExtensionResponse {
   ProfileSettingsMigrated = "profile.settingsMigrated",
   ProfileResetComplete = "profile.resetComplete",
   ProfileAllProvidersLoaded = "profile.allProvidersLoaded",
+  ApiConfigurationUpserted = "apiConfiguration.upserted",
 
   // ===== Connection Module =====
   ConnectionTestResult = "connection.testResult",
