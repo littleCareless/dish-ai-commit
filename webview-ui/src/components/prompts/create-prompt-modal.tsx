@@ -26,8 +26,10 @@ import {
   CATEGORY_VARIABLES,
   PromptCategory,
   PromptVariable,
+  CommitSubCategory,
+  SUB_CATEGORY_DISPLAY_NAMES,
 } from "@shared/types/prompts";
-import React from "react";
+import React, { useCallback } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import * as z from "zod";
 
@@ -43,6 +45,7 @@ const formSchema = z.object({
   key: z.string().min(1, { message: "提示词名称不能为空" }),
   content: z.string().min(1, { message: "提示词内容不能为空" }),
   category: z.nativeEnum(PromptCategory),
+  subCategory: z.nativeEnum(CommitSubCategory).optional(),
 });
 
 type FormValues = z.infer<typeof formSchema>;
@@ -62,6 +65,7 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
       key: "",
       content: "",
       category: PromptCategory.Commit,
+      subCategory: CommitSubCategory.Standard,
     },
   });
 
@@ -73,19 +77,45 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
   const availableVariables: PromptVariable[] =
     CATEGORY_VARIABLES[selectedCategory] || [];
 
-  const onSubmit = (values: FormValues) => {
-    postMessage(UIRequest.PromptCreate, {
-      key: values.key,
-      content: values.content,
-      category: values.category,
-    });
-    onClose();
-    form.reset();
+  // Handle category change - reset subCategory for non-Commit categories
+  const handleCategoryChange = (value: string) => {
+    const category = value as PromptCategory;
+    form.setValue("category", category);
+    if (category !== PromptCategory.Commit) {
+      form.setValue("subCategory", undefined);
+    } else {
+      form.setValue("subCategory", CommitSubCategory.Standard);
+    }
   };
 
+  const onSubmit = useCallback(
+    (values: FormValues) => {
+      // Generate a unique key using timestamp and random suffix
+      // This avoids conflicts from user-entered titles
+      const timestamp = Date.now().toString(36);
+      const randomSuffix = Math.random().toString(36).substring(2, 8);
+      const uniqueKey = `prompt_${timestamp}_${randomSuffix}`;
+
+      postMessage(UIRequest.PromptCreate, {
+        key: uniqueKey,
+        content: values.content,
+        category: values.category,
+        subCategory: values.subCategory,
+        // Also pass the original title for display purposes
+        title: values.key,
+      });
+      onClose();
+      form.reset();
+    },
+    [form, onClose],
+  );
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-[525px] bg-[var(--vscode-editor-background)] text-[var(--vscode-foreground)] border-[var(--vscode-panel-border)]">
+    <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+      <DialogContent
+        className="sm:max-w-[525px] bg-[var(--vscode-editor-background)] text-[var(--vscode-foreground)] border-[var(--vscode-panel-border)]"
+        onClose={onClose}
+      >
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <DialogHeader>
@@ -104,7 +134,7 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
                     <FormControl>
                       <Select
                         value={field.value}
-                        onValueChange={field.onChange}
+                        onValueChange={handleCategoryChange}
                       >
                         {selectableCategories.map((cat) => (
                           <SelectOption key={cat} value={cat}>
@@ -117,6 +147,46 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
                   </FormItem>
                 )}
               />
+              {selectedCategory === PromptCategory.Commit && (
+                <FormField
+                  control={form.control}
+                  name="subCategory"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>提交模式</FormLabel>
+                      <FormControl>
+                        <Select
+                          value={field.value || CommitSubCategory.Standard}
+                          onValueChange={field.onChange}
+                        >
+                          <SelectOption value={CommitSubCategory.Standard}>
+                            {
+                              SUB_CATEGORY_DISPLAY_NAMES[
+                                CommitSubCategory.Standard
+                              ]
+                            }
+                          </SelectOption>
+                          <SelectOption value={CommitSubCategory.Layered}>
+                            {
+                              SUB_CATEGORY_DISPLAY_NAMES[
+                                CommitSubCategory.Layered
+                              ]
+                            }
+                          </SelectOption>
+                          <SelectOption value={CommitSubCategory.System}>
+                            {
+                              SUB_CATEGORY_DISPLAY_NAMES[
+                                CommitSubCategory.System
+                              ]
+                            }
+                          </SelectOption>
+                        </Select>
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
               <FormField
                 control={form.control}
                 name="key"

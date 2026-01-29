@@ -52,9 +52,23 @@ export const StorageLevelModal: React.FC<StorageLevelModalProps> = ({
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-      <div className="bg-[var(--vscode-editor-background)] border border-[var(--vscode-widget-border)] rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl">
-        <h2 className="text-lg font-bold mb-4 text-[var(--vscode-foreground)]">
+    <div
+      className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+      onClick={(e) => {
+        if (e.target === e.currentTarget) {
+          onClose();
+        }
+      }}
+    >
+      <div className="bg-[var(--vscode-editor-background)] border border-[var(--vscode-widget-border)] rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl relative">
+        <button
+          onClick={onClose}
+          className="absolute right-4 top-4 w-6 h-6 flex items-center justify-center rounded hover:bg-[var(--vscode-list-hoverBackground)] text-[var(--vscode-foreground)]"
+          aria-label="Close dialog"
+        >
+          ×
+        </button>
+        <h2 className="text-lg font-bold mb-4 text-[var(--vscode-foreground)] pr-6">
           {t("storageSelection")}
         </h2>
 
