@@ -1,7 +1,7 @@
-import { AIProviderFactory } from '@/ai/ai-provider-factory';
-import { AIModel, AIProvider } from '@/ai/types';
-import { ProviderConfig } from '@/types/provider-config';
-import { Logger } from '@/utils/logger';
+import { AIProviderFactory } from "@/ai/ai-provider-factory";
+import { AIModel, AIProvider } from "@/ai/types";
+import { ProviderConfig } from "@/types/provider-config";
+import { Logger } from "@/utils/logger";
 
 /**
  * AI Provider 管理器 - 单例模式
@@ -42,7 +42,7 @@ export class AIProviderManager {
   private logger: Logger;
 
   private constructor() {
-    this.logger = Logger.getInstance('AIProviderManager');
+    this.logger = Logger.getInstance("AIProviderManager");
   }
 
   /**
@@ -65,16 +65,16 @@ export class AIProviderManager {
    */
   async getProvider(
     providerId: string,
-    config: ProviderConfig
+    config: ProviderConfig,
   ): Promise<AIProvider> {
     // 1. 检查缓存
     if (this.providerCache.has(providerId)) {
-      this.logger.debug('Using cached provider', { data: { providerId } });
+      this.logger.debug("Using cached provider", { data: { providerId } });
       return this.providerCache.get(providerId)!;
     }
 
     // 2. 创建新实例
-    this.logger.info('Creating new provider', { data: { providerId } });
+    this.logger.info("Creating new provider", { data: { providerId } });
     const startTime = Date.now();
 
     try {
@@ -84,15 +84,15 @@ export class AIProviderManager {
       this.providerCache.set(providerId, provider);
 
       const duration = Date.now() - startTime;
-      this.logger.info('Provider created and cached', {
-        data: { providerId, duration: `${duration}ms` }
+      this.logger.info("Provider created and cached", {
+        data: { providerId, duration: `${duration}ms` },
       });
 
       return provider;
     } catch (error) {
-      this.logger.error('Failed to create provider', {
+      this.logger.error("Failed to create provider", {
         error: error as Error,
-        data: { providerId }
+        data: { providerId },
       });
       throw error;
     }
@@ -109,13 +109,13 @@ export class AIProviderManager {
   async getModels(
     providerId: string,
     config: ProviderConfig,
-    forceRefresh: boolean = false
+    forceRefresh: boolean = false,
   ): Promise<AIModel[]> {
     // 1. 检查是否需要刷新
     const needsRefresh = forceRefresh || this.isCacheExpired(providerId);
 
     if (!needsRefresh && this.modelCache.has(providerId)) {
-      this.logger.debug('Using cached models', { data: { providerId } });
+      this.logger.debug("Using cached models", { data: { providerId } });
       return this.modelCache.get(providerId)!;
     }
 
@@ -123,7 +123,7 @@ export class AIProviderManager {
     const provider = await this.getProvider(providerId, config);
 
     // 3. 获取模型列表
-    this.logger.info('Fetching models from API', { data: { providerId } });
+    this.logger.info("Fetching models from API", { data: { providerId } });
     const startTime = Date.now();
 
     try {
@@ -134,19 +134,19 @@ export class AIProviderManager {
       this.modelCacheTimestamp.set(providerId, Date.now());
 
       const duration = Date.now() - startTime;
-      this.logger.info('Models fetched and cached', {
+      this.logger.info("Models fetched and cached", {
         data: {
           providerId,
           modelCount: models.length,
-          duration: `${duration}ms`
-        }
+          duration: `${duration}ms`,
+        },
       });
 
       return models;
     } catch (error) {
-      this.logger.error('Failed to fetch models', {
+      this.logger.error("Failed to fetch models", {
         error: error as Error,
-        data: { providerId }
+        data: { providerId },
       });
       throw error;
     }
@@ -164,39 +164,39 @@ export class AIProviderManager {
   async validateModel(
     providerId: string,
     modelId: string,
-    config: ProviderConfig
+    config: ProviderConfig,
   ): Promise<{
     valid: boolean;
     model: AIModel | null;
     confidence: number;
   }> {
-    this.logger.info('Validating model', {
-      data: { providerId, modelId }
+    this.logger.info("Validating model", {
+      data: { providerId, modelId },
     });
 
     // 获取模型列表（可能使用缓存）
     const models = await this.getModels(providerId, config);
 
     // 查找模型
-    const model = models.find(m => m.id === modelId);
+    const model = models.find((m) => m.id === modelId);
 
     if (model) {
-      this.logger.info('Model validation succeeded', {
-        data: { providerId, modelId }
+      this.logger.info("Model validation succeeded", {
+        data: { providerId, modelId },
       });
       return {
         valid: true,
         model,
-        confidence: 1.0
+        confidence: 1.0,
       };
     } else {
-      this.logger.warn('Model validation failed', {
-        data: { providerId, modelId, availableModels: models.map(m => m.id) }
+      this.logger.warn("Model validation failed", {
+        data: { providerId, modelId, availableModels: models.map((m) => m.id) },
       });
       return {
         valid: false,
         model: null,
-        confidence: 0.3 // 低置信度，可能是模型名称变更
+        confidence: 0.3, // 低置信度，可能是模型名称变更
       };
     }
   }
@@ -212,7 +212,7 @@ export class AIProviderManager {
   async getProviderAndModel(
     providerId: string,
     modelId: string,
-    config: ProviderConfig
+    config: ProviderConfig,
   ): Promise<{
     provider: AIProvider;
     model: AIModel;
@@ -225,13 +225,13 @@ export class AIProviderManager {
 
     if (!validation.valid || !validation.model) {
       throw new Error(
-        `Model '${modelId}' not found for provider '${providerId}'`
+        `Model '${modelId}' not found for provider '${providerId}'`,
       );
     }
 
     return {
       provider,
-      model: validation.model
+      model: validation.model,
     };
   }
 
@@ -245,7 +245,7 @@ export class AIProviderManager {
     this.modelCache.delete(providerId);
     this.modelCacheTimestamp.delete(providerId);
 
-    this.logger.info('Cache cleared', { data: { providerId } });
+    this.logger.info("Cache cleared", { data: { providerId } });
   }
 
   /**
@@ -256,7 +256,7 @@ export class AIProviderManager {
     this.modelCache.clear();
     this.modelCacheTimestamp.clear();
 
-    this.logger.info('All caches cleared');
+    this.logger.info("All caches cleared");
   }
 
   /**
@@ -266,7 +266,7 @@ export class AIProviderManager {
    */
   setModelCacheTTL(ttl: number): void {
     this.modelCacheTTL = ttl;
-    this.logger.info('Model cache TTL updated', { data: { ttl: `${ttl}ms` } });
+    this.logger.info("Model cache TTL updated", { data: { ttl: `${ttl}ms` } });
   }
 
   /**
@@ -277,7 +277,9 @@ export class AIProviderManager {
    */
   private isCacheExpired(providerId: string): boolean {
     const timestamp = this.modelCacheTimestamp.get(providerId);
-    if (!timestamp) return true;
+    if (!timestamp) {
+      return true;
+    }
 
     return Date.now() - timestamp > this.modelCacheTTL;
   }
@@ -293,7 +295,7 @@ export class AIProviderManager {
     return {
       providerCount: this.providerCache.size,
       modelCount: this.modelCache.size,
-      totalMemory: this.providerCache.size + this.modelCache.size
+      totalMemory: this.providerCache.size + this.modelCache.size,
     };
   }
 
@@ -305,6 +307,6 @@ export class AIProviderManager {
     if (AIProviderManager.instance === this) {
       AIProviderManager.instance = null as any;
     }
-    this.logger.info('AIProviderManager destroyed');
+    this.logger.info("AIProviderManager destroyed");
   }
 }

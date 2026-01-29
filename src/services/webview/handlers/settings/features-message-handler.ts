@@ -1,7 +1,12 @@
 import { DISH_CONFIG_PREFIX } from "@/config/constants";
 import { FeaturesSettingsManager } from "@/services/settings/features-settings-manager";
 import { workspaceManager } from "@/services/core/workspace-manager";
-import { PromptCategory, PromptKey, PROMPT_CATEGORIES, StorageLevel } from "@shared/types/prompts";
+import {
+  PromptCategory,
+  PromptKey,
+  PROMPT_CATEGORIES,
+  StorageLevel,
+} from "@shared/types/prompts";
 import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 import * as vscode from "vscode";
 
@@ -25,7 +30,8 @@ export class FeaturesMessageHandler {
           data: {
             ...settings,
             // 确保包含子分类信息
-            activePromptsBySubCategory: settings.activePromptsBySubCategory || {},
+            activePromptsBySubCategory:
+              settings.activePromptsBySubCategory || {},
           },
         });
         break;
@@ -39,55 +45,81 @@ export class FeaturesMessageHandler {
             data: {
               ...settings,
               // 确保包含子分类信息
-              activePromptsBySubCategory: settings.activePromptsBySubCategory || {},
+              activePromptsBySubCategory:
+                settings.activePromptsBySubCategory || {},
             },
           });
         }
         break;
 
       case UIRequest.FeaturesSetActivePrompt:
-        console.log('[FeaturesMessageHandler] FeaturesSetActivePrompt received:', message);
+        console.log(
+          "[FeaturesMessageHandler] FeaturesSetActivePrompt received:",
+          message,
+        );
         // 支持两种消息格式：{key, category, storageLevel, workspaceId} 或 {data: {key, category, storageLevel, workspaceId}}
         const key = message.key || message.data?.key;
-        const category = message.category || message.data?.category || this.determineCategoryFromKey(key) || PromptCategory.Commit;
-        const storageLevel: StorageLevel = message.storageLevel || message.data?.storageLevel || 'global';
-        const workspaceId: string | undefined = message.workspaceId || message.data?.workspaceId;
+        const category =
+          message.category ||
+          message.data?.category ||
+          this.determineCategoryFromKey(key) ||
+          PromptCategory.Commit;
+        const storageLevel: StorageLevel =
+          message.storageLevel || message.data?.storageLevel || "global";
+        const workspaceId: string | undefined =
+          message.workspaceId || message.data?.workspaceId;
 
-        console.log('[FeaturesMessageHandler] Parsed data:', { key, category, storageLevel, workspaceId });
+        console.log("[FeaturesMessageHandler] Parsed data:", {
+          key,
+          category,
+          storageLevel,
+          workspaceId,
+        });
 
         if (key) {
-          console.log('[FeaturesMessageHandler] Processing:', { category, storageLevel, workspaceId, key });
+          console.log("[FeaturesMessageHandler] Processing:", {
+            category,
+            storageLevel,
+            workspaceId,
+            key,
+          });
 
           try {
             await this._settingsManager.setActivePrompt(
               category,
               key,
               storageLevel,
-              workspaceId
+              workspaceId,
             );
 
-            console.log('[FeaturesMessageHandler] setActivePrompt completed');
+            console.log("[FeaturesMessageHandler] setActivePrompt completed");
 
             // 向后兼容：更新 legacy key（仅全局级别）
-            if (storageLevel === 'global') {
+            if (storageLevel === "global") {
               await this.context.globalState.update(
                 FeaturesMessageHandler.ACTIVE_PROMPT_KEY,
-                key
+                key,
               );
             }
 
             // 刷新设置到 UI
             const settings = this._settingsManager.getSettings();
             // 使用 getPromptSource 获取特定提示词的源信息（支持子分类）
-            const activeSource = await this._settingsManager.getPromptSource(key, workspaceId);
+            const activeSource = await this._settingsManager.getPromptSource(
+              key,
+              workspaceId,
+            );
 
             // 获取子分类级别的活跃提示词信息
-            const activePromptsBySubCategory = settings.activePromptsBySubCategory || {};
+            const activePromptsBySubCategory =
+              settings.activePromptsBySubCategory || {};
 
-            console.log('[FeaturesMessageHandler] Sending response:', {
+            console.log("[FeaturesMessageHandler] Sending response:", {
               activePrompts: settings.activePrompts,
               activePromptsBySubCategory,
-              activePromptsKeys: settings.activePrompts ? Object.keys(settings.activePrompts) : 'undefined',
+              activePromptsKeys: settings.activePrompts
+                ? Object.keys(settings.activePrompts)
+                : "undefined",
               activeSource,
             });
 
@@ -99,12 +131,14 @@ export class FeaturesMessageHandler {
                 currentActiveSource: activeSource,
               },
             });
-            console.log('[FeaturesMessageHandler] Response sent');
+            console.log("[FeaturesMessageHandler] Response sent");
           } catch (error) {
-            console.error('Failed to set active prompt:', error);
+            console.error("Failed to set active prompt:", error);
             await webview.postMessage({
               command: ExtensionResponse.Error,
-              data: { message: error instanceof Error ? error.message : String(error) },
+              data: {
+                message: error instanceof Error ? error.message : String(error),
+              },
             });
           }
         }
@@ -126,7 +160,8 @@ export class FeaturesMessageHandler {
 
       // 新增：获取所有工作区的活跃状态
       case UIRequest.FeaturesGetAllWorkspaceStates:
-        const allStates = await this._settingsManager.getAllWorkspaceActiveStates();
+        const allStates =
+          await this._settingsManager.getAllWorkspaceActiveStates();
 
         await webview.postMessage({
           command: ExtensionResponse.FeaturesAllWorkspaceStates,
@@ -144,11 +179,21 @@ export class FeaturesMessageHandler {
     }
 
     // Fallback to heuristic for custom prompts or unknown keys
-    if (key.includes('commit') || key.includes('layered')) return PromptCategory.Commit;
-    if (key.includes('review')) return PromptCategory.CodeReview;
-    if (key.includes('pr') || key.includes('summary')) return PromptCategory.PR;
-    if (key.includes('report')) return PromptCategory.Report;
-    if (key.includes('branch')) return PromptCategory.Git;
+    if (key.includes("commit") || key.includes("layered")) {
+      return PromptCategory.Commit;
+    }
+    if (key.includes("review")) {
+      return PromptCategory.CodeReview;
+    }
+    if (key.includes("pr") || key.includes("summary")) {
+      return PromptCategory.PR;
+    }
+    if (key.includes("report")) {
+      return PromptCategory.Report;
+    }
+    if (key.includes("branch")) {
+      return PromptCategory.Git;
+    }
 
     return null;
   }

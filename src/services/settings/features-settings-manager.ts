@@ -546,7 +546,9 @@ export class FeaturesSettingsManager {
     workspaceId: string,
   ): Promise<Record<PromptCategory, string> | null> {
     const workspace = workspaceManager.getWorkspaceById(workspaceId);
-    if (!workspace) return null;
+    if (!workspace) {
+      return null;
+    }
 
     const configPath = path.join(workspace.path, ".dish", "config.json");
 
@@ -617,7 +619,9 @@ export class FeaturesSettingsManager {
     workspaceId: string,
   ): Promise<Record<PromptCategory, Record<string, string>> | null> {
     const workspace = workspaceManager.getWorkspaceById(workspaceId);
-    if (!workspace) return null;
+    if (!workspace) {
+      return null;
+    }
 
     const configPath = path.join(workspace.path, ".dish", "config.json");
 

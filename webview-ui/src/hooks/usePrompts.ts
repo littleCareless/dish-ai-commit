@@ -1,31 +1,31 @@
-import { useState, useEffect, useCallback, useRef } from "react";
-import { useTranslation } from "react-i18next";
+import {
+  deletePrompt,
+  loadAllPrompts,
+  loadWorkspaceInfo,
+  loadWorkspaceStates,
+  renamePrompt,
+  resetAllPrompts,
+  resetPrompt,
+  setActivePrompt,
+  updatePrompt,
+} from "@/services/prompts-api";
+import {
+  getActivePromptForDefaultSelection,
+  getAvailableVariables,
+  getCategoryFromKey,
+} from "@/utils/prompt-helpers";
 import { ExtensionResponse } from "@shared/types/messages";
 import {
   ActivePromptSource,
+  CommitSubCategory,
   PromptCategory,
   PromptDetail,
   StorageLevel,
-  WorkspaceInfo,
-  CommitSubCategory,
   WorkspaceActiveState,
+  WorkspaceInfo,
 } from "@shared/types/prompts";
-import {
-  getCategoryFromKey,
-  getActivePromptForDefaultSelection,
-  getAvailableVariables,
-} from "@/utils/prompt-helpers";
-import {
-  loadAllPrompts,
-  loadWorkspaceStates,
-  loadWorkspaceInfo,
-  updatePrompt,
-  resetPrompt,
-  resetAllPrompts,
-  deletePrompt,
-  renamePrompt,
-  setActivePrompt,
-} from "@/services/prompts-api";
+import { useCallback, useEffect, useRef, useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface Prompts {
   [key: string]: PromptDetail;
@@ -303,7 +303,10 @@ export function usePrompts(): UsePromptsReturn {
     // 仅在 selectedKey 变化时更新内容，避免与用户输入冲突
     if (selectedKey && prompts[selectedKey]) {
       const content = prompts[selectedKey].content;
-      setCurrentContent(content);
+      // 使用 setTimeout 将 setState 移至 effect 之外，避免级联渲染
+      setTimeout(() => {
+        setCurrentContent(content);
+      }, 0);
     }
   }, [categoryFilter, prompts, activePromptsByCategory, selectedKey]);
 
@@ -316,14 +319,14 @@ export function usePrompts(): UsePromptsReturn {
         setCurrentContent(prompts[key].content);
       }
     },
-    [prompts, currentContent],
+    [prompts],
   );
 
   const handleContentChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
       setCurrentContent(e.target.value);
     },
-    [currentContent],
+    [],
   );
 
   const handleCreateNew = useCallback(() => {
@@ -358,7 +361,7 @@ export function usePrompts(): UsePromptsReturn {
       setShowStorageModal(false);
       setPendingSaveContent(null);
     },
-    [selectedKey, pendingSaveContent, currentContent],
+    [selectedKey, pendingSaveContent],
   );
 
   const handleReset = useCallback(() => {
@@ -425,32 +428,29 @@ export function usePrompts(): UsePromptsReturn {
     setActivePrompt(category, selectedKey, workspaceId);
   }, [selectedKey, prompts, selectedWorkspace]);
 
-  const handleInsertVariable = useCallback(
-    (variableName: string) => {
-      if (!textareaRef.current) return;
+  const handleInsertVariable = useCallback((variableName: string) => {
+    if (!textareaRef.current) return;
 
-      const textarea = textareaRef.current;
-      const start = textarea.selectionStart;
-      const end = textarea.selectionEnd;
-      const text = textarea.value;
-      const variable = `{{${variableName}}}`;
+    const textarea = textareaRef.current;
+    const start = textarea.selectionStart;
+    const end = textarea.selectionEnd;
+    const text = textarea.value;
+    const variable = `{{${variableName}}}`;
 
-      setCurrentContent(
-        text.substring(0, start) + variable + text.substring(end),
-      );
+    setCurrentContent(
+      text.substring(0, start) + variable + text.substring(end),
+    );
 
-      setTimeout(() => {
-        if (textareaRef.current) {
-          textareaRef.current.focus();
-          textareaRef.current.setSelectionRange(
-            start + variable.length,
-            start + variable.length,
-          );
-        }
-      }, 0);
-    },
-    [currentContent],
-  );
+    setTimeout(() => {
+      if (textareaRef.current) {
+        textareaRef.current.focus();
+        textareaRef.current.setSelectionRange(
+          start + variable.length,
+          start + variable.length,
+        );
+      }
+    }, 0);
+  }, []);
 
   // Helper functions
   const getAvailableVariablesHelper = useCallback(
