@@ -87,3 +87,4 @@ jspm_packages/
 # Dish AI Commit - Workspace identification files
 .dish/workspace-id
 
+.zcf/**
