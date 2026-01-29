@@ -37,6 +37,11 @@ export class StreamingGenerationHelper {
     requestParams: any;
   } | null = null;
 
+  // 配置缓存
+  private _baseRequestParams: any | null = null;
+  private _lastConfigHash: string | null = null;
+  private _lastSystemPrompt: string | null = null;
+
   constructor(private logger: Logger) {
     this.contextBuilder = new CommitContextBuilder();
     this.layeredCommitHandler = new LayeredCommitHandler(logger);
@@ -320,7 +325,7 @@ export class StreamingGenerationHelper {
 
     // 否则，使用统一的模型验证服务（兼容旧流程）
     this.logger.warn(
-      `[Chain] [StreamingHelper] No pre-initialized AI provider provided, creating new instance (fallback mode)`,
+      `[Chain] [StreamingHelper] ⚠ No pre-initialized AI provider provided, entering fallback mode. This should rarely happen.`,
     );
     const { ModelValidationService } =
       await import("@/services/core/model-validation-service");
@@ -363,30 +368,31 @@ export class StreamingGenerationHelper {
     requestId: string,
   ): Promise<{ contextManager: ContextManager; requestParams: any }> {
     if (this.lastRequestId === requestId && this.lastContext) {
-      console.log(
-        `[StreamingHelper] Reused context for requestId=${requestId}`,
+      this.logger.debug(
+        `[StreamingHelper] ✓ Reused context for requestId=${requestId}`,
       );
       return this.lastContext;
     }
 
-    const tempParams = {
-      ...configuration.features.commitMessage,
-      ...configuration.features.commitFormat,
-      ...configuration.features.codeAnalysis,
-      model: selectedModel,
-      scm: scmProvider.type ?? "git",
-      workspaceRoot: repositoryPath,
-      changeFiles: selectedFiles || [],
-      languages: configuration.base.language,
-      diff: diffContent,
-      additionalContext: "",
-      feature: "commit-generation",
-    };
+    // 构建并缓存 system prompt
+    if (
+      !this._lastSystemPrompt ||
+      this._lastConfigHash !== this.getConfigHash(configuration)
+    ) {
+      const tempParams = this.buildRequestParams(configuration, {
+        model: selectedModel,
+        scm: scmProvider.type ?? "git",
+        workspaceRoot: repositoryPath,
+        changeFiles: selectedFiles || [],
+        diff: diffContent,
+      });
 
-    const systemPrompt = await getSystemPrompt(tempParams);
+      this._lastSystemPrompt = await getSystemPrompt(tempParams);
+    }
+
     const contextManager = await this.contextBuilder.buildContextManager(
       selectedModel,
-      systemPrompt,
+      this._lastSystemPrompt,
       scmProvider,
       diffContent,
       configuration,
@@ -401,15 +407,20 @@ export class StreamingGenerationHelper {
         .join(", ")}`,
     );
 
-    const requestParams = {
-      ...tempParams,
+    const requestParams = this.buildRequestParams(configuration, {
+      model: selectedModel,
+      scm: scmProvider.type ?? "git",
+      workspaceRoot: repositoryPath,
+      changeFiles: selectedFiles || [],
       diff: diffContent,
-    };
+      additionalContext: "",
+      feature: "commit-generation",
+    });
 
     this.lastRequestId = requestId;
     this.lastContext = { contextManager, requestParams };
 
-    console.log(
+    this.logger.debug(
       `[StreamingHelper] Built new context for requestId=${requestId}`,
     );
     return { contextManager, requestParams };
@@ -421,6 +432,45 @@ export class StreamingGenerationHelper {
   ): string {
     const input = `${repositoryPath}:${selectedFiles?.join(",") || ""}`;
     return Buffer.from(input).toString("base64").substring(0, 16);
+  }
+
+  /**
+   * 构建请求参数 - 避免重复解构配置
+   */
+  private buildRequestParams(
+    configuration: any,
+    overrides: Partial<any> = {},
+  ): any {
+    const currentConfigHash = this.getConfigHash(configuration);
+    if (
+      !this._baseRequestParams ||
+      this._lastConfigHash !== currentConfigHash
+    ) {
+      this._baseRequestParams = {
+        ...configuration.features.commitMessage,
+        ...configuration.features.commitFormat,
+        ...configuration.features.codeAnalysis,
+        languages: configuration.base.language,
+      };
+      this._lastConfigHash = currentConfigHash;
+    }
+
+    return {
+      ...this._baseRequestParams,
+      ...overrides,
+    };
+  }
+
+  /**
+   * 计算配置哈希，用于检测配置变化
+   */
+  private getConfigHash(config: any): string {
+    return JSON.stringify({
+      language: config.base?.language,
+      emoji: config.features?.commitFormat?.enableEmoji,
+      body: config.features?.commitFormat?.enableBody,
+      rule: config.features?.commitMessage?.rule,
+    });
   }
 
   /**
@@ -454,18 +504,14 @@ export class StreamingGenerationHelper {
       );
 
       if (choice === useFallbackChoice) {
-        const tempParams = {
-          ...configuration.features.commitMessage,
-          ...configuration.features.commitFormat,
-          ...configuration.features.codeAnalysis,
+        const tempParams = this.buildRequestParams(configuration, {
           model: selectedModel,
           scm: "git",
           workspaceRoot: undefined,
           changeFiles: [],
-          languages: configuration.base.language,
           diff: "",
           additionalContext: "",
-        };
+        });
 
         const fallbackSystemPrompt = await getSystemPrompt(
           tempParams,

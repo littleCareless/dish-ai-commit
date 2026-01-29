@@ -1,17 +1,15 @@
-import { ISCMProvider } from "@/scm/scm-provider";
 import { AIModel } from "@/ai/types";
-import { ContextManager, TruncationStrategy } from "@/utils/context-manager";
 import { ContextCollector } from "@/commands/generate-commit/utils/context-collector";
 import { extractProcessedDiff } from "@/commands/generate-commit/utils/diff-extractor";
+import { ISCMProvider } from "@/scm/scm-provider";
+import { ContextManager, TruncationStrategy } from "@/utils/context-manager";
 import * as crypto from "crypto";
 
 /**
- * 提交上下文构建器类，负责构建和管理上下文管理器
+ * 提交上下文构建器类，负责构建上下文管理器
  */
 export class CommitContextBuilder {
   private contextCollector: ContextCollector;
-  private lastRequestId: string | null = null;
-  private lastContext: ContextManager | null = null;
 
   constructor() {
     this.contextCollector = new ContextCollector();
@@ -39,14 +37,10 @@ export class CommitContextBuilder {
       exclude?: string[];
       globalContext?: string;
       requestId?: string;
+      parsedDiff?: { originalCode: string; codeChanges: string };
     } = {},
   ): Promise<ContextManager> {
     const requestId = options.requestId || crypto.randomUUID();
-
-    if (this.lastRequestId === requestId && this.lastContext) {
-      console.log(`[ContextBuilder] Reused context for requestId=${requestId}`);
-      return this.lastContext;
-    }
     // 1. 获取所有上下文信息
     const currentInput =
       await this.contextCollector.getSCMInputContext(scmProvider);
@@ -133,18 +127,12 @@ export class CommitContextBuilder {
       });
     }
 
-    this.lastRequestId = requestId;
-    this.lastContext = contextManager;
+    // 记录日志
+    if (requestId) {
+      console.log(`[ContextBuilder] Built context for requestId=${requestId}`);
+    }
 
-    console.log(
-      `[ContextBuilder] Built new context for requestId=${requestId}`,
-    );
     return contextManager;
-  }
-
-  invalidateCache(): void {
-    this.lastRequestId = null;
-    this.lastContext = null;
   }
 
   /**
@@ -226,5 +214,13 @@ export class CommitContextBuilder {
     });
 
     return contextManager;
+  }
+
+  /**
+   * 移除缓存（不再需要，保留是为了兼容性）
+   * @deprecated 缓存功能已移至StreamingGenerationHelper
+   */
+  invalidateCache(): void {
+    // 不再需要此方法
   }
 }
