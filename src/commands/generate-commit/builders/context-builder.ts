@@ -3,12 +3,15 @@ import { AIModel } from "@/ai/types";
 import { ContextManager, TruncationStrategy } from "@/utils/context-manager";
 import { ContextCollector } from "@/commands/generate-commit/utils/context-collector";
 import { extractProcessedDiff } from "@/commands/generate-commit/utils/diff-extractor";
+import * as crypto from "crypto";
 
 /**
  * 提交上下文构建器类，负责构建和管理上下文管理器
  */
 export class CommitContextBuilder {
   private contextCollector: ContextCollector;
+  private lastRequestId: string | null = null;
+  private lastContext: ContextManager | null = null;
 
   constructor() {
     this.contextCollector = new ContextCollector();
@@ -32,17 +35,26 @@ export class CommitContextBuilder {
     scmProvider: ISCMProvider,
     diffContent: string,
     configuration: any,
-    options: { 
+    options: {
       exclude?: string[];
-      globalContext?: string; // ✅ 新增
-    } = {}
+      globalContext?: string;
+      requestId?: string;
+    } = {},
   ): Promise<ContextManager> {
+    const requestId = options.requestId || crypto.randomUUID();
+
+    if (this.lastRequestId === requestId && this.lastContext) {
+      console.log(`[ContextBuilder] Reused context for requestId=${requestId}`);
+      return this.lastContext;
+    }
     // 1. 获取所有上下文信息
-    const currentInput = await this.contextCollector.getSCMInputContext(scmProvider);
-    const { userCommits, repoCommits } = await this.contextCollector.getRecentCommits(
-      scmProvider,
-      configuration.features.commitMessage.useRecentCommitsAsReference
-    );
+    const currentInput =
+      await this.contextCollector.getSCMInputContext(scmProvider);
+    const { userCommits, repoCommits } =
+      await this.contextCollector.getRecentCommits(
+        scmProvider,
+        configuration.features.commitMessage.useRecentCommitsAsReference,
+      );
     const { exclude = [], globalContext } = options;
     const similarCodeContext = exclude.includes("similar-code")
       ? ""
@@ -50,14 +62,14 @@ export class CommitContextBuilder {
     const reminder = this.contextCollector.getReminder(
       userCommits,
       repoCommits,
-      configuration.base.language
+      configuration.base.language,
     );
 
     // 2. 构建 ContextManager
     const contextManager = new ContextManager(
       selectedModel,
       systemPrompt,
-      configuration.features.suppressNonCriticalWarnings
+      configuration.features.suppressNonCriticalWarnings,
     );
     const { originalCode, codeChanges } = extractProcessedDiff(diffContent);
 
@@ -121,7 +133,18 @@ export class CommitContextBuilder {
       });
     }
 
+    this.lastRequestId = requestId;
+    this.lastContext = contextManager;
+
+    console.log(
+      `[ContextBuilder] Built new context for requestId=${requestId}`,
+    );
     return contextManager;
+  }
+
+  invalidateCache(): void {
+    this.lastRequestId = null;
+    this.lastContext = null;
   }
 
   /**
@@ -138,25 +161,27 @@ export class CommitContextBuilder {
     systemPrompt: string,
     scmProvider: ISCMProvider,
     formattedFileChanges: string,
-    configuration: any
+    configuration: any,
   ): Promise<ContextManager> {
     // 1. 获取上下文信息（不包括需要真实 diff 的部分）
-    const currentInput = await this.contextCollector.getSCMInputContext(scmProvider);
-    const { userCommits, repoCommits } = await this.contextCollector.getRecentCommits(
-      scmProvider,
-      configuration.features.commitMessage.useRecentCommitsAsReference
-    );
+    const currentInput =
+      await this.contextCollector.getSCMInputContext(scmProvider);
+    const { userCommits, repoCommits } =
+      await this.contextCollector.getRecentCommits(
+        scmProvider,
+        configuration.features.commitMessage.useRecentCommitsAsReference,
+      );
     const reminder = this.contextCollector.getReminder(
       userCommits,
       repoCommits,
-      configuration.base.language
+      configuration.base.language,
     );
 
     // 2. 构建 ContextManager
     const contextManager = new ContextManager(
       selectedModel,
       systemPrompt,
-      configuration.features.suppressNonCriticalWarnings
+      configuration.features.suppressNonCriticalWarnings,
     );
 
     // 添加与摘要生成相关的块
@@ -203,4 +228,3 @@ export class CommitContextBuilder {
     return contextManager;
   }
 }
-
