@@ -3,12 +3,34 @@ import { multiRepositoryContextManager } from "@/scm/multi-repository-context-ma
 import { ISCMProvider, SCMFactory } from "@/scm/scm-provider";
 import { getMessage } from "@/utils/i18n";
 import { notify } from "@/utils/notification/notification-manager";
+import { Logger } from "@/utils/logger";
 
 /**
- * SCM检测器服务
+ * SCM检测器服务 - 单例模式
  * 负责从VS Code环境中检测活动的SCM提供者和相关上下文（如文件、仓库）。
+ *
+ * 设计原则：
+ * - 单例模式：全局唯一实例
+ * - 无状态缓存：避免数据过期（仓库结构相对稳定，但为了一致性也不缓存）
+ * - 优化遍历：减少重复的文件系统操作
  */
 export class SCMDetectorService {
+  private static instance: SCMDetectorService;
+  private logger: Logger;
+
+  private constructor() {
+    this.logger = Logger.getInstance('SCMDetectorService');
+  }
+
+  /**
+   * 获取单例实例
+   */
+  static getInstance(): SCMDetectorService {
+    if (!SCMDetectorService.instance) {
+      SCMDetectorService.instance = new SCMDetectorService();
+    }
+    return SCMDetectorService.instance;
+  }
   /**
    * 提取文件路径，优先使用 renameResourceUri（重命名后的文件）
    */
@@ -56,10 +78,17 @@ export class SCMDetectorService {
 
   /**
    * 检测并获取SCM提供程序
-   * @param {vscode.SourceControlResourceState | vscode.SourceControlResourceState[] | string[] | undefined} resourcesOrFiles - 可选的资源状态、文件路径列表或字符串数组
+   * 链路追踪日志：[Chain] [SCM-Detection]
+   *
+   * 优化点：
+   * 1. 移除重复检测逻辑（协调器确保只调用一次）
+   * 2. 简化参数处理
+   * 3. 使用 logger 替代 console.log
+   *
+   * @param resourcesOrFiles - 可选的资源状态、文件路径列表或字符串数组
    * @returns SCM提供程序实例和相关信息
    */
-  public static async detectSCMProvider(
+  public async detectSCMProvider(
     resourcesOrFiles?:
       | vscode.SourceControlResourceState
       | vscode.SourceControlResourceState[]
@@ -72,44 +101,70 @@ export class SCMDetectorService {
     }
     | undefined
   > {
+    const startTime = Date.now();
+    this.logger.info('[SCM-Detection] START', {
+      data: {
+        inputType: Array.isArray(resourcesOrFiles)
+          ? `Array(${resourcesOrFiles.length})`
+          : resourcesOrFiles ? 'Resources' : 'None'
+      }
+    });
+
     let selectedFiles: string[] | undefined;
     let repositoryPath: string | undefined;
 
-    // 判断参数类型并处理
+    // 1. 提取文件路径
     if (resourcesOrFiles) {
-      // 如果是字符串数组，直接作为文件路径使用（保持向后兼容）
-      if (
-        Array.isArray(resourcesOrFiles) &&
-        typeof resourcesOrFiles[0] === "string"
-      ) {
+      if (Array.isArray(resourcesOrFiles) && typeof resourcesOrFiles[0] === "string") {
+        // 字符串数组，直接使用
         selectedFiles = resourcesOrFiles as string[];
-      }
-      // 如果是资源状态，提取文件和仓库信息
-      else {
-        const resources = resourcesOrFiles as
-          | vscode.SourceControlResourceState
-          | vscode.SourceControlResourceState[];
-        selectedFiles = this.getSelectedFiles(resources);
+        this.logger.debug('Extracted files from string array', {
+          data: { count: selectedFiles.length }
+        });
+      } else {
+        // 资源状态，提取文件和仓库信息
+        const resources = resourcesOrFiles as vscode.SourceControlResourceState[];
+        selectedFiles = SCMDetectorService.getSelectedFiles(resources);
+
         repositoryPath = await multiRepositoryContextManager.getRepositoryFromResources(
           resources,
           selectedFiles
         );
+
+        this.logger.debug('MultiRepo detection result', {
+          data: { repositoryPath }
+        });
       }
     }
 
+    // 2. 检测 SCM Provider
     const scmProvider = await SCMFactory.detectSCM(
       selectedFiles,
       repositoryPath
     );
+
     if (!scmProvider) {
+      const duration = Date.now() - startTime;
+      this.logger.error('SCM detection failed', {
+        data: { duration: `${duration}ms` }
+      });
       await notify.error(getMessage("scm.not.detected"));
-      return;
+      return undefined;
     }
 
-    // 如果 repositoryPath 仍然是 undefined，从 SCMFactory 获取当前使用的仓库路径
+    // 3. 获取最终仓库路径
     if (!repositoryPath) {
       repositoryPath = SCMFactory.getCurrentRepositoryPath();
     }
+
+    const duration = Date.now() - startTime;
+    this.logger.info('SCM-Detection] COMPLETE', {
+      data: {
+        duration: `${duration}ms`,
+        scmType: scmProvider.type,
+        repositoryPath
+      }
+    });
 
     return {
       scmProvider,

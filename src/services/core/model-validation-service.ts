@@ -20,6 +20,7 @@ export interface ModelValidationResult {
 export class ModelValidationService {
   /**
    * 验证模型并返回完整的 provider 实例和模型对象
+   * 链路追踪日志：[Chain] [ModelValidation]
    *
    * @param provider - Provider ID
    * @param model - 模型 ID
@@ -33,16 +34,23 @@ export class ModelValidationService {
     config?: any,
     profile?: any
   ): Promise<ModelValidationResult> {
-    logger.logOperationStart("validateModel", {
-      data: { provider, model, hasConfig: !!config },
-    });
+    const startTime = Date.now();
+    logger.info(
+      `[Chain] [ModelValidation] START - Provider: ${provider}, Model: ${model}`
+    );
 
     try {
       // 1. 获取 AI Provider 实例
+      logger.info(
+        `[Chain] [ModelValidation] Step 1: Creating AI Provider via factory`
+      );
       const effectiveConfig = config ?? profile;
       const aiProvider = await AIProviderFactory.getProvider(
         provider,
         effectiveConfig
+      );
+      logger.info(
+        `[Chain] [ModelValidation] Step 1 COMPLETE - Provider created: ${aiProvider.getName?.() || provider}`
       );
 
       // 2. 设置全局配置（如果提供了 config 且 provider 支持）
@@ -51,51 +59,82 @@ export class ModelValidationService {
         typeof aiProvider.setGlobalConfig === "function" &&
         config
       ) {
+        logger.info(`[Chain] [ModelValidation] Step 2: Setting global config`);
         aiProvider.setGlobalConfig(config);
       }
 
       // 3. 获取模型列表
+      logger.info(`[Chain] [ModelValidation] Step 3: Fetching models from API`);
       const models = await aiProvider.getModels();
-      console.log("aiProvider", aiProvider, models);
+      logger.info(
+        `[Chain] [ModelValidation] Step 3 COMPLETE - Fetched ${models.length} models`
+      );
+
       // 4. 验证模型列表不为空
       if (!models || models.length === 0) {
-        logger.error("模型列表为空", {
-          operation: "validateModel",
-          data: { provider },
-        });
+        logger.logError(
+          new Error("Model list is empty"),
+          "[Chain] [ModelValidation] FAILED - Model list is empty",
+          {
+            operation: "validateModel",
+            data: { provider },
+          }
+        );
         throw new Error(getMessage("model.list.empty"));
       }
-      console.log("models", models);
 
       // 5. 查找指定模型
+      logger.info(
+        `[Chain] [ModelValidation] Step 4: Looking for model '${model}' in ${models.length} available models`
+      );
       const selectedModel = models.find((m: AIModel) => m.id === model);
 
       // 6. 验证模型存在
       if (!selectedModel) {
-        logger.error("模型未找到", {
-          operation: "validateModel",
-          data: {
-            provider,
-            model,
-            availableModels: models.map((m) => m.id),
-          },
-        });
+        const availableModels = models.map((m) => m.id).join(", ");
+        logger.logError(
+          new Error(`Model not found: ${model}`),
+          "[Chain] [ModelValidation] FAILED - Model not found",
+          {
+            operation: "validateModel",
+            data: {
+              provider,
+              model,
+              availableModels: models.map((m) => m.id),
+            },
+          }
+        );
+        logger.info(
+          `[Chain] [ModelValidation] Available models: ${availableModels}`
+        );
         throw new Error(getMessage("model.not.found"));
       }
 
-      logger.logOperationEnd("validateModel", undefined, {
-        data: { provider, model },
-      });
+      logger.info(
+        `[Chain] [ModelValidation] Step 4 COMPLETE - Model found: ${selectedModel.id}`
+      );
+
+      const duration = Date.now() - startTime;
+      logger.info(
+        `[Chain] [ModelValidation] COMPLETE - Duration: ${duration}ms, Provider: ${aiProvider.getName?.() || provider}, Model: ${selectedModel.id}`
+      );
 
       return {
-        aiProvider: await aiProvider,
+        aiProvider,
         selectedModel,
       };
     } catch (error) {
-      logger.logError(error as Error, `模型验证失败: ${provider}/${model}`, {
-        operation: "validateModel",
-        data: { provider, model },
-      });
+      const duration = Date.now() - startTime;
+      const errorObj =
+        error instanceof Error ? error : new Error(String(error));
+      logger.logError(
+        errorObj,
+        `[Chain] [ModelValidation] FAILED - Duration: ${duration}ms`,
+        {
+          operation: "validateModel",
+          data: { provider, model },
+        }
+      );
       throw error;
     }
   }
@@ -103,6 +142,7 @@ export class ModelValidationService {
   /**
    * 仅验证模型是否存在（轻量级检查）
    * 不返回完整的模型信息，适用于只需要确认模型可用性的场景
+   * 链路追踪日志：[Chain] [ModelVerification]
    *
    * @param provider - Provider ID
    * @param model - 模型 ID
@@ -115,22 +155,26 @@ export class ModelValidationService {
     config?: any,
     profile?: any
   ): Promise<void> {
-    logger.logOperationStart("verifyModelExists", {
-      data: { provider, model, hasConfig: !!config },
-    });
+    const startTime = Date.now();
+    logger.info(
+      `[Chain] [ModelVerification] START - Provider: ${provider}, Model: ${model} (Light mode)`
+    );
 
     try {
-      console.log("verifyModelExists", provider, model, config, profile);
       // 复用 validateModel 方法进行验证
       await this.validateModel(provider, model, config, profile);
 
-      logger.logOperationEnd("verifyModelExists", undefined, {
-        data: { provider, model },
-      });
+      const duration = Date.now() - startTime;
+      logger.info(
+        `[Chain] [ModelVerification] COMPLETE - Duration: ${duration}ms`
+      );
     } catch (error) {
+      const duration = Date.now() - startTime;
+      const errorObj =
+        error instanceof Error ? error : new Error(String(error));
       logger.logError(
-        error as Error,
-        `模型存在性验证失败: ${provider}/${model}`,
+        errorObj,
+        `[Chain] [ModelVerification] FAILED - Duration: ${duration}ms`,
         {
           operation: "verifyModelExists",
           data: { provider, model },

@@ -6,6 +6,9 @@ import {
   PromptKey,
   PromptSource,
   SYSTEM_GENERATED_PROMPTS,
+  CommitSubCategory,
+  COMMIT_SUB_CATEGORIES,
+  PromptMetadata,
 } from "@shared/types/prompts";
 import { FeaturesSettingsManager } from "@/services/settings/features-settings-manager";
 import { workspaceManager } from "@/services/core/workspace-manager";
@@ -54,10 +57,10 @@ export class PromptManagerService {
   }
 
   /**
-   * 获取提示词元数据（包含 category 等信息）
+   * 获取提示词元数据（包含 category、subCategory 和 title 等信息）
    */
-  private getPromptMetadata(): Record<string, { category: PromptCategory }> {
-    return stateManager.getGlobal<Record<string, { category: PromptCategory }>>(
+  private getPromptMetadata(): Record<string, PromptMetadata> {
+    return stateManager.getGlobal<Record<string, PromptMetadata>>(
       PromptManagerService.PROMPT_METADATA_KEY,
       {}
     );
@@ -66,7 +69,7 @@ export class PromptManagerService {
   /**
    * 设置提示词元数据
    */
-  private async setPromptMetadata(metadata: Record<string, { category: PromptCategory }>): Promise<void> {
+  private async setPromptMetadata(metadata: Record<string, PromptMetadata>): Promise<void> {
     await stateManager.setGlobal(PromptManagerService.PROMPT_METADATA_KEY, metadata);
   }
 
@@ -381,23 +384,47 @@ export class PromptManagerService {
       (stateManager as any)._context || {} as any
     );
 
-    // 获取当前工作区的活跃提示词映射
-    const activePrompts = await featuresManager.getActivePrompts(workspaceId);
-    const activeKey = activePrompts[category];
+    // 检查是否有子分类映射
+    const subCategory = COMMIT_SUB_CATEGORIES[key as PromptKey];
 
-    if (activeKey && activeKey !== key) {
-      // 使用配置的活跃提示词
-      const detail = this.getPromptDetail(activeKey, scope);
-      logger.debug("使用活跃提示词配置", {
-        data: { originalKey: key, activeKey, category, workspaceId },
-      });
-      return detail.content;
+    if (subCategory) {
+      // 子分类级别的活跃提示词检查
+      const subCategoryPrompts = await featuresManager.getActivePromptsBySubCategory(
+        category,
+        subCategory as string,
+        workspaceId
+      );
+
+      // 在子分类中查找活跃的提示词
+      const activeKey = subCategoryPrompts[category]?.[subCategory as string];
+
+      if (activeKey && activeKey !== key) {
+        // 使用配置的活跃提示词
+        const detail = this.getPromptDetail(activeKey, scope);
+        logger.debug("使用子分类活跃提示词配置", {
+          data: { originalKey: key, activeKey, category, subCategory, workspaceId },
+        });
+        return detail.content;
+      }
+    } else {
+      // 传统的分类级别检查
+      const activePrompts = await featuresManager.getActivePrompts(workspaceId);
+      const activeKey = activePrompts[category];
+
+      if (activeKey && activeKey !== key) {
+        // 使用配置的活跃提示词
+        const detail = this.getPromptDetail(activeKey, scope);
+        logger.debug("使用分类活跃提示词配置", {
+          data: { originalKey: key, activeKey, category, workspaceId },
+        });
+        return detail.content;
+      }
     }
 
     // 4. 回退到默认提示词
     const detail = this.getPromptDetail(key, scope);
     logger.debug("使用默认提示词", {
-      data: { key, category },
+      data: { key, category, subCategory },
     });
     return detail.content;
   }
@@ -410,9 +437,6 @@ export class PromptManagerService {
    * 根据提示词key获取对应的分类
    */
   private getCategoryFromPromptKey(key: string): PromptCategory | null {
-    // Import PROMPT_CATEGORIES from prompts types
-    // We need to dynamically import or use a mapping here
-    // Since we can't import at method level, let's use a simple mapping
     const promptKey = key as PromptKey;
 
     // Mapping from our existing PROMPT_CATEGORIES
@@ -432,6 +456,14 @@ export class PromptManagerService {
     return categoryMap[promptKey] || null;
   }
 
+  /**
+   * 根据提示词key获取对应的子分类（仅 Commit 类型）
+   */
+  private getSubCategoryFromPromptKey(key: string): CommitSubCategory | null {
+    const promptKey = key as PromptKey;
+    return COMMIT_SUB_CATEGORIES[promptKey] || null;
+  }
+
   public getPromptDetail(
     key: string,
     scope?: vscode.ConfigurationScope
@@ -442,6 +474,7 @@ export class PromptManagerService {
     let isCustomized = false;
     let isNew = false;
     let category: PromptCategory | undefined;
+    let subCategory: CommitSubCategory | undefined;
 
     // 1. 从 globalState 获取全局自定义提示词内容
     const globalPrompts = this.getGlobalPrompts();
@@ -487,7 +520,25 @@ export class PromptManagerService {
       }
     }
 
-    return { content, source, isCustomized, isNew, isSystemGenerated, category };
+    // 5. 获取子分类信息（仅 Commit 类型）
+    if (category === PromptCategory.Commit) {
+      // 优先级：元数据存储 > 系统映射
+      const metadata = this.getPromptMetadata();
+      if (metadata[key]?.subCategory) {
+        subCategory = metadata[key].subCategory;
+      } else {
+        subCategory = this.getSubCategoryFromPromptKey(key) || undefined;
+      }
+    }
+
+    // 6. 获取标题信息（从元数据）
+    let title: string | undefined;
+    const metadata = this.getPromptMetadata();
+    if (metadata[key]?.title) {
+      title = metadata[key].title;
+    }
+
+    return { content, source, isCustomized, isNew, isSystemGenerated, category, subCategory, title };
   }
 
   public async updatePrompt(
@@ -537,6 +588,20 @@ export class PromptManagerService {
   public async updatePromptMetadata(key: string, category: PromptCategory): Promise<void> {
     const metadata = this.getPromptMetadata();
     metadata[key] = { category };
+    await this.setPromptMetadata(metadata);
+  }
+
+  /**
+   * 更新提示词元数据（保存分类、子分类和标题信息）
+   */
+  public async updatePromptMetadataWithSubCategory(
+    key: string,
+    category: PromptCategory,
+    subCategory?: CommitSubCategory,
+    title?: string
+  ): Promise<void> {
+    const metadata = this.getPromptMetadata();
+    metadata[key] = { category, subCategory, title };
     await this.setPromptMetadata(metadata);
   }
 
@@ -738,8 +803,10 @@ export class PromptManagerService {
                 "utf-8"
               );
 
-              // 获取分类信息（优先从元数据获取）
+              // 获取分类、子分类和标题信息（优先从元数据获取）
               const category = metadata[key]?.category;
+              const subCategory = metadata[key]?.subCategory;
+              const title = metadata[key]?.title;
 
               // Override or add
               allPrompts[key] = {
@@ -748,6 +815,8 @@ export class PromptManagerService {
                 isCustomized: true,
                 isNew: !this.defaultPrompts.has(key as PromptKey),
                 category,
+                subCategory,
+                title,
               };
             }
           }
