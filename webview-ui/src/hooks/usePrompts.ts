@@ -86,6 +86,11 @@ export function usePrompts(): UsePromptsReturn {
   const [currentContent, setCurrentContent] = useState("");
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [showStorageModal, setShowStorageModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [pendingDeleteKey, _setPendingDeleteKey] = useState<string | null>(
+    null,
+  );
   const [pendingSaveContent, setPendingSaveContent] = useState<string | null>(
     null,
   );
@@ -196,7 +201,7 @@ export function usePrompts(): UsePromptsReturn {
             for (const category of Object.keys(
               firstWorkspace.activePromptsBySubCategory,
             ) as PromptCategory[]) {
-              const subCategoryPrompts =
+              const subCategoryPrompts: Record<string, string> =
                 firstWorkspace.activePromptsBySubCategory[category];
               for (const subCategory in subCategoryPrompts) {
                 const promptKey = subCategoryPrompts[subCategory];
@@ -374,7 +379,15 @@ export function usePrompts(): UsePromptsReturn {
       const oldKey = key;
       const newKey = prompt(t("renamePrompt", { oldKey }), oldKey);
       if (newKey && newKey !== oldKey) {
-        renamePrompt(oldKey, newKey, prompts[oldKey].source);
+        const source = prompts[oldKey].source;
+        // 将 PromptSource 映射为 renamePrompt 接受的类型
+        const target: "global" | "workspace" | "project" =
+          source === "workspace"
+            ? "workspace"
+            : source === "project"
+              ? "project"
+              : "global";
+        renamePrompt(oldKey, newKey, target);
       }
     },
     [t, prompts],
@@ -461,6 +474,8 @@ export function usePrompts(): UsePromptsReturn {
     currentContent,
     showCreateModal,
     showStorageModal,
+    showDeleteModal,
+    pendingDeleteKey,
     pendingSaveContent,
     activePromptsByCategory,
     activePromptsBySubCategory,
@@ -485,6 +500,7 @@ export function usePrompts(): UsePromptsReturn {
     handleInsertVariable,
     setShowCreateModal,
     setShowStorageModal,
+    setShowDeleteModal,
     setCategoryFilter,
     setGuideExpanded,
     setSelectedWorkspace,
