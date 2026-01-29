@@ -1,17 +1,16 @@
-# .github/workflows/release.yml
-
 # ----------------------------------------------------------------
-# 自动化发布工作流 (Automated Release Workflow) - v2 (整合版)
+# 自动化发布工作流 (Automated Release Workflow) - v3 (优化版)
 # ----------------------------------------------------------------
-# 触发时机: 当一个格式为 vX.Y.Z 的新标签被推送到 main 或 develop 分支时。
+# 触发时机:
+#   1. 当一个格式为 vX.Y.Z 的新标签被推送时
+#   2. 手动触发并指定版本号
 #
 # 核心功能:
-# 1. 基于 Git 标签触发，区分预发布 (develop) 和正式发布 (main)。
-# 2. 运行代码质量检查 (Lint) 和自动化测试。
-# 3. 基于 Conventional Commits 自动生成更新日志 (Changelog)。
-# 4. 创建包含更新日志和构建产物的 GitHub Release。
-# 5. 将扩展发布到 Open VSX Registry 和 Visual Studio Marketplace。
-# 6. 发送发布成功通知到 Slack。
+# 1. 基于 Git 标签或手动输入触发，区分预发布和正式发布
+# 2. 运行代码质量检查 (Lint) 和自动化测试
+# 3. 基于 Conventional Commits 自动生成更新日志 (Changelog)
+# 4. 创建包含更新日志和构建产物的 GitHub Release
+# 5. 将扩展发布到 Open VSX Registry 和 Visual Studio Marketplace
 # ----------------------------------------------------------------
 
 name: Release
@@ -22,22 +21,26 @@ on:
       - "v*.*.*"
   workflow_dispatch:
     inputs:
+      version:
+        description: "版本号 (例如: 1.2.3, 不需要 v 前缀)"
+        required: true
+        type: string
       publish:
-        description: "是否执行真实发布（默认仅打包与验证）"
-        required: false
-        default: "false"
-        type: choice
-        options:
-          - "false"
-          - "true"
-      dry_run_publish:
-        description: "手动触发时是否对发布步骤做 dry-run（仅在未真实发布时生效）"
+        description: "是否执行真实发布到市场"
         required: false
         default: "true"
         type: choice
         options:
-          - "false"
           - "true"
+          - "false"
+      prerelease:
+        description: "是否为预发布版本"
+        required: false
+        default: "false"
+        type: choice
+        options:
+          - "true"
+          - "false"
 
 jobs:
   release:
@@ -93,111 +96,121 @@ jobs:
             exit 1
           fi
 
-      - name: Compute publish flags
-        id: flags
+      # =================================================================
+      # 计算发布参数 (Compute Release Parameters)
+      # =================================================================
+      - name: Compute release parameters
+        id: params
         run: |
           IS_TAG=false
+          VERSION=""
+          IS_PRERELEASE="false"
+          DO_PUBLISH="false"
+
+          # 如果是 tag 触发
           if [[ "${GITHUB_REF}" =~ ^refs/tags/v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
             IS_TAG=true
+            VERSION="${GITHUB_REF#refs/tags/v}"
+            DO_PUBLISH="true"
+            
+            # Tag 触发时，自动判断是否为预发布
+            # 获取远程分支信息
+            git fetch origin --prune --prune-tags
+            git fetch origin +refs/heads/*:refs/remotes/origin/* --force
+            
+            # 获取当前标签对应的提交哈希
+            TAG_COMMIT=$(git rev-list -n 1 ${{ github.ref }})
+            echo "Tag ${{ github.ref }} points to commit: $TAG_COMMIT"
+            
+            # 检查该提交在哪些分支上
+            BRANCHES=$(git branch -r --contains $TAG_COMMIT | grep -v 'HEAD' | sed 's/origin\///' | tr -d ' ')
+            echo "Commit is on branches: $BRANCHES"
+            
+            # 获取主要分支（优先级：main > master > release/* > develop）
+            MAIN_BRANCH=""
+            for branch in $BRANCHES; do
+              case $branch in
+                main)
+                  MAIN_BRANCH="main"
+                  break
+                  ;;
+                master)
+                  if [[ -z "$MAIN_BRANCH" ]]; then
+                    MAIN_BRANCH="master"
+                  fi
+                  ;;
+                release/*)
+                  if [[ -z "$MAIN_BRANCH" ]] || [[ "$MAIN_BRANCH" != "main" && "$MAIN_BRANCH" != "master" ]]; then
+                    MAIN_BRANCH="$branch"
+                  fi
+                  ;;
+                develop)
+                  if [[ -z "$MAIN_BRANCH" ]] || [[ "$MAIN_BRANCH" == "develop" ]]; then
+                    MAIN_BRANCH="develop"
+                  fi
+                  ;;
+              esac
+            done
+            
+            echo "Primary branch for this tag: $MAIN_BRANCH"
+            
+            # 判断是否为预发布
+            case $MAIN_BRANCH in
+              main|master|release/*)
+                IS_PRERELEASE="false"
+                echo "This is a stable release from branch: $MAIN_BRANCH"
+                ;;
+              *)
+                IS_PRERELEASE="true"
+                echo "This is a pre-release from branch: $MAIN_BRANCH"
+                ;;
+            esac
           fi
 
-          INPUT_PUBLISH="${{ github.event.inputs.publish || 'false' }}"
-          INPUT_DRYRUN="${{ github.event.inputs.dry_run_publish || 'true' }}"
-
-          if [[ "${GITHUB_EVENT_NAME}" != "workflow_dispatch" ]]; then
-            INPUT_PUBLISH="false"
-            INPUT_DRYRUN="true"
+          # 如果是手动触发
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            VERSION="${{ github.event.inputs.version }}"
+            
+            # 验证版本号格式
+            if ! [[ "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+              echo "::error::Invalid version format. Expected: X.Y.Z (e.g., 1.2.3)"
+              exit 1
+            fi
+            
+            IS_PRERELEASE="${{ github.event.inputs.prerelease }}"
+            DO_PUBLISH="${{ github.event.inputs.publish }}"
           fi
 
-          DO_PUBLISH=false
-          DO_DRYRUN=false
-
-          if [[ "$IS_TAG" == "true" ]]; then
-            DO_PUBLISH=true
-          elif [[ "$INPUT_PUBLISH" == "true" ]]; then
-            DO_PUBLISH=true
-          fi
-
-          if [[ "$DO_PUBLISH" != "true" && "$INPUT_DRYRUN" == "true" ]]; then
-            DO_DRYRUN=true
-          fi
-
+          # 输出参数
           echo "is_tag=$IS_TAG" >> $GITHUB_OUTPUT
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "is_prerelease=$IS_PRERELEASE" >> $GITHUB_OUTPUT
           echo "do_publish=$DO_PUBLISH" >> $GITHUB_OUTPUT
-          echo "do_dry_run=$DO_DRYRUN" >> $GITHUB_OUTPUT
+
+          echo "=========================================="
+          echo "Release Parameters:"
+          echo "  Version: $VERSION"
+          echo "  Is Tag: $IS_TAG"
+          echo "  Is Prerelease: $IS_PRERELEASE"
+          echo "  Do Publish: $DO_PUBLISH"
+          echo "=========================================="
 
       # =================================================================
-      # 1. 代码质量保证 (Code Quality Assurance)
+      # 代码质量保证 (Code Quality Assurance)
       # =================================================================
       - name: Lint code
         run: pnpm lint
 
       # =================================================================
-      # Determine Release Type (Moved before build to pass flags)
+      # 构建和打包 (Build and Package)
       # =================================================================
-      - name: Determine if pre-release
-        id: determine_prerelease
-        if: steps.flags.outputs.do_publish == 'true'
-        run: |
-          # 安全地获取远程信息，避免标签冲突
-          git fetch origin --prune --prune-tags
-          git fetch origin +refs/heads/*:refs/remotes/origin/* --force
-
-          # 获取当前标签对应的提交哈希
-          TAG_COMMIT=$(git rev-list -n 1 ${{ github.ref }})
-          echo "Tag ${{ github.ref }} points to commit: $TAG_COMMIT"
-
-          # 检查该提交在哪些分支上
-          BRANCHES=$(git branch -r --contains $TAG_COMMIT | grep -v 'HEAD' | sed 's/origin\///' | tr -d ' ')
-          echo "Commit is on branches: $BRANCHES"
-
-          # 获取主要分支（优先级：main > master > release/* > develop）
-          MAIN_BRANCH=""
-          for branch in $BRANCHES; do
-            case $branch in
-              main)
-                MAIN_BRANCH="main"
-                break
-                ;;
-              master)
-                if [[ -z "$MAIN_BRANCH" ]]; then
-                  MAIN_BRANCH="master"
-                fi
-                ;;
-              release/*)
-                if [[ -z "$MAIN_BRANCH" ]] || [[ "$MAIN_BRANCH" != "main" && "$MAIN_BRANCH" != "master" ]]; then
-                  MAIN_BRANCH="$branch"
-                fi
-                ;;
-              develop)
-                if [[ -z "$MAIN_BRANCH" ]] || [[ "$MAIN_BRANCH" == "develop" ]]; then
-                  MAIN_BRANCH="develop"
-                fi
-                ;;
-            esac
-          done
-
-          echo "Primary branch for this tag: $MAIN_BRANCH"
-
-          # 判断是否为预发布
-          case $MAIN_BRANCH in
-            main|master|release/*)
-              echo "is_prerelease=false" >> $GITHUB_OUTPUT
-              echo "This is a stable release from branch: $MAIN_BRANCH"
-              ;;
-            *)
-              echo "is_prerelease=true" >> $GITHUB_OUTPUT
-              echo "This is a pre-release from branch: $MAIN_BRANCH"
-              ;;
-          esac
-
       - name: Build and Package (turbo)
         id: package
         env:
           TURBO_TELEMETRY_DISABLED: "1"
         run: |
           mkdir -p release-artifacts
-          pnpm turbo run package --filter dish-ai-commit -- ${{ steps.determine_prerelease.outputs.is_prerelease == 'true' && '--pre-release' || '' }}
+          pnpm turbo run package --filter dish-ai-commit -- ${{ steps.params.outputs.is_prerelease == 'true' && '--pre-release' || '' }}
 
           VSIX_FILE=$(ls src/*.vsix | head -n 1 || true)
 
@@ -213,24 +226,30 @@ jobs:
           echo "Found VSIX: release-artifacts/extension.vsix"
           echo "vsix_path=release-artifacts/extension.vsix" >> $GITHUB_OUTPUT
 
-      - name: Dry-run publish (vsce/ovsx)
-        if: steps.flags.outputs.do_dry_run == 'true'
+      # =================================================================
+      # Dry-run (仅当不发布时执行)
+      # =================================================================
+      - name: Dry-run publish validation
+        if: steps.params.outputs.do_publish == 'false'
         env:
           VSIX_FILE: ${{ steps.package.outputs.vsix_path }}
         run: |
-          echo "Dry-run vsce publish..."
-          echo "Dry-run vsce publish... (Skipped: @vscode/vsce does not support --dry-run)"
-          # pnpm dlx @vscode/vsce publish --packagePath "$VSIX_FILE" --pre-release --dry-run
-          echo "Dry-run ovsx publish... (Skipped: ovsx does not support --dry-run)"
-          # pnpm dlx ovsx publish "$VSIX_FILE" --pre-release --skip-duplicate --pat "${OVSX_PAT:-dummy}" --dry-run 2>/dev/null || echo "ovsx dry-run skipped"
-
-
+          echo "=========================================="
+          echo "DRY-RUN MODE - No actual publishing"
+          echo "=========================================="
+          echo "VSIX file created: $VSIX_FILE"
+          echo "Version: ${{ steps.params.outputs.version }}"
+          echo "Prerelease: ${{ steps.params.outputs.is_prerelease }}"
+          echo ""
+          echo "To actually publish, set 'publish' input to 'true'"
+          echo "=========================================="
 
       # =================================================================
-      # 3. 获取更新日志 (Generate Changelog)
+      # 获取更新日志 (Generate Changelog)
       # =================================================================
       - name: Extract latest changelog section (中文)
         id: extract_changelog
+        if: steps.params.outputs.do_publish == 'true'
         run: |
           body=$(awk '
             BEGIN { capture=0 }
@@ -245,40 +264,59 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       # =================================================================
-      # 4. 发布到市场 (Publish to Marketplaces)
+      # 发布到市场 (Publish to Marketplaces)
       # =================================================================
       - name: Publish to Open VSX Registry
         uses: HaaLeo/publish-vscode-extension@v2
         id: publishToOpenVSX
-        if: steps.flags.outputs.do_publish == 'true'
+        if: steps.params.outputs.do_publish == 'true'
         with:
           pat: ${{ secrets.OPEN_VSX_TOKEN }}
           extensionFile: ${{ steps.package.outputs.vsix_path }}
-          preRelease: ${{ steps.determine_prerelease.outputs.is_prerelease }}
+          preRelease: ${{ steps.params.outputs.is_prerelease }}
           skipDuplicate: true
 
       - name: Publish to Visual Studio Marketplace
         uses: HaaLeo/publish-vscode-extension@v2
         id: publishToVSMarketplace
-        if: steps.flags.outputs.do_publish == 'true'
+        if: steps.params.outputs.do_publish == 'true'
         with:
           pat: ${{ secrets.VS_MARKETPLACE_TOKEN }}
           registryUrl: https://marketplace.visualstudio.com
           extensionFile: ${{ steps.package.outputs.vsix_path }}
-          preRelease: ${{ steps.determine_prerelease.outputs.is_prerelease }}
+          preRelease: ${{ steps.params.outputs.is_prerelease }}
           skipDuplicate: true
 
       # =================================================================
-      # 5. 创建 GitHub Release (Create GitHub Release)
+      # 创建 GitHub Release (Create GitHub Release)
       # =================================================================
       - name: Create GitHub Release
         id: create_release
         uses: softprops/action-gh-release@v2
-        if: steps.flags.outputs.do_publish == 'true'
+        if: steps.params.outputs.do_publish == 'true'
         with:
           body: ${{ steps.extract_changelog.outputs.body }}
           files: |
             ${{ steps.package.outputs.vsix_path }}
-          prerelease: ${{ steps.determine_prerelease.outputs.is_prerelease }}
-          name: Release ${{ github.ref_name }}
-          tag_name: ${{ github.ref_name }}
+          prerelease: ${{ steps.params.outputs.is_prerelease }}
+          name: Release v${{ steps.params.outputs.version }}
+          tag_name: v${{ steps.params.outputs.version }}
+          draft: false
+
+      # =================================================================
+      # 发布成功总结 (Release Summary)
+      # =================================================================
+      - name: Release Summary
+        if: steps.params.outputs.do_publish == 'true'
+        run: |
+          echo "=========================================="
+          echo "🎉 Release Successful!"
+          echo "=========================================="
+          echo "Version: v${{ steps.params.outputs.version }}"
+          echo "Prerelease: ${{ steps.params.outputs.is_prerelease }}"
+          echo ""
+          echo "Published to:"
+          echo "  ✓ Open VSX Registry"
+          echo "  ✓ Visual Studio Marketplace"
+          echo "  ✓ GitHub Releases"
+          echo "=========================================="
