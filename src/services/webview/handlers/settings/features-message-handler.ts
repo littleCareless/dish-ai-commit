@@ -22,7 +22,11 @@ export class FeaturesMessageHandler {
         const settings = this._settingsManager.getSettings();
         await webview.postMessage({
           command: ExtensionResponse.FeaturesSettingsLoaded,
-          data: settings,
+          data: {
+            ...settings,
+            // 确保包含子分类信息
+            activePromptsBySubCategory: settings.activePromptsBySubCategory || {},
+          },
         });
         break;
 
@@ -32,7 +36,11 @@ export class FeaturesMessageHandler {
           const settings = this._settingsManager.getSettings();
           await webview.postMessage({
             command: ExtensionResponse.FeaturesSettingsLoaded,
-            data: settings,
+            data: {
+              ...settings,
+              // 确保包含子分类信息
+              activePromptsBySubCategory: settings.activePromptsBySubCategory || {},
+            },
           });
         }
         break;
@@ -70,18 +78,24 @@ export class FeaturesMessageHandler {
 
             // 刷新设置到 UI
             const settings = this._settingsManager.getSettings();
-            const activeSource = await this._settingsManager.getActivePromptSource(category, workspaceId);
+            // 使用 getPromptSource 获取特定提示词的源信息（支持子分类）
+            const activeSource = await this._settingsManager.getPromptSource(key, workspaceId);
+
+            // 获取子分类级别的活跃提示词信息
+            const activePromptsBySubCategory = settings.activePromptsBySubCategory || {};
 
             console.log('[FeaturesMessageHandler] Sending response:', {
               activePrompts: settings.activePrompts,
+              activePromptsBySubCategory,
               activePromptsKeys: settings.activePrompts ? Object.keys(settings.activePrompts) : 'undefined',
               activeSource,
             });
 
             await webview.postMessage({
-              command: ExtensionResponse.FeaturesSettingsLoaded,
+              command: ExtensionResponse.FeaturesActivePromptChanged,
               data: {
-                ...settings,
+                activePrompts: settings.activePrompts,
+                activePromptsBySubCategory,
                 currentActiveSource: activeSource,
               },
             });

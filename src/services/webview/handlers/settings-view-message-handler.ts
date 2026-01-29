@@ -157,6 +157,8 @@ export class SettingsViewMessageHandler {
       case UIRequest.FeaturesLoadSettings:
       case UIRequest.FeaturesSaveSettings:
       case UIRequest.FeaturesSetActivePrompt:
+      case UIRequest.FeaturesGetWorkspaceInfo:
+      case UIRequest.FeaturesGetAllWorkspaceStates:
         await this._featuresHandler.handle(message, webview);
         break;
 

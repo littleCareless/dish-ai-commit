@@ -102,17 +102,17 @@ export class PromptMessageHandler {
       case UIRequest.PromptCreate: {
         console.log("[PromptMessageHandler] Handling CreatePrompt");
         const payload = this.extractPayload(message);
-        const { key, content, category } = payload;
+        const { key, content, category, subCategory, title } = payload;
         const target = this.resolveTarget(payload);
         try {
           await this._promptManager.updatePrompt(key, content, target);
 
-          // 保存分类信息到元数据
+          // 保存分类、子分类和标题信息到元数据
           if (category) {
-            await this._promptManager.updatePromptMetadata(key, category);
+            await this._promptManager.updatePromptMetadataWithSubCategory(key, category, subCategory, title);
           }
 
-          notify.info(`Prompt ${key} created.`);
+          notify.info(`Prompt ${title || key} created.`);
           // Refresh the prompts in the webview
           const prompts = await this._promptManager.getAllPrompts();
           webview.postMessage({
@@ -124,7 +124,7 @@ export class PromptMessageHandler {
             `[PromptMessageHandler] Error in CreatePrompt for key ${key}:`,
             error
           );
-          notify.error(`Failed to create prompt ${key}.`);
+          notify.error(`Failed to create prompt ${title || key}.`);
         }
         break;
       }
@@ -141,6 +141,11 @@ export class PromptMessageHandler {
           notify.info(`Prompt ${key} has been deleted.`);
           // Refresh the prompts in the webview
           const prompts = await this._promptManager.getAllPrompts();
+          // Send both responses for compatibility
+          webview.postMessage({
+            command: ExtensionResponse.PromptDeleted,
+            payload: { key },
+          });
           webview.postMessage({
             command: ExtensionResponse.PromptAllLoaded,
             payload: prompts,
@@ -158,7 +163,7 @@ export class PromptMessageHandler {
       case UIRequest.PromptRename: {
         console.log("[PromptMessageHandler] Handling RenamePrompt");
         const payload = this.extractPayload(message);
-        const { oldKey, newKey } = payload;
+        const { oldKey, newKey, title } = payload;
         const target = this.resolveTarget(payload);
         try {
           const promptDetail = this._promptManager.getPromptDetail(oldKey);
@@ -171,11 +176,16 @@ export class PromptMessageHandler {
 
           // 同时迁移元数据（如果存在）
           if (promptDetail.category) {
-            await this._promptManager.updatePromptMetadata(newKey, promptDetail.category);
+            await this._promptManager.updatePromptMetadataWithSubCategory(
+              newKey,
+              promptDetail.category,
+              promptDetail.subCategory,
+              title || promptDetail.title // 优先使用传入的 title，否则使用原有的
+            );
             await this._promptManager.deletePromptMetadata(oldKey);
           }
 
-          notify.info(`Prompt ${oldKey} has been renamed to ${newKey}.`);
+          notify.info(`Prompt ${promptDetail.title || oldKey} has been renamed to ${title || newKey}.`);
           // Refresh the prompts in the webview
           const prompts = await this._promptManager.getAllPrompts();
           webview.postMessage({
