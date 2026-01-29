@@ -3,15 +3,8 @@ import { Label } from "@/components/ui/label";
 import { Switch } from "@/components/ui/switch";
 import { postMessage } from "@/utils/vscode";
 import { ExtensionResponse, UIRequest } from "@shared/types/messages";
-import {
-  BarChart3,
-  ClipboardCheck,
-  Code,
-  GitBranch,
-  GitCommit,
-  GitPullRequest,
-} from "lucide-react";
-import React, { useEffect, useState } from "react";
+import { Code, GitCommit } from "lucide-react";
+import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 
 interface FeatureSwitchProps {
@@ -47,60 +40,70 @@ const FeatureSwitch: React.FC<FeatureSwitchProps> = ({
 
 export const FeaturesSettings: React.FC = () => {
   const { t } = useTranslation("features-settings");
-  const [features, setFeatures] = useState({
-    // Commit Message Generation
-    enableEmoji: true,
-    enableMergeCommit: false,
-    enableBody: true,
-    enableLayeredCommit: false,
-    enableGlobalContext: true,
-    useRecentCommitsAsReference: false,
-
-    // Code Analysis
-    simplifyDiff: false,
-    autoDetectStaged: true,
-    fallbackToAll: true,
-
-    // Other Features
-    weeklyReport: true,
-    codeReview: true,
-    generateBranchName: true,
-    generatePRSummary: true,
+  const hasLoadedRef = useRef(false);
+  const [features, setFeatures] = useState(() => {
+    const cached = sessionStorage.getItem("featuresSettingsCache");
+    if (cached) {
+      try {
+        return JSON.parse(cached);
+      } catch {
+        sessionStorage.removeItem("featuresSettingsCache");
+      }
+    }
+    return {
+      enableEmoji: true,
+      enableMergeCommit: false,
+      enableBody: true,
+      enableLayeredCommit: false,
+      enableGlobalContext: true,
+      useRecentCommitsAsReference: false,
+      simplifyDiff: false,
+      autoDetectStaged: true,
+      fallbackToAll: true,
+      weeklyReport: true,
+      codeReview: true,
+      generateBranchName: true,
+      generatePRSummary: true,
+    };
   });
 
-  // Load settings from backend on mount
   useEffect(() => {
+    if (hasLoadedRef.current) return;
+    hasLoadedRef.current = true;
     postMessage(UIRequest.FeaturesLoadSettings);
 
-    // Listen for settings updates from backend
     const handleMessage = (event: MessageEvent) => {
       const message = event.data;
       if (
         message.command === ExtensionResponse.FeaturesSettingsLoaded &&
-        message.settings
+        message.data
       ) {
-        setFeatures(message.settings);
+        setFeatures(message.data);
+        sessionStorage.setItem(
+          "featuresSettingsCache",
+          JSON.stringify(message.data),
+        );
       }
     };
 
     window.addEventListener("message", handleMessage);
-    return () => window.removeEventListener("message", handleMessage);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+      hasLoadedRef.current = false;
+    };
   }, []);
 
   const handleFeatureToggle = (
     feature: keyof typeof features,
     enabled: boolean,
   ) => {
-    // Update local state immediately for responsive UI
-    setFeatures((prev) => ({
-      ...prev,
-      [feature]: enabled,
-    }));
-
-    // Save to backend
-    postMessage(UIRequest.FeaturesSaveSettings, {
-      ...features,
-      [feature]: enabled,
+    setFeatures((prev: any) => {
+      const updated = { ...prev, [feature]: enabled };
+      console.log("[FeaturesSettings] Toggling", feature, "to", enabled);
+      console.log("[FeaturesSettings] Previous state:", prev);
+      console.log("[FeaturesSettings] Sending to backend:", updated);
+      postMessage(UIRequest.FeaturesSaveSettings, updated);
+      return updated;
     });
   };
 
@@ -223,57 +226,6 @@ export const FeaturesSettings: React.FC = () => {
               onCheckedChange={(enabled) =>
                 handleFeatureToggle("fallbackToAll", enabled)
               }
-            />
-          </CardContent>
-        </Card>
-
-        {/* Other Features */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              {t("otherFeatures.title")}
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-1 divide-y">
-            <FeatureSwitch
-              id="weekly-report"
-              label={t("otherFeatures.weeklyReport.label")}
-              description={t("otherFeatures.weeklyReport.description")}
-              checked={features.weeklyReport}
-              onCheckedChange={(enabled) =>
-                handleFeatureToggle("weeklyReport", enabled)
-              }
-              icon={<BarChart3 className="w-5 h-5" />}
-            />
-            <FeatureSwitch
-              id="code-review"
-              label={t("otherFeatures.codeReview.label")}
-              description={t("otherFeatures.codeReview.description")}
-              checked={features.codeReview}
-              onCheckedChange={(enabled) =>
-                handleFeatureToggle("codeReview", enabled)
-              }
-              icon={<ClipboardCheck className="w-5 h-5" />}
-            />
-            <FeatureSwitch
-              id="generate-branch-name"
-              label={t("otherFeatures.generateBranchName.label")}
-              description={t("otherFeatures.generateBranchName.description")}
-              checked={features.generateBranchName}
-              onCheckedChange={(enabled) =>
-                handleFeatureToggle("generateBranchName", enabled)
-              }
-              icon={<GitBranch className="w-5 h-5" />}
-            />
-            <FeatureSwitch
-              id="generate-pr-summary"
-              label={t("otherFeatures.generatePRSummary.label")}
-              description={t("otherFeatures.generatePRSummary.description")}
-              checked={features.generatePRSummary}
-              onCheckedChange={(enabled) =>
-                handleFeatureToggle("generatePRSummary", enabled)
-              }
-              icon={<GitPullRequest className="w-5 h-5" />}
             />
           </CardContent>
         </Card>
