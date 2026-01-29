@@ -22,11 +22,11 @@ export interface LogContext {
  * 日志级别枚举
  */
 export enum LogLevel {
-  TRACE = 'trace',
-  DEBUG = 'debug',
-  INFO = 'info',
-  WARN = 'warn',
-  ERROR = 'error'
+  TRACE = "trace",
+  DEBUG = "debug",
+  INFO = "info",
+  WARN = "warn",
+  ERROR = "error",
 }
 
 /**
@@ -63,27 +63,27 @@ export class Logger {
     }
 
     const parts: string[] = [message];
-    
+
     // 添加操作信息
     if (context.operation) {
       parts.push(`[操作: ${context.operation}]`);
     }
-    
+
     // 添加用户信息
     if (context.userId) {
       parts.push(`[用户: ${context.userId}]`);
     }
-    
+
     // 添加请求ID
     if (context.requestId) {
       parts.push(`[请求ID: ${context.requestId}]`);
     }
-    
+
     // 添加时间戳
     if (context.timestamp) {
       parts.push(`[时间: ${context.timestamp.toISOString()}]`);
     }
-    
+
     // 添加错误信息
     if (context.error) {
       parts.push(`[错误: ${context.error.name}: ${context.error.message}]`);
@@ -91,7 +91,7 @@ export class Logger {
         parts.push(`[堆栈: ${context.error.stack}]`);
       }
     }
-    
+
     // 添加额外数据
     if (context.data && Object.keys(context.data).length > 0) {
       try {
@@ -101,8 +101,8 @@ export class Logger {
         parts.push(`[数据: 无法序列化]`);
       }
     }
-    
-    return parts.join(' ');
+
+    return parts.join(" ");
   }
 
   /**
@@ -111,9 +111,13 @@ export class Logger {
    * @param message 消息
    * @param context 上下文信息
    */
-  private logWithLevel(level: LogLevel, message: string, context?: LogContext): void {
+  private logWithLevel(
+    level: LogLevel,
+    message: string,
+    context?: LogContext,
+  ): void {
     const formattedMessage = this.formatMessage(message, context);
-    
+
     switch (level) {
       case LogLevel.TRACE:
         this._outputChannel.trace(formattedMessage);
@@ -196,13 +200,17 @@ export class Logger {
    * @param message 可选的额外消息
    * @param additionalContext 额外的上下文信息
    */
-  public logError(error: Error, message?: string, additionalContext?: Omit<LogContext, 'error'>): void {
+  public logError(
+    error: Error,
+    message?: string,
+    additionalContext?: Omit<LogContext, "error">,
+  ): void {
     const context: LogContext = {
       error,
       ...additionalContext,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
-    
+
     const logMessage = message || `发生错误: ${error.message}`;
     this.logWithLevel(LogLevel.ERROR, logMessage, context);
   }
@@ -212,11 +220,14 @@ export class Logger {
    * @param operation 操作名称
    * @param context 可选的上下文信息
    */
-  public logOperationStart(operation: string, context?: Omit<LogContext, 'operation'>): void {
+  public logOperationStart(
+    operation: string,
+    context?: Omit<LogContext, "operation">,
+  ): void {
     const logContext: LogContext = {
       operation,
       ...context,
-      timestamp: new Date()
+      timestamp: new Date(),
     };
     this.logWithLevel(LogLevel.INFO, `开始执行操作: ${operation}`, logContext);
   }
@@ -227,14 +238,18 @@ export class Logger {
    * @param duration 操作耗时（毫秒）
    * @param context 可选的上下文信息
    */
-  public logOperationEnd(operation: string, duration?: number, context?: Omit<LogContext, 'operation'>): void {
+  public logOperationEnd(
+    operation: string,
+    duration?: number,
+    context?: Omit<LogContext, "operation">,
+  ): void {
     const logContext: LogContext = {
       operation,
       ...context,
       timestamp: new Date(),
-      data: duration ? { duration } : undefined
+      data: duration ? { duration } : undefined,
     };
-    const message = duration 
+    const message = duration
       ? `操作完成: ${operation} (耗时: ${duration}ms)`
       : `操作完成: ${operation}`;
     this.logWithLevel(LogLevel.INFO, message, logContext);
@@ -271,13 +286,13 @@ export class Logger {
 
 /**
  * 使用示例：
- * 
+ *
  * ```typescript
  * const logger = Logger.getInstance('MyExtension');
- * 
+ *
  * // 基本用法
  * logger.info('用户登录成功');
- * 
+ *
  * // 带错误对象的日志
  * try {
  *   // 一些可能出错的操作
@@ -288,7 +303,7 @@ export class Logger {
  *     data: { attemptCount: 3 }
  *   });
  * }
- * 
+ *
  * // 带上下文的日志
  * logger.debug('处理用户请求', {
  *   operation: 'processRequest',
@@ -296,12 +311,12 @@ export class Logger {
  *   requestId: 'req-456',
  *   data: { requestType: 'commit', fileCount: 5 }
  * });
- * 
+ *
  * // 操作追踪
  * logger.logOperationStart('generateCommitMessage');
  * // ... 执行操作 ...
  * logger.logOperationEnd('generateCommitMessage', 150); // 150ms
- * 
+ *
  * // 警告日志
  * logger.warn('API 响应时间过长', {
  *   operation: 'apiCall',
