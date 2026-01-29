@@ -1,11 +1,12 @@
-import { ISCMProvider } from "@/scm/scm-provider";
 import { AIModel } from "@/ai/types";
-import { ContextManager, TruncationStrategy } from "@/utils/context-manager";
 import { ContextCollector } from "@/commands/generate-commit/utils/context-collector";
 import { extractProcessedDiff } from "@/commands/generate-commit/utils/diff-extractor";
+import { ISCMProvider } from "@/scm/scm-provider";
+import { ContextManager, TruncationStrategy } from "@/utils/context-manager";
+import * as crypto from "crypto";
 
 /**
- * 提交上下文构建器类，负责构建和管理上下文管理器
+ * 提交上下文构建器类，负责构建上下文管理器
  */
 export class CommitContextBuilder {
   private contextCollector: ContextCollector;
@@ -32,17 +33,22 @@ export class CommitContextBuilder {
     scmProvider: ISCMProvider,
     diffContent: string,
     configuration: any,
-    options: { 
+    options: {
       exclude?: string[];
-      globalContext?: string; // ✅ 新增
-    } = {}
+      globalContext?: string;
+      requestId?: string;
+      parsedDiff?: { originalCode: string; codeChanges: string };
+    } = {},
   ): Promise<ContextManager> {
+    const requestId = options.requestId || crypto.randomUUID();
     // 1. 获取所有上下文信息
-    const currentInput = await this.contextCollector.getSCMInputContext(scmProvider);
-    const { userCommits, repoCommits } = await this.contextCollector.getRecentCommits(
-      scmProvider,
-      configuration.features.commitMessage.useRecentCommitsAsReference
-    );
+    const currentInput =
+      await this.contextCollector.getSCMInputContext(scmProvider);
+    const { userCommits, repoCommits } =
+      await this.contextCollector.getRecentCommits(
+        scmProvider,
+        configuration.features.commitMessage.useRecentCommitsAsReference,
+      );
     const { exclude = [], globalContext } = options;
     const similarCodeContext = exclude.includes("similar-code")
       ? ""
@@ -50,14 +56,14 @@ export class CommitContextBuilder {
     const reminder = this.contextCollector.getReminder(
       userCommits,
       repoCommits,
-      configuration.base.language
+      configuration.base.language,
     );
 
     // 2. 构建 ContextManager
     const contextManager = new ContextManager(
       selectedModel,
       systemPrompt,
-      configuration.features.suppressNonCriticalWarnings
+      configuration.features.suppressNonCriticalWarnings,
     );
     const { originalCode, codeChanges } = extractProcessedDiff(diffContent);
 
@@ -121,6 +127,11 @@ export class CommitContextBuilder {
       });
     }
 
+    // 记录日志
+    if (requestId) {
+      console.log(`[ContextBuilder] Built context for requestId=${requestId}`);
+    }
+
     return contextManager;
   }
 
@@ -138,25 +149,27 @@ export class CommitContextBuilder {
     systemPrompt: string,
     scmProvider: ISCMProvider,
     formattedFileChanges: string,
-    configuration: any
+    configuration: any,
   ): Promise<ContextManager> {
     // 1. 获取上下文信息（不包括需要真实 diff 的部分）
-    const currentInput = await this.contextCollector.getSCMInputContext(scmProvider);
-    const { userCommits, repoCommits } = await this.contextCollector.getRecentCommits(
-      scmProvider,
-      configuration.features.commitMessage.useRecentCommitsAsReference
-    );
+    const currentInput =
+      await this.contextCollector.getSCMInputContext(scmProvider);
+    const { userCommits, repoCommits } =
+      await this.contextCollector.getRecentCommits(
+        scmProvider,
+        configuration.features.commitMessage.useRecentCommitsAsReference,
+      );
     const reminder = this.contextCollector.getReminder(
       userCommits,
       repoCommits,
-      configuration.base.language
+      configuration.base.language,
     );
 
     // 2. 构建 ContextManager
     const contextManager = new ContextManager(
       selectedModel,
       systemPrompt,
-      configuration.features.suppressNonCriticalWarnings
+      configuration.features.suppressNonCriticalWarnings,
     );
 
     // 添加与摘要生成相关的块
@@ -202,5 +215,12 @@ export class CommitContextBuilder {
 
     return contextManager;
   }
-}
 
+  /**
+   * 移除缓存（不再需要，保留是为了兼容性）
+   * @deprecated 缓存功能已移至StreamingGenerationHelper
+   */
+  invalidateCache(): void {
+    // 不再需要此方法
+  }
+}

@@ -22,10 +22,10 @@ import { getCommitMessageTools } from "@/prompt/generate-commit";
 import { PromptManagerService } from "@/services/core/prompt-manager-service";
 import { TokenStatsService } from "@/services/core/token-stats-service";
 import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
-import { PromptKey, PromptCategory } from "@shared/types/prompts";
 import { formatMessage } from "@/utils/i18n/localization-manager";
 import { Logger } from "@/utils/logger";
 import { tokenizerService } from "@/utils/tokenizer";
+import { PromptCategory, PromptKey } from "@shared/types/prompts";
 
 /**
  * AI调用时的提示词信息接口
@@ -45,14 +45,14 @@ interface PromptLogInfo {
  * 功能到提示词键的映射
  */
 const PROMPT_KEY_MAP: Record<string, PromptKey> = {
-  'commit': PromptKey.GenerateCommitSystem,
-  'commit-stream': PromptKey.GenerateCommitSystem,
-  'commit-function-calling': PromptKey.GenerateCommitSystem,
-  'code-review': PromptKey.CodeReviewSystem,
-  'branch-name': PromptKey.BranchNameSystem,
-  'weekly-report': PromptKey.WeeklyReport,
-  'layered-commit': PromptKey.LayeredCommitFile,
-  'pr-summary': PromptKey.PRSummarySystem,
+  commit: PromptKey.GenerateCommitSystem,
+  "commit-stream": PromptKey.GenerateCommitSystem,
+  "commit-function-calling": PromptKey.GenerateCommitSystem,
+  "code-review": PromptKey.CodeReviewSystem,
+  "branch-name": PromptKey.BranchNameSystem,
+  "weekly-report": PromptKey.WeeklyReport,
+  "layered-commit": PromptKey.LayeredCommitFile,
+  "pr-summary": PromptKey.PRSummarySystem,
 };
 
 /**
@@ -92,7 +92,7 @@ export abstract class AbstractAIProvider implements AIProvider {
           params,
           false,
           false,
-          this.globalConfig
+          this.globalConfig,
         );
         params.messages = [
           { role: "system", content: systemPrompt },
@@ -123,12 +123,12 @@ export abstract class AbstractAIProvider implements AIProvider {
         error as Error,
         formatMessage("generation.failed", [
           error instanceof Error ? error.message : String(error),
-        ])
+        ]),
       );
       throw new Error(
         formatMessage("generation.failed", [
           error instanceof Error ? error.message : String(error),
-        ])
+        ]),
       );
     }
   }
@@ -139,27 +139,37 @@ export abstract class AbstractAIProvider implements AIProvider {
    * @remarks 此方法为新增，AIProvider接口也需要相应更新
    */
   async generateCommitStream(
-    params: AIRequestParams
+    params: AIRequestParams,
   ): Promise<AsyncIterable<string>> {
     this.logger.info(`Generating commit stream with provider: ${this.getId()}`);
-    console.log("[AbstractAIProvider] generateCommitStream - params:", {
-      feature: params.feature,
-      hasModel: !!params.model,
-      hasMessages: Array.isArray(params.messages),
-      messageCount: params.messages?.length,
-    });
+    this.logger.debugObject(
+      "[AbstractAIProvider] generateCommitStream - params:",
+      {
+        feature: params.feature,
+        hasModel: !!params.model,
+        hasMessages: Array.isArray(params.messages),
+        messageCount: params.messages?.length,
+      },
+    );
     try {
       if (!params.messages) {
+        this.logger.debug(
+          `[AbstractAIProvider] Building messages from scratch`,
+        );
         const systemPrompt = await getSystemPrompt(
           params,
           false,
           false,
-          this.globalConfig
+          this.globalConfig,
         );
         params.messages = [
           { role: "system", content: systemPrompt },
           { role: "user", content: params.diff },
         ];
+      } else {
+        this.logger.debug(
+          `[AbstractAIProvider] ✓ Using pre-built messages, length: ${params.messages.length}`,
+        );
       }
 
       const preferences =
@@ -178,7 +188,7 @@ export abstract class AbstractAIProvider implements AIProvider {
         temperature: preferences.commitTemperature,
       });
 
-      const self = this;
+      const self: AbstractAIProvider = this;
       // 确保 params.model 存在，用于后续的 token 统计
       if (!params.model) {
         params.model = this.getDefaultModel();
@@ -196,11 +206,11 @@ export abstract class AbstractAIProvider implements AIProvider {
         try {
           const promptTokens = tokenizerService.countTokens(
             JSON.stringify(params.messages),
-            model
+            model,
           );
           const completionTokens = tokenizerService.countTokens(
             fullContent,
-            model
+            model,
           );
           const totalTokens = promptTokens + completionTokens;
 
@@ -213,10 +223,15 @@ export abstract class AbstractAIProvider implements AIProvider {
                 totalTokens,
               },
             },
-            params
+            params,
           );
         } catch (e) {
-          console.warn("Failed to record token usage for stream:", e);
+          if (Logger.isDevelopment()) {
+            console.warn("Failed to record token usage for stream:", e);
+          }
+          self.logger.warn("Failed to record token usage for stream", {
+            error: e as Error,
+          });
         }
       }
 
@@ -228,21 +243,21 @@ export abstract class AbstractAIProvider implements AIProvider {
         error as Error,
         formatMessage("generation.failed", [
           error instanceof Error ? error.message : String(error),
-        ])
+        ]),
       );
       throw new Error(
         formatMessage("generation.failed", [
           error instanceof Error ? error.message : String(error),
-        ])
+        ]),
       );
     }
   }
 
   async generateCommitWithFunctionCalling(
-    params: AIRequestParams
+    params: AIRequestParams,
   ): Promise<AIResponse> {
     this.logger.info(
-      `Generating commit with function calling with provider: ${this.getId()}`
+      `Generating commit with function calling with provider: ${this.getId()}`,
     );
     try {
       if (!params.messages) {
@@ -250,7 +265,7 @@ export abstract class AbstractAIProvider implements AIProvider {
           params,
           false,
           false,
-          this.globalConfig
+          this.globalConfig,
         );
         params.messages = [
           { role: "system", content: systemPrompt },
@@ -326,19 +341,19 @@ export abstract class AbstractAIProvider implements AIProvider {
       }
 
       throw new Error(
-        "Failed to generate commit message with function calling."
+        "Failed to generate commit message with function calling.",
       );
     } catch (error) {
       this.logger.logError(
         error as Error,
         formatMessage("generation.failed", [
           error instanceof Error ? error.message : String(error),
-        ])
+        ]),
       );
       throw new Error(
         formatMessage("generation.failed", [
           error instanceof Error ? error.message : String(error),
-        ])
+        ]),
       );
     }
   }
@@ -355,7 +370,7 @@ export abstract class AbstractAIProvider implements AIProvider {
         const systemPrompt = await getCodeReviewPrompt(
           params,
           false,
-          this.globalConfig
+          this.globalConfig,
         );
         params.messages = [
           { role: "system", content: systemPrompt },
@@ -397,12 +412,12 @@ export abstract class AbstractAIProvider implements AIProvider {
         error as Error,
         formatMessage("codeReview.generation.failed", [
           error instanceof Error ? error.message : String(error),
-        ])
+        ]),
       );
       throw new Error(
         formatMessage("codeReview.generation.failed", [
           error instanceof Error ? error.message : String(error),
-        ])
+        ]),
       );
     }
   }
@@ -419,7 +434,7 @@ export abstract class AbstractAIProvider implements AIProvider {
         const systemPrompt = await getBranchNameSystemPrompt(
           params,
           false,
-          this.globalConfig
+          this.globalConfig,
         );
         const userPrompt = getBranchNameUserPrompt(params.diff);
         params.messages = [
@@ -451,12 +466,12 @@ export abstract class AbstractAIProvider implements AIProvider {
         error as Error,
         formatMessage("branchName.generation.failed", [
           error instanceof Error ? error.message : String(error),
-        ])
+        ]),
       );
       throw new Error(
         formatMessage("branchName.generation.failed", [
           error instanceof Error ? error.message : String(error),
-        ])
+        ]),
       );
     }
   }
@@ -474,7 +489,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       endDate: string;
     },
     model?: AIModel,
-    users?: string[] // 新增可选的 users 参数
+    users?: string[], // 新增可选的 users 参数
   ): Promise<AIResponse> {
     this.logger.info(`Generating weekly report with provider: ${this.getId()}`);
     try {
@@ -485,14 +500,14 @@ export abstract class AbstractAIProvider implements AIProvider {
         period.startDate,
         period.endDate,
         false,
-        this.globalConfig
+        this.globalConfig,
       );
 
       // 如果有用户信息，可以附加到 systemPrompt
       let finalSystemPrompt = systemPrompt;
       if (users && users.length > 0) {
         finalSystemPrompt += `\nThis weekly report is for the team members: ${users.join(
-          ", "
+          ", ",
         )}. Please summarize their collective work.`;
       }
 
@@ -505,7 +520,9 @@ export abstract class AbstractAIProvider implements AIProvider {
       };
 
       // 记录提示词使用日志（周报）
-      const preferences = this.globalConfig.preferences || PreferencesSettingsManager.getInstance().getSettings();
+      const preferences =
+        this.globalConfig.preferences ||
+        PreferencesSettingsManager.getInstance().getSettings();
       await this.logPromptUsage("weekly-report", params, {
         temperature: preferences.weeklyReportTemperature,
         commitCount: commits.length,
@@ -523,7 +540,7 @@ export abstract class AbstractAIProvider implements AIProvider {
         },
         {
           temperature: preferences.weeklyReportTemperature,
-        }
+        },
       );
 
       await this.recordTokenUsage(result, params);
@@ -534,12 +551,12 @@ export abstract class AbstractAIProvider implements AIProvider {
         error as Error,
         formatMessage("weeklyReport.generation.failed", [
           error instanceof Error ? error.message : String(error),
-        ])
+        ]),
       );
       throw new Error(
         formatMessage("weeklyReport.generation.failed", [
           error instanceof Error ? error.message : String(error),
-        ])
+        ]),
       );
     }
   }
@@ -550,14 +567,16 @@ export abstract class AbstractAIProvider implements AIProvider {
    * @returns 包含全局摘要和文件描述的分层提交信息
    */
   async generateLayeredCommit(
-    params: AIRequestParams
+    params: AIRequestParams,
   ): Promise<LayeredCommitMessage> {
     this.logger.info(
-      `Generating layered commit with provider: ${this.getId()}`
+      `Generating layered commit with provider: ${this.getId()}`,
     );
     try {
       const modifiedFiles = extractModifiedFilePaths(params.diff);
-      const preferences = this.globalConfig.preferences || PreferencesSettingsManager.getInstance().getSettings();
+      const preferences =
+        this.globalConfig.preferences ||
+        PreferencesSettingsManager.getInstance().getSettings();
 
       // 记录提示词使用日志（分层提交 - 批量）
       await this.logPromptUsage("layered-commit", params, {
@@ -571,7 +590,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       this.logger.info("Generating global summary for layered commit...");
       const summarySystemPrompt = await getGlobalSummaryPrompt(
         params,
-        this.globalConfig
+        this.globalConfig,
       );
 
       // 记录全局摘要的详细日志
@@ -590,7 +609,7 @@ export abstract class AbstractAIProvider implements AIProvider {
         },
         {
           temperature: preferences.commitTemperature,
-        }
+        },
       );
       await this.recordTokenUsage(summaryResult, params);
       const summary = summaryResult.content;
@@ -603,9 +622,9 @@ export abstract class AbstractAIProvider implements AIProvider {
         const filePattern = new RegExp(
           `diff --git a/${filePath.replace(
             /[.*+?^${}()|[\]\\]/g,
-            "\\$&"
+            "\\$&",
           )}.*?(?=diff --git|$)`,
-          "gs"
+          "gs",
         );
         const fileDiff = params.diff.match(filePattern)?.[0] || "";
 
@@ -613,7 +632,7 @@ export abstract class AbstractAIProvider implements AIProvider {
           const fileSystemPrompt = await getFileDescriptionPrompt(
             params,
             filePath,
-            this.globalConfig
+            this.globalConfig,
           );
           const fileResult = await this.executeAIRequest(
             {
@@ -628,7 +647,7 @@ export abstract class AbstractAIProvider implements AIProvider {
                 this.globalConfig.preferences ||
                 PreferencesSettingsManager.getInstance().getSettings()
               ).commitTemperature,
-            }
+            },
           );
 
           await this.recordTokenUsage(fileResult, params);
@@ -646,12 +665,12 @@ export abstract class AbstractAIProvider implements AIProvider {
         error as Error,
         formatMessage("layeredCommit.generation.failed", [
           error instanceof Error ? error.message : String(error),
-        ])
+        ]),
       );
       throw new Error(
         formatMessage("layeredCommit.generation.failed", [
           error instanceof Error ? error.message : String(error),
-        ])
+        ]),
       );
     }
   }
@@ -664,13 +683,13 @@ export abstract class AbstractAIProvider implements AIProvider {
    */
   async generatePRSummary(
     params: AIRequestParams,
-    commitMessages: string[]
+    commitMessages: string[],
   ): Promise<AIResponse> {
     // 使用新的支持活跃提示词的函数
     const fullPrompt = await getPRSummaryPrompt(
       params,
       false,
-      this.globalConfig
+      this.globalConfig,
     );
 
     const userContent = commitMessages.join("\n- ");
@@ -700,7 +719,7 @@ export abstract class AbstractAIProvider implements AIProvider {
           },
           {
             temperature: 0.7,
-          }
+          },
         );
 
         await this.recordTokenUsage(response, params);
@@ -710,7 +729,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       {
         initialMaxLength: commitMessagesString.length,
         provider: this.getId(),
-      }
+      },
     );
   }
 
@@ -721,7 +740,7 @@ export abstract class AbstractAIProvider implements AIProvider {
    */
   protected async recordTokenUsage(
     result: AIResponse,
-    params: AIRequestParams
+    params: AIRequestParams,
   ): Promise<void> {
     if (result.usage?.totalTokens) {
       const tokenStatsService = TokenStatsService.getInstance();
@@ -737,14 +756,14 @@ export abstract class AbstractAIProvider implements AIProvider {
           tokens: result.usage.totalTokens,
           model,
           feature,
-        }
+        },
       );
 
       await tokenStatsService.addTokens(
         result.usage.totalTokens,
         model,
         this.getId(),
-        feature
+        feature,
       );
     }
   }
@@ -757,23 +776,26 @@ export abstract class AbstractAIProvider implements AIProvider {
    */
   protected async getPromptLogInfo(
     feature: string,
-    params: AIRequestParams
+    params: AIRequestParams,
   ): Promise<PromptLogInfo | null> {
     try {
       // 从功能映射获取提示词键
-      const promptKey = PROMPT_KEY_MAP[feature] || PromptKey.GenerateCommitSystem;
+      const promptKey =
+        PROMPT_KEY_MAP[feature] || PromptKey.GenerateCommitSystem;
 
       // 获取当前活跃的提示词内容
       const promptManager = PromptManagerService.getInstance();
-      const promptContent = await promptManager.getActivePromptContent(promptKey);
+      const promptContent =
+        await promptManager.getActivePromptContent(promptKey);
 
       // 获取提示词详情（包含来源等信息）
       const promptDetail = promptManager.getPromptDetail(promptKey);
 
       // 截断提示词内容，避免日志过长
-      const truncatedContent = promptContent.length > 200
-        ? promptContent.substring(0, 200) + '...'
-        : promptContent;
+      const truncatedContent =
+        promptContent.length > 200
+          ? promptContent.substring(0, 200) + "..."
+          : promptContent;
 
       // 获取分类信息
       const promptCategory = promptDetail.category;
@@ -786,7 +808,10 @@ export abstract class AbstractAIProvider implements AIProvider {
         promptSource,
       };
     } catch (error) {
-      console.warn('[AbstractAIProvider] Failed to get prompt log info:', error);
+      console.warn(
+        "[AbstractAIProvider] Failed to get prompt log info:",
+        error,
+      );
       return null;
     }
   }
@@ -800,13 +825,14 @@ export abstract class AbstractAIProvider implements AIProvider {
   protected async logPromptUsage(
     feature: string,
     params: AIRequestParams,
-    additionalInfo: Record<string, any> = {}
+    additionalInfo: Record<string, any> = {},
   ): Promise<void> {
     const promptInfo = await this.getPromptLogInfo(feature, params);
 
     // 构建日志消息
     const provider = this.getId();
-    const modelName = params.model?.id || this.getConfig()?.defaultModel || 'unknown-model';
+    const modelName =
+      params.model?.id || this.getConfig()?.defaultModel || "unknown-model";
 
     let logMessage = `[AI调用] 提供者: ${provider} | 模型: ${modelName} | 功能: ${feature}`;
 
@@ -827,13 +853,17 @@ export abstract class AbstractAIProvider implements AIProvider {
 
       // 记录额外信息
       if (Object.keys(additionalInfo).length > 0) {
-        this.logger.info(`[调用详情] ${JSON.stringify(additionalInfo, null, 2)}`);
+        this.logger.info(
+          `[调用详情] ${JSON.stringify(additionalInfo, null, 2)}`,
+        );
       }
     } else {
       // 无法获取提示词信息时的降级日志
       this.logger.info(logMessage);
       if (Object.keys(additionalInfo).length > 0) {
-        this.logger.info(`[调用详情] ${JSON.stringify(additionalInfo, null, 2)}`);
+        this.logger.info(
+          `[调用详情] ${JSON.stringify(additionalInfo, null, 2)}`,
+        );
       }
     }
   }
@@ -853,7 +883,7 @@ export abstract class AbstractAIProvider implements AIProvider {
       temperature?: number;
       maxTokens?: number;
       tools?: any[];
-    }
+    },
   ): Promise<{
     content: string;
     usage?: any;
@@ -867,7 +897,7 @@ export abstract class AbstractAIProvider implements AIProvider {
    * @returns 适合提供商API的消息结构
    */
   protected abstract buildProviderMessages(
-    params: AIRequestParams
+    params: AIRequestParams,
   ): Promise<any>;
 
   /**
@@ -887,7 +917,7 @@ export abstract class AbstractAIProvider implements AIProvider {
     options?: {
       temperature?: number;
       maxTokens?: number;
-    }
+    },
   ): Promise<AsyncIterable<string>>;
 
   /**
@@ -930,7 +960,7 @@ export abstract class AbstractAIProvider implements AIProvider {
 
     if (!params.messages || params.messages.length === 0) {
       console.warn(
-        `countTokens called with no messages for ${this.getName()}.`
+        `countTokens called with no messages for ${this.getName()}.`,
       );
       return { totalTokens: 0 };
     }
@@ -965,7 +995,7 @@ export abstract class AbstractAIProvider implements AIProvider {
 
     if (isContextLengthError) {
       throw new ContextLengthExceededError(
-        `The context for model ${modelId} is too long. Original error: ${error.message}`
+        `The context for model ${modelId} is too long. Original error: ${error.message}`,
       );
     }
 

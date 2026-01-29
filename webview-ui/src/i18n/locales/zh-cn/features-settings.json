@@ -1,6 +1,6 @@
 {
   "title": "功能设置",
-  "description": "启用或禁用扩展的各种功能。这些设置对应于您的 `settings.json` 中的配置。",
+  "description": "启用或禁用扩展的各种功能。",
   "commitMessageGeneration": {
     "title": "提交信息生成",
     "enableEmoji": {

@@ -1,4 +1,5 @@
 import { EmbeddingService } from "@/core/indexing/embedding-service";
+import WebviewSessionManager from "@/services/webview/core/WebviewSessionManager";
 import { ConnectionMessageHandler } from "@/services/webview/handlers/settings/connection-message-handler";
 import { FeaturesMessageHandler } from "@/services/webview/handlers/settings/features-message-handler";
 import { IndexingMessageHandler } from "@/services/webview/handlers/settings/indexing-message-handler";
@@ -14,10 +15,13 @@ import { UsageMessageHandler } from "@/services/webview/handlers/settings/usage-
 import { UIRequest } from "@shared/types/messages";
 import * as vscode from "vscode";
 
+const postMessage = (webview: vscode.Webview, command: string, data?: any) => {
+  webview.postMessage({ command, data });
+};
+
 export class SettingsViewMessageHandler {
   private readonly _extensionId: string;
-  private _lastMessage: any = null;
-  private _lastMessageTime = 0;
+  private _sessionManager: WebviewSessionManager;
 
   // Sub-handlers
   private _notificationHandler: NotificationMessageHandler;
@@ -36,17 +40,17 @@ export class SettingsViewMessageHandler {
   constructor(
     extensionId: string,
     private _embeddingService: EmbeddingService | null,
-    private readonly _extensionContext: vscode.ExtensionContext
+    private readonly _extensionContext: vscode.ExtensionContext,
   ) {
     console.log("[SettingsViewMessageHandler] Initializing...");
     this._extensionId = extensionId;
+    this._sessionManager = WebviewSessionManager.getInstance();
 
-    // Initialize sub-handlers
     this._notificationHandler = new NotificationMessageHandler();
     this._promptHandler = new PromptMessageHandler();
     this._indexingHandler = new IndexingMessageHandler(
       _embeddingService,
-      _extensionContext
+      _extensionContext,
     );
     this._profileHandler = new ProfileMessageHandler(_extensionContext);
     this._connectionHandler = new ConnectionMessageHandler(_extensionContext);
@@ -61,168 +65,178 @@ export class SettingsViewMessageHandler {
 
   public async handleMessage(
     message: any,
-    webview: vscode.Webview
+    webview: vscode.Webview,
   ): Promise<void> {
-    const now = Date.now();
-    if (
-      this._lastMessage &&
-      now - this._lastMessageTime < 1000 && // 1秒内防抖
-      this._lastMessage.command === message.command &&
-      JSON.stringify(this._lastMessage.data) === JSON.stringify(message.data)
-    ) {
-      console.log(
-        `[SettingsViewMessageHandler] Duplicate message blocked: ${JSON.stringify(
-          message
-        )}`
+    if (message.command === "webview.handshake") {
+      const { sessionId, timestamp } = message.data || {};
+      if (!sessionId) {
+        console.warn(
+          "[SettingsViewMessageHandler] Handshake missing sessionId",
+        );
+        return;
+      }
+
+      const isNewSession = this._sessionManager.handleHandshake(sessionId);
+
+      if (isNewSession) {
+        this._sessionManager.markSessionReady();
+        postMessage(webview, "webview.handshake.ack", {
+          sessionId,
+          timestamp: Date.now(),
+          success: true,
+        });
+        console.log(
+          `[SettingsViewMessageHandler] Handshake acknowledged for session ${sessionId}`,
+        );
+
+        await this._storageHandler.handle(
+          { command: UIRequest.SystemGetAllStorage },
+          webview,
+        );
+      } else {
+        console.log(
+          `[SettingsViewMessageHandler] Duplicate handshake, ignoring for session ${sessionId}`,
+        );
+      }
+      return;
+    }
+
+    if (!this._sessionManager.hasActiveSession()) {
+      console.warn(
+        "[SettingsViewMessageHandler] No active session, ignoring message:",
+        message.command,
       );
       return;
     }
 
-    this._lastMessage = message;
-    this._lastMessageTime = now;
+    const messageId =
+      message.messageId || `${message.command}_${JSON.stringify(message.data)}`;
 
-    console.log(
-      `[SettingsViewMessageHandler] Received message: ${JSON.stringify(
-        message,
-        null,
-        2
-      )}`
-    );
-
-    // Dispatch to appropriate handler based on command
-    switch (message.command) {
-      // ===== Notification Module =====
-      case UIRequest.NotificationGetSettings:
-      case UIRequest.NotificationUpdateSettings:
-      case UIRequest.NotificationTest:
-        await this._notificationHandler.handle(message, webview);
-        break;
-
-      // ===== Prompt Module =====
-      case UIRequest.PromptGetAll:
-      case UIRequest.PromptUpdate:
-      case UIRequest.PromptReset:
-      case UIRequest.PromptResetAll:
-      case UIRequest.PromptCreate:
-      case UIRequest.PromptDelete:
-      case UIRequest.PromptRename:
-        await this._promptHandler.handle(message, webview);
-        break;
-
-      // ===== Indexing Module =====
-      case UIRequest.IndexingStart:
-      case UIRequest.IndexingClear:
-      case UIRequest.IndexingGetSettings:
-      case UIRequest.IndexingSaveSettings:
-      case UIRequest.IndexingFetchEmbeddingModels:
-        await this._indexingHandler.handle(message, webview);
-        break;
-
-      // ===== Profile Module =====
-      case UIRequest.ProfileLoadAll:
-      case UIRequest.ProfileSave:
-      case UIRequest.ProfileDelete:
-      case UIRequest.ProfileSetActive:
-      case UIRequest.ProfileExport:
-      case UIRequest.ProfileImport:
-      case UIRequest.ProfileMigrateSettings:
-      case UIRequest.ProfileResetDefaults:
-      case UIRequest.ProfileGetAllProviders:
-      case UIRequest.UpsertApiConfiguration:
-        await this._profileHandler.handle(message, webview);
-        break;
-
-      // ===== Connection Module =====
-      case UIRequest.ConnectionTest:
-      case UIRequest.ConnectionTestAndSave:
-      case UIRequest.ConnectionGetModelsForProvider:
-      case UIRequest.ConnectionFetchProviderModels:
-      case UIRequest.ConnectionGetAllModels:
-        await this._connectionHandler.handle(message, webview);
-        break;
-
-      // ===== System Module =====
-      case UIRequest.SystemShowMessage:
-      case UIRequest.SystemGetPackageInfo:
-      case UIRequest.SystemGetOS:
-      case UIRequest.SystemSetGlobalState:
-      case UIRequest.SystemGetGlobalState:
-      case UIRequest.SystemSetSecret:
-      case UIRequest.SystemGetSecret:
-      case UIRequest.SystemDeleteSecret:
-        await this._systemHandler.handle(message, webview);
-        break;
-
-      // ===== Features Module =====
-      case UIRequest.FeaturesLoadSettings:
-      case UIRequest.FeaturesSaveSettings:
-      case UIRequest.FeaturesSetActivePrompt:
-      case UIRequest.FeaturesGetWorkspaceInfo:
-      case UIRequest.FeaturesGetAllWorkspaceStates:
-        await this._featuresHandler.handle(message, webview);
-        break;
-
-      // ===== Preferences Module =====
-      case UIRequest.PreferencesLoadSettings:
-      case UIRequest.PreferencesSaveSettings:
+    try {
+      await this._sessionManager.withIdempotency(messageId, async () => {
         console.log(
-          "[SettingsViewMessageHandler] Routing Preferences message:",
-          message.command
+          `[SettingsViewMessageHandler] Processing message: ${message.command}`,
         );
-        await this._preferencesHandler.handle(message, webview);
-        break;
 
-      // ===== Usage Module =====
-      case UIRequest.UsageGetStats:
-      case UIRequest.UsageResetStats:
-      case UIRequest.UsageAddTestData:
-        await this._usageHandler.handle(message, webview);
-        break;
+        switch (message.command) {
+          case UIRequest.NotificationGetSettings:
+          case UIRequest.NotificationUpdateSettings:
+          case UIRequest.NotificationTest:
+            await this._notificationHandler.handle(message, webview);
+            break;
 
-      // ===== Storage Module =====
-      case UIRequest.SystemGetAllStorage:
-      case UIRequest.SystemClearAllStorage:
-        await this._storageHandler.handle(message, webview);
-        break;
+          case UIRequest.PromptGetAll:
+          case UIRequest.PromptUpdate:
+          case UIRequest.PromptReset:
+          case UIRequest.PromptResetAll:
+          case UIRequest.PromptCreate:
+          case UIRequest.PromptDelete:
+          case UIRequest.PromptRename:
+            await this._promptHandler.handle(message, webview);
+            break;
 
-      // ===== Onboarding Module =====
-      case UIRequest.OnboardingDetectEnvironment:
-      case UIRequest.OnboardingGetTemplates:
-      case UIRequest.OnboardingApplyTemplate:
-      case UIRequest.OnboardingValidateConfig:
-      case UIRequest.OnboardingSetCompleted:
-      case UIRequest.OnboardingGetStatus:
-        await this._onboardingHandler.handle(message, webview);
-        break;
+          case UIRequest.IndexingStart:
+          case UIRequest.IndexingClear:
+          case UIRequest.IndexingGetSettings:
+          case UIRequest.IndexingSaveSettings:
+          case UIRequest.IndexingFetchEmbeddingModels:
+            await this._indexingHandler.handle(message, webview);
+            break;
 
-      // ===== Model Custom Module =====
-      case UIRequest.ModelCustomGetAll:
-      case UIRequest.ModelCustomSave:
-      case UIRequest.ModelCustomDelete:
-      case UIRequest.ModelCustomExport:
-      case UIRequest.ModelCustomImport:
-      case UIRequest.ModelCustomGetProviders:
-        await this._modelCustomHandler.handle(message, webview);
-        break;
+          case UIRequest.ProfileLoadAll:
+          case UIRequest.ProfileSave:
+          case UIRequest.ProfileDelete:
+          case UIRequest.ProfileSetActive:
+          case UIRequest.ProfileExport:
+          case UIRequest.ProfileImport:
+          case UIRequest.ProfileMigrateSettings:
+          case UIRequest.ProfileResetDefaults:
+          case UIRequest.ProfileGetAllProviders:
+          case UIRequest.UpsertApiConfiguration:
+            await this._profileHandler.handle(message, webview);
+            break;
 
-      // ===== System Lifecycle Messages =====
-      case "webviewDidLaunch":
-        // Webview 启动通知，静默处理
-        console.log(
-          "[SettingsViewMessageHandler] Webview launched successfully"
+          case UIRequest.ConnectionTest:
+          case UIRequest.ConnectionTestAndSave:
+          case UIRequest.ConnectionGetModelsForProvider:
+          case UIRequest.ConnectionFetchProviderModels:
+          case UIRequest.ConnectionGetAllModels:
+            await this._connectionHandler.handle(message, webview);
+            break;
+
+          case UIRequest.SystemShowMessage:
+          case UIRequest.SystemGetPackageInfo:
+          case UIRequest.SystemGetOS:
+          case UIRequest.SystemSetGlobalState:
+          case UIRequest.SystemGetGlobalState:
+          case UIRequest.SystemSetSecret:
+          case UIRequest.SystemGetSecret:
+          case UIRequest.SystemDeleteSecret:
+            await this._systemHandler.handle(message, webview);
+            break;
+
+          case UIRequest.FeaturesLoadSettings:
+          case UIRequest.FeaturesSaveSettings:
+          case UIRequest.FeaturesSetActivePrompt:
+          case UIRequest.FeaturesGetWorkspaceInfo:
+          case UIRequest.FeaturesGetAllWorkspaceStates:
+            await this._featuresHandler.handle(message, webview);
+            break;
+
+          case UIRequest.PreferencesLoadSettings:
+          case UIRequest.PreferencesSaveSettings:
+            await this._preferencesHandler.handle(message, webview);
+            break;
+
+          case UIRequest.UsageGetStats:
+          case UIRequest.UsageResetStats:
+          case UIRequest.UsageAddTestData:
+            await this._usageHandler.handle(message, webview);
+            break;
+
+          case UIRequest.SystemGetAllStorage:
+          case UIRequest.SystemClearAllStorage:
+            await this._storageHandler.handle(message, webview);
+            break;
+
+          case UIRequest.OnboardingDetectEnvironment:
+          case UIRequest.OnboardingGetTemplates:
+          case UIRequest.OnboardingApplyTemplate:
+          case UIRequest.OnboardingValidateConfig:
+          case UIRequest.OnboardingSetCompleted:
+          case UIRequest.OnboardingGetStatus:
+            await this._onboardingHandler.handle(message, webview);
+            break;
+
+          case UIRequest.ModelCustomGetAll:
+          case UIRequest.ModelCustomSave:
+          case UIRequest.ModelCustomDelete:
+          case UIRequest.ModelCustomExport:
+          case UIRequest.ModelCustomImport:
+          case UIRequest.ModelCustomGetProviders:
+            await this._modelCustomHandler.handle(message, webview);
+            break;
+
+          case "webviewDidLaunch":
+            console.log(
+              "[SettingsViewMessageHandler] Legacy webviewDidLaunch received, ignoring (handled by handshake)",
+            );
+            break;
+
+          default:
+            console.warn(
+              `[SettingsViewMessageHandler] Unknown command: ${message.command}`,
+            );
+            break;
+        }
+      });
+    } catch (error) {
+      if ((error as Error).message !== "Message already processed") {
+        console.error(
+          `[SettingsViewMessageHandler] Error handling message ${message.command}:`,
+          error,
         );
-        // 立即发送所有存储状态，以解除前端 RouteGuard 的阻塞
-        await this._storageHandler.handle(
-          { command: UIRequest.SystemGetAllStorage },
-          webview
-        );
-        break;
-
-      default:
-        console.warn(
-          `[SettingsViewMessageHandler] Unknown command: ${message.command}`
-        );
-        break;
+      }
     }
   }
 }

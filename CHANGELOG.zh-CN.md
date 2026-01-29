@@ -1,71 +1,77 @@
-## 0.56.8 (2026-01-29)
+## 0.56.9 (2026-01-29)
 
 ### 📦 src 模块
 
 ### ✨ Features
 
-- **ai**: 扩展Gemini模型支持并优化AI提供商接口 ([11d15e2](https://github.com/littleCareless/dish-ai-commit/commit/11d15e2))
-- **settings**: 扩展功能设置管理器以支持细粒度提示词配置 ([daf4157](https://github.com/littleCareless/dish-ai-commit/commit/daf4157))
-- **core**: 新增提交生成协调器与AI提供商管理器 ([95bf37b](https://github.com/littleCareless/dish-ai-commit/commit/95bf37b))
-- **webview**: 新增工作区信息获取功能并重构提示词管理系统 ([14d2b0b](https://github.com/littleCareless/dish-ai-commit/commit/14d2b0b))
-- **prompts**: 新增提交生成子分类系统并优化提示词元数据 ([52030d0](https://github.com/littleCareless/dish-ai-commit/commit/52030d0))
-- **ui**: 优化 Tooltip 组件样式并增强 VS Code 主题兼容性 ([9e508fc](https://github.com/littleCareless/dish-ai-commit/commit/9e508fc))
-- **prompts**: 重构提示词管理系统并新增核心模块 ([506e281](https://github.com/littleCareless/dish-ai-commit/commit/506e281))
-- **prompts**: 新增分层提交引导和系统机制说明 ([d7a78c1](https://github.com/littleCareless/dish-ai-commit/commit/d7a78c1))
-- **prompts**: 新增提示词管理界面组件并优化创建模态框 ([e4b8073](https://github.com/littleCareless/dish-ai-commit/commit/e4b8073))
+- **utils**: 引入Logger类并优化日志记录与代码格式 ([0bae0c8](https://github.com/littleCareless/dish-ai-commit/commit/0bae0c8))
+- **webview**: 添加Webview握手消息与会话管理类型 ([83eac9e](https://github.com/littleCareless/dish-ai-commit/commit/83eac9e))
+- **chore**: 新增 GitHub 社区与反馈模板体系 ([121b3bc](https://github.com/littleCareless/dish-ai-commit/commit/121b3bc))
+
+### 🐛 Bug Fixes
+
+- **fix**: resolve context pipeline reentrancy issue ([c9e8510](https://github.com/littleCareless/dish-ai-commit/commit/c9e8510))
+
+### ♻️ Code Refactoring
+
+- **ai**: 重构AI提供者抽象类与工具函数，优化日志记录和代码格式 ([77bd20e](https://github.com/littleCareless/dish-ai-commit/commit/77bd20e))
+- **generate-commit**: 重构提交信息生成管道，优化缓存机制与流式生成逻辑 ([1a42c2e](https://github.com/littleCareless/dish-ai-commit/commit/1a42c2e))
+- **webview**: 重构会话管理机制以提升模块化和健壮性 ([3b46078](https://github.com/littleCareless/dish-ai-commit/commit/3b46078))
+- **webview**: 引入会话管理器重构应用启动流程 ([e1fd804](https://github.com/littleCareless/dish-ai-commit/commit/e1fd804))
 
 ### 🔧 Chores
 
+- **ci**: 优化发布流程，支持手动触发和试运行 ([7c83104](https://github.com/littleCareless/dish-ai-commit/commit/7c83104))
+- **pre-push**: 添加标签检查防止非法标签创建 ([459655a](https://github.com/littleCareless/dish-ai-commit/commit/459655a))
+- v0.56.8 ([09b3d75](https://github.com/littleCareless/dish-ai-commit/commit/09b3d75))
 - **refactor**: 重构代码格式并增强类型安全 ([57379e5](https://github.com/littleCareless/dish-ai-commit/commit/57379e5))
-- v0.56.7 ([c9086e8](https://github.com/littleCareless/dish-ai-commit/commit/c9086e8))
-- **chore**: 添加 .zcf 目录到 .gitignore ([5eaf562](https://github.com/littleCareless/dish-ai-commit/commit/5eaf562))
-- **webview**: 重构提示词管理钩子并增强类型安全 ([b20a8bd](https://github.com/littleCareless/dish-ai-commit/commit/b20a8bd))
-- **scm**: 增强仓库检测链路追踪并扩展SCM接口功能 ([b71b941](https://github.com/littleCareless/dish-ai-commit/commit/b71b941))
-- **commands**: 重构命令执行流程并优化AI上下文管理 ([8fa4ab3](https://github.com/littleCareless/dish-ai-commit/commit/8fa4ab3))
-- **eslint**: 添加 react-hooks/exhaustive-deps 规则并更新构建信息 ([fd4ac63](https://github.com/littleCareless/dish-ai-commit/commit/fd4ac63))
 
 ### 🖥️ webview-ui 模块
 
 ### ✨ Features
 
-- **ai**: 扩展Gemini模型支持并优化AI提供商接口 ([11d15e2](https://github.com/littleCareless/dish-ai-commit/commit/11d15e2))
-- **settings**: 扩展功能设置管理器以支持细粒度提示词配置 ([daf4157](https://github.com/littleCareless/dish-ai-commit/commit/daf4157))
-- **core**: 新增提交生成协调器与AI提供商管理器 ([95bf37b](https://github.com/littleCareless/dish-ai-commit/commit/95bf37b))
-- **webview**: 新增工作区信息获取功能并重构提示词管理系统 ([14d2b0b](https://github.com/littleCareless/dish-ai-commit/commit/14d2b0b))
-- **prompts**: 新增提交生成子分类系统并优化提示词元数据 ([52030d0](https://github.com/littleCareless/dish-ai-commit/commit/52030d0))
-- **ui**: 优化 Tooltip 组件样式并增强 VS Code 主题兼容性 ([9e508fc](https://github.com/littleCareless/dish-ai-commit/commit/9e508fc))
-- **prompts**: 重构提示词管理系统并新增核心模块 ([506e281](https://github.com/littleCareless/dish-ai-commit/commit/506e281))
-- **prompts**: 新增分层提交引导和系统机制说明 ([d7a78c1](https://github.com/littleCareless/dish-ai-commit/commit/d7a78c1))
-- **prompts**: 新增提示词管理界面组件并优化创建模态框 ([e4b8073](https://github.com/littleCareless/dish-ai-commit/commit/e4b8073))
+- **utils**: 引入Logger类并优化日志记录与代码格式 ([0bae0c8](https://github.com/littleCareless/dish-ai-commit/commit/0bae0c8))
+- **webview**: 添加Webview握手消息与会话管理类型 ([83eac9e](https://github.com/littleCareless/dish-ai-commit/commit/83eac9e))
+- **chore**: 新增 GitHub 社区与反馈模板体系 ([121b3bc](https://github.com/littleCareless/dish-ai-commit/commit/121b3bc))
+
+### 🐛 Bug Fixes
+
+- **fix**: resolve context pipeline reentrancy issue ([c9e8510](https://github.com/littleCareless/dish-ai-commit/commit/c9e8510))
+
+### ♻️ Code Refactoring
+
+- **ai**: 重构AI提供者抽象类与工具函数，优化日志记录和代码格式 ([77bd20e](https://github.com/littleCareless/dish-ai-commit/commit/77bd20e))
+- **generate-commit**: 重构提交信息生成管道，优化缓存机制与流式生成逻辑 ([1a42c2e](https://github.com/littleCareless/dish-ai-commit/commit/1a42c2e))
+- **webview**: 重构会话管理机制以提升模块化和健壮性 ([3b46078](https://github.com/littleCareless/dish-ai-commit/commit/3b46078))
+- **webview**: 引入会话管理器重构应用启动流程 ([e1fd804](https://github.com/littleCareless/dish-ai-commit/commit/e1fd804))
 
 ### 🔧 Chores
 
+- **ci**: 优化发布流程，支持手动触发和试运行 ([7c83104](https://github.com/littleCareless/dish-ai-commit/commit/7c83104))
+- **pre-push**: 添加标签检查防止非法标签创建 ([459655a](https://github.com/littleCareless/dish-ai-commit/commit/459655a))
+- v0.56.8 ([09b3d75](https://github.com/littleCareless/dish-ai-commit/commit/09b3d75))
 - **refactor**: 重构代码格式并增强类型安全 ([57379e5](https://github.com/littleCareless/dish-ai-commit/commit/57379e5))
-- v0.56.7 ([c9086e8](https://github.com/littleCareless/dish-ai-commit/commit/c9086e8))
-- **chore**: 添加 .zcf 目录到 .gitignore ([5eaf562](https://github.com/littleCareless/dish-ai-commit/commit/5eaf562))
-- **webview**: 重构提示词管理钩子并增强类型安全 ([b20a8bd](https://github.com/littleCareless/dish-ai-commit/commit/b20a8bd))
-- **scm**: 增强仓库检测链路追踪并扩展SCM接口功能 ([b71b941](https://github.com/littleCareless/dish-ai-commit/commit/b71b941))
-- **commands**: 重构命令执行流程并优化AI上下文管理 ([8fa4ab3](https://github.com/littleCareless/dish-ai-commit/commit/8fa4ab3))
-- **eslint**: 添加 react-hooks/exhaustive-deps 规则并更新构建信息 ([fd4ac63](https://github.com/littleCareless/dish-ai-commit/commit/fd4ac63))
 
 ### ✨ Features
 
-- **ai**: 扩展Gemini模型支持并优化AI提供商接口 ([11d15e2](https://github.com/littleCareless/dish-ai-commit/commit/11d15e2))
-- **settings**: 扩展功能设置管理器以支持细粒度提示词配置 ([daf4157](https://github.com/littleCareless/dish-ai-commit/commit/daf4157))
-- **core**: 新增提交生成协调器与AI提供商管理器 ([95bf37b](https://github.com/littleCareless/dish-ai-commit/commit/95bf37b))
-- **webview**: 新增工作区信息获取功能并重构提示词管理系统 ([14d2b0b](https://github.com/littleCareless/dish-ai-commit/commit/14d2b0b))
-- **prompts**: 新增提交生成子分类系统并优化提示词元数据 ([52030d0](https://github.com/littleCareless/dish-ai-commit/commit/52030d0))
-- **ui**: 优化 Tooltip 组件样式并增强 VS Code 主题兼容性 ([9e508fc](https://github.com/littleCareless/dish-ai-commit/commit/9e508fc))
-- **prompts**: 重构提示词管理系统并新增核心模块 ([506e281](https://github.com/littleCareless/dish-ai-commit/commit/506e281))
-- **prompts**: 新增分层提交引导和系统机制说明 ([d7a78c1](https://github.com/littleCareless/dish-ai-commit/commit/d7a78c1))
-- **prompts**: 新增提示词管理界面组件并优化创建模态框 ([e4b8073](https://github.com/littleCareless/dish-ai-commit/commit/e4b8073))
+- **utils**: 引入Logger类并优化日志记录与代码格式 ([0bae0c8](https://github.com/littleCareless/dish-ai-commit/commit/0bae0c8))
+- **webview**: 添加Webview握手消息与会话管理类型 ([83eac9e](https://github.com/littleCareless/dish-ai-commit/commit/83eac9e))
+- **chore**: 新增 GitHub 社区与反馈模板体系 ([121b3bc](https://github.com/littleCareless/dish-ai-commit/commit/121b3bc))
+
+### 🐛 Bug Fixes
+
+- **fix**: resolve context pipeline reentrancy issue ([c9e8510](https://github.com/littleCareless/dish-ai-commit/commit/c9e8510))
+
+### ♻️ Code Refactoring
+
+- **ai**: 重构AI提供者抽象类与工具函数，优化日志记录和代码格式 ([77bd20e](https://github.com/littleCareless/dish-ai-commit/commit/77bd20e))
+- **generate-commit**: 重构提交信息生成管道，优化缓存机制与流式生成逻辑 ([1a42c2e](https://github.com/littleCareless/dish-ai-commit/commit/1a42c2e))
+- **webview**: 重构会话管理机制以提升模块化和健壮性 ([3b46078](https://github.com/littleCareless/dish-ai-commit/commit/3b46078))
+- **webview**: 引入会话管理器重构应用启动流程 ([e1fd804](https://github.com/littleCareless/dish-ai-commit/commit/e1fd804))
 
 ### 🔧 Chores
 
+- **ci**: 优化发布流程，支持手动触发和试运行 ([7c83104](https://github.com/littleCareless/dish-ai-commit/commit/7c83104))
+- **pre-push**: 添加标签检查防止非法标签创建 ([459655a](https://github.com/littleCareless/dish-ai-commit/commit/459655a))
+- v0.56.8 ([09b3d75](https://github.com/littleCareless/dish-ai-commit/commit/09b3d75))
 - **refactor**: 重构代码格式并增强类型安全 ([57379e5](https://github.com/littleCareless/dish-ai-commit/commit/57379e5))
-- v0.56.7 ([c9086e8](https://github.com/littleCareless/dish-ai-commit/commit/c9086e8))
-- **chore**: 添加 .zcf 目录到 .gitignore ([5eaf562](https://github.com/littleCareless/dish-ai-commit/commit/5eaf562))
-- **webview**: 重构提示词管理钩子并增强类型安全 ([b20a8bd](https://github.com/littleCareless/dish-ai-commit/commit/b20a8bd))
-- **scm**: 增强仓库检测链路追踪并扩展SCM接口功能 ([b71b941](https://github.com/littleCareless/dish-ai-commit/commit/b71b941))
-- **commands**: 重构命令执行流程并优化AI上下文管理 ([8fa4ab3](https://github.com/littleCareless/dish-ai-commit/commit/8fa4ab3))
-- **eslint**: 添加 react-hooks/exhaustive-deps 规则并更新构建信息 ([fd4ac63](https://github.com/littleCareless/dish-ai-commit/commit/fd4ac63))

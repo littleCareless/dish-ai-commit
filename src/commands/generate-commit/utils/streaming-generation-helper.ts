@@ -17,7 +17,9 @@ import { Logger } from "@/utils/logger";
 import { notify } from "@/utils/notification/notification-manager";
 import { showCommitSuccessNotification } from "@/utils/notification/system-notification";
 import { stateManager } from "@/utils/state/state-manager";
+import { GenerationGate } from "@/core/generation-gate";
 import * as vscode from "vscode";
+import * as crypto from "crypto";
 
 /**
  * 流式生成辅助类 - 遵循单一职责原则
@@ -28,6 +30,17 @@ export class StreamingGenerationHelper {
   private layeredCommitHandler: LayeredCommitHandler;
   private streamingHandler: StreamingHandler;
   private functionCallingHandler: FunctionCallingHandler;
+  private generationGate = GenerationGate.getInstance();
+  private lastRequestId: string | null = null;
+  private lastContext: {
+    contextManager: ContextManager;
+    requestParams: any;
+  } | null = null;
+
+  // 配置缓存
+  private _baseRequestParams: any | null = null;
+  private _lastConfigHash: string | null = null;
+  private _lastSystemPrompt: string | null = null;
 
   constructor(private logger: Logger) {
     this.contextBuilder = new CommitContextBuilder();
@@ -52,7 +65,7 @@ export class StreamingGenerationHelper {
     repositoryPath: string | undefined,
     providerConfig: any,
     aiProvider?: AIProvider,
-    selectedModel?: AIModel
+    selectedModel?: AIModel,
   ): Promise<void> {
     this.logger.info("Performing streaming generation...");
 
@@ -68,7 +81,7 @@ export class StreamingGenerationHelper {
         scmProvider,
         selectedFiles,
         resources,
-        providerConfig
+        providerConfig,
       );
 
     if (!diffContent) {
@@ -87,13 +100,13 @@ export class StreamingGenerationHelper {
       const cacheKey = commitCacheService.generateKey(
         diffContent,
         configuration,
-        model
+        model,
       );
       const cachedMessage = commitCacheService.get(cacheKey);
 
       if (cachedMessage) {
         this.logger.info(
-          "Cache hit! Using cached commit message (ultra-early check)."
+          "Cache hit! Using cached commit message (ultra-early check).",
         );
         progress.report({
           message:
@@ -118,7 +131,7 @@ export class StreamingGenerationHelper {
       model,
       providerConfig,
       aiProvider,
-      selectedModel
+      selectedModel,
     );
 
     // 阶段3: 构建上下文
@@ -126,6 +139,7 @@ export class StreamingGenerationHelper {
       message:
         getMessage("progress.stage.buildingContext") || "[3/4] 构建上下文...",
     });
+    const requestId = crypto.randomUUID();
     const { contextManager, requestParams } =
       await this.preparePromptAndContext(
         modelConfig.selectedModel,
@@ -133,14 +147,15 @@ export class StreamingGenerationHelper {
         diffContent,
         configuration,
         selectedFiles,
-        repositoryPath
+        repositoryPath,
+        requestId,
       );
 
     // 步骤4: 检查提示词长度并处理警告
     await this.checkPromptLengthAndHandleWarnings(
       contextManager,
       modelConfig.selectedModel,
-      configuration
+      configuration,
     );
 
     // 阶段4: 生成提交消息
@@ -160,7 +175,7 @@ export class StreamingGenerationHelper {
       progress,
       configuration,
       repositoryPath,
-      modelConfig.provider
+      modelConfig.provider,
     );
   }
 
@@ -172,14 +187,14 @@ export class StreamingGenerationHelper {
     scmProvider: ISCMProvider,
     selectedFiles: string[] | undefined,
     resources: vscode.SourceControlResourceState[],
-    providerConfig: any
+    providerConfig: any,
   ): Promise<{ configuration: any; diffContent: string | undefined }> {
     if (!providerConfig) {
       this.logger.error(
         "Provider config not found in prepareConfigurationAndDiff",
         {
           operation: "prepareConfigurationAndDiff",
-        }
+        },
       );
       throw new Error(getMessage("profile.not.found"));
     }
@@ -190,7 +205,7 @@ export class StreamingGenerationHelper {
     // 设置当前文件
     if (scmProvider.setCurrentFiles && selectedFiles) {
       this.logger.info(
-        `Setting current files for SCM provider: ${selectedFiles.join(", ")}`
+        `Setting current files for SCM provider: ${selectedFiles.join(", ")}`,
       );
       scmProvider.setCurrentFiles(selectedFiles);
     }
@@ -210,7 +225,7 @@ export class StreamingGenerationHelper {
         scmProvider,
         selectedFiles,
         resources,
-        progress
+        progress,
       );
     } else {
       progress.report({ message: getMessage("progress.getting.diff") });
@@ -227,14 +242,14 @@ export class StreamingGenerationHelper {
     scmProvider: ISCMProvider,
     selectedFiles: string[] | undefined,
     resources: vscode.SourceControlResourceState[],
-    progress: vscode.Progress<{ message?: string; increment?: number }>
+    progress: vscode.Progress<{ message?: string; increment?: number }>,
   ): Promise<string | undefined> {
     try {
       const repositoryContext =
         await multiRepositoryContextManager.identifyRepository(
           selectedFiles,
           vscode.window.activeTextEditor,
-          resources
+          resources,
         );
 
       const detectionResult = await stagedContentDetector.detectStagedContent({
@@ -246,23 +261,23 @@ export class StreamingGenerationHelper {
       const selectedTarget = await smartDiffSelector.selectDiffTarget(
         scmProvider,
         detectionResult,
-        DiffTarget.AUTO
+        DiffTarget.AUTO,
       );
 
       const diffResult = await smartDiffSelector.getDiffWithTarget(
         scmProvider,
         selectedTarget,
-        selectedFiles
+        selectedFiles,
       );
 
       this.logger.info(
-        `Auto-detection selected target: ${selectedTarget}, files: ${diffResult.files.length}`
+        `Auto-detection selected target: ${selectedTarget}, files: ${diffResult.files.length}`,
       );
 
       return diffResult.content;
     } catch (error) {
       this.logger.warn(
-        `Auto-detection failed, falling back to traditional method: ${error}`
+        `Auto-detection failed, falling back to traditional method: ${error}`,
       );
       progress.report({ message: getMessage("progress.getting.diff") });
       return await scmProvider.getDiff(selectedFiles);
@@ -279,7 +294,7 @@ export class StreamingGenerationHelper {
     model: string,
     providerConfig: any,
     aiProvider?: AIProvider,
-    selectedModel?: AIModel
+    selectedModel?: AIModel,
   ): Promise<{
     provider: string;
     model: string;
@@ -291,7 +306,7 @@ export class StreamingGenerationHelper {
     // 如果已提供 aiProvider 和 selectedModel，直接使用（避免重复创建）
     if (aiProvider && selectedModel) {
       this.logger.info(
-        `[Chain] [StreamingHelper] Using pre-initialized AI provider: ${aiProvider.getName?.() || provider}, model: ${selectedModel.id}`
+        `[Chain] [StreamingHelper] Using pre-initialized AI provider: ${aiProvider.getName?.() || provider}, model: ${selectedModel.id}`,
       );
 
       if (!aiProvider.generateCommitStream) {
@@ -310,7 +325,7 @@ export class StreamingGenerationHelper {
 
     // 否则，使用统一的模型验证服务（兼容旧流程）
     this.logger.warn(
-      `[Chain] [StreamingHelper] No pre-initialized AI provider provided, creating new instance (fallback mode)`
+      `[Chain] [StreamingHelper] ⚠ No pre-initialized AI provider provided, entering fallback mode. This should rarely happen.`,
     );
     const { ModelValidationService } =
       await import("@/services/core/model-validation-service");
@@ -318,7 +333,7 @@ export class StreamingGenerationHelper {
       await ModelValidationService.validateModel(
         provider,
         model,
-        providerConfig
+        providerConfig,
       );
 
     if (!newModel) {
@@ -349,29 +364,39 @@ export class StreamingGenerationHelper {
     diffContent: string,
     configuration: any,
     selectedFiles: string[] | undefined,
-    repositoryPath?: string
+    repositoryPath: string | undefined,
+    requestId: string,
   ): Promise<{ contextManager: ContextManager; requestParams: any }> {
-    const tempParams = {
-      ...configuration.features.commitMessage,
-      ...configuration.features.commitFormat,
-      ...configuration.features.codeAnalysis,
-      model: selectedModel,
-      scm: scmProvider.type ?? "git",
-      workspaceRoot: repositoryPath,
-      changeFiles: selectedFiles || [],
-      languages: configuration.base.language,
-      diff: diffContent,
-      additionalContext: "",
-      feature: "commit-generation",
-    };
+    if (this.lastRequestId === requestId && this.lastContext) {
+      this.logger.debug(
+        `[StreamingHelper] ✓ Reused context for requestId=${requestId}`,
+      );
+      return this.lastContext;
+    }
 
-    const systemPrompt = await getSystemPrompt(tempParams);
+    // 构建并缓存 system prompt
+    if (
+      !this._lastSystemPrompt ||
+      this._lastConfigHash !== this.getConfigHash(configuration)
+    ) {
+      const tempParams = this.buildRequestParams(configuration, {
+        model: selectedModel,
+        scm: scmProvider.type ?? "git",
+        workspaceRoot: repositoryPath,
+        changeFiles: selectedFiles || [],
+        diff: diffContent,
+      });
+
+      this._lastSystemPrompt = await getSystemPrompt(tempParams);
+    }
+
     const contextManager = await this.contextBuilder.buildContextManager(
       selectedModel,
-      systemPrompt,
+      this._lastSystemPrompt,
       scmProvider,
       diffContent,
-      configuration
+      configuration,
+      { requestId },
     );
 
     this.logger.info("ContextManager built.");
@@ -379,15 +404,73 @@ export class StreamingGenerationHelper {
       `Context blocks: ${contextManager
         .getBlocks()
         .map((b: any) => b.name)
-        .join(", ")}`
+        .join(", ")}`,
     );
 
-    const requestParams = {
-      ...tempParams,
+    const requestParams = this.buildRequestParams(configuration, {
+      model: selectedModel,
+      scm: scmProvider.type ?? "git",
+      workspaceRoot: repositoryPath,
+      changeFiles: selectedFiles || [],
       diff: diffContent,
-    };
+      additionalContext: "",
+      feature: "commit-generation",
+    });
 
+    this.lastRequestId = requestId;
+    this.lastContext = { contextManager, requestParams };
+
+    this.logger.debug(
+      `[StreamingHelper] Built new context for requestId=${requestId}`,
+    );
     return { contextManager, requestParams };
+  }
+
+  private computeChangeHash(
+    selectedFiles?: string[],
+    repositoryPath?: string,
+  ): string {
+    const input = `${repositoryPath}:${selectedFiles?.join(",") || ""}`;
+    return Buffer.from(input).toString("base64").substring(0, 16);
+  }
+
+  /**
+   * 构建请求参数 - 避免重复解构配置
+   */
+  private buildRequestParams(
+    configuration: any,
+    overrides: Partial<any> = {},
+  ): any {
+    const currentConfigHash = this.getConfigHash(configuration);
+    if (
+      !this._baseRequestParams ||
+      this._lastConfigHash !== currentConfigHash
+    ) {
+      this._baseRequestParams = {
+        ...configuration.features.commitMessage,
+        ...configuration.features.commitFormat,
+        ...configuration.features.codeAnalysis,
+        languages: configuration.base.language,
+      };
+      this._lastConfigHash = currentConfigHash;
+    }
+
+    return {
+      ...this._baseRequestParams,
+      ...overrides,
+    };
+  }
+
+  /**
+   * 计算配置哈希，用于检测配置变化
+   */
+  private getConfigHash(config: any): string {
+    return JSON.stringify({
+      language: config.base?.language,
+      emoji: config.features?.commitFormat?.enableEmoji,
+      body: config.features?.commitFormat?.enableBody,
+      rule: config.features?.commitMessage?.rule,
+    });
   }
 
   /**
@@ -396,14 +479,14 @@ export class StreamingGenerationHelper {
   private async checkPromptLengthAndHandleWarnings(
     contextManager: ContextManager,
     selectedModel: AIModel,
-    configuration: any
+    configuration: any,
   ): Promise<void> {
     const promptLength = contextManager.getEstimatedRawTokenCount();
     this.logger.info(`Estimated prompt length: ${promptLength} tokens.`);
 
     const tokenLimits = await getAccurateTokenLimits(
       selectedModel,
-      configuration
+      configuration,
     );
     const maxTokens = tokenLimits.input;
 
@@ -417,27 +500,23 @@ export class StreamingGenerationHelper {
       const choice = await notify.warn(
         "prompt.large.warning.with.fallback",
         [promptLength.toLocaleString(), maxTokens.toLocaleString()],
-        { modal: true, buttons: [useFallbackChoice, continueAnyway] }
+        { modal: true, buttons: [useFallbackChoice, continueAnyway] },
       );
 
       if (choice === useFallbackChoice) {
-        const tempParams = {
-          ...configuration.features.commitMessage,
-          ...configuration.features.commitFormat,
-          ...configuration.features.codeAnalysis,
+        const tempParams = this.buildRequestParams(configuration, {
           model: selectedModel,
           scm: "git",
           workspaceRoot: undefined,
           changeFiles: [],
-          languages: configuration.base.language,
           diff: "",
           additionalContext: "",
-        };
+        });
 
         const fallbackSystemPrompt = await getSystemPrompt(
           tempParams,
           true,
-          true
+          true,
         );
         contextManager.setSystemPrompt(fallbackSystemPrompt);
         notify.info("info.using.fallback.prompt");
@@ -461,14 +540,14 @@ export class StreamingGenerationHelper {
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     configuration: any,
     repositoryPath: string | undefined,
-    newProvider: string
+    newProvider: string,
   ): Promise<void> {
     try {
       this.throwIfCancelled(token);
 
       const useFunctionCalling =
         stateManager.getWorkspace<boolean>(
-          "experimental.commitWithFunctionCalling.enabled"
+          "experimental.commitWithFunctionCalling.enabled",
         ) ?? false;
 
       // === 缓存检查 ===
@@ -486,7 +565,7 @@ export class StreamingGenerationHelper {
         cacheKey = commitCacheService.generateKey(
           requestParams.diff || "", // 核心是 Diff 内容
           configuration,
-          selectedModel.id
+          selectedModel.id,
         );
       }
       // =================
@@ -502,7 +581,7 @@ export class StreamingGenerationHelper {
           token,
           progress,
           repositoryPath,
-          newProvider
+          newProvider,
         );
       } else {
         generatedMessage = await this.handleStandardGeneration(
@@ -515,7 +594,7 @@ export class StreamingGenerationHelper {
           token,
           progress,
           configuration,
-          repositoryPath
+          repositoryPath,
         );
       }
 
@@ -549,22 +628,22 @@ export class StreamingGenerationHelper {
     token: vscode.CancellationToken,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     repositoryPath: string | undefined,
-    newProvider: string
+    newProvider: string,
   ): Promise<string> {
     this.logger.info("Using function calling generation.");
 
     if (!aiProvider.generateCommitWithFunctionCalling) {
       this.logger.error(
-        `Provider ${newProvider} does not support function calling.`
+        `Provider ${newProvider} does not support function calling.`,
       );
       throw new Error(
-        `Provider ${newProvider} does not support function calling.`
+        `Provider ${newProvider} does not support function calling.`,
       );
     }
 
     const messages = contextManager.buildMessages();
     this.logger.info(
-      `Built messages for function calling. Total messages: ${messages.length}`
+      `Built messages for function calling. Total messages: ${messages.length}`,
     );
 
     return await this.functionCallingHandler.handle(
@@ -573,7 +652,7 @@ export class StreamingGenerationHelper {
       scmProvider,
       token,
       progress,
-      repositoryPath
+      repositoryPath,
     );
   }
 
@@ -590,7 +669,7 @@ export class StreamingGenerationHelper {
     token: vscode.CancellationToken,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     configuration: any,
-    repositoryPath: string | undefined
+    repositoryPath: string | undefined,
   ): Promise<string | undefined> {
     const shouldUseLayeredCommit =
       configuration.features.commitFormat.enableLayeredCommit &&
@@ -607,7 +686,7 @@ export class StreamingGenerationHelper {
         token,
         progress,
         selectedModel,
-        configuration
+        configuration,
       );
       return undefined; // Layered commit handler manages its own output and doesn't return a single string
     } else {
@@ -619,7 +698,7 @@ export class StreamingGenerationHelper {
         token,
         progress,
         contextManager,
-        repositoryPath
+        repositoryPath,
       );
     }
   }
@@ -633,12 +712,12 @@ export class StreamingGenerationHelper {
       const choice = await notify.error(
         "error.request.too.large",
         [error.message],
-        { modal: true, buttons: [switchToLargerModel] }
+        { modal: true, buttons: [switchToLargerModel] },
       );
       if (choice === switchToLargerModel) {
         // 模型选择已迁移到 webview-ui 设置页面
         await vscode.commands.executeCommand(
-          "workbench.view.extension.dish-ai-commitActivityBar"
+          "workbench.view.extension.dish-ai-commitActivityBar",
         );
       }
     } else {

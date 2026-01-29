@@ -230,10 +230,10 @@ export const ExtensionStateContextProvider: React.FC<{
   }, [handleMessage]);
 
   useEffect(() => {
-    postMessage("webviewDidLaunch");
+    // 注意：webviewDidLaunch 已在 App.tsx 统一处理
+    // 这里不再重复发送，避免消息风暴
 
     // Fallback: Ensure UI unblocks even if extension doesn't send initial state
-    // 保留作为兜底方案，防止后端响应失败导致页面卡死
     const timer = setTimeout(() => {
       setDidHydrateState((prev) => {
         if (!prev) {

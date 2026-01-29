@@ -5,7 +5,7 @@ import * as path from "path";
 import { v4 as uuidv4 } from "uuid";
 import * as vscode from "vscode";
 
-const logger = Logger.getInstance("WorkspaceManager");
+const logger = Logger.getInstance("Dish AI Commit");
 
 /**
  * 工作区管理器
@@ -66,7 +66,7 @@ export class WorkspaceManager {
     const idFilePath = path.join(
       workspaceFolder.uri.fsPath,
       ".dish",
-      "workspace-id"
+      "workspace-id",
     );
 
     // 读取现有 ID
@@ -97,7 +97,7 @@ export class WorkspaceManager {
         `Failed to create workspace ID for ${workspaceFolder.name}`,
         {
           error: error as Error,
-        }
+        },
       );
       // 回退：使用路径作为 ID（不理想但可用）
       return workspaceFolder.uri.fsPath;

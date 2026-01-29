@@ -11,16 +11,17 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import SessionManager from "@/core/SessionManager";
 import { profileManager } from "@/services/webview/profile-manager";
 import { DEFAULT_USER_PREFERENCES, Profile } from "@/types/settings";
-import { showInformationMessage } from "@/utils/vscode";
 import { themeStyles } from "@/utils/theme";
+import { showInformationMessage } from "@/utils/vscode";
 import { Settings as SettingsIcon } from "lucide-react";
 import React, { useCallback, useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FeaturesSettings } from "./FeaturesSettings";
-import { ProvidersSettings } from "./ProvidersSettings";
 import { ModelCustomSettings } from "./ModelCustomSettings";
+import { ProvidersSettings } from "./ProvidersSettings";
 
 export const SettingsPage: React.FC = () => {
   const { t } = useTranslation("settings-page");
@@ -58,7 +59,6 @@ export const SettingsPage: React.FC = () => {
         activeProfileId,
       );
       if (profiles.length === 0) {
-        // No profiles found, create a default one
         const defaultProfile = profileManager.createDefaultProfile(
           t("defaultProfileName"),
           t("defaultProfileDescription"),
@@ -67,12 +67,11 @@ export const SettingsPage: React.FC = () => {
         await profileManager.saveProfile(defaultProfile);
         await profileManager.setActiveProfile(defaultProfile.id);
 
-        // Set state directly instead of reloading
         setAllProfiles([defaultProfile]);
         setActiveProfile(defaultProfile);
         setEditingProfile(defaultProfile);
         console.log("[SettingsPage] Set default profile as editingProfile");
-        return; // Early return to prevent state from being overwritten
+        return;
       }
 
       setAllProfiles(profiles);
@@ -80,7 +79,7 @@ export const SettingsPage: React.FC = () => {
         profiles.find((p) => p.id === activeProfileId) || profiles[0];
       console.log("[SettingsPage] Active profile:", active);
       setActiveProfile(active);
-      setEditingProfile(active); // Initially, edit the active profile
+      setEditingProfile(active);
       console.log("[SettingsPage] Set active profile as editingProfile");
     } catch (err) {
       console.log("[SettingsPage] Error loading profiles:", err);
@@ -93,7 +92,14 @@ export const SettingsPage: React.FC = () => {
   }, [t]);
 
   useEffect(() => {
-    loadData();
+    const sessionManager = SessionManager.getInstance();
+
+    // 使用 ensureInitialized 防止重复加载
+    sessionManager
+      .ensureInitialized("settings-profiles", loadData)
+      .catch((error) => {
+        console.error("[SettingsPage] Error in ensureInitialized:", error);
+      });
   }, [loadData]);
 
   const handleProfileCreate = () => {
