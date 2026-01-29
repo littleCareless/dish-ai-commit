@@ -1,0 +1,52 @@
+---
+name: 🐛 Bug Report
+about: 报告一个 Bug 或问题
+title: '[Bug] '
+labels: 'bug'
+assignees: ''
+---
+
+## 🐛 Bug 描述
+简要描述这个 Bug 是什么。
+
+## 📋 复现步骤
+1. 执行 '...'
+2. 点击 '....'
+3. 滚动到 '....'
+4. 看到错误
+
+## 期望行为
+描述你期望发生什么。
+
+## 实际行为
+描述实际发生了什么。
+
+## 📸 截图
+如果适用，添加截图来帮助解释问题。
+
+## 🌍 环境
+- VS Code 版本: [例如 1.80.0]
+- 扩展版本: [例如 0.56.1]
+- 操作系统: [例如 Windows 11 / macOS 13 / Ubuntu 22.04]
+- Node.js 版本: [运行 `node -v`]
+- AI 提供商: [例如 OpenAI, Ollama, 等]
+- AI 模型: [例如 gpt-3.5-turbo, llama2, 等]
+
+## 📝 配置
+```json
+// 粘贴相关配置（请移除敏感信息如 API keys）
+{
+  "dish-ai-commit.base.provider": "...",
+  "dish-ai-commit.base.model": "..."
+}
+```
+
+## 📋 日志
+[VS Code 帮助 > 切换开发人员工具 > Console]
+
+```log
+// 粘贴相关日志
+```
+
+## 附加信息
+添加其他关于问题的信息。

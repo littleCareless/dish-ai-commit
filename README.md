@@ -6,7 +6,7 @@
 
 A powerful VSCode extension that uses AI technology to generate standardized Git/SVN commit messages with intelligent code analysis, semantic indexing, and multi-dimensional generation capabilities.
 
-[Report Bug][github-issues-link] · [Request Feature][github-issues-link] · [View Documentation](#-documentation)
+[Report Bug][github-issues-link] · [Request Feature][github-issues-link] · [Join Discussions][github-discussions-link] · [View Documentation](#-documentation)
 
 <!-- SHIELD GROUP -->
 
@@ -358,6 +358,28 @@ webview-ui/
 - ✅ Unit tests for critical paths
 - ✅ Documentation for public APIs
 
+## 💬 Community & Feedback
+
+### Get Help & Share Ideas
+
+- 🐛 **[Report a Bug](https://github.com/littleCareless/dish-ai-commit/issues/new?template=bug_report.yml)** - Found an issue? Let us know!
+- ✨ **[Request a Feature](https://github.com/littleCareless/dish-ai-commit/issues/new?template=feature_request.yml)** - Have an idea? We'd love to hear it!
+- 📝 **[Share Feedback](https://github.com/littleCareless/dish-ai-commit/issues/79)** - Tell us what you think about the extension
+- 💬 **[Join Discussions](https://github.com/littleCareless/dish-ai-commit/discussions)** - Share ideas, ask questions, or chat with the community
+
+### Community Guidelines
+
+- Be respectful and constructive
+- Provide detailed information (version, OS, config)
+- Include screenshots when applicable
+- Search existing issues before creating new ones
+
+### Stay Updated
+
+- ⭐ **Star the repo** to get notified of new releases
+- 👀 **Watch** for issue and PR updates
+- 📧 **Follow** for important announcements
+
 ## 🤝 Contributing
 
 We welcome all contributions!
@@ -438,6 +460,7 @@ This project is [MIT](./LICENSE) licensed.
 **Status**: ✅ Production Ready
 
 [github-issues-link]: https://github.com/littleCareless/dish-ai-commit/issues
+[github-discussions-link]: https://github.com/littleCareless/dish-ai-commit/discussions
 [github-contributors-link]: https://github.com/littleCareless/dish-ai-commit/graphs/contributors
 [github-forks-link]: https://github.com/littleCareless/dish-ai-commit/network/members
 [github-stars-link]: https://github.com/littleCareless/dish-ai-commit/network/stargazers
