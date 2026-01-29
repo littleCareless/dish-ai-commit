@@ -23,7 +23,7 @@ export class CrossRepositoryHandler {
    * @param filesByRepository - Map of repository path to file paths
    * @param provider - AI provider instance
    * @param model - AI model name
-   * @param performStreamingGeneration - 流式生成函数
+   * @param performStreamingGeneration - 流式生成函数（支持可选的 aiProvider 和 selectedModel）
    */
   async handle(
     filesByRepository: Map<string, string[]>,
@@ -37,7 +37,10 @@ export class CrossRepositoryHandler {
       scmProvider: ISCMProvider,
       selectedFiles: string[] | undefined,
       resources: vscode.SourceControlResourceState[],
-      repositoryPath?: string
+      repositoryPath?: string,
+      providerConfig?: any,
+      aiProvider?: any,
+      selectedModel?: any
     ) => Promise<void>
   ): Promise<void> {
     const repositoryCount = filesByRepository.size;
@@ -165,7 +168,10 @@ export class CrossRepositoryHandler {
       scmProvider: ISCMProvider,
       selectedFiles: string[] | undefined,
       resources: vscode.SourceControlResourceState[],
-      repositoryPath?: string
+      repositoryPath?: string,
+      providerConfig?: any,
+      aiProvider?: any,
+      selectedModel?: any
     ) => Promise<void>
   ): Promise<void> {
     this.logger.info(`--- Processing Single Repository ---`);

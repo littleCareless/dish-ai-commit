@@ -1,4 +1,3 @@
-import { AIProviderFactory } from "@/ai/ai-provider-factory";
 import { AIModel, AIProvider } from "@/ai/types";
 
 import { DISH_CONFIG_PREFIX } from "@/config/constants";
@@ -180,6 +179,89 @@ export abstract class BaseCommand {
   }
 
   /**
+   * 统一初始化AI上下文（消除重复创建Provider的问题）
+   * 链路追踪日志：[Chain] AI Context Initialization
+   *
+   * @param provider - AI提供商ID
+   * @param model - 模型ID
+   * @param config - 配置对象
+   * @param profile - 用户配置档案
+   * @param options - 选项 { validateModel: 是否需要完整验证 }
+   * @returns AI上下文对象，失败返回undefined
+   */
+  protected async initializeAIContext(
+    provider: string,
+    model: string,
+    config: any,
+    profile: any,
+    options: { validateModel?: boolean }
+  ): Promise<{ aiProvider?: AIProvider; selectedModel?: AIModel } | undefined> {
+    const startTime = Date.now();
+    this.logger.info(`[Chain] [AI-Context-Init] START - Provider: ${provider}, Model: ${model}, Mode: ${options.validateModel ? 'full' : 'light'}`);
+
+    // 情况A：需要完整验证（创建Provider + 获取模型列表）
+    if (options.validateModel) {
+      try {
+        this.logger.info(`[Chain] [AI-Context-Init] Step 1: Calling ModelValidationService.validateModel()`);
+
+        const { ModelValidationService } = await import("@/services/core/model-validation-service");
+        const result = await ModelValidationService.validateModel(
+          provider,
+          model,
+          config,
+          profile
+        );
+
+        const duration = Date.now() - startTime;
+        this.logger.info(`[Chain] [AI-Context-Init] SUCCESS - Mode: full, Duration: ${duration}ms, Provider: ${result.aiProvider?.getName?.() || provider}, Model: ${result.selectedModel?.id || model}`);
+
+        return {
+          aiProvider: result.aiProvider,
+          selectedModel: result.selectedModel  // 返回完整的模型对象
+        };
+      } catch (error) {
+        const duration = Date.now() - startTime;
+        const errorObj = error instanceof Error ? error : new Error(String(error));
+        this.logger.logError(
+          errorObj,
+          `[Chain] [AI-Context-Init] FAILED - Mode: full, Duration: ${duration}ms`,
+          {
+            data: { provider, model },
+          }
+        );
+
+        await notify.error(getMessage("model.not.available"), [provider, model]);
+        return undefined;
+      }
+    }
+
+    // 情况B：只需要轻量级检查（不创建Provider）
+    try {
+      this.logger.info(`[Chain] [AI-Context-Init] Step 1: Calling verifyModelAvailability() (light mode)`);
+
+      await this.verifyModelAvailability(provider, model, config);
+
+      const duration = Date.now() - startTime;
+      this.logger.info(`[Chain] [AI-Context-Init] SUCCESS - Mode: light, Duration: ${duration}ms`);
+
+      return {};
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      const errorObj = error instanceof Error ? error : new Error(String(error));
+      this.logger.logError(
+        errorObj,
+        `[Chain] [AI-Context-Init] FAILED - Mode: light, Duration: ${duration}ms`,
+        {
+          data: { provider, model },
+        }
+      );
+
+      await notify.error(getMessage("model.not.available"), [provider, model]);
+      return undefined;
+    }
+  }
+
+  /**
    * 检测并获取SCM提供程序。
    * 此方法将所有复杂的检测逻辑委托给 SCMDetectorService。
    * @param {vscode.SourceControlResourceState | vscode.SourceControlResourceState[] | string[] | undefined} resourcesOrFiles - 可选的资源状态、文件路径列表或字符串数组
@@ -191,7 +273,7 @@ export abstract class BaseCommand {
       | vscode.SourceControlResourceState[]
       | string[]
   ) {
-    return SCMDetectorService.detectSCMProvider(resourcesOrFiles);
+    return SCMDetectorService.getInstance().detectSCMProvider(resourcesOrFiles);
   }
 
   /**
@@ -259,7 +341,9 @@ export abstract class BaseCommand {
   }
   /**
    * 准备命令执行环境
-   * 执行通用的前置检查：ToS确认、配置验证、SCM检测、模型验证
+   * 执行通用的前置检查：ToS确认、配置验证、AI上下文初始化、SCM检测
+   * 链路追踪日志：[Chain] Command Preparation
+   *
    * @param arg - 命令参数
    * @param options - 选项
    * @returns 命令上下文，如果检查失败返回undefined
@@ -272,13 +356,18 @@ export abstract class BaseCommand {
       progress?: vscode.Progress<{ message?: string; increment?: number }>;
     } = {}
   ): Promise<CommandContext | undefined> {
+    const prepareStartTime = Date.now();
+    this.logger.info(`[Chain] [Prepare] START - validateModel: ${options.validateModel}, requireSelectedFiles: ${options.requireSelectedFiles}`);
+
     // 1. 验证AI提供商服务条款
+    this.logger.info(`[Chain] [Prepare] Step 1: Validating AI provider ToS`);
     if ((await this.showConfirmAIProviderToS()) === false) {
-      this.logger.warn("User did not confirm AI provider ToS.");
+      this.logger.warn("[Chain] [Prepare] FAILED - User did not confirm AI provider ToS.");
       return;
     }
 
     // 2. 验证配置
+    this.logger.info(`[Chain] [Prepare] Step 2: Loading profile and configuration`);
     const profileManager = await ProfileManagerService.create(this.context);
     const activeProfileId = profileManager.getActiveProfileId();
     const profile = activeProfileId
@@ -286,7 +375,7 @@ export abstract class BaseCommand {
       : null;
 
     if (!profile) {
-      this.logger.error("prepare: Active profile not found", {
+      this.logger.error("[Chain] [Prepare] FAILED - Active profile not found", {
         operation: "prepare",
       });
       await notify.error(getMessage("profile.not.found"));
@@ -296,73 +385,64 @@ export abstract class BaseCommand {
 
     const configResult = this.handleConfiguration(profile, featureSettings);
     if (!configResult) {
-      this.logger.warn("Configuration is not valid.");
+      this.logger.warn("[Chain] [Prepare] FAILED - Configuration is not valid.");
       return;
     }
     const { provider, model, config } = configResult;
-    this.logger.debug("配置处理完成", {
-      data: { provider, model, hasConfig: !!config },
-    });
-    // 验证模型可用性
+    this.logger.info(`[Chain] [Prepare] Step 2 COMPLETE - Provider: ${provider}, Model: ${model}`);
+
+    // 3. 统一初始化AI上下文（关键优化：消除重复创建Provider）
     if (options.progress) {
       options.progress.report({
         message: getMessage("verifying.model.availability"),
       });
     }
-    try {
-      await this.verifyModelAvailability(provider, model, config);
-    } catch (error) {
-      this.logger.logError(
-        error as Error,
-        "Model availability verification failed",
-        { data: { provider, model } }
-      );
-      await notify.error(getMessage("model.not.available"), [provider, model]);
-      return;
+
+    const aiContext = await this.initializeAIContext(
+      provider,
+      model,
+      config,
+      profile,
+      { validateModel: options.validateModel }
+    );
+
+    if (aiContext === undefined) {
+      this.logger.warn("[Chain] [Prepare] FAILED - AI context initialization failed");
+      return; // AI初始化失败，直接返回
     }
 
-    // 3. 检测SCM和文件
+    this.logger.info(`[Chain] [Prepare] Step 3 COMPLETE - AI Context initialized${aiContext.aiProvider ? ` (Provider: ${aiContext.aiProvider.getName?.()})` : ''}`);
+
+    // 4. 检测SCM和文件
     if (options.progress) {
       options.progress.report({
         message: getMessage("detecting.scm.provider"),
       });
     }
 
+    this.logger.info(`[Chain] [Prepare] Step 4: Detecting SCM provider`);
     const scmResult = await this.resolveSCMContext(arg);
     if (!scmResult) {
-      this.logger.warn("SCM provider not detected.");
+      this.logger.warn("[Chain] [Prepare] FAILED - SCM provider not detected.");
       return;
     }
 
     const { scmProvider, selectedFiles, repositoryPath } = scmResult;
+    this.logger.info(`[Chain] [Prepare] Step 4 COMPLETE - SCM: ${scmProvider.type}, Repo: ${repositoryPath}`);
 
-    // 检查是否需要选中的文件
+    // 5. 检查是否需要选中的文件
     if (
       options.requireSelectedFiles &&
       (!selectedFiles || selectedFiles.length === 0)
     ) {
-      this.logger.warn("No files selected.");
+      this.logger.warn("[Chain] [Prepare] FAILED - No files selected.");
       await notify.warn("no.changes.selected");
       return;
     }
 
-    // 4. 验证模型 (可选) - 已移除，由ProfileManager保证配置有效性
-    let aiContext: { aiProvider?: AIProvider; selectedModel?: AIModel } = {};
-    if (options.validateModel) {
-      // 模型验证逻辑已移除
-      // 我们假设ProfileManager返回的配置是有效的，或者在执行时处理错误
-      // 🔥 关键修复：传递 config 以确保 API key 等配置被正确传递
-      const aiProvider = await AIProviderFactory.getProvider(provider, config);
-      // 确保设置全局配置（包含 preferences 等）
-      if (aiProvider && typeof aiProvider.setGlobalConfig === "function") {
-        aiProvider.setGlobalConfig(config);
-      }
-      aiContext = {
-        aiProvider,
-        selectedModel: undefined, // 我们不再预先获取模型详情
-      };
-    }
-    console.log("aiContext", aiContext);
+    // 6. 返回完整的命令上下文
+    const prepareDuration = Date.now() - prepareStartTime;
+    this.logger.info(`[Chain] [Prepare] COMPLETE - Duration: ${prepareDuration}ms`);
 
     return {
       provider,
@@ -399,7 +479,7 @@ export abstract class BaseCommand {
     }
 
     // 2. 委托给SCMDetectorService处理资源状态或undefined
-    return SCMDetectorService.detectSCMProvider(arg);
+    return SCMDetectorService.getInstance().detectSCMProvider(arg);
   }
 
   /**

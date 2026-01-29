@@ -47,12 +47,12 @@ export class GenerateCommitCommand extends BaseCommand {
       return;
     }
 
-    const { provider, model, providerConfig } = context;
+    const { provider, model, providerConfig, aiProvider, selectedModel } = context;
     this.logger.info(`Using AI provider: ${provider}, model: ${model}`);
 
     // 步骤3: 处理具体执行逻辑
     try {
-      await this.executeCommitGeneration(arg, provider, model, providerConfig);
+      await this.executeCommitGeneration(arg, provider, model, providerConfig, aiProvider, selectedModel);
     } catch (error) {
       this.logger.logError(error as Error, "生成提交信息失败");
       if (error instanceof Error) {
@@ -68,7 +68,9 @@ export class GenerateCommitCommand extends BaseCommand {
     arg: any,
     provider: string,
     model: string,
-    providerConfig: any
+    providerConfig: any,
+    aiProvider?: any,
+    selectedModel?: any
   ): Promise<void> {
     // 解析参数
     const parsedArgs = this.parseArguments(arg);
@@ -79,7 +81,9 @@ export class GenerateCommitCommand extends BaseCommand {
         parsedArgs.filesByRepository,
         provider,
         model,
-        providerConfig
+        providerConfig,
+        aiProvider,
+        selectedModel
       );
       return;
     }
@@ -89,7 +93,9 @@ export class GenerateCommitCommand extends BaseCommand {
       parsedArgs,
       provider,
       model,
-      providerConfig
+      providerConfig,
+      aiProvider,
+      selectedModel
     );
   }
 
@@ -142,12 +148,15 @@ export class GenerateCommitCommand extends BaseCommand {
 
   /**
    * 处理跨仓库场景 - 遵循单一职责原则
+   * 注意：跨仓库场景下，每个仓库需要独立的 Provider 实例，因此不传递 aiProvider
    */
   private async handleCrossRepositoryScenario(
     filesByRepository: Map<string, string[]> | undefined,
     provider: string,
     model: string,
-    providerConfig: any
+    providerConfig: any,
+    aiProvider?: any,
+    selectedModel?: any
   ): Promise<void> {
     if (!filesByRepository) {
       this.logger.warn(
@@ -155,6 +164,11 @@ export class GenerateCommitCommand extends BaseCommand {
       );
       return;
     }
+
+    // 跨仓库场景：每个仓库独立创建 Provider，不传递 aiProvider/selectedModel
+    this.logger.info(
+      `[Chain] [CrossRepo] Starting cross-repository generation for ${filesByRepository.size} repositories`
+    );
 
     await this.crossRepoHandler.handle(
       filesByRepository,
@@ -168,7 +182,10 @@ export class GenerateCommitCommand extends BaseCommand {
         scmProvider,
         selectedFiles,
         resources,
-        repoPath
+        repoPath,
+        providerConfig,
+        aiProvider,
+        selectedModel
       ) =>
         this.streamingHelper.performStreamingGeneration(
           progress,
@@ -179,7 +196,9 @@ export class GenerateCommitCommand extends BaseCommand {
           selectedFiles,
           resources,
           repoPath,
-          providerConfig
+          providerConfig,
+          undefined,  // 跨仓库场景：每个仓库独立创建
+          undefined   // 跨仓库场景：每个仓库独立创建
         )
     );
   }
@@ -191,7 +210,9 @@ export class GenerateCommitCommand extends BaseCommand {
     parsedArgs: any,
     provider: string,
     model: string,
-    providerConfig: any
+    providerConfig: any,
+    aiProvider?: any,
+    selectedModel?: any
   ): Promise<void> {
     let result: any;
 
@@ -242,7 +263,9 @@ export class GenerateCommitCommand extends BaseCommand {
           selectedFiles,
           parsedArgs.resourceStates || [],
           finalRepoPath,
-          providerConfig
+          providerConfig,
+          aiProvider,
+          selectedModel
         );
       }
     );

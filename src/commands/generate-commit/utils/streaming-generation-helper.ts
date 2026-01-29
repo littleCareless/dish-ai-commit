@@ -38,6 +38,8 @@ export class StreamingGenerationHelper {
 
   /**
    * 执行流式生成 - 遵循单一职责原则
+   * @param aiProvider - 已创建的AI提供者实例（避免重复创建）
+   * @param selectedModel - 已验证的模型对象（可选，如果未提供则从配置中获取）
    */
   async performStreamingGeneration(
     progress: vscode.Progress<{ message?: string; increment?: number }>,
@@ -48,7 +50,9 @@ export class StreamingGenerationHelper {
     selectedFiles: string[] | undefined,
     resources: vscode.SourceControlResourceState[],
     repositoryPath: string | undefined,
-    providerConfig: any
+    providerConfig: any,
+    aiProvider?: AIProvider,
+    selectedModel?: AIModel
   ): Promise<void> {
     this.logger.info("Performing streaming generation...");
 
@@ -112,7 +116,9 @@ export class StreamingGenerationHelper {
       progress,
       provider,
       model,
-      providerConfig
+      providerConfig,
+      aiProvider,
+      selectedModel
     );
 
     // 阶段3: 构建上下文
@@ -265,12 +271,15 @@ export class StreamingGenerationHelper {
 
   /**
    * 处理模型配置 - 遵循单一职责原则
+   * 优先使用传入的 aiProvider 和 selectedModel，避免重复创建
    */
   private async processModelConfiguration(
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     provider: string,
     model: string,
-    providerConfig: any
+    providerConfig: any,
+    aiProvider?: AIProvider,
+    selectedModel?: AIModel
   ): Promise<{
     provider: string;
     model: string;
@@ -279,22 +288,45 @@ export class StreamingGenerationHelper {
   }> {
     progress.report({ message: getMessage("progress.updating.model.config") });
 
-    // 使用统一的模型验证服务
+    // 如果已提供 aiProvider 和 selectedModel，直接使用（避免重复创建）
+    if (aiProvider && selectedModel) {
+      this.logger.info(
+        `[Chain] [StreamingHelper] Using pre-initialized AI provider: ${aiProvider.getName?.() || provider}, model: ${selectedModel.id}`
+      );
+
+      if (!aiProvider.generateCommitStream) {
+        this.logger.error(`Provider ${provider} does not support streaming.`);
+        notify.error("provider.does.not.support.streaming", [provider]);
+        throw new Error(`Provider ${provider} does not support streaming.`);
+      }
+
+      return {
+        provider,
+        model,
+        aiProvider,
+        selectedModel,
+      };
+    }
+
+    // 否则，使用统一的模型验证服务（兼容旧流程）
+    this.logger.warn(
+      `[Chain] [StreamingHelper] No pre-initialized AI provider provided, creating new instance (fallback mode)`
+    );
     const { ModelValidationService } =
       await import("@/services/core/model-validation-service");
-    const { aiProvider, selectedModel } =
+    const { aiProvider: newProvider, selectedModel: newModel } =
       await ModelValidationService.validateModel(
         provider,
         model,
         providerConfig
       );
 
-    if (!selectedModel) {
+    if (!newModel) {
       this.logger.error("No model selected.");
       throw new Error(getMessage("no.model.selected"));
     }
 
-    if (!aiProvider.generateCommitStream) {
+    if (!newProvider.generateCommitStream) {
       this.logger.error(`Provider ${provider} does not support streaming.`);
       notify.error("provider.does.not.support.streaming", [provider]);
       throw new Error(`Provider ${provider} does not support streaming.`);
@@ -303,8 +335,8 @@ export class StreamingGenerationHelper {
     return {
       provider,
       model,
-      aiProvider,
-      selectedModel,
+      aiProvider: newProvider,
+      selectedModel: newModel,
     };
   }
 
