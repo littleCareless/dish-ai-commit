@@ -23,9 +23,15 @@ import {
   RequestTooLargeError,
   TruncationStrategy,
 } from "@/utils/context-manager/types";
+import { Logger } from "./logger";
 
 // 重新导出类型和枚举以保持向后兼容
-export { ContextBlock, FORCE_RETAIN_BLOCKS, RequestTooLargeError, TruncationStrategy };
+export {
+  ContextBlock,
+  FORCE_RETAIN_BLOCKS,
+  RequestTooLargeError,
+  TruncationStrategy,
+};
 
 /**
  * 管理和构建 AI 请求的上下文
@@ -51,7 +57,7 @@ export class ContextManager {
   constructor(
     model: AIModel,
     systemPrompt: string,
-    suppressNonCriticalWarnings: boolean = false
+    suppressNonCriticalWarnings: boolean = false,
   ) {
     this.model = model;
     this.systemPrompt = systemPrompt;
@@ -63,7 +69,7 @@ export class ContextManager {
     this.blockProcessor = new BlockProcessor(
       this.tokenCalculator,
       this.contentTruncator,
-      suppressNonCriticalWarnings
+      suppressNonCriticalWarnings,
     );
     this.contentBuilder = new ContentBuilder();
     this.contextLogger = new ContextLogger(suppressNonCriticalWarnings);
@@ -132,23 +138,26 @@ export class ContextManager {
   async *buildWithRetry(
     aiProvider: AbstractAIProvider,
     requestParams: AIRequestParams,
-    maxRetries: number = 3
+    maxRetries: number = 3,
   ): AsyncGenerator<string> {
     let retries = 0;
 
     while (retries <= maxRetries) {
       const messages = this.buildMessages();
       const currentRequestParams = { ...requestParams, messages };
-      console.log('[ContextManager] buildWithRetry - currentRequestParams:', {
-        feature: currentRequestParams.feature,
-        hasModel: !!currentRequestParams.model,
-        hasMessages: Array.isArray(currentRequestParams.messages),
-        messageCount: currentRequestParams.messages?.length
-      });
+
+      if (Logger.isDevelopment()) {
+        console.log("[ContextManager] buildWithRetry - currentRequestParams:", {
+          feature: currentRequestParams.feature,
+          hasModel: !!currentRequestParams.model,
+          hasMessages: Array.isArray(currentRequestParams.messages),
+          messageCount: currentRequestParams.messages?.length,
+        });
+      }
+
       try {
-        const stream = await aiProvider.generateCommitStream(
-          currentRequestParams
-        );
+        const stream =
+          await aiProvider.generateCommitStream(currentRequestParams);
         for await (const chunk of stream) {
           yield chunk;
         }
@@ -158,19 +167,24 @@ export class ContextManager {
           retries++;
           if (retries > maxRetries) {
             throw new RequestTooLargeError(
-              `Context length issue persists after ${maxRetries} retries. Please try a model with a larger context window or reduce the number of selected files.`
+              `Context length issue persists after ${maxRetries} retries. Please try a model with a larger context window or reduce the number of selected files.`,
             );
           }
 
+          if (Logger.isDevelopment()) {
+            console.warn(
+              `Context too long, attempting retry ${retries}/${maxRetries}.`,
+            );
+          }
           notify.warn(
-            `Context too long, attempting retry ${retries}/${maxRetries}.`
+            `Context too long, attempting retry ${retries}/${maxRetries}.`,
           );
 
           // 智能截断逻辑
           if (!this.smartTruncate()) {
             // 如果无法再截断，则抛出错误
             throw new RequestTooLargeError(
-              "Unable to truncate context further. Please reduce the number of selected files."
+              "Unable to truncate context further. Please reduce the number of selected files.",
             );
           }
         } else {
@@ -197,13 +211,13 @@ export class ContextManager {
     // 处理强制保留的区块
     const forcedResult = this.blockProcessor.processForcedBlocks(
       forcedBlocks,
-      remainingTokens
+      remainingTokens,
     );
 
     // 处理可处理的区块
     const processableResult = this.blockProcessor.processProcessableBlocks(
       processableBlocks,
-      forcedResult.remainingTokens
+      forcedResult.remainingTokens,
     );
 
     // 合并结果
@@ -222,12 +236,12 @@ export class ContextManager {
 
     const userContent = this.contentBuilder.sortAndBuildUserContent(
       allIncludedBlocks,
-      allIncludedBlockNames
+      allIncludedBlockNames,
     );
 
     this.contextLogger.logContextBlockReport(
       allIncludedBlockNames,
-      allExcludedBlockNames
+      allExcludedBlockNames,
     );
 
     return [
@@ -244,7 +258,7 @@ export class ContextManager {
     const smartTruncator = new SmartTruncator(
       this.blocks,
       this.tokenCalculator,
-      this.suppressNonCriticalWarnings
+      this.suppressNonCriticalWarnings,
     );
     return smartTruncator.smartTruncate();
   }

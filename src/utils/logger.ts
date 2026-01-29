@@ -277,10 +277,73 @@ export class Logger {
   }
 
   /**
-   * Disposes the output channel.
+   * Disposes of output channel.
    */
   public dispose(): void {
     this._outputChannel.dispose();
+  }
+
+  /**
+   * 判断是否为开发环境
+   */
+  public static isDevelopment(): boolean {
+    return process.env.NODE_ENV === "development";
+  }
+
+  /**
+   * 调试日志 - 同时输出到终端和VSCode
+   * 开发环境启用，生产环境禁用
+   * @param message The message to log.
+   * @param context Optional context information.
+   */
+  public debugWithTerminal(message: string, context?: LogContext): void {
+    const formattedMessage = this.formatMessage(message, context);
+
+    // 开发环境：输出到终端
+    if (process.env.NODE_ENV === "development") {
+      console.log(`[DEBUG] ${formattedMessage}`);
+    }
+
+    // 输出到VSCode（debug级别）
+    this._outputChannel.debug(formattedMessage);
+  }
+
+  /**
+   * 链路追踪日志 - 始终输出到VSCode，开发环境同时输出到终端
+   * 用于追踪执行流程
+   * @param message The message to log.
+   * @param context Optional context information.
+   */
+  public traceWithTerminal(message: string, context?: LogContext): void {
+    const formattedMessage = this.formatMessage(message, context);
+
+    // 开发环境：同时输出到终端
+    if (process.env.NODE_ENV === "development") {
+      console.log(`[TRACE] ${formattedMessage}`);
+    }
+
+    // 输出到VSCode（info级别）
+    this._outputChannel.info(formattedMessage);
+  }
+
+  /**
+   * 调试日志（带对象）- 同时输出到终端和VSCode
+   * @param label The label for the object.
+   * @param obj The object to log.
+   */
+  public debugObject(label: string, obj: any): void {
+    // 开发环境：输出到终端
+    if (process.env.NODE_ENV === "development") {
+      console.log(`[DEBUG] ${label}:`, obj);
+    }
+
+    // 输出到VSCode（debug级别）
+    try {
+      const objStr = JSON.stringify(obj, null, 2);
+      this._outputChannel.debug(`${label}: ${objStr}`);
+    } catch (e) {
+      this._outputChannel.debug(`${label}: [无法序列化]`);
+    }
   }
 }
 
