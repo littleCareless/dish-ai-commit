@@ -16,6 +16,32 @@ export interface RecentCommitMessages {
 }
 
 /**
+ * SCM文件变更接口
+ */
+export interface SCMFileChange {
+  /** 文件路径 */
+  file: string;
+  /** 变更类型 */
+  type: 'add' | 'modify' | 'delete' | 'rename';
+  /** 文件差异内容 */
+  diff?: string;
+}
+
+/**
+ * SCM提交信息接口
+ */
+export interface SCMCommit {
+  /** 提交哈希 */
+  hash: string;
+  /** 提交信息 */
+  message: string;
+  /** 提交作者 */
+  author?: string;
+  /** 提交时间 */
+  date?: string;
+}
+
+/**
  * 源代码管理提供者接口
  * 定义了通用的SCM操作方法
  */
@@ -54,6 +80,17 @@ export interface ISCMProvider {
    * 获取最近的提交信息
    */
   getRecentCommitMessages(): Promise<RecentCommitMessages>;
+
+  /**
+   * 获取指定数量的最近提交
+   * @param count 要获取的提交数量
+   */
+  getRecentCommits?(count: number): Promise<SCMCommit[]>;
+
+  /**
+   * 获取文件变更列表
+   */
+  getChanges?(): Promise<SCMFileChange[]>;
 
   /**
    * 将提交信息复制到剪贴板
@@ -418,6 +455,8 @@ export class SCMFactory {
 
   /**
    * 检测并创建可用的SCM提供者
+   * 链路追踪日志：[Chain] [SCM-Detection]
+   *
    * @param {string[] | undefined} selectedFiles - 可选的选定文件路径列表
    * @param {string | undefined} repositoryPath - 可选的仓库路径，如果提供则优先使用此路径
    * @returns {Promise<ISCMProvider | undefined>} 返回可用的SCM提供者实例,如果没有可用的提供者则返回undefined
@@ -426,6 +465,9 @@ export class SCMFactory {
     selectedFiles?: string[],
     repositoryPath?: string
   ): Promise<ISCMProvider | undefined> {
+    const startTime = Date.now();
+    console.log(`[Chain] [SCM-Detection] [Factory] START - Files: ${selectedFiles?.length || 0}, RepoPath: ${repositoryPath || 'auto'}`);
+
     try {
       // 如果没有提供任何参数，尝试使用 vscode.scm API 检测仓库
       if (!selectedFiles && !repositoryPath) {
@@ -489,6 +531,8 @@ export class SCMFactory {
       console.log(`[SCMFactory] Workspace root determined: ${workspaceRoot}`);
 
       if (!workspaceRoot || !ImprovedPathUtils.isValidPath(workspaceRoot)) {
+        const duration = Date.now() - startTime;
+        console.log(`[Chain] [SCM-Detection] [Factory] COMPLETE - Duration: ${duration}ms, Result: invalid workspace`);
         return undefined;
       }
 
@@ -510,12 +554,18 @@ export class SCMFactory {
 
       if (provider) {
         this.currentProvider = provider;
+        const duration = Date.now() - startTime;
+        console.log(`[Chain] [SCM-Detection] [Factory] COMPLETE - Duration: ${duration}ms, Result: ${provider.type}, Path: ${this.currentRepositoryPath}`);
+      } else {
+        const duration = Date.now() - startTime;
+        console.log(`[Chain] [SCM-Detection] [Factory] COMPLETE - Duration: ${duration}ms, Result: no provider`);
       }
 
       return provider;
     } catch (error) {
+      const duration = Date.now() - startTime;
       console.error(
-        "SCM detection failed:",
+        `[Chain] [SCM-Detection] [Factory] FAILED - Duration: ${duration}ms`,
         error instanceof Error ? error.message : error
       );
       return undefined;

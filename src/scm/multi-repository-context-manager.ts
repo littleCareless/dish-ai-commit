@@ -499,6 +499,8 @@ export class MultiRepositoryContextManager
 
   /**
    * From resources or file paths, detect the corresponding repository path.
+   * 链路追踪日志：[Chain] [SCM-Detection]
+   *
    * @param resourceStates - Source control resource status
    * @param files - Optional list of file paths, if not provided, it will be extracted from resourceStates
    * @returns Repository path, if not found, returns undefined
@@ -509,9 +511,8 @@ export class MultiRepositoryContextManager
       | vscode.SourceControlResourceState[],
     files?: string[]
   ): Promise<string | undefined> {
-    console.log(`[MultiRepositoryContextManager] Starting repository detection`);
-    console.log(`[MultiRepositoryContextManager] ResourceStates provided: ${!!resourceStates}`);
-    console.log(`[MultiRepositoryContextManager] Files provided: ${!!files}`);
+    const startTime = Date.now();
+    console.log(`[Chain] [SCM-Detection] [MultiRepo] START - ResourceStates: ${!!resourceStates}, Files: ${!!files}`);
     
     // If files are not provided, extract from resourceStates
     if (!files && resourceStates) {
@@ -536,7 +537,8 @@ export class MultiRepositoryContextManager
                 const repoPath = MultiRepositoryContextManager.normalizeRepositoryPath((repository as any).rootUri?.fsPath);
                 console.log(`[MultiRepositoryContextManager] Checking repository: ${repoPath}`);
                 if (repoPath && file.startsWith(repoPath)) {
-                  console.log(`[MultiRepositoryContextManager] ✓ Found matching Git repository: ${repoPath}`);
+                  const duration = Date.now() - startTime;
+                  console.log(`[Chain] [SCM-Detection] [MultiRepo] COMPLETE - Duration: ${duration}ms, Result: ${repoPath}`);
                   return repoPath;
                 }
               }
@@ -581,7 +583,8 @@ export class MultiRepositoryContextManager
                   const repoPath = MultiRepositoryContextManager.normalizeRepositoryPath(repository.root);
                   console.log(`[MultiRepositoryContextManager] Checking SVN repository: ${repoPath}`);
                   if (repoPath && file.startsWith(repoPath)) {
-                    console.log(`[MultiRepositoryContextManager] ✓ Found matching SVN repository: ${repoPath}`);
+                    const duration = Date.now() - startTime;
+                    console.log(`[Chain] [SCM-Detection] [MultiRepo] COMPLETE - Duration: ${duration}ms, Result: ${repoPath}`);
                     return repoPath;
                   }
                 }
@@ -625,6 +628,8 @@ export class MultiRepositoryContextManager
       }
     }
 
+    const duration = Date.now() - startTime;
+    console.log(`[Chain] [SCM-Detection] [MultiRepo] COMPLETE - Duration: ${duration}ms, Result: not found`);
     return undefined;
   }
 
