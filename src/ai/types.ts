@@ -184,7 +184,7 @@ export interface AIProvider {
   generateCommit(params: AIRequestParams): Promise<AIResponse>;
   /** 生成分层提交信息 */
   generateLayeredCommit?(
-    params: AIRequestParams
+    params: AIRequestParams,
   ): Promise<LayeredCommitMessage>;
   /**
    * 流式生成提交内容
@@ -192,11 +192,11 @@ export interface AIProvider {
    * @returns 一个异步可迭代对象，用于逐块生成提交信息
    */
   generateCommitStream?(
-    params: AIRequestParams
+    params: AIRequestParams,
   ): Promise<AsyncIterable<string>>;
   /** 使用函数调用提交信息 */
   generateCommitWithFunctionCalling?(
-    params: AIRequestParams
+    params: AIRequestParams,
   ): Promise<AIResponse>;
   /** 生成代码评审内容 */
   generateCodeReview?(params: AIRequestParams): Promise<AIResponse>;
@@ -210,12 +210,12 @@ export interface AIProvider {
       endDate: string;
     },
     model?: AIModel,
-    users?: string[] // 新增可选的 users 参数
+    users?: string[], // 新增可选的 users 参数
   ): Promise<AIResponse>;
   /** 生成PR摘要 */
   generatePRSummary?(
     params: AIRequestParams,
-    commitMessages: string[]
+    commitMessages: string[],
   ): Promise<AIResponse>;
   /** 检查服务可用性 */
   isAvailable(): Promise<boolean>;
@@ -340,15 +340,19 @@ export type DoubaoModels =
   | "doubao-1-5-pro-32k-character-250715";
 
 export type GeminiAIModels =
-  | "gemini-2.5-flash-preview"
-  | "gemini-2.5-pro-preview"
+  // Gemini 3 系列 (最新预览版)
+  | "gemini-3-flash-preview"
+  | "gemini-3-pro-preview"
+  | "gemini-3-pro-image-preview"
+  // Gemini 2.5 系列 (稳定版)
+  | "gemini-2.5-flash"
+  | "gemini-2.5-pro"
+  | "gemini-2.5-flash-lite"
+  // Gemini 2.0 系列 (可选)
   | "gemini-2.0-flash"
   | "gemini-2.0-flash-lite"
-  | "gemini-1.5-flash"
-  | "gemini-1.5-flash-8b"
-  | "gemini-1.5-pro"
-  | "gemini-2.5-pro-preview-05-06"
-  | "gemini-2.5-flash-preview-05-20";
+  // 图像生成
+  | "gemini-2.5-flash-image";
 
 export type GoogleAIModels =
   | "gemini-1.5-pro-latest"

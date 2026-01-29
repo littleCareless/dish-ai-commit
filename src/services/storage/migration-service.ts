@@ -66,7 +66,7 @@ export class MigrationService {
     // 检查旧的Profile存储（在secrets中）
     try {
       const oldProfileData = await this.context.secrets.get(
-        `${DISH_CONFIG_PREFIX}_profile`
+        `${DISH_CONFIG_PREFIX}_profile`,
       );
       if (oldProfileData) {
         result.details.hasProfileInSecrets = true;
@@ -79,13 +79,13 @@ export class MigrationService {
 
     // 检查旧的设置存储（在globalState中）
     const oldPreferences = this.context.globalState.get(
-      `${DISH_CONFIG_PREFIX}_preferences_settings`
+      `${DISH_CONFIG_PREFIX}_preferences_settings`,
     );
     const oldFeatures = this.context.globalState.get(
-      `${DISH_CONFIG_PREFIX}_features_settings`
+      `${DISH_CONFIG_PREFIX}_features_settings`,
     );
     const oldAdvanced = this.context.globalState.get(
-      `${DISH_CONFIG_PREFIX}_advanced_settings`
+      `${DISH_CONFIG_PREFIX}_advanced_settings`,
     );
 
     if (oldPreferences) {
@@ -107,10 +107,10 @@ export class MigrationService {
     // 检查是否已经是新格式
     if (result.oldDataFound) {
       const newApiConfig = await this.context.secrets.get(
-        `${DISH_CONFIG_PREFIX}_api_config`
+        `${DISH_CONFIG_PREFIX}_api_config`,
       );
       const newPreferences = this.context.globalState.get(
-        `${DISH_CONFIG_PREFIX}_preferences`
+        `${DISH_CONFIG_PREFIX}_preferences`,
       );
 
       // 如果新格式已经存在，可能不需要迁移
@@ -121,7 +121,7 @@ export class MigrationService {
 
     // 检查旧Profile格式（混合格式）
     const oldProfileData = await this.context.secrets.get(
-      `${DISH_CONFIG_PREFIX}_profile`
+      `${DISH_CONFIG_PREFIX}_profile`,
     );
     if (oldProfileData) {
       try {
@@ -152,7 +152,7 @@ export class MigrationService {
     // 收集旧数据
     try {
       const oldProfileData = await this.context.secrets.get(
-        `${DISH_CONFIG_PREFIX}_profile`
+        `${DISH_CONFIG_PREFIX}_profile`,
       );
       if (oldProfileData) {
         oldData.profile = JSON.parse(oldProfileData);
@@ -163,7 +163,7 @@ export class MigrationService {
     }
 
     const oldPreferences = this.context.globalState.get(
-      `${DISH_CONFIG_PREFIX}_preferences_settings`
+      `${DISH_CONFIG_PREFIX}_preferences_settings`,
     );
     if (oldPreferences) {
       oldData.preferences = oldPreferences;
@@ -171,7 +171,7 @@ export class MigrationService {
     }
 
     const oldFeatures = this.context.globalState.get(
-      `${DISH_CONFIG_PREFIX}_features_settings`
+      `${DISH_CONFIG_PREFIX}_features_settings`,
     );
     if (oldFeatures) {
       oldData.features = oldFeatures;
@@ -179,7 +179,7 @@ export class MigrationService {
     }
 
     const oldAdvanced = this.context.globalState.get(
-      `${DISH_CONFIG_PREFIX}_advanced_settings`
+      `${DISH_CONFIG_PREFIX}_advanced_settings`,
     );
     if (oldAdvanced) {
       oldData.advanced = oldAdvanced;
@@ -240,7 +240,7 @@ export class MigrationService {
       // 标记迁移状态
       await this.context.globalState.update(
         `${DISH_CONFIG_PREFIX}_migration_completed`,
-        true
+        true,
       );
 
       result.success = true;
@@ -325,22 +325,75 @@ export class MigrationService {
 
     // 偏好设置转换
     const preferences: PreferencesStorageData = {
-      language: oldData.preferences?.language || oldData.profile?.language || "Simplified Chinese",
-      commitTemperature: oldData.preferences?.commitTemperature || oldData.profile?.temperature || 0.3,
+      language:
+        oldData.preferences?.language ||
+        oldData.profile?.language ||
+        "Simplified Chinese",
+      commitTemperature:
+        oldData.preferences?.commitTemperature ||
+        oldData.profile?.temperature ||
+        0.3,
       reviewTemperature: oldData.preferences?.reviewTemperature || 0.6,
       branchNameTemperature: oldData.preferences?.branchNameTemperature || 0.4,
-      weeklyReportTemperature: oldData.preferences?.weeklyReportTemperature || 0.3,
+      weeklyReportTemperature:
+        oldData.preferences?.weeklyReportTemperature || 0.3,
       skipDiffFileExtensions: oldData.preferences?.skipDiffFileExtensions || [
-        ".png", ".jpg", ".jpeg", ".gif", ".bmp", ".ico", ".pdf", ".zip", ".rar", ".7z", ".tar", ".gz", ".bz2", ".xz", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".o", ".a", ".so", ".dll", ".exe", ".jar", ".war", ".ear", ".class", ".pyc", ".swo", ".swp", ".DS_Store", ".lock", ".log"
+        ".png",
+        ".jpg",
+        ".jpeg",
+        ".gif",
+        ".bmp",
+        ".ico",
+        ".pdf",
+        ".zip",
+        ".rar",
+        ".7z",
+        ".tar",
+        ".gz",
+        ".bz2",
+        ".xz",
+        ".doc",
+        ".docx",
+        ".xls",
+        ".xlsx",
+        ".ppt",
+        ".pptx",
+        ".o",
+        ".a",
+        ".so",
+        ".dll",
+        ".exe",
+        ".jar",
+        ".war",
+        ".ear",
+        ".class",
+        ".pyc",
+        ".swo",
+        ".swp",
+        ".DS_Store",
+        ".lock",
+        ".log",
       ],
-      skipDiffPathPatterns: oldData.preferences?.skipDiffPathPatterns || ["**/package-lock.json", "**/pnpm-lock.yaml", "**/yarn.lock"],
+      skipDiffPathPatterns: oldData.preferences?.skipDiffPathPatterns || [
+        "**/package-lock.json",
+        "**/pnpm-lock.yaml",
+        "**/yarn.lock",
+      ],
       maxDiffFileSizeKB: oldData.preferences?.maxDiffFileSizeKB || 500,
       autoDetectBinaryFiles: oldData.preferences?.autoDetectBinaryFiles ?? true,
       respectGitAttributes: oldData.preferences?.respectGitAttributes ?? true,
-      timeout: oldData.preferences?.timeout || oldData.profile?.timeout || 30000,
-      retryAttempts: oldData.preferences?.retryAttempts || oldData.profile?.retryAttempts || 3,
-      rateLimitSeconds: oldData.preferences?.rateLimitSeconds || oldData.profile?.rateLimitSeconds || 0,
-      consecutiveMistakeLimit: oldData.preferences?.consecutiveMistakeLimit || 3,
+      timeout:
+        oldData.preferences?.timeout || oldData.profile?.timeout || 30000,
+      retryAttempts:
+        oldData.preferences?.retryAttempts ||
+        oldData.profile?.retryAttempts ||
+        3,
+      rateLimitSeconds:
+        oldData.preferences?.rateLimitSeconds ||
+        oldData.profile?.rateLimitSeconds ||
+        0,
+      consecutiveMistakeLimit:
+        oldData.preferences?.consecutiveMistakeLimit || 3,
       maxTokens: oldData.preferences?.maxTokens || oldData.profile?.maxTokens,
     };
 
@@ -351,12 +404,14 @@ export class MigrationService {
       enableBody: oldData.features?.enableBody ?? true,
       enableLayeredCommit: oldData.features?.enableLayeredCommit ?? false,
       enableGlobalContext: oldData.features?.enableGlobalContext ?? true,
-      useRecentCommitsAsReference: oldData.features?.useRecentCommitsAsReference ?? false,
+      useRecentCommitsAsReference:
+        oldData.features?.useRecentCommitsAsReference ?? false,
       simplifyDiff: oldData.features?.simplifyDiff ?? false,
       autoDetectStaged: oldData.features?.autoDetectStaged ?? true,
       fallbackToAll: oldData.features?.fallbackToAll ?? true,
       diffTarget: oldData.features?.diffTarget || "auto",
-      suppressNonCriticalWarnings: oldData.features?.suppressNonCriticalWarnings ?? true,
+      suppressNonCriticalWarnings:
+        oldData.features?.suppressNonCriticalWarnings ?? true,
       weeklyReport: oldData.features?.weeklyReport ?? true,
       codeReview: oldData.features?.codeReview ?? true,
       generateBranchName: oldData.features?.generateBranchName ?? true,
@@ -365,11 +420,22 @@ export class MigrationService {
 
     // 高级设置转换
     const advanced: AdvancedStorageData = {
-      verbosity: oldData.advanced?.verbosity || oldData.preferences?.verbosity || 1,
-      rateLimitSeconds: oldData.advanced?.rateLimitSeconds || oldData.preferences?.rateLimitSeconds || 0,
-      timeout: oldData.advanced?.timeout || oldData.preferences?.timeout || 30000,
-      retryAttempts: oldData.advanced?.retryAttempts || oldData.preferences?.retryAttempts || 3,
-      consecutiveMistakeLimit: oldData.advanced?.consecutiveMistakeLimit || oldData.preferences?.consecutiveMistakeLimit || 3,
+      verbosity:
+        oldData.advanced?.verbosity || oldData.preferences?.verbosity || 1,
+      rateLimitSeconds:
+        oldData.advanced?.rateLimitSeconds ||
+        oldData.preferences?.rateLimitSeconds ||
+        0,
+      timeout:
+        oldData.advanced?.timeout || oldData.preferences?.timeout || 30000,
+      retryAttempts:
+        oldData.advanced?.retryAttempts ||
+        oldData.preferences?.retryAttempts ||
+        3,
+      consecutiveMistakeLimit:
+        oldData.advanced?.consecutiveMistakeLimit ||
+        oldData.preferences?.consecutiveMistakeLimit ||
+        3,
       maxTokens: oldData.advanced?.maxTokens || oldData.preferences?.maxTokens,
     };
 
@@ -411,7 +477,7 @@ export class MigrationService {
     const modelMap: Record<string, string> = {
       openai: "gpt-4o-mini",
       anthropic: "claude-3-haiku-20240307",
-      gemini: "gemini-1.5-flash",
+      gemini: "gemini-2.5-flash",
       ollama: "llama2",
       bedrock: "anthropic.claude-v2",
     };
@@ -424,7 +490,7 @@ export class MigrationService {
   public async isMigrationCompleted(): Promise<boolean> {
     return this.context.globalState.get(
       `${DISH_CONFIG_PREFIX}_migration_completed`,
-      false
+      false,
     );
   }
 

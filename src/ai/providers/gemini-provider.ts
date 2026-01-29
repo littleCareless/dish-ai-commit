@@ -12,11 +12,44 @@ import { Content, GoogleGenAI, Part } from "@google/genai";
 /**
  * Gemini支持的AI模型配置列表
  * 定义了不同版本的Gemini模型及其特性
+ * 更新于 2025年7月 - 基于官方 Gemini API Coding Guidelines
  */
 const geminiModels: AIModel[] = [
+  // Gemini 3 系列 (最新预览版)
   {
-    id: "gemini-2.5-flash-preview-05-20",
-    name: "Gemini 2.5 Flash 预览版 - 自适应思维，成本效益高",
+    id: "gemini-3-flash-preview",
+    name: "Gemini 3 Flash 预览版 - 通用文本和多模态任务",
+    maxTokens: { input: 1048576, output: 65536 },
+    provider: { id: "gemini", name: "Gemini AI" },
+    capabilities: {
+      streaming: true,
+      functionCalling: true,
+    },
+  },
+  {
+    id: "gemini-3-pro-preview",
+    name: "Gemini 3 Pro 预览版 - 编码和复杂推理任务",
+    maxTokens: { input: 1048576, output: 65536 },
+    provider: { id: "gemini", name: "Gemini AI" },
+    capabilities: {
+      streaming: true,
+      functionCalling: true,
+    },
+  },
+  {
+    id: "gemini-3-pro-image-preview",
+    name: "Gemini 3 Pro Image 预览版 - 高质量图像生成和编辑",
+    maxTokens: { input: 1048576, output: 65536 },
+    provider: { id: "gemini", name: "Gemini AI" },
+    capabilities: {
+      streaming: true,
+      functionCalling: true,
+    },
+  },
+  // Gemini 2.5 系列 (稳定版)
+  {
+    id: "gemini-2.5-flash",
+    name: "Gemini 2.5 Flash - 自适应思维，成本效益高（推荐）",
     maxTokens: { input: 1048576, output: 65536 },
     provider: { id: "gemini", name: "Gemini AI" },
     default: true,
@@ -26,8 +59,8 @@ const geminiModels: AIModel[] = [
     },
   },
   {
-    id: "gemini-2.5-pro-preview-05-06",
-    name: "Gemini 2.5 Pro 预览版 - 增强型思考和推理能力、多模态理解、高级编码",
+    id: "gemini-2.5-pro",
+    name: "Gemini 2.5 Pro - 增强型思考和推理能力、多模态理解、高级编码",
     maxTokens: { input: 1048576, output: 65536 },
     provider: { id: "gemini", name: "Gemini AI" },
     capabilities: {
@@ -36,8 +69,19 @@ const geminiModels: AIModel[] = [
     },
   },
   {
+    id: "gemini-2.5-flash-lite",
+    name: "Gemini 2.5 Flash Lite - 低延迟、高吞吐量任务",
+    maxTokens: { input: 1048576, output: 65536 },
+    provider: { id: "gemini", name: "Gemini AI" },
+    capabilities: {
+      streaming: true,
+      functionCalling: true,
+    },
+  },
+  // Gemini 2.0 系列 (可选)
+  {
     id: "gemini-2.0-flash",
-    name: "Gemini 2.0 Flash - 新一代功能、速度、思考、实时串流和多模式生成",
+    name: "Gemini 2.0 Flash - 新一代功能、速度、实时串流",
     maxTokens: { input: 1048576, output: 8192 },
     provider: { id: "gemini", name: "Gemini AI" },
     capabilities: {
@@ -47,7 +91,7 @@ const geminiModels: AIModel[] = [
   },
   {
     id: "gemini-2.0-flash-lite",
-    name: "Gemini 2.0 Flash-Lite - 成本效益高且延迟时间短",
+    name: "Gemini 2.0 Flash Lite - 成本效益高且延迟时间短",
     maxTokens: { input: 1048576, output: 8192 },
     provider: { id: "gemini", name: "Gemini AI" },
     capabilities: {
@@ -55,30 +99,11 @@ const geminiModels: AIModel[] = [
       functionCalling: true,
     },
   },
+  // 图像生成模型
   {
-    id: "gemini-1.5-flash",
-    name: "Gemini 1.5 Flash - 在各种任务中提供快速、多样化的性能",
+    id: "gemini-2.5-flash-image",
+    name: "Gemini 2.5 Flash Image - 快速图像生成和编辑 (Nano Banana)",
     maxTokens: { input: 1048576, output: 8192 },
-    provider: { id: "gemini", name: "Gemini AI" },
-    capabilities: {
-      streaming: true,
-      functionCalling: false,
-    },
-  },
-  {
-    id: "gemini-1.5-flash-8b",
-    name: "Gemini 1.5 Flash-8B - 适用于量大且智能程度较低的任务",
-    maxTokens: { input: 1048576, output: 8192 },
-    provider: { id: "gemini", name: "Gemini AI" },
-    capabilities: {
-      streaming: true,
-      functionCalling: false,
-    },
-  },
-  {
-    id: "gemini-1.5-pro",
-    name: "Gemini 1.5 Pro - 适用于需要更高智能的复杂推理任务",
-    maxTokens: { input: 2097152, output: 8192 },
     provider: { id: "gemini", name: "Gemini AI" },
     capabilities: {
       streaming: true,
@@ -144,19 +169,41 @@ export class GeminiAIProvider extends AbstractAIProvider {
   constructor(config?: any) {
     super();
 
+    // 使用用户配置的 baseUrl，如果没有则使用官方默认地址
+    const baseUrl =
+      config?.baseUrl || "https://generativelanguage.googleapis.com/v1beta";
+
     this.config = {
       apiKey: config?.apiKey,
-      baseUrl: "https://api.gemini.com/",
+      baseUrl: baseUrl,
       providerId: "gemini",
       providerName: "Gemini",
       models: geminiModels,
-      defaultModel: "gemini-1.5-flash",
+      defaultModel: "gemini-2.5-flash",
     };
 
     if (this.config.apiKey) {
-      this.genAI = new GoogleGenAI({
+      // 构建 GoogleGenAI 配置选项
+      const genAIOptions: {
+        apiKey: string;
+        httpOptions?: { baseUrl: string };
+      } = {
         apiKey: this.config.apiKey,
-      });
+      };
+
+      // 如果用户配置了自定义 baseUrl，则通过 httpOptions 传递
+      // 注意：仅当 baseUrl 是有效的 http/https URL 时才设置
+      if (
+        config?.baseUrl &&
+        (config.baseUrl.startsWith("http://") ||
+          config.baseUrl.startsWith("https://"))
+      ) {
+        genAIOptions.httpOptions = {
+          baseUrl: config.baseUrl,
+        };
+      }
+
+      this.genAI = new GoogleGenAI(genAIOptions);
     }
   }
 
@@ -170,18 +217,18 @@ export class GeminiAIProvider extends AbstractAIProvider {
       parseAsJSON?: boolean;
       temperature?: number;
       maxTokens?: number;
-    }
+    },
   ): Promise<{ content: string; usage?: any; jsonContent?: any }> {
     if (!this.genAI) {
       throw new Error(
-        "Gemini API client not initialized. Please check your API key."
+        "Gemini API client not initialized. Please check your API key.",
       );
     }
 
     // 获取模型ID
     const modelId = (params.model?.id || this.config.defaultModel) as string;
     const { systemInstruction, contents } = (await this.buildProviderMessages(
-      params
+      params,
     )) as {
       systemInstruction?: string;
       contents: Content[];
@@ -189,7 +236,7 @@ export class GeminiAIProvider extends AbstractAIProvider {
 
     console.log(
       "Final messages for AI:",
-      JSON.stringify({ systemInstruction, contents }, null, 2)
+      JSON.stringify({ systemInstruction, contents }, null, 2),
     );
 
     try {
@@ -217,7 +264,7 @@ export class GeminiAIProvider extends AbstractAIProvider {
             .map((part: Part) =>
               part && "text" in part && typeof part.text === "string"
                 ? part.text
-                : ""
+                : "",
             )
             .join("");
         }
@@ -245,30 +292,30 @@ export class GeminiAIProvider extends AbstractAIProvider {
     options?: {
       temperature?: number;
       maxTokens?: number; // 注意: Gemini API 可能对 maxTokens 的处理方式不同或在流式中不支持
-    }
+    },
   ): Promise<AsyncIterable<string>> {
     if (!this.genAI) {
       throw new Error(
-        "Gemini API client not initialized. Please check your API key."
+        "Gemini API client not initialized. Please check your API key.",
       );
     }
     const genAI = this.genAI;
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
     const { systemInstruction, contents } = (await this.buildProviderMessages(
-      params
+      params,
     )) as {
       systemInstruction?: string;
       contents: Content[];
     };
 
     const processStream = async function* (
-      this: GeminiAIProvider
+      this: GeminiAIProvider,
     ): AsyncIterable<string> {
       try {
         console.log(
           "Final messages for AI:",
-          JSON.stringify({ systemInstruction, contents }, null, 2)
+          JSON.stringify({ systemInstruction, contents }, null, 2),
         );
         const streamResult = await genAI.models.generateContentStream({
           model: modelId,
@@ -299,7 +346,7 @@ export class GeminiAIProvider extends AbstractAIProvider {
                 .map((part: Part) =>
                   part && "text" in part && typeof part.text === "string"
                     ? part.text
-                    : ""
+                    : "",
                 ) // 确保 part.text 是字符串
                 .join("");
               if (text) {
@@ -338,7 +385,7 @@ export class GeminiAIProvider extends AbstractAIProvider {
   async getModels(): Promise<AIModel[]> {
     if (!this.genAI) {
       throw new Error(
-        "Gemini API client not initialized. Please check your API key."
+        "Gemini API client not initialized. Please check your API key.",
       );
     }
 
@@ -396,7 +443,7 @@ export class GeminiAIProvider extends AbstractAIProvider {
   async refreshModels(): Promise<string[]> {
     if (!this.genAI) {
       throw new Error(
-        "Gemini API client not initialized. Please check your API key."
+        "Gemini API client not initialized. Please check your API key.",
       );
     }
     const pager = await this.genAI.models.list({
@@ -434,10 +481,10 @@ export class GeminiAIProvider extends AbstractAIProvider {
    */
   async generatePRSummary(
     params: AIRequestParams,
-    commitMessages: string[]
+    commitMessages: string[],
   ): Promise<import("../types").AIResponse> {
     console.warn(
-      "generatePRSummary is not fully implemented for GeminiAIProvider and will return an empty response."
+      "generatePRSummary is not fully implemented for GeminiAIProvider and will return an empty response.",
     );
     const systemPrompt =
       params.systemPrompt ||
@@ -462,7 +509,7 @@ export class GeminiAIProvider extends AbstractAIProvider {
       },
       {
         temperature: 0.7,
-      }
+      },
     );
 
     return { content: response.content, usage: response.usage };
@@ -527,13 +574,13 @@ export class GeminiAIProvider extends AbstractAIProvider {
   async countTokens(params: AIRequestParams): Promise<{ totalTokens: number }> {
     if (!this.genAI) {
       throw new Error(
-        "Gemini API client not initialized. Please check your API key."
+        "Gemini API client not initialized. Please check your API key.",
       );
     }
 
     const modelId = (params.model?.id || this.config.defaultModel) as string;
     const { systemInstruction, contents } = (await this.buildProviderMessages(
-      params
+      params,
     )) as {
       systemInstruction?: string;
       contents: Content[];
@@ -542,7 +589,7 @@ export class GeminiAIProvider extends AbstractAIProvider {
     // 将 systemInstruction 和所有 parts 的文本内容连接成一个字符串
     const contentsText = contents
       .flatMap((content) =>
-        (content.parts || []).map((part) => ("text" in part ? part.text : ""))
+        (content.parts || []).map((part) => ("text" in part ? part.text : "")),
       )
       .join("\n");
 

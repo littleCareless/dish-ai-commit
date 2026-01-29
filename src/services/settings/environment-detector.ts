@@ -234,7 +234,7 @@ export class EnvironmentDetectorService {
         descriptionKey: "templates.gemini.description",
         providerId: "gemini",
         config: {
-          model: "gemini-1.5-flash",
+          model: "gemini-2.5-flash",
         },
         isFree: true,
         requiresApiKey: true,
@@ -274,7 +274,7 @@ export class EnvironmentDetectorService {
         },
         isFree: false,
         requiresApiKey: true,
-      }
+      },
     );
 
     // 如果有本地服务，将第一个本地模板标记为推荐
