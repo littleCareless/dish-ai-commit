@@ -1,6 +1,12 @@
 #!/usr/bin/env sh
 . "$(dirname -- "$0")/_/husky.sh"
 
+if git show-ref --tags develop >/dev/null; then
+  echo "❌ Illegal tag 'develop' exists. Delete it:"
+  echo "   git push origin :refs/tags/develop"
+  exit 1
+fi
+
 # 运行TypeScript编译检查
 echo "🔍 正在进行TypeScript编译验证..."
 turbo run check-types || (echo "❌ TypeScript编译失败，请修复错误后再提交" && exit 1)
