@@ -28,11 +28,11 @@ import {
   getWeeklyReportVariables,
 } from "@/prompt/weekly-report";
 import { PromptManagerService } from "@/services/core/prompt-manager-service";
-import { PromptKey } from "@shared/types/prompts";
 import { loadCommitlintConfig } from "@/utils/commitlint";
 import { getMessage } from "@/utils/i18n";
 import { notify } from "@/utils/notification/notification-manager";
 import { processPromptTemplate } from "@/utils/prompt-template";
+import { PromptKey } from "@shared/types/prompts";
 
 /**
  * AI 生成过程中可能遇到的错误类型枚举
@@ -78,7 +78,7 @@ export interface GenerateWithRetryOptions {
 export async function generateWithRetry<T>(
   params: AIRequestParams,
   generateFn: (truncatedDiff: string) => Promise<T>,
-  options: GenerateWithRetryOptions
+  options: GenerateWithRetryOptions,
 ): Promise<T> {
   // 解构配置参数并设置默认值
   const {
@@ -145,7 +145,7 @@ export async function generateWithRetry<T>(
 export async function* generateStreamWithRetry(
   params: AIRequestParams,
   generateFn: (truncatedDiff: string) => Promise<AsyncIterable<string>>,
-  options: GenerateWithRetryOptions
+  options: GenerateWithRetryOptions,
 ): AsyncGenerator<string> {
   const {
     maxRetries = 2,
@@ -182,7 +182,7 @@ export async function* generateStreamWithRetry(
         retries++;
         maxInputLength = Math.floor(maxInputLength * reductionFactor);
         notify.warn(
-          `Stream generation failed, retrying with smaller input size (${maxInputLength} chars). Retry ${retries}/${maxRetries}`
+          `Stream generation failed, retrying with smaller input size (${maxInputLength} chars). Retry ${retries}/${maxRetries}`,
         );
         await new Promise((resolve) => setTimeout(resolve, retryDelay));
         continue; // 继续下一次重试
@@ -192,7 +192,7 @@ export async function* generateStreamWithRetry(
       throw new Error(
         `Stream generation failed after ${retries} retries: ${
           error.message || String(error)
-        }`
+        }`,
       );
     }
   }
@@ -206,7 +206,7 @@ export async function* generateStreamWithRetry(
  */
 function appendLanguageConstraint(
   prompt: string,
-  params: AIRequestParams
+  params: AIRequestParams,
 ): string {
   // 获取语言设置，优先使用language，如果不存在则使用languages
   const language = params.language || params.languages;
@@ -238,7 +238,7 @@ function appendOutputConstraint(prompt: string): string {
 function appendConstraints(
   prompt: string,
   params: AIRequestParams,
-  directOutput: boolean = false
+  directOutput: boolean = false,
 ): string {
   let constrainedPrompt = prompt;
 
@@ -264,10 +264,8 @@ export async function getSystemPrompt(
   params: AIRequestParams,
   directOutput: boolean = false,
   useFallback: boolean = false,
-  config?: any
+  config?: any,
 ): Promise<string> {
-  console.log("调用栈:\n", new Error().stack);
-
   if (isGeneratingPrompt) {
     return ""; // 防止循环调用
   }
@@ -287,7 +285,7 @@ export async function getSystemPrompt(
     // 2. 获取 Active Prompt (支持 .dish/prompts, Config, Default)
     const promptManager = PromptManagerService.getInstance();
     const activePromptContent = await promptManager.getActivePromptContent(
-      PromptKey.GenerateCommitSystem
+      PromptKey.GenerateCommitSystem,
     );
 
     if (activePromptContent) {
@@ -308,18 +306,18 @@ export async function getSystemPrompt(
       const formatTemplate = getMergeCommitsSection(
         enableMergeCommit,
         enableEmoji,
-        enableBody
+        enableBody,
       );
 
       const examples = getVCSExamples(
         params.scm === "svn" ? "svn" : "git",
         enableMergeCommit,
         enableEmoji,
-        enableBody
+        enableBody,
       );
 
       const thinkingProcess = generateThinkingProcessPrompt(
-        useRecentCommitsAsReference
+        useRecentCommitsAsReference,
       );
 
       // Process template variables
@@ -344,7 +342,7 @@ export async function getSystemPrompt(
       });
       prompt = processPromptTemplate(
         GENERATE_COMMIT_FALLBACK_TEMPLATE,
-        variables
+        variables,
       );
     } else {
       // Construct a config object that mimics the old structure for the generator
@@ -387,7 +385,7 @@ export async function getSystemPrompt(
 export async function getCodeReviewPrompt(
   params: AIRequestParams,
   directOutput: boolean = false,
-  config?: any
+  config?: any,
 ): Promise<string> {
   // 1. 优先使用 params 中提供的代码审查提示
   if (params.codeReviewPrompt) {
@@ -397,7 +395,7 @@ export async function getCodeReviewPrompt(
   // 2. 检查 PromptManager 是否有活跃的提示词（支持用户自定义选中）
   const promptManager = PromptManagerService.getInstance();
   const activePromptContent = await promptManager.getActivePromptContent(
-    PromptKey.CodeReviewSystem
+    PromptKey.CodeReviewSystem,
   );
 
   // 3. 获取语言配置
@@ -406,8 +404,13 @@ export async function getCodeReviewPrompt(
 
   // 如果有活跃提示词内容，使用它并替换变量
   if (activePromptContent && activePromptContent.trim() !== "") {
-    const processedPrompt = processPromptTemplate(activePromptContent, variables);
-    return directOutput ? appendOutputConstraint(processedPrompt) : processedPrompt;
+    const processedPrompt = processPromptTemplate(
+      activePromptContent,
+      variables,
+    );
+    return directOutput
+      ? appendOutputConstraint(processedPrompt)
+      : processedPrompt;
   }
 
   // 4. 使用默认模板并替换变量（fallback）
@@ -426,7 +429,7 @@ export async function getCodeReviewPrompt(
 export async function getBranchNameSystemPrompt(
   params: AIRequestParams,
   directOutput: boolean = false,
-  config?: any
+  config?: any,
 ): Promise<string> {
   // 1. 优先使用params中提供的分支名称提示
   if (params.branchNamePrompt) {
@@ -436,12 +439,14 @@ export async function getBranchNameSystemPrompt(
   // 2. 检查 PromptManager 是否有活跃的提示词（支持用户自定义选中）
   const promptManager = PromptManagerService.getInstance();
   const activePromptContent = await promptManager.getActivePromptContent(
-    PromptKey.BranchNameSystem
+    PromptKey.BranchNameSystem,
   );
 
   // 如果有活跃提示词内容，使用它
   if (activePromptContent && activePromptContent.trim() !== "") {
-    return directOutput ? appendOutputConstraint(activePromptContent) : activePromptContent;
+    return directOutput
+      ? appendOutputConstraint(activePromptContent)
+      : activePromptContent;
   }
 
   // 3. 使用默认生成的提示词（fallback）
@@ -468,7 +473,7 @@ export function getBranchNameUserPrompt(diffContent: string): string {
  */
 export async function getGlobalSummaryPrompt(
   params: AIRequestParams,
-  config?: any
+  config?: any,
 ): Promise<string> {
   try {
     // 提示AI生成全局摘要
@@ -493,7 +498,7 @@ ${await getSystemPrompt(params, false, false, config)}`;
 export async function getFileDescriptionPrompt(
   params: AIRequestParams,
   filePath: string,
-  config?: any
+  config?: any,
 ): Promise<string> {
   try {
     // 提示AI生成文件级描述
@@ -536,7 +541,7 @@ export function extractModifiedFilePaths(diff: string): string[] {
 export async function getPRSummaryPrompt(
   params: AIRequestParams,
   directOutput: boolean = false,
-  config?: any
+  config?: any,
 ): Promise<string> {
   // 1. 优先使用 params 中提供的 PR 摘要提示
   if (params.systemPrompt) {
@@ -546,7 +551,7 @@ export async function getPRSummaryPrompt(
   // 2. 检查 PromptManager 是否有活跃的提示词（支持用户自定义选中）
   const promptManager = PromptManagerService.getInstance();
   const activePromptContent = await promptManager.getActivePromptContent(
-    PromptKey.PRSummarySystem
+    PromptKey.PRSummarySystem,
   );
 
   // 3. 获取语言配置
@@ -555,13 +560,21 @@ export async function getPRSummaryPrompt(
   // 如果有活跃提示词内容，使用它并替换变量
   if (activePromptContent && activePromptContent.trim() !== "") {
     const variables = { language };
-    const processedPrompt = processPromptTemplate(activePromptContent, variables);
-    return directOutput ? appendOutputConstraint(processedPrompt) : processedPrompt;
+    const processedPrompt = processPromptTemplate(
+      activePromptContent,
+      variables,
+    );
+    return directOutput
+      ? appendOutputConstraint(processedPrompt)
+      : processedPrompt;
   }
 
   // 4. 使用默认模板并替换变量（fallback）
   const variables = { language };
-  const systemPrompt = processPromptTemplate(PR_SUMMARY_SYSTEM_TEMPLATE, variables);
+  const systemPrompt = processPromptTemplate(
+    PR_SUMMARY_SYSTEM_TEMPLATE,
+    variables,
+  );
   const userPrompt = processPromptTemplate(PR_SUMMARY_USER_TEMPLATE, variables);
 
   const fullPrompt = `${systemPrompt}\n\n${userPrompt}`;
@@ -584,7 +597,7 @@ export async function getWeeklyReportPrompt(
   startDate: string,
   endDate: string,
   directOutput: boolean = false,
-  config?: any
+  config?: any,
 ): Promise<string> {
   // 1. 优先使用 params 中提供的周报提示
   if (params.systemPrompt) {
@@ -594,7 +607,7 @@ export async function getWeeklyReportPrompt(
   // 2. 检查 PromptManager 是否有活跃的提示词（支持用户自定义选中）
   const promptManager = PromptManagerService.getInstance();
   const activePromptContent = await promptManager.getActivePromptContent(
-    PromptKey.WeeklyReport
+    PromptKey.WeeklyReport,
   );
 
   // 3. 获取语言配置
@@ -602,9 +615,18 @@ export async function getWeeklyReportPrompt(
 
   // 如果有活跃提示词内容，使用它并替换变量
   if (activePromptContent && activePromptContent.trim() !== "") {
-    const variables = getWeeklyReportVariables({ language, startDate, endDate });
-    const processedPrompt = processPromptTemplate(activePromptContent, variables);
-    return directOutput ? appendOutputConstraint(processedPrompt) : processedPrompt;
+    const variables = getWeeklyReportVariables({
+      language,
+      startDate,
+      endDate,
+    });
+    const processedPrompt = processPromptTemplate(
+      activePromptContent,
+      variables,
+    );
+    return directOutput
+      ? appendOutputConstraint(processedPrompt)
+      : processedPrompt;
   }
 
   // 4. 使用默认模板并替换变量（fallback）
