@@ -3,6 +3,9 @@
 // 命名格式: 模块.动作 (module.action)
 // ============================================================================
 export enum UIRequest {
+  // ===== Lifecycle =====
+  WebviewHandshake = "webview.handshake",
+
   // ===== Notification Module =====
   NotificationGetSettings = "notification.getSettings",
   NotificationUpdateSettings = "notification.updateSettings",
@@ -106,6 +109,9 @@ export enum UIRequest {
 // 命名格式: 模块.状态/结果 (module.state/result)
 // ============================================================================
 export enum ExtensionResponse {
+  // ===== Lifecycle =====
+  WebviewHandshakeAck = "webview.handshake.ack",
+
   // ===== Notification Module =====
   NotificationSettingsLoaded = "notification.settingsLoaded",
   NotificationSettingsUpdated = "notification.settingsUpdated",
