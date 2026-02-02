@@ -92,14 +92,7 @@ export const SettingsPage: React.FC = () => {
   }, [t]);
 
   useEffect(() => {
-    const sessionManager = SessionManager.getInstance();
-
-    // 使用 ensureInitialized 防止重复加载
-    sessionManager
-      .ensureInitialized("settings-profiles", loadData)
-      .catch((error) => {
-        console.error("[SettingsPage] Error in ensureInitialized:", error);
-      });
+    loadData();
   }, [loadData]);
 
   const handleProfileCreate = () => {
