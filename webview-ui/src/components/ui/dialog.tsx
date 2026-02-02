@@ -31,14 +31,32 @@ interface DialogDescriptionProps extends React.HTMLAttributes<HTMLElement> {
 
 const Dialog: React.FC<DialogProps> = ({
   open = false,
+  onOpenChange,
   children,
   ...props
 }) => {
   if (!open) return null;
 
+  const handleOpenChange = (open: boolean) => {
+    onOpenChange?.(open);
+  };
+
+  const handleClose = () => {
+    handleOpenChange(false);
+  };
+
   return (
     <div className="dialog" {...props}>
-      {children}
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          if (child.type === DialogContent) {
+            return React.cloneElement(child, {
+              onClose: handleClose,
+            } as React.ComponentProps<typeof DialogContent>);
+          }
+        }
+        return child;
+      })}
     </div>
   );
 };
@@ -79,13 +97,19 @@ const DialogContent: React.FC<DialogContentProps> = ({
           opacity: 1,
           backdropFilter: "none",
         }}
+        onClick={(e) => e.stopPropagation()}
       >
         <Button
           variant="ghost"
           size="icon"
           className="absolute right-4 top-4"
-          onClick={onClose}
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            onClose?.();
+          }}
           aria-label="Close dialog"
+          type="button"
         >
           ×
         </Button>

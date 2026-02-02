@@ -1,14 +1,14 @@
-import { useForm, useWatch } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useTranslation } from "react-i18next";
 import { Button } from "@/components/ui/button";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 import { Select, SelectOption } from "@/components/ui/select";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import { ModelFormValues } from "@/types/model-custom";
 import { themeStyles } from "@/utils/theme";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { useForm, useWatch } from "react-hook-form";
+import { useTranslation } from "react-i18next";
+import { z } from "zod";
 
 interface ModelFormProps {
   providers: { id: string; name: string }[];
@@ -25,6 +25,7 @@ export function ModelForm({
   onCancel,
   isLoading,
 }: ModelFormProps) {
+  // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form's useWatch cannot be memoized
   const { t } = useTranslation("model-custom");
 
   // Create dynamic schema with i18n validation messages
@@ -72,8 +73,23 @@ export function ModelForm({
   const vision = useWatch({ name: "vision", control: form.control });
   const deprecated = useWatch({ name: "deprecated", control: form.control });
 
+  const handleFormSubmit = async () => {
+    console.log("handleFormSubmit called");
+    const values = form.getValues();
+    console.log("Current form values:", values);
+    const errors = form.formState.errors;
+    console.log("Form errors:", errors);
+    const isValid = await form.trigger();
+    console.log("Form validation:", isValid);
+    const errorsAfterTrigger = form.formState.errors;
+    console.log("Form errors after trigger:", errorsAfterTrigger);
+    if (isValid) {
+      await onSubmit(values);
+    }
+  };
+
   return (
-    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+    <div className="space-y-5">
       {/* 第一行：提供商和模型ID - 上下排列 */}
       <div className="grid grid-cols-2 gap-4">
         <div className="flex flex-col gap-2">
@@ -85,7 +101,10 @@ export function ModelForm({
           </label>
           <Select
             value={providerId}
-            onValueChange={(v) => form.setValue("providerId", v)}
+            onValueChange={(v) => {
+              form.setValue("providerId", v);
+              form.trigger("providerId");
+            }}
           >
             <SelectOption value="">
               {t("validation.invalidProvider")}
@@ -104,7 +123,14 @@ export function ModelForm({
           >
             {t("modelId")}
           </label>
-          <Input {...form.register("modelId")} placeholder="gpt-4-custom" />
+          <Input
+            value={form.watch("modelId")}
+            onInput={(e: any) => {
+              const value = e.target?.value || "";
+              form.setValue("modelId", value);
+            }}
+            placeholder="gpt-4-custom"
+          />
         </div>
       </div>
 
@@ -116,7 +142,14 @@ export function ModelForm({
         >
           {t("modelName")}
         </label>
-        <Input {...form.register("modelName")} placeholder="GPT-4 Custom" />
+        <Input
+          value={form.watch("modelName")}
+          onInput={(e: any) => {
+            const value = e.target?.value || "";
+            form.setValue("modelName", value);
+          }}
+          placeholder="GPT-4 Custom"
+        />
       </div>
 
       {/* Token 上限 - 上下排列 */}
@@ -130,7 +163,11 @@ export function ModelForm({
           </label>
           <Input
             type="number"
-            {...form.register("inputTokens", { valueAsNumber: true })}
+            value={form.watch("inputTokens") || ""}
+            onInput={(e: any) => {
+              const value = e.target?.value || "";
+              form.setValue("inputTokens", value ? Number(value) : 0);
+            }}
             placeholder="128000"
           />
         </div>
@@ -143,7 +180,11 @@ export function ModelForm({
           </label>
           <Input
             type="number"
-            {...form.register("outputTokens", { valueAsNumber: true })}
+            value={form.watch("outputTokens") || ""}
+            onInput={(e: any) => {
+              const value = e.target?.value || "";
+              form.setValue("outputTokens", value ? Number(value) : 0);
+            }}
             placeholder="16384"
           />
         </div>
@@ -160,7 +201,11 @@ export function ModelForm({
           </label>
           <Input
             type="number"
-            {...form.register("contextWindow", { valueAsNumber: true })}
+            value={form.watch("contextWindow") || ""}
+            onInput={(e: any) => {
+              const value = e.target?.value || "";
+              form.setValue("contextWindow", value ? Number(value) : undefined);
+            }}
             placeholder="128000"
           />
         </div>
@@ -172,7 +217,11 @@ export function ModelForm({
             {t("notes")}
           </label>
           <Textarea
-            {...form.register("notes")}
+            value={form.watch("notes") || ""}
+            onInput={(e: any) => {
+              const value = e.target?.value || "";
+              form.setValue("notes", value);
+            }}
             placeholder={t("notes") + "..."}
           />
         </div>
@@ -216,7 +265,11 @@ export function ModelForm({
           </label>
           <Input
             type="number"
-            {...form.register("pricingInput", { valueAsNumber: true })}
+            value={form.watch("pricingInput") || ""}
+            onInput={(e: any) => {
+              const value = e.target?.value || "";
+              form.setValue("pricingInput", value ? Number(value) : undefined);
+            }}
             placeholder="2.5"
           />
         </div>
@@ -229,7 +282,11 @@ export function ModelForm({
           </label>
           <Input
             type="number"
-            {...form.register("pricingOutput", { valueAsNumber: true })}
+            value={form.watch("pricingOutput") || ""}
+            onInput={(e: any) => {
+              const value = e.target?.value || "";
+              form.setValue("pricingOutput", value ? Number(value) : undefined);
+            }}
             placeholder="10.0"
           />
         </div>
@@ -249,10 +306,10 @@ export function ModelForm({
         <Button type="button" variant="outline" onClick={onCancel}>
           {t("cancel")}
         </Button>
-        <Button type="submit" disabled={isLoading}>
+        <Button type="button" disabled={isLoading} onClick={handleFormSubmit}>
           {isLoading ? t("save") + "..." : t("save")}
         </Button>
       </div>
-    </form>
+    </div>
   );
 }
