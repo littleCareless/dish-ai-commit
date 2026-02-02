@@ -13,6 +13,7 @@ export const routes = {
   storage: "/storage",
   profiles: "/profiles",
   migration: "/migration",
+  weeklyReport: "/weekly-report",
 } as const;
 
 // 路由类型
