@@ -1,8 +1,6 @@
 import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
-import {
-  WeeklyReportService,
-  type Period,
-} from "@/services/reporting/weekly-report";
+import { WeeklyReportService, type Period } from "@/services/weekly-report";
+
 import { ModelConfigurationManager } from "@/services/webview/config/model-configuration-manager";
 import { getMessage } from "@/utils/i18n";
 import { ProgressHandler } from "@/utils/notification";
@@ -21,7 +19,7 @@ export class WeeklyReportGenerator {
       await getMessage("weeklyReport.generating"),
       async () => {
         const workItems = await this.weeklyReportService.generate(
-          period as unknown as Period
+          period as unknown as Period,
         );
         const profileManager = ProfileManagerService.getInstance();
         const profile = profileManager.getProfileForMode();
@@ -29,13 +27,13 @@ export class WeeklyReportGenerator {
         const { aiProvider, selectedModel } =
           await ModelConfigurationManager.getModelAndProvider(
             profile,
-            featureSettings
+            featureSettings,
           );
 
         const response = await aiProvider.generateWeeklyReport(
           workItems.map((item) => item.content),
           period,
-          selectedModel
+          selectedModel,
         );
 
         if (!response?.content) {
@@ -43,7 +41,7 @@ export class WeeklyReportGenerator {
         }
 
         return response.content;
-      }
+      },
     );
   }
 
@@ -59,7 +57,7 @@ export class WeeklyReportGenerator {
 
   public async generateTeamReport(
     period: Period,
-    users: string[]
+    users: string[],
   ): Promise<string> {
     await this.weeklyReportService.initialize();
 
@@ -69,7 +67,7 @@ export class WeeklyReportGenerator {
         // generateForUsers 返回 WorkItem[], 其 content 就是 commit message string
         const workItems = await this.weeklyReportService.generateForUsers(
           period as unknown as Period, // Period 类型在 weeklyReportService 中已定义
-          users
+          users,
         );
         const profileManager = ProfileManagerService.getInstance();
         const profile = profileManager.getProfileForMode();
@@ -77,20 +75,20 @@ export class WeeklyReportGenerator {
         const { aiProvider, selectedModel } =
           await ModelConfigurationManager.getModelAndProvider(
             profile,
-            featureSettings
+            featureSettings,
           );
 
         // aiProvider.generateWeeklyReport 需要 string[] 类型的 commits
         // workItems已经是 WorkItem[] 类型，我们需要提取其 content 属性
         const commitMessages = workItems.map(
-          (item: { content: string }) => item.content
+          (item: { content: string }) => item.content,
         );
 
         const response = await aiProvider.generateWeeklyReport(
           commitMessages, // 传递 commit messages 字符串数组
           period as Period, // 确保 period 类型正确
           selectedModel,
-          users
+          users,
         );
 
         if (!response?.content) {
@@ -98,7 +96,7 @@ export class WeeklyReportGenerator {
         }
 
         return response.content;
-      }
+      },
     );
   }
 }

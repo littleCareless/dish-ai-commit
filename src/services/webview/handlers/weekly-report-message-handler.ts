@@ -8,8 +8,10 @@ import * as vscode from "vscode";
 export class WeeklyReportMessageHandler {
   private readonly generator: WeeklyReportGenerator;
   private readonly configManager: ModelConfigurationManager;
+  private readonly _extensionContext: vscode.ExtensionContext;
 
-  constructor() {
+  constructor(extensionContext: vscode.ExtensionContext) {
+    this._extensionContext = extensionContext;
     this.generator = new WeeklyReportGenerator();
     this.configManager = new ModelConfigurationManager();
   }
@@ -51,14 +53,14 @@ export class WeeklyReportMessageHandler {
 
   private async handleGenerateTeamReportCommand(
     message: any,
-    webview: vscode.Webview
+    webview: vscode.Webview,
   ) {
     // 重命名方法
     try {
       const report = await this.generator.generateTeamReport(
         // 修改调用
         message.data.period,
-        message.data.users // 传递 users
+        message.data.users, // 传递 users
       );
       // const author = await this.generator.getCurrentAuthor(); // 对于团队报告，可能不需要单个 author
 
@@ -79,7 +81,7 @@ export class WeeklyReportMessageHandler {
         [error.message || error],
         {
           timeout: 3000,
-        }
+        },
       );
     }
   }

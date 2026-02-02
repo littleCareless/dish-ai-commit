@@ -1,12 +1,12 @@
 import * as vscode from "vscode";
-import { WorkItem } from "../types/weekly-report";
-import { SCMFactory, type ISCMProvider } from "../scm/scm-provider";
 import { AuthorService } from "../scm/author-service";
 import {
   CommitLogStrategy,
   GitCommitStrategy,
   SvnCommitStrategy,
 } from "../scm/commit-log-strategy";
+import { SCMFactory, type ISCMProvider } from "../scm/scm-provider";
+import { WorkItem } from "../types/weekly-report";
 
 /**
  * Represents a time period with start and end dates
@@ -39,7 +39,7 @@ export class WeeklyReportService {
    */
   async initialize(): Promise<void> {
     const workspacePath = this.getWorkspacePath();
-
+    console.log("workspacePath", workspacePath);
     // 修改：传递工作区路径作为首选文件路径来检测SCM
     this.scmProvider = await SCMFactory.detectSCM([workspacePath]);
     if (!this.scmProvider) {
@@ -68,7 +68,7 @@ export class WeeklyReportService {
     const commits = await commitStrategy.getCommits(
       this.getWorkspacePath(),
       period,
-      author
+      author,
     );
 
     return commits.map((commit) => ({
@@ -137,7 +137,7 @@ export class WeeklyReportService {
     const commits = await commitStrategy.getCommitsForUsers(
       this.getWorkspacePath(),
       period,
-      users
+      users,
     );
 
     return commits.map(
@@ -146,7 +146,7 @@ export class WeeklyReportService {
         content: commit,
         time: "", // Placeholder, might need to extract from commit
         description: commit, // Placeholder, might need to extract from commit
-      })
+      }),
     );
   }
 
