@@ -1,6 +1,7 @@
 import { ModelCustomStorage } from "@/services/storage/model-custom-storage";
 import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 import { ProviderInfo } from "@shared/types/model-custom";
+import { PROVIDER_DEFINITIONS } from "@/config/provider-definitions";
 import * as vscode from "vscode";
 
 /**
@@ -65,7 +66,7 @@ export class ModelCustomMessageHandler {
    */
   private async handleGetAll(
     webview: vscode.Webview,
-    requestId: string
+    requestId: string,
   ): Promise<void> {
     const allData = await this.storage.getAllModelInfo();
     webview.postMessage({
@@ -81,7 +82,7 @@ export class ModelCustomMessageHandler {
   private async handleSave(
     data: any,
     webview: vscode.Webview,
-    requestId: string
+    requestId: string,
   ): Promise<void> {
     if (!data.info) {
       throw new Error("Missing info data");
@@ -100,7 +101,7 @@ export class ModelCustomMessageHandler {
   private async handleDelete(
     data: any,
     webview: vscode.Webview,
-    requestId: string
+    requestId: string,
   ): Promise<void> {
     if (!data.providerId || !data.modelId) {
       throw new Error("Missing providerId or modelId");
@@ -118,7 +119,7 @@ export class ModelCustomMessageHandler {
    */
   private async handleExport(
     webview: vscode.Webview,
-    requestId: string
+    requestId: string,
   ): Promise<void> {
     const exportData = await this.storage.exportData();
     webview.postMessage({
@@ -134,7 +135,7 @@ export class ModelCustomMessageHandler {
   private async handleImport(
     data: any,
     webview: vscode.Webview,
-    requestId: string
+    requestId: string,
   ): Promise<void> {
     if (!data.registry) {
       throw new Error("Missing registry data");
@@ -152,29 +153,11 @@ export class ModelCustomMessageHandler {
    */
   private async handleGetProviders(
     webview: vscode.Webview,
-    requestId: string
+    requestId: string,
   ): Promise<void> {
-    const providers: ProviderInfo[] = [
-      { id: "openai", name: "OpenAI" },
-      { id: "anthropic", name: "Anthropic" },
-      { id: "gemini", name: "Google Gemini" },
-      { id: "github", name: "GitHub" },
-      { id: "zhipu", name: "ZhiPu" },
-      { id: "dashscope", name: "DashScope" },
-      { id: "doubao", name: "Doubao" },
-      { id: "deepseek", name: "DeepSeek" },
-      { id: "iflow", name: "Alibaba iFlow" },
-      { id: "volcano", name: "ByteDance Volcano" },
-      { id: "modelscope", name: "ModelScope" },
-      { id: "kat", name: "Kuaishou KAT" },
-      { id: "longcat", name: "Meituan LongCat" },
-      { id: "qiniu", name: "Qiniu AI" },
-      { id: "nvidia", name: "NVIDIA NIM" },
-      { id: "cerebras", name: "Cerebras" },
-      { id: "codebuddy", name: "Tencent CodeBuddy" },
-      { id: "codeflicker", name: "Kuaishou CodeFlicker" },
-      { id: "tongyi", name: "Tongyi Lingma" },
-    ];
+    const providers: ProviderInfo[] = Object.values(PROVIDER_DEFINITIONS).map(
+      (def) => ({ id: def.id, name: def.displayName }),
+    );
     webview.postMessage({
       command: ExtensionResponse.ModelCustomProvidersLoaded,
       requestId,
