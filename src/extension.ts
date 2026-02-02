@@ -8,7 +8,7 @@ import { notify } from "@/utils/notification/notification-manager";
 import { stateManager } from "@/utils/state/state-manager";
 import * as vscode from "vscode";
 
-import { SettingsViewProvider } from "@/services/webview/settings-view-provider";
+import { SettingsViewProvider } from "@/webview/settings-view-provider";
 import { EmbeddingServiceManager } from "./core/indexing/embedding-service-manager";
 import { getSettingsMigration } from "./services/core/settings-migration";
 import { TokenStatsService } from "./services/core/token-stats-service";
@@ -29,7 +29,7 @@ export async function activate(context: vscode.ExtensionContext) {
     const logger = Logger.getInstance("Dish AI Commit Gen");
     logger.info("Activating extension...");
     logger.info(
-      `Extension version: ${vscode.extensions.getExtension("littleCareless.dish-ai-commit")?.packageJSON.version}`
+      `Extension version: ${vscode.extensions.getExtension("littleCareless.dish-ai-commit")?.packageJSON.version}`,
     );
     logger.info(`VSCode version: ${vscode.version}`);
     context.subscriptions.push(logger);
@@ -61,16 +61,16 @@ export async function activate(context: vscode.ExtensionContext) {
 
     if (migrationDetection.hasOldConfig && (!hasProfiles || hasAutoMigrated)) {
       logger.info(
-        "Detected old configuration and no user-created profiles. Performing automatic migration..."
+        "Detected old configuration and no user-created profiles. Performing automatic migration...",
       );
       try {
         const result = await settingsMigration.performMigration();
         if (result.success) {
           notify.info(
-            "Dish AI Commit: Your settings have been automatically migrated to the new Profile system."
+            "Dish AI Commit: Your settings have been automatically migrated to the new Profile system.",
           );
           logger.info(
-            `Migration successful. Created and activated profile: ${result.profileId}`
+            `Migration successful. Created and activated profile: ${result.profileId}`,
           );
         }
       } catch (error) {
@@ -80,13 +80,13 @@ export async function activate(context: vscode.ExtensionContext) {
     } else if (!hasProfiles) {
       // Fallback: Create default profile if no profiles exist
       logger.info(
-        "No existing configuration or profiles found. Creating default profile..."
+        "No existing configuration or profiles found. Creating default profile...",
       );
       try {
         const result = await settingsMigration.ensureDefaultProfile();
         if (result.created) {
           logger.info(
-            `Default profile created and activated: ${result.profileId}`
+            `Default profile created and activated: ${result.profileId}`,
           );
         }
       } catch (error) {
@@ -102,7 +102,7 @@ export async function activate(context: vscode.ExtensionContext) {
 
     // 将 IndexingSettingsManager 传递给 EmbeddingServiceManager
     EmbeddingServiceManager.getInstance().setIndexingSettingsManager(
-      indexingSettingsManager
+      indexingSettingsManager,
     );
 
     // 初始化 EmbeddingServiceManager（现在是异步的，支持多仓库检测）
@@ -135,13 +135,13 @@ export async function activate(context: vscode.ExtensionContext) {
       context.extensionUri,
       context.extension.id,
       context,
-      embeddingService || null
+      embeddingService || null,
     );
     context.subscriptions.push(
       vscode.window.registerWebviewViewProvider(
         SettingsViewProvider.viewType,
-        settingsProvider
-      )
+        settingsProvider,
+      ),
     );
 
     // Check and show migration notification (non-blocking)
@@ -150,7 +150,7 @@ export async function activate(context: vscode.ExtensionContext) {
     });
   } catch (e) {
     Logger.getInstance("Dish AI Commit Gen").error(
-      `Error activating extension: ${e}`
+      `Error activating extension: ${e}`,
     );
     // 向用户显示本地化的错误提示
     notify.error("extension.activation.failed", [
@@ -166,6 +166,6 @@ export async function activate(context: vscode.ExtensionContext) {
  */
 export function deactivate() {
   Logger.getInstance("Dish AI Commit Gen").info(
-    'Extension "dish-ai-commit-gen" has been deactivated.'
+    'Extension "dish-ai-commit-gen" has been deactivated.',
   );
 }
