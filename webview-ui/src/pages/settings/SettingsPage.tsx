@@ -11,7 +11,6 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import SessionManager from "@/core/SessionManager";
 import { profileManager } from "@/services/webview/profile-manager";
 import { DEFAULT_USER_PREFERENCES, Profile } from "@/types/settings";
 import { themeStyles } from "@/utils/theme";
