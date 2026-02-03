@@ -1,9 +1,4 @@
-import { useState } from "react";
-import { CustomModelInfo } from "@/types/model-custom";
 import { Button } from "@/components/ui/button";
-import { Trash2, Edit } from "lucide-react";
-import { themeStyles } from "@/utils/theme";
-import { useTranslation } from "react-i18next";
 import {
   Dialog,
   DialogContent,
@@ -12,6 +7,11 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { CustomModelInfo } from "@/types/model-custom";
+import { themeStyles } from "@/utils/theme";
+import { Edit, Trash2 } from "lucide-react";
+import { useState } from "react";
+import { useTranslation } from "react-i18next";
 
 interface ModelListProps {
   models: CustomModelInfo[];

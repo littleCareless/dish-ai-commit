@@ -1,7 +1,7 @@
 import { ProviderConfigForm } from "@/components/settings/ProviderConfigForm";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ConnectionStatusIndicator } from "@/components/welcome/ConnectionStatusIndicator";
-import { TemplateGrid, SelectionCard } from "@/components/welcome/TemplateCard";
+import { SelectionCard, TemplateGrid } from "@/components/welcome/TemplateCard";
 import { providerRegistry } from "@/config/provider-registry";
 import { useOnboarding, type QuickStartTemplate } from "@/hooks/useOnboarding";
 import {
@@ -450,7 +450,6 @@ const SetupWizard = ({
                     className="cursor-pointer text-sm py-2 flex items-center gap-1"
                     style={{ color: "var(--vscode-textLink-foreground)" }}
                   >
-                    <ChevronRight className="w-4 h-4 transition-transform group-open:rotate-90" />
                     {t("setup.moreProviders")}
                   </summary>
                   <div className="mt-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -486,7 +485,7 @@ const SetupWizard = ({
                     })}
                   </p>
                   <ProviderConfigForm
-                    key={`${selectedProviderId}-${apiConfiguration.model || "no-model"}`}
+                    key={selectedProviderId}
                     provider={providerConfig}
                     config={apiConfiguration}
                     onConfigChange={setApiConfigurationField}
@@ -543,7 +542,7 @@ const SetupWizard = ({
             </div>
           )}
 
-          {currentStep === 1 && (
+          {currentStep === 2 && (
             <div className="space-y-4">
               <ConfigSummary
                 providerId={selectedProviderId}

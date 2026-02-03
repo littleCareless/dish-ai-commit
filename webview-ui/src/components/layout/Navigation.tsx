@@ -200,7 +200,7 @@ export const Navigation: React.FC = () => {
       </div>
       {/* 语言切换器 */}
       <div
-        className="p-4 border-t"
+        className="p-4"
         style={{
           borderColor: "var(--border)",
         }}
