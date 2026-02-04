@@ -3,6 +3,10 @@ import * as fs from "fs";
 import micromatch from "micromatch";
 import * as path from "path";
 
+// Sentinel string injected into synthetic diff blocks so downstream processors
+// can reliably identify placeholder content that intentionally omits real diffs.
+export const SKIPPED_DIFF_PLACEHOLDER_SENTINEL = "[DishAI-SkipDiff-Placeholder]";
+
 /**
  * 文件类型工具类
  * 用于判断文件是否应该跳过 diff 生成
