@@ -10,7 +10,7 @@ import {
   COMMIT_SUB_CATEGORIES,
   PromptMetadata,
 } from "@shared/types/prompts";
-import { FeaturesSettingsManager } from "@/services/settings/features-settings-manager";
+import { ActivePromptStore } from "@/services/settings/active-prompt-store";
 import { workspaceManager } from "@/services/core/workspace-manager";
 import { Logger } from "@/utils/logger";
 import { stateManager } from "@/utils/state/state-manager";
@@ -375,21 +375,19 @@ export class PromptManagerService {
       workspaceId = workspaceManager.getWorkspaceId(workspaceFolder);
     }
 
-    // 3. 从 FeaturesSettingsManager 获取活跃提示词配置
+    // 3. 从 ActivePromptStore 获取活跃提示词配置
     //    优先级：项目级配置 > 工作区级配置 > 全局配置
-    // 注意：FeaturesSettingsManager 应该已经在 extension.ts 中被初始化
-    // 这里我们创建一个新的实例，但依赖于 stateManager 的全局状态
-    const featuresManager = FeaturesSettingsManager.getInstance(
-      // 通过 stateManager 的私有属性获取 context（临时方案）
-      (stateManager as any)._context || {} as any
+    const promptStore = ActivePromptStore.getInstance(
+      (stateManager as any)._context || ({} as any)
     );
+    await promptStore.initialize();
 
     // 检查是否有子分类映射
     const subCategory = COMMIT_SUB_CATEGORIES[key as PromptKey];
 
     if (subCategory) {
       // 子分类级别的活跃提示词检查
-      const subCategoryPrompts = await featuresManager.getActivePromptsBySubCategory(
+      const subCategoryPrompts = await promptStore.getActivePromptsBySubCategory(
         category,
         subCategory as string,
         workspaceId
@@ -408,7 +406,7 @@ export class PromptManagerService {
       }
     } else {
       // 传统的分类级别检查
-      const activePrompts = await featuresManager.getActivePrompts(workspaceId);
+      const activePrompts = await promptStore.getActivePrompts(workspaceId);
       const activeKey = activePrompts[category];
 
       if (activeKey && activeKey !== key) {

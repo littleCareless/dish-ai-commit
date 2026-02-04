@@ -152,15 +152,6 @@ export function usePrompts(): UsePromptsReturn {
             }
           }, 0);
         }
-      } else if (messageType === ExtensionResponse.FeaturesSettingsLoaded) {
-        // 处理设置加载的响应
-        if (messageData?.activePrompts) {
-          setActivePromptsByCategory(messageData.activePrompts);
-        }
-        if (messageData?.activePromptsBySubCategory) {
-          setActivePromptsBySubCategory(messageData.activePromptsBySubCategory);
-        }
-        // 注意：这里不处理 activeSources，因为 FeaturesSettingsLoaded 不包含这个信息
       } else if (messageType === ExtensionResponse.FeaturesAllWorkspaceStates) {
         // messageData 是 WorkspaceActiveState[] 数组
         // 我们需要合并所有工作区的配置，优先使用当前工作区的配置

@@ -14,9 +14,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { profileManager } from "@/services/webview/profile-manager";
 import { DEFAULT_USER_PREFERENCES, Profile } from "@/types/settings";
 import { themeStyles } from "@/utils/theme";
-import { showInformationMessage } from "@/utils/vscode";
+import { postMessage, showInformationMessage } from "@/utils/vscode";
+import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 import { Settings as SettingsIcon } from "lucide-react";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { FeaturesSettings } from "./FeaturesSettings";
 import { ModelCustomSettings } from "./ModelCustomSettings";
@@ -30,7 +31,15 @@ export const SettingsPage: React.FC = () => {
   const [editingProfile, setEditingProfile] = useState<Profile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [profileDirty, setProfileDirty] = useState(false);
+  const [preferencesDirty, setPreferencesDirty] = useState(false);
+  const hasUnsavedChanges = profileDirty || preferencesDirty;
+  const [preferences, setPreferences] = useState(DEFAULT_USER_PREFERENCES);
+  const [isPreferencesLoading, setIsPreferencesLoading] = useState(true);
+  const savedPreferencesRef = useRef(DEFAULT_USER_PREFERENCES);
+  const pendingPreferencesPayloadRef = useRef<string | null>(null);
+  const pendingPreferencesPromiseRef = useRef<Promise<void> | null>(null);
+  const pendingPreferencesResolverRef = useRef<(() => void) | null>(null);
 
   // Local UI state
   const [selectedTab, setSelectedTab] = useState("providers");
@@ -77,8 +86,13 @@ export const SettingsPage: React.FC = () => {
       const active =
         profiles.find((p) => p.id === activeProfileId) || profiles[0];
       console.log("[SettingsPage] Active profile:", active);
-      setActiveProfile(active);
-      setEditingProfile(active);
+      const normalizedActive = {
+        ...active,
+        preferences: savedPreferencesRef.current,
+      };
+      setActiveProfile(normalizedActive);
+      setEditingProfile(normalizedActive);
+      setProfileDirty(false);
       console.log("[SettingsPage] Set active profile as editingProfile");
     } catch (err) {
       console.log("[SettingsPage] Error loading profiles:", err);
@@ -167,6 +181,51 @@ export const SettingsPage: React.FC = () => {
     }
   };
 
+  const requestPreferencesSave = useCallback(
+    (next: typeof DEFAULT_USER_PREFERENCES) => {
+      const payloadString = JSON.stringify(next);
+      if (
+        pendingPreferencesPromiseRef.current &&
+        pendingPreferencesPayloadRef.current === payloadString
+      ) {
+        return pendingPreferencesPromiseRef.current;
+      }
+      pendingPreferencesPayloadRef.current = payloadString;
+      const promise = new Promise<void>((resolve) => {
+        pendingPreferencesResolverRef.current = resolve;
+      });
+      pendingPreferencesPromiseRef.current = promise;
+      postMessage(UIRequest.PreferencesSaveSettings, next);
+      return promise;
+    },
+    [],
+  );
+
+  const persistChanges = useCallback(async () => {
+    const operations: Promise<void>[] = [];
+    if (profileDirty && editingProfile) {
+      operations.push(
+        (async () => {
+          await profileManager.saveProfile(editingProfile);
+          setProfileDirty(false);
+        })(),
+      );
+    }
+    if (preferencesDirty) {
+      operations.push(requestPreferencesSave(preferences));
+    }
+
+    if (operations.length > 0) {
+      await Promise.all(operations);
+    }
+  }, [
+    editingProfile,
+    preferences,
+    preferencesDirty,
+    profileDirty,
+    requestPreferencesSave,
+  ]);
+
   const handleDone = async () => {
     console.log(
       "[SettingsPage] handleDone triggered with editingProfile:",
@@ -177,14 +236,10 @@ export const SettingsPage: React.FC = () => {
       return;
     }
     try {
-      console.log("[SettingsPage] Saving profile:", editingProfile);
-      await profileManager.saveProfile(editingProfile);
+      await persistChanges();
       await profileManager.setActiveProfile(editingProfile.id);
-
-      // Update active profile in state directly to reflect changes immediately
       setActiveProfile(editingProfile);
       setEditingProfile(editingProfile);
-      setHasUnsavedChanges(false);
 
       await loadData(); // Refresh data to ensure everything is in sync
 
@@ -192,7 +247,7 @@ export const SettingsPage: React.FC = () => {
         t("messages.switchedToProfile", { name: editingProfile.name }),
       );
     } catch (err) {
-      console.log("[SettingsPage] Error saving profile:", err);
+      console.log("[SettingsPage] Error applying settings:", err);
       showInformationMessage(
         t("errors.failedToApplySettings", {
           message:
@@ -209,41 +264,60 @@ export const SettingsPage: React.FC = () => {
     );
     if (editingProfile && updatedProfile.id === editingProfile.id) {
       setEditingProfile(updatedProfile);
-      setHasUnsavedChanges(true);
+      setProfileDirty(true);
     }
   };
-
-  // Track previous preferences to prevent infinite loops
-  const prevPreferencesRef = React.useRef<
-    typeof DEFAULT_USER_PREFERENCES | null
-  >(null);
 
   const handlePreferencesChange = (
-    preferences: typeof DEFAULT_USER_PREFERENCES,
+    updatedPreferences: typeof DEFAULT_USER_PREFERENCES,
   ) => {
-    const prev = prevPreferencesRef.current;
+    setPreferences(updatedPreferences);
     const hasChanged =
-      !prev || JSON.stringify(prev) !== JSON.stringify(preferences);
-
-    console.log(
-      "[SettingsPage] handlePreferencesChange called with:",
-      preferences,
-      "hasChanged:",
-      hasChanged,
-    );
-
-    if (hasChanged && editingProfile) {
-      prevPreferencesRef.current = preferences;
-      const newProfile = { ...editingProfile, preferences };
-      console.log("[SettingsPage] New profile:", newProfile);
-      setEditingProfile(newProfile);
-      setHasUnsavedChanges(true);
-    } else if (!editingProfile) {
-      console.log("[SettingsPage] No editingProfile available");
-    } else {
-      console.log("[SettingsPage] No change detected, skipping update");
-    }
+      JSON.stringify(updatedPreferences) !==
+      JSON.stringify(savedPreferencesRef.current);
+    setPreferencesDirty(hasChanged);
   };
+
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const message = event.data;
+      if (message.command === ExtensionResponse.PreferencesSettingsUpdated) {
+        const incoming = message.settings;
+        if (!incoming) {
+          return;
+        }
+        const merged = {
+          ...DEFAULT_USER_PREFERENCES,
+          ...incoming,
+        };
+        savedPreferencesRef.current = merged;
+        setPreferences(merged);
+        setIsPreferencesLoading(false);
+        setPreferencesDirty(false);
+        setEditingProfile((prev) =>
+          prev ? { ...prev, preferences: merged } : prev,
+        );
+        setActiveProfile((prev) =>
+          prev ? { ...prev, preferences: merged } : prev,
+        );
+        if (
+          pendingPreferencesPayloadRef.current &&
+          JSON.stringify(merged) === pendingPreferencesPayloadRef.current
+        ) {
+          pendingPreferencesResolverRef.current?.();
+          pendingPreferencesResolverRef.current = null;
+          pendingPreferencesPromiseRef.current = null;
+          pendingPreferencesPayloadRef.current = null;
+        }
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    postMessage(UIRequest.PreferencesLoadSettings);
+    return () => {
+      window.removeEventListener("message", handleMessage);
+    };
+  }, []);
 
   if (error) {
     return (
@@ -343,11 +417,9 @@ export const SettingsPage: React.FC = () => {
 
             <TabsContent value="preferences" className="mt-0">
               <PreferencesSettings
-                preferences={
-                  editingProfile?.preferences || DEFAULT_USER_PREFERENCES
-                }
+                preferences={preferences}
                 onChange={handlePreferencesChange}
-                isLoading={isLoading}
+                isLoading={isLoading || isPreferencesLoading}
               />
             </TabsContent>
 
@@ -357,11 +429,9 @@ export const SettingsPage: React.FC = () => {
 
             <TabsContent value="advanced" className="mt-0">
               <AdvancedSettings
-                preferences={
-                  editingProfile?.preferences || DEFAULT_USER_PREFERENCES
-                }
+                preferences={preferences}
                 onChange={handlePreferencesChange}
-                isLoading={isLoading}
+                isLoading={isLoading || isPreferencesLoading}
               />
             </TabsContent>
 
@@ -396,24 +466,25 @@ export const SettingsPage: React.FC = () => {
               variant="outline"
               onClick={() => {
                 setIsUnsavedChangesDialogOpen(false);
-                setHasUnsavedChanges(false);
+                setProfileDirty(false);
+                setPreferences(savedPreferencesRef.current);
+                setPreferencesDirty(false);
                 if (targetProfileOnSwitch) {
                   setEditingProfile(targetProfileOnSwitch);
                 }
+                setTargetProfileOnSwitch(null);
               }}
             >
               {t("dialogs.unsavedChanges.dontSave")}
             </Button>
             <Button
               onClick={async () => {
-                if (editingProfile) {
-                  await profileManager.saveProfile(editingProfile);
-                }
+                await persistChanges();
                 setIsUnsavedChangesDialogOpen(false);
-                setHasUnsavedChanges(false);
                 if (targetProfileOnSwitch) {
                   setEditingProfile(targetProfileOnSwitch);
                 }
+                setTargetProfileOnSwitch(null);
               }}
             >
               {t("dialogs.unsavedChanges.save")}
