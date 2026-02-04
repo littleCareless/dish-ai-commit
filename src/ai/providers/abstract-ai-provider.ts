@@ -77,6 +77,19 @@ export abstract class AbstractAIProvider implements AIProvider {
     } else {
       this.config = config;
     }
+
+    try {
+      const preferences =
+        PreferencesSettingsManager.getInstance().getSettings();
+      this.globalConfig.preferences = preferences;
+      if (this.config) {
+        this.config.preferences = preferences;
+      }
+    } catch (error) {
+      this.logger.warn("Failed to load preferences settings", {
+        error: error as Error,
+      });
+    }
   }
 
   /**

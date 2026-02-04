@@ -15,6 +15,8 @@ import { TokenStatsService } from "./services/core/token-stats-service";
 import { NotificationService } from "./services/notification-service";
 import { IndexingSettingsManager } from "./services/settings/indexing-settings-manager";
 import { PreferencesSettingsManager } from "./services/settings/preferences-settings-manager";
+import { FeaturesSettingsManager } from "./services/settings/features-settings-manager";
+import { ActivePromptStore } from "./services/settings/active-prompt-store";
 import { NotificationSettingsManager } from "./utils/notification/notification-settings-manager";
 
 /**
@@ -42,11 +44,16 @@ export async function activate(context: vscode.ExtensionContext) {
     logger.info("Initializing state manager...");
     stateManager.initialize(context);
 
-    // ConfigurationManager is deprecated - all configuration moved to Profile system
-
     // 初始化 ProfileManagerService
     logger.info("Initializing profile manager service...");
     const profileManager = await ProfileManagerService.create(context);
+
+    // 预加载 Feature 设置和 Prompt 状态，确保 legacy 数据在启动时完成迁移
+    logger.info("Initializing feature settings manager...");
+    await FeaturesSettingsManager.getInstance(context).initialize();
+
+    logger.info("Initializing active prompt store...");
+    await ActivePromptStore.getInstance(context).initialize();
 
     // Initialize Notification Service
     logger.info("Initializing notification service...");
