@@ -84,7 +84,15 @@
       "form-data": ">=4.0.4",
       "bluebird": ">=3.7.2",
       "glob": "10.3.10"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "@vscode/vsce-sign",
+      "core-js",
+      "esbuild",
+      "keytar",
+      "protobufjs",
+      "unrs-resolver"
+    ]
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^3.0.56",
@@ -96,6 +104,8 @@
     "@ai-sdk/google": "^2.0.36",
     "@ai-sdk/openai": "^2.0.68",
     "ai": "^5.0.95",
+    "commitlint": "^20.4.1",
+    "commitlint-config-gitmoji": "^2.3.1",
     "ollama-ai-provider-v2": "^1.5.4",
     "proper-lockfile": "^4.1.2",
     "stream-json": "^1.9.1",
