@@ -132,9 +132,6 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
   const internalUpdateRef = useRef(false);
 
   // When config truly changes (e.g., switching profiles or providers), reset form
-  const configModel =
-    (config as Record<string, unknown>).model ||
-    (config as Record<string, unknown>).defaultModel;
   useEffect(() => {
     const providerChanged = prevProviderIdRef.current !== provider.id;
     const configChanged =

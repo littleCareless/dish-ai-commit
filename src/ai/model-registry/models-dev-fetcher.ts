@@ -83,7 +83,7 @@ export class ModelsDevFetcher {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`);
       }
 
-      const data: ModelsDevApiResponse = await response.json();
+      const data = await response.json() as ModelsDevApiResponse;
 
       // 处理 Providers
       const providers = this.parseProviders(data.providers);
