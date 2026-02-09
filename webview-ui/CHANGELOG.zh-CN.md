@@ -1,18 +1,21 @@
-## 0.56.11 (2026-02-02)
+## 0.56.12 (2026-02-09)
 
 ### ✨ Features
 
-- **webview**: 添加周报页面路由配置 ([e09132b](https://github.com/littleCareless/dish-ai-commit/commit/e09132b))
+- **core**: 重构数据获取器和工具函数以提升代码健壮性 ([c2e0171](https://github.com/littleCareless/dish-ai-commit/commit/c2e0171))
+- **ui**: 优化导航组件视觉设计和修复提示词管理状态同步 ([2a0c6bc](https://github.com/littleCareless/dish-ai-commit/commit/2a0c6bc))
+- **settings**: 引入高级运行时设置控制机制 ([b6332a4](https://github.com/littleCareless/dish-ai-commit/commit/b6332a4))
+- **model-registry**: 集成 Models.dev 平台支持 ([21f4672](https://github.com/littleCareless/dish-ai-commit/commit/21f4672))
 
 ### ♻️ Code Refactoring
 
-- **webview**: 更新 webview 模块导入路径以适配架构调整 ([0b0d19b](https://github.com/littleCareless/dish-ai-commit/commit/0b0d19b))
-- **webview**: 重构Webview架构，统一视图提供者与服务层 ([ce13cc3](https://github.com/littleCareless/dish-ai-commit/commit/ce13cc3))
-- **settings**: 移除设置页面中的SessionManager调用，直接执行数据加载 ([7fb369f](https://github.com/littleCareless/dish-ai-commit/commit/7fb369f))
-- **model**: 优化模型编辑对话框与表单的交互逻辑 ([4fc7905](https://github.com/littleCareless/dish-ai-commit/commit/4fc7905))
-- **model-settings**: 使用配置常量替代硬编码，优化模型设置管理 ([3ff15a8](https://github.com/littleCareless/dish-ai-commit/commit/3ff15a8))
+- **scm**: 重构 Git 和 SVN 差异处理逻辑，引入缓存机制和占位符标准化 ([784a535](https://github.com/littleCareless/dish-ai-commit/commit/784a535))
+- **settings**: 解耦提示词管理与功能设置，引入 ActivePromptStore ([527116b](https://github.com/littleCareless/dish-ai-commit/commit/527116b))
+- **webview**: 优化表单验证逻辑、重置行为及代码风格 ([f35f60c](https://github.com/littleCareless/dish-ai-commit/commit/f35f60c))
 
 ### 🔧 Chores
 
+- **deps**: 添加 commitlint 依赖并更新构建配置 ([d5cb439](https://github.com/littleCareless/dish-ai-commit/commit/d5cb439))
+- **extension**: 在扩展激活时初始化功能设置和活动提示词存储 ([61f9a28](https://github.com/littleCareless/dish-ai-commit/commit/61f9a28))
+- v0.56.11 ([532a08b](https://github.com/littleCareless/dish-ai-commit/commit/532a08b))
 - **settings**: 清理未使用的 SessionManager 导入并格式化代码 ([4d6e257](https://github.com/littleCareless/dish-ai-commit/commit/4d6e257))
-- v0.56.10 ([51a81eb](https://github.com/littleCareless/dish-ai-commit/commit/51a81eb))
