@@ -37,6 +37,14 @@ export enum LogLevel {
 export class Logger {
   private static _instance: Logger;
   private readonly _outputChannel: vscode.LogOutputChannel;
+  private static minimumLevel: LogLevel = LogLevel.INFO;
+  private static readonly levelOrder: Record<LogLevel, number> = {
+    [LogLevel.TRACE]: 0,
+    [LogLevel.DEBUG]: 1,
+    [LogLevel.INFO]: 2,
+    [LogLevel.WARN]: 3,
+    [LogLevel.ERROR]: 4,
+  };
 
   private constructor(channelName: string) {
     this._outputChannel = vscode.window.createOutputChannel(channelName, {
@@ -116,6 +124,10 @@ export class Logger {
     message: string,
     context?: LogContext,
   ): void {
+    if (!Logger.shouldLog(level)) {
+      return;
+    }
+
     const formattedMessage = this.formatMessage(message, context);
 
     switch (level) {
@@ -344,6 +356,19 @@ export class Logger {
     } catch (e) {
       this._outputChannel.debug(`${label}: [无法序列化]`);
     }
+  }
+
+  /**
+   * 设置当前日志最低输出级别
+   */
+  public static setMinimumLevel(level: LogLevel): void {
+    Logger.minimumLevel = level;
+  }
+
+  private static shouldLog(level: LogLevel): boolean {
+    return (
+      Logger.levelOrder[level] >= Logger.levelOrder[Logger.minimumLevel]
+    );
   }
 }
 

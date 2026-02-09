@@ -21,6 +21,10 @@ import {
 import { getCommitMessageTools } from "@/prompt/generate-commit";
 import { PromptManagerService } from "@/services/core/prompt-manager-service";
 import { TokenStatsService } from "@/services/core/token-stats-service";
+import {
+  AdvancedRuntimeSettings,
+  AdvancedSettingsRuntime,
+} from "@/services/settings/advanced-settings-runtime";
 import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
 import { formatMessage } from "@/utils/i18n/localization-manager";
 import { Logger } from "@/utils/logger";
@@ -63,6 +67,7 @@ export abstract class AbstractAIProvider implements AIProvider {
   protected logger: Logger;
   protected config: any;
   protected globalConfig: any = {};
+  private readonly advancedRuntime = AdvancedSettingsRuntime.getInstance();
 
   constructor() {
     this.logger = Logger.getInstance("Dish AI Commit Gen");
@@ -124,9 +129,17 @@ export abstract class AbstractAIProvider implements AIProvider {
         messageCount: params.messages?.length,
       });
 
-      const result = await this.executeAIRequest(params, {
-        temperature: preferences.commitTemperature,
-      });
+      const runtimeSettings = this.advancedRuntime.getSettings();
+      const maxTokens = this.resolveMaxTokens(params, runtimeSettings);
+      const result = await this.advancedRuntime.executeWithControls(
+        this.getId(),
+        () =>
+          this.executeAIRequest(params, {
+            temperature: preferences.commitTemperature,
+            maxTokens,
+          }),
+        runtimeSettings,
+      );
 
       await this.recordTokenUsage(result, params);
 
@@ -197,9 +210,17 @@ export abstract class AbstractAIProvider implements AIProvider {
         isStreaming: true,
       });
 
-      const stream = await this.executeAIStreamRequest(params, {
-        temperature: preferences.commitTemperature,
-      });
+      const runtimeSettings = this.advancedRuntime.getSettings();
+      const maxTokens = this.resolveMaxTokens(params, runtimeSettings);
+      const stream = await this.advancedRuntime.executeWithControls(
+        this.getId(),
+        () =>
+          this.executeAIStreamRequest(params, {
+            temperature: preferences.commitTemperature,
+            maxTokens,
+          }),
+        runtimeSettings,
+      );
 
       const self: AbstractAIProvider = this;
       // 确保 params.model 存在，用于后续的 token 统计
@@ -320,10 +341,18 @@ export abstract class AbstractAIProvider implements AIProvider {
         hasTools: !!tools,
       });
 
-      const result = await this.executeAIRequest(params, {
-        temperature: preferences.commitTemperature,
-        tools: tools,
-      });
+      const runtimeSettings = this.advancedRuntime.getSettings();
+      const maxTokens = this.resolveMaxTokens(params, runtimeSettings);
+      const result = await this.advancedRuntime.executeWithControls(
+        this.getId(),
+        () =>
+          this.executeAIRequest(params, {
+            temperature: preferences.commitTemperature,
+            tools: tools,
+            maxTokens,
+          }),
+        runtimeSettings,
+      );
 
       if (result.tool_calls && result.tool_calls.length > 0) {
         const toolCall = result.tool_calls[0];
@@ -401,10 +430,18 @@ export abstract class AbstractAIProvider implements AIProvider {
         messageCount: params.messages?.length,
       });
 
-      const result = await this.executeAIRequest(params, {
-        // parseAsJSON: true,
-        temperature: preferences.reviewTemperature,
-      });
+      const runtimeSettings = this.advancedRuntime.getSettings();
+      const maxTokens = this.resolveMaxTokens(params, runtimeSettings);
+      const result = await this.advancedRuntime.executeWithControls(
+        this.getId(),
+        () =>
+          this.executeAIRequest(params, {
+            // parseAsJSON: true,
+            temperature: preferences.reviewTemperature,
+            maxTokens,
+          }),
+        runtimeSettings,
+      );
 
       if (result.content) {
         const finalResult = {
@@ -467,9 +504,17 @@ export abstract class AbstractAIProvider implements AIProvider {
         messageCount: params.messages?.length,
       });
 
-      const result = await this.executeAIRequest(params, {
-        temperature: preferences.branchNameTemperature,
-      });
+      const runtimeSettings = this.advancedRuntime.getSettings();
+      const maxTokens = this.resolveMaxTokens(params, runtimeSettings);
+      const result = await this.advancedRuntime.executeWithControls(
+        this.getId(),
+        () =>
+          this.executeAIRequest(params, {
+            temperature: preferences.branchNameTemperature,
+            maxTokens,
+          }),
+        runtimeSettings,
+      );
 
       await this.recordTokenUsage(result, params);
 
@@ -543,17 +588,25 @@ export abstract class AbstractAIProvider implements AIProvider {
         users: users,
       });
 
-      const result = await this.executeAIRequest(
-        {
-          ...params,
-          messages: [
-            { role: "system", content: finalSystemPrompt },
-            { role: "user", content: userContent },
-          ],
-        },
-        {
-          temperature: preferences.weeklyReportTemperature,
-        },
+      const runtimeSettings = this.advancedRuntime.getSettings();
+      const maxTokens = this.resolveMaxTokens(params, runtimeSettings);
+      const result = await this.advancedRuntime.executeWithControls(
+        this.getId(),
+        () =>
+          this.executeAIRequest(
+            {
+              ...params,
+              messages: [
+                { role: "system", content: finalSystemPrompt },
+                { role: "user", content: userContent },
+              ],
+            },
+            {
+              temperature: preferences.weeklyReportTemperature,
+              maxTokens,
+            },
+          ),
+        runtimeSettings,
       );
 
       await this.recordTokenUsage(result, params);
@@ -879,6 +932,19 @@ export abstract class AbstractAIProvider implements AIProvider {
         );
       }
     }
+  }
+
+  /**
+   * 解析最大token数
+   * @param params AI请求参数
+   * @param runtimeSettings 运行时设置
+   * @returns 最大token数（如果设置了的话）
+   */
+  protected resolveMaxTokens(
+    params: AIRequestParams,
+    runtimeSettings: AdvancedRuntimeSettings,
+  ): number | undefined {
+    return runtimeSettings.maxTokens;
   }
 
   /**
