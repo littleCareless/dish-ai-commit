@@ -23,10 +23,16 @@ export class BranchSuggester {
   /**
    * 显示分支名称建议并提供创建分支的选项
    * @param branchName - AI生成的分支名称建议
+   * @param postAction - 分支名称生成后的默认动作
    * @returns {Promise<void>}
    */
-  async showBranchNameSuggestion(branchName: string): Promise<void> {
-    this.logger.info("Showing branch name suggestion QuickPick...");
+  async showBranchNameSuggestion(
+    branchName: string,
+    postAction: "ask" | "createAndCopy" | "copyOnly" = "createAndCopy",
+    selectionMode: "autoFirst" | "quickPick" = "autoFirst",
+    failureAction: "ask" | "copyOnly" = "copyOnly"
+  ): Promise<void> {
+    this.logger.info("Processing branch name suggestion...");
     
     // 格式化分支名称
     const formattedBranchName = this.formatter.formatBranchName(branchName);
@@ -34,15 +40,17 @@ export class BranchSuggester {
     // 生成多个分支名称变体供用户选择
     const branchSuggestions = this.formatter.generateBranchVariants(formattedBranchName);
 
-    // 显示 QuickPick
-    const selectedBranch = await this.showBranchQuickPick(branchSuggestions);
+    const selectedBranch =
+      selectionMode === "autoFirst"
+        ? branchSuggestions[0]
+        : await this.showBranchQuickPick(branchSuggestions);
     if (!selectedBranch) {
       this.logger.info("User cancelled branch name selection.");
       return;
     }
 
-    // 处理用户选择
-    await this.handleBranchSelection(selectedBranch);
+    // 按配置处理后续动作，默认自动创建并复制
+    await this.handleBranchSelection(selectedBranch, postAction, failureAction);
   }
 
   /**
@@ -87,9 +95,24 @@ export class BranchSuggester {
   /**
    * 处理用户选择的分支名称
    * @param selectedBranch - 用户选择的分支名称
+   * @param postAction - 默认动作
    */
-  private async handleBranchSelection(selectedBranch: string): Promise<void> {
+  private async handleBranchSelection(
+    selectedBranch: string,
+    postAction: "ask" | "createAndCopy" | "copyOnly",
+    failureAction: "ask" | "copyOnly"
+  ): Promise<void> {
     this.logger.info(`User selected branch name: ${selectedBranch}`);
+
+    if (postAction === "createAndCopy") {
+      await this.handleCreateBranch(selectedBranch, failureAction);
+      return;
+    }
+
+    if (postAction === "copyOnly") {
+      await this.handleCopyToClipboard(selectedBranch);
+      return;
+    }
 
     // 显示操作选项
     const createBranch = getMessage("create.branch");
@@ -104,7 +127,7 @@ export class BranchSuggester {
     );
 
     if (selection === createBranch) {
-      await this.handleCreateBranch(selectedBranch);
+      await this.handleCreateBranch(selectedBranch, failureAction);
     } else if (selection === copyToClipboard) {
       await this.handleCopyToClipboard(selectedBranch);
     } else {
@@ -116,7 +139,10 @@ export class BranchSuggester {
    * 处理创建分支操作
    * @param branchName - 分支名称
    */
-  private async handleCreateBranch(branchName: string): Promise<void> {
+  private async handleCreateBranch(
+    branchName: string,
+    failureAction: "ask" | "copyOnly"
+  ): Promise<void> {
     this.logger.info(`User chose to create branch: ${branchName}`);
     
     try {
@@ -124,7 +150,7 @@ export class BranchSuggester {
       await vscode.env.clipboard.writeText(branchName);
       
       // 创建分支
-      await this.creator.createBranchFromGeneratedName(branchName);
+      await this.creator.createBranchFromGeneratedName(branchName, failureAction);
     } catch (error) {
       this.logger.error(`Failed to create branch: ${error}`);
       notify.error("branch.creation.failed");

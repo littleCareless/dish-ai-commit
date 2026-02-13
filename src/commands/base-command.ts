@@ -291,54 +291,36 @@ export abstract class BaseCommand {
    * @returns A promise that resolves to true if the user accepts, false otherwise.
    */
   protected async showConfirmAIProviderToS(): Promise<boolean> {
+    const tosConfirmKey = `${DISH_CONFIG_PREFIX}_confirm_ai_tos`;
+    const tosNoticeShownKey = `${DISH_CONFIG_PREFIX}_ai_tos_notice_shown`;
+
     const confirmed =
-      stateManager.getGlobal<boolean>(
-        `${DISH_CONFIG_PREFIX}_confirm_ai_tos`,
-        false
-      ) ||
-      stateManager.getWorkspace<boolean>(
-        `${DISH_CONFIG_PREFIX}_confirm_ai_tos`,
-        false
-      );
+      stateManager.getGlobal<boolean>(tosConfirmKey, false) ||
+      stateManager.getWorkspace<boolean>(tosConfirmKey, false);
     if (confirmed) {
       return true;
     }
 
-    const acceptAlways: vscode.MessageItem = {
-      title: getMessage("confirm.ai.provider.tos.accept"),
-    };
-    const acceptWorkspace: vscode.MessageItem = {
-      title: getMessage("confirm.ai.provider.tos.acceptWorkspace"),
-    };
-    const cancel: vscode.MessageItem = {
-      title: getMessage("confirm.ai.provider.tos.cancel"),
-      isCloseAffordance: true,
-    };
-
-    const result = await notify.info(
-      "confirm.ai.provider.tos.message",
-      undefined,
-      {
-        modal: true,
-        buttons: [acceptAlways.title, acceptWorkspace.title, cancel.title],
-      }
+    const noticeShown = stateManager.getWorkspace<boolean>(
+      tosNoticeShownKey,
+      false
     );
+    if (!noticeShown) {
+      const openSettings = getMessage("confirm.ai.provider.tos.openSettings");
+      const later = getMessage("confirm.ai.provider.tos.later");
+      const selection = await notify.info("confirm.ai.provider.tos.message", [], {
+        buttons: [openSettings, later],
+      });
 
-    if (result === acceptWorkspace.title) {
-      void stateManager
-        .setWorkspace(`${DISH_CONFIG_PREFIX}_confirm_ai_tos`, true)
-        .catch();
-      return true;
+      if (selection === openSettings) {
+        await vscode.commands.executeCommand("dish-ai-commit.settingsView.focus");
+      }
+
+      await stateManager.setWorkspace(tosNoticeShownKey, true);
     }
 
-    if (result === acceptAlways.title) {
-      void stateManager
-        .setGlobal(`${DISH_CONFIG_PREFIX}_confirm_ai_tos`, true)
-        .catch();
-      return true;
-    }
-
-    return false;
+    // Non-blocking: keep command flow smooth, user can confirm in settings later.
+    return true;
   }
   /**
    * 准备命令执行环境

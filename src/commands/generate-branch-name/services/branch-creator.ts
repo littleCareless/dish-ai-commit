@@ -27,7 +27,8 @@ export class BranchCreator {
    * @returns {Promise<void>}
    */
   async createBranchFromGeneratedName(
-    generatedBranchName: string
+    generatedBranchName: string,
+    failureAction: "ask" | "copyOnly" = "copyOnly"
   ): Promise<void> {
     this.logger.info(`Attempting to create branch: '${generatedBranchName}'`);
 
@@ -58,7 +59,11 @@ export class BranchCreator {
       await this.createBranchWithGitApi(repository, generatedBranchName);
     } catch (error: any) {
       this.logger.error(`Branch creation failed: ${error}`);
-      await this.handleBranchCreationError(error, generatedBranchName);
+      await this.handleBranchCreationError(
+        error,
+        generatedBranchName,
+        failureAction
+      );
     }
   }
 
@@ -83,12 +88,15 @@ export class BranchCreator {
       return;
     }
 
-    this.logger.info(
-      `Found ${refs.length} refs. Showing QuickPick for source ref.`
-    );
+    this.logger.info(`Found ${refs.length} refs. Resolving source ref automatically.`);
 
-    // 显示源引用选择器
-    const selectedRef = await this.showRefSelection(refs);
+    // 默认优先当前分支/HEAD，无法推断时再回退到选择器
+    let selectedRef = this.resolveSourceRef(repository, refs);
+    if (!selectedRef) {
+      this.logger.info("Unable to infer source ref. Falling back to QuickPick.");
+      selectedRef = await this.showRefSelection(refs);
+    }
+
     if (!selectedRef) {
       this.logger.info(
         "User cancelled branch creation at source ref selection."
@@ -101,14 +109,75 @@ export class BranchCreator {
     await this.checkBranchNameConflicts(refs, branchName);
 
     // 创建分支
+    const sourceRefName = selectedRef.name || "HEAD";
     this.logger.info(
-      `Creating branch '${branchName}' from '${selectedRef.name}' (${selectedRef.commit})`
+      `Creating branch '${branchName}' from '${sourceRefName}' (${selectedRef.commit})`
     );
 
     await repository.createBranch(branchName, true, selectedRef.commit);
 
     this.logger.info("Branch created successfully via Git API.");
-    notify.info("branch.created.from", [branchName, selectedRef.name]);
+    notify.info("branch.created.from", [branchName, sourceRefName]);
+  }
+
+  /**
+   * 自动推断新分支的源引用，尽量减少用户选择
+   */
+  private resolveSourceRef(repository: any, refs: any[]): any | undefined {
+    const head = repository?.state?.HEAD;
+    if (head?.commit) {
+      const byHeadName = head.name
+        ? refs.find((ref) => ref?.name === head.name && ref?.commit)
+        : undefined;
+      if (byHeadName) {
+        this.logger.info(
+          `Auto source ref resolved from active HEAD name: ${byHeadName.name}`
+        );
+        return byHeadName;
+      }
+
+      const byHeadCommit = refs.find((ref) => ref?.commit === head.commit);
+      if (byHeadCommit) {
+        this.logger.info(
+          `Auto source ref resolved from active HEAD commit: ${byHeadCommit.name || head.name || "HEAD"}`
+        );
+        return byHeadCommit;
+      }
+
+      this.logger.info(
+        `Auto source ref resolved directly from repository HEAD: ${head.name || "HEAD"}`
+      );
+      return {
+        name: head.name || "HEAD",
+        commit: head.commit,
+      };
+    }
+
+    const preferredNames = [
+      "main",
+      "master",
+      "origin/main",
+      "origin/master",
+    ];
+    const preferredRef = preferredNames
+      .map((name) => refs.find((ref) => ref?.name === name && ref?.commit))
+      .find(Boolean);
+    if (preferredRef) {
+      this.logger.info(
+        `Auto source ref resolved from preferred branch: ${preferredRef.name}`
+      );
+      return preferredRef;
+    }
+
+    const firstWithCommit = refs.find((ref) => ref?.commit);
+    if (firstWithCommit) {
+      this.logger.info(
+        `Auto source ref resolved from first available ref: ${firstWithCommit.name || "unknown"}`
+      );
+      return firstWithCommit;
+    }
+
+    return undefined;
   }
 
   /**
@@ -185,12 +254,19 @@ export class BranchCreator {
    */
   private async handleBranchCreationError(
     error: any,
-    branchName: string
+    branchName: string,
+    failureAction: "ask" | "copyOnly"
   ): Promise<void> {
     if (error.gitErrorCode === "CantLockRef") {
       notify.error("branch.name.conflicts.generic");
     } else {
       notify.error("branch.creation.failed");
+
+      if (failureAction === "copyOnly") {
+        await vscode.env.clipboard.writeText(branchName);
+        notify.info("branch.name.copied");
+        return;
+      }
 
       // 提供友好的错误信息和建议
       const action = await notify.info(
@@ -206,7 +282,7 @@ export class BranchCreator {
         notify.info("branch.name.copied");
       } else if (action === getMessage("try.again")) {
         // 递归调用重试
-        await this.createBranchFromGeneratedName(branchName);
+        await this.createBranchFromGeneratedName(branchName, failureAction);
       }
     }
   }

@@ -5,7 +5,7 @@ import { BranchSuggester } from "@/commands/generate-branch-name/services/branch
 import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
 import { getMessage } from "@/utils/i18n";
-import { withProgress } from "@/utils/notification/notification-manager";
+import { notify, withProgress } from "@/utils/notification/notification-manager";
 import * as vscode from "vscode";
 
 /**
@@ -73,18 +73,8 @@ export class GenerateBranchNameCommand extends BaseCommand {
             }`
           );
 
-          // 步骤3: 选择生成模式
-          const generationMode = await this.selectGenerationMode();
-          if (!generationMode) {
-            this.logger.info(
-              "User cancelled branch name generation mode selection."
-            );
-            return;
-          }
-
-          // 步骤4: 执行对应的生成逻辑
+          // 步骤3: 自动执行生成逻辑（优先基于代码变更，必要时回退到描述模式）
           const branchName = await this.executeBranchGeneration(
-            generationMode,
             aiProvider,
             selectedModel,
             configuration,
@@ -98,7 +88,12 @@ export class GenerateBranchNameCommand extends BaseCommand {
               message: getMessage("preparing.results"),
             });
 
-            await this.branchSuggester.showBranchNameSuggestion(branchName);
+            await this.branchSuggester.showBranchNameSuggestion(
+              branchName,
+              featureSettings.branchNamePostAction,
+              featureSettings.branchNameSelectionMode,
+              featureSettings.branchCreationFailureAction
+            );
           }
 
           progress.report({
@@ -113,43 +108,7 @@ export class GenerateBranchNameCommand extends BaseCommand {
   }
 
   /**
-   * 选择生成模式
-   * @returns {Promise<any>} 选中的生成模式
-   */
-  private async selectGenerationMode(): Promise<any> {
-    const generationMode = await vscode.window.showQuickPick(
-      [
-        {
-          label: getMessage("branch.gen.mode.from.changes.label"),
-          description: getMessage("branch.gen.mode.from.changes.description"),
-          detail: getMessage("branch.gen.mode.from.changes.detail"),
-        },
-        {
-          label: getMessage("branch.gen.mode.from.description.label"),
-          description: getMessage(
-            "branch.gen.mode.from.description.description"
-          ),
-          detail: getMessage("branch.gen.mode.from.description.detail"),
-        },
-      ],
-      {
-        placeHolder: getMessage("branch.gen.mode.select.placeholder"),
-        ignoreFocusOut: true,
-      }
-    );
-
-    if (generationMode) {
-      this.logger.info(
-        `User selected generation mode: ${generationMode.label}`
-      );
-    }
-
-    return generationMode;
-  }
-
-  /**
    * 执行分支名称生成
-   * @param generationMode - 生成模式
    * @param aiProvider - AI 提供程序
    * @param model - 选中的模型
    * @param configuration - 配置对象
@@ -157,33 +116,50 @@ export class GenerateBranchNameCommand extends BaseCommand {
    * @returns {Promise<string | undefined>} 生成的分支名称
    */
   private async executeBranchGeneration(
-    generationMode: any,
     aiProvider: any,
     model: any,
     configuration: any,
     resources?: vscode.SourceControlResourceState[]
   ): Promise<string | undefined> {
-    if (
-      generationMode.label ===
-      getMessage("branch.gen.mode.from.description.label")
-    ) {
-      // 描述模式
+    // 优先使用代码变更模式，减少额外选择步骤
+    const result = await this.changesHandler.handle(
+      resources,
+      aiProvider,
+      model,
+      configuration,
+      (files: any) => this.detectSCMProvider(files)
+    );
+
+    if (result?.branchName) {
+      this.logger.info("Branch name generated from code changes.");
+      return result.branchName;
+    }
+
+    // 在没有传入资源时才回退到描述模式，避免对 SCM 入口场景增加输入负担
+    if (!resources || resources.length === 0) {
+      const continueByDescription = getMessage(
+        "branch.gen.mode.from.description.label"
+      );
+      const action = await notify.info("branch.description.fallback.suggested", [], {
+        buttons: [continueByDescription],
+      });
+      if (action !== continueByDescription) {
+        this.logger.info(
+          "Skipped description fallback because user did not opt in."
+        );
+        return undefined;
+      }
+
+      this.logger.info(
+        "Falling back to description mode after changes-based generation."
+      );
       return await this.descriptionHandler.handle(
         aiProvider,
         model,
         configuration
       );
-    } else {
-      // 代码变更模式
-      const result = await this.changesHandler.handle(
-        resources,
-        aiProvider,
-        model,
-        configuration,
-        (files: any) => this.detectSCMProvider(files)
-      );
-
-      return result?.branchName;
     }
+
+    return undefined;
   }
 }

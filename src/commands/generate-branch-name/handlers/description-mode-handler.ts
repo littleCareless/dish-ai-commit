@@ -75,7 +75,6 @@ export class DescriptionModeHandler {
     });
 
     if (!description) {
-      await notify.info("branch.description.cancelled");
       return undefined;
     }
 
