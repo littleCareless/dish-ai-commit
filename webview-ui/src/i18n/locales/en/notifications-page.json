@@ -2,6 +2,16 @@
   "loading": "Loading...",
   "title": "Notification Settings",
   "description": "Configure notification and voice features for Dish.",
+  "verbosity": {
+    "title": "Message Verbosity",
+    "description": "Control how much in-editor notification noise Dish should produce.",
+    "label": "Notification Level",
+    "hint": "Actionable prompts are still shown even in quiet mode.",
+    "options": {
+      "all": "All Messages",
+      "warnError": "Warnings and Errors Only"
+    }
+  },
   "textToSpeech": {
     "title": "Text-to-Speech",
     "description": "When enabled, Dish will read its responses aloud using text-to-speech.",

@@ -9,6 +9,7 @@ import {
 } from "@/components/ui/card";
 import { postMessage, useMessageHandler } from "@/utils/vscode";
 import { ExtensionResponse, UIRequest } from "@shared/types/messages";
+import { Select, SelectOption } from "@/components/ui/select";
 import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react";
 import { Bell, Info, MessageSquare, Volume2, VolumeX } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
@@ -18,12 +19,14 @@ interface NotificationSettings {
   textToSpeech: boolean;
   soundNotifications: boolean;
   systemNotifications: boolean;
+  verbosity: "all" | "warn-error";
 }
 
 const DEFAULT_SETTINGS: NotificationSettings = {
   textToSpeech: false,
   soundNotifications: false,
   systemNotifications: false,
+  verbosity: "all",
 };
 
 export const NotificationsPage: React.FC = () => {
@@ -94,6 +97,7 @@ export const NotificationsPage: React.FC = () => {
           textToSpeech: data.settings?.textToSpeech ?? false,
           soundNotifications: data.settings?.soundNotifications ?? false,
           systemNotifications: data.settings?.systemNotifications ?? false,
+          verbosity: data.settings?.verbosity ?? "all",
         });
       }
     } else if (command === ExtensionResponse.SystemOSInfoLoaded) {
@@ -124,11 +128,51 @@ export const NotificationsPage: React.FC = () => {
     saveSettings({ ...settings, systemNotifications: checked });
   };
 
+  const handleVerbosityChange = (value: string) => {
+    saveSettings({
+      ...settings,
+      verbosity: value === "warn-error" ? "warn-error" : "all",
+    });
+  };
+
   return (
     <PageLayout maxWidth="3xl">
       <PageHeader title={t("title")} description={t("description")} />
 
       <div className="space-y-4">
+        {/* 文本转语音 */}
+        <Card>
+          <CardHeader>
+            <div className="flex items-center gap-2">
+              <Info className="w-5 h-5" />
+              <CardTitle className="text-lg">{t("verbosity.title")}</CardTitle>
+            </div>
+            <CardDescription>{t("verbosity.description")}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between">
+              <div>
+                <div className="font-medium">{t("verbosity.label")}</div>
+                <div className="text-sm text-muted-foreground mt-1">
+                  {t("verbosity.hint")}
+                </div>
+              </div>
+              <Select
+                value={settings.verbosity}
+                onValueChange={handleVerbosityChange}
+                className="w-56"
+              >
+                <SelectOption value="all">
+                  {t("verbosity.options.all")}
+                </SelectOption>
+                <SelectOption value="warn-error">
+                  {t("verbosity.options.warnError")}
+                </SelectOption>
+              </Select>
+            </div>
+          </CardContent>
+        </Card>
+
         {/* 文本转语音 */}
         <Card>
           <CardHeader>

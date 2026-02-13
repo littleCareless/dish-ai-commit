@@ -35,6 +35,31 @@
         "useFallback": "Auto Use Fallback Prompt",
         "continue": "Auto Continue"
       }
+    },
+    "branchNamePostAction": {
+      "label": "Default Action After Branch Name Generation",
+      "description": "Choose the default operation after branch name is generated to reduce extra prompts.",
+      "options": {
+        "createAndCopy": "Auto Create and Copy",
+        "copyOnly": "Copy Only",
+        "ask": "Ask Every Time"
+      }
+    },
+    "branchNameSelectionMode": {
+      "label": "Branch Suggestion Selection Mode",
+      "description": "Choose whether to use the top suggestion directly or open an editable suggestion list.",
+      "options": {
+        "autoFirst": "Auto Use Top Suggestion",
+        "quickPick": "Show Editable Suggestions"
+      }
+    },
+    "branchCreationFailureAction": {
+      "label": "Action on Branch Creation Failure",
+      "description": "Choose the default action when auto branch creation fails.",
+      "options": {
+        "copyOnly": "Copy Branch Name Only",
+        "ask": "Ask for Retry or Copy"
+      }
     }
   },
   "codeAnalysis": {

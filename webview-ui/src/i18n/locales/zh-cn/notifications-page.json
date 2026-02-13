@@ -2,6 +2,16 @@
   "loading": "加载中...",
   "title": "通知设置",
   "description": "配置 Dish 的通知和语音功能",
+  "verbosity": {
+    "title": "消息提示级别",
+    "description": "控制 Dish 在编辑器内通知提示的频率。",
+    "label": "通知级别",
+    "hint": "即使在安静模式下，需要你决策的提示仍会显示。",
+    "options": {
+      "all": "显示全部消息",
+      "warnError": "仅警告和错误"
+    }
+  },
   "textToSpeech": {
     "title": "文本转语音",
     "description": "启用后，Dish 将使用文本转语音功能朗读其响应。",

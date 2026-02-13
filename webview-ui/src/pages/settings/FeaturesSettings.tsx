@@ -52,7 +52,10 @@ export const FeaturesSettings: React.FC = () => {
       }
     }
     return {
-      largePromptAction: "ask",
+      largePromptAction: "useFallback",
+      branchNamePostAction: "createAndCopy",
+      branchNameSelectionMode: "autoFirst",
+      branchCreationFailureAction: "copyOnly",
       enableEmoji: true,
       enableMergeCommit: false,
       enableBody: true,
@@ -82,11 +85,14 @@ export const FeaturesSettings: React.FC = () => {
         message.command === ExtensionResponse.FeaturesSettingsLoaded &&
         message.data
       ) {
-        setFeatures(message.data);
-        sessionStorage.setItem(
-          "featuresSettingsCache",
-          JSON.stringify(message.data),
-        );
+        setFeatures((prev: any) => {
+          const merged = { ...prev, ...message.data };
+          sessionStorage.setItem(
+            "featuresSettingsCache",
+            JSON.stringify(merged),
+          );
+          return merged;
+        });
       }
     };
 
@@ -219,6 +225,103 @@ export const FeaturesSettings: React.FC = () => {
                 <SelectOption value="continue">
                   {t(
                     "commitMessageGeneration.largePromptAction.options.continue",
+                  )}
+                </SelectOption>
+              </Select>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <div className="flex flex-col">
+                <Label htmlFor="branch-name-post-action">
+                  {t("commitMessageGeneration.branchNamePostAction.label")}
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {t(
+                    "commitMessageGeneration.branchNamePostAction.description",
+                  )}
+                </p>
+              </div>
+              <Select
+                value={features.branchNamePostAction}
+                onValueChange={(value) =>
+                  handleFeatureToggle("branchNamePostAction", value)
+                }
+                className="w-56"
+              >
+                <SelectOption value="createAndCopy">
+                  {t(
+                    "commitMessageGeneration.branchNamePostAction.options.createAndCopy",
+                  )}
+                </SelectOption>
+                <SelectOption value="copyOnly">
+                  {t(
+                    "commitMessageGeneration.branchNamePostAction.options.copyOnly",
+                  )}
+                </SelectOption>
+                <SelectOption value="ask">
+                  {t(
+                    "commitMessageGeneration.branchNamePostAction.options.ask",
+                  )}
+                </SelectOption>
+              </Select>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <div className="flex flex-col">
+                <Label htmlFor="branch-name-selection-mode">
+                  {t("commitMessageGeneration.branchNameSelectionMode.label")}
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {t(
+                    "commitMessageGeneration.branchNameSelectionMode.description",
+                  )}
+                </p>
+              </div>
+              <Select
+                value={features.branchNameSelectionMode}
+                onValueChange={(value) =>
+                  handleFeatureToggle("branchNameSelectionMode", value)
+                }
+                className="w-56"
+              >
+                <SelectOption value="autoFirst">
+                  {t(
+                    "commitMessageGeneration.branchNameSelectionMode.options.autoFirst",
+                  )}
+                </SelectOption>
+                <SelectOption value="quickPick">
+                  {t(
+                    "commitMessageGeneration.branchNameSelectionMode.options.quickPick",
+                  )}
+                </SelectOption>
+              </Select>
+            </div>
+            <div className="flex items-center justify-between py-2">
+              <div className="flex flex-col">
+                <Label htmlFor="branch-creation-failure-action">
+                  {t(
+                    "commitMessageGeneration.branchCreationFailureAction.label",
+                  )}
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {t(
+                    "commitMessageGeneration.branchCreationFailureAction.description",
+                  )}
+                </p>
+              </div>
+              <Select
+                value={features.branchCreationFailureAction}
+                onValueChange={(value) =>
+                  handleFeatureToggle("branchCreationFailureAction", value)
+                }
+                className="w-56"
+              >
+                <SelectOption value="copyOnly">
+                  {t(
+                    "commitMessageGeneration.branchCreationFailureAction.options.copyOnly",
+                  )}
+                </SelectOption>
+                <SelectOption value="ask">
+                  {t(
+                    "commitMessageGeneration.branchCreationFailureAction.options.ask",
                   )}
                 </SelectOption>
               </Select>

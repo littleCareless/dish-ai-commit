@@ -35,6 +35,31 @@
         "useFallback": "自动使用备用提示词",
         "continue": "自动继续"
       }
+    },
+    "branchNamePostAction": {
+      "label": "分支名生成后的默认动作",
+      "description": "生成分支名后默认执行的操作，减少二次选择。",
+      "options": {
+        "createAndCopy": "自动创建并复制",
+        "copyOnly": "仅复制到剪贴板",
+        "ask": "每次询问"
+      }
+    },
+    "branchNameSelectionMode": {
+      "label": "分支候选选择模式",
+      "description": "是否直接使用首选候选，或显示候选列表供你选择/编辑。",
+      "options": {
+        "autoFirst": "自动使用首选候选",
+        "quickPick": "显示候选并可编辑"
+      }
+    },
+    "branchCreationFailureAction": {
+      "label": "分支创建失败后的动作",
+      "description": "自动创建分支失败时的默认处理方式。",
+      "options": {
+        "copyOnly": "仅复制分支名",
+        "ask": "询问重试或复制"
+      }
     }
   },
   "codeAnalysis": {

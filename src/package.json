@@ -533,7 +533,7 @@
         },
         "dish-ai-commit.features.commitMessage.largePromptAction": {
           "type": "string",
-          "default": "ask",
+          "default": "useFallback",
           "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitMessage.largePromptAction.description%",
           "enum": [
             "ask",
@@ -560,6 +560,34 @@
           "type": "string",
           "default": "",
           "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.branchName.systemPrompt.description%"
+        },
+        "dish-ai-commit.features.branchName.postAction": {
+          "type": "string",
+          "default": "createAndCopy",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.branchName.postAction.description%",
+          "enum": [
+            "ask",
+            "createAndCopy",
+            "copyOnly"
+          ]
+        },
+        "dish-ai-commit.features.branchName.selectionMode": {
+          "type": "string",
+          "default": "autoFirst",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.branchName.selectionMode.description%",
+          "enum": [
+            "autoFirst",
+            "quickPick"
+          ]
+        },
+        "dish-ai-commit.features.branchName.createFailureAction": {
+          "type": "string",
+          "default": "copyOnly",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.branchName.createFailureAction.description%",
+          "enum": [
+            "ask",
+            "copyOnly"
+          ]
         },
         "dish-ai-commit.features.prSummary.baseBranch": {
           "type": "string",
