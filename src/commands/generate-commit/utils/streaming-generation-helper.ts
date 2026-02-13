@@ -489,11 +489,23 @@ export class StreamingGenerationHelper {
       configuration,
     );
     const maxTokens = tokenLimits.input;
+    const largePromptAction =
+      configuration.features?.commitMessage?.largePromptAction ?? "ask";
 
-    if (
-      promptLength > maxTokens * 0.75 &&
-      !configuration.features.suppressNonCriticalWarnings
-    ) {
+    if (promptLength <= maxTokens * 0.75) {
+      return;
+    }
+
+    if (largePromptAction === "useFallback") {
+      await this.applyFallbackSystemPrompt(contextManager, selectedModel, configuration);
+      return;
+    }
+
+    if (largePromptAction === "continue") {
+      return;
+    }
+
+    if (!configuration.features.suppressNonCriticalWarnings) {
       const useFallbackChoice = getMessage("fallback.use");
       const continueAnyway = getMessage("prompt.large.continue");
 
@@ -504,26 +516,30 @@ export class StreamingGenerationHelper {
       );
 
       if (choice === useFallbackChoice) {
-        const tempParams = this.buildRequestParams(configuration, {
-          model: selectedModel,
-          scm: "git",
-          workspaceRoot: undefined,
-          changeFiles: [],
-          diff: "",
-          additionalContext: "",
-        });
-
-        const fallbackSystemPrompt = await getSystemPrompt(
-          tempParams,
-          true,
-          true,
-        );
-        contextManager.setSystemPrompt(fallbackSystemPrompt);
-        notify.info("info.using.fallback.prompt");
+        await this.applyFallbackSystemPrompt(contextManager, selectedModel, configuration);
       } else if (choice !== continueAnyway) {
         throw new Error(getMessage("prompt.user.cancelled"));
       }
     }
+  }
+
+  private async applyFallbackSystemPrompt(
+    contextManager: ContextManager,
+    selectedModel: AIModel,
+    configuration: any,
+  ): Promise<void> {
+    const tempParams = this.buildRequestParams(configuration, {
+      model: selectedModel,
+      scm: "git",
+      workspaceRoot: undefined,
+      changeFiles: [],
+      diff: "",
+      additionalContext: "",
+    });
+
+    const fallbackSystemPrompt = await getSystemPrompt(tempParams, true, true);
+    contextManager.setSystemPrompt(fallbackSystemPrompt);
+    notify.info("info.using.fallback.prompt");
   }
 
   /**

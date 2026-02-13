@@ -124,6 +124,7 @@ export abstract class BaseCommand {
         commitMessage: {
           useRecentCommitsAsReference:
             featureSettings.useRecentCommitsAsReference,
+          largePromptAction: featureSettings.largePromptAction,
           systemPrompt: undefined,
         },
         codeAnalysis: {

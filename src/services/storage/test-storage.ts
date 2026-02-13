@@ -177,6 +177,7 @@ export class StorageTest {
 
     // 测试保存
     await features.save({
+      largePromptAction: "ask",
       enableEmoji: false,
       enableMergeCommit: true,
       enableBody: false,

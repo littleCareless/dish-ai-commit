@@ -264,6 +264,7 @@ export class ProfileManagerService {
     );
     return (
       settings || {
+        largePromptAction: "ask",
         enableEmoji: true,
         enableMergeCommit: true,
         enableBody: true,

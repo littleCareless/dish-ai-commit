@@ -422,7 +422,7 @@ export class SuggestionEngine {
     // 排序：置信度高的在前，类型优先级
     return unique
       .sort((a, b) => {
-        const typePriority = {
+        const typePriority: Record<CommitSuggestion["type"], number> = {
           template: 3,
           convention: 2,
           style: 1,

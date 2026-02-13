@@ -2,6 +2,9 @@ import { DISH_CONFIG_PREFIX } from "@/config/constants";
 import * as vscode from "vscode";
 
 export interface FeaturesStorageData {
+  // Large Prompt Handling
+  largePromptAction: "ask" | "useFallback" | "continue";
+
   // Commit Message Generation
   enableEmoji: boolean;
   enableMergeCommit: boolean;
@@ -34,6 +37,7 @@ export class FeaturesStorage {
 
   // 默认值
   private readonly defaults: FeaturesStorageData = {
+    largePromptAction: "ask",
     // Commit Message Generation
     enableEmoji: true,
     enableMergeCommit: false,

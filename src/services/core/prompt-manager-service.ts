@@ -749,7 +749,7 @@ export class PromptManagerService {
     const allPrompts: Record<string, PromptDetail> = {};
 
     // 1. 添加所有已知的 PromptKey（确保所有 prompts 都会显示，即使加载失败）
-    for (const key of Object.values(PromptKey)) {
+    for (const key of Object.values(PromptKey) as string[]) {
       allPrompts[key] = this.getPromptDetail(key, scope);
     }
 

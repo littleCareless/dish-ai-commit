@@ -219,6 +219,10 @@ export class SettingsMigration {
 
     // 2. Map Features
     const features: z.infer<typeof featuresSchema> = {
+      largePromptAction: config.get(
+        "features.commitMessage.largePromptAction",
+        "ask"
+      ) as "ask" | "useFallback" | "continue",
       enableEmoji: config.get("features.commitFormat.enableEmoji", true),
       enableMergeCommit: config.get(
         "features.commitFormat.enableMergeCommit",

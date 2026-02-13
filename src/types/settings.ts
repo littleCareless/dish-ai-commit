@@ -113,6 +113,7 @@ export type UserPreferences = z.infer<typeof userPreferencesSchema>;
 
 // Zod Schema for Features
 export const featuresSchema = z.object({
+  largePromptAction: z.enum(["ask", "useFallback", "continue"]),
   enableEmoji: z.boolean(),
   enableMergeCommit: z.boolean(),
   enableBody: z.boolean(),
@@ -305,6 +306,7 @@ export type ProviderChangeCallback = (
 export type SettingsChangeCallback = (event: SettingsChangeEvent) => void;
 
 export interface FeatureSettings {
+  largePromptAction: "ask" | "useFallback" | "continue";
   enableEmoji: boolean;
   enableMergeCommit: boolean;
   enableBody: boolean;

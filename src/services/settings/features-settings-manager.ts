@@ -2,6 +2,9 @@ import { DISH_CONFIG_PREFIX } from "@/config/constants";
 import * as vscode from "vscode";
 
 export interface FeaturesSettings {
+  // Large Prompt Handling
+  largePromptAction: "ask" | "useFallback" | "continue";
+
   // Commit Message Generation
   enableEmoji: boolean;
   enableMergeCommit: boolean;
@@ -14,8 +17,10 @@ export interface FeaturesSettings {
   simplifyDiff: boolean;
   autoDetectStaged: boolean;
   fallbackToAll: boolean;
+  diffTarget: "staged" | "all" | "auto";
 
   // Other Features
+  suppressNonCriticalWarnings: boolean;
   weeklyReport: boolean;
   codeReview: boolean;
   generateBranchName: boolean;
@@ -23,6 +28,7 @@ export interface FeaturesSettings {
 }
 
 const DEFAULT_FEATURE_SETTINGS: FeaturesSettings = {
+  largePromptAction: "ask",
   enableEmoji: true,
   enableMergeCommit: false,
   enableBody: true,
@@ -32,6 +38,8 @@ const DEFAULT_FEATURE_SETTINGS: FeaturesSettings = {
   simplifyDiff: false,
   autoDetectStaged: true,
   fallbackToAll: true,
+  diffTarget: "auto",
+  suppressNonCriticalWarnings: true,
   weeklyReport: true,
   codeReview: true,
   generateBranchName: true,

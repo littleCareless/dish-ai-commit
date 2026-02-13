@@ -399,6 +399,7 @@ export class MigrationService {
 
     // 功能开关转换
     const features: FeaturesStorageData = {
+      largePromptAction: "ask",
       enableEmoji: oldData.features?.enableEmoji ?? true,
       enableMergeCommit: oldData.features?.enableMergeCommit ?? false,
       enableBody: oldData.features?.enableBody ?? true,
