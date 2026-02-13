@@ -221,8 +221,20 @@ export class SettingsMigration {
     const features: z.infer<typeof featuresSchema> = {
       largePromptAction: config.get(
         "features.commitMessage.largePromptAction",
-        "ask"
+        "useFallback"
       ) as "ask" | "useFallback" | "continue",
+      branchNamePostAction: config.get(
+        "features.branchName.postAction",
+        "createAndCopy"
+      ) as "ask" | "createAndCopy" | "copyOnly",
+      branchNameSelectionMode: config.get(
+        "features.branchName.selectionMode",
+        "autoFirst"
+      ) as "autoFirst" | "quickPick",
+      branchCreationFailureAction: config.get(
+        "features.branchName.createFailureAction",
+        "copyOnly"
+      ) as "ask" | "copyOnly",
       enableEmoji: config.get("features.commitFormat.enableEmoji", true),
       enableMergeCommit: config.get(
         "features.commitFormat.enableMergeCommit",

@@ -778,7 +778,7 @@ export const CONFIG_SCHEMA = {
       },
       largePromptAction: {
         type: "string",
-        default: "ask",
+        default: "useFallback",
         description:
           "Behavior when prompt is too large: ask/useFallback/continue. / 提示词过大时的处理方式：ask/useFallback/continue。",
         enum: ["ask", "useFallback", "continue"],
@@ -815,6 +815,27 @@ export const CONFIG_SCHEMA = {
         default: ``,
         description:
           "Custom system prompt for branch name generation / 分支名称生成的自定义系统提示语",
+      },
+      postAction: {
+        type: "string",
+        default: "createAndCopy",
+        description:
+          "Default action after branch name generation: ask/createAndCopy/copyOnly. / 分支名生成后的默认动作：ask/createAndCopy/copyOnly。",
+        enum: ["ask", "createAndCopy", "copyOnly"],
+      },
+      selectionMode: {
+        type: "string",
+        default: "autoFirst",
+        description:
+          "Branch suggestion selection mode: autoFirst/quickPick. / 分支候选选择模式：autoFirst/quickPick。",
+        enum: ["autoFirst", "quickPick"],
+      },
+      createFailureAction: {
+        type: "string",
+        default: "copyOnly",
+        description:
+          "Default action when branch creation fails: ask/copyOnly. / 分支创建失败后的默认动作：ask/copyOnly。",
+        enum: ["ask", "copyOnly"],
       },
     },
     prSummary: {

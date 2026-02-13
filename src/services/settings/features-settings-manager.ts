@@ -4,6 +4,9 @@ import * as vscode from "vscode";
 export interface FeaturesSettings {
   // Large Prompt Handling
   largePromptAction: "ask" | "useFallback" | "continue";
+  branchNamePostAction: "ask" | "createAndCopy" | "copyOnly";
+  branchNameSelectionMode: "autoFirst" | "quickPick";
+  branchCreationFailureAction: "ask" | "copyOnly";
 
   // Commit Message Generation
   enableEmoji: boolean;
@@ -28,7 +31,10 @@ export interface FeaturesSettings {
 }
 
 const DEFAULT_FEATURE_SETTINGS: FeaturesSettings = {
-  largePromptAction: "ask",
+  largePromptAction: "useFallback",
+  branchNamePostAction: "createAndCopy",
+  branchNameSelectionMode: "autoFirst",
+  branchCreationFailureAction: "copyOnly",
   enableEmoji: true,
   enableMergeCommit: false,
   enableBody: true,

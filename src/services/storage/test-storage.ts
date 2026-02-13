@@ -178,6 +178,9 @@ export class StorageTest {
     // 测试保存
     await features.save({
       largePromptAction: "ask",
+      branchNamePostAction: "ask",
+      branchNameSelectionMode: "quickPick",
+      branchCreationFailureAction: "ask",
       enableEmoji: false,
       enableMergeCommit: true,
       enableBody: false,

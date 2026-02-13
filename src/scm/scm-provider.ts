@@ -454,6 +454,82 @@ export class SCMFactory {
   }
 
   /**
+   * 在多仓库场景下自动推断目标仓库，尽量减少用户选择
+   */
+  private static async autoSelectRepository(
+    repositories: Array<{
+      type: "git" | "svn";
+      rootUri: vscode.Uri;
+      label: string;
+    }>
+  ): Promise<{ type: "git" | "svn"; rootUri: vscode.Uri } | undefined> {
+    if (repositories.length === 0) {
+      return undefined;
+    }
+
+    const normalizedRepos = repositories.map((repo) => ({
+      repo,
+      root: ImprovedPathUtils.normalizePath(repo.rootUri.fsPath),
+    }));
+
+    const tryMatchByFilePath = (filePath?: string) => {
+      if (!filePath || !ImprovedPathUtils.isValidPath(filePath)) {
+        return undefined;
+      }
+
+      const normalizedFilePath = ImprovedPathUtils.normalizePath(filePath);
+      const matches = normalizedRepos.filter(({ root }) =>
+        normalizedFilePath.startsWith(root)
+      );
+
+      if (matches.length === 1) {
+        return matches[0].repo;
+      }
+
+      return undefined;
+    };
+
+    const activeFilePath =
+      vscode.window.activeTextEditor?.document?.uri.scheme === "file"
+        ? vscode.window.activeTextEditor.document.uri.fsPath
+        : undefined;
+    const fromActiveEditor = tryMatchByFilePath(activeFilePath);
+    if (fromActiveEditor) {
+      return fromActiveEditor;
+    }
+
+    const fromOpenDocument = vscode.workspace.textDocuments
+      .filter((doc) => doc.uri.scheme === "file")
+      .map((doc) => tryMatchByFilePath(doc.uri.fsPath))
+      .find(Boolean);
+    if (fromOpenDocument) {
+      return fromOpenDocument;
+    }
+
+    try {
+      const primaryRepo = await multiRepositoryContextManager.getPrimaryRepository();
+      if (primaryRepo?.path) {
+        const normalizedPrimaryPath = ImprovedPathUtils.normalizePath(
+          primaryRepo.path
+        );
+        const matched = normalizedRepos.find(
+          ({ root }) => root === normalizedPrimaryPath
+        );
+        if (matched) {
+          return matched.repo;
+        }
+      }
+    } catch (error) {
+      console.warn(
+        "[SCMFactory] Failed to infer repository from primary context:",
+        error
+      );
+    }
+
+    return undefined;
+  }
+
+  /**
    * 检测并创建可用的SCM提供者
    * 链路追踪日志：[Chain] [SCM-Detection]
    *
@@ -510,16 +586,20 @@ export class SCMFactory {
             `[SCMFactory] Single repository found: ${repositoryPath}`
           );
         } else {
-          // 多个仓库，让用户选择
+          // 多个仓库，先自动推断，无法推断再让用户选择
+          const autoSelected = await this.autoSelectRepository(repositories);
           const selected =
-            await this.promptUserToSelectRepository(repositories);
+            autoSelected ||
+            (await this.promptUserToSelectRepository(repositories));
           if (!selected) {
             // 用户取消选择
             return undefined;
           }
           repositoryPath = selected.rootUri.fsPath;
           console.log(
-            `[SCMFactory] User selected repository: ${repositoryPath}`
+            autoSelected
+              ? `[SCMFactory] Auto selected repository: ${repositoryPath}`
+              : `[SCMFactory] User selected repository: ${repositoryPath}`
           );
         }
       }

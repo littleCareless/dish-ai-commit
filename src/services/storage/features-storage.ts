@@ -4,6 +4,9 @@ import * as vscode from "vscode";
 export interface FeaturesStorageData {
   // Large Prompt Handling
   largePromptAction: "ask" | "useFallback" | "continue";
+  branchNamePostAction: "ask" | "createAndCopy" | "copyOnly";
+  branchNameSelectionMode: "autoFirst" | "quickPick";
+  branchCreationFailureAction: "ask" | "copyOnly";
 
   // Commit Message Generation
   enableEmoji: boolean;
@@ -37,7 +40,10 @@ export class FeaturesStorage {
 
   // 默认值
   private readonly defaults: FeaturesStorageData = {
-    largePromptAction: "ask",
+    largePromptAction: "useFallback",
+    branchNamePostAction: "createAndCopy",
+    branchNameSelectionMode: "autoFirst",
+    branchCreationFailureAction: "copyOnly",
     // Commit Message Generation
     enableEmoji: true,
     enableMergeCommit: false,

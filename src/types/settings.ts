@@ -114,6 +114,9 @@ export type UserPreferences = z.infer<typeof userPreferencesSchema>;
 // Zod Schema for Features
 export const featuresSchema = z.object({
   largePromptAction: z.enum(["ask", "useFallback", "continue"]),
+  branchNamePostAction: z.enum(["ask", "createAndCopy", "copyOnly"]),
+  branchNameSelectionMode: z.enum(["autoFirst", "quickPick"]),
+  branchCreationFailureAction: z.enum(["ask", "copyOnly"]),
   enableEmoji: z.boolean(),
   enableMergeCommit: z.boolean(),
   enableBody: z.boolean(),
@@ -307,6 +310,9 @@ export type SettingsChangeCallback = (event: SettingsChangeEvent) => void;
 
 export interface FeatureSettings {
   largePromptAction: "ask" | "useFallback" | "continue";
+  branchNamePostAction: "ask" | "createAndCopy" | "copyOnly";
+  branchNameSelectionMode: "autoFirst" | "quickPick";
+  branchCreationFailureAction: "ask" | "copyOnly";
   enableEmoji: boolean;
   enableMergeCommit: boolean;
   enableBody: boolean;

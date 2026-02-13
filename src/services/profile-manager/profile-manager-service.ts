@@ -264,7 +264,10 @@ export class ProfileManagerService {
     );
     return (
       settings || {
-        largePromptAction: "ask",
+        largePromptAction: "useFallback",
+        branchNamePostAction: "createAndCopy",
+        branchNameSelectionMode: "autoFirst",
+        branchCreationFailureAction: "copyOnly",
         enableEmoji: true,
         enableMergeCommit: true,
         enableBody: true,

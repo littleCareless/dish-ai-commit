@@ -399,7 +399,10 @@ export class MigrationService {
 
     // 功能开关转换
     const features: FeaturesStorageData = {
-      largePromptAction: "ask",
+      largePromptAction: "useFallback",
+      branchNamePostAction: "createAndCopy",
+      branchNameSelectionMode: "autoFirst",
+      branchCreationFailureAction: "copyOnly",
       enableEmoji: oldData.features?.enableEmoji ?? true,
       enableMergeCommit: oldData.features?.enableMergeCommit ?? false,
       enableBody: oldData.features?.enableBody ?? true,
