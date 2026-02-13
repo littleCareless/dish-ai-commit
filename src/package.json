@@ -531,6 +531,16 @@
           "default": "",
           "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitMessage.systemPrompt.description%"
         },
+        "dish-ai-commit.features.commitMessage.largePromptAction": {
+          "type": "string",
+          "default": "ask",
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitMessage.largePromptAction.description%",
+          "enum": [
+            "ask",
+            "useFallback",
+            "continue"
+          ]
+        },
         "dish-ai-commit.features.commitMessage.useRecentCommitsAsReference": {
           "type": "boolean",
           "default": false,
@@ -688,12 +698,12 @@
     "build:prod": "npm run build:webview:prod && node esbuild.mjs -- --mode=prod",
     "compile": "tsc -p ./",
     "compile:esbuild": "npm run build:webview && npm run check-types && node esbuild.mjs",
-    "watch:esbuild-tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
+    "watch:esbuild-tsc": "tsc -b --watch tsconfig.json",
+    "watch:tsc": "tsc -b --watch tsconfig.json",
     "watch:bundle": "node esbuild.mjs --watch",
     "watch:bundle:dev": "node esbuild.mjs --watch --mode=dev",
     "lint": "eslint .",
-    "check-types": "tsc --noEmit",
+    "check-types": "tsc -b tsconfig.json",
     "check-types:staged": "tsc-files --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",

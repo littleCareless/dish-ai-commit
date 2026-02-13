@@ -776,6 +776,13 @@ export const CONFIG_SCHEMA = {
         description:
           "Custom system prompt for commit message generation / 提交信息生成的自定义系统提示语",
       },
+      largePromptAction: {
+        type: "string",
+        default: "ask",
+        description:
+          "Behavior when prompt is too large: ask/useFallback/continue. / 提示词过大时的处理方式：ask/useFallback/continue。",
+        enum: ["ask", "useFallback", "continue"],
+      },
       useRecentCommitsAsReference: {
         type: "boolean",
         default: false,

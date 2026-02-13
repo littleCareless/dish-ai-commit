@@ -75,6 +75,7 @@
   "extension.contributes.configuration.properties.dish-ai-commit.features.commitFormat.enableLayeredCommit.description": "Generate layered commit messages with global summary and per-file details",
   "extension.contributes.configuration.properties.dish-ai-commit.features.commitFormat.enableGlobalContext.description": "Extract global context to enhance file descriptions correlation (only effective when enableLayeredCommit is true)",
   "extension.contributes.configuration.properties.dish-ai-commit.features.commitMessage.systemPrompt.description": "Custom system prompt for commit message generation",
+  "extension.contributes.configuration.properties.dish-ai-commit.features.commitMessage.largePromptAction.description": "Behavior when prompt is too large: ask/useFallback/continue.",
   "extension.contributes.configuration.properties.dish-ai-commit.features.commitMessage.useRecentCommitsAsReference.description": "Use recent commits as a reference for generating commit messages",
   "extension.contributes.configuration.properties.dish-ai-commit.features.weeklyReport.systemPrompt.description": "Custom system prompt for weekly report generation",
   "extension.contributes.configuration.properties.dish-ai-commit.features.codeReview.systemPrompt.description": "Custom system prompt for code review",

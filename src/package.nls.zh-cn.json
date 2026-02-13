@@ -75,6 +75,7 @@
   "extension.contributes.configuration.properties.dish-ai-commit.features.commitFormat.enableLayeredCommit.description": "生成分层提交信息，包含全局摘要和每个文件的详细描述",
   "extension.contributes.configuration.properties.dish-ai-commit.features.commitFormat.enableGlobalContext.description": "提取全局上下文以增强文件描述的关联性(仅在enableLayeredCommit为true时生效)",
   "extension.contributes.configuration.properties.dish-ai-commit.features.commitMessage.systemPrompt.description": "提交信息生成的自定义系统提示语",
+  "extension.contributes.configuration.properties.dish-ai-commit.features.commitMessage.largePromptAction.description": "提示词过大时的处理方式：ask/useFallback/continue。",
   "extension.contributes.configuration.properties.dish-ai-commit.features.commitMessage.useRecentCommitsAsReference.description": "使用最近的提交作为生成提交信息的参考",
   "extension.contributes.configuration.properties.dish-ai-commit.features.weeklyReport.systemPrompt.description": "生成周报的自定义系统提示语",
   "extension.contributes.configuration.properties.dish-ai-commit.features.codeReview.systemPrompt.description": "代码审查的自定义系统提示语",
