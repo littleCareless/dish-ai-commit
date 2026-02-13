@@ -150,10 +150,11 @@ export const Navigation: React.FC = () => {
                 to={item.path}
                 className={({ isActive }: { isActive: boolean }) =>
                   cn(
-                    "group flex items-center gap-2 px-2 py-2 rounded-xl text-sm transition-all duration-200 ease-in-out border border-transparent",
-                    "hover:bg-accent hover:text-accent-foreground hover:shadow-sm hover:border-accent-foreground/10",
-                    isActive &&
-                      "bg-accent text-accent-foreground shadow-sm border-accent-foreground/20",
+                    "group relative flex items-center gap-3 px-3 pl-6 pr-3 py-2 rounded-xl text-sm transition-all duration-200 ease-in-out border focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50",
+                    "hover:-translate-x-0.5 hover:bg-accent hover:text-accent-foreground hover:shadow-[0_10px_25px_-12px_rgba(15,23,42,0.55)] hover:border-accent-foreground/20",
+                    isActive
+                      ? "bg-accent/95 text-accent-foreground shadow-[0_15px_35px_-18px_rgba(15,23,42,0.75)] border-accent-foreground/40"
+                      : "text-muted-foreground border-transparent",
                   )
                 }
                 style={({ isActive }) => ({
@@ -163,33 +164,53 @@ export const Navigation: React.FC = () => {
                         backgroundColor: "var(--accent)",
                         color: "var(--accent-foreground)",
                         borderColor: "var(--accent-foreground)",
-                        opacity: 0.9,
+                        boxShadow: "0 12px 30px rgba(15, 23, 42, 0.35)",
+                        transform: "translateX(4px)",
                       }
                     : {}),
                 })}
               >
                 {({ isActive }: { isActive: boolean }) => (
                   <>
-                    <div
+                    <span
+                      aria-hidden="true"
                       className={cn(
-                        "w-7 h-7 rounded-lg flex items-center justify-center transition-colors",
+                        "pointer-events-none absolute left-2 top-2 bottom-2 w-1 rounded-full transform transition-all duration-300 ease-out",
                         isActive
-                          ? "bg-primary text-primary-foreground"
-                          : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary",
+                          ? "opacity-100 scale-y-100"
+                          : "opacity-0 scale-y-50 group-hover:opacity-70 group-hover:scale-y-100",
                       )}
                       style={{
-                        backgroundColor: isActive
-                          ? "var(--primary)"
-                          : "var(--muted)",
-                        color: isActive
-                          ? "var(--primary-foreground)"
-                          : "var(--muted-foreground)",
+                        backgroundColor: "var(--primary)",
+                        boxShadow: isActive
+                          ? "0 0 12px rgba(15, 23, 42, 0.3)"
+                          : "0 0 0 rgba(0, 0, 0, 0)",
                       }}
-                    >
-                      <Icon className="w-4 h-4" />
-                    </div>
-                    <div className="flex-1">
-                      <div className="font-medium">{item.label}</div>
+                    />
+                    <div className="flex items-center gap-3 w-full">
+                      <div
+                        className={cn(
+                          "w-9 h-9 rounded-lg flex items-center justify-center transition-all duration-200",
+                          isActive
+                            ? "bg-primary text-primary-foreground shadow-inner"
+                            : "bg-muted text-muted-foreground group-hover:bg-primary/10 group-hover:text-primary",
+                        )}
+                        style={{
+                          backgroundColor: isActive
+                            ? "var(--primary)"
+                            : "var(--muted)",
+                          color: isActive
+                            ? "var(--primary-foreground)"
+                            : "var(--muted-foreground)",
+                        }}
+                      >
+                        <Icon className="w-4 h-4" />
+                      </div>
+                      <div className="flex flex-col flex-1 leading-tight">
+                        <div className="font-semibold tracking-tight">
+                          {item.label}
+                        </div>
+                      </div>
                     </div>
                   </>
                 )}
@@ -200,7 +221,7 @@ export const Navigation: React.FC = () => {
       </div>
       {/* 语言切换器 */}
       <div
-        className="p-4 border-t"
+        className="p-4"
         style={{
           borderColor: "var(--border)",
         }}

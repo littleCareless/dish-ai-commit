@@ -140,9 +140,10 @@ export function createProviderSchema(
 export function validateFieldValue(
   field: FieldConfig,
   value: unknown,
+  t: TFunction = i18next.t,
 ): { isValid: boolean; error?: string } {
   try {
-    const validator = createZodValidator(field, i18next.t);
+    const validator = createZodValidator(field, t);
     validator.parse(value);
     return { isValid: true };
   } catch (error) {

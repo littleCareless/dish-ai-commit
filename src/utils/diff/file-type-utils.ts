@@ -3,6 +3,10 @@ import * as fs from "fs";
 import micromatch from "micromatch";
 import * as path from "path";
 
+// Sentinel string injected into synthetic diff blocks so downstream processors
+// can reliably identify placeholder content that intentionally omits real diffs.
+export const SKIPPED_DIFF_PLACEHOLDER_SENTINEL = "[DishAI-SkipDiff-Placeholder]";
+
 /**
  * 文件类型工具类
  * 用于判断文件是否应该跳过 diff 生成
@@ -48,17 +52,17 @@ export class FileTypeUtils {
             const settings = PreferencesSettingsManager.getInstance().getSettings();
 
             // 1. 检查文件扩展名
-            if (this.isNonCodeFileByExtension(filePath, settings.skipDiffFileExtensions)) {
+            if (settings.skipDiffFileExtensions && this.isNonCodeFileByExtension(filePath, settings.skipDiffFileExtensions)) {
                 return true;
             }
 
             // 2. 检查路径模式（Glob）
-            if (this.matchesPathPattern(filePath, settings.skipDiffPathPatterns)) {
+            if (settings.skipDiffPathPatterns && this.matchesPathPattern(filePath, settings.skipDiffPathPatterns)) {
                 return true;
             }
 
             // 3. 检查文件大小
-            if (settings.maxDiffFileSizeKB > 0) {
+            if (settings.maxDiffFileSizeKB && settings.maxDiffFileSizeKB > 0) {
                 if (this.isFileTooLarge(filePath, settings.maxDiffFileSizeKB)) {
                     return true;
                 }

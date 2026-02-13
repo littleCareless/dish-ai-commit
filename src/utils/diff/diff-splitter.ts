@@ -1,4 +1,7 @@
-import { FileTypeUtils } from "@/utils/diff/file-type-utils";
+import {
+  FileTypeUtils,
+  SKIPPED_DIFF_PLACEHOLDER_SENTINEL,
+} from "@/utils/diff/file-type-utils";
 import { DiffChunk } from "@/utils/diff/types";
 
 export class DiffSplitter {
@@ -24,10 +27,15 @@ export class DiffSplitter {
       }
 
       const filename = fileNameMatch[1];
+      const chunkContent = file?.trim() || "";
+      const isSkippedPlaceholder = chunkContent.includes(
+        SKIPPED_DIFF_PLACEHOLDER_SENTINEL
+      );
       chunks.push({
         filename,
-        content: file?.trim(),
-        isNonCodeFile: FileTypeUtils.isNonCodeFile(filename),
+        content: chunkContent,
+        isNonCodeFile:
+          isSkippedPlaceholder || FileTypeUtils.isNonCodeFile(filename),
       });
     }
 
@@ -52,11 +60,16 @@ export class DiffSplitter {
       // SVN diff 中文件名在第一行
       const lines = file?.split("\n");
       const filename = lines[0]?.trim();
+      const chunkContent = file?.trim() || "";
+      const isSkippedPlaceholder = chunkContent.includes(
+        SKIPPED_DIFF_PLACEHOLDER_SENTINEL
+      );
 
       chunks.push({
         filename,
-        content: file?.trim(),
-        isNonCodeFile: FileTypeUtils.isNonCodeFile(filename),
+        content: chunkContent,
+        isNonCodeFile:
+          isSkippedPlaceholder || FileTypeUtils.isNonCodeFile(filename),
       });
     }
 

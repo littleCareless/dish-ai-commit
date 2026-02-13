@@ -23,8 +23,8 @@ import {
 import { TFunction } from "i18next";
 import { AlertCircle } from "lucide-react";
 import React from "react";
-import { KeyValueField } from "./KeyValueField";
 import { fieldPropsEqual } from "./DynamicFieldRenderer.helpers";
+import { KeyValueField } from "./KeyValueField";
 
 type FieldValue =
   | string
@@ -75,7 +75,7 @@ export const DynamicFieldRenderer: React.FC<DynamicFieldRendererProps> =
 
       const shouldValidate = field.required || !isEmpty;
       const validation = shouldValidate
-        ? validateFieldValue(field, value)
+        ? validateFieldValue(field, value, t)
         : { isValid: true };
       const hasError = !validation.isValid;
 

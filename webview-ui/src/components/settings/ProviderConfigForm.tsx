@@ -11,7 +11,7 @@ import { postMessage, useMessageHandler } from "@/utils/vscode";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 import { VSCodeDropdown, VSCodeOption } from "@vscode/webview-ui-toolkit/react";
-import { AlertCircle, Loader, RefreshCw } from "lucide-react";
+import { AlertCircle, RefreshCw } from "lucide-react";
 import React, {
   useCallback,
   useEffect,
@@ -129,14 +129,28 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
   // Track previous config to detect actual changes
   const prevConfigRef = useRef<Record<string, unknown> | null>(null);
   const prevProviderIdRef = useRef<string | null>(null);
+  const internalUpdateRef = useRef(false);
 
   // When config truly changes (e.g., switching profiles or providers), reset form
-  const configModel =
-    (config as Record<string, unknown>).model ||
-    (config as Record<string, unknown>).defaultModel;
   useEffect(() => {
+    const providerChanged = prevProviderIdRef.current !== provider.id;
+    const configChanged =
+      prevConfigRef.current !== (config as Record<string, unknown>);
+
+    if (!providerChanged && (!configChanged || internalUpdateRef.current)) {
+      if (internalUpdateRef.current) {
+        console.log(`[ProviderConfigForm] 检测到内部配置更新，跳过表单重置`);
+        internalUpdateRef.current = false;
+      }
+      return;
+    }
+
     console.log(
       `[ProviderConfigForm] Config/Provider changed, resetting form for provider: ${provider.id}`,
+      {
+        providerChanged,
+        configChanged,
+      },
     );
 
     const newDefaults = getDefaultValues();
@@ -147,11 +161,11 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
     setModelError(null);
     setIsLoadingModels(false);
 
-    // We still need to update the prevConfigRef for the initial load.
     prevConfigRef.current = config as Record<string, unknown>;
     prevProviderIdRef.current = provider.id;
+    internalUpdateRef.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [provider.id, configModel]); // Depends on provider.id and model field
+  }, [provider.id, config]);
 
   // 7. 获取监听的值
   const watchedValues = form.watch();
@@ -178,6 +192,8 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
       (newConfig as Record<string, unknown>)["defaultModel"] = value;
       form.setValue("model", value as never);
     }
+
+    internalUpdateRef.current = true;
 
     // 将完整配置传递给父组件
     // 关键：确保 newConfig 对象本身包含了所有字段
@@ -497,12 +513,6 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
                 {t("modelSelection")}
               </label>
               <div className="flex items-center gap-2">
-                {isLoadingModels && (
-                  <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                    <Loader className="w-3 h-3 animate-spin" />
-                    {t("loading")}...
-                  </div>
-                )}
                 <Button
                   type="button"
                   variant="secondary"
@@ -593,29 +603,6 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
             )}
           </div>
         )}
-        {/* Action Buttons */}
-        {/* <div className="flex gap-2">
-          <VSCodeButton
-            appearance="secondary"
-            onClick={() => onTestProvider(provider.id)}
-            disabled={!canTestConnection}
-            title={
-              !canTestConnection
-                ? `请先填写: ${configValidation.missingFields.join(", ")}`
-                : "测试与提供商的连接"
-            }
-          >
-            <TestTube className="w-4 h-4 mr-2" />
-            测试连接
-          </VSCodeButton>
-          <VSCodeButton
-            appearance="secondary"
-            onClick={() => onOpenSettings(provider.id)}
-          >
-            <Settings className="w-4 h-4 mr-2" />
-            高级设置
-          </VSCodeButton>
-        </div> */}
       </div>
     </Form>
   );

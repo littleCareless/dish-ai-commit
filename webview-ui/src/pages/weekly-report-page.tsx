@@ -16,7 +16,7 @@ import { FileDown, Save, Wand2 } from "lucide-react";
 // Define a more specific type for setting values
 
 function WeeklyReportPage() {
-  const { t } = useTranslation("weeklyReport-page");
+  const { t } = useTranslation("weekly-report-page");
   const [content, setContent] = useState("");
   const [dateRange, setDateRange] = useState<dayjs.Dayjs[]>([]);
   const [allUsers, setAllUsers] = useState<string[]>([]);

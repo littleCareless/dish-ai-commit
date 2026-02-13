@@ -1,7 +1,10 @@
 import { GitRepository } from "@/scm/git/helpers/git-repository-helper";
 import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils";
 import { DiffProcessor } from "@/utils/diff/diff-processor";
-import { FileTypeUtils } from "@/utils/diff/file-type-utils";
+import {
+  FileTypeUtils,
+  SKIPPED_DIFF_PLACEHOLDER_SENTINEL,
+} from "@/utils/diff/file-type-utils";
 import { formatMessage } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
 import { notify } from "@/utils/notification/notification-manager";
@@ -181,8 +184,11 @@ export class GitDiffHelper {
               currentWorkspaceRoot
             );
             const fileTypeDesc = FileTypeUtils.getFileTypeDescription(file);
-            diffOutput += `\n=== ${fileStatus}: ${file} ===\n`;
-            diffOutput += `[${fileTypeDesc} - diff content not shown]\n`;
+            diffOutput += this.buildSkippedDiffBlock(
+              file,
+              fileStatus,
+              fileTypeDesc
+            );
             continue;
           }
 
@@ -666,5 +672,25 @@ export class GitDiffHelper {
     }
 
     return null;
+  }
+
+  private buildSkippedDiffBlock(
+    file: string,
+    status: string,
+    typeDescription: string
+  ): string {
+    const normalizedPath = file.replace(/\\/g, "/");
+    const placeholderLine = `${SKIPPED_DIFF_PLACEHOLDER_SENTINEL} ${status}: ${typeDescription}`;
+
+    return [
+      "",
+      `diff --git a/${normalizedPath} b/${normalizedPath}`,
+      `--- a/${normalizedPath}`,
+      `+++ b/${normalizedPath}`,
+      "@@",
+      `- ${placeholderLine}`,
+      `+ ${placeholderLine}`,
+      `# ${typeDescription} - diff content not shown`,
+    ].join("\n");
   }
 }

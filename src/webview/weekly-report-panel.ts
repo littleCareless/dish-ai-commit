@@ -1,76 +1,117 @@
+import { WeeklyReportMessageHandler } from "@/services/webview/handlers/weekly-report-message-handler";
+import { WeeklyReportViewProvider } from "@/services/webview/providers/weekly-report-view-provider";
 import * as vscode from "vscode";
-import { WeeklyReportViewProvider } from "./providers/weekly-report-view-provider";
-import { WeeklyReportMessageHandler } from "./handlers/weekly-report-message-handler";
-import { getMessage } from "../utils/i18n";
-
 export class WeeklyReportPanel {
-  public static readonly viewType = "weeklyReport.view";
+  public static readonly viewType = "dish-ai-commit.weeklyReportView";
   public static currentPanel: WeeklyReportPanel | undefined;
 
-  private readonly _panel: vscode.WebviewPanel;
-  private readonly _viewProvider: WeeklyReportViewProvider;
+  private _view?: vscode.WebviewPanel;
+  private readonly _extensionUri: vscode.Uri;
+  private readonly _htmlContentProvider: WeeklyReportViewProvider;
   private readonly _messageHandler: WeeklyReportMessageHandler;
   private _disposables: vscode.Disposable[] = [];
 
-  private constructor(panel: vscode.WebviewPanel, extensionUri: vscode.Uri) {
-    this._panel = panel;
-    this._viewProvider = new WeeklyReportViewProvider(extensionUri);
-    this._messageHandler = new WeeklyReportMessageHandler();
+  private constructor(
+    extensionUri: vscode.Uri,
+    extensionContext: vscode.ExtensionContext,
+  ) {
+    this._extensionUri = extensionUri;
+    this._htmlContentProvider = new WeeklyReportViewProvider(
+      this._extensionUri,
+    );
+    this._messageHandler = new WeeklyReportMessageHandler(extensionContext);
+  }
 
-    this._panel.webview.options = {
+  private async setupWebview(panel: vscode.WebviewPanel) {
+    panel.webview.options = {
       enableScripts: true,
       localResourceRoots: [
-        vscode.Uri.joinPath(extensionUri, "webview-ui-dist"),
+        vscode.Uri.joinPath(this._extensionUri, "dist", "webview-ui-dist"),
       ],
     };
 
-    this._panel.webview.html = this._viewProvider.getWebviewContent(
-      this._panel.webview
+    panel.webview.html = await this._htmlContentProvider.getWebviewContent(
+      panel.webview,
+      {
+        viewType: "weeklyReport",
+        initialRoute: "/weekly-report",
+        language: vscode.env.language,
+        isFirstInstall: true,
+      },
     );
 
-    this._panel.webview.onDidReceiveMessage(
+    panel.webview.onDidReceiveMessage(
       async (message) => {
-        await this._messageHandler.handleMessage(message, this._panel.webview);
+        if (message.command === "webview.handshake") {
+          panel.webview.postMessage({
+            command: "webview.handshake.ack",
+            sessionId: message.sessionId,
+            timestamp: Date.now(),
+          });
+          return;
+        }
+        await this._messageHandler.handleMessage(message, panel.webview);
       },
       null,
-      this._disposables
+      this._disposables,
     );
+  }
 
-    this._panel.onDidDispose(() => this.dispose(), null, this._disposables);
+  public async resolveWebviewView(
+    webviewView: vscode.WebviewPanel,
+    _context: vscode.WebviewViewResolveContext,
+    _token: vscode.CancellationToken,
+  ) {
+    this._view = webviewView;
+    await this.setupWebview(webviewView);
   }
 
   public static async createOrShow(
     extensionUri: vscode.Uri,
-    context: vscode.ExtensionContext
-  ) {
+    context: vscode.ExtensionContext,
+  ): Promise<void> {
     const column = vscode.window.activeTextEditor
       ? vscode.window.activeTextEditor.viewColumn
       : undefined;
 
     if (WeeklyReportPanel.currentPanel) {
-      WeeklyReportPanel.currentPanel._panel.reveal(column);
+      WeeklyReportPanel.currentPanel._view?.reveal(column);
       return;
     }
 
     const panel = vscode.window.createWebviewPanel(
       WeeklyReportPanel.viewType,
-      getMessage("weeklyReport.title"),
+      "Weekly Report",
       column || vscode.ViewColumn.One,
       {
         enableScripts: true,
         retainContextWhenHidden: true,
         localResourceRoots: [
-          vscode.Uri.joinPath(extensionUri, "webview-ui-dist"),
+          vscode.Uri.joinPath(extensionUri, "dist", "webview-ui-dist"),
         ],
-      }
+      },
     );
 
-    WeeklyReportPanel.currentPanel = new WeeklyReportPanel(panel, extensionUri);
+    WeeklyReportPanel.currentPanel = new WeeklyReportPanel(
+      extensionUri,
+      context,
+    );
+
+    WeeklyReportPanel.currentPanel._view = panel as any;
+
+    await WeeklyReportPanel.currentPanel.setupWebview(panel);
+
+    panel.onDidDispose(
+      () => {
+        WeeklyReportPanel.currentPanel?.dispose();
+      },
+      null,
+      WeeklyReportPanel.currentPanel._disposables,
+    );
   }
 
-  public dispose() {
+  public dispose(): void {
     WeeklyReportPanel.currentPanel = undefined;
-    this._panel.dispose();
 
     while (this._disposables.length) {
       const disposable = this._disposables.pop();

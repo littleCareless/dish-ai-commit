@@ -113,15 +113,34 @@ export function usePrompts(): UsePromptsReturn {
   );
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const selectedKeyRef = useRef<string | null>(null);
+  const activePromptsByCategoryRef = useRef<Record<PromptCategory, string>>(
+    {} as Record<PromptCategory, string>,
+  );
+  const activePromptsBySubCategoryRef = useRef<
+    Record<PromptCategory, Record<string, string>>
+  >({} as Record<PromptCategory, Record<string, string>>);
+  const activeSourcesRef = useRef<Record<string, ActivePromptSource | null>>(
+    {},
+  );
 
-  // Load initial data
   useEffect(() => {
-    loadAllPrompts();
-    loadWorkspaceStates();
-    loadWorkspaceInfo();
-  }, []);
+    selectedKeyRef.current = selectedKey;
+  }, [selectedKey]);
 
-  // Message handler
+  useEffect(() => {
+    activePromptsByCategoryRef.current = activePromptsByCategory;
+  }, [activePromptsByCategory]);
+
+  useEffect(() => {
+    activePromptsBySubCategoryRef.current = activePromptsBySubCategory;
+  }, [activePromptsBySubCategory]);
+
+  useEffect(() => {
+    activeSourcesRef.current = activeSources;
+  }, [activeSources]);
+
+  // Message handler + initial data load (ensures listener ready first)
   useEffect(() => {
     const handler = (event: MessageEvent) => {
       const { type, data, command, payload } = event.data;
@@ -136,31 +155,28 @@ export function usePrompts(): UsePromptsReturn {
           setTimeout(() => {
             const activeKey = getActivePromptForDefaultSelection(
               promptsData,
-              activePromptsByCategory,
-              activePromptsBySubCategory,
+              activePromptsByCategoryRef.current,
+              activePromptsBySubCategoryRef.current,
             );
-            if (activeKey) {
+            if (activeKey && promptsData[activeKey]) {
               setSelectedKey(activeKey);
               setCurrentContent(promptsData[activeKey].content);
-            } else if (!selectedKey) {
-              const firstKey = Object.keys(promptsData)[0];
+              return;
+            }
+
+            const currentSelected = selectedKeyRef.current;
+            if (currentSelected && promptsData[currentSelected]) {
+              setCurrentContent(promptsData[currentSelected].content);
+              return;
+            }
+
+            const firstKey = Object.keys(promptsData)[0];
+            if (firstKey) {
               setSelectedKey(firstKey);
               setCurrentContent(promptsData[firstKey].content);
-            } else if (selectedKey && promptsData[selectedKey]) {
-              // 如果已有选中的 key，更新内容以保持同步
-              setCurrentContent(promptsData[selectedKey].content);
             }
           }, 0);
         }
-      } else if (messageType === ExtensionResponse.FeaturesSettingsLoaded) {
-        // 处理设置加载的响应
-        if (messageData?.activePrompts) {
-          setActivePromptsByCategory(messageData.activePrompts);
-        }
-        if (messageData?.activePromptsBySubCategory) {
-          setActivePromptsBySubCategory(messageData.activePromptsBySubCategory);
-        }
-        // 注意：这里不处理 activeSources，因为 FeaturesSettingsLoaded 不包含这个信息
       } else if (messageType === ExtensionResponse.FeaturesAllWorkspaceStates) {
         // messageData 是 WorkspaceActiveState[] 数组
         // 我们需要合并所有工作区的配置，优先使用当前工作区的配置
@@ -238,7 +254,7 @@ export function usePrompts(): UsePromptsReturn {
           const source = messageData.currentActiveSource;
           const promptKey = source.promptKey;
           if (promptKey) {
-            const sources = { ...activeSources };
+            const sources = { ...activeSourcesRef.current };
             // 按 promptKey 存储源信息，支持子分类级别
             sources[promptKey] = source;
             setActiveSources(sources);
@@ -256,7 +272,7 @@ export function usePrompts(): UsePromptsReturn {
       } else if (messageType === ExtensionResponse.PromptDeleted) {
         loadAllPrompts();
         loadWorkspaceStates();
-        if (selectedKey === messageData?.key) {
+        if (selectedKeyRef.current === messageData?.key) {
           setSelectedKey(null);
           setCurrentContent("");
         }
@@ -264,13 +280,11 @@ export function usePrompts(): UsePromptsReturn {
     };
 
     window.addEventListener("message", handler);
+    loadAllPrompts();
+    loadWorkspaceStates();
+    loadWorkspaceInfo();
     return () => window.removeEventListener("message", handler);
-  }, [
-    selectedKey,
-    activePromptsByCategory,
-    activePromptsBySubCategory,
-    activeSources,
-  ]);
+  }, []);
 
   // Handle selection and content updates
   useEffect(() => {

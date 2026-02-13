@@ -5,6 +5,7 @@ import { getMessage, formatMessage } from "@/utils/i18n";
 import { IGitProvider } from "@/scm/git/git-provider-interface";
 import { GitProviderFactory, GitProviderType } from "@/scm/git/git-provider-factory";
 import { GitRepositoryManager } from "@/scm/git/git-repository-manager";
+import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils";
 import { notify } from "@/utils/notification/notification-manager";
 
 /**
@@ -20,6 +21,9 @@ export class GitProvider implements ISCMProvider {
   private repositoryManager: GitRepositoryManager | undefined;
   private factory: GitProviderFactory;
   private logger: Logger;
+  private providerCache = new Map<string, IGitProvider>();
+  private initPromise: Promise<void> | undefined;
+  private defaultRepositoryPath?: string;
 
   /**
    * 创建Git提供者实例
@@ -30,6 +34,10 @@ export class GitProvider implements ISCMProvider {
   constructor(private readonly gitExtension: any, private readonly repositoryPath?: string) {
     this.logger = Logger.getInstance("Dish AI Commit Gen");
     this.factory = GitProviderFactory.getInstance();
+    this.defaultRepositoryPath = repositoryPath
+      ? ImprovedPathUtils.normalizePath(repositoryPath)
+      : undefined;
+    this.repositoryManager = undefined;
 
     if (!vscode.workspace.workspaceFolders?.length) {
       throw new Error(getMessage("workspace.not.found"));
@@ -39,36 +47,8 @@ export class GitProvider implements ISCMProvider {
   /**
    * 初始化Provider
    */
-  async init(): Promise<void> {
-    try {
-      // 初始化仓库管理器
-      await this.factory.initRepositoryManager(this.gitExtension);
-      
-      // 直接使用repositoryPath创建提供者实例（每次创建新的实例，不使用缓存）
-      if (this.repositoryPath) {
-        this.gitProvider = await this.factory.createProviderForRepository(
-          this.repositoryPath,
-          GitProviderType.API, 
-          this.gitExtension
-        );
-      } else {
-        // 回退到原有的当前仓库逻辑（兼容性处理）
-        this.gitProvider = await this.factory.createProviderForCurrentRepository(
-          GitProviderType.API, 
-          this.gitExtension
-        );
-      }
-      
-      if (!this.gitProvider) {
-        throw new Error(formatMessage("scm.repository.not.found", ["Git"]));
-      }
-      
-      // 初始化所选的提供者
-      await this.gitProvider.init();
-    } catch (error) {
-      this.logger.error(`Failed to initialize Git provider: ${error}`);
-      throw error;
-    }
+  async init(forceReload = false): Promise<void> {
+    await this.ensureDefaultProvider(forceReload);
   }
 
   /**
@@ -77,7 +57,7 @@ export class GitProvider implements ISCMProvider {
    */
   async isAvailable(): Promise<boolean> {
     // 每次都重新初始化提供者
-    await this.init();
+    await this.ensureDefaultProvider();
     
     return this.gitProvider?.isAvailable() || false;
   }
@@ -105,7 +85,7 @@ export class GitProvider implements ISCMProvider {
       }
       
       // 否则使用当前默认提供者（每次重新获取）
-      await this.init();
+      await this.ensureDefaultProvider();
       
       return this.gitProvider?.getDiff(files, target);
     } catch (error) {
@@ -130,7 +110,7 @@ export class GitProvider implements ISCMProvider {
       }
       
       // 否则使用当前默认提供者（每次重新获取）
-      await this.init();
+      await this.ensureDefaultProvider();
       
       return this.gitProvider?.commit(message, files);
     } catch (error) {
@@ -165,7 +145,7 @@ export class GitProvider implements ISCMProvider {
       }
       
       // 回退到原有逻辑
-      await this.init();
+      await this.ensureDefaultProvider();
       return this.gitProvider?.setCommitInput(message);
     } catch (error) {
       this.logger.error(`Failed to set commit input: ${error}`);
@@ -179,7 +159,7 @@ export class GitProvider implements ISCMProvider {
    */
   async getCommitInput(): Promise<string> {
     // 每次重新初始化提供者
-    await this.init();
+    await this.ensureDefaultProvider();
     
     return this.gitProvider?.getCommitInput() || "";
   }
@@ -190,7 +170,7 @@ export class GitProvider implements ISCMProvider {
    */
   async startStreamingInput(message: string): Promise<void> {
     // 每次重新初始化提供者
-    await this.init();
+    await this.ensureDefaultProvider();
     
     return this.gitProvider?.startStreamingInput(message);
   }
@@ -206,7 +186,7 @@ export class GitProvider implements ISCMProvider {
     headBranch = "HEAD"
   ): Promise<string[]> {
     // 每次重新初始化提供者
-    await this.init();
+    await this.ensureDefaultProvider();
     
     return this.gitProvider?.getCommitLog(baseBranch, headBranch) || [];
   }
@@ -217,7 +197,7 @@ export class GitProvider implements ISCMProvider {
    */
   async getBranches(): Promise<string[]> {
     // 每次重新初始化提供者
-    await this.init();
+    await this.ensureDefaultProvider();
     
     return this.gitProvider?.getBranches() || [];
   }
@@ -228,7 +208,7 @@ export class GitProvider implements ISCMProvider {
    */
   async getRecentCommitMessages(): Promise<{ repository: string[]; user: string[] }> {
     // 每次重新初始化提供者
-    await this.init();
+    await this.ensureDefaultProvider();
     
     return this.gitProvider?.getRecentCommitMessages() || { repository: [], user: [] };
   }
@@ -239,7 +219,7 @@ export class GitProvider implements ISCMProvider {
    */
   async copyToClipboard(message: string): Promise<void> {
     // 每次重新初始化提供者
-    await this.init();
+    await this.ensureDefaultProvider();
     
     return this.gitProvider?.copyToClipboard(message);
   }
@@ -250,7 +230,7 @@ export class GitProvider implements ISCMProvider {
    */
   async getStagedFiles(): Promise<string[]> {
     // 每次重新初始化提供者
-    await this.init();
+    await this.ensureDefaultProvider();
     
     return this.gitProvider?.getStagedFiles() || [];
   }
@@ -261,7 +241,7 @@ export class GitProvider implements ISCMProvider {
    */
   async getAllChangedFiles(): Promise<string[]> {
     // 每次重新初始化提供者
-    await this.init();
+    await this.ensureDefaultProvider();
     
     return this.gitProvider?.getAllChangedFiles() || [];
   }
@@ -273,14 +253,12 @@ export class GitProvider implements ISCMProvider {
    */
   async switchToRepository(repositoryPath: string): Promise<boolean> {
     try {
-      const provider = await this.factory.createProviderForRepository(
-        repositoryPath,
-        GitProviderType.API,
-        this.gitExtension
-      );
+      const provider = await this.getOrCreateProvider(repositoryPath, true);
       
       if (provider) {
         this.gitProvider = provider;
+        this.defaultRepositoryPath =
+          ImprovedPathUtils.normalizePath(repositoryPath);
         notify.info(formatMessage("scm.repository.switched", [repositoryPath]));
         return true;
       }
@@ -299,13 +277,18 @@ export class GitProvider implements ISCMProvider {
    */
   async selectAndSwitchRepository(): Promise<boolean> {
     try {
-      const provider = await this.factory.createProviderForSelectedRepository(
-        GitProviderType.API,
-        this.gitExtension
-      );
+      const repositoryManager = await this.ensureRepositoryManager();
+      const repoInfo = await repositoryManager.selectRepository();
+      if (!repoInfo) {
+        return false;
+      }
+      const provider = await this.getOrCreateProvider(repoInfo.rootPath);
       
       if (provider) {
         this.gitProvider = provider;
+        this.defaultRepositoryPath = ImprovedPathUtils.normalizePath(
+          repoInfo.rootPath,
+        );
         notify.info(formatMessage("scm.repository.selected"));
         return true;
       }
@@ -327,23 +310,26 @@ export class GitProvider implements ISCMProvider {
   private async getProviderForFiles(files: string[]): Promise<IGitProvider | undefined> {
     if (!files.length) {
       // 重新获取当前提供者
-      await this.init();
+      await this.ensureDefaultProvider();
       return this.gitProvider;
     }
 
     try {
-      // 每次重新创建文件对应的提供者实例
-      return await this.factory.createProviderForFile(
-        files[0],
-        GitProviderType.API,
-        this.gitExtension
+      const repositoryManager = await this.ensureRepositoryManager();
+      const repoInfo = await repositoryManager.getRepositoryForFile(files[0]);
+      if (repoInfo) {
+        return this.getOrCreateProvider(repoInfo.rootPath);
+      }
+      this.logger.debug(
+        `Repository not found for file ${files[0]} when resolving provider`,
       );
     } catch (error) {
       this.logger.debug(`Could not get provider for file ${files[0]}: ${error}`);
-      // 重新获取当前提供者
-      await this.init();
-      return this.gitProvider;
     }
+
+    // 重新获取当前提供者
+    await this.ensureDefaultProvider();
+    return this.gitProvider;
   }
 
   /**
@@ -351,9 +337,83 @@ export class GitProvider implements ISCMProvider {
    * @returns 所有仓库信息的数组
    */
   async getAllRepositories() {
-    await this.factory.initRepositoryManager(this.gitExtension);
-    const repositoryManager = GitRepositoryManager.getInstance(this.gitExtension);
+    const repositoryManager = await this.ensureRepositoryManager();
     // 每次都重新发现仓库
     return repositoryManager.getAllRepositories();
+  }
+
+  private async ensureDefaultProvider(forceReload = false): Promise<void> {
+    if (this.initPromise && !forceReload) {
+      await this.initPromise;
+      return;
+    }
+
+    this.initPromise = (async () => {
+      if (!forceReload && this.gitProvider) {
+        return;
+      }
+
+      const repositoryManager = await this.ensureRepositoryManager();
+
+      if (!this.defaultRepositoryPath) {
+        const repoInfo = await repositoryManager.getCurrentRepository();
+        if (!repoInfo) {
+          throw new Error(formatMessage("scm.repository.not.found", ["Git"]));
+        }
+        this.defaultRepositoryPath = ImprovedPathUtils.normalizePath(
+          repoInfo.rootPath,
+        );
+      }
+
+      this.gitProvider = await this.getOrCreateProvider(
+        this.defaultRepositoryPath,
+        forceReload,
+      );
+    })();
+
+    try {
+      await this.initPromise;
+    } finally {
+      this.initPromise = undefined;
+    }
+  }
+
+  private async ensureRepositoryManager(): Promise<GitRepositoryManager> {
+    if (!this.repositoryManager) {
+      await this.factory.initRepositoryManager(this.gitExtension);
+      this.repositoryManager = GitRepositoryManager.getInstance(
+        this.gitExtension,
+      );
+    }
+    return this.repositoryManager;
+  }
+
+  private async getOrCreateProvider(
+    repositoryPath: string,
+    forceReload = false,
+  ): Promise<IGitProvider> {
+    const cacheKey = ImprovedPathUtils.normalizePath(repositoryPath);
+    if (forceReload) {
+      this.providerCache.delete(cacheKey);
+    } else {
+      const cached = this.providerCache.get(cacheKey);
+      if (cached) {
+        return cached;
+      }
+    }
+
+    const provider = await this.factory.createProviderForRepository(
+      repositoryPath,
+      GitProviderType.API,
+      this.gitExtension,
+    );
+
+    if (!provider) {
+      throw new Error(formatMessage("scm.repository.not.found", ["Git"]));
+    }
+
+    await provider.init();
+    this.providerCache.set(cacheKey, provider);
+    return provider;
   }
 }

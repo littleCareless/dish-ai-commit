@@ -5,6 +5,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useTranslation } from "react-i18next";
+import { useState } from "react";
 import { ModelForm } from "./ModelForm";
 import { CustomModelInfo, ModelFormValues } from "@/types/model-custom";
 
@@ -24,35 +25,44 @@ export function ModelEditDialog({
   onSave,
 }: ModelEditDialogProps) {
   const { t } = useTranslation("model-custom");
+  const [isSaving, setIsSaving] = useState(false);
 
   const handleSubmit = async (data: ModelFormValues) => {
-    const info: CustomModelInfo = {
-      id: data.modelId,
-      providerId: data.providerId,
-      modelName: data.modelName,
-      maxTokens: {
-        input: data.inputTokens,
-        output: data.outputTokens,
-      },
-      contextWindow: data.contextWindow,
-      capabilities: {
-        streaming: data.streaming,
-        functionCalling: data.functionCalling,
-        vision: data.vision,
-      },
-      pricing:
-        data.pricingInput || data.pricingOutput
-          ? {
-              input: data.pricingInput || 0,
-              output: data.pricingOutput || 0,
-            }
-          : undefined,
-      deprecated: data.deprecated,
-      notes: data.notes,
-    };
+    console.log("handleSubmit called", data);
+    setIsSaving(true);
+    try {
+      const info: CustomModelInfo = {
+        id: data.modelId,
+        providerId: data.providerId,
+        modelName: data.modelName,
+        maxTokens: {
+          input: data.inputTokens,
+          output: data.outputTokens,
+        },
+        contextWindow: data.contextWindow,
+        capabilities: {
+          streaming: data.streaming,
+          functionCalling: data.functionCalling,
+          vision: data.vision,
+        },
+        pricing:
+          data.pricingInput || data.pricingOutput
+            ? {
+                input: data.pricingInput || 0,
+                output: data.pricingOutput || 0,
+              }
+            : undefined,
+        deprecated: data.deprecated,
+        notes: data.notes,
+      };
 
-    await onSave(info);
-    onClose();
+      console.log("Calling onSave", info);
+      await onSave(info);
+      console.log("onSave completed");
+      onClose();
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const defaultValues = model
@@ -74,7 +84,7 @@ export function ModelEditDialog({
     : undefined;
 
   return (
-    <Dialog open={open} onOpenChange={onClose}>
+    <Dialog open={open} onOpenChange={(open) => !open && onClose()}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
           <DialogTitle>{model ? t("edit") : t("addModel")}</DialogTitle>
@@ -84,6 +94,7 @@ export function ModelEditDialog({
           defaultValues={defaultValues}
           onSubmit={handleSubmit}
           onCancel={onClose}
+          isLoading={isSaving}
         />
       </DialogContent>
     </Dialog>

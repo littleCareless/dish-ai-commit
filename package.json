@@ -3,7 +3,7 @@
   "packageManager": "pnpm@10.26.2",
   "displayName": "Dish AI Commit Message Gen",
   "description": "🤖 由 AI 提供支持的 VSCode 扩展，用于生成标准化的 Git/SVN 提交消息 - 🤖 AI-Powered VSCode extension for generating standardized Git/SVN commit messages. ✨ Supports multiple AI services: OpenAI, ChatGPT, Ollama, Zhipu, DashScope, Doubao, Gemini and VS Code built-in AI. 🌍 Multi-language support (EN/CN/JP/KR/Other). 📊 Auto-generate weekly reports.",
-  "version": "0.56.9",
+  "version": "0.56.12",
   "engines": {
     "node": ">= 18.20.8",
     "pnpm": ">= 10.0.0"
@@ -84,7 +84,15 @@
       "form-data": ">=4.0.4",
       "bluebird": ">=3.7.2",
       "glob": "10.3.10"
-    }
+    },
+    "onlyBuiltDependencies": [
+      "@vscode/vsce-sign",
+      "core-js",
+      "esbuild",
+      "keytar",
+      "protobufjs",
+      "unrs-resolver"
+    ]
   },
   "dependencies": {
     "@ai-sdk/amazon-bedrock": "^3.0.56",
@@ -96,6 +104,8 @@
     "@ai-sdk/google": "^2.0.36",
     "@ai-sdk/openai": "^2.0.68",
     "ai": "^5.0.95",
+    "commitlint": "^20.4.1",
+    "commitlint-config-gitmoji": "^2.3.1",
     "ollama-ai-provider-v2": "^1.5.4",
     "proper-lockfile": "^4.1.2",
     "stream-json": "^1.9.1",

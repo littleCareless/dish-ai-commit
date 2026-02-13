@@ -1,26 +1,22 @@
-## 0.56.9 (2026-01-29)
+## 0.56.12 (2026-02-09)
 
 ### ✨ Features
 
-- **utils**: 引入Logger类并优化日志记录与代码格式 ([0bae0c8](https://github.com/littleCareless/dish-ai-commit/commit/0bae0c8))
-- **webview**: 添加Webview握手消息与会话管理类型 ([83eac9e](https://github.com/littleCareless/dish-ai-commit/commit/83eac9e))
-- **chore**: 新增 GitHub 社区与反馈模板体系 ([121b3bc](https://github.com/littleCareless/dish-ai-commit/commit/121b3bc))
-
-### 🐛 Bug Fixes
-
-- **fix**: resolve context pipeline reentrancy issue ([c9e8510](https://github.com/littleCareless/dish-ai-commit/commit/c9e8510))
+- **core**: 重构数据获取器和工具函数以提升代码健壮性 ([c2e0171](https://github.com/littleCareless/dish-ai-commit/commit/c2e0171))
+- **ui**: 优化导航组件视觉设计和修复提示词管理状态同步 ([2a0c6bc](https://github.com/littleCareless/dish-ai-commit/commit/2a0c6bc))
+- **settings**: 引入高级运行时设置控制机制 ([b6332a4](https://github.com/littleCareless/dish-ai-commit/commit/b6332a4))
+- **model-registry**: 集成 Models.dev 平台支持 ([21f4672](https://github.com/littleCareless/dish-ai-commit/commit/21f4672))
 
 ### ♻️ Code Refactoring
 
-- **ai**: 重构AI提供者抽象类与工具函数，优化日志记录和代码格式 ([77bd20e](https://github.com/littleCareless/dish-ai-commit/commit/77bd20e))
-- **generate-commit**: 重构提交信息生成管道，优化缓存机制与流式生成逻辑 ([1a42c2e](https://github.com/littleCareless/dish-ai-commit/commit/1a42c2e))
-- **webview**: 重构会话管理机制以提升模块化和健壮性 ([3b46078](https://github.com/littleCareless/dish-ai-commit/commit/3b46078))
-- **webview**: 引入会话管理器重构应用启动流程 ([e1fd804](https://github.com/littleCareless/dish-ai-commit/commit/e1fd804))
+- **scm**: 重构 Git 和 SVN 差异处理逻辑，引入缓存机制和占位符标准化 ([784a535](https://github.com/littleCareless/dish-ai-commit/commit/784a535))
+- **settings**: 解耦提示词管理与功能设置，引入 ActivePromptStore ([527116b](https://github.com/littleCareless/dish-ai-commit/commit/527116b))
+- **webview**: 优化表单验证逻辑、重置行为及代码风格 ([f35f60c](https://github.com/littleCareless/dish-ai-commit/commit/f35f60c))
 
 ### 🔧 Chores
 
-- **ci**: 优化发布流程，支持手动触发和试运行 ([7c83104](https://github.com/littleCareless/dish-ai-commit/commit/7c83104))
-- **pre-push**: 添加标签检查防止非法标签创建 ([459655a](https://github.com/littleCareless/dish-ai-commit/commit/459655a))
-- v0.56.8 ([09b3d75](https://github.com/littleCareless/dish-ai-commit/commit/09b3d75))
-- **refactor**: 重构代码格式并增强类型安全 ([57379e5](https://github.com/littleCareless/dish-ai-commit/commit/57379e5))
+- **deps**: 添加 commitlint 依赖并更新构建配置 ([d5cb439](https://github.com/littleCareless/dish-ai-commit/commit/d5cb439))
+- **extension**: 在扩展激活时初始化功能设置和活动提示词存储 ([61f9a28](https://github.com/littleCareless/dish-ai-commit/commit/61f9a28))
+- v0.56.11 ([532a08b](https://github.com/littleCareless/dish-ai-commit/commit/532a08b))
+- **settings**: 清理未使用的 SessionManager 导入并格式化代码 ([4d6e257](https://github.com/littleCareless/dish-ai-commit/commit/4d6e257))
 

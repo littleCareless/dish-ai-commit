@@ -1,5 +1,9 @@
+import { DISH_CONFIG_PREFIX } from "@/config/constants";
+import {
+  CustomModelInfo,
+  CustomModelRegistry,
+} from "@shared/types/model-custom";
 import * as vscode from "vscode";
-import { CustomModelInfo, CustomModelRegistry } from "@shared/types/model-custom";
 import { getPresetRegistry } from "./model-presets";
 
 /**
@@ -7,7 +11,7 @@ import { getPresetRegistry } from "./model-presets";
  * 使用 VSCode globalState 持久化用户自定义的模型信息
  */
 export class ModelCustomStorage {
-  private static readonly KEY = "dish_commit_model_custom";
+  private static readonly KEY = `${DISH_CONFIG_PREFIX}_model_custom`;
   private static instance: ModelCustomStorage;
   private static readonly CURRENT_VERSION = "1.0.0";
 
@@ -20,7 +24,9 @@ export class ModelCustomStorage {
   static getInstance(context?: vscode.ExtensionContext): ModelCustomStorage {
     if (!this.instance) {
       if (!context) {
-        throw new Error("ModelCustomStorage requires context for first instantiation");
+        throw new Error(
+          "ModelCustomStorage requires context for first instantiation",
+        );
       }
       this.instance = new ModelCustomStorage(context);
     }
@@ -45,7 +51,10 @@ export class ModelCustomStorage {
    * @param modelId - 模型ID
    * @returns 模型信息或 null
    */
-  async getModelInfo(providerId: string, modelId: string): Promise<CustomModelInfo | null> {
+  async getModelInfo(
+    providerId: string,
+    modelId: string,
+  ): Promise<CustomModelInfo | null> {
     const registry = await this.getAllModelInfo();
     const key = `${providerId}_${modelId}`;
     return registry.models[key] || null;
@@ -82,9 +91,14 @@ export class ModelCustomStorage {
    * 检查并更新预设模型（保留用户自定义数据）
    * @param existingRegistry - 现有的注册表数据
    */
-  private async updatePresetsIfNeeded(existingRegistry: CustomModelRegistry): Promise<void> {
+  private async updatePresetsIfNeeded(
+    existingRegistry: CustomModelRegistry,
+  ): Promise<void> {
     const presetRegistry = getPresetRegistry();
-    const mergedModels = { ...presetRegistry.models, ...existingRegistry.models };
+    const mergedModels = {
+      ...presetRegistry.models,
+      ...existingRegistry.models,
+    };
 
     // 合并数据，用户自定义覆盖预设
     const updatedRegistry: CustomModelRegistry = {
@@ -136,7 +150,7 @@ export class ModelCustomStorage {
     registry.lastSync = new Date().toISOString();
     await this.context.globalState.update(
       ModelCustomStorage.KEY,
-      JSON.stringify(registry)
+      JSON.stringify(registry),
     );
   }
 }

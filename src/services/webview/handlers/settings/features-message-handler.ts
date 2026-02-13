@@ -1,5 +1,6 @@
 import { DISH_CONFIG_PREFIX } from "@/config/constants";
 import { FeaturesSettingsManager } from "@/services/settings/features-settings-manager";
+import { ActivePromptStore } from "@/services/settings/active-prompt-store";
 import { workspaceManager } from "@/services/core/workspace-manager";
 import {
   PromptCategory,
@@ -12,13 +13,16 @@ import * as vscode from "vscode";
 
 export class FeaturesMessageHandler {
   private _settingsManager: FeaturesSettingsManager;
+  private activePromptStore: ActivePromptStore;
   private context: vscode.ExtensionContext;
   private static readonly ACTIVE_PROMPT_KEY = `${DISH_CONFIG_PREFIX}_active_prompt_key`;
 
   constructor(context: vscode.ExtensionContext) {
     this.context = context;
     this._settingsManager = FeaturesSettingsManager.getInstance(context);
-    this._settingsManager.initialize();
+    void this._settingsManager.initialize();
+    this.activePromptStore = ActivePromptStore.getInstance(context);
+    void this.activePromptStore.initialize();
   }
 
   public async handle(message: any, webview: vscode.Webview): Promise<void> {
@@ -29,9 +33,6 @@ export class FeaturesMessageHandler {
           command: ExtensionResponse.FeaturesSettingsLoaded,
           data: {
             ...settings,
-            // 确保包含子分类信息
-            activePromptsBySubCategory:
-              settings.activePromptsBySubCategory || {},
           },
         });
         break;
@@ -44,9 +45,6 @@ export class FeaturesMessageHandler {
             command: ExtensionResponse.FeaturesSettingsLoaded,
             data: {
               ...settings,
-              // 确保包含子分类信息
-              activePromptsBySubCategory:
-                settings.activePromptsBySubCategory || {},
             },
           });
         }
@@ -85,7 +83,7 @@ export class FeaturesMessageHandler {
           });
 
           try {
-            await this._settingsManager.setActivePrompt(
+            await this.activePromptStore.setActivePrompt(
               category,
               key,
               storageLevel,
@@ -102,23 +100,19 @@ export class FeaturesMessageHandler {
               );
             }
 
-            // 刷新设置到 UI
-            const settings = this._settingsManager.getSettings();
-            // 使用 getPromptSource 获取特定提示词的源信息（支持子分类）
-            const activeSource = await this._settingsManager.getPromptSource(
+            const activePrompts = await this.activePromptStore.getActivePrompts();
+            const activePromptsBySubCategory =
+              await this.activePromptStore.getActivePromptsBySubCategory();
+            const activeSource = await this.activePromptStore.getPromptSource(
               key,
               workspaceId,
             );
 
-            // 获取子分类级别的活跃提示词信息
-            const activePromptsBySubCategory =
-              settings.activePromptsBySubCategory || {};
-
             console.log("[FeaturesMessageHandler] Sending response:", {
-              activePrompts: settings.activePrompts,
+              activePrompts,
               activePromptsBySubCategory,
-              activePromptsKeys: settings.activePrompts
-                ? Object.keys(settings.activePrompts)
+              activePromptsKeys: activePrompts
+                ? Object.keys(activePrompts)
                 : "undefined",
               activeSource,
             });
@@ -126,7 +120,7 @@ export class FeaturesMessageHandler {
             await webview.postMessage({
               command: ExtensionResponse.FeaturesActivePromptChanged,
               data: {
-                activePrompts: settings.activePrompts,
+                activePrompts,
                 activePromptsBySubCategory,
                 currentActiveSource: activeSource,
               },
@@ -161,7 +155,7 @@ export class FeaturesMessageHandler {
       // 新增：获取所有工作区的活跃状态
       case UIRequest.FeaturesGetAllWorkspaceStates:
         const allStates =
-          await this._settingsManager.getAllWorkspaceActiveStates();
+          await this.activePromptStore.getAllWorkspaceActiveStates();
 
         await webview.postMessage({
           command: ExtensionResponse.FeaturesAllWorkspaceStates,

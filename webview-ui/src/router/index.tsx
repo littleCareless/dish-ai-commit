@@ -15,6 +15,7 @@ import { SettingsPage } from "@/pages/settings/SettingsPage";
 import { StoragePage } from "@/pages/storage-page";
 import { UsagePage } from "@/pages/usage-page";
 import WelcomePage from "@/pages/welcome-page";
+import WeeklyReportPage from "@/pages/weekly-report-page";
 
 // 布局组件
 import { ErrorBoundary } from "@/components/common/ErrorBoundary";
@@ -52,6 +53,10 @@ export const AppRouter: React.FC = () => {
       <MemoryRouter initialEntries={initialEntries}>
         <RouteGuard>
           <Routes>
+            {/* 周报页面 - 独立布局 */}
+            <Route path={routes.weeklyReport} element={<WeeklyReportPage />} />
+
+            {/* 其他页面 - 使用公共布局 */}
             <Route
               path="/*"
               element={

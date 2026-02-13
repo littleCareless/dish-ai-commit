@@ -24,6 +24,40 @@ export {
   ProxyDetectionResult,
 } from "@/ai/model-registry/model-validator";
 
+// Models.dev 集成
+export {
+  ModelsDevModel,
+  ModelsDevProvider,
+  ModelsDevApiResponse,
+  FetchResult,
+  CachedModelData,
+  CachedProviderData,
+} from "@/ai/model-registry/models-dev-types";
+export {
+  ModelsDevFetcher,
+  fetchModelsDevData,
+  getModelsDevModel,
+  getModelsDevProvider,
+  searchModelsDevModels as searchModelsDevModelsRaw,
+  getModelsDevCacheStats,
+} from "@/ai/model-registry/models-dev-fetcher";
+export {
+  ModelsDevScheduler,
+  SchedulerConfig,
+  startModelsDevScheduler,
+  stopModelsDevScheduler,
+  triggerModelsDevUpdate,
+  getModelsDevSchedulerStatus,
+} from "@/ai/model-registry/models-dev-scheduler";
+export {
+  ModelsDevIntegration,
+  convertModelsDevToModelSpec,
+  getModelsDevModelSpec,
+  searchModelsDevModels,
+  getModelsDevStats,
+  getRecommendedModels,
+} from "@/ai/model-registry/models-dev-integration";
+
 import { EnhancedModelFetcher } from "@/ai/model-registry/enhanced-model-fetcher";
 import { ModelInfoFetcher } from "@/ai/model-registry/model-info-fetcher";
 import { AIModel } from "@/ai/types";

@@ -1,4 +1,4 @@
-import { WeeklyReportPanel } from "@/services/webview/weekly-report-panel";
+import { WeeklyReportPanel } from "@/webview/weekly-report-panel";
 import { BaseCommand } from "@/commands/base-command";
 
 /**
