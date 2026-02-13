@@ -9,6 +9,7 @@ export interface NotificationSettings {
   textToSpeech: boolean;
   soundNotifications: boolean;
   systemNotifications: boolean;
+  verbosity: "all" | "warn-error";
 }
 
 export class NotificationSettingsManager {
@@ -17,6 +18,7 @@ export class NotificationSettingsManager {
     textToSpeech: false,
     soundNotifications: false,
     systemNotifications: false,
+    verbosity: "all",
   };
   private _extensionContext: vscode.ExtensionContext | undefined;
 
@@ -104,6 +106,13 @@ export class NotificationSettingsManager {
    */
   public isSystemNotificationsEnabled(): boolean {
     return this._settings.systemNotifications;
+  }
+
+  /**
+   * 获取通知可见级别
+   */
+  public getVerbosity(): "all" | "warn-error" {
+    return this._settings.verbosity || "all";
   }
 
   /**

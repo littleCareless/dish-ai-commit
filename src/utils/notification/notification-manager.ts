@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { NotificationType, NotificationConfig } from "@/utils/notification/notification-types";
 import { formatMessage } from "@/utils/i18n/localization-manager";
+import { NotificationSettingsManager } from "@/utils/notification/notification-settings-manager";
 
 // 常量配置
 const DEFAULT_TIMEOUT = 3000;
@@ -76,6 +77,15 @@ const showNotification = async (
   options?: NotificationOptions
 ): Promise<string | undefined> => {
   try {
+    // Quiet mode: suppress plain info notifications, but keep actionable prompts.
+    if (type === "info") {
+      const verbosity = NotificationSettingsManager.getInstance().getVerbosity();
+      const isActionable = Boolean(options?.modal || options?.buttons?.length);
+      if (verbosity === "warn-error" && !isActionable) {
+        return undefined;
+      }
+    }
+
     validateOptions(options);
 
     const message = formatMessage(messageKey, args);

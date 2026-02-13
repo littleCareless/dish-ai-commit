@@ -265,6 +265,11 @@ export class EnhancedErrorHandler {
   ): Promise<void> {
     try {
       const message = `${userFriendlyError.title}\n\n${userFriendlyError.message}`;
+      const shouldAutoOpenSingleHelp =
+        userFriendlyError.helpLinks.length === 1 &&
+        suggestedActions.length === 0 &&
+        !userFriendlyError.canRetry &&
+        userFriendlyError.severity !== "critical";
       
       // 构建按钮选项
       const buttons: string[] = [];
@@ -273,7 +278,7 @@ export class EnhancedErrorHandler {
         buttons.push("查看解决方案");
       }
       
-      if (userFriendlyError.helpLinks.length > 0) {
+      if (userFriendlyError.helpLinks.length > 0 && !shouldAutoOpenSingleHelp) {
         buttons.push("查看帮助");
       }
       
@@ -296,6 +301,8 @@ export class EnhancedErrorHandler {
       } else if (result === "重试" && userFriendlyError.canRetry) {
         // 重试逻辑由调用方处理
         throw new Error("RETRY_REQUESTED");
+      } else if (shouldAutoOpenSingleHelp) {
+        await this.showHelp(userFriendlyError.helpLinks);
       }
     } catch (error) {
       if (error instanceof Error && error.message === "RETRY_REQUESTED") {
