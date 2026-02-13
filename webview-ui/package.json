@@ -1,7 +1,7 @@
 {
   "name": "@dish-ai-commit/webview-ui",
   "private": true,
-  "version": "0.56.13",
+  "version": "0.56.14",
   "type": "module",
   "scripts": {
     "changelog": "standard-version -i CHANGELOG.zh-CN.md",
