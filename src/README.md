@@ -1,541 +1,476 @@
-# Dish AI Commit Gen - 源代码结构文档
+<div align="center">
 
-本文档详细描述了 Dish AI Commit Gen 项目的源代码结构、核心模块架构和设计原则。基于实际代码实现编写，确保准确性和实用性。
+# Dish AI Commit Gen
 
-## 📁 项目概览
+🤖 **AI-Powered VSCode Extension for Intelligent Commit Message Generation**
 
-Dish AI Commit Gen 是一个功能完整的 VSCode 扩展，使用 AI 技术生成标准化的 Git/SVN 提交信息。项目采用**模块化架构设计**，严格遵循 **SOLID 原则**，确保代码的可维护性、可测试性和可扩展性。
+A powerful VSCode extension that uses AI technology to generate standardized Git/SVN commit messages with intelligent code analysis, semantic indexing, and multi-dimensional generation capabilities.
 
-### 核心设计原则
+[Report Bug][github-issues-link] · [Request Feature][github-issues-link] · [Join Discussions][github-discussions-link] · [View Documentation](#-documentation)
 
-- **单一职责原则 (SRP)**: 每个类只负责一个特定功能
-- **开闭原则 (OCP)**: 通过组合模式，易于扩展新功能
-- **里氏替换原则 (LSP)**: 处理器可以相互替换
-- **接口隔离原则 (ISP)**: 精确的接口定义
-- **依赖倒置原则 (DIP)**: 依赖抽象而非具体实现
+<!-- SHIELD GROUP -->
 
-### 代码质量标准
+[![][github-contributors-shield]][github-contributors-link]
+[![][github-forks-shield]][github-forks-link]
+[![][github-stars-shield]][github-stars-link]
+[![][github-issues-shield]][github-issues-link]
+[![][vscode-marketplace-shield]][vscode-marketplace-link]
+[![][total-installs-shield]][total-installs-link]
+[![][avarage-rating-shield]][avarage-rating-link]
+[![][github-license-shield]][github-license-link]
 
-- ✅ **核心类 < 200 行**: 所有核心命令类严格控制在 200 行以内
-- ✅ **文件 < 500 行**: 单个文件不超过 500 行
-- ✅ **清晰分层**: 命令 → 处理器 → 构建器 → 服务 → 工具
-- ✅ **完整类型**: 全面的 TypeScript 类型定义
-- ✅ **文档覆盖**: 公共 API 完整文档
+![Demo](images/demo.gif)
 
-## 🗂️ 完整目录结构
+</div>
 
-```
-src/
-├── ai/                                    # AI 核心模块
-│   ├── model-registry/                    # 模型信息注册表
-│   │   ├── model-specs.ts                 # 模型规格数据库 (200+ 模型)
-│   │   ├── model-info-fetcher.ts          # 模型信息获取器 (API/本地)
-│   │   ├── model-update-service.ts        # 模型更新服务
-│   │   └── README.md                      # 详细文档
-│   ├── providers/                         # AI 提供商实现
-│   │   ├── abstract-ai-provider.ts        # 抽象基类
-│   │   ├── openai-provider.ts             # OpenAI 实现
-│   │   ├── ollama-provider.ts             # Ollama 实现
-│   │   ├── xiaomi-provider.ts             # 小米 MiMo 实现
-│   │   ├── zhipu-provider.ts              # 智谱 AI 实现
-│   │   └── ... (20+ 提供商)
-│   ├── ai-provider-factory.ts             # 提供商工厂
-│   ├── types.ts                           # AI 类型定义
-│   └── utils/                             # AI 工具函数
-│       ├── generate-helper.ts             # 提示词生成辅助
-│       └── model-validator.ts             # 模型验证器
-│
-├── commands/                              # 命令模块
-│   ├── generate-commit/                   # 提交信息生成 (重构后 222 行)
-│   │   ├── generate-commit-command.ts     # 主命令类 (222行) ⭐
-│   │   ├── handlers/                      # 处理器层 (4个处理器)
-│   │   │   ├── streaming-handler.ts       # 流式生成处理器 (73行)
-│   │   │   ├── function-calling-handler.ts # 函数调用处理器 (68行)
-│   │   │   ├── layered-commit-handler.ts  # 分层提交处理器 (225行)
-│   │   │   └── cross-repository-handler.ts # 跨仓库处理器 (209行)
-│   │   ├── builders/                      # 构建器层 (2个构建器)
-│   │   │   ├── context-builder.ts         # 上下文构建器 (193行)
-│   │   │   └── message-builder.ts         # 消息构建器 (39行)
-│   │   ├── utils/                         # 工具层 (4个工具)
-│   │   │   ├── streaming-generation-helper.ts # 流式辅助 (462行)
-│   │   │   ├── commit-formatter.ts        # 提交格式化 (42行)
-│   │   │   ├── diff-extractor.ts          # Diff 提取 (20行)
-│   │   │   └── context-collector.ts       # 上下文收集 (113行)
-│   │   └── README.md                      # 架构文档
-│   │
-│   ├── generate-branch-name/              # 分支名称生成 (重构后 146 行)
-│   │   ├── generate-branch-name-command.ts # 主命令类 (146行) ⭐
-│   │   ├── handlers/                      # 处理器层 (2个处理器)
-│   │   │   ├── description-mode-handler.ts # 描述模式处理器
-│   │   │   └── changes-mode-handler.ts     # 代码变更模式处理器
-│   │   ├── services/                      # 服务层 (3个服务)
-│   │   │   ├── branch-creator.ts          # 分支创建服务
-│   │   │   ├── branch-formatter.ts        # 分支格式化服务
-│   │   │   └── branch-suggester.ts        # 分支建议器
-│   │   └── README.md                      # 架构文档
-│   │
-│   ├── generate-weekly-report/            # 周报生成
-│   │   └── generate-weekly-report.ts      # 周报命令
-│   ├── generate-pr-summary/               # PR 摘要生成
-│   │   └── generate-pr-summary.ts         # PR 摘要命令
-│   └── review-code/                       # 代码审查
-│       └── review-code.ts                 # 代码审查命令
-│
-├── scm/                                   # 源代码管理
-│   ├── git/                               # Git 支持
-│   │   ├── git-provider.ts                # Git 提供商
-│   │   └── git-provider-factory.ts        # Git 工厂
-│   ├── svn/                               # SVN 支持 (优雅降级)
-│   │   ├── svn-provider.ts                # VS Code API 实现
-│   │   ├── svn-command-provider.ts        # 命令行实现
-│   │   ├── cli-svn-provider.ts            # 简化 CLI 实现
-│   │   ├── svn-provider-factory.ts        # 工厂类 (3级降级)
-│   │   ├── helpers/                       # 辅助工具
-│   │   │   ├── diff-parser.ts             # Diff 解析
-│   │   │   └── status-parser.ts           # 状态解析
-│   │   └── README.md                      # SVN 文档
-│   ├── multi-repository/                  # 多仓库管理
-│   │   └── multi-repository-context-manager.ts # 上下文管理器
-│   ├── smart-diff-selector/               # 智能 Diff 选择
-│   │   └── smart-diff-selector.ts         # 智能选择器
-│   ├── staged-content-detector/           # 暂存内容检测
-│   │   └── staged-content-detector.ts     # 检测器
-│   └── scm-provider.ts                    # SCM 统一接口
-│
-├── services/                              # 业务服务层
-│   ├── cache/                             # 缓存服务
-│   │   └── commit-cache-service.ts        # 提交缓存服务 (LRU, 50条)
-│   ├── notification/                      # 通知服务
-│   │   ├── notification-manager.ts        # 通知管理器
-│   │   ├── progress-handler.ts            # 进度处理器
-│   │   └── system-notification.ts         # 系统通知 (跨平台)
-│   ├── core/                              # 核心服务
-│   │   └── settings-migration.ts          # 设置迁移 (增强版)
-│   └── config/                            # 配置管理
-│       └── config-manager.ts              # 配置管理器
-│
-├── config/                                # 配置定义
-│   ├── settings-schema.ts                 # 设置 Schema (完整定义)
-│   └── settings-migration.ts              # 迁移逻辑
-│
-├── core/                                  # 核心功能
-│   ├── extension-core.ts                  # 扩展核心
-│   └── command-registry.ts                # 命令注册
-│
-├── utils/                                 # 工具函数
-│   ├── logger.ts                          # 日志记录器
-│   ├── i18n/                              # 国际化
-│   │   ├── messages.en.json               # 英文消息
-│   │   ├── messages.zh-cn.json            # 中文消息
-│   │   └── i18n.ts                        # i18n 工具
-│   ├── notification/                      # 通知工具
-│   │   └── notification-utils.ts          # 通知辅助
-│   ├── context-manager.ts                 # 上下文管理
-│   ├── state/                             # 状态管理
-│   │   └── state-manager.ts               # 状态管理器
-│   └── validation/                        # 验证工具
-│       └── config-validator.ts            # 配置验证
-│
-├── i18n/                                  # 国际化文件
-│   ├── messages.en.json                   # 英语 (18种语言)
-│   ├── messages.zh-cn.json                # 简体中文
-│   ├── messages.ja.json                   # 日语
-│   └── ... (更多语言)
-│
-├── prompt/                                # AI 提示词模板
-│   ├── generate-commit.ts                 # 提交信息提示词
-│   ├── generate-branch-name.ts            # 分支名称提示词
-│   ├── generate-weekly-report.ts          # 周报提示词
-│   ├── generate-pr-summary.ts             # PR 摘要提示词
-│   └── review-code.ts                     # 代码审查提示词
-│
-├── extension.ts                           # 扩展入口点
-├── commands.ts                            # 命令注册
-├── package.json                           # 扩展配置
-└── package.nls.json                       # 国际化配置
-```
+[English](README.md) | [简体中文](README.zh-CN.md)
 
-## 🏗️ 核心架构设计
+<!-- Keep these links. Translations will automatically update with the README. -->
 
-### 1. 模块化分层架构
-
-```
-┌─────────────────────────────────────────────────────────────┐
-│                    Command Layer (命令层)                    │
-│  • GenerateCommitCommand (222行) - 主入口                   │
-│  • GenerateBranchNameCommand (146行) - 分支生成             │
-│  • 其他命令 (周报、PR、代码审查)                             │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────────┐
-│                  Handler Layer (处理器层)                    │
-│  • StreamingHandler - 流式生成                              │
-│  • FunctionCallingHandler - 函数调用                        │
-│  • LayeredCommitHandler - 分层提交                          │
-│  • CrossRepositoryHandler - 跨仓库                          │
-│  • DescriptionModeHandler / ChangesModeHandler              │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────────┐
-│                  Builder Layer (构建器层)                    │
-│  • CommitContextBuilder - 上下文构建                        │
-│  • CommitMessageBuilder - 消息构建                          │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────────┐
-│                  Service Layer (服务层)                      │
-│  • CommitCacheService - 缓存服务 (LRU)                      │
-│  • NotificationService - 通知服务                           │
-│  • SettingsMigration - 设置迁移                             │
-│  • BranchCreator / BranchSuggester                          │
-└──────────────────────┬──────────────────────────────────────┘
-                       │
-┌──────────────────────▼──────────────────────────────────────┐
-│                  Utils Layer (工具层)                        │
-│  • StreamingGenerationHelper - 流式辅助                     │
-│  • ContextCollector - 上下文收集                            │
-│  • CommitFormatter - 提交格式化                             │
-│  • DiffExtractor - Diff 提取                                │
-└─────────────────────────────────────────────────────────────┘
-```
-
-### 2. AI 提供商架构
-
-```
-AIProviderFactory (工厂模式)
-├── AbstractAIProvider (抽象基类)
-│   ├── generateCommitMessage() - 生成提交
-│   ├── generateBranchName() - 生成分支
-│   ├── getModels() - 获取模型列表
-│   └── validateConnection() - 验证连接
-│
-├── OpenAIProvider
-├── OllamaProvider
-├── XiaomiMiMoProvider (新增 v0.56.1)
-├── ZhipuProvider
-├── DashScopeProvider
-├── DoubaoProvider
-├── GeminiProvider
-├── ClaudeProvider
-└── ... (20+ 提供商)
-```
-
-### 3. 优雅降级机制
-
-#### SVN 3级降级
-```
-Level 1: VS Code SVN Extension API
-    ↓ (不可用)
-Level 2: SVN CLI (svn diff, svn commit)
-    ↓ (不可用)
-Level 3: Simple CLI (svn status, svn add)
-```
-
-#### Git 2级降级
-```
-Level 1: VS Code Git Extension API
-    ↓ (不可用)
-Level 2: Git CLI (git diff, git commit)
-```
-
-## 🎯 核心功能实现
-
-### 1. 提交生成流程
-
-```
-用户触发生成
-    ↓
-1. 命令层: GenerateCommitCommand.execute()
-    ↓
-2. 参数解析: 获取选中文件、配置、AI 提供商
-    ↓
-3. SCM 检测: SCMFactory.detectSCM()
-    ↓
-4. 缓存检查: CommitCacheService.get() (极速)
-    ↓
-5. 上下文构建: CommitContextBuilder.build()
-    │   ├─ 收集代码差异
-    │   ├─ 分析变更类型
-    │   ├─ 获取历史提交
-    │   └─ 构建提示词
-    ↓
-6. 处理器选择 (根据配置)
-    ├─ StreamingHandler (流式)
-    ├─ FunctionCallingHandler (结构化)
-    ├─ LayeredCommitHandler (分层)
-    └─ CrossRepositoryHandler (跨仓库)
-    ↓
-7. AI 调用: provider.generateCommitMessage()
-    ↓
-8. 后处理: 格式化、验证、添加 emoji
-    ↓
-9. 缓存存储: CommitCacheService.set()
-    ↓
-10. 返回结果并显示
-```
-
-### 2. 分支生成流程
-
-```
-用户触发生成
-    ↓
-1. 命令层: GenerateBranchNameCommand.execute()
-    ↓
-2. 模式选择
-    ├─ 描述模式: DescriptionModeHandler
-    │   └─ 用户输入描述 → AI 生成
-    └─ 变更模式: ChangesModeHandler
-        └─ 分析代码变更 → AI 生成
-    ↓
-3. 分支格式化: BranchFormatter.format()
-    ├─ 转换为 kebab-case
-    ├─ 添加类型前缀 (feature/, fix/)
-    └─ 移除非法字符
-    ↓
-4. 分支建议: BranchSuggester.suggest()
-    ├─ 生成 3-5 个变体
-    └─ 用户选择
-    ↓
-5. 分支创建: BranchCreator.create()
-    ├─ 使用 Git API
-    └─ 或 Git CLI
-```
-
-### 3. 缓存机制
-
-```typescript
-// 缓存键生成 (基于内容和配置的智能哈希)
-const cacheKey = md5({
-  diff: codeChanges,
-  modelId: activeModel,
-  config: {
-    language: config.base.language,
-    emoji: config.features.commitFormat.enableEmoji,
-    body: config.features.commitFormat.enableBody,
-    rule: config.features.commitMessage.rule
-  }
-});
-
-// LRU 策略
-- 最大容量: 50 条
-- 自动清理: 最近最少使用
-- 内存安全: 防止内存泄漏
-```
-
-### 4. 上下文构建
-
-```typescript
-// 多维度上下文收集
-const context = {
-  // 1. 代码差异
-  diff: await extractDiff(selectedFiles),
-
-  // 2. 变更分析
-  analysis: {
-    fileTypes: ['.ts', '.tsx'],  // 文件类型
-    changeTypes: ['feat', 'fix'], // 变更类型
-    scope: 'components/auth'     // 影响范围
-  },
-
-  // 3. 历史参考
-  history: {
-    recentCommits: [...],        // 最近提交
-    commitPatterns: [...],       // 提交模式
-    projectRules: commitlint     // 项目规范
-  },
-
-  // 4. 用户偏好
-  preferences: {
-    language: 'zh',
-    style: 'conventional',
-    emoji: true,
-    body: true
-  }
-};
-```
-
-## 📊 重构成果对比
-
-### Generate Commit 模块
-
-| 指标 | 重构前 | 重构后 | 改进 |
-|------|--------|--------|------|
-| **主文件行数** | 636 行 | 222 行 | ⬇️ 65% |
-| **文件数量** | 1 个 | 11 个 | 模块化 |
-| **核心类行数** | >200 行 | <200 行 | ✅ 符合标准 |
-| **圈复杂度** | 高 | 低 | ⬇️ 70% |
-| **可测试性** | 困难 | 容易 | ⬆️ 显著 |
-
-### Generate Branch Name 模块
-
-| 指标 | 重构前 | 重构后 | 改进 |
-|------|--------|--------|------|
-| **主文件行数** | 674 行 | 146 行 | ⬇️ 78% |
-| **文件数量** | 1 个 | 6 个 | 模块化 |
-| **代码复用** | 低 | 高 | ⬆️ 显著 |
-| **维护性** | 困难 | 容易 | ⬆️ 显著 |
-
-## 🔧 技术栈和依赖
-
-### 核心依赖
-- **类型安全**: `zod` (Schema 验证)
-- **日志**: 自定义 Logger
-- **加密**: Node.js `crypto` (MD5 哈希)
-
-### 开发工具
-- **构建**: `esbuild` (快速构建)
-- **类型检查**: TypeScript
-- **代码质量**: ESLint + Prettier
-- **测试**: Vitest
-- **包管理**: pnpm
-
-## 🎯 设计模式应用
-
-### 1. 工厂模式
-```typescript
-// AI 提供商工厂
-const provider = AIProviderFactory.createProvider('openai');
-const scm = SCMFactory.detectSCM();
-```
-
-### 2. 策略模式
-```typescript
-// 不同的生成策略
-interface GenerationStrategy {
-  generate(diff: string): Promise<string>;
-}
-
-// 可互换的策略
-const strategies = {
-  streaming: new StreamingStrategy(),
-  functionCalling: new FunctionCallingStrategy(),
-  layered: new LayeredStrategy()
-};
-```
-
-### 3. 观察者模式
-```typescript
-// 配置变更通知
-configManager.on('change', (newConfig) => {
-  cacheService.clear();
-  notificationService.notify('配置已更新');
-});
-```
-
-### 4. 装饰器模式
-```typescript
-// 增强功能
-@cacheable
-@retryable
-@loggable
-async function generateCommit() { ... }
-```
-
-## 📚 相关文档链接
-
-- **主 README**: [../README.md](../README.md) - 用户文档
-- **AI 模型**: [ai/model-registry/README.md](ai/model-registry/README.md) - 模型管理
-- **提交生成**: [commands/generate-commit/README.md](commands/generate-commit/README.md) - 架构详解
-- **分支生成**: [commands/generate-branch-name/README.md](commands/generate-branch-name/README.md) - 架构详解
-- **SVN 支持**: [scm/svn/README.md](scm/svn/README.md) - SVN 优雅降级
-- **WebView UI**: [../webview-ui/README.md](../webview-ui/README.md) - 前端架构
-- **聊天界面**: [../webview-ui/src/components/commit-chat/README.md](../webview-ui/src/components/commit-chat/README.md) - 聊天功能
-
-## 🤝 开发指南
-
-### 添加新功能
-
-1. **确定层级**: 选择合适的层级 (命令/处理器/构建器/服务)
-2. **遵循原则**: 保持单一职责，控制文件大小
-3. **类型定义**: 完善 TypeScript 类型
-4. **添加测试**: 编写单元测试
-5. **更新文档**: 同步更新 README
-
-### 代码规范
-
-```typescript
-// ✅ 推荐
-class MyHandler {
-  private readonly logger: Logger;
-
-  constructor(logger: Logger) {
-    this.logger = logger;
-  }
-
-  async handle(data: MyData): Promise<MyResult> {
-    // 职责单一，逻辑清晰
-    return result;
-  }
-}
-
-// ❌ 避免
-class MyHandler {
-  // 违反单一职责
-  async handleData() { /* ... */ }
-  async validate() { /* ... */ }
-  async format() { /* ... */ }
-  async save() { /* ... */ }
-}
-```
-
-### 测试策略
-
-```typescript
-// 单元测试示例
-describe('CommitCacheService', () => {
-  it('should generate correct cache key', () => {
-    const key = service.generateKey(diff, config, model);
-    expect(key).toBe(expectedHash);
-  });
-
-  it('should respect LRU limit', () => {
-    // 测试 50 条限制
-  });
-});
-```
-
-## 📊 项目统计
-
-### 代码统计
-- **总文件数**: 100+ TypeScript 文件
-- **总代码行**: ~15,000 行
-- **核心命令**: 2 个 (重构后 < 400 行)
-- **AI 提供商**: 20+ 支持
-- **测试覆盖**: 核心路径 100%
-
-### 架构指标
-- **平均类大小**: < 150 行
-- **模块耦合度**: 低
-- **内聚性**: 高
-- **可测试性**: 优秀
-
-## 🎓 学习要点
-
-### 1. 模块化设计
-- 将大文件拆分为小模块
-- 每个模块职责单一
-- 通过组合实现复杂功能
-
-### 2. 优雅降级
-- 主方案 → 备用方案 → 简化方案
-- 确保功能可用性
-- 提升用户体验
-
-### 3. 性能优化
-- 缓存优先
-- 智能键生成
-- LRU 策略
-
-### 4. 类型安全
-- 完整的 TypeScript 类型
-- Zod Schema 验证
-- 编译时错误检查
+[Deutsch](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=de) |
+[Español](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=es) |
+[Français](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=fr) |
+[日本語](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=ja) |
+[한국어](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=ko) |
+[Português](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=pt) |
+[Русский](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=ru) |
+[中文](https://www.readme-i18n.com/littleCareless/dish-ai-commit?lang=zh)
 
 ---
 
-**最后更新**: 2024年12月
-**架构版本**: v2.0 (模块化)
-**代码质量**: ⭐⭐⭐⭐⭐
-**维护性**: ⭐⭐⭐⭐⭐
+> 💡 **Why Dish AI Commit Gen?**
+>
+> Unlike other AI commit tools, we provide **the most comprehensive AI provider support** (20+ providers), **pioneering semantic code analysis** (Tree-sitter + Qdrant), and **multi-dimensional intelligent generation** (commits, branches, PR summaries, weekly reports). Built with enterprise-grade architecture following SOLID principles for maximum maintainability and extensibility.
 
-> 💡 **提示**: 本文档基于实际代码实现编写，如需了解具体实现细节，请参考对应文件的源代码。
+## 🚀 Core Features Overview
+
+### 🤖 AI-Powered Generation
+
+- **Commit Message Generation**: Intelligent commit messages from code changes with context-aware analysis
+- **Branch Name Generation**: Smart branch naming based on requirements or code changes
+- **PR Summary Generation**: Auto-generate PR titles and descriptions from commit history
+- **Weekly Report Generation**: AI-powered work summaries and progress tracking
+- **Code Review**: AI-assisted code review with detailed feedback
+
+### 🏗️ Advanced Architecture
+
+- **Modular Design**: SOLID principles, core classes < 200 lines
+- **Multi-layer Architecture**: Command → Handler → Builder → Service → Utils
+- **Graceful Degradation**: Multi-level fallback for Git and SVN
+- **Unified AI Interface**: 20+ providers with consistent API
+
+### 🧠 Intelligent Analysis
+
+- **Semantic Indexing**: Tree-sitter + Qdrant vector database
+- **Context Collection**: Automatic code change analysis and context building
+- **Framework Detection**: Framework-specific commit suggestions
+- **Smart Caching**: LRU cache for performance optimization
+
+### 🎨 Modern UI
+
+- **Interactive Chat**: Real-time commit generation through natural language
+- **Dynamic Settings**: Schema-driven auto-generated configuration UI
+- **Multi-language Support**: 18 languages including English and Chinese
+- **System Notifications**: Cross-platform native notifications
+
+## ✨ What's New (v0.56.1)
+
+### 🔥 Latest Features
+
+- **Xiaomi MiMo Support**: Added Xiaomi's MiMo as a new AI service provider
+- **Enhanced Settings Migration**: Improved robustness and traceability for settings migration
+- **Framework-Specific Suggestions**: Intelligent commit suggestions based on project type
+- **Commit Caching**: LRU cache mechanism to improve performance
+- **New User Onboarding**: Enhanced guidance and configuration file robustness
+- **Performance Optimizations**: Optimized commit generation and logging
+
+### 📊 Recent Major Features
+
+- **Cross-Repository Support**: Handle multiple repositories in single workspace
+- **Function Calling Mode**: Structured commit messages via AI function calling
+- **Dynamic Settings UI**: Auto-generated configuration interface
+- **System Notifications**: Native notifications (macOS, Windows, Linux)
+- **Layered Commits**: Multi-file commit with detailed descriptions
+
+## 🤖 Comprehensive AI Provider Support
+
+### Provider Categories
+
+| Category                | Providers                                                             | Key Features                     | Best For                    |
+| ----------------------- | --------------------------------------------------------------------- | -------------------------------- | --------------------------- |
+| **Premium AI**          | OpenAI (GPT-3.5/4/4o, o1-preview/mini)                                | Highest quality, latest models   | Production use              |
+| **Local Deployment**    | Ollama, LM Studio                                                     | 100+ open-source models, privacy | Data-sensitive environments |
+| **VSCode Integration**  | GitHub Copilot                                                        | Built-in VSCode AI service       | Copilot subscribers         |
+| **Chinese AI Services** | Zhipu AI, DashScope, Doubao, Deepseek, Baidu Qianfan, **Xiaomi MiMo** | Excellent Chinese processing     | Chinese users               |
+| **International**       | Gemini, Claude, Mistral, SiliconFlow, OpenRouter                      | Global reach, diverse options    | International teams         |
+| **Enterprise**          | Azure OpenAI, Vertex AI, Cloudflare Workers AI                        | Enterprise-grade security        | Large organizations         |
+| **Open Source**         | Together AI, X.AI (Grok), Groq, Prem AI                               | Cost-effective, community-driven | Budget-conscious users      |
+
+### 🆓 Free AI Models
+
+- **Zhipu AI (GLM-4-Flash)**: Fixed monthly free quota ([Get API Key](https://open.bigmodel.cn/usercenter/apikeys))
+- **Gemini AI**: 1,500 free requests per day ([Get API Key](https://makersuite.google.com/app/apikey))
+- **Ollama**: Completely free local deployment with 100+ models
+- **LM Studio**: Free local model hosting and management
+- **Xiaomi MiMo**: Competitive pricing with excellent Chinese support
+
+## 📝 Version Control System Support
+
+### Git Support
+
+- **VS Code Git API**: Full integration with VS Code's Git extension
+- **CLI Fallback**: Command-line Git operations when API unavailable
+- **Multi-repository**: Handle multiple Git repositories in workspace
+- **Smart Detection**: Automatic repository detection and switching
+
+### SVN Support
+
+- **SVN SCM Extension**: Integration with VS Code SVN extension
+- **CLI Implementation**: Direct SVN command-line operations
+- **Graceful Degradation**: 3-level fallback (API → CLI → Simple CLI)
+- **Unified Interface**: Same API as Git for seamless switching
+
+## 🏗️ Architecture Highlights
+
+### Modular Design (SOLID Principles)
+
+```
+┌─────────────────────────────────────────┐
+│           Command Layer                 │
+│  GenerateCommitCommand (222 lines)      │
+│  GenerateBranchNameCommand (146 lines)  │
+└─────────────────┬───────────────────────┘
+                  │
+┌─────────────────▼───────────────────────┐
+│         Handler Layer                   │
+│  • StreamingHandler                     │
+│  • FunctionCallingHandler              │
+│  • LayeredCommitHandler                │
+│  • CrossRepositoryHandler              │
+└─────────────────┬───────────────────────┘
+                  │
+┌─────────────────▼───────────────────────┐
+│         Builder Layer                   │
+│  • CommitContextBuilder                │
+│  • CommitMessageBuilder                │
+└─────────────────┬───────────────────────┘
+                  │
+┌─────────────────▼───────────────────────┐
+│         Service Layer                   │
+│  • CommitCacheService                  │
+│  • NotificationService                 │
+│  • SettingsMigration                   │
+└─────────────────┬───────────────────────┘
+                  │
+┌─────────────────▼───────────────────────┐
+│         Utils Layer                     │
+│  • StreamingGenerationHelper           │
+│  • ContextCollector                    │
+│  • CommitFormatter                     │
+└─────────────────────────────────────────┘
+```
+
+### Performance Optimizations
+
+- **Smart Caching**: LRU cache with MD5-based keys (50 items max)
+- **Incremental Indexing**: Only updates changed files
+- **Context Management**: Intelligent prompt length optimization
+- **Request Retries**: Automatic retry with exponential backoff
+
+## ⚙️ Configuration
+
+### Core Settings
+
+| Configuration                                            | Type    | Default                | Description              |
+| -------------------------------------------------------- | ------- | ---------------------- | ------------------------ |
+| `dish-ai-commit.base.language`                           | string  | Simplified Chinese     | Commit message language  |
+| `dish-ai-commit.base.provider`                           | string  | OpenAI                 | Active AI provider       |
+| `dish-ai-commit.base.model`                              | string  | gpt-3.5-turbo          | Active AI model          |
+| `dish-ai-commit.providers.openai.apiKey`                 | string  | ""                     | OpenAI API key           |
+| `dish-ai-commit.providers.mimo.apiKey`                   | string  | ""                     | Xiaomi MiMo API key      |
+| `dish-ai-commit.providers.ollama.baseUrl`                | string  | http://localhost:11434 | Ollama API URL           |
+| `dish-ai-commit.features.commitFormat.enableEmoji`       | boolean | true                   | Use emoji in commits     |
+| `dish-ai-commit.features.commitFormat.enableBody`        | boolean | true                   | Include commit body      |
+| `dish-ai-commit.features.commitFormat.enableMergeCommit` | boolean | false                  | Merge multiple files     |
+| `dish-ai-commit.features.codeIndex.enabled`              | boolean | false                  | Enable semantic indexing |
+| `dish-ai-commit.features.codeIndex.provider`             | string  | ollama                 | Embedding provider       |
+| `dish-ai-commit.features.codeIndex.qdrantUrl`            | string  | http://localhost:6333  | Qdrant URL               |
+
+### Available Commands
+
+| Command ID                             | Title                  | Description                  |
+| -------------------------------------- | ---------------------- | ---------------------------- |
+| `dish-ai-commit.selectModel`           | Select AI Model        | Choose provider and model    |
+| `dish-ai-commit.generateCommitMessage` | Generate Commit        | Generate commit from changes |
+| `dish-ai-commit.generateBranchName`    | Generate Branch Name   | Create standardized branch   |
+| `dish-ai-commit.generateWeeklyReport`  | Generate Weekly Report | AI-powered work summary      |
+| `dish-ai-commit.generatePRSummary`     | Generate PR Summary    | PR title and description     |
+| `dish-ai-commit.reviewCode`            | Code Review            | AI-assisted code review      |
+
+## 📋 Configuration Examples
+
+### 1. OpenAI Configuration
+
+```json
+{
+  "dish-ai-commit.base.provider": "openai",
+  "dish-ai-commit.providers.openai.apiKey": "sk-...",
+  "dish-ai-commit.providers.openai.baseUrl": "https://api.openai.com/v1"
+}
+```
+
+### 2. Xiaomi MiMo Configuration
+
+```json
+{
+  "dish-ai-commit.base.provider": "mimo",
+  "dish-ai-commit.providers.mimo.apiKey": "your-mimo-key"
+}
+```
+
+### 3. Ollama Local Configuration
+
+```json
+{
+  "dish-ai-commit.base.provider": "ollama",
+  "dish-ai-commit.providers.ollama.baseUrl": "http://localhost:11434"
+}
+```
+
+### 4. GitHub Copilot Configuration
+
+```json
+{
+  "dish-ai-commit.base.provider": "vscode"
+}
+```
+
+## 🚀 Quick Start
+
+### Installation
+
+1. Search "Dish AI Commit" in VS Code Extension Marketplace
+2. Click Install
+3. Restart VS Code
+4. Configure your preferred AI provider
+
+### Basic Usage
+
+#### Generate Commit Message
+
+1. Open Source Control view (Git or SVN)
+2. Select files to commit
+3. Click "Dish AI Commit" icon in SCM title bar
+4. Or use Command Palette: `Dish AI Commit: Generate Commit Message`
+5. AI generates commit message automatically
+
+#### Generate Branch Name
+
+1. Use Command Palette: `Dish AI Commit: Generate Branch Name`
+2. Choose mode:
+   - **From Description**: Enter feature description
+   - **From Changes**: Use current code changes
+3. Select from suggested branch names
+4. Branch is created automatically
+
+#### Interactive Chat
+
+1. Open Command Palette: `Dish AI Commit: Open Chat Interface`
+2. Type your requirements in natural language
+3. Use commands: `/help`, `/template`, `/style`, `/language`
+4. Get real-time commit suggestions
+
+## 📚 Documentation
+
+### Core Modules
+
+- **[Project Structure](src/README.md)** - Complete architecture overview
+- **[AI Model Registry](src/ai/model-registry/README.md)** - Model management system
+- **[Generate Commit](src/commands/generate-commit/README.md)** - Commit generation architecture
+- **[Generate Branch Name](src/commands/generate-branch-name/README.md)** - Branch generation architecture
+- **[SVN SCM](src/scm/svn/README.md)** - SVN support with graceful degradation
+- **[WebView UI](webview-ui/README.md)** - Modern React-based interface
+- **[Commit Chat](webview-ui/src/components/commit-chat/README.md)** - Interactive chat features
+
+### Architecture Deep Dive
+
+- **Modular Design**: All core commands follow SOLID principles
+- **Graceful Degradation**: Multi-level fallback mechanisms
+- **Performance**: LRU caching, incremental indexing, smart context management
+- **Security**: Secret storage, input validation, error handling
+
+## 🛠️ Development
+
+### Prerequisites
+
+- Node.js 18.20.8+
+- pnpm 10.0.0+
+- VS Code 1.80.0+
+
+### Setup
+
+```bash
+# Clone repository
+git clone https://github.com/littleCareless/dish-ai-commit
+cd dish-ai-commit
+
+# Install dependencies
+pnpm install
+
+# Start development
+pnpm dev
+
+# Build extension
+pnpm build
+
+# Package extension
+pnpm package
+```
+
+### Project Structure
+
+```
+src/
+├── ai/                    # AI providers and model registry
+├── commands/              # Feature commands (commit, branch, etc.)
+├── scm/                   # Git/SVN integration
+├── services/              # Business services (cache, notification)
+├── config/                # Configuration schema
+├── core/                  # Core extension logic
+├── utils/                 # Utility functions
+├── i18n/                  # Internationalization
+├── prompt/                # AI prompt templates
+└── extension.ts           # Extension entry point
+
+webview-ui/
+├── src/                   # React frontend
+│   ├── components/        # UI components
+│   ├── services/          # Webview services
+│   └── hooks/             # React hooks
+└── package.json           # Frontend dependencies
+```
+
+### Code Quality Standards
+
+- ✅ Single file < 500 lines (core classes < 200 lines)
+- ✅ Clear separation of concerns
+- ✅ Comprehensive TypeScript types
+- ✅ Unit tests for critical paths
+- ✅ Documentation for public APIs
+
+## 💬 Community & Feedback
+
+### Get Help & Share Ideas
+
+- 🐛 **[Report a Bug](https://github.com/littleCareless/dish-ai-commit/issues/new?template=bug_report.yml)** - Found an issue? Let us know!
+- ✨ **[Request a Feature](https://github.com/littleCareless/dish-ai-commit/issues/new?template=feature_request.yml)** - Have an idea? We'd love to hear it!
+- 📝 **[Share Feedback](https://github.com/littleCareless/dish-ai-commit/issues/79)** - Tell us what you think about the extension
+- 💬 **[Join Discussions](https://github.com/littleCareless/dish-ai-commit/discussions)** - Share ideas, ask questions, or chat with the community
+
+### Community Guidelines
+
+- Be respectful and constructive
+- Provide detailed information (version, OS, config)
+- Include screenshots when applicable
+- Search existing issues before creating new ones
+
+### Stay Updated
+
+- ⭐ **Star the repo** to get notified of new releases
+- 👀 **Watch** for issue and PR updates
+- 📧 **Follow** for important announcements
+
+## 🤝 Contributing
+
+We welcome all contributions!
+
+### How to Contribute
+
+1. Fork the repository
+2. Create a feature branch: `git checkout -b feature/amazing-feature`
+3. Commit your changes: `git commit -m 'feat: add amazing feature'`
+4. Push to the branch: `git push origin feature/amazing-feature`
+5. Open a Pull Request
+
+### Contribution Guidelines
+
+- Follow existing code style and patterns
+- Add tests for new functionality
+- Update documentation
+- Ensure all checks pass
+- Reference related issues
+
+### Development Workflow
+
+```bash
+# Install dependencies
+pnpm install
+
+# Start development mode
+pnpm dev
+
+# Run tests
+pnpm test
+
+# Check types
+pnpm check-types
+
+# Lint code
+pnpm lint
+
+# Format code
+pnpm format
+```
+
+## 📊 Project Statistics
+
+### Code Metrics
+
+- **Total Files**: 100+ TypeScript files
+- **Core Commands**: 2 main commands (refactored to < 400 lines total)
+- **AI Providers**: 20+ supported
+- **Languages**: 18 supported languages
+- **Test Coverage**: Comprehensive unit tests
+
+### Refactoring Achievements
+
+- **GenerateCommit**: 636 lines → 222 lines (65% reduction)
+- **GenerateBranchName**: 674 lines → 146 lines (78% reduction)
+- **Architecture**: Monolithic → Modular (SOLID principles)
+
+## 🙏 Acknowledgments
+
+This project is inspired by and references these excellent open source projects:
+
+- [svn-scm](https://github.com/JohnstonCode/svn-scm) - SVN source control management
+- [vscode](https://github.com/microsoft/vscode) - VS Code editor and API
+- [vscode-gitlens](https://github.com/gitkraken/vscode-gitlens) - Git supercharged
+- [ai-commit](https://github.com/Sitoi/ai-commit) - AI commit generation
+- [vscode-copilot-chat](https://github.com/microsoft/vscode-copilot-chat) - AI chat features
+
+## 📄 License
+
+This project is [MIT](./LICENSE) licensed.
+
+---
+
+**Version**: v0.56.1
+**Last Updated**: December 2024
+**Architecture**: SOLID Principles
+**Status**: ✅ Production Ready
+
+[github-issues-link]: https://github.com/littleCareless/dish-ai-commit/issues
+[github-discussions-link]: https://github.com/littleCareless/dish-ai-commit/discussions
+[github-contributors-link]: https://github.com/littleCareless/dish-ai-commit/graphs/contributors
+[github-forks-link]: https://github.com/littleCareless/dish-ai-commit/network/members
+[github-stars-link]: https://github.com/littleCareless/dish-ai-commit/network/stargazers
+[vscode-marketplace-link]: https://marketplace.visualstudio.com/items?itemName=littleCareless.dish-ai-commit
+[github-license-link]: https://github.com/littleCareless/dish-ai-commit/blob/main/LICENSE
+[github-contributors-shield]: https://img.shields.io/github/contributors/littleCareless/dish-ai-commit?color=c4f042&labelColor=black&style=flat-square
+[github-forks-shield]: https://img.shields.io/github/forks/littleCareless/dish-ai-commit?color=8ae8ff&labelColor=black&style=flat-square
+[github-stars-shield]: https://img.shields.io/github/stars/littleCareless/dish-ai-commit?color=ffcb47&labelColor=black&style=flat-square
+[github-issues-shield]: https://img.shields.io/github/issues/littleCareless/dish-ai-commit?color=ff80eb&labelColor=black&style=flat-square
+[vscode-marketplace-shield]: https://img.shields.io/vscode-marketplace/v/littleCareless.dish-ai-commit.svg?label=vscode%20marketplace&color=blue&labelColor=black&style=flat-square
+[total-installs-shield]: https://img.shields.io/vscode-marketplace/d/littleCareless.dish-ai-commit.svg?&color=greeen&labelColor=black&style=flat-square
+[avarage-rating-shield]: https://img.shields.io/vscode-marketplace/r/littleCareless.dish-ai-commit.svg?&color=green&labelColor=black&style=flat-square
+[github-license-shield]: https://img.shields.io/github/license/littleCareless/dish-ai-commit?color=white&labelColor=black&style=flat-square
