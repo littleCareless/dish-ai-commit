@@ -48,35 +48,8 @@ export class GeneratePRSummaryCommand extends BaseCommand {
           });
           const branches = await scmProvider.getBranches();
           if (branches && branches.length > 0) {
-            const sortedBranches = [...branches];
-            const defaultBaseIndex = sortedBranches.indexOf(baseBranch);
-            if (defaultBaseIndex > -1) {
-              const defaultBranch = sortedBranches.splice(
-                defaultBaseIndex,
-                1
-              )[0];
-              sortedBranches.unshift(defaultBranch);
-            }
-
-            const selectedBranch = await vscode.window.showQuickPick(
-              sortedBranches,
-              {
-                placeHolder: formatMessage(
-                  "pr.summary.select.base.branch.placeholder",
-                  [baseBranch]
-                ),
-                title: getMessage("pr.summary.select.base.branch.title"),
-              }
-            );
-
-            if (selectedBranch) {
-              baseBranch = selectedBranch;
-              this.logger.info(`User selected base branch: ${baseBranch}`);
-            } else {
-              this.logger.info("User cancelled base branch selection.");
-              notify.info("pr.summary.base.branch.selection.cancelled");
-              return;
-            }
+            baseBranch = this.resolveBaseBranch(baseBranch, branches);
+            this.logger.info(`Auto selected base branch: ${baseBranch}`);
           } else {
             this.logger.warn("No branches found to select from.");
             notify.warn("pr.summary.no.branches.found");
@@ -167,5 +140,19 @@ export class GeneratePRSummaryCommand extends BaseCommand {
         }
       }
     );
+  }
+
+  private resolveBaseBranch(configuredBase: string, branches: string[]): string {
+    if (branches.includes(configuredBase)) {
+      return configuredBase;
+    }
+
+    const preferred = ["origin/main", "origin/master", "main", "master"];
+    const candidate = preferred.find((branch) => branches.includes(branch));
+    if (candidate) {
+      return candidate;
+    }
+
+    return branches[0];
   }
 }

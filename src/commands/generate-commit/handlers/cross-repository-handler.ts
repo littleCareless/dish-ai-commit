@@ -55,9 +55,6 @@ export class CrossRepositoryHandler {
       this.logger.info(`  - Files: ${files.slice(0, 5).join(", ")}${files.length > 5 ? "..." : ""}`);
     }
     
-    // 显示开始提示
-    await notify.info("generate.commit.cross.repository.start", [repositoryCount]);
-    
     const results: Array<{ repoPath: string; success: boolean; error?: string }> = [];
     
     try {
@@ -105,9 +102,8 @@ export class CrossRepositoryHandler {
               const errorMessage = error instanceof Error ? error.message : String(error);
               this.logger.error(`Failed to process repository ${repoPath}: ${errorMessage}`);
               results.push({ repoPath, success: false, error: errorMessage });
-              
-              // 继续处理下一个仓库，不中断
-              await notify.warn("generate.commit.repository.failed", [repoName, errorMessage]);
+
+              // 继续处理下一个仓库，不中断（逐仓库错误只写日志，避免通知轰炸）
             }
           }
           
@@ -136,6 +132,14 @@ export class CrossRepositoryHandler {
         await notify.info("generate.commit.cross.repository.success", [successCount]);
       } else {
         await notify.warn("generate.commit.cross.repository.partial", [successCount, failureCount]);
+        const failedRepoNames = results
+          .filter((r) => !r.success)
+          .map((r) => path.basename(r.repoPath))
+          .slice(0, 5)
+          .join(", ");
+        await notify.warn("generate.commit.cross.repository.failed.list", [
+          failedRepoNames,
+        ]);
       }
       
     } catch (error) {
@@ -212,4 +216,3 @@ export class CrossRepositoryHandler {
     this.logger.info(`Commit message generation completed for: ${repoPath} (${duration}ms)`);
   }
 }
-

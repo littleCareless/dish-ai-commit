@@ -490,7 +490,7 @@ export class StreamingGenerationHelper {
     );
     const maxTokens = tokenLimits.input;
     const largePromptAction =
-      configuration.features?.commitMessage?.largePromptAction ?? "ask";
+      configuration.features?.commitMessage?.largePromptAction ?? "useFallback";
 
     if (promptLength <= maxTokens * 0.75) {
       return;
@@ -728,7 +728,7 @@ export class StreamingGenerationHelper {
       const choice = await notify.error(
         "error.request.too.large",
         [error.message],
-        { modal: true, buttons: [switchToLargerModel] },
+        { buttons: [switchToLargerModel] },
       );
       if (choice === switchToLargerModel) {
         // 模型选择已迁移到 webview-ui 设置页面
