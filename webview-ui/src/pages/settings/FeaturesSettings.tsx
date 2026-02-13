@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
+import { Select, SelectOption } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { postMessage } from "@/utils/vscode";
 import { ExtensionResponse, UIRequest } from "@shared/types/messages";
@@ -51,6 +52,7 @@ export const FeaturesSettings: React.FC = () => {
       }
     }
     return {
+      largePromptAction: "ask",
       enableEmoji: true,
       enableMergeCommit: false,
       enableBody: true,
@@ -60,6 +62,8 @@ export const FeaturesSettings: React.FC = () => {
       simplifyDiff: false,
       autoDetectStaged: true,
       fallbackToAll: true,
+      diffTarget: "auto",
+      suppressNonCriticalWarnings: true,
       weeklyReport: true,
       codeReview: true,
       generateBranchName: true,
@@ -95,11 +99,11 @@ export const FeaturesSettings: React.FC = () => {
 
   const handleFeatureToggle = (
     feature: keyof typeof features,
-    enabled: boolean,
+    value: string | boolean,
   ) => {
     setFeatures((prev: any) => {
-      const updated = { ...prev, [feature]: enabled };
-      console.log("[FeaturesSettings] Toggling", feature, "to", enabled);
+      const updated = { ...prev, [feature]: value };
+      console.log("[FeaturesSettings] Toggling", feature, "to", value);
       console.log("[FeaturesSettings] Previous state:", prev);
       console.log("[FeaturesSettings] Sending to backend:", updated);
       postMessage(UIRequest.FeaturesSaveSettings, updated);
@@ -188,6 +192,37 @@ export const FeaturesSettings: React.FC = () => {
                 handleFeatureToggle("useRecentCommitsAsReference", enabled)
               }
             />
+            <div className="flex items-center justify-between py-2">
+              <div className="flex flex-col">
+                <Label htmlFor="large-prompt-action">
+                  {t("commitMessageGeneration.largePromptAction.label")}
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {t("commitMessageGeneration.largePromptAction.description")}
+                </p>
+              </div>
+              <Select
+                value={features.largePromptAction}
+                onValueChange={(value) =>
+                  handleFeatureToggle("largePromptAction", value)
+                }
+                className="w-56"
+              >
+                <SelectOption value="ask">
+                  {t("commitMessageGeneration.largePromptAction.options.ask")}
+                </SelectOption>
+                <SelectOption value="useFallback">
+                  {t(
+                    "commitMessageGeneration.largePromptAction.options.useFallback",
+                  )}
+                </SelectOption>
+                <SelectOption value="continue">
+                  {t(
+                    "commitMessageGeneration.largePromptAction.options.continue",
+                  )}
+                </SelectOption>
+              </Select>
+            </div>
           </CardContent>
         </Card>
 

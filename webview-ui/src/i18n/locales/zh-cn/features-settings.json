@@ -26,6 +26,15 @@
     "useRecentCommitsAsReference": {
       "label": "使用最近的提交作为参考",
       "description": "从最近的提交中学习以匹配项目的风格。"
+    },
+    "largePromptAction": {
+      "label": "提示词过长时的处理方式",
+      "description": "当提示词接近模型上限时，选择默认行为，避免每次弹窗确认。",
+      "options": {
+        "ask": "每次询问",
+        "useFallback": "自动使用备用提示词",
+        "continue": "自动继续"
+      }
     }
   },
   "codeAnalysis": {

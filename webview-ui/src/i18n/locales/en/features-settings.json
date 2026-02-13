@@ -26,6 +26,15 @@
     "useRecentCommitsAsReference": {
       "label": "Use Recent Commits as Reference",
       "description": "Learn from recent commits to match the project's style."
+    },
+    "largePromptAction": {
+      "label": "When Prompt Is Too Large",
+      "description": "Choose a default action when the prompt is near the model limit to avoid repeated popups.",
+      "options": {
+        "ask": "Ask Every Time",
+        "useFallback": "Auto Use Fallback Prompt",
+        "continue": "Auto Continue"
+      }
     }
   },
   "codeAnalysis": {
