@@ -1,10 +1,14 @@
-## 0.56.14 (2026-02-13)
+## 0.56.15 (2026-02-13)
 
 ### ✨ Features
 
-- **commit**: implement largePromptAction logic for prompt size handling ([8d5ccc5](https://github.com/littleCareless/dish-ai-commit/commit/8d5ccc5))
-- **ui**: add largePromptAction select in features settings ([eadad87](https://github.com/littleCareless/dish-ai-commit/commit/eadad87))
-- **config**: add largePromptAction config for prompt size handling ([83b27a9](https://github.com/littleCareless/dish-ai-commit/commit/83b27a9))
+- **notifications**: enhance notification and error handling ([485ce2b](https://github.com/littleCareless/dish-ai-commit/commit/485ce2b))
+- **config**: enhance settings and storage management ([5f17f15](https://github.com/littleCareless/dish-ai-commit/commit/5f17f15))
+- **commit**: enhance cross-repository and streaming handling ([8759b1a](https://github.com/littleCareless/dish-ai-commit/commit/8759b1a))
+
+### ♻️ Code Refactoring
+
+- **branch**: simplify branch name generation flow ([8d4e309](https://github.com/littleCareless/dish-ai-commit/commit/8d4e309))
 
 ### 📝 Documentation
 
@@ -12,7 +16,10 @@
 
 ### 🔧 Chores
 
-- v0.56.13 ([cbad15a](https://github.com/littleCareless/dish-ai-commit/commit/cbad15a))
-- pull request #84 from littleCareless/fix/context-pipeline-reentrancy ([cc50bdd](https://github.com/littleCareless/dish-ai-commit/commit/cc50bdd))
-- pull request #82 from littleCareless/fix/context-pipeline-reentrancy ([75c6a3f](https://github.com/littleCareless/dish-ai-commit/commit/75c6a3f))
+- **i18n**: update English and Chinese translations ([93ce359](https://github.com/littleCareless/dish-ai-commit/commit/93ce359))
+- v0.56.14 ([30311ba](https://github.com/littleCareless/dish-ai-commit/commit/30311ba))
+
+### 💄 Styles
+
+- **ui**: enhance webview UI with new features ([577c0d2](https://github.com/littleCareless/dish-ai-commit/commit/577c0d2))
 
