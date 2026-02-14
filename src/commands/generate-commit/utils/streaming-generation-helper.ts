@@ -11,6 +11,7 @@ import { smartDiffSelector } from "@/scm/smart-diff-selector";
 import { stagedContentDetector } from "@/scm/staged-content-detector";
 import { DiffTarget } from "@/scm/staged-detector-types";
 import { commitCacheService } from "@/services/cache/commit-cache-service";
+import { ContextInspectorService } from "@/services/context-inspector-service";
 import { ContextManager, RequestTooLargeError } from "@/utils/context-manager";
 import { getMessage } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
@@ -41,6 +42,7 @@ export class StreamingGenerationHelper {
   private _baseRequestParams: any | null = null;
   private _lastConfigHash: string | null = null;
   private _lastSystemPrompt: string | null = null;
+  private contextInspectorService = ContextInspectorService.getInstance();
 
   constructor(private logger: Logger) {
     this.contextBuilder = new CommitContextBuilder();
@@ -157,6 +159,15 @@ export class StreamingGenerationHelper {
       modelConfig.selectedModel,
       configuration,
     );
+
+    this.contextInspectorService.storeSnapshot({
+      requestId,
+      provider: modelConfig.provider,
+      model: modelConfig.selectedModel,
+      contextManager,
+      suppressNonCriticalWarnings:
+        configuration.features?.suppressNonCriticalWarnings ?? false,
+    });
 
     // 阶段4: 生成提交消息
     progress.report({

@@ -75,6 +75,46 @@ export interface HunkInfo {
 }
 
 /**
+ * Context build summary used for debugging/inspection.
+ */
+export interface ContextBuildSummary {
+  maxTokens: number;
+  systemPromptTokens: number;
+  reserveTokens: number;
+  remainingTokens: number;
+  rawPromptTokens: number;
+  finalPromptTokens: number;
+}
+
+/**
+ * Per-block build report used by the context inspector.
+ */
+export interface ContextBlockBuildReport {
+  name: string;
+  priority: number;
+  strategy: TruncationStrategy;
+  forceRetained: boolean;
+  included: boolean;
+  truncated: boolean;
+  rawTokens: number;
+  finalTokens: number;
+  rawLength: number;
+  finalLength: number;
+  finalContent: string;
+}
+
+/**
+ * Complete context build report.
+ */
+export interface ContextBuildReport {
+  summary: ContextBuildSummary;
+  blocks: ContextBlockBuildReport[];
+  includedBlockNames: string[];
+  excludedBlockNames: string[];
+  userContent: string;
+}
+
+/**
  * 自定义错误类型，当上下文过大且无法再缩减时抛出
  */
 export class RequestTooLargeError extends Error {

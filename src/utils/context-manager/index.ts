@@ -10,7 +10,10 @@ export {
   TokenCalculationResult,
   BlockPartitionResult,
   BlockProcessingResult,
-  HunkInfo
+  HunkInfo,
+  ContextBuildSummary,
+  ContextBlockBuildReport,
+  ContextBuildReport
 } from '@/utils/context-manager/types';
 
 // 导出常量

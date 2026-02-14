@@ -20,6 +20,7 @@ import { SmartTruncator } from "@/utils/context-manager/smart-truncator";
 import { TokenCalculator } from "@/utils/context-manager/token-calculator";
 import {
   ContextBlock,
+  ContextBuildReport,
   RequestTooLargeError,
   TruncationStrategy,
 } from "@/utils/context-manager/types";
@@ -48,6 +49,9 @@ export class ContextManager {
   private blockProcessor: BlockProcessor;
   private contentBuilder: ContentBuilder;
   private contextLogger: ContextLogger;
+  private lastBuiltMessages: AIMessage[] | null = null;
+  private lastBuildReport: ContextBuildReport | null = null;
+  private isDirty = true;
 
   /**
    * @param model - 使用的 AI 模型
@@ -82,6 +86,7 @@ export class ContextManager {
   addBlock(block: ContextBlock) {
     if (block.content && block.content?.trim().length > 0) {
       this.blocks.push(block);
+      this.invalidateBuildCache();
     }
   }
 
@@ -99,6 +104,7 @@ export class ContextManager {
    */
   setSystemPrompt(systemPrompt: string) {
     this.systemPrompt = systemPrompt;
+    this.invalidateBuildCache();
   }
 
   /**
@@ -200,6 +206,10 @@ export class ContextManager {
    * @returns 经过智能截断和组装的 messages 数组
    */
   public buildMessages(): AIMessage[] {
+    if (!this.isDirty && this.lastBuiltMessages) {
+      return this.lastBuiltMessages;
+    }
+
     const { maxTokens, systemPromptTokens } =
       this.tokenCalculator.calculateInitialTokens(this.systemPrompt);
     let remainingTokens =
@@ -244,10 +254,78 @@ export class ContextManager {
       allExcludedBlockNames,
     );
 
-    return [
+    const messages: AIMessage[] = [
       { role: "system", content: this.systemPrompt },
       { role: "user", content: userContent?.trim() },
     ];
+
+    const rawMessages: AIMessage[] = [
+      { role: "system", content: this.systemPrompt },
+      {
+        role: "user",
+        content: this.contentBuilder.buildRawUserContent(this.blocks),
+      },
+    ];
+
+    const finalBlockByName = new Map<string, ContextBlock>();
+    for (const block of allIncludedBlocks) {
+      if (!finalBlockByName.has(block.name)) {
+        finalBlockByName.set(block.name, block);
+      }
+    }
+
+    this.lastBuildReport = {
+      summary: {
+        maxTokens,
+        systemPromptTokens,
+        reserveTokens: DEFAULT_TOKEN_RESERVE,
+        remainingTokens: processableResult.remainingTokens,
+        rawPromptTokens: this.tokenCalculator.calculateMessagesTokens(rawMessages),
+        finalPromptTokens: this.tokenCalculator.calculateMessagesTokens(messages),
+      },
+      blocks: this.blocks.map((originalBlock) => {
+        const finalBlock = finalBlockByName.get(originalBlock.name);
+        const isTruncated = allIncludedBlockNames.includes(
+          `${originalBlock.name} (Truncated)`,
+        );
+        const isIncluded =
+          allIncludedBlockNames.includes(originalBlock.name) || isTruncated;
+        return {
+          name: originalBlock.name,
+          priority: originalBlock.priority,
+          strategy: originalBlock.strategy,
+          forceRetained: FORCE_RETAIN_BLOCKS.includes(originalBlock.name),
+          included: isIncluded,
+          truncated: isTruncated,
+          rawTokens: this.tokenCalculator.calculateContentTokens(
+            originalBlock.content,
+          ),
+          finalTokens: finalBlock
+            ? this.tokenCalculator.calculateContentTokens(finalBlock.content)
+            : 0,
+          rawLength: originalBlock.content.length,
+          finalLength: finalBlock?.content.length ?? 0,
+          finalContent: finalBlock?.content ?? "",
+        };
+      }),
+      includedBlockNames: allIncludedBlockNames,
+      excludedBlockNames: allExcludedBlockNames,
+      userContent,
+    };
+    this.lastBuiltMessages = messages;
+    this.isDirty = false;
+
+    return messages;
+  }
+
+  /**
+   * 获取最近一次构建的上下文报告（若未构建会自动构建一次）
+   */
+  public getLastBuildReport(): ContextBuildReport {
+    if (!this.lastBuildReport) {
+      this.buildMessages();
+    }
+    return this.lastBuildReport!;
   }
 
   /**
@@ -260,6 +338,16 @@ export class ContextManager {
       this.tokenCalculator,
       this.suppressNonCriticalWarnings,
     );
-    return smartTruncator.smartTruncate();
+    const truncated = smartTruncator.smartTruncate();
+    if (truncated) {
+      this.invalidateBuildCache();
+    }
+    return truncated;
+  }
+
+  private invalidateBuildCache(): void {
+    this.lastBuiltMessages = null;
+    this.lastBuildReport = null;
+    this.isDirty = true;
   }
 }

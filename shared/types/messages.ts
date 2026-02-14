@@ -70,6 +70,10 @@ export enum UIRequest {
   UsageResetStats = "usage.resetStats",
   UsageAddTestData = "usage.addTestData",
 
+  // ===== Context Module =====
+  ContextGetLatest = "context.getLatest",
+  ContextRebuildPreview = "context.rebuildPreview",
+
   // ===== WeeklyReport Module =====
   WeeklyReportGenerateTeam = "weeklyReport.generateTeam",
   WeeklyReportGetUsers = "weeklyReport.getUsers",
@@ -183,6 +187,10 @@ export enum ExtensionResponse {
   UsageStatsReset = "usage.statsReset",
   UsageTestDataAdded = "usage.testDataAdded",
 
+  // ===== Context Module =====
+  ContextLatestLoaded = "context.latestLoaded",
+  ContextPreviewUpdated = "context.previewUpdated",
+
   // ===== WeeklyReport Module =====
   WeeklyReportUsersListLoaded = "weeklyReport.usersListLoaded",
   WeeklyReportGenerated = "weeklyReport.reportGenerated",
@@ -239,6 +247,48 @@ export interface UIRequestMessage<T = any> extends BaseMessage<T> {
 /** 扩展发送的响应消息 */
 export interface ExtensionResponseMessage<T = any> extends BaseMessage<T> {
   command: ExtensionResponse;
+}
+
+// ============================================================================
+// Context Inspector Types
+// ============================================================================
+
+export interface ContextBlockSnapshot {
+  name: string;
+  priority: number;
+  strategy: string;
+  forceRetained: boolean;
+  included: boolean;
+  truncated: boolean;
+  rawTokens: number;
+  finalTokens: number;
+  rawLength: number;
+  finalLength: number;
+  contentPreview: string;
+}
+
+export interface ContextSummarySnapshot {
+  requestId: string;
+  provider: string;
+  modelId: string;
+  maxInputTokens: number;
+  systemPromptTokens: number;
+  rawPromptTokens: number;
+  finalPromptTokens: number;
+  reserveTokens: number;
+  generatedAt: number;
+}
+
+export interface ContextPreviewSnapshot {
+  summary: ContextSummarySnapshot;
+  blocks: ContextBlockSnapshot[];
+  includedBlockNames: string[];
+  excludedBlockNames: string[];
+  finalUserContent: string;
+}
+
+export interface ContextRebuildPreviewRequest {
+  exclude?: string[];
 }
 
 // ============================================================================
