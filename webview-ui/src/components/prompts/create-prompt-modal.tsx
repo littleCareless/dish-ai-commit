@@ -30,6 +30,7 @@ import {
   SUB_CATEGORY_DISPLAY_NAMES,
 } from "@shared/types/prompts";
 import React, { useCallback } from "react";
+import { useTranslation } from "react-i18next";
 import { useForm, useWatch } from "react-hook-form";
 import * as z from "zod";
 
@@ -59,6 +60,8 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
   isOpen,
   onClose,
 }) => {
+  const { t } = useTranslation("prompts-page");
+
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -223,7 +226,9 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
               />
               {availableVariables.length > 0 && (
                 <div className="p-3 bg-[var(--vscode-editor-inactiveSelectionBackground)] rounded-md">
-                  <div className="text-sm font-medium mb-2">可用变量：</div>
+                  <div className="text-sm font-medium mb-2">
+                    {t("availableVariables")}:
+                  </div>
                   <div className="flex flex-wrap gap-2">
                     {availableVariables.map((v) => (
                       <span
@@ -233,7 +238,9 @@ export const CreatePromptModal: React.FC<CreatePromptModalProps> = ({
                           const current = form.getValues("content");
                           form.setValue("content", current + `{{${v.name}}}`);
                         }}
-                        title={v.description}
+                        title={t(`variables.${v.name}`, {
+                          defaultValue: v.description,
+                        })}
                       >
                         {`{{${v.name}}}`}
                       </span>

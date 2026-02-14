@@ -111,7 +111,7 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
       {availableVariables.length > 0 && (
         <div className="p-2 bg-[var(--vscode-editor-inactiveSelectionBackground)] rounded-md border border-[var(--vscode-widget-border)] flex-shrink-0">
           <div className="text-xs font-medium mb-1 text-[var(--vscode-foreground)]">
-            可用变量：
+            {t("availableVariables")}:
           </div>
           <div className="flex flex-wrap gap-1.5">
             {availableVariables.map((v) => (
@@ -127,7 +127,11 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
                 <TooltipContent side="top">
                   <div className="max-w-[250px]">
                     <div className="font-semibold mb-1">{v.name}</div>
-                    <div className="text-xs opacity-80">{v.description}</div>
+                    <div className="text-xs opacity-80">
+                      {t(`variables.${v.name}`, {
+                        defaultValue: v.description,
+                      })}
+                    </div>
                   </div>
                 </TooltipContent>
               </Tooltip>
