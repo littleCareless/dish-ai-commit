@@ -43,13 +43,9 @@ export const PromptInfoPanel: React.FC<PromptInfoPanelProps> = ({
 
   // 检查活跃状态（支持子分类级别）
   const subCategory = getSubCategoryFromKey(selectedKey);
-  let isActive = false;
-  if (subCategory) {
-    isActive =
-      activePromptsBySubCategory[category]?.[subCategory] === selectedKey;
-  } else {
-    isActive = activePromptsByCategory[category] === selectedKey;
-  }
+  const isActive = subCategory
+    ? activePromptsBySubCategory[category]?.[subCategory] === selectedKey
+    : activePromptsByCategory[category] === selectedKey;
 
   // 从新的 activeSources 结构中获取源信息（按 promptKey 存储）
   const source = activeSources[selectedKey];

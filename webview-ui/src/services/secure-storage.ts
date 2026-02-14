@@ -17,6 +17,12 @@ import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 export class SecureStorage {
   private static instance: SecureStorage;
 
+  private createError(message: string, cause: unknown): Error {
+    const error = new Error(message);
+    (error as Error & { cause?: unknown }).cause = cause;
+    return error;
+  }
+
   static getInstance(): SecureStorage {
     if (!SecureStorage.instance) {
       SecureStorage.instance = new SecureStorage();
@@ -71,8 +77,9 @@ export class SecureStorage {
       console.log(`Provider config saved: ${providerId}`);
     } catch (error) {
       console.error("Failed to save provider config:", error);
-      throw new Error(
+      throw this.createError(
         `保存配置失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        error,
       );
     }
   }
@@ -140,8 +147,9 @@ export class SecureStorage {
       console.log(`Provider config deleted: ${providerId}`);
     } catch (error) {
       console.error("Failed to delete provider config:", error);
-      throw new Error(
+      throw this.createError(
         `删除配置失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        error,
       );
     }
   }
@@ -281,8 +289,9 @@ export class SecureStorage {
       });
     } catch (error) {
       console.error("Failed to set configuration value:", error);
-      throw new Error(
+      throw this.createError(
         `配置保存失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        error,
       );
     }
   }
@@ -359,8 +368,9 @@ export class SecureStorage {
       });
     } catch (error) {
       console.error("Failed to set secret value:", error);
-      throw new Error(
+      throw this.createError(
         `密钥保存失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        error,
       );
     }
   }
@@ -435,8 +445,9 @@ export class SecureStorage {
       console.log("All provider configs cleared");
     } catch (error) {
       console.error("Failed to clear all configs:", error);
-      throw new Error(
+      throw this.createError(
         `清除配置失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        error,
       );
     }
   }

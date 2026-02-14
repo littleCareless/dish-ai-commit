@@ -56,15 +56,9 @@ export const PromptList: React.FC<PromptListProps> = ({
   const renderActiveIndicator = (category: PromptCategory, key: string) => {
     // 检查是否有子分类映射
     const subCategory = getSubCategoryFromKey(key);
-    let isActive = false;
-
-    if (subCategory) {
-      // 子分类级别的活跃检查
-      isActive = activePromptsBySubCategory[category]?.[subCategory] === key;
-    } else {
-      // 传统的分类级别活跃检查
-      isActive = activePromptsByCategory[category] === key;
-    }
+    const isActive = subCategory
+      ? activePromptsBySubCategory[category]?.[subCategory] === key
+      : activePromptsByCategory[category] === key;
 
     if (!isActive) return null;
 
@@ -131,12 +125,9 @@ export const PromptList: React.FC<PromptListProps> = ({
     // 检查活跃状态（支持子分类级别）
     // 优先使用 detail.subCategory，如果没有则从 key 映射获取
     const subCategory = detail.subCategory || getSubCategoryFromKey(key);
-    let isActive = false;
-    if (subCategory) {
-      isActive = activePromptsBySubCategory[category]?.[subCategory] === key;
-    } else {
-      isActive = activePromptsByCategory[category] === key;
-    }
+    const isActive = subCategory
+      ? activePromptsBySubCategory[category]?.[subCategory] === key
+      : activePromptsByCategory[category] === key;
 
     return (
       <div

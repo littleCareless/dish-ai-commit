@@ -49,7 +49,7 @@ interface UsePromptsReturn {
   selectedWorkspace: string;
   categoryFilter: PromptCategory | "all";
   guideExpanded: Record<string, boolean>;
-  textareaRef: React.RefObject<HTMLTextAreaElement>;
+  textareaRef: React.RefObject<HTMLTextAreaElement | null>;
 
   // Actions
   handleSelectChange: (key: string) => void;

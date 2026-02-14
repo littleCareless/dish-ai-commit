@@ -21,7 +21,7 @@ interface PromptEditorProps {
   currentContent: string;
   activePromptsByCategory: Record<PromptCategory, string>;
   activePromptsBySubCategory: Record<PromptCategory, Record<string, string>>;
-  textareaRef: React.RefObject<HTMLTextAreaElement>;
+  textareaRef: React.RefObject<HTMLTextAreaElement | null>;
   availableVariables: PromptVariable[];
   onContentChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   onInsertVariable: (variableName: string) => void;
@@ -59,13 +59,9 @@ export const PromptEditor: React.FC<PromptEditorProps> = ({
   const category = getCategoryFromKey(selectedKey);
   // 检查活跃状态（支持子分类级别）
   const subCategory = getSubCategoryFromKey(selectedKey);
-  let isActive = false;
-  if (subCategory) {
-    isActive =
-      activePromptsBySubCategory[category]?.[subCategory] === selectedKey;
-  } else {
-    isActive = activePromptsByCategory[category] === selectedKey;
-  }
+  const isActive = subCategory
+    ? activePromptsBySubCategory[category]?.[subCategory] === selectedKey
+    : activePromptsByCategory[category] === selectedKey;
   const detail = prompts[selectedKey];
 
   return (
