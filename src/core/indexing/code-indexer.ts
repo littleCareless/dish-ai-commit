@@ -89,7 +89,7 @@ export class CodeIndexer {
     return derivedPath;
   }
 
-  private getDocumentation(node: treeSitter.SyntaxNode): string | undefined {
+  private getDocumentation(node: treeSitter.Node): string | undefined {
     let previousSibling = node.previousNamedSibling;
     if (
       previousSibling &&
@@ -114,7 +114,7 @@ export class CodeIndexer {
   }
 
   private extractSignature(
-    node: treeSitter.SyntaxNode,
+    node: treeSitter.Node,
     fileContent: string
   ): string | undefined {
     // Logic from original CodeIndexer, adapted for web-tree-sitter nodes
@@ -134,7 +134,7 @@ export class CodeIndexer {
       }
       if (node.type === "arrow_function") {
         const arrowOperator = node.children.find(
-          (c: treeSitter.SyntaxNode) => c.type === "=>"
+          (c: treeSitter.Node) => c.type === "=>"
         );
         if (arrowOperator) {
           return fileContent
@@ -151,7 +151,7 @@ export class CodeIndexer {
     return undefined;
   }
 
-  private extractName(node: treeSitter.SyntaxNode): string | null {
+  private extractName(node: treeSitter.Node): string | null {
     let nameNode = node.childForFieldName("name");
 
     if (
@@ -197,7 +197,7 @@ export class CodeIndexer {
 
   private mapNodeToSemanticType(
     nodeType: string,
-    node: treeSitter.SyntaxNode
+    node: treeSitter.Node
   ): string | null {
     // This mapping depends on the tree-sitter grammar and desired SemanticBlock types
     // It should align with what language.query captures.
@@ -284,6 +284,9 @@ export class CodeIndexer {
     }
 
     const tree = languageInfo.parser.parse(content);
+    if (!tree) {
+      return [];
+    }
     const captures = languageInfo.query.captures(tree.rootNode);
 
     const results: SemanticBlock[] = [];
@@ -329,7 +332,7 @@ export class CodeIndexer {
           nodeTypeString === "variable_declaration")
       ) {
         const declarators = node.children.filter(
-          (child: treeSitter.SyntaxNode) => child.type === "variable_declarator"
+          (child: treeSitter.Node) => child.type === "variable_declarator"
         );
         for (const declarator of declarators) {
           const varNameNode = declarator.childForFieldName("name");
@@ -591,7 +594,7 @@ export class CodeIndexer {
   }
 
   private _chunkNodeAsSemanticBlocks(
-    node: treeSitter.SyntaxNode,
+    node: treeSitter.Node,
     filePath: string,
     modulePath: string,
     semanticType: string, // Original semantic type of the node
