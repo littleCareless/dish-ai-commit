@@ -1,4 +1,4 @@
-## 0.56.19 (2026-02-14)
+## 0.56.20 (2026-02-14)
 
 ### ✨ Features
 
@@ -11,6 +11,6 @@
 
 ### 🔧 Chores
 
+- v0.56.19 ([87b0714](https://github.com/littleCareless/dish-ai-commit/commit/87b0714))
 - **chore**: update dev port ([ee66f46](https://github.com/littleCareless/dish-ai-commit/commit/ee66f46))
-- v0.56.18 ([fc26a28](https://github.com/littleCareless/dish-ai-commit/commit/fc26a28))
 
