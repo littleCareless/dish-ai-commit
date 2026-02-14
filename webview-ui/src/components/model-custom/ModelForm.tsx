@@ -25,7 +25,6 @@ export function ModelForm({
   onCancel,
   isLoading,
 }: ModelFormProps) {
-  // eslint-disable-next-line react-hooks/incompatible-library -- react-hook-form's useWatch cannot be memoized
   const { t } = useTranslation("model-custom");
 
   // Create dynamic schema with i18n validation messages
@@ -72,6 +71,32 @@ export function ModelForm({
   });
   const vision = useWatch({ name: "vision", control: form.control });
   const deprecated = useWatch({ name: "deprecated", control: form.control });
+  const modelIdValue = useWatch({ name: "modelId", control: form.control });
+  const modelNameValue = useWatch({
+    name: "modelName",
+    control: form.control,
+  });
+  const inputTokensValue = useWatch({
+    name: "inputTokens",
+    control: form.control,
+  });
+  const outputTokensValue = useWatch({
+    name: "outputTokens",
+    control: form.control,
+  });
+  const contextWindowValue = useWatch({
+    name: "contextWindow",
+    control: form.control,
+  });
+  const notesValue = useWatch({ name: "notes", control: form.control });
+  const pricingInputValue = useWatch({
+    name: "pricingInput",
+    control: form.control,
+  });
+  const pricingOutputValue = useWatch({
+    name: "pricingOutput",
+    control: form.control,
+  });
 
   const handleFormSubmit = async () => {
     console.log("handleFormSubmit called");
@@ -124,7 +149,7 @@ export function ModelForm({
             {t("modelId")}
           </label>
           <Input
-            value={form.watch("modelId")}
+            value={modelIdValue ?? ""}
             onInput={(e: any) => {
               const value = e.target?.value || "";
               form.setValue("modelId", value);
@@ -143,7 +168,7 @@ export function ModelForm({
           {t("modelName")}
         </label>
         <Input
-          value={form.watch("modelName")}
+          value={modelNameValue ?? ""}
           onInput={(e: any) => {
             const value = e.target?.value || "";
             form.setValue("modelName", value);
@@ -163,7 +188,7 @@ export function ModelForm({
           </label>
           <Input
             type="number"
-            value={form.watch("inputTokens") || ""}
+            value={inputTokensValue ?? ""}
             onInput={(e: any) => {
               const value = e.target?.value || "";
               form.setValue("inputTokens", value ? Number(value) : 0);
@@ -180,7 +205,7 @@ export function ModelForm({
           </label>
           <Input
             type="number"
-            value={form.watch("outputTokens") || ""}
+            value={outputTokensValue ?? ""}
             onInput={(e: any) => {
               const value = e.target?.value || "";
               form.setValue("outputTokens", value ? Number(value) : 0);
@@ -201,7 +226,7 @@ export function ModelForm({
           </label>
           <Input
             type="number"
-            value={form.watch("contextWindow") || ""}
+            value={contextWindowValue ?? ""}
             onInput={(e: any) => {
               const value = e.target?.value || "";
               form.setValue("contextWindow", value ? Number(value) : undefined);
@@ -217,7 +242,7 @@ export function ModelForm({
             {t("notes")}
           </label>
           <Textarea
-            value={form.watch("notes") || ""}
+            value={notesValue ?? ""}
             onInput={(e: any) => {
               const value = e.target?.value || "";
               form.setValue("notes", value);
@@ -265,7 +290,7 @@ export function ModelForm({
           </label>
           <Input
             type="number"
-            value={form.watch("pricingInput") || ""}
+            value={pricingInputValue ?? ""}
             onInput={(e: any) => {
               const value = e.target?.value || "";
               form.setValue("pricingInput", value ? Number(value) : undefined);
@@ -282,7 +307,7 @@ export function ModelForm({
           </label>
           <Input
             type="number"
-            value={form.watch("pricingOutput") || ""}
+            value={pricingOutputValue ?? ""}
             onInput={(e: any) => {
               const value = e.target?.value || "";
               form.setValue("pricingOutput", value ? Number(value) : undefined);

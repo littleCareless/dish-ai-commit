@@ -103,7 +103,7 @@ export const DynamicProviderForm: React.FC<DynamicProviderFormProps> = ({
         });
       }
     },
-    [onChange, onValidate, validateField],
+    [onChange, onValidate, t, validateField],
   );
 
   // 初始验证

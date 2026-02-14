@@ -1,4 +1,5 @@
-import { VSCodeProvider, useVSCodeContext } from "@/contexts/VSCodeContext";
+import { VSCodeProvider } from "@/contexts/VSCodeContext";
+import { useVSCodeContext } from "@/contexts/useVSCodeContext";
 import { ConfigProvider } from "@arco-design/web-react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import React, { useCallback, useEffect, useState } from "react";

@@ -110,8 +110,12 @@ export const ModelCustomSettings: React.FC = () => {
     // This avoids the "setState in effect" warning while maintaining behavior
     const initLoad = () => {
       setIsLoading(true);
-      postMessage(UIRequest.ModelCustomGetAll);
-      postMessage(UIRequest.ModelCustomGetProviders);
+      postMessage(UIRequest.ModelCustomGetAll, undefined, {
+        allowDuplicate: true,
+      });
+      postMessage(UIRequest.ModelCustomGetProviders, undefined, {
+        allowDuplicate: true,
+      });
     };
     // Defer to next tick to avoid synchronous state update in effect
     setTimeout(initLoad, 0);
@@ -119,7 +123,9 @@ export const ModelCustomSettings: React.FC = () => {
 
   const loadData = useCallback(() => {
     setIsLoading(true);
-    postMessage(UIRequest.ModelCustomGetAll);
+    postMessage(UIRequest.ModelCustomGetAll, undefined, {
+      allowDuplicate: true,
+    });
   }, []);
 
   const handleSave = useCallback(

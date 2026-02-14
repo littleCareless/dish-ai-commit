@@ -1,4 +1,4 @@
-import { useVSCodeContext } from "@/contexts/VSCodeContext";
+import { useVSCodeContext } from "@/contexts/useVSCodeContext";
 import { useTheme } from "@/hooks/useTheme";
 import React from "react";
 import { MemoryRouter, Navigate, Route, Routes } from "react-router-dom";

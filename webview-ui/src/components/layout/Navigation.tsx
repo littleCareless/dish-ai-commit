@@ -4,7 +4,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { useExtensionState } from "@/context/ExtensionStateContext";
+import { useExtensionState } from "@/context/extension-state/useExtensionState";
 import { routes } from "@/router/routes";
 import { cn } from "@/utils/cn";
 import {

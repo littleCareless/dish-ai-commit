@@ -1,7 +1,7 @@
 import { useCallback, useState, useRef, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
 import { ChevronDown } from "lucide-react";
-import { useVSCodeContext } from "@/contexts/VSCodeContext";
+import { useVSCodeContext } from "@/contexts/useVSCodeContext";
 import WelcomeHero from "@/components/welcome/WelcomeHero";
 import FeatureShowcase from "@/components/welcome/FeatureShowcase";
 import SetupWizard from "@/components/welcome/SetupWizard";

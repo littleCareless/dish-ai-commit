@@ -204,7 +204,7 @@ const TipCard: React.FC<{ tip: TipItem }> = ({ tip }) => {
 import { Hero } from "@/components/welcome/hero";
 import { Tips } from "@/components/welcome/tips";
 import { useNavigate } from "react-router-dom";
-import { useVSCodeContext } from "@/contexts/VSCodeContext";
+import { useVSCodeContext } from "@/contexts/useVSCodeContext";
 
 export default function WelcomePage() {
   const navigate = useNavigate();
