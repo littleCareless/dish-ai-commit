@@ -95,122 +95,122 @@ export async function loadRequiredLanguageParsers(
       case "jsx":
       case "json":
         language = await loadLanguage("javascript");
-        query = language.query(javascriptQuery);
+        query = new Query(language, javascriptQuery);
         break;
       case "ts":
         language = await loadLanguage("typescript");
-        query = language.query(typescriptQuery);
+        query = new Query(language, typescriptQuery);
         break;
       case "tsx":
         language = await loadLanguage("tsx");
-        query = language.query(tsxQuery);
+        query = new Query(language, tsxQuery);
         break;
       case "py":
         language = await loadLanguage("python");
-        query = language.query(pythonQuery);
+        query = new Query(language, pythonQuery);
         break;
       case "rs":
         language = await loadLanguage("rust");
-        query = language.query(rustQuery);
+        query = new Query(language, rustQuery);
         break;
       case "go":
         language = await loadLanguage("go");
-        query = language.query(goQuery);
+        query = new Query(language, goQuery);
         break;
       case "cpp":
       case "hpp":
         language = await loadLanguage("cpp");
-        query = language.query(cppQuery);
+        query = new Query(language, cppQuery);
         break;
       case "c":
       case "h":
         language = await loadLanguage("c");
-        query = language.query(cQuery);
+        query = new Query(language, cQuery);
         break;
       case "cs":
         language = await loadLanguage("c_sharp");
-        query = language.query(csharpQuery);
+        query = new Query(language, csharpQuery);
         break;
       case "rb":
         language = await loadLanguage("ruby");
-        query = language.query(rubyQuery);
+        query = new Query(language, rubyQuery);
         break;
       case "java":
         language = await loadLanguage("java");
-        query = language.query(javaQuery);
+        query = new Query(language, javaQuery);
         break;
       case "php":
         language = await loadLanguage("php");
-        query = language.query(phpQuery);
+        query = new Query(language, phpQuery);
         break;
       case "swift":
         language = await loadLanguage("swift");
-        query = language.query(swiftQuery);
+        query = new Query(language, swiftQuery);
         break;
       case "kt":
       case "kts":
         language = await loadLanguage("kotlin");
-        query = language.query(kotlinQuery);
+        query = new Query(language, kotlinQuery);
         break;
       case "css":
         language = await loadLanguage("css");
-        query = language.query(cssQuery);
+        query = new Query(language, cssQuery);
         break;
       case "html":
         language = await loadLanguage("html");
-        query = language.query(htmlQuery);
+        query = new Query(language, htmlQuery);
         break;
       case "ml":
       case "mli":
         language = await loadLanguage("ocaml");
-        query = language.query(ocamlQuery);
+        query = new Query(language, ocamlQuery);
         break;
       case "scala":
         language = await loadLanguage("scala");
-        query = language.query(luaQuery); // Temporarily use Lua query until Scala is implemented
+        query = new Query(language, luaQuery); // Temporarily use Lua query until Scala is implemented
         break;
       case "sol":
         language = await loadLanguage("solidity");
-        query = language.query(solidityQuery);
+        query = new Query(language, solidityQuery);
         break;
       case "toml":
         language = await loadLanguage("toml");
-        query = language.query(tomlQuery);
+        query = new Query(language, tomlQuery);
         break;
       case "vue":
         language = await loadLanguage("vue");
-        query = language.query(vueQuery);
+        query = new Query(language, vueQuery);
         break;
       case "lua":
         language = await loadLanguage("lua");
-        query = language.query(luaQuery);
+        query = new Query(language, luaQuery);
         break;
       case "rdl":
         language = await loadLanguage("systemrdl");
-        query = language.query(systemrdlQuery);
+        query = new Query(language, systemrdlQuery);
         break;
       case "tla":
         language = await loadLanguage("tlaplus");
-        query = language.query(tlaPlusQuery);
+        query = new Query(language, tlaPlusQuery);
         break;
       case "zig":
         language = await loadLanguage("zig");
-        query = language.query(zigQuery);
+        query = new Query(language, zigQuery);
         break;
       case "ejs":
       case "erb":
         language = await loadLanguage("embedded_template");
         parserKey = "embedded_template"; // Use same key for both extensions
-        query = language.query(embeddedTemplateQuery);
+        query = new Query(language, embeddedTemplateQuery);
         break;
       case "el":
         language = await loadLanguage("elisp");
-        query = language.query(elispQuery);
+        query = new Query(language, elispQuery);
         break;
       case "ex":
       case "exs":
         language = await loadLanguage("elixir");
-        query = language.query(elixirQuery);
+        query = new Query(language, elixirQuery);
         break;
       default:
         continue;
