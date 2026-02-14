@@ -1,6 +1,7 @@
 import { AIProviderFactory } from "@/ai/ai-provider-factory";
 import { ModelPickerService } from "@/services/core/model-picker-service";
 import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
+import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
 import { getMessage } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
 
@@ -24,11 +25,13 @@ export class ModelConfigurationManager {
     const model = selection.model;
     const providerConfig = selection.config as any;
 
+    const preferences = PreferencesSettingsManager.getInstance().getSettings();
+
     // 构建完整配置
     const fullConfig = {
       ...providerConfig,
       base: {
-        language: profile.preferences?.language || "Simplified Chinese",
+        language: preferences.language || "Simplified Chinese",
       },
       features: {
         commitFormat: {
@@ -37,7 +40,7 @@ export class ModelConfigurationManager {
           enableBody: featureSettings.enableBody,
         },
       },
-      preferences: profile.preferences || {},
+      preferences,
     };
 
     // 使用统一的验证服务

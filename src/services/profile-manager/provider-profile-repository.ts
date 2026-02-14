@@ -99,7 +99,7 @@ export class ProviderProfileRepository {
     try {
       await this.context.secrets.store(
         this.secretsKey,
-        JSON.stringify(providerProfiles, null, 2)
+        JSON.stringify(this.sanitizeProfiles(providerProfiles), null, 2)
       );
     } catch (error) {
       throw new Error(`Failed to write provider profiles to secrets: ${error}`);
@@ -108,5 +108,24 @@ export class ProviderProfileRepository {
 
   public async resetAll(): Promise<void> {
     await this.context.secrets.delete(this.secretsKey);
+  }
+
+  private sanitizeProfiles(profiles: ProviderProfiles): ProviderProfiles {
+    const sanitized: ProviderProfiles = {
+      ...profiles,
+      apiConfigs: Object.fromEntries(
+        Object.entries(profiles.apiConfigs).map(([key, value]) => [
+          key,
+          this.stripPreferences(value),
+        ])
+      ),
+    };
+
+    return sanitized;
+  }
+
+  private stripPreferences(profile: ProviderSettingsWithId): ProviderSettingsWithId {
+    const { preferences, ...rest } = profile;
+    return rest as ProviderSettingsWithId;
   }
 }
