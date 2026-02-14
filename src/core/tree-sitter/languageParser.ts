@@ -28,17 +28,17 @@ import {
   zigQuery,
 } from "@/core/tree-sitter/queries";
 import * as path from "path";
-import Parser from "web-tree-sitter";
+import { Language, Parser, Query } from "web-tree-sitter";
 
 export interface LanguageParser {
   [key: string]: {
     parser: Parser;
-    query: Parser.Query;
+    query: Query;
   };
 }
 
 async function loadLanguage(langName: string) {
-  return await Parser.Language.load(
+  return await Language.load(
     path.join(__dirname, "wasm", `tree-sitter-${langName}.wasm`)
   );
 }
@@ -87,8 +87,8 @@ export async function loadRequiredLanguageParsers(
   );
   const parsers: LanguageParser = {};
   for (const ext of extensionsToLoad) {
-    let language: Parser.Language;
-    let query: Parser.Query;
+    let language: Language;
+    let query: Query;
     let parserKey = ext; // Default to using extension as key
     switch (ext) {
       case "js":
