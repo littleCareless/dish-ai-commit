@@ -4,6 +4,7 @@ import { DISH_CONFIG_PREFIX } from "@/config/constants";
 import { ISCMProvider, SCMFactory } from "@/scm/scm-provider";
 import { SCMDetectorService } from "@/services/core/scm-detector-service";
 import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
+import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
 import { getMessage } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
 import { notify } from "@/utils/notification/notification-manager";
@@ -105,11 +106,13 @@ export abstract class BaseCommand {
       throw new Error(getMessage("profile.incomplete"));
     }
 
+    const preferences = PreferencesSettingsManager.getInstance().getSettings();
+
     // 构建完整配置
     const fullConfig = {
       ...config,
       base: {
-        language: profile.preferences.language || "Simplified Chinese",
+        language: preferences.language || "Simplified Chinese",
       },
       features: {
         suppressNonCriticalWarnings:
@@ -148,7 +151,7 @@ export abstract class BaseCommand {
           headBranch: undefined,
         },
       },
-      preferences: profile.preferences,
+      preferences,
     };
 
     this.logger.info(

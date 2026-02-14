@@ -3,10 +3,9 @@
  * 将 Models.dev 数据与现有的模型注册表系统整合
  */
 
+import { ModelSpec } from "@/ai/model-registry/model-specs";
 import { ModelsDevFetcher } from "@/ai/model-registry/models-dev-fetcher";
 import { ModelsDevModel, ModelsDevProvider } from "@/ai/model-registry/models-dev-types";
-import { ModelSpec } from "@/ai/model-registry/model-specs";
-import { AIModel } from "@/ai/types";
 
 /**
  * 转换 Models.dev 模型到内部 ModelSpec 格式
@@ -242,7 +241,7 @@ export class ModelsDevIntegration {
     // 按成本筛选
     if (options?.maxCost !== undefined) {
       models = models.filter((model) => {
-        if (!model.cost) return false;
+        if (!model.cost) {return false;}
         const avgCost = ((model.cost.input || 0) + (model.cost.output || 0)) / 2;
         return avgCost <= options.maxCost!;
       });

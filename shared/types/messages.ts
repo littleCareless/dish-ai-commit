@@ -234,6 +234,7 @@ export interface BaseMessage<T = any> {
   command: AllMessageType;
   data?: T;
   requestId?: string; // 用于请求-响应匹配
+  messageId?: string; // 用于消息去重
   payload?: T; // 保持向后兼容
   key?: string; // 某些消息需要的键
   error?: string; // 错误消息

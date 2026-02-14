@@ -1,7 +1,12 @@
 import { useCallback, useEffect } from "react";
 
 declare const acquireVsCodeApi: () => {
-  postMessage(message: { command: string; data?: unknown }): void;
+  postMessage(message: {
+    command: string;
+    data?: unknown;
+    requestId?: string;
+    messageId?: string;
+  }): void;
   getState<T>(): T | undefined;
   setState<T>(newState: T): void;
 };
@@ -28,9 +33,27 @@ function getVscodeApi() {
 let lastMessage: { command: string; data?: unknown } | null = null;
 let lastMessageTime = 0;
 
-export function postMessage(command: string, data?: unknown) {
+interface PostMessageOptions {
+  requestId?: string;
+  allowDuplicate?: boolean;
+  messageId?: string;
+}
+
+export function postMessage(
+  command: string,
+  data?: unknown,
+  options?: PostMessageOptions,
+) {
   const now = Date.now();
+  const { allowDuplicate = false, requestId } = options ?? {};
+  const providedMessageId = options?.messageId;
+  const messageId =
+    providedMessageId ??
+    (allowDuplicate
+      ? `${command}-${now}-${Math.random().toString(16).slice(2)}`
+      : undefined);
   if (
+    !allowDuplicate &&
     lastMessage &&
     now - lastMessageTime < 1000 && // 1秒内防抖
     lastMessage.command === command &&
@@ -44,6 +67,8 @@ export function postMessage(command: string, data?: unknown) {
   if (vscode) {
     vscode.postMessage({
       command,
+      messageId,
+      requestId,
       data,
     });
     lastMessage = { command, data };
