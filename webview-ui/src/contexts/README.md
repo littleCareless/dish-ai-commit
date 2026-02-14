@@ -218,10 +218,8 @@ function AnyComponent() {
 **实现**:
 
 ```tsx
-import {
-  useExtensionState,
-  ExtensionStateContextProvider,
-} from "../context/ExtensionStateContext";
+import { useExtensionState } from "../context/extension-state/useExtensionState";
+import { ExtensionStateContextProvider } from "../context/ExtensionStateContext";
 
 export const useVSCodeContext = () => {
   const state = useExtensionState();
@@ -258,7 +256,7 @@ interface ExtensionState {
 **使用示例**:
 
 ```tsx
-import { useVSCodeContext } from "@/contexts/VSCodeContext";
+import { useVSCodeContext } from "@/contexts/useVSCodeContext";
 
 function App() {
   const { isReady, initialData } = useVSCodeContext();

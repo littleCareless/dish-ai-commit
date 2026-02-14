@@ -1,10 +1,4 @@
-import React, {
-  createContext,
-  useCallback,
-  useContext,
-  useEffect,
-  useState,
-} from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
 import {
   ExtensionResponse,
@@ -15,101 +9,18 @@ import i18n from "../i18n/setup";
 import { convertTextMateToHljs } from "../utils/textMateToHljs";
 import { postMessage } from "../utils/vscode";
 
-// --- Type Definitions ---
-
-export interface StyleRule {
-  color?: string;
-  fontStyle?: string;
-  fontWeight?: string;
-  textDecoration?: string;
-}
-
-export type HljsTheme = Record<string, StyleRule>;
-
-// Adapted for the svn-commit-gen project. These types would typically be shared
-// with the extension backend.
-
-export type ProviderSettings = Record<
-  string,
-  {
-    apiKey?: string;
-    model?: string;
-    baseUrl?: string;
-  }
->;
-
-export type ProviderSettingsEntry = {
-  name: string;
-  provider: string;
-};
-
-export type TelemetrySetting = "unset" | "enabled" | "disabled";
-
-export type Command = {
-  id: string;
-  name: string;
-  description?: string;
-};
-
-// The state broadcast from the extension to the webview
-export interface ExtensionState {
-  apiConfiguration: ProviderSettings;
-  version: string;
-  language: string;
-  customInstructions?: string;
-  listApiConfigMeta: ProviderSettingsEntry[];
-  currentApiConfigName: string;
-  telemetrySetting: TelemetrySetting;
-  machineId?: string;
-  diffEnabled: boolean;
-  pinnedApiConfigs?: Record<string, boolean>;
-  historyPreviewCollapsed?: boolean;
-  reasoningBlockCollapsed?: boolean;
-  includeCurrentTime?: boolean;
-  includeCurrentCost?: boolean;
-}
-
-// The full context type, including state and setters
-export interface ExtensionStateContextType extends ExtensionState {
-  didHydrateState: boolean;
-  showWelcome: boolean;
-  isFirstInstall: boolean; // 是否为首次安装
-  theme: HljsTheme | undefined; // The converted TextMate theme for highlighting
-  filePaths: string[];
-  openedTabs: Array<{ label: string; isActive: boolean; path?: string }>;
-  commands: Command[];
-
-  // Setters
-  setApiConfiguration: (config: ProviderSettings) => void;
-  setCustomInstructions: (value?: string) => void;
-  setCurrentApiConfigName: (value: string) => void;
-  setTelemetrySetting: (value: TelemetrySetting) => void;
-  setDiffEnabled: (value: boolean) => void;
-  togglePinnedApiConfig: (configName: string) => void;
-  setHistoryPreviewCollapsed: (value: boolean) => void;
-  setReasoningBlockCollapsed: (value: boolean) => void;
-  setIncludeCurrentTime: (value: boolean) => void;
-  setIncludeCurrentCost: (value: boolean) => void;
-  setLanguage: (value: string) => void;
-}
-
-export const ExtensionStateContext = createContext<
-  ExtensionStateContextType | undefined
->(undefined);
-
-export const mergeExtensionState = (
-  prevState: ExtensionState,
-  newState: Partial<ExtensionState>,
-) => {
-  return {
-    ...prevState,
-    ...newState,
-    apiConfiguration: {
-      ...prevState.apiConfiguration,
-      ...newState.apiConfiguration,
-    },
-  };
-};
+import {
+  ExtensionStateContext,
+  mergeExtensionState,
+} from "./extension-state/core";
+import type {
+  Command,
+  ExtensionState,
+  ExtensionStateContextType,
+  HljsTheme,
+  ProviderSettings,
+  ProviderSettingsEntry,
+} from "./extension-state/types";
 
 export const ExtensionStateContextProvider: React.FC<{
   children: React.ReactNode;
@@ -308,16 +219,4 @@ export const ExtensionStateContextProvider: React.FC<{
       {children}
     </ExtensionStateContext.Provider>
   );
-};
-
-export const useExtensionState = () => {
-  const context = useContext(ExtensionStateContext);
-
-  if (context === undefined) {
-    throw new Error(
-      "useExtensionState must be used within an ExtensionStateContextProvider",
-    );
-  }
-
-  return context;
 };
