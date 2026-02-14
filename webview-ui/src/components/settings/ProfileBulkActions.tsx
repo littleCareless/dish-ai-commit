@@ -187,10 +187,10 @@ export const ProfileBulkActions: React.FC<ProfileBulkActionsProps> = ({
               variant="outline"
               onClick={() => setShowDeleteDialog(false)}
             >
-              {tCommon("cancel")}
+              {tCommon("actions.cancel")}
             </Button>
             <Button variant="destructive" onClick={confirmBulkDelete}>
-              {tCommon("delete")}
+              {tCommon("actions.delete")}
             </Button>
           </DialogFooter>
         </DialogContent>

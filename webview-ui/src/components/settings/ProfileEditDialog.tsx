@@ -57,6 +57,7 @@ export const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
   onSave,
 }) => {
   const { t } = useTranslation("profile-settings");
+  const { t: tCommon } = useTranslation("common");
 
   const profileSchema = useMemo(() => createProfileSchema(t), [t]);
 
@@ -158,7 +159,7 @@ export const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
 
             <DialogFooter>
               <Button variant="outline" onClick={onClose}>
-                {t("common.cancel", { ns: "translation" })}
+                {tCommon("actions.cancel")}
               </Button>
               <Button
                 onClick={() => {
@@ -166,7 +167,7 @@ export const ProfileEditDialog: React.FC<ProfileEditDialogProps> = ({
                 }}
               >
                 {profile
-                  ? t("common.saveChanges", { ns: "translation" })
+                  ? t("profileEditDialog.saveButton")
                   : t("profileEditDialog.createButton")}
               </Button>
             </DialogFooter>

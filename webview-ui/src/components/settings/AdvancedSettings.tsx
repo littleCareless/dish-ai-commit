@@ -12,7 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Slider } from "@/components/ui/slider";
 import { UserPreferences } from "@/types/settings";
-import React, { useEffect } from "react";
+import React, { useEffect, useMemo, useRef } from "react";
 import { useForm, useWatch } from "react-hook-form";
 import { useTranslation } from "react-i18next";
 
@@ -32,15 +32,30 @@ export const AdvancedSettings: React.FC<AdvancedSettingsProps> = ({
   const form = useForm<UserPreferences>({
     defaultValues: preferences,
   });
+  const lastResetSnapshotRef = useRef<string>("");
+  const lastEmittedSnapshotRef = useRef<string>("");
+  const preferencesSnapshot = useMemo(
+    () => JSON.stringify(preferences),
+    [preferences],
+  );
 
   // 当 preferences prop 变化时同步表单值
   useEffect(() => {
+    if (lastResetSnapshotRef.current === preferencesSnapshot) {
+      return;
+    }
+    lastResetSnapshotRef.current = preferencesSnapshot;
     form.reset(preferences);
-  }, [preferences, form]);
+  }, [form, preferences, preferencesSnapshot]);
 
   // 监听表单值变化并触发 onChange - using useWatch for React Compiler compatibility
   const watchedValues = useWatch({ control: form.control });
   useEffect(() => {
+    const nextSnapshot = JSON.stringify(watchedValues ?? {});
+    if (lastEmittedSnapshotRef.current === nextSnapshot) {
+      return;
+    }
+    lastEmittedSnapshotRef.current = nextSnapshot;
     onChange(watchedValues as UserPreferences);
   }, [watchedValues, onChange]);
 

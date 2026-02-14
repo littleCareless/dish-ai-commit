@@ -19,12 +19,14 @@ import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 import { Settings as SettingsIcon } from "lucide-react";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useLocation } from "react-router-dom";
 import { FeaturesSettings } from "./FeaturesSettings";
 import { ModelCustomSettings } from "./ModelCustomSettings";
 import { ProvidersSettings } from "./ProvidersSettings";
 
 export const SettingsPage: React.FC = () => {
   const { t } = useTranslation("settings-page");
+  const location = useLocation();
   // Centralized state management
   const [allProfiles, setAllProfiles] = useState<Profile[]>([]);
   const [activeProfile, setActiveProfile] = useState<Profile | null>(null);
@@ -107,6 +109,20 @@ export const SettingsPage: React.FC = () => {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  useEffect(() => {
+    const tab = new URLSearchParams(location.search).get("tab");
+    const validTabs = new Set([
+      "providers",
+      "preferences",
+      "features",
+      "advanced",
+      "model-custom",
+    ]);
+    if (tab && validTabs.has(tab)) {
+      setSelectedTab(tab);
+    }
+  }, [location.search]);
 
   const handleProfileCreate = () => {
     setDialogEditingProfile(null);

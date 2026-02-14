@@ -174,8 +174,8 @@ export const ModelCustomSettings: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <div>
+      <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+        <div className="min-w-0">
           <h2 className="text-lg font-semibold">{t("title")}</h2>
           <p
             className="text-sm"
@@ -184,14 +184,21 @@ export const ModelCustomSettings: React.FC = () => {
             {t("description")}
           </p>
         </div>
-        <div className="flex gap-2">
-          <Button onClick={() => setIsDialogOpen(true)}>
+        <div className="flex w-full flex-wrap items-center gap-2 md:w-auto md:justify-end">
+          <Button onClick={() => setIsDialogOpen(true)} className="shrink-0">
             <Plus className="w-4 h-4 mr-2" /> {t("addModel")}
           </Button>
-          <Button variant="outline" onClick={handleExport}>
+          <Button variant="outline" onClick={handleExport} className="shrink-0">
             <Download className="w-4 h-4 mr-2" /> {t("export")}
           </Button>
-          <label className="inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 px-4 py-2 cursor-pointer">
+          <label
+            className="inline-flex h-8 shrink-0 cursor-pointer items-center justify-center whitespace-nowrap rounded-sm px-3 text-sm font-medium transition-opacity hover:opacity-90"
+            style={{
+              backgroundColor: "var(--vscode-button-background)",
+              color: "var(--vscode-button-foreground)",
+              border: "1px solid var(--vscode-button-border, transparent)",
+            }}
+          >
             <Upload className="w-4 h-4 mr-2" />
             {t("import")}
             <input
