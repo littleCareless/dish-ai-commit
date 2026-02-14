@@ -2,6 +2,7 @@ import { VSCodeCheckbox } from "@vscode/webview-ui-toolkit/react";
 import React from "react";
 
 interface CheckboxProps {
+  id?: string;
   checked?: boolean;
   indeterminate?: boolean;
   disabled?: boolean;
@@ -11,6 +12,7 @@ interface CheckboxProps {
 }
 
 const Checkbox: React.FC<CheckboxProps> = ({
+  id,
   checked = false,
   indeterminate = false,
   disabled = false,
@@ -31,6 +33,7 @@ const Checkbox: React.FC<CheckboxProps> = ({
 
   return (
     <VSCodeCheckbox
+      id={id}
       checked={checked}
       indeterminate={indeterminate}
       disabled={disabled}
