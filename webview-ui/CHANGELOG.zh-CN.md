@@ -1,18 +1,15 @@
-## 0.56.18 (2026-02-14)
+## 0.56.19 (2026-02-14)
 
-### ♻️ Code Refactoring
+### ✨ Features
 
-- **context**: simplify ExtensionStateContext and VSCodeContext ([5b6d5e6](https://github.com/littleCareless/dish-ai-commit/commit/5b6d5e6))
-- **provider**: optimize provider profile repository ([7fdec8c](https://github.com/littleCareless/dish-ai-commit/commit/7fdec8c))
-- **settings**: clean up settings service code ([8c72e4d](https://github.com/littleCareless/dish-ai-commit/commit/8c72e4d))
+- **prompts**: integrate i18n into prompt components ([45f9059](https://github.com/littleCareless/dish-ai-commit/commit/45f9059))
+- **i18n**: add new prompt variable translations ([0a6f8b2](https://github.com/littleCareless/dish-ai-commit/commit/0a6f8b2))
+
+### 🐛 Bug Fixes
+
+- **prompts**: improve variable deduplication logic ([a1fefb4](https://github.com/littleCareless/dish-ai-commit/commit/a1fefb4))
 
 ### 🔧 Chores
 
-- v0.56.17 ([6b1ceeb](https://github.com/littleCareless/dish-ai-commit/commit/6b1ceeb))
-- **chore**: update tsconfig build info ([0fe57ea](https://github.com/littleCareless/dish-ai-commit/commit/0fe57ea))
-- **chore**: update utilities and handlers ([b79c0fa](https://github.com/littleCareless/dish-ai-commit/commit/b79c0fa))
-
-### 💄 Styles
-
-- **pages**: update pages and routing ([9830492](https://github.com/littleCareless/dish-ai-commit/commit/9830492))
-- **ui**: simplify toggle and navigation-menu components ([46ad433](https://github.com/littleCareless/dish-ai-commit/commit/46ad433))
+- **chore**: update dev port ([ee66f46](https://github.com/littleCareless/dish-ai-commit/commit/ee66f46))
+- v0.56.18 ([fc26a28](https://github.com/littleCareless/dish-ai-commit/commit/fc26a28))
