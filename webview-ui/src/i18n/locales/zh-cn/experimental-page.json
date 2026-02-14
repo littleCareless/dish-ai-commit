@@ -1,4 +1,54 @@
 {
-  "title": "实验性",
-  "description": "这里是实验性功能页面。"
+  "title": "实验策略",
+  "description": "这里仅管理策略预设与快捷操作，详细功能开关统一在 设置 -> 功能 中调整。",
+  "notice": {
+    "title": "避免与功能设置重复",
+    "description": "实验页提供一键预设与导航，不提供逐项开关编辑，保证配置入口唯一。"
+  },
+  "current": {
+    "title": "当前策略",
+    "description": "系统会根据关键实验项自动识别当前策略。"
+  },
+  "preset": {
+    "safe": "稳健",
+    "balanced": "平衡",
+    "aggressive": "激进",
+    "custom": "自定义"
+  },
+  "presetDesc": {
+    "safe": "保守策略：优先可控与稳定，最小化实验行为。",
+    "balanced": "默认策略：兼顾稳定性和生成质量。",
+    "aggressive": "探索策略：开启更多实验能力，适合验证与试点。"
+  },
+  "automation": {
+    "title": "自动化策略包",
+    "description": "一键调整分支处理和告警噪音策略。",
+    "guided": "引导模式",
+    "semiAuto": "半自动",
+    "auto": "全自动"
+  },
+  "capability": {
+    "title": "能力组合包",
+    "description": "按场景启用一组命令能力。",
+    "reviewOnly": "仅审查",
+    "full": "全能力",
+    "minimal": "最小集"
+  },
+  "quickNav": {
+    "title": "快捷入口",
+    "description": "快速跳转到高频页面。",
+    "context": "上下文",
+    "indexing": "代码索引",
+    "usage": "用量",
+    "prompts": "提示词"
+  },
+  "actions": {
+    "openFeatures": "前往 设置 -> 功能",
+    "apply": "应用预设",
+    "applying": "应用中..."
+  },
+  "footer": {
+    "title": "说明",
+    "description": "需要逐项微调时，请直接在 设置 -> 功能 页面操作。"
+  }
 }

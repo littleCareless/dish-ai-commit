@@ -32,6 +32,7 @@
       "nameMin": "配置名称至少需要 2 个字符",
       "nameMax": "配置名称不能超过 50 个字符",
       "descriptionMax": "描述不能超过 200 个字符"
-    }
+    },
+    "saveButton": "保存修改"
   }
 }

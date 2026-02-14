@@ -56,6 +56,9 @@
     "name": "Name",
     "input": "Input",
     "output": "Output",
+    "contextWindow": "Context Window",
+    "capabilities": "Capabilities",
+    "none": "None",
     "actions": "Actions"
   }
 }

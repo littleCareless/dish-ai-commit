@@ -1,4 +1,32 @@
 {
   "title": "上下文",
-  "description": "这里是上下文管理页面。"
+  "description": "查看最近一次提交生成的上下文构成和 Token 使用情况。",
+  "empty": "暂无上下文快照。请先生成一次提交信息后再查看。",
+  "model": "模型",
+  "generatedAt": "生成时间",
+  "tokens": {
+    "rawFinal": "原始 / 最终 Token",
+    "systemReserve": "System / 预留 Token"
+  },
+  "actions": {
+    "refresh": "刷新",
+    "rebuild": "重算预览"
+  },
+  "blocks": {
+    "title": "上下文区块",
+    "included": "已包含",
+    "excluded": "已排除",
+    "truncated": "已截断",
+    "forceRetained": "强制保留",
+    "exclude": "排除"
+  },
+  "detail": {
+    "title": "区块详情",
+    "empty": "请选择左侧区块查看详情。",
+    "emptyContent": "暂无内容。",
+    "tokenStats": "Token: {{raw}} -> {{final}}"
+  },
+  "finalPrompt": {
+    "title": "最终 User Prompt 预览"
+  }
 }

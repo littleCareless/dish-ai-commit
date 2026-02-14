@@ -1,4 +1,54 @@
 {
-  "title": "Experimental",
-  "description": "This is the experimental features page."
+  "title": "Experimental Strategy",
+  "description": "This page provides strategy presets and quick actions. Detailed toggles remain in Settings -> Features.",
+  "notice": {
+    "title": "Avoid duplicate config entry points",
+    "description": "Experimental page offers one-click presets and navigation only, while per-option editing stays in settings."
+  },
+  "current": {
+    "title": "Current Strategy",
+    "description": "The current strategy is inferred from key experimental fields."
+  },
+  "preset": {
+    "safe": "Safe",
+    "balanced": "Balanced",
+    "aggressive": "Aggressive",
+    "custom": "Custom"
+  },
+  "presetDesc": {
+    "safe": "Conservative defaults focused on stability and predictability.",
+    "balanced": "Default profile balancing output quality and control.",
+    "aggressive": "Exploration mode enabling more experimental behavior."
+  },
+  "automation": {
+    "title": "Automation Bundles",
+    "description": "One-click branch behavior and warning-noise strategy.",
+    "guided": "Guided",
+    "semiAuto": "Semi Auto",
+    "auto": "Full Auto"
+  },
+  "capability": {
+    "title": "Capability Bundles",
+    "description": "Enable a command set for your current workflow.",
+    "reviewOnly": "Review Only",
+    "full": "Full Set",
+    "minimal": "Minimal Set"
+  },
+  "quickNav": {
+    "title": "Quick Navigation",
+    "description": "Jump directly to high-frequency pages.",
+    "context": "Context",
+    "indexing": "Indexing",
+    "usage": "Usage",
+    "prompts": "Prompts"
+  },
+  "actions": {
+    "openFeatures": "Open Settings -> Features",
+    "apply": "Apply Preset",
+    "applying": "Applying..."
+  },
+  "footer": {
+    "title": "Note",
+    "description": "For per-option tuning, use the Settings -> Features page directly."
+  }
 }

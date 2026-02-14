@@ -32,6 +32,7 @@
       "nameMin": "Profile name must be at least 2 characters",
       "nameMax": "Profile name must be less than 50 characters",
       "descriptionMax": "Description must be less than 200 characters"
-    }
+    },
+    "saveButton": "Save Changes"
   }
 }

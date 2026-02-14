@@ -1,4 +1,32 @@
 {
   "title": "Context",
-  "description": "This is the context management page."
+  "description": "Inspect the latest commit-generation context and token usage.",
+  "empty": "No context snapshot yet. Generate a commit message once, then return here.",
+  "model": "Model",
+  "generatedAt": "Generated At",
+  "tokens": {
+    "rawFinal": "Raw / Final Tokens",
+    "systemReserve": "System / Reserve Tokens"
+  },
+  "actions": {
+    "refresh": "Refresh",
+    "rebuild": "Rebuild Preview"
+  },
+  "blocks": {
+    "title": "Context Blocks",
+    "included": "Included",
+    "excluded": "Excluded",
+    "truncated": "Truncated",
+    "forceRetained": "Force Retained",
+    "exclude": "Exclude"
+  },
+  "detail": {
+    "title": "Block Detail",
+    "empty": "Select a block to inspect details.",
+    "emptyContent": "No content available.",
+    "tokenStats": "Tokens: {{raw}} -> {{final}}"
+  },
+  "finalPrompt": {
+    "title": "Final User Prompt Preview"
+  }
 }

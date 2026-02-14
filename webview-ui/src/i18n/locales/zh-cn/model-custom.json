@@ -56,6 +56,9 @@
     "name": "名称",
     "input": "输入",
     "output": "输出",
+    "contextWindow": "上下文窗口",
+    "capabilities": "能力",
+    "none": "无",
     "actions": "操作"
   }
 }
