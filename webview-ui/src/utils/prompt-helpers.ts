@@ -105,5 +105,30 @@ export const getAvailableVariables = (
   const categoryVars = CATEGORY_VARIABLES[category] || [];
   const promptVars = PROMPT_VARIABLES[key as PromptKey] || [];
 
-  return [...new Set([...categoryVars, ...promptVars])];
+  // De-duplicate by variable name; prompt-level metadata overrides category-level metadata.
+  const variableMap = new Map<string, PromptVariable>();
+
+  for (const variable of categoryVars) {
+    const normalizedName = variable.name.trim();
+    if (!normalizedName) continue;
+
+    if (!variableMap.has(normalizedName)) {
+      variableMap.set(normalizedName, {
+        ...variable,
+        name: normalizedName,
+      });
+    }
+  }
+
+  for (const variable of promptVars) {
+    const normalizedName = variable.name.trim();
+    if (!normalizedName) continue;
+
+    variableMap.set(normalizedName, {
+      ...variable,
+      name: normalizedName,
+    });
+  }
+
+  return Array.from(variableMap.values());
 };
