@@ -2,15 +2,16 @@
 
 ## 🚀 优先级排序 (数字越小优先级越高)
 
-| 优先级 | 区块名称 | 强制保留 | 作用 |
-|--------|----------|----------|------|
-| **100** | `code-changes` | ✅ | **核心**：AI 分析的主要对象 |
-| **750** | `custom-instructions` | ❌ | 用户自定义指令 |
-| **800** | `original-code` | ❌ | 原始代码对比 |
-| **900** | `reminder` | ✅ | 系统提醒和指导 |
-| **950** | `user-commits` | ✅ | 用户提交历史（用户开启） |
-| **950** | `recent-commits` | ✅ | 仓库提交历史（用户开启） |
-| **320** | `similar-code` | ❌ | 相似代码上下文 |
+| 优先级  | 区块名称              | 强制保留 | 作用                        |
+| ------- | --------------------- | -------- | --------------------------- |
+| **100** | `code-changes`        | ✅       | **核心**：AI 分析的主要对象 |
+| **320** | `similar-code`        | ❌       | 相似代码上下文              |
+| **800** | `original-code`       | ❌       | 原始代码对比                |
+| **850** | `global-context`      | ❌       | 分层提交全局上下文          |
+| **900** | `reminder`            | ✅       | 系统提醒和指导              |
+| **950** | `custom-instructions` | ❌       | 用户自定义指令              |
+| **950** | `user-commits`        | ✅       | 用户提交历史（用户开启）    |
+| **950** | `recent-commits`      | ✅       | 仓库提交历史（用户开启）    |
 
 ## 🎯 关键设计原则
 
@@ -23,11 +24,11 @@
 
 ```typescript
 FORCE_RETAIN_BLOCKS = [
-  "code-changes",      // 核心分析对象
-  "user-commits",      // 用户主动开启
-  "recent-commits",    // 用户主动开启  
-  "reminder"           // 系统指导
-]
+  "code-changes", // 核心分析对象
+  "user-commits", // 用户主动开启
+  "recent-commits", // 用户主动开启
+  "reminder", // 系统指导
+];
 ```
 
 ## 🔄 截断策略
@@ -37,4 +38,4 @@ FORCE_RETAIN_BLOCKS = [
 
 ---
 
-*详细文档请参考: [context-blocks.md](./context-blocks.md)*
+_详细文档请参考: [context-blocks.md](./context-blocks.md)_
