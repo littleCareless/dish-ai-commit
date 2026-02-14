@@ -74,6 +74,17 @@ function getNewVersion() {
   log("📦 获取新版本号...");
 
   try {
+    const currentVersion = getCurrentVersion(ROOT_DIR);
+    const commitsSinceLastTag = getCommitsSinceLastTag();
+
+    if (commitsSinceLastTag.length === 0) {
+      log("⚠️  最新 tag 之后没有新提交，跳过 release", "yellow");
+      return null;
+    }
+
+    const commitType = getCommitType(commitsSinceLastTag);
+    log(`检测到变更类型: ${commitType}`, "cyan");
+
     // 使用 standard-version 预览版本号
     const output = execSync(
       "npx standard-version --dry-run --skip.tag --skip.commit",
@@ -89,19 +100,28 @@ function getNewVersion() {
       /bumping version in package\.json from (\d+\.\d+\.\d+) to (\d+\.\d+\.\d+)/,
     );
     if (!match) {
-      // 如果没有版本变更，尝试从 commit 获取类型
-      const commitType = getCommitType();
-      log(`检测到变更类型: ${commitType}`, "cyan");
-
-      // 手动计算版本号
-      const currentVersion = getCurrentVersion(ROOT_DIR);
+      // 如果没有版本变更，按 commit 类型手动计算版本号
       const newVersion = bumpVersion(currentVersion, commitType);
       log(`当前版本: ${currentVersion} → 新版本: ${newVersion}`, "yellow");
       return newVersion;
     }
 
-    const currentVersion = match[1];
-    const newVersion = match[2];
+    const stdCurrentVersion = match[1];
+    const stdNewVersion = match[2];
+    const standardBumpType = inferBumpType(stdCurrentVersion, stdNewVersion);
+    const resolvedBumpType = pickHigherBump(commitType, standardBumpType);
+    const newVersion =
+      resolvedBumpType === standardBumpType
+        ? stdNewVersion
+        : bumpVersion(currentVersion, resolvedBumpType);
+
+    if (resolvedBumpType !== standardBumpType) {
+      log(
+        `⚠️  standard-version 检测为 ${standardBumpType}，已按 commit 修正为 ${resolvedBumpType}`,
+        "yellow",
+      );
+    }
+
     log(`当前版本: ${currentVersion} → 新版本: ${newVersion}`, "yellow");
     return newVersion;
   } catch (error) {
@@ -116,17 +136,72 @@ function getCurrentVersion(dir) {
   return pkg.version;
 }
 
+function getLastTag() {
+  try {
+    return execSync("git describe --tags --abbrev=0", {
+      encoding: "utf8",
+    }).trim();
+  } catch {
+    return "";
+  }
+}
+
+function getCommitsSinceLastTag() {
+  const lastTag = getLastTag();
+  const range = lastTag ? `${lastTag}..HEAD` : "";
+  const cmd = lastTag
+    ? `git log ${range} --pretty=format:%s`
+    : "git log --pretty=format:%s -n 100";
+
+  const commits = execSync(cmd, { encoding: "utf8" })
+    .split("\n")
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  // 忽略 release 自身提交，避免重复 bump patch
+  return commits.filter(
+    (msg) => !msg.match(/^(🚀\s+)?chore\(release\):\s*v\d+\.\d+\.\d+$/),
+  );
+}
+
 // 获取提交类型
-function getCommitType() {
-  const commits = execSync("git log --oneline -n 10", {
-    encoding: "utf8",
-  }).trim();
+function getCommitType(commits = []) {
+  const text = Array.isArray(commits) ? commits.join("\n") : String(commits);
 
-  if (commits.includes("feat:") || commits.includes("✨")) return "minor";
-  if (commits.includes("fix:") || commits.includes("🐛")) return "patch";
-  if (commits.includes("BREAKING")) return "major";
+  if (
+    /BREAKING[\s_-]CHANGES?/i.test(text) ||
+    /(^|\s)\w+(\([^)]+\))?!:\s*/m.test(text)
+  ) {
+    return "major";
+  }
 
-  return "patch"; // 默认为 patch
+  if (/^\s*✨/m.test(text) || /(^|\s)feat(\([^)]+\))?:\s*/m.test(text)) {
+    return "minor";
+  }
+
+  if (/^\s*🐛/m.test(text) || /(^|\s)fix(\([^)]+\))?:\s*/m.test(text)) {
+    return "patch";
+  }
+
+  // 其他类型（refactor/chore/docs 等）默认按 patch 处理
+  return "patch";
+}
+
+function inferBumpType(currentVersion, newVersion) {
+  const [currentMajor, currentMinor, currentPatch] = currentVersion
+    .split(".")
+    .map(Number);
+  const [newMajor, newMinor, newPatch] = newVersion.split(".").map(Number);
+
+  if (newMajor > currentMajor) return "major";
+  if (newMinor > currentMinor) return "minor";
+  if (newPatch > currentPatch) return "patch";
+  return "patch";
+}
+
+function pickHigherBump(left, right) {
+  const rank = { patch: 1, minor: 2, major: 3 };
+  return rank[left] >= rank[right] ? left : right;
 }
 
 // 版本号递增
@@ -635,13 +710,26 @@ function main() {
     // 2. 获取新版本号
     const newVersion = getNewVersion();
 
+    if (!newVersion) {
+      log("ℹ️  没有可发布的新变更，流程结束", "cyan");
+      return;
+    }
+
+    const currentVersion = getCurrentVersion(ROOT_DIR);
+
     if (isDryRun) {
       log("\n📋 DRY RUN 预览:", "cyan");
       log(`   - 新版本号: ${newVersion}`, "cyan");
       log(`   - 将更新文件:`, "cyan");
-      log(`     • package.json (0.56.1 → ${newVersion})`, "cyan");
-      log(`     • src/package.json (0.56.1 → ${newVersion})`, "cyan");
-      log(`     • webview-ui/package.json (0.56.1 → ${newVersion})`, "cyan");
+      log(`     • package.json (${currentVersion} → ${newVersion})`, "cyan");
+      log(
+        `     • src/package.json (${currentVersion} → ${newVersion})`,
+        "cyan",
+      );
+      log(
+        `     • webview-ui/package.json (${currentVersion} → ${newVersion})`,
+        "cyan",
+      );
       log(`     • src/CHANGELOG.zh-CN.md`, "cyan");
       log(`     • webview-ui/CHANGELOG.zh-CN.md`, "cyan");
       log(`     • CHANGELOG.zh-CN.md (合并)`, "cyan");

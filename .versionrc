@@ -1,4 +1,5 @@
 {
+  "preset": "conventional-changelog-gitmoji-config",
   "header": "# Changelog \n\n[English](CHANGELOG.md) | [简体中文](CHANGELOG.zh-CN.md) \n\nAll notable changes to this project will be documented in this file. \n\nThe format is based on [Keep a Changelog](https://keepachangelog.com/zh-CN/1.0.0/)。",
   "types": [
     {
