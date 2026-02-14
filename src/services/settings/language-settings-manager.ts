@@ -1,10 +1,11 @@
-import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
+import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
 import { Logger } from "@/utils/logger";
+import { UserPreferences } from "@/types/settings";
 
 const logger = Logger.getInstance("Dish AI Commit Gen");
 
 export interface LanguageSettings {
-  language: string;
+  language: UserPreferences["language"];
 }
 
 /**
@@ -14,8 +15,9 @@ export class LanguageSettingsManager {
   /**
    * 获取当前语言设置
    */
-  public static getLanguage(profile: any): string {
-    return profile?.preferences?.language || "Simplified Chinese";
+  public static getLanguage(): UserPreferences["language"] {
+    const settings = PreferencesSettingsManager.getInstance().getSettings();
+    return settings.language || "Simplified Chinese";
   }
 
   /**
@@ -23,36 +25,18 @@ export class LanguageSettingsManager {
    * @param language 新的语言值
    */
   public static async updateLanguage(
-    profileManager: ProfileManagerService,
-    profile: any,
-    language: string
+    language: UserPreferences["language"]
   ): Promise<void> {
-    if (!profile) {
-      logger.error("Profile not found in updateLanguage", {
-        operation: "updateLanguage",
-      });
-      throw new Error("Profile not found");
-    }
-
-    // 更新 profile 中的 language
-    const updatedProfile = {
-      ...profile,
-      preferences: {
-        ...profile.preferences,
-        language: language,
-      },
-      updatedAt: new Date().toISOString(),
-    };
-
-    await profileManager.saveProfile(updatedProfile);
+    await PreferencesSettingsManager.getInstance().updateSettings({
+      language,
+    });
   }
 
   /**
    * 获取语言设置的有效范围信息
-   * @returns 设置的来源（现在总是返回 "profile"）
+   * @returns 设置的来源（现在总是返回 "preferences"）
    */
   public static getLanguageScope(): string {
-    // 现在所有配置都存储在 profile 中
-    return "profile";
+    return "preferences";
   }
 }

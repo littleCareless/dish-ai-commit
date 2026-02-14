@@ -125,6 +125,8 @@ export class StorageTest {
 
     // 测试保存
     await preferences.save({
+      temperature: 0.5,
+      verbosity: 1,
       language: "English",
       commitTemperature: 0.8,
       reviewTemperature: 0.9,
@@ -295,6 +297,8 @@ export class StorageTest {
   private async testExportImport(): Promise<void> {
     // 准备测试数据
     await this.storageManager.preferences.save({
+      temperature: 0.6,
+      verbosity: 2,
       language: "Japanese",
       commitTemperature: 0.5,
       reviewTemperature: 0.6,

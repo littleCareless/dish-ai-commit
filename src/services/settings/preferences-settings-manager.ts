@@ -1,3 +1,4 @@
+import { PreferencesStorage } from "@/services/storage/preferences-storage";
 import { DISH_CONFIG_PREFIX } from "@/config/constants";
 import {
   DEFAULT_USER_PREFERENCES,
@@ -5,18 +6,17 @@ import {
 } from "@/types/settings";
 import * as vscode from "vscode";
 
-const clonePreferences = <T>(value: T): T =>
+const clonePreferences = <T extends object>(value: T): T =>
   JSON.parse(JSON.stringify(value));
 
 export class PreferencesSettingsManager {
   private static instance: PreferencesSettingsManager;
-  private static readonly STORAGE_KEY = `${DISH_CONFIG_PREFIX}_preferences_settings`;
+  private readonly preferencesStorage: PreferencesStorage;
+  private _settings: UserPreferences = clonePreferences(DEFAULT_USER_PREFERENCES);
 
-  private _settings: UserPreferences = clonePreferences(
-    DEFAULT_USER_PREFERENCES,
-  );
-
-  private constructor(private context: vscode.ExtensionContext) {}
+  private constructor(private context: vscode.ExtensionContext) {
+    this.preferencesStorage = PreferencesStorage.getInstance(context);
+  }
 
   public static getInstance(
     context?: vscode.ExtensionContext
@@ -50,39 +50,43 @@ export class PreferencesSettingsManager {
   }
 
   private async loadSettings(): Promise<void> {
-    const storedSettings = this.context.globalState.get<UserPreferences>(
-      PreferencesSettingsManager.STORAGE_KEY
+    const legacyKey = `${DISH_CONFIG_PREFIX}_preferences_settings`;
+    const legacySettings = this.context.globalState.get<UserPreferences>(
+      legacyKey
     );
 
-    if (storedSettings) {
-      this._settings = {
+    if (legacySettings) {
+      const merged = {
         ...clonePreferences(DEFAULT_USER_PREFERENCES),
-        ...storedSettings,
+        ...legacySettings,
         skipDiffFileExtensions:
-          storedSettings.skipDiffFileExtensions ??
+          legacySettings.skipDiffFileExtensions ??
           DEFAULT_USER_PREFERENCES.skipDiffFileExtensions,
         skipDiffPathPatterns:
-          storedSettings.skipDiffPathPatterns ??
+          legacySettings.skipDiffPathPatterns ??
           DEFAULT_USER_PREFERENCES.skipDiffPathPatterns,
         maxDiffFileSizeKB:
-          storedSettings.maxDiffFileSizeKB ??
+          legacySettings.maxDiffFileSizeKB ??
           DEFAULT_USER_PREFERENCES.maxDiffFileSizeKB,
         autoDetectBinaryFiles:
-          storedSettings.autoDetectBinaryFiles ??
+          legacySettings.autoDetectBinaryFiles ??
           DEFAULT_USER_PREFERENCES.autoDetectBinaryFiles,
         respectGitAttributes:
-          storedSettings.respectGitAttributes ??
+          legacySettings.respectGitAttributes ??
           DEFAULT_USER_PREFERENCES.respectGitAttributes,
       };
-    } else {
-      this._settings = clonePreferences(DEFAULT_USER_PREFERENCES);
+
+      await this.preferencesStorage.save(merged);
+      await this.context.globalState.update(legacyKey, undefined);
+      this._settings = clonePreferences(merged);
+      return;
     }
+
+    const storedSettings = await this.preferencesStorage.load();
+    this._settings = clonePreferences(storedSettings);
   }
 
   private async saveSettings(): Promise<void> {
-    await this.context.globalState.update(
-      PreferencesSettingsManager.STORAGE_KEY,
-      this._settings
-    );
+    await this.preferencesStorage.save(this._settings);
   }
 }

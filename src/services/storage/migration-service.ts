@@ -1,5 +1,8 @@
 import { DISH_CONFIG_PREFIX } from "@/config/constants";
-import { ProviderConfig } from "@/types/settings";
+import {
+  ProviderConfig,
+  DEFAULT_USER_PREFERENCES,
+} from "@/types/settings";
 import * as vscode from "vscode";
 import { AdvancedStorageData } from "./advanced-storage";
 import { ApiConfigStorageData } from "./api-config-storage";
@@ -325,76 +328,73 @@ export class MigrationService {
 
     // 偏好设置转换
     const preferences: PreferencesStorageData = {
+      ...DEFAULT_USER_PREFERENCES,
       language:
-        oldData.preferences?.language ||
-        oldData.profile?.language ||
-        "Simplified Chinese",
-      commitTemperature:
-        oldData.preferences?.commitTemperature ||
-        oldData.profile?.temperature ||
-        0.3,
-      reviewTemperature: oldData.preferences?.reviewTemperature || 0.6,
-      branchNameTemperature: oldData.preferences?.branchNameTemperature || 0.4,
-      weeklyReportTemperature:
-        oldData.preferences?.weeklyReportTemperature || 0.3,
-      skipDiffFileExtensions: oldData.preferences?.skipDiffFileExtensions || [
-        ".png",
-        ".jpg",
-        ".jpeg",
-        ".gif",
-        ".bmp",
-        ".ico",
-        ".pdf",
-        ".zip",
-        ".rar",
-        ".7z",
-        ".tar",
-        ".gz",
-        ".bz2",
-        ".xz",
-        ".doc",
-        ".docx",
-        ".xls",
-        ".xlsx",
-        ".ppt",
-        ".pptx",
-        ".o",
-        ".a",
-        ".so",
-        ".dll",
-        ".exe",
-        ".jar",
-        ".war",
-        ".ear",
-        ".class",
-        ".pyc",
-        ".swo",
-        ".swp",
-        ".DS_Store",
-        ".lock",
-        ".log",
-      ],
-      skipDiffPathPatterns: oldData.preferences?.skipDiffPathPatterns || [
-        "**/package-lock.json",
-        "**/pnpm-lock.yaml",
-        "**/yarn.lock",
-      ],
-      maxDiffFileSizeKB: oldData.preferences?.maxDiffFileSizeKB || 500,
-      autoDetectBinaryFiles: oldData.preferences?.autoDetectBinaryFiles ?? true,
-      respectGitAttributes: oldData.preferences?.respectGitAttributes ?? true,
-      timeout:
-        oldData.preferences?.timeout || oldData.profile?.timeout || 30000,
-      retryAttempts:
-        oldData.preferences?.retryAttempts ||
-        oldData.profile?.retryAttempts ||
-        3,
+        oldData.preferences?.language ??
+        oldData.profile?.language ??
+        DEFAULT_USER_PREFERENCES.language,
+      temperature:
+        oldData.preferences?.temperature ??
+        oldData.profile?.temperature ??
+        DEFAULT_USER_PREFERENCES.temperature,
+      verbosity:
+        oldData.preferences?.verbosity ??
+        oldData.profile?.verbosity ??
+        DEFAULT_USER_PREFERENCES.verbosity,
       rateLimitSeconds:
-        oldData.preferences?.rateLimitSeconds ||
-        oldData.profile?.rateLimitSeconds ||
-        0,
+        oldData.preferences?.rateLimitSeconds ??
+        oldData.profile?.rateLimitSeconds ??
+        DEFAULT_USER_PREFERENCES.rateLimitSeconds,
       consecutiveMistakeLimit:
-        oldData.preferences?.consecutiveMistakeLimit || 3,
-      maxTokens: oldData.preferences?.maxTokens || oldData.profile?.maxTokens,
+        oldData.preferences?.consecutiveMistakeLimit ??
+        oldData.profile?.consecutiveMistakeLimit ??
+        DEFAULT_USER_PREFERENCES.consecutiveMistakeLimit,
+      commitTemperature:
+        oldData.preferences?.commitTemperature ??
+        oldData.profile?.temperature ??
+        DEFAULT_USER_PREFERENCES.commitTemperature,
+      reviewTemperature:
+        oldData.preferences?.reviewTemperature ??
+        oldData.profile?.reviewTemperature ??
+        DEFAULT_USER_PREFERENCES.reviewTemperature,
+      branchNameTemperature:
+        oldData.preferences?.branchNameTemperature ??
+        oldData.profile?.branchNameTemperature ??
+        DEFAULT_USER_PREFERENCES.branchNameTemperature,
+      weeklyReportTemperature:
+        oldData.preferences?.weeklyReportTemperature ??
+        oldData.profile?.weeklyReportTemperature ??
+        DEFAULT_USER_PREFERENCES.weeklyReportTemperature,
+      skipDiffFileExtensions:
+        oldData.preferences?.skipDiffFileExtensions ??
+        oldData.profile?.skipDiffFileExtensions ??
+        DEFAULT_USER_PREFERENCES.skipDiffFileExtensions,
+      skipDiffPathPatterns:
+        oldData.preferences?.skipDiffPathPatterns ??
+        oldData.profile?.skipDiffPathPatterns ??
+        DEFAULT_USER_PREFERENCES.skipDiffPathPatterns,
+      maxDiffFileSizeKB:
+        oldData.preferences?.maxDiffFileSizeKB ??
+        oldData.profile?.maxDiffFileSizeKB ??
+        DEFAULT_USER_PREFERENCES.maxDiffFileSizeKB,
+      autoDetectBinaryFiles:
+        oldData.preferences?.autoDetectBinaryFiles ??
+        DEFAULT_USER_PREFERENCES.autoDetectBinaryFiles,
+      respectGitAttributes:
+        oldData.preferences?.respectGitAttributes ??
+        DEFAULT_USER_PREFERENCES.respectGitAttributes,
+      timeout:
+        oldData.preferences?.timeout ??
+        oldData.profile?.timeout ??
+        DEFAULT_USER_PREFERENCES.timeout,
+      retryAttempts:
+        oldData.preferences?.retryAttempts ??
+        oldData.profile?.retryAttempts ??
+        DEFAULT_USER_PREFERENCES.retryAttempts,
+      maxTokens:
+        oldData.preferences?.maxTokens ??
+        oldData.profile?.maxTokens ??
+        DEFAULT_USER_PREFERENCES.maxTokens,
     };
 
     // 功能开关转换

@@ -1,27 +1,14 @@
 import { DISH_CONFIG_PREFIX } from "@/config/constants";
+import {
+  DEFAULT_USER_PREFERENCES,
+  UserPreferences,
+} from "@/types/settings";
 import * as vscode from "vscode";
 
-export interface PreferencesStorageData {
-  language: string;
-  commitTemperature: number;
-  reviewTemperature: number;
-  branchNameTemperature: number;
-  weeklyReportTemperature: number;
+const clonePreferences = <T extends object>(value: T): T =>
+  JSON.parse(JSON.stringify(value));
 
-  // Diff 跳过配置
-  skipDiffFileExtensions: string[];
-  skipDiffPathPatterns: string[];
-  maxDiffFileSizeKB: number;
-  autoDetectBinaryFiles: boolean;
-  respectGitAttributes: boolean;
-
-  // 超时和重试
-  timeout: number;
-  retryAttempts: number;
-  rateLimitSeconds: number;
-  consecutiveMistakeLimit: number;
-  maxTokens?: number;
-}
+export type PreferencesStorageData = UserPreferences;
 
 /**
  * 偏好设置存储 - 存储在globalState中
@@ -31,97 +18,9 @@ export class PreferencesStorage {
   private static readonly STORAGE_KEY = `${DISH_CONFIG_PREFIX}_preferences`;
   private static instance: PreferencesStorage;
 
-  // 默认值
-  private readonly defaults: PreferencesStorageData = {
-    language: "Simplified Chinese",
-    commitTemperature: 0.3,
-    reviewTemperature: 0.6,
-    branchNameTemperature: 0.4,
-    weeklyReportTemperature: 0.3,
-
-    skipDiffFileExtensions: [
-      ".png",
-      ".jpg",
-      ".jpeg",
-      ".gif",
-      ".bmp",
-      ".ico",
-      ".webp",
-      ".svg",
-      ".tiff",
-      ".tif",
-      ".psd",
-      ".ai",
-      ".eps",
-      ".raw",
-      ".heic",
-      ".avif",
-      ".mp4",
-      ".avi",
-      ".mov",
-      ".mkv",
-      ".webm",
-      ".flv",
-      ".wmv",
-      ".m4v",
-      ".mpg",
-      ".mpeg",
-      ".3gp",
-      ".ogv",
-      ".mp3",
-      ".wav",
-      ".ogg",
-      ".m4a",
-      ".flac",
-      ".aac",
-      ".wma",
-      ".opus",
-      ".ttf",
-      ".otf",
-      ".woff",
-      ".woff2",
-      ".eot",
-      ".zip",
-      ".tar",
-      ".gz",
-      ".rar",
-      ".7z",
-      ".bz2",
-      ".xz",
-      ".pdf",
-      ".doc",
-      ".docx",
-      ".xls",
-      ".xlsx",
-      ".ppt",
-      ".pptx",
-      ".exe",
-      ".dll",
-      ".so",
-      ".dylib",
-      ".wasm",
-      ".class",
-      ".pyc",
-      ".db",
-      ".sqlite",
-      ".sqlite3",
-    ],
-    maxDiffFileSizeKB: 500,
-    autoDetectBinaryFiles: true,
-    skipDiffPathPatterns: [
-      "node_modules/**",
-      "dist/**",
-      "build/**",
-      "**/*.min.js",
-      "**/*.min.css",
-    ],
-    respectGitAttributes: true,
-
-    timeout: 30000,
-    retryAttempts: 3,
-    rateLimitSeconds: 0,
-    consecutiveMistakeLimit: 3,
-  };
+  private readonly defaults: PreferencesStorageData = clonePreferences(
+    DEFAULT_USER_PREFERENCES,
+  );
 
   private constructor(private context: vscode.ExtensionContext) {}
 
@@ -143,17 +42,16 @@ export class PreferencesStorage {
     );
 
     if (!stored) {
-      return { ...this.defaults };
+      return clonePreferences(this.defaults);
     }
 
-    // 向后兼容：补充新字段的默认值
     return {
-      ...this.defaults,
+      ...clonePreferences(this.defaults),
       ...stored,
       skipDiffFileExtensions:
-        stored.skipDiffFileExtensions || this.defaults.skipDiffFileExtensions,
+        stored.skipDiffFileExtensions ?? this.defaults.skipDiffFileExtensions,
       skipDiffPathPatterns:
-        stored.skipDiffPathPatterns || this.defaults.skipDiffPathPatterns,
+        stored.skipDiffPathPatterns ?? this.defaults.skipDiffPathPatterns,
       maxDiffFileSizeKB:
         stored.maxDiffFileSizeKB ?? this.defaults.maxDiffFileSizeKB,
       autoDetectBinaryFiles:

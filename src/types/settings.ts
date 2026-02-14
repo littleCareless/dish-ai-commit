@@ -140,7 +140,7 @@ export const profileSchema = z.object({
   name: z.string(),
   description: z.string().optional(),
   providers: z.record(z.string(), providerConfigSchema),
-  preferences: userPreferencesSchema,
+  preferences: userPreferencesSchema.optional(),
   features: featuresSchema.optional(), // 新增features字段
   createdAt: z.date().or(z.string().datetime()),
   updatedAt: z.date().or(z.string().datetime()),
