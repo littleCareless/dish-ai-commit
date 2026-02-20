@@ -253,12 +253,18 @@ jobs:
         run: |
           body=$(awk '
             BEGIN { capture=0 }
-            /^# [0-9]+\.[0-9]+\.[0-9]+ \(/ {
+            /^##? [0-9]+\.[0-9]+\.[0-9]+ \(/ {
               if (capture) exit;
               capture=1;
             }
             capture { print }
           ' CHANGELOG.zh-CN.md)
+
+          if [ -z "$body" ]; then
+            echo "::warning::No changelog section matched. Using default release notes."
+            body="Release v${{ steps.params.outputs.version }}"
+          fi
+
           echo "body<<EOF" >> $GITHUB_OUTPUT
           echo "$body" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -319,4 +325,7 @@ jobs:
           echo "  ✓ Open VSX Registry"
           echo "  ✓ Visual Studio Marketplace"
           echo "  ✓ GitHub Releases"
+          echo ""
+          echo "GitHub Release URL:"
+          echo "  ${{ steps.create_release.outputs.url }}"
           echo "=========================================="
