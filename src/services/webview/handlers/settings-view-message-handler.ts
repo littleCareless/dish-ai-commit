@@ -1,6 +1,7 @@
 import { EmbeddingService } from "@/core/indexing/embedding-service";
 import WebviewSessionManager from "@/services/webview/core/WebviewSessionManager";
 import { ConnectionMessageHandler } from "@/services/webview/handlers/settings/connection-message-handler";
+import { CommitChatMessageHandler } from "@/services/webview/handlers/settings/commit-chat-message-handler";
 import { ContextMessageHandler } from "@/services/webview/handlers/settings/context-message-handler";
 import { FeaturesMessageHandler } from "@/services/webview/handlers/settings/features-message-handler";
 import { IndexingMessageHandler } from "@/services/webview/handlers/settings/indexing-message-handler";
@@ -33,6 +34,7 @@ export class SettingsViewMessageHandler {
   private _systemHandler: SystemMessageHandler;
   private _featuresHandler: FeaturesMessageHandler;
   private _contextHandler: ContextMessageHandler;
+  private _commitChatHandler: CommitChatMessageHandler;
   private _usageHandler: UsageMessageHandler;
   private _storageHandler: StorageMessageHandler;
   private _onboardingHandler: OnboardingMessageHandler;
@@ -59,6 +61,7 @@ export class SettingsViewMessageHandler {
     this._systemHandler = new SystemMessageHandler(_extensionContext);
     this._featuresHandler = new FeaturesMessageHandler(_extensionContext);
     this._contextHandler = new ContextMessageHandler(_extensionContext);
+    this._commitChatHandler = new CommitChatMessageHandler(_extensionContext);
     this._usageHandler = new UsageMessageHandler(_extensionContext);
     this._storageHandler = new StorageMessageHandler(_extensionContext);
     this._onboardingHandler = new OnboardingMessageHandler(_extensionContext);
@@ -200,6 +203,12 @@ export class SettingsViewMessageHandler {
           case UIRequest.ContextGetLatest:
           case UIRequest.ContextRebuildPreview:
             await this._contextHandler.handle(message, webview);
+            break;
+
+          case UIRequest.CommitChatSendMessage:
+          case UIRequest.CommitChatGetChangedFiles:
+          case UIRequest.CommitChatGetFileDiff:
+            await this._commitChatHandler.handle(message, webview);
             break;
 
           case UIRequest.SystemGetAllStorage:

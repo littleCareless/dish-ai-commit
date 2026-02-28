@@ -5,6 +5,7 @@ export const routes = {
   notifications: "/notifications",
   context: "/context",
   prompts: "/prompts",
+  commitChat: "/commit-chat",
   experimental: "/experimental",
   about: "/about",
   indexing: "/indexing",
