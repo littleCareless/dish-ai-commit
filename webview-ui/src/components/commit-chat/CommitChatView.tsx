@@ -433,9 +433,11 @@ const CommitChatView: React.FC = () => {
           <div className="flex items-center gap-2">
             <Input
               value={input}
-              onChange={(event) => setInput(event.target.value)}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                setInput(event.target.value)
+              }
               placeholder="Describe your changes and intent..."
-              onKeyDown={(event) => {
+              onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
                 if (event.key === "Enter" && !event.shiftKey) {
                   event.preventDefault();
                   void sendMessage();
