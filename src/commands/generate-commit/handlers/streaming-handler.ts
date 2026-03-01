@@ -56,7 +56,8 @@ export class StreamingHandler {
 
     // After the stream is complete, filter the final message and apply it.
     const finalMessage = filterCodeBlockMarkers(accumulatedMessage);
-    await scmProvider.startStreamingInput(finalMessage);
+    // Persist final message with the provider's stable setter path.
+    await scmProvider.setCommitInput(finalMessage);
 
     return finalMessage;
   }

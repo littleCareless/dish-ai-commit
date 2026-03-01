@@ -169,10 +169,9 @@ export class GitProvider implements ISCMProvider {
    * @param {string} message - 要设置的提交信息
    */
   async startStreamingInput(message: string): Promise<void> {
-    // 每次重新初始化提供者
-    await this.ensureDefaultProvider();
-    
-    return this.gitProvider?.startStreamingInput(message);
+    // Reuse repository-targeted set logic to avoid drifting to the wrong
+    // repository/provider in multi-repository streaming scenarios.
+    return this.setCommitInput(message);
   }
 
   /**
