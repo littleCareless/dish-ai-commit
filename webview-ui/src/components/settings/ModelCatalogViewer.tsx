@@ -148,7 +148,6 @@ export const ModelCatalogViewer: React.FC = () => {
             )}
           </div>
           <Button
-            id="sync-model-catalog"
             onClick={handleSyncModelCatalog}
             disabled={syncingCatalog}
             appearance="secondary"
@@ -173,7 +172,9 @@ export const ModelCatalogViewer: React.FC = () => {
         <Input
           placeholder={t("contextGuard.catalog.searchPlaceholder")}
           value={catalogQuery}
-          onChange={(event) => setCatalogQuery(event.target.value)}
+          onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+            setCatalogQuery(event.target.value)
+          }
         />
         <div className="flex items-center justify-between gap-2">
           <Select

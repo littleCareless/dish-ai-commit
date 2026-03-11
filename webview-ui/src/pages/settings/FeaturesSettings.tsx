@@ -451,7 +451,7 @@ export const FeaturesSettings: React.FC = () => {
                 step={256}
                 className="w-56"
                 value={features.maxInputTokensPerRequest ?? 0}
-                onChange={(event) =>
+                onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
                   handleMaxInputTokensChange(event.target.value)
                 }
               />
@@ -466,7 +466,6 @@ export const FeaturesSettings: React.FC = () => {
                 </p>
               </div>
               <Button
-                id="open-model-registry"
                 onClick={() => navigate(routes.modelRegistry)}
                 appearance="secondary"
               >
