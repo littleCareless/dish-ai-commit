@@ -124,6 +124,16 @@
           "dark": "images/dark/git-pull-request.svg"
         },
         "description": "%extension.contributes.commands.dish-ai-commit.generatePRSummary.description%"
+      },
+      {
+        "command": "dish-ai-commit.syncModelCatalog",
+        "title": "%extension.contributes.commands.dish-ai-commit.syncModelCatalog.title%",
+        "category": "%extension.contributes.commands.dish-ai-commit.syncModelCatalog.category%",
+        "icon": {
+          "light": "images/light/brain.svg",
+          "dark": "images/dark/brain.svg"
+        },
+        "description": "%extension.contributes.commands.dish-ai-commit.syncModelCatalog.description%"
       }
     ],
     "configuration": {
@@ -713,6 +723,9 @@
         },
         {
           "command": "dish-ai-commit.reviewCode"
+        },
+        {
+          "command": "dish-ai-commit.syncModelCatalog"
         }
       ]
     }

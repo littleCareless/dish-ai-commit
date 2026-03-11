@@ -58,6 +58,8 @@
     "output": "输出",
     "contextWindow": "上下文窗口",
     "capabilities": "能力",
+    "source": "来源",
+    "updatedAt": "更新时间",
     "none": "无",
     "actions": "操作"
   }

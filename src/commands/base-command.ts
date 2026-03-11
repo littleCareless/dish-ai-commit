@@ -128,6 +128,12 @@ export abstract class BaseCommand {
           useRecentCommitsAsReference:
             featureSettings.useRecentCommitsAsReference,
           largePromptAction: featureSettings.largePromptAction,
+          enableThirdPartyModelCatalog:
+            featureSettings.enableThirdPartyModelCatalog,
+          enableAdaptiveInputLimitLearning:
+            featureSettings.enableAdaptiveInputLimitLearning,
+          diffTruncationStrategy: featureSettings.diffTruncationStrategy,
+          maxInputTokensPerRequest: featureSettings.maxInputTokensPerRequest,
           systemPrompt: undefined,
         },
         codeAnalysis: {

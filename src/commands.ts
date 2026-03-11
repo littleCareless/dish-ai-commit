@@ -3,6 +3,7 @@ import { GenerateCommitCommand } from "@/commands/generate-commit/generate-commi
 import { GeneratePRSummaryCommand } from "@/commands/generate-pr-summary-command";
 import { GenerateWeeklyReportCommand } from "@/commands/generate-weekly-report-command";
 import { ReviewCodeCommand } from "@/commands/review-code-command";
+import { SyncModelCatalogCommand } from "@/commands/sync-model-catalog-command";
 import { COMMANDS } from "@/constants";
 import { notify } from "@/utils";
 import * as vscode from "vscode";
@@ -43,6 +44,7 @@ export class CommandManager implements vscode.Disposable {
         this.profileManager
       );
       const prSummaryCommand = new GeneratePRSummaryCommand(this.context);
+      const syncModelCatalogCommand = new SyncModelCatalogCommand(this.context);
 
       this.disposables.push(
         // 注册生成commit信息命令
@@ -110,6 +112,19 @@ export class CommandManager implements vscode.Disposable {
             } catch (error) {
               // 处理PR摘要生成失败
               notify.error("command.pr.summary.failed", [
+                error instanceof Error ? error.message : String(error),
+              ]);
+            }
+          }
+        ),
+        // 注册模型目录同步命令
+        vscode.commands.registerCommand(
+          COMMANDS.MODEL_CATALOG.SYNC,
+          async () => {
+            try {
+              await syncModelCatalogCommand.execute();
+            } catch (error) {
+              notify.error("model.catalog.sync.failed", [
                 error instanceof Error ? error.message : String(error),
               ]);
             }

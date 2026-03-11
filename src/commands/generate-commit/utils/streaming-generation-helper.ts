@@ -1,4 +1,6 @@
 import { getAccurateTokenLimits } from "@/ai/model-registry";
+import { AdaptiveModelLimitService } from "@/ai/model-registry/adaptive-model-limit-service";
+import { ModelCatalogService } from "@/ai/model-registry/model-catalog-service";
 import { AIModel, AIProvider } from "@/ai/types";
 import { getSystemPrompt } from "@/ai/utils/generate-helper";
 import { CommitContextBuilder } from "@/commands/generate-commit/builders/context-builder";
@@ -22,6 +24,13 @@ import { GenerationGate } from "@/core/generation-gate";
 import * as vscode from "vscode";
 import * as crypto from "crypto";
 
+const DEFAULT_REQUEST_INPUT_TOKEN_LIMIT = 120000;
+const MODEL_INPUT_TOKEN_SAFETY_RATIO = 0.88;
+const PROVIDER_REQUEST_INPUT_LIMITS: Record<string, number> = {
+  gemini: 250000,
+  vertexai: 250000,
+};
+
 /**
  * 流式生成辅助类 - 遵循单一职责原则
  * 只负责流式生成的逻辑，不包含其他职责
@@ -43,6 +52,8 @@ export class StreamingGenerationHelper {
   private _lastConfigHash: string | null = null;
   private _lastSystemPrompt: string | null = null;
   private contextInspectorService = ContextInspectorService.getInstance();
+  private adaptiveModelLimitService = AdaptiveModelLimitService.getInstance();
+  private modelCatalogService = ModelCatalogService.getInstance();
 
   constructor(private logger: Logger) {
     this.contextBuilder = new CommitContextBuilder();
@@ -135,6 +146,10 @@ export class StreamingGenerationHelper {
       aiProvider,
       selectedModel,
     );
+    const contextModel = await this.getContextModelWithSafeInputLimit(
+      modelConfig.selectedModel,
+      configuration,
+    );
 
     // 阶段3: 构建上下文
     progress.report({
@@ -144,6 +159,7 @@ export class StreamingGenerationHelper {
     const requestId = crypto.randomUUID();
     const { contextManager, requestParams } =
       await this.preparePromptAndContext(
+        contextModel,
         modelConfig.selectedModel,
         scmProvider,
         diffContent,
@@ -156,7 +172,7 @@ export class StreamingGenerationHelper {
     // 步骤4: 检查提示词长度并处理警告
     await this.checkPromptLengthAndHandleWarnings(
       contextManager,
-      modelConfig.selectedModel,
+      contextModel,
       configuration,
     );
 
@@ -181,7 +197,7 @@ export class StreamingGenerationHelper {
       scmProvider,
       contextManager,
       selectedFiles,
-      modelConfig.selectedModel,
+      contextModel,
       token,
       progress,
       configuration,
@@ -370,7 +386,8 @@ export class StreamingGenerationHelper {
    * 准备提示词和上下文 - 遵循单一职责原则
    */
   private async preparePromptAndContext(
-    selectedModel: AIModel,
+    contextModel: AIModel,
+    requestModel: AIModel,
     scmProvider: ISCMProvider,
     diffContent: string,
     configuration: any,
@@ -391,7 +408,7 @@ export class StreamingGenerationHelper {
       this._lastConfigHash !== this.getConfigHash(configuration)
     ) {
       const tempParams = this.buildRequestParams(configuration, {
-        model: selectedModel,
+        model: requestModel,
         scm: scmProvider.type ?? "git",
         workspaceRoot: repositoryPath,
         changeFiles: selectedFiles || [],
@@ -402,7 +419,7 @@ export class StreamingGenerationHelper {
     }
 
     const contextManager = await this.contextBuilder.buildContextManager(
-      selectedModel,
+      contextModel,
       this._lastSystemPrompt,
       scmProvider,
       diffContent,
@@ -419,7 +436,7 @@ export class StreamingGenerationHelper {
     );
 
     const requestParams = this.buildRequestParams(configuration, {
-      model: selectedModel,
+      model: requestModel,
       scm: scmProvider.type ?? "git",
       workspaceRoot: repositoryPath,
       changeFiles: selectedFiles || [],
@@ -495,11 +512,15 @@ export class StreamingGenerationHelper {
     const promptLength = contextManager.getEstimatedRawTokenCount();
     this.logger.info(`Estimated prompt length: ${promptLength} tokens.`);
 
-    const tokenLimits = await getAccurateTokenLimits(
+    const rawInputLimit = await this.resolveModelInputLimit(
       selectedModel,
       configuration,
     );
-    const maxTokens = tokenLimits.input;
+    const maxTokens = this.getEffectiveInputTokenLimit(
+      selectedModel,
+      rawInputLimit,
+      configuration,
+    );
     const largePromptAction =
       configuration.features?.commitMessage?.largePromptAction ?? "useFallback";
 
@@ -551,6 +572,132 @@ export class StreamingGenerationHelper {
     const fallbackSystemPrompt = await getSystemPrompt(tempParams, true, true);
     contextManager.setSystemPrompt(fallbackSystemPrompt);
     notify.info("info.using.fallback.prompt");
+  }
+
+  private async getContextModelWithSafeInputLimit(
+    selectedModel: AIModel,
+    configuration: any,
+  ): Promise<AIModel> {
+    const rawInputLimit = await this.resolveModelInputLimit(
+      selectedModel,
+      configuration,
+    );
+    const effectiveInputLimit = this.getEffectiveInputTokenLimit(
+      selectedModel,
+      rawInputLimit,
+      configuration,
+    );
+
+    if (effectiveInputLimit >= selectedModel.maxTokens.input) {
+      return selectedModel;
+    }
+
+    this.logger.warn(
+      `[StreamingHelper] Reducing context input limit for ${selectedModel.provider.id}/${selectedModel.id}: ${selectedModel.maxTokens.input} -> ${effectiveInputLimit}`,
+    );
+
+    return {
+      ...selectedModel,
+      maxTokens: {
+        ...selectedModel.maxTokens,
+        input: effectiveInputLimit,
+      },
+    };
+  }
+
+  private getEffectiveInputTokenLimit(
+    selectedModel: AIModel,
+    modelInputLimit: number,
+    configuration?: any,
+  ): number {
+    const providerId = selectedModel.provider?.id?.toLowerCase?.() ?? "";
+    const modelId = selectedModel.id?.toLowerCase?.() ?? "";
+    const modelSafetyLimit = Math.floor(
+      modelInputLimit * MODEL_INPUT_TOKEN_SAFETY_RATIO,
+    );
+    const providerLimit =
+      PROVIDER_REQUEST_INPUT_LIMITS[providerId] ??
+      (modelId.includes("gemini")
+        ? PROVIDER_REQUEST_INPUT_LIMITS.gemini
+        : undefined);
+    const providerSafetyLimit = providerLimit
+      ? Math.floor(providerLimit * MODEL_INPUT_TOKEN_SAFETY_RATIO)
+      : Number.POSITIVE_INFINITY;
+    const configuredLimit = Number(
+      configuration?.features?.commitMessage?.maxInputTokensPerRequest,
+    );
+    const configSafetyLimit =
+      Number.isFinite(configuredLimit) && configuredLimit > 0
+        ? Math.floor(configuredLimit)
+        : Number.POSITIVE_INFINITY;
+    const learnedInputLimit =
+      this.adaptiveModelLimitService.getLearnedInputLimit(providerId, modelId);
+    const learnedSafetyLimit =
+      learnedInputLimit && Number.isFinite(learnedInputLimit)
+        ? Math.floor(learnedInputLimit * MODEL_INPUT_TOKEN_SAFETY_RATIO)
+        : Number.POSITIVE_INFINITY;
+
+    return Math.max(
+      4096,
+      Math.min(
+        modelInputLimit,
+        modelSafetyLimit,
+        DEFAULT_REQUEST_INPUT_TOKEN_LIMIT,
+        providerSafetyLimit,
+        configSafetyLimit,
+        learnedSafetyLimit,
+      ),
+    );
+  }
+
+  private async resolveModelInputLimit(
+    selectedModel: AIModel,
+    configuration: any,
+  ): Promise<number> {
+    const enableThirdPartyModelCatalog =
+      configuration?.features?.commitMessage?.enableThirdPartyModelCatalog !==
+      false;
+    const catalogResolved = await this.modelCatalogService.resolveInputLimit(
+      selectedModel,
+      { enableSyncedCatalog: enableThirdPartyModelCatalog },
+    );
+    const runtimeLimit = Number(selectedModel?.maxTokens?.input);
+    if (catalogResolved?.inputLimit) {
+      if (Number.isFinite(runtimeLimit) && runtimeLimit > 0) {
+        const merged = Math.min(runtimeLimit, catalogResolved.inputLimit);
+        this.logger.info(
+          `[StreamingHelper] Input limit resolved via catalog (${catalogResolved.source}, ${catalogResolved.confidence}): runtime=${runtimeLimit}, catalog=${catalogResolved.inputLimit}, using=${merged}`,
+        );
+        return merged;
+      }
+
+      this.logger.info(
+        `[StreamingHelper] Input limit resolved via catalog (${catalogResolved.source}, ${catalogResolved.confidence}): ${catalogResolved.inputLimit}`,
+      );
+      return catalogResolved.inputLimit;
+    }
+
+    if (Number.isFinite(runtimeLimit) && runtimeLimit > 0) {
+      return runtimeLimit;
+    }
+
+    try {
+      const tokenLimits = await getAccurateTokenLimits(
+        selectedModel,
+        configuration,
+      );
+      const inferredLimit = Number(tokenLimits?.input);
+      if (Number.isFinite(inferredLimit) && inferredLimit > 0) {
+        return inferredLimit;
+      }
+    } catch (error) {
+      this.logger.warn(
+        `[StreamingHelper] Failed to resolve input limit from model registry for ${selectedModel.provider.id}/${selectedModel.id}, fallback to safe default.`,
+        { error: error as Error },
+      );
+    }
+
+    return 8192;
   }
 
   /**
@@ -640,7 +787,7 @@ export class StreamingGenerationHelper {
 
       showCommitSuccessNotification();
     } catch (error) {
-      await this.handleGenerationError(error);
+      await this.handleGenerationError(error, selectedModel, configuration);
     }
   }
 
@@ -733,7 +880,19 @@ export class StreamingGenerationHelper {
   /**
    * 处理生成错误 - 遵循单一职责原则
    */
-  private async handleGenerationError(error: any): Promise<void> {
+  private async handleGenerationError(
+    error: any,
+    selectedModel?: AIModel,
+    configuration?: any,
+  ): Promise<void> {
+    if (selectedModel) {
+      await this.learnInputLimitFromRuntimeError(
+        error,
+        selectedModel,
+        configuration,
+      );
+    }
+
     if (error instanceof RequestTooLargeError) {
       const switchToLargerModel = getMessage("error.switch.to.larger.model");
       const choice = await notify.error(
@@ -751,6 +910,98 @@ export class StreamingGenerationHelper {
       this.logger.logError(error as Error, "流式生成失败");
       throw error;
     }
+  }
+
+  private async learnInputLimitFromRuntimeError(
+    error: any,
+    selectedModel: AIModel,
+    configuration?: any,
+  ): Promise<void> {
+    if (
+      configuration?.features?.commitMessage?.enableAdaptiveInputLimitLearning ===
+      false
+    ) {
+      return;
+    }
+
+    if (!this.isInputLimit429Error(error)) {
+      return;
+    }
+
+    const message = this.extractErrorMessage(error);
+    const learnedLimit = this.extractInputLimitFromErrorMessage(message);
+    if (!learnedLimit) {
+      return;
+    }
+
+    await this.adaptiveModelLimitService.recordLearnedInputLimit(
+      selectedModel.provider.id,
+      selectedModel.id as string,
+      learnedLimit,
+      message,
+    );
+
+    this.logger.warn(
+      `[StreamingHelper] Learned input limit from runtime error for ${selectedModel.provider.id}/${selectedModel.id}: ${learnedLimit}`,
+    );
+  }
+
+  private isInputLimit429Error(error: any): boolean {
+    const statusCode =
+      Number(error?.status) ||
+      Number(error?.statusCode) ||
+      Number(error?.response?.status);
+
+    if (statusCode !== 429) {
+      return false;
+    }
+
+    const message = this.extractErrorMessage(error).toLowerCase();
+    return (
+      message.includes("input token") ||
+      message.includes("tokens per minute") ||
+      message.includes("token limit") ||
+      message.includes("quota")
+    );
+  }
+
+  private extractErrorMessage(error: any): string {
+    if (typeof error?.message === "string" && error.message.trim()) {
+      return error.message;
+    }
+
+    const responseText = error?.response?.data || error?.response?.body;
+    if (typeof responseText === "string" && responseText.trim()) {
+      return responseText;
+    }
+
+    return String(error ?? "");
+  }
+
+  private extractInputLimitFromErrorMessage(message: string): number | null {
+    if (!message) {
+      return null;
+    }
+
+    const patterns = [
+      /(?:at most|limit of)\s*([0-9][0-9,]*)\s*(?:input\s+)?tokens/i,
+      /([0-9][0-9,]*)\s*(?:input\s+)?tokens\s+per\s+minute/i,
+      /(?:maximum|max)\s*(?:input\s+)?tokens(?:\s*[:=]|\s+is\s+)\s*([0-9][0-9,]*)/i,
+    ];
+
+    for (const pattern of patterns) {
+      const match = message.match(pattern);
+      if (!match?.[1]) {
+        continue;
+      }
+
+      const parsed = Number(match[1].replace(/,/g, ""));
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+
+    return null;
   }
 
   /**

@@ -36,6 +36,11 @@ export const COMMANDS = {
     /** 生成PR摘要的命令 */
     GENERATE: packageJson.contributes.commands[4].command,
   },
+  /** 模型目录相关命令 */
+  MODEL_CATALOG: {
+    /** 同步第三方模型目录 */
+    SYNC: packageJson.contributes.commands[5].command,
+  },
 } as const;
 
 /** COMMANDS常量的TypeScript类型 */

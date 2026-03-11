@@ -1,11 +1,15 @@
 import { useCallback, useState, useRef, useEffect, useMemo } from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, Zap } from "lucide-react";
 import { useVSCodeContext } from "@/contexts/useVSCodeContext";
 import WelcomeHero from "@/components/welcome/WelcomeHero";
 import FeatureShowcase from "@/components/welcome/FeatureShowcase";
 import SetupWizard from "@/components/welcome/SetupWizard";
 import QuickStartGuide from "@/components/welcome/QuickStartGuide";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { postMessage } from "@/utils/vscode";
+import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 import { useNavigate } from "react-router-dom";
 import { routes } from "@/router/routes";
 
@@ -16,6 +20,8 @@ const WelcomePage = () => {
   const { initialData, isFirstInstall } = useVSCodeContext();
   const [viewMode, setViewMode] = useState<ViewMode>("welcome");
   const [showScrollHint, setShowScrollHint] = useState(true);
+  const [executingAction, setExecutingAction] = useState<string | null>(null);
+  const [quickActionMessage, setQuickActionMessage] = useState<string>("");
   const contentRef = useRef<HTMLDivElement>(null);
   const setupRef = useRef<HTMLDivElement>(null);
   const navigate = useNavigate();
@@ -65,6 +71,51 @@ const WelcomePage = () => {
     }
   }, [handleScroll]);
 
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      const message = event.data;
+      if (message.command !== ExtensionResponse.FeaturesCommandExecuted) {
+        return;
+      }
+
+      const action = String(message.data?.action ?? "");
+      const actionLabel = t(`quickActions.actions.${action}`);
+      setExecutingAction(null);
+      if (message.data?.success) {
+        setQuickActionMessage(
+          t("quickActions.result.success", { action: actionLabel }),
+        );
+      } else {
+        setQuickActionMessage(
+          t("quickActions.result.failed", {
+            action: actionLabel,
+            error: message.data?.error || "unknown",
+          }),
+        );
+      }
+    };
+
+    window.addEventListener("message", handleMessage);
+    return () => window.removeEventListener("message", handleMessage);
+  }, [t]);
+
+  const handleExecuteCommand = useCallback(
+    (action: string) => {
+      setExecutingAction(action);
+      setQuickActionMessage(
+        t("quickActions.result.running", {
+          action: t(`quickActions.actions.${action}`),
+        }),
+      );
+      postMessage(
+        UIRequest.FeaturesExecuteCommand,
+        { action, source: "welcome-page" },
+        { allowDuplicate: true },
+      );
+    },
+    [t],
+  );
+
   return (
     <div
       className="flex flex-col h-screen overflow-hidden"
@@ -106,6 +157,47 @@ const WelcomePage = () => {
 
           {/* Feature showcase - 仅在非首次安装时显示 */}
           {!isFirstInstall && <FeatureShowcase className="mb-4" />}
+
+          {!isFirstInstall && (
+            <Card className="mb-4">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-base">
+                  <Zap className="w-4 h-4" />
+                  {t("quickActions.title")}
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <p className="text-sm text-muted-foreground">
+                  {t("quickActions.description")}
+                </p>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                  {[
+                    "generateCommit",
+                    "reviewCode",
+                    "generateBranchName",
+                    "generatePRSummary",
+                    "generateWeeklyReport",
+                  ].map((action) => (
+                    <Button
+                      key={action}
+                      appearance="secondary"
+                      disabled={executingAction !== null}
+                      onClick={() => handleExecuteCommand(action)}
+                    >
+                      {executingAction === action
+                        ? t("quickActions.buttonRunning")
+                        : t(`quickActions.actions.${action}`)}
+                    </Button>
+                  ))}
+                </div>
+                {quickActionMessage && (
+                  <p className="text-xs text-muted-foreground">
+                    {quickActionMessage}
+                  </p>
+                )}
+              </CardContent>
+            </Card>
+          )}
 
           {/* Setup wizard or quick start */}
           <div ref={setupRef}>

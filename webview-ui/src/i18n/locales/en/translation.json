@@ -10,6 +10,8 @@
     "context_description": "Manage context information",
     "prompts": "Prompts",
     "prompts_description": "Manage and use prompts",
+    "modelRegistry": "Model Registry",
+    "modelRegistry_description": "Manage custom models and synced model catalog",
     "experimental": "Experimental",
     "experimental_description": "Try experimental features",
     "indexing": "Code Indexing",

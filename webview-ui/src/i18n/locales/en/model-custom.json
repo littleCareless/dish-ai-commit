@@ -58,6 +58,8 @@
     "output": "Output",
     "contextWindow": "Context Window",
     "capabilities": "Capabilities",
+    "source": "Source",
+    "updatedAt": "Updated At",
     "none": "None",
     "actions": "Actions"
   }

@@ -21,7 +21,6 @@ import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useLocation } from "react-router-dom";
 import { FeaturesSettings } from "./FeaturesSettings";
-import { ModelCustomSettings } from "./ModelCustomSettings";
 import { ProvidersSettings } from "./ProvidersSettings";
 
 export const SettingsPage: React.FC = () => {
@@ -117,7 +116,6 @@ export const SettingsPage: React.FC = () => {
       "preferences",
       "features",
       "advanced",
-      "model-custom",
     ]);
     if (tab && validTabs.has(tab)) {
       setSelectedTab(tab);
@@ -405,9 +403,6 @@ export const SettingsPage: React.FC = () => {
             <TabsTrigger value="advanced" className="px-2 py-1.5">
               {t("tabs.advanced")}
             </TabsTrigger>
-            <TabsTrigger value="model-custom" className="px-2 py-1.5">
-              {t("tabs.modelCustom")}
-            </TabsTrigger>
           </TabsList>
 
           <div
@@ -449,10 +444,6 @@ export const SettingsPage: React.FC = () => {
                 onChange={handlePreferencesChange}
                 isLoading={isLoading || isPreferencesLoading}
               />
-            </TabsContent>
-
-            <TabsContent value="model-custom" className="mt-0">
-              <ModelCustomSettings />
             </TabsContent>
           </div>
         </Tabs>

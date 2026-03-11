@@ -74,6 +74,12 @@ export const Navigation: React.FC = () => {
         description: t("nav.prompts_description"),
       },
       {
+        path: routes.modelRegistry,
+        label: t("nav.modelRegistry"),
+        icon: Archive,
+        description: t("nav.modelRegistry_description"),
+      },
+      {
         path: routes.experimental,
         label: t("nav.experimental"),
         icon: FlaskConical,

@@ -64,6 +64,9 @@ export enum UIRequest {
   FeaturesSetActivePrompt = "features.setActivePrompt",
   FeaturesGetWorkspaceInfo = "features.getWorkspaceInfo",
   FeaturesGetAllWorkspaceStates = "features.getAllWorkspaceStates",
+  FeaturesSyncModelCatalog = "features.syncModelCatalog",
+  FeaturesGetModelCatalog = "features.getModelCatalog",
+  FeaturesExecuteCommand = "features.executeCommand",
 
   // ===== Usage Module =====
   UsageGetStats = "usage.getStats",
@@ -180,6 +183,9 @@ export enum ExtensionResponse {
   FeaturesActivePromptChanged = "features.activePromptChanged",
   FeaturesWorkspaceInfo = "features.workspaceInfo",
   FeaturesAllWorkspaceStates = "features.allWorkspaceStates",
+  FeaturesModelCatalogSynced = "features.modelCatalogSynced",
+  FeaturesModelCatalogLoaded = "features.modelCatalogLoaded",
+  FeaturesCommandExecuted = "features.commandExecuted",
   Error = "error",
 
   // ===== Usage Module =====

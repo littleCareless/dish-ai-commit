@@ -65,6 +65,10 @@ export class CommitContextBuilder {
       systemPrompt,
       configuration.features.suppressNonCriticalWarnings,
     );
+    const diffTruncationStrategy =
+      configuration.features?.commitMessage?.diffTruncationStrategy === "direct"
+        ? TruncationStrategy.TruncateTail
+        : TruncationStrategy.SmartTruncateDiff;
     const { originalCode, codeChanges } = extractProcessedDiff(diffContent);
 
     if (userCommits) {
@@ -94,14 +98,14 @@ export class CommitContextBuilder {
       contextManager.addBlock({
         content: originalCode,
         priority: 800,
-        strategy: TruncationStrategy.SmartTruncateDiff,
+        strategy: diffTruncationStrategy,
         name: "original-code",
       });
     }
     contextManager.addBlock({
       content: codeChanges,
       priority: 100, // 最高优先级：AI 分析的主要对象
-      strategy: TruncationStrategy.SmartTruncateDiff,
+      strategy: diffTruncationStrategy,
       name: "code-changes",
     });
     contextManager.addBlock({

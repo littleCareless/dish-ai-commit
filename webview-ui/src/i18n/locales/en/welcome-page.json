@@ -157,6 +157,23 @@
       }
     }
   },
+  "quickActions": {
+    "title": "Quick Actions",
+    "description": "Run common commands directly from the home page.",
+    "buttonRunning": "Running...",
+    "actions": {
+      "generateCommit": "Generate Commit Message",
+      "reviewCode": "Review Code",
+      "generateBranchName": "Generate Branch Name",
+      "generatePRSummary": "Generate PR Summary",
+      "generateWeeklyReport": "Generate Weekly Report"
+    },
+    "result": {
+      "running": "Running {{action}}...",
+      "success": "{{action}} finished.",
+      "failed": "{{action}} failed: {{error}}"
+    }
+  },
   "footer": {
     "title": "Dish AI Commit Message Generator",
     "madeWith": "Made with ❤️ by"
