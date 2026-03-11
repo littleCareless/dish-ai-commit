@@ -1,12 +1,16 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectOption } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { postMessage } from "@/utils/vscode";
 import { ExtensionResponse, UIRequest } from "@shared/types/messages";
-import { Code, GitCommit } from "lucide-react";
+import { Code, GitCommit, Shield, Zap } from "lucide-react";
 import React, { useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
+import { routes } from "@/router/routes";
 
 interface FeatureSwitchProps {
   id: string;
@@ -41,7 +45,10 @@ const FeatureSwitch: React.FC<FeatureSwitchProps> = ({
 
 export const FeaturesSettings: React.FC = () => {
   const { t } = useTranslation("features-settings");
+  const navigate = useNavigate();
   const hasLoadedRef = useRef(false);
+  const [executingAction, setExecutingAction] = useState<string | null>(null);
+  const [quickActionMessage, setQuickActionMessage] = useState<string>("");
   const [features, setFeatures] = useState(() => {
     const cached = sessionStorage.getItem("featuresSettingsCache");
     if (cached) {
@@ -62,6 +69,10 @@ export const FeaturesSettings: React.FC = () => {
       enableLayeredCommit: false,
       enableGlobalContext: true,
       useRecentCommitsAsReference: false,
+      enableThirdPartyModelCatalog: true,
+      enableAdaptiveInputLimitLearning: true,
+      diffTruncationStrategy: "semantic",
+      maxInputTokensPerRequest: 0,
       simplifyDiff: false,
       autoDetectStaged: true,
       fallbackToAll: true,
@@ -94,6 +105,23 @@ export const FeaturesSettings: React.FC = () => {
           return merged;
         });
       }
+      if (message.command === ExtensionResponse.FeaturesCommandExecuted) {
+        const action = String(message.data?.action ?? "");
+        const actionLabel = t(`quickActions.actions.${action}`);
+        setExecutingAction(null);
+        if (message.data?.success) {
+          setQuickActionMessage(
+            t("quickActions.result.success", { action: actionLabel }),
+          );
+        } else {
+          setQuickActionMessage(
+            t("quickActions.result.failed", {
+              action: actionLabel,
+              error: message.data?.error || "unknown",
+            }),
+          );
+        }
+      }
     };
 
     window.addEventListener("message", handleMessage);
@@ -105,7 +133,7 @@ export const FeaturesSettings: React.FC = () => {
 
   const handleFeatureToggle = (
     feature: keyof typeof features,
-    value: string | boolean,
+    value: string | boolean | number,
   ) => {
     setFeatures((prev: any) => {
       const updated = { ...prev, [feature]: value };
@@ -115,6 +143,29 @@ export const FeaturesSettings: React.FC = () => {
       postMessage(UIRequest.FeaturesSaveSettings, updated);
       return updated;
     });
+  };
+
+  const handleMaxInputTokensChange = (value: string) => {
+    const parsed = Number(value);
+    if (!Number.isFinite(parsed) || parsed < 0) {
+      handleFeatureToggle("maxInputTokensPerRequest", 0);
+      return;
+    }
+    handleFeatureToggle("maxInputTokensPerRequest", Math.floor(parsed));
+  };
+
+  const handleExecuteCommand = (action: string) => {
+    setExecutingAction(action);
+    setQuickActionMessage(
+      t("quickActions.result.running", {
+        action: t(`quickActions.actions.${action}`),
+      }),
+    );
+    postMessage(
+      UIRequest.FeaturesExecuteCommand,
+      { action, source: "settings-features" },
+      { allowDuplicate: true },
+    );
   };
 
   return (
@@ -326,6 +377,142 @@ export const FeaturesSettings: React.FC = () => {
                 </SelectOption>
               </Select>
             </div>
+          </CardContent>
+        </Card>
+
+        {/* Context Guard */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Shield className="w-5 h-5" />
+              {t("contextGuard.title")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-1 divide-y">
+            <FeatureSwitch
+              id="enable-third-party-model-catalog"
+              label={t("contextGuard.enableThirdPartyModelCatalog.label")}
+              description={t(
+                "contextGuard.enableThirdPartyModelCatalog.description",
+              )}
+              checked={features.enableThirdPartyModelCatalog}
+              onCheckedChange={(enabled) =>
+                handleFeatureToggle("enableThirdPartyModelCatalog", enabled)
+              }
+            />
+            <FeatureSwitch
+              id="enable-adaptive-input-limit-learning"
+              label={t("contextGuard.enableAdaptiveInputLimitLearning.label")}
+              description={t(
+                "contextGuard.enableAdaptiveInputLimitLearning.description",
+              )}
+              checked={features.enableAdaptiveInputLimitLearning}
+              onCheckedChange={(enabled) =>
+                handleFeatureToggle("enableAdaptiveInputLimitLearning", enabled)
+              }
+            />
+            <div className="flex items-center justify-between py-2">
+              <div className="flex flex-col">
+                <Label htmlFor="diff-truncation-strategy">
+                  {t("contextGuard.diffTruncationStrategy.label")}
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {t("contextGuard.diffTruncationStrategy.description")}
+                </p>
+              </div>
+              <Select
+                value={features.diffTruncationStrategy}
+                onValueChange={(value) =>
+                  handleFeatureToggle("diffTruncationStrategy", value)
+                }
+                className="w-56"
+              >
+                <SelectOption value="semantic">
+                  {t("contextGuard.diffTruncationStrategy.options.semantic")}
+                </SelectOption>
+                <SelectOption value="direct">
+                  {t("contextGuard.diffTruncationStrategy.options.direct")}
+                </SelectOption>
+              </Select>
+            </div>
+            <div className="flex items-center justify-between py-2 gap-4">
+              <div className="flex flex-col">
+                <Label htmlFor="max-input-tokens-per-request">
+                  {t("contextGuard.maxInputTokensPerRequest.label")}
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {t("contextGuard.maxInputTokensPerRequest.description")}
+                </p>
+              </div>
+              <Input
+                id="max-input-tokens-per-request"
+                type="number"
+                min={0}
+                step={256}
+                className="w-56"
+                value={features.maxInputTokensPerRequest ?? 0}
+                onChange={(event) =>
+                  handleMaxInputTokensChange(event.target.value)
+                }
+              />
+            </div>
+            <div className="flex items-center justify-between py-2 gap-4">
+              <div className="flex flex-col">
+                <Label htmlFor="open-model-registry">
+                  {t("contextGuard.modelRegistry.label")}
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {t("contextGuard.modelRegistry.description")}
+                </p>
+              </div>
+              <Button
+                id="open-model-registry"
+                onClick={() => navigate(routes.modelRegistry)}
+                appearance="secondary"
+              >
+                {t("contextGuard.modelRegistry.button")}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {/* Quick Actions */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Zap className="w-5 h-5" />
+              {t("quickActions.title")}
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-3">
+            <p className="text-sm text-muted-foreground">
+              {t("quickActions.description")}
+            </p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+              {[
+                "generateCommit",
+                "reviewCode",
+                "generateBranchName",
+                "generatePRSummary",
+                "generateWeeklyReport",
+              ].map((action) => (
+                <Button
+                  key={action}
+                  appearance="secondary"
+                  disabled={executingAction !== null}
+                  onClick={() => handleExecuteCommand(action)}
+                >
+                  {executingAction === action
+                    ? t("quickActions.buttonRunning")
+                    : t(`quickActions.actions.${action}`)}
+                </Button>
+              ))}
+            </div>
+            {quickActionMessage && (
+              <p className="text-xs text-muted-foreground">
+                {quickActionMessage}
+              </p>
+            )}
           </CardContent>
         </Card>
 

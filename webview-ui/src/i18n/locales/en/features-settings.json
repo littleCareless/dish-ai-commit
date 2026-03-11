@@ -62,6 +62,89 @@
       }
     }
   },
+  "contextGuard": {
+    "title": "Context Guard",
+    "enableThirdPartyModelCatalog": {
+      "label": "Use Third-Party Model Catalog",
+      "description": "Use OpenRouter/LiteLLM synced metadata when provider APIs do not return max input tokens."
+    },
+    "enableAdaptiveInputLimitLearning": {
+      "label": "Learn Limit from 429 Errors",
+      "description": "If a provider returns token-limit errors, record the discovered limit and apply it next time."
+    },
+    "diffTruncationStrategy": {
+      "label": "Diff Truncation Strategy",
+      "description": "Semantic keeps high-signal files first. Direct keeps the earliest raw content.",
+      "options": {
+        "semantic": "Semantic Priority",
+        "direct": "Direct Truncate"
+      }
+    },
+    "maxInputTokensPerRequest": {
+      "label": "Request Input Token Cap",
+      "description": "0 means auto. Set a positive value to force a strict input token cap before sending requests."
+    },
+    "modelRegistry": {
+      "label": "Model Registry",
+      "description": "Manage custom model limits and view synced third-party model catalog in one place.",
+      "button": "Open Model Registry"
+    },
+    "sync": {
+      "label": "Sync Model Catalog",
+      "description": "Manually refresh model context limits from third-party sources (OpenRouter/LiteLLM).",
+      "button": "Sync Now",
+      "buttonSyncing": "Syncing...",
+      "result": {
+        "syncing": "Syncing model catalog...",
+        "success": "Model catalog synced.",
+        "failed": "Sync failed: {{error}}"
+      }
+    },
+    "catalog": {
+      "total": "Total entries: {{count}}",
+      "lastSyncAt": "Last sync: {{time}}",
+      "neverSynced": "Never synced",
+      "searchPlaceholder": "Search by provider/model/source",
+      "showing": "Showing {{count}} entries",
+      "empty": "No model catalog entries",
+      "note": "This is a synced snapshot for readability and pre-checks, not a provider live API response.",
+      "sourceFilter": {
+        "all": "All Sources",
+        "openrouter": "OpenRouter",
+        "litellm": "LiteLLM",
+        "custom": "Custom Models"
+      },
+      "columns": {
+        "provider": "Provider",
+        "model": "Model",
+        "input": "Max Input",
+        "output": "Max Output",
+        "source": "Source",
+        "updatedAt": "Updated At"
+      }
+    }
+  },
+  "quickActions": {
+    "title": "Quick Actions",
+    "description": "Run common commands directly from WebView while keeping command palette workflows available.",
+    "buttonRunning": "Running...",
+    "actions": {
+      "generateCommit": "Generate Commit Message",
+      "reviewCode": "Review Code",
+      "generateBranchName": "Generate Branch Name",
+      "generatePRSummary": "Generate PR Summary",
+      "generateWeeklyReport": "Generate Weekly Report"
+    },
+    "result": {
+      "running": "Running {{action}}...",
+      "success": "{{action}} finished.",
+      "failed": "{{action}} failed: {{error}}"
+    }
+  },
+  "modelCatalogViewer": {
+    "title": "Synced Model Catalog",
+    "description": "Unified view of synced third-party model metadata and custom model overrides."
+  },
   "codeAnalysis": {
     "title": "Code Analysis",
     "simplifyDiff": {

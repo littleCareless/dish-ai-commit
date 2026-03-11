@@ -62,6 +62,89 @@
       }
     }
   },
+  "contextGuard": {
+    "title": "上下文保护",
+    "enableThirdPartyModelCatalog": {
+      "label": "启用第三方模型目录",
+      "description": "当 provider API 不返回 max input tokens 时，使用 OpenRouter/LiteLLM 同步的模型元数据。"
+    },
+    "enableAdaptiveInputLimitLearning": {
+      "label": "从 429 错误学习输入上限",
+      "description": "当 provider 返回 token 限制错误时，记录识别到的上限，并在下次请求中自动应用。"
+    },
+    "diffTruncationStrategy": {
+      "label": "Diff 裁剪策略",
+      "description": "语义优先会先保留高价值文件；直接裁剪会按原始顺序保留前部内容。",
+      "options": {
+        "semantic": "语义优先",
+        "direct": "直接裁剪"
+      }
+    },
+    "maxInputTokensPerRequest": {
+      "label": "请求输入 Token 上限",
+      "description": "填 0 表示自动。填正数可在发送请求前强制限制最大输入 token。"
+    },
+    "modelRegistry": {
+      "label": "模型目录中心",
+      "description": "在一个页面统一管理自定义模型限制与第三方同步模型目录。",
+      "button": "打开模型目录中心"
+    },
+    "sync": {
+      "label": "同步模型目录",
+      "description": "手动从第三方来源（OpenRouter/LiteLLM）刷新模型上下文限制。",
+      "button": "立即同步",
+      "buttonSyncing": "同步中...",
+      "result": {
+        "syncing": "正在同步模型目录...",
+        "success": "模型目录同步完成。",
+        "failed": "同步失败：{{error}}"
+      }
+    },
+    "catalog": {
+      "total": "总条目：{{count}}",
+      "lastSyncAt": "上次同步：{{time}}",
+      "neverSynced": "尚未同步",
+      "searchPlaceholder": "按 provider/model/source 搜索",
+      "showing": "当前展示 {{count}} 条",
+      "empty": "暂无模型目录数据",
+      "note": "这里展示的是用于可读性与预检的同步快照，不是 provider 实时 API 回传。",
+      "sourceFilter": {
+        "all": "全部来源",
+        "openrouter": "OpenRouter",
+        "litellm": "LiteLLM",
+        "custom": "自定义模型"
+      },
+      "columns": {
+        "provider": "Provider",
+        "model": "Model",
+        "input": "最大输入",
+        "output": "最大输出",
+        "source": "来源",
+        "updatedAt": "更新时间"
+      }
+    }
+  },
+  "quickActions": {
+    "title": "快捷操作",
+    "description": "在 WebView 内直接执行常用命令，同时保留命令面板和快捷键工作流。",
+    "buttonRunning": "执行中...",
+    "actions": {
+      "generateCommit": "生成提交信息",
+      "reviewCode": "代码审查",
+      "generateBranchName": "生成分支名",
+      "generatePRSummary": "生成 PR 摘要",
+      "generateWeeklyReport": "生成周报"
+    },
+    "result": {
+      "running": "正在执行：{{action}}...",
+      "success": "{{action}} 执行完成。",
+      "failed": "{{action}} 执行失败：{{error}}"
+    }
+  },
+  "modelCatalogViewer": {
+    "title": "同步模型目录",
+    "description": "统一查看第三方同步模型元数据与自定义模型覆盖结果。"
+  },
   "codeAnalysis": {
     "title": "代码分析",
     "simplifyDiff": {
