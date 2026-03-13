@@ -708,6 +708,49 @@
           "high": "High"
         }
       },
+      "enableSmoothStreaming": {
+        "label": "Enable Smooth Streaming",
+        "helpText": "Smooth token chunks in streaming output for better readability"
+      },
+      "topP": {
+        "label": "Top-p",
+        "helpText": "Nucleus sampling. Set -1 to disable and use provider default.",
+        "placeholder": "e.g. 0.9 (or -1 to disable)"
+      },
+      "topK": {
+        "label": "Top-k",
+        "helpText": "Top-k sampling. Set -1 to disable and use provider default.",
+        "placeholder": "e.g. 40 (or -1 to disable)"
+      },
+      "presencePenalty": {
+        "label": "Presence Penalty",
+        "helpText": "Penalize repeated topics to encourage new content.",
+        "placeholder": "e.g. 0"
+      },
+      "frequencyPenalty": {
+        "label": "Frequency Penalty",
+        "helpText": "Penalize repeated tokens to reduce repetition.",
+        "placeholder": "e.g. 0"
+      },
+      "stopSequences": {
+        "label": "Stop Sequences",
+        "helpText": "Stop tokens, separated by comma or newline.",
+        "placeholder": "END\\n###\\n<stop>"
+      },
+      "enableReasoningExtraction": {
+        "label": "Enable Reasoning Extraction",
+        "helpText": "Extract reasoning segments from tagged output into a separate channel."
+      },
+      "reasoningExtractionTagName": {
+        "label": "Reasoning Tag Name",
+        "helpText": "Tag name used by extraction middleware.",
+        "placeholder": "think"
+      },
+      "featureOverrides": {
+        "label": "Feature Overrides (JSON)",
+        "helpText": "Per-feature overrides for topP/topK/penalties/stopSequences. JSON object.",
+        "placeholder": "{\n  \"branch-name\": {\n    \"topP\": 0.8,\n    \"topK\": 40,\n    \"stopSequences\": \"\\n\"\n  },\n  \"pr-summary\": {\n    \"presencePenalty\": 0.2\n  }\n}"
+      },
       "customModelSupportsPromptCache": {
         "label": "Support Prompt Caching",
         "helpText": "Enable prompt caching price calculation for this model"

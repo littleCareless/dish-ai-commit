@@ -1,337 +1,269 @@
 import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
 import { AIModel, AIRequestParams } from "@/ai/types";
 import { getSystemPrompt } from "@/ai/utils/generate-helper";
-import { Logger } from "@/utils/logger";
-import OpenAI from "openai";
-import { ChatCompletionMessageParam } from "openai/resources";
+import { createAnthropic } from "@ai-sdk/anthropic";
+import { createGoogleGenerativeAI } from "@ai-sdk/google";
+import { createOpenAI } from "@ai-sdk/openai";
+import {
+  Output,
+  defaultSettingsMiddleware,
+  extractReasoningMiddleware,
+  generateObject,
+  generateText,
+  jsonSchema,
+  smoothStream,
+  streamText,
+  wrapLanguageModel,
+} from "ai";
+import { createOllama } from "ollama-ai-provider-v2";
 
-/**
- * OpenAI提供者配置项接口
- */
 export interface OpenAIProviderConfig {
-  /** OpenAI API密钥 */
   apiKey?: string;
-  /** API基础URL，对于非官方OpenAI端点可自定义 */
   baseUrl?: string;
-  /** API版本号 */
   apiVersion?: string;
-  /** 组织ID */
   organization?: string;
-  /** 提供者唯一标识符 */
   providerId: string;
-  /** 提供者显示名称 */
   providerName: string;
-  /** 默认使用的模型ID */
   defaultModel?: string;
-  /** 支持的模型列表 */
   models: AIModel[];
-  /** 请求超时时间 (毫秒) */
   timeout?: number;
-  /** 最大重试次数 */
   maxRetries?: number;
-  /** 允许其他自定义配置项 */
+  customHeaders?: Record<string, string>;
+  includeMaxTokens?: boolean;
+  maxTokens?: number;
+  enableR1Models?: boolean;
+  enableReasoningEffort?: boolean;
+  reasoningEffortLevel?: "low" | "medium" | "high" | string;
+  enableSmoothStreaming?: boolean;
+  topP?: number;
+  topK?: number;
+  presencePenalty?: number;
+  frequencyPenalty?: number;
+  stopSequences?: string[] | string;
+  enableReasoningExtraction?: boolean;
+  reasoningExtractionTagName?: string;
+  featureOverrides?: Record<
+    string,
+    {
+      topP?: number;
+      topK?: number;
+      presencePenalty?: number;
+      frequencyPenalty?: number;
+      stopSequences?: string[] | string;
+    }
+  > | string;
   [key: string]: any;
 }
 
-/**
- * OpenAI API基础提供者抽象类
- * 实现了OpenAI API的基本功能，可被具体提供者继承和扩展
- */
+type ModelListResponse = {
+  data: Array<{ id: string; context_window?: number }>;
+};
+
 export abstract class BaseOpenAIProvider extends AbstractAIProvider {
-  /** 超时时间(ms) */
-  private readonly TIMEOUT = 120000; // 120秒
-  /** 重试次数 */
+  private readonly TIMEOUT = 120000;
   private readonly MAX_RETRIES = 3;
 
-  /** OpenAI API客户端实例 */
-  protected openai: OpenAI;
-  /** 提供者配置信息 */
+  // kept for compatibility with subclasses that referenced this field
+  protected openai: { models: { list: () => Promise<ModelListResponse> } };
   protected config: OpenAIProviderConfig;
-  /** 提供者标识信息 */
   protected provider: { id: string; name: string };
 
-  /**
-   * 创建基础OpenAI提供者实例
-   * @param config - 提供者配置对象
-   */
   constructor(config: OpenAIProviderConfig) {
     super();
     this.config = config;
-    this.provider = {
-      id: config.providerId,
-      name: config.providerName,
-    };
-    this.openai = this.createClient();
-  }
-
-  /**
-   * 创建OpenAI API客户端
-   * @returns OpenAI客户端实例
-   * @protected
-   */
-  protected createClient(): OpenAI {
-    const apiKey = this.config.apiKey ?? "local-dummy-key";
-    const logger = Logger.getInstance("Svn Commit-Gen AI");
-    const config: any = {
-      apiKey: apiKey,
-      logLevel: "debug",
-      timeout: this.config.timeout ?? this.TIMEOUT,
-      maxRetries: this.config.maxRetries ?? this.MAX_RETRIES,
-      logger: {
-        error: (msg: string) => logger.error(msg),
-        warn: (msg: string) => logger.warn(msg),
-        info: (msg: string) => logger.info(msg),
-        debug: (msg: string) => logger.debug(msg),
+    this.provider = { id: config.providerId, name: config.providerName };
+    this.openai = {
+      models: {
+        list: () => this._fetchModelsFromApi(),
       },
     };
-    console.log("config", config, this);
-
-    if (this.config.baseUrl) {
-      config.baseURL = this.config.baseUrl;
-      config.defaultHeaders = {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
-        "api-key": apiKey,
-        Authorization: `Bearer ${apiKey}`,
-      };
-    }
-
-    const loggableConfig = { ...config };
-    // if (loggableConfig.apiKey) {
-    //   loggableConfig.apiKey = "REDACTED";
-    // }
-    // if (loggableConfig.defaultHeaders?.["api-key"]) {
-    //   // To avoid modifying the original config object, create a new defaultHeaders object
-    //   loggableConfig.defaultHeaders = {
-    //     ...loggableConfig.defaultHeaders,
-    //     "api-key": "REDACTED",
-    //   };
-    // }
-
-    console.log(
-      `[BaseOpenAIProvider] Creating OpenAI client with config:`,
-      JSON.stringify(loggableConfig, null, 2)
-    );
-    console.log("[BaseOpenAIProvider] createClient this.config:", {
-      baseUrl: this.config.baseUrl,
-      hasBaseUrl: !!this.config.baseUrl,
-      apiKey: this.config.apiKey ? "***" : undefined,
-      providerId: this.config.providerId,
-    });
-
-    return new OpenAI(config);
   }
 
-  /**
-   * 为特定模型创建OpenAI API客户端
-   * @param model - AI模型
-   * @returns OpenAI客户端实例
-   * @protected
-   */
-  protected createClientForModel(model?: AIModel): OpenAI {
-    const apiKey = this.config.apiKey ?? "local-dummy-key";
-    const config: any = {
-      apiKey: apiKey,
-      timeout: this.config.timeout ?? this.TIMEOUT,
-      maxRetries: this.config.maxRetries ?? this.MAX_RETRIES,
-    };
-
-    const baseUrl = model?.baseUrl || this.config.baseUrl;
-    if (baseUrl) {
-      config.baseURL = baseUrl;
-      config.defaultHeaders = {
-        "User-Agent":
-          "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
-        "api-key": apiKey,
-        Authorization: `Bearer ${apiKey}`,
-      };
-    }
-    console.log("[BaseOpenAIProvider] createClientForModel config:", {
-      hasApiKey: !!apiKey,
-      hasBaseUrl: !!baseUrl,
-      baseUrl: baseUrl,
-      hasDefaultHeaders: !!config.defaultHeaders,
-      defaultHeaders: config.defaultHeaders,
-      modelId: model?.id,
-      modelBaseUrl: model?.baseUrl,
-      configBaseUrl: this.config.baseUrl,
-      thisConfigKeys: Object.keys(this.config),
-    });
-    return new OpenAI(config);
-  }
-
-  /**
-   * 实现抽象方法：执行AI请求
-   * 调用OpenAI API执行请求并返回结果
-   */
   protected async executeAIRequest(
     params: AIRequestParams,
     options?: {
       parseAsJSON?: boolean;
       temperature?: number;
       maxTokens?: number;
+      tools?: any[];
+      outputSchema?: {
+        schema: any;
+        key?: string;
+      };
+    },
+  ): Promise<{ content: string; usage?: any; jsonContent?: any; tool_calls?: any[] }> {
+    const messages = await this.buildProviderMessages(params);
+    const filteredMessages = this.filterEmptyMessages(messages);
+    const modelId = this.resolveModelId(params);
+
+    if (options?.outputSchema?.schema) {
+      const result = await generateObject({
+        model: this.createLanguageModel(modelId, params.model),
+        messages: filteredMessages as any,
+        schema: options.outputSchema.schema,
+        temperature: this.resolveTemperature(options?.temperature),
+        topP: this.resolveTopP(params.feature),
+        topK: this.resolveTopK(params.feature),
+        presencePenalty: this.resolvePresencePenalty(params.feature),
+        frequencyPenalty: this.resolveFrequencyPenalty(params.feature),
+        maxOutputTokens: this.resolveMaxTokensValue(options?.maxTokens),
+        maxRetries: this.config.maxRetries ?? this.MAX_RETRIES,
+        abortSignal: AbortSignal.timeout(this.config.timeout ?? this.TIMEOUT),
+      });
+      this.logSDKWarnings(result.warnings, modelId, "generateObject");
+
+      const jsonContent = result.object;
+      const outputKey = options.outputSchema.key;
+      const outputValue =
+        outputKey && jsonContent && typeof jsonContent === "object"
+          ? (jsonContent as Record<string, unknown>)[outputKey]
+          : undefined;
+
+      return {
+        content:
+          typeof outputValue === "string"
+            ? outputValue
+            : JSON.stringify(jsonContent ?? {}),
+        usage: this.mapUsage(result.usage),
+        jsonContent,
+      };
     }
-  ): Promise<{ content: string; usage?: any; jsonContent?: any }> {
-    const messages = (await this.buildProviderMessages(
-      params
-    )) as ChatCompletionMessageParam[];
 
-    console.log(
-      `[BaseOpenAIProvider] executeAIRequest called at ${new Date().toISOString()} `
-    );
-    console.log("Final messages for AI:", JSON.stringify(messages, null, 2));
+    if (options?.tools?.length) {
+      const firstTool = options.tools[0];
+      const functionName = firstTool?.function?.name;
+      const parameters = firstTool?.function?.parameters;
 
-    const client = this.createClientForModel(params.model);
-    const completion = await client.chat.completions.create({
-      model:
-        (params.model && params.model.id) ||
-        this.config.defaultModel ||
-        "gpt-3.5-turbo",
-      messages,
-      temperature: options?.temperature,
-    });
+      if (functionName && parameters) {
+        const result = await generateText({
+          model: this.createLanguageModel(modelId, params.model),
+          messages: filteredMessages as any,
+          output: Output.object({
+            schema: jsonSchema(parameters),
+            name: functionName,
+            description: firstTool?.function?.description,
+          }),
+          temperature: this.resolveTemperature(options?.temperature),
+          topP: this.resolveTopP(params.feature),
+          topK: this.resolveTopK(params.feature),
+          presencePenalty: this.resolvePresencePenalty(params.feature),
+          frequencyPenalty: this.resolveFrequencyPenalty(params.feature),
+          stopSequences: this.resolveStopSequences(params.feature),
+          maxOutputTokens: this.resolveMaxTokensValue(options?.maxTokens),
+          maxRetries: this.config.maxRetries ?? this.MAX_RETRIES,
+          abortSignal: AbortSignal.timeout(this.config.timeout ?? this.TIMEOUT),
+        });
+        this.logSDKWarnings(result.warnings, modelId, "generateText/object");
 
-    const content = completion.choices[0]?.message?.content || "";
-    const usage = {
-      promptTokens: completion.usage?.prompt_tokens,
-      completionTokens: completion.usage?.completion_tokens,
-      totalTokens: completion.usage?.total_tokens,
-    };
-
-    let jsonContent;
-    if (options?.parseAsJSON) {
-      try {
-        jsonContent = JSON.parse(content);
-      } catch (e) {
-        console.warn("Failed to parse response as JSON", e);
+        return {
+          content: "",
+          usage: this.mapUsage(result.usage),
+          tool_calls: [
+            {
+              function: {
+                name: functionName,
+                arguments: JSON.stringify(result.output ?? {}),
+              },
+            },
+          ],
+        };
       }
     }
 
-    return { content, usage, jsonContent };
+    const result = await generateText({
+      model: this.createLanguageModel(modelId, params.model),
+      messages: filteredMessages as any,
+      temperature: this.resolveTemperature(options?.temperature),
+      topP: this.resolveTopP(params.feature),
+      topK: this.resolveTopK(params.feature),
+      presencePenalty: this.resolvePresencePenalty(params.feature),
+      frequencyPenalty: this.resolveFrequencyPenalty(params.feature),
+      stopSequences: this.resolveStopSequences(params.feature),
+      maxOutputTokens: this.resolveMaxTokensValue(options?.maxTokens),
+      maxRetries: this.config.maxRetries ?? this.MAX_RETRIES,
+      abortSignal: AbortSignal.timeout(this.config.timeout ?? this.TIMEOUT),
+    });
+    this.logSDKWarnings(result.warnings, modelId, "generateText");
+
+    const content = result.text ?? "";
+    let jsonContent: any;
+    if (options?.parseAsJSON) {
+      jsonContent = this.tryParseJson(content);
+    }
+
+    return {
+      content,
+      usage: this.mapUsage(result.usage),
+      jsonContent,
+    };
   }
 
-  /**
-   * 执行AI流式请求
-   * 调用OpenAI API执行流式请求并逐步返回结果
-   */
   protected async executeAIStreamRequest(
     params: AIRequestParams,
     options?: {
       temperature?: number;
       maxTokens?: number;
-    }
+    },
   ): Promise<AsyncIterable<string>> {
-    const messages = (await this.buildProviderMessages(
-      params
-    )) as ChatCompletionMessageParam[];
+    const messages = await this.buildProviderMessages(params);
+    const filteredMessages = this.filterEmptyMessages(messages);
+    const modelId = this.resolveModelId(params);
 
-    const filteredMessages = messages.filter((msg) => {
-      if (typeof msg.content === "string") {
-        return msg.content?.trim() !== "";
-      } else if (Array.isArray(msg.content)) {
-        // 过滤掉 content 为空数组或者数组里全是空字符串
-        const nonEmptyParts = msg.content.filter((part) => {
-          if (part.type === "text" && part.text?.trim() !== "") {
-            return true;
-          }
-          // 这里如果有别的类型，也可以加判断
-          return false;
-        });
-        return nonEmptyParts.length > 0;
-      }
-      return false;
+    const stream = streamText({
+      model: this.createLanguageModel(modelId, params.model),
+      messages: filteredMessages as any,
+      temperature: this.resolveTemperature(options?.temperature),
+      topP: this.resolveTopP(params.feature),
+      topK: this.resolveTopK(params.feature),
+      presencePenalty: this.resolvePresencePenalty(params.feature),
+      frequencyPenalty: this.resolveFrequencyPenalty(params.feature),
+      stopSequences: this.resolveStopSequences(params.feature),
+      maxOutputTokens: this.resolveMaxTokensValue(options?.maxTokens),
+      experimental_transform: this.resolveStreamTransform(),
+      onFinish: ({ warnings }) => {
+        this.logSDKWarnings(warnings, modelId, "streamText");
+      },
+      maxRetries: this.config.maxRetries ?? this.MAX_RETRIES,
+      abortSignal: AbortSignal.timeout(this.config.timeout ?? this.TIMEOUT),
     });
 
-    const processStream = async function* (
-      this: BaseOpenAIProvider
-    ): AsyncIterable<string> {
-      try {
-        console.log(
-          "Final messages for AI:",
-          JSON.stringify(filteredMessages, null, 2)
-        );
-        const client = this.createClientForModel(params.model);
-        const stream = await client.chat.completions.create({
-          model:
-            (params.model && params.model.id) ||
-            this.config.defaultModel ||
-            "gpt-3.5-turbo",
-          messages: filteredMessages,
-          temperature: options?.temperature,
-          max_tokens: options?.maxTokens,
-          stream: true,
-        });
-        let completionContent = "";
-        for await (const chunk of stream) {
-          if (chunk.choices[0]?.delta?.content) {
-            const content = chunk.choices[0].delta.content;
-            completionContent += content;
-            yield content;
-          }
+    const processStream = async function* (): AsyncIterable<string> {
+      for await (const chunk of stream.textStream) {
+        if (chunk) {
+          yield chunk;
         }
-      } catch (error: any) {
-        console.log("[BaseOpenAIProvider] Stream request error:", {
-          error: error,
-          errorType: typeof error,
-          errorKeys: error ? Object.keys(error) : [],
-          status: error?.status,
-          code: error?.code,
-          message: error?.message,
-          hasConfig: !!this.config,
-          configApiKey: this.config?.apiKey ? "***" : undefined,
-        });
-        this.handleApiError(error);
       }
     };
 
-    return Promise.resolve(processStream.call(this));
+    return processStream();
   }
 
-  /**
-   * 获取默认模型
-   */
   protected getDefaultModel(): AIModel {
-    // 使用类型断言将模型ID转换为AIModel.id允许的类型
-    const modelId = this.config.defaultModel || "gpt-3.5-turbo";
+    const modelId = this.config.defaultModel || "gpt-4o-mini";
     return {
       id: modelId,
       name: modelId,
       maxTokens: { input: 4096, output: 2048 },
       provider: {
-        id: this.provider.id,
+        id: this.provider.id as any,
         name: this.provider.name,
       },
     } as AIModel;
   }
 
-  /**
-   * 获取当前支持的AI模型列表
-   * 优先从API获取，如果失败则返回配置的静态列表
-   *
-   * @returns Promise<AIModel[]> 支持的模型配置数组
-   */
   async getModels(): Promise<AIModel[]> {
-    // 如果没有提供API密钥，立即返回静态模型列表，避免不必要的API调用
-    if (!this.config.apiKey) {
-      console.warn(
-        `[BaseOpenAIProvider] No API key for ${this.config.providerName}, returning static model list.`
-      );
-      return this.config.models as AIModel[];
+    if (!this.shouldFetchModelsFromApi()) {
+      return this.config.models;
     }
 
     try {
       const response = await this._fetchModelsFromApi();
-      const models = response.data;
-
-      if (!models || models.length === 0) {
-        console.warn(
-          `API for ${this.config.providerName} returned no models, falling back to static list.`
-        );
-        return this.config.models as AIModel[];
+      if (!response?.data?.length) {
+        return this.config.models;
       }
 
-      return models.map(
-        (model: any) =>
+      return response.data.map(
+        (model) =>
           ({
             id: model.id,
             name: model.id,
@@ -343,56 +275,33 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
               id: this.provider.id,
               name: this.provider.name,
             },
-          }) as AIModel
+          }) as AIModel,
       );
-    } catch (error) {
-      // _fetchModelsFromApi 已经记录了详细错误, 这里只记录回退行为
-      console.warn(
-        `[BaseOpenAIProvider] Falling back to static model list for ${this.config.providerName} due to API error.`
-      );
-      return this.config.models as AIModel[];
+    } catch {
+      return this.config.models;
     }
   }
 
-  /**
-   * 刷新并返回可用的模型ID列表
-   * @returns Promise<string[]> 模型ID数组
-   */
   async refreshModels(): Promise<string[]> {
-    try {
-      const response = await this._fetchModelsFromApi();
-      return response.data.map((model) => model.id);
-    } catch (error) {
-      // _fetchModelsFromApi 已经记录了详细错误, 这里只返回空数组
-      console.warn(
-        `[BaseOpenAIProvider] Falling back to static model list for ${this.config.providerName} due to API error.`
-      );
-      return [];
+    if (!this.shouldFetchModelsFromApi()) {
+      return this.config.models.map((m) => m.id);
     }
+
+    const response = await this._fetchModelsFromApi();
+    return response.data.map((model) => model.id);
   }
 
-  /**
-   * 获取提供者显示名称
-   */
   getName(): string {
     return this.provider.name;
   }
 
-  /**
-   * 获取提供者唯一标识符
-   */
   getId(): string {
     return this.provider.id;
   }
 
-  /**
-   * 带超时的Promise包装
-   * @param promise 原始Promise
-   * @param timeout 超时时间(ms)
-   */
   protected async withTimeout<T>(
     promise: Promise<T>,
-    timeout = this.TIMEOUT
+    timeout = this.TIMEOUT,
   ): Promise<T> {
     const timeoutPromise = new Promise<never>((_, reject) => {
       setTimeout(() => reject(new Error("Request timeout")), timeout);
@@ -400,42 +309,21 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
     return Promise.race([promise, timeoutPromise]);
   }
 
-  /**
-   * 带重试的Promise包装
-   * @param operation 异步操作函数
-   * @param retries 重试次数
-   */
   protected async withRetry<T>(
     operation: () => Promise<T>,
     retries = this.MAX_RETRIES,
-    operationName = "unnamed operation"
   ): Promise<T> {
     try {
       return await operation();
     } catch (error) {
       if (retries > 0) {
-        const delay = Math.min(1000 * (this.MAX_RETRIES - retries + 1), 3000);
-        console.warn(
-          `[BaseOpenAIProvider] Attempt for ${operationName} failed. Retrying in ${delay}ms... (${
-            retries - 1
-          } retries left). Error:`,
-          error
-        );
-        await new Promise((resolve) => setTimeout(resolve, delay));
-        return this.withRetry(operation, retries - 1, operationName);
+        await new Promise((resolve) => setTimeout(resolve, 500));
+        return this.withRetry(operation, retries - 1);
       }
-      console.error(
-        `[BaseOpenAIProvider] All retries for ${operationName} failed.`
-      );
       throw error;
     }
   }
 
-  /**
-   * 构建OpenAI特定的消息数组。
-   * @param params AI请求参数
-   * @returns 转换后的ChatCompletionMessageParam数组
-   */
   protected async buildProviderMessages(params: AIRequestParams): Promise<any> {
     if (!params.messages || params.messages.length === 0) {
       const systemPrompt = await getSystemPrompt(params);
@@ -451,66 +339,435 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       }
     }
 
-    // 类型断言，因为OpenAI的类型与通用类型兼容
-    return params.messages as ChatCompletionMessageParam[];
+    return params.messages.map((message) => ({
+      role: message.role,
+      content: message.content,
+    }));
   }
-  /**
-   * 检查服务是否可用的抽象方法
-   * 需要由具体提供者实现
-   */
+
   abstract isAvailable(): Promise<boolean>;
 
-  /**
-   * 处理API错误
-   * @param error - 捕获到的错误对象
-   */
   protected handleApiError(error: any): void {
-    if (error.code === "context_length_exceeded") {
+    if (error?.code === "context_length_exceeded") {
       this.handleContextLengthError(error, "unknown");
-    } else {
-      console.error(`[BaseOpenAIProvider] API Error: ${error.message}`);
-      throw error;
     }
+    throw error;
   }
 
-  /**
-   * 处理上下文长度错误
-   * @param error - 捕获到的错误对象
-   * @param modelId - 当前使用的模型ID
-   */
   protected handleContextLengthError(error: any, modelId: string): void {
-    console.error(
-      `[BaseOpenAIProvider] Context length exceeded for model ${modelId}: ${error.message}`
-    );
     throw new Error(
-      `Context length exceeded for model ${modelId}. Please reduce the input size.`
+      `Context length exceeded for model ${modelId}. ${error?.message ?? ""}`.trim(),
     );
   }
 
-  /**
-   * 受保护的辅助方法：从API获取模型列表，包含重试和超时逻辑
-   * 子类可以直接调用此方法来获取模型列表
-   * @returns Promise<OpenAI.Models.ModelsPage>
-   * @protected
-   */
-  protected async _fetchModelsFromApi(): Promise<OpenAI.Models.ModelsPage> {
-    try {
-      console.log(
-        `[BaseOpenAIProvider] Attempting to fetch models from API for provider: ${this.config.providerName}`
-      );
-      const response = await this.openai.models.list();
-      console.log(
-        `[BaseOpenAIProvider] Successfully fetched models from API for provider: ${this.config.providerName}`
-      );
-      return response;
-    } catch (error) {
-      console.dir(error);
-      console.error(
-        `[BaseOpenAIProvider] Failed to fetch models for provider: ${this.config.providerName}. Full error:`,
-        error
-      );
-      // 向上抛出错误，由调用方（getModels/refreshModels）决定如何处理
-      throw error;
+  protected async _fetchModelsFromApi(): Promise<ModelListResponse> {
+    const baseUrl = this.normalizeBaseUrl(this.config.baseUrl);
+    const url = `${baseUrl}/models`;
+    const headers = this.resolveOpenAICompatibleHeaders();
+
+    const response = await fetch(url, { method: "GET", headers });
+    if (!response.ok) {
+      const text = await response.text();
+      throw new Error(`Failed to fetch models: ${response.status} ${text}`);
     }
+
+    const data = (await response.json()) as ModelListResponse;
+    if (!data?.data) {
+      return { data: [] };
+    }
+
+    return data;
+  }
+
+  private shouldFetchModelsFromApi(): boolean {
+    const nonOpenAIStyle = new Set(["anthropic", "gemini", "ollama", "vertexai"]);
+    if (nonOpenAIStyle.has(this.provider.id)) {
+      return false;
+    }
+
+    return !!this.config.apiKey || this.provider.id === "ollama";
+  }
+
+  private resolveModelId(params: AIRequestParams): string {
+    return (params.model?.id || this.config.defaultModel || "gpt-4o-mini") as string;
+  }
+
+  private resolveMaxTokensValue(requestMaxTokens?: number): number | undefined {
+    if (this.config.includeMaxTokens === false) {
+      return undefined;
+    }
+    if (this.config.maxTokens && this.config.maxTokens > 0) {
+      return this.config.maxTokens;
+    }
+    return requestMaxTokens;
+  }
+
+  private resolveTemperature(requestTemperature?: number): number | undefined {
+    if (this.config.enableR1Models) {
+      return undefined;
+    }
+    return requestTemperature;
+  }
+
+  private resolveProviderOptions() {
+    const reasoningEffort = this.resolveReasoningEffort();
+    if (!reasoningEffort) {
+      return undefined;
+    }
+
+    const options: Record<string, Record<string, unknown>> = {};
+
+    // Keep both keys for maximum compatibility:
+    // - "openai": official AI SDK provider key
+    // - provider id: custom OpenAI-compatible provider names in this codebase
+    options.openai = { reasoningEffort };
+    options[this.provider.id] = { reasoningEffort };
+
+    return options as any;
+  }
+
+  private resolveReasoningEffort(): "low" | "medium" | "high" | undefined {
+    if (!this.config.enableReasoningEffort) {
+      return undefined;
+    }
+
+    const level = this.config.reasoningEffortLevel;
+    if (level === "low" || level === "medium" || level === "high") {
+      return level;
+    }
+
+    return "medium";
+  }
+
+  private resolveTopP(feature?: string): number | undefined {
+    const candidate = this.resolveFeatureOverride(feature, "topP");
+    if (typeof candidate !== "number") {
+      return undefined;
+    }
+
+    if (candidate <= 0 || candidate > 1) {
+      return undefined;
+    }
+
+    return candidate;
+  }
+
+  private resolveTopK(feature?: string): number | undefined {
+    const candidate = this.resolveFeatureOverride(feature, "topK");
+    if (typeof candidate !== "number") {
+      return undefined;
+    }
+
+    if (candidate <= 0) {
+      return undefined;
+    }
+
+    return Math.floor(candidate);
+  }
+
+  private resolvePresencePenalty(feature?: string): number | undefined {
+    const candidate = this.resolveFeatureOverride(feature, "presencePenalty");
+    return typeof candidate === "number"
+      ? candidate
+      : undefined;
+  }
+
+  private resolveFrequencyPenalty(feature?: string): number | undefined {
+    const candidate = this.resolveFeatureOverride(feature, "frequencyPenalty");
+    return typeof candidate === "number"
+      ? candidate
+      : undefined;
+  }
+
+  private resolveStopSequences(feature?: string): string[] | undefined {
+    const raw = this.resolveFeatureOverride(feature, "stopSequences");
+    const values = Array.isArray(raw)
+      ? raw
+      : typeof raw === "string"
+        ? raw.split(/[\n,]/g)
+        : [];
+
+    const sequences = values
+      .map((value) => value?.trim())
+      .filter((value): value is string => !!value);
+
+    return sequences.length > 0 ? sequences : undefined;
+  }
+
+  private resolveFeatureOverride(
+    feature: string | undefined,
+    key:
+      | "topP"
+      | "topK"
+      | "presencePenalty"
+      | "frequencyPenalty"
+      | "stopSequences",
+  ): unknown {
+    if (!feature) {
+      return this.config[key];
+    }
+
+    const overrides = this.resolveFeatureOverridesMap();
+    const featureConfig = overrides?.[feature];
+    if (featureConfig && key in featureConfig) {
+      return featureConfig[key];
+    }
+
+    return this.config[key];
+  }
+
+  private resolveFeatureOverridesMap():
+    | Record<
+        string,
+        {
+          topP?: number;
+          topK?: number;
+          presencePenalty?: number;
+          frequencyPenalty?: number;
+          stopSequences?: string[] | string;
+        }
+      >
+    | undefined {
+    const raw = this.config.featureOverrides;
+
+    if (!raw) {
+      return undefined;
+    }
+
+    if (typeof raw === "string") {
+      try {
+        const parsed = JSON.parse(raw);
+        if (parsed && typeof parsed === "object") {
+          return parsed as Record<
+            string,
+            {
+              topP?: number;
+              topK?: number;
+              presencePenalty?: number;
+              frequencyPenalty?: number;
+              stopSequences?: string[] | string;
+            }
+          >;
+        }
+      } catch {
+        return undefined;
+      }
+      return undefined;
+    }
+
+    return raw;
+  }
+
+  private logSDKWarnings(
+    warnings: ReadonlyArray<unknown> | undefined,
+    modelId: string,
+    stage: string,
+  ): void {
+    if (!warnings?.length) {
+      return;
+    }
+
+    this.logger.warn("AI SDK returned model warnings", {
+      data: {
+        provider: this.provider.id,
+        model: modelId,
+        stage,
+        warnings,
+      },
+    });
+  }
+
+  private resolveStreamTransform() {
+    if (!this.config.enableSmoothStreaming) {
+      return undefined;
+    }
+
+    return smoothStream();
+  }
+
+  private filterEmptyMessages(messages: Array<{ role: string; content: any }>) {
+    return messages.filter((msg) => {
+      if (typeof msg.content === "string") {
+        return msg.content.trim() !== "";
+      }
+      return msg.content !== null && msg.content !== undefined;
+    });
+  }
+
+  private tryParseJson(content: string): any {
+    try {
+      return JSON.parse(content);
+    } catch {
+      try {
+        const jsonString = content.replace(/^```json\s*|\s*```$/g, "").trim();
+        return JSON.parse(jsonString);
+      } catch {
+        return undefined;
+      }
+    }
+  }
+
+  private mapUsage(usage?: {
+    inputTokens?: number;
+    outputTokens?: number;
+    totalTokens?: number;
+  }) {
+    return {
+      promptTokens: usage?.inputTokens,
+      completionTokens: usage?.outputTokens,
+      totalTokens: usage?.totalTokens,
+    };
+  }
+
+  private createLanguageModel(modelId: string, model?: AIModel) {
+    const baseUrl = this.normalizeBaseUrl(model?.baseUrl || this.config.baseUrl);
+    const apiKey = this.config.apiKey;
+    const providerId = this.provider.id;
+
+    if (providerId === "anthropic") {
+      const anthropic = createAnthropic({
+        apiKey,
+        baseURL: baseUrl || "https://api.anthropic.com/v1",
+        headers: this.config.customHeaders,
+        name: "anthropic",
+      });
+      return this.wrapLanguageModelWithDefaults(anthropic(modelId as any));
+    }
+
+    if (providerId === "gemini" || providerId === "vertexai") {
+      const google = createGoogleGenerativeAI({
+        apiKey,
+        baseURL: baseUrl || "https://generativelanguage.googleapis.com/v1beta",
+        headers: this.config.customHeaders,
+        name: "google.generative-ai",
+      });
+      return this.wrapLanguageModelWithDefaults(google(modelId as any));
+    }
+
+    if (providerId === "ollama") {
+      const ollama = createOllama({
+        baseURL: this.normalizeOllamaBaseUrl(baseUrl || "http://localhost:11434"),
+        headers: this.config.customHeaders,
+        compatibility: "strict",
+        name: "ollama",
+      });
+      return this.wrapLanguageModelWithDefaults(ollama(modelId as any));
+    }
+
+    const openai = createOpenAI({
+      apiKey: apiKey || "local-dummy-key",
+      baseURL: baseUrl,
+      headers: this.resolveOpenAICompatibleHeaders(),
+      name: this.provider.id,
+      fetch: this.createProviderFetch(),
+    });
+    return this.wrapLanguageModelWithDefaults(openai(modelId as any));
+  }
+
+  private wrapLanguageModelWithDefaults(model: any) {
+    const settings: Record<string, unknown> = {};
+
+    const topP = this.resolveTopP();
+    const topK = this.resolveTopK();
+    const presencePenalty = this.resolvePresencePenalty();
+    const frequencyPenalty = this.resolveFrequencyPenalty();
+    const providerOptions = this.resolveProviderOptions();
+
+    if (topP !== undefined) {
+      settings.topP = topP;
+    }
+    if (topK !== undefined) {
+      settings.topK = topK;
+    }
+    if (presencePenalty !== undefined) {
+      settings.presencePenalty = presencePenalty;
+    }
+    if (frequencyPenalty !== undefined) {
+      settings.frequencyPenalty = frequencyPenalty;
+    }
+    if (providerOptions !== undefined) {
+      settings.providerOptions = providerOptions;
+    }
+
+    const middlewares: any[] = [];
+    if (Object.keys(settings).length > 0) {
+      middlewares.push(
+        defaultSettingsMiddleware({
+          settings: settings as any,
+        }),
+      );
+    }
+
+    const reasoningMiddleware = this.resolveReasoningExtractionMiddleware();
+    if (reasoningMiddleware) {
+      middlewares.push(reasoningMiddleware);
+    }
+
+    if (middlewares.length === 0) {
+      return model;
+    }
+
+    return wrapLanguageModel({
+      model,
+      middleware: middlewares,
+    });
+  }
+
+  private resolveReasoningExtractionMiddleware() {
+    if (!this.config.enableReasoningExtraction) {
+      return undefined;
+    }
+
+    const tagName = this.config.reasoningExtractionTagName?.trim() || "think";
+    return extractReasoningMiddleware({ tagName });
+  }
+
+  private resolveOpenAICompatibleHeaders(): Record<string, string> {
+    const apiKey = this.config.apiKey || "local-dummy-key";
+    const headers: Record<string, string> = {
+      ...this.config.customHeaders,
+      "User-Agent":
+        "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36",
+    };
+
+    if (!headers.Authorization) {
+      headers.Authorization = `Bearer ${apiKey}`;
+    }
+    if (!headers["api-key"]) {
+      headers["api-key"] = apiKey;
+    }
+
+    return headers;
+  }
+
+  private createProviderFetch(): typeof fetch | undefined {
+    if (!(this.provider.id === "azure-openai" || this.config.useAzure)) {
+      return undefined;
+    }
+
+    const apiVersion = this.config.azureApiVersion || this.config.apiVersion;
+    if (!apiVersion) {
+      return undefined;
+    }
+
+    return async (input: string | URL | Request, init?: RequestInit) => {
+      const url = new URL(typeof input === "string" ? input : input.toString());
+      if (!url.searchParams.has("api-version")) {
+        url.searchParams.set("api-version", apiVersion);
+      }
+      return fetch(url.toString(), init);
+    };
+  }
+
+  private normalizeBaseUrl(baseUrl?: string): string | undefined {
+    if (!baseUrl) {
+      return undefined;
+    }
+    return baseUrl.replace(/\/+$/, "");
+  }
+
+  private normalizeOllamaBaseUrl(baseUrl: string): string {
+    const normalized = this.normalizeBaseUrl(baseUrl) || "http://localhost:11434";
+    return normalized.endsWith("/api") ? normalized : `${normalized}/api`;
   }
 }

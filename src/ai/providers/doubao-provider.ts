@@ -132,12 +132,14 @@ export class DoubaoProvider extends BaseOpenAIProvider {
    */
   async refreshModels(): Promise<string[]> {
     try {
-      // 使用轻量级聊天请求验证 API 连接
-      await this.openai.chat.completions.create({
-        model: this.config.defaultModel || "doubao-seed-1-6-251015",
-        messages: [{ role: "user", content: "test" }],
-        max_tokens: 1,
-      });
+      await this.executeAIRequest(
+        {
+          diff: "ping",
+          additionalContext: "",
+          messages: [{ role: "user", content: "ping" }],
+        },
+        { maxTokens: 1 },
+      );
       // 如果成功，返回静态模型列表
       return doubaoModels.map((m) => m.id);
     } catch (error) {
