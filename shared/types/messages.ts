@@ -74,6 +74,11 @@ export enum UIRequest {
   ContextGetLatest = "context.getLatest",
   ContextRebuildPreview = "context.rebuildPreview",
 
+  // ===== Commit Chat Module =====
+  CommitChatSendMessage = "commitChat.sendMessage",
+  CommitChatGetChangedFiles = "commitChat.getChangedFiles",
+  CommitChatGetFileDiff = "commitChat.getFileDiff",
+
   // ===== WeeklyReport Module =====
   WeeklyReportGenerateTeam = "weeklyReport.generateTeam",
   WeeklyReportGetUsers = "weeklyReport.getUsers",
@@ -190,6 +195,14 @@ export enum ExtensionResponse {
   // ===== Context Module =====
   ContextLatestLoaded = "context.latestLoaded",
   ContextPreviewUpdated = "context.previewUpdated",
+
+  // ===== Commit Chat Module =====
+  CommitChatResponse = "commitChat.response",
+  CommitChatChangedFilesLoaded = "commitChat.changedFilesLoaded",
+  CommitChatFileDiffLoaded = "commitChat.fileDiffLoaded",
+  CommitChatStreamStarted = "commitChat.streamStarted",
+  CommitChatStreamDelta = "commitChat.streamDelta",
+  CommitChatStreamError = "commitChat.streamError",
 
   // ===== WeeklyReport Module =====
   WeeklyReportUsersListLoaded = "weeklyReport.usersListLoaded",
@@ -327,4 +340,41 @@ export interface CommitCommand {
   command: string;
   description: string;
   handler: (input: string) => void;
+}
+
+export interface CommitChatSendMessageRequest {
+  messages: Array<{ role: "user" | "assistant"; content: string }>;
+  targetFiles?: string[];
+}
+
+export interface CommitChatSendMessageResponse {
+  reply: string;
+  commitMessage?: string;
+  suggestions?: string[];
+  targetFiles: string[];
+}
+
+export interface CommitChatGetChangedFilesResponse {
+  files: string[];
+}
+
+export interface CommitChatGetFileDiffRequest {
+  file: string;
+}
+
+export interface CommitChatGetFileDiffResponse {
+  file: string;
+  diff: string;
+}
+
+export interface CommitChatStreamStartedResponse {
+  targetFiles: string[];
+}
+
+export interface CommitChatStreamDeltaResponse {
+  delta: string;
+}
+
+export interface CommitChatStreamErrorResponse {
+  error: string;
 }

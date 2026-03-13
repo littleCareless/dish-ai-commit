@@ -5,6 +5,7 @@ import { MemoryRouter, Navigate, Route, Routes } from "react-router-dom";
 
 // 页面组件
 import { AboutPage } from "@/pages/about-page";
+import { CommitChatPage } from "@/pages/CommitChatPage";
 import { ContextPage } from "@/pages/context-page";
 import { ExperimentalPage } from "@/pages/experimental-page";
 import { IndexingPage } from "@/pages/indexing-page";
@@ -85,6 +86,12 @@ export const AppRouter: React.FC = () => {
 
                     {/* 提示词页面 */}
                     <Route path={routes.prompts} element={<PromptsPage />} />
+
+                    {/* Commit Chat 页面 */}
+                    <Route
+                      path={routes.commitChat}
+                      element={<CommitChatPage />}
+                    />
 
                     {/* 实验性页面 */}
                     <Route

@@ -10,6 +10,8 @@
     "context_description": "Manage context information",
     "prompts": "Prompts",
     "prompts_description": "Manage and use prompts",
+    "commit_chat": "Commit Chat",
+    "commit_chat_description": "Generate commit messages through chat",
     "experimental": "Experimental",
     "experimental_description": "Try experimental features",
     "indexing": "Code Indexing",
