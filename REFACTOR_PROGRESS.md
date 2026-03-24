@@ -56,4 +56,14 @@
 - 创建进度跟踪文档
 - 准备开始执行重构
 
+### 2026-03-24 - 方案收敛（本轮瘦身）
+
+- 主链未接入的编排层 scaffold 已删除：
+  - `src/services/core/commit-generation-coordinator.ts`
+  - `src/core/generation-orchestrator.ts`
+  - `src/core/generation-transaction.ts`
+  - `src/core/generation-gate.ts`
+- `StreamingGenerationHelper` 中未使用的 `GenerationGate` 引用已移除。
+- 本文件保留为历史记录，不再作为进行中任务清单。
+
 ---

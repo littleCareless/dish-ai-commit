@@ -20,7 +20,6 @@ import { Logger } from "@/utils/logger";
 import { notify } from "@/utils/notification/notification-manager";
 import { showCommitSuccessNotification } from "@/utils/notification/system-notification";
 import { stateManager } from "@/utils/state/state-manager";
-import { GenerationGate } from "@/core/generation-gate";
 import * as vscode from "vscode";
 import * as crypto from "crypto";
 
@@ -40,7 +39,6 @@ export class StreamingGenerationHelper {
   private layeredCommitHandler: LayeredCommitHandler;
   private streamingHandler: StreamingHandler;
   private functionCallingHandler: FunctionCallingHandler;
-  private generationGate = GenerationGate.getInstance();
   private lastRequestId: string | null = null;
   private lastContext: {
     contextManager: ContextManager;

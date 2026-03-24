@@ -37,6 +37,15 @@ Change: `refactor-generation-pipeline-dedup`
 - Removed legacy duplicate files under `src/services/`.
 - Canonical paths documented in `docs/refactor-generation-pipeline-dedup-decisions.md`.
 
+7. Disconnected orchestration scaffolds: **Removed**
+
+- Deleted unused scaffolds that were not wired into runtime path:
+  - `src/services/core/commit-generation-coordinator.ts`
+  - `src/core/generation-orchestrator.ts`
+  - `src/core/generation-transaction.ts`
+  - `src/core/generation-gate.ts`
+- Removed stale `GenerationGate` field/import from `StreamingGenerationHelper`.
+
 ## Validation Commands and Outputs
 
 1. Typecheck
@@ -86,5 +95,4 @@ Result: ✅ dedup/cross-repo checks pass; model fallback path is no longer hit b
 ## Residual Risks
 
 1. `prepare()` still performs one SCM detection before cross-repo branching, and each repository execution still performs its own detection in cross-repo mode (expected per repo, but baseline counters should be interpreted accordingly).
-2. Refactor scaffolds retained but not wired (`commit-generation-coordinator`, `generation-orchestrator`) are now tracked with explicit sunset dates in the decisions doc.
-3. Broader repository `console.*` cleanup was out of scope; this refactor only guarantees critical commit/SCM path cleanup.
+2. Broader repository `console.*` cleanup was out of scope; this refactor only guarantees critical commit/SCM path cleanup.

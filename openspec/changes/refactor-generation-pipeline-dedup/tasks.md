@@ -15,6 +15,7 @@
 - [x] 3.1 Keep canonical service entrypoints under `services/core/*` and `services/error-handling/*`.
 - [x] 3.2 Remove or deprecate unreferenced duplicate service implementations.
 - [x] 3.3 Align command artifacts (registered commands, contributed commands, docs) and remove orphan command files.
+- [x] 3.4 Remove disconnected orchestration scaffolds (`commit-generation-coordinator`, `generation-orchestrator`, `generation-transaction`, `generation-gate`) and clear stale runtime references.
 
 ## 4. P3 Logging and Verification
 
