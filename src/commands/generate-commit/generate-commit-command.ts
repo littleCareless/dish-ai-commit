@@ -1,8 +1,8 @@
 import { BaseCommand } from "@/commands/base-command";
 import { CrossRepositoryHandler } from "@/commands/generate-commit/handlers/cross-repository-handler";
 import { StreamingGenerationHelper } from "@/commands/generate-commit/utils/streaming-generation-helper";
-import { SCMFactory } from "@/scm/scm-provider";
-import { formatMessage, getMessage } from "@/utils/i18n";
+import { multiRepositoryContextManager } from "@/scm/multi-repository-context-manager";
+import { formatMessage } from "@/utils/i18n";
 import { notify } from "@/utils/notification/notification-manager";
 import { ProgressHandler } from "@/utils/notification/progress-handler";
 import * as vscode from "vscode";
@@ -50,9 +50,19 @@ export class GenerateCommitCommand extends BaseCommand {
     const { provider, model, providerConfig, aiProvider, selectedModel } = context;
     this.logger.info(`Using AI provider: ${provider}, model: ${model}`);
 
+    const parsedArgs = await this.parseArguments(arg);
+
     // 步骤3: 处理具体执行逻辑
     try {
-      await this.executeCommitGeneration(arg, provider, model, providerConfig, aiProvider, selectedModel);
+      await this.executeCommitGeneration(
+        context,
+        parsedArgs,
+        provider,
+        model,
+        providerConfig,
+        aiProvider,
+        selectedModel,
+      );
     } catch (error) {
       this.logger.logError(error as Error, "生成提交信息失败");
       if (error instanceof Error) {
@@ -65,53 +75,56 @@ export class GenerateCommitCommand extends BaseCommand {
    * 执行提交生成的主要逻辑 - 遵循单一职责原则
    */
   private async executeCommitGeneration(
-    arg: any,
+    context: {
+      scmProvider: any;
+      selectedFiles?: string[];
+      repositoryPath?: string;
+    },
+    parsedArgs: {
+      resourceStates?: vscode.SourceControlResourceState[];
+      filesByRepository?: Map<string, string[]>;
+      isCrossRepository: boolean;
+    },
     provider: string,
     model: string,
     providerConfig: any,
     aiProvider?: any,
-    selectedModel?: any
+    selectedModel?: any,
   ): Promise<void> {
-    // 解析参数
-    const parsedArgs = this.parseArguments(arg);
-
     // 检测是否为跨仓库场景
-    if (parsedArgs.isCrossRepository) {
+    if (parsedArgs.isCrossRepository && parsedArgs.filesByRepository) {
       await this.handleCrossRepositoryScenario(
         parsedArgs.filesByRepository,
         provider,
         model,
         providerConfig,
         aiProvider,
-        selectedModel
+        selectedModel,
       );
       return;
     }
 
     // 处理单仓库场景
     await this.handleSingleRepositoryScenario(
-      parsedArgs,
+      context,
+      parsedArgs.resourceStates,
       provider,
       model,
       providerConfig,
       aiProvider,
-      selectedModel
+      selectedModel,
     );
   }
 
   /**
    * 解析参数 - 遵循单一职责原则
    */
-  private parseArguments(arg: any): {
+  private async parseArguments(arg: any): Promise<{
     resourceStates?: vscode.SourceControlResourceState[];
-    repositoryPath?: string;
-    scmType?: "git" | "svn";
     filesByRepository?: Map<string, string[]>;
     isCrossRepository: boolean;
-  } {
+  }> {
     let resourceStates: vscode.SourceControlResourceState[] | undefined;
-    let repositoryPath: string | undefined;
-    let scmType: "git" | "svn" | undefined;
     let filesByRepository: Map<string, string[]> | undefined;
     let isCrossRepository = false;
 
@@ -120,27 +133,34 @@ export class GenerateCommitCommand extends BaseCommand {
       this.logger.info(
         `Received resourceStates array with ${arg.length} items`
       );
-    } else if (arg?.rootUri) {
-      repositoryPath = arg.rootUri.fsPath;
-      scmType = arg.id;
-      this.logger.info(
-        `Received sourceControl object: ${scmType} at ${repositoryPath}`
-      );
+    } else if (arg?.rootUri && arg.id) {
+      this.logger.info(`Received sourceControl object: ${arg.id} at ${arg.rootUri.fsPath}`);
     } else {
       this.logger.info("No valid arguments provided, will use fallback logic");
     }
 
     // 检查跨仓库场景
     if (resourceStates && resourceStates.length > 0) {
-      // 这里需要异步处理，但我们先简化处理
-      // 实际实现中需要await multiRepositoryContextManager.groupFilesByRepository(resourceStates)
-      isCrossRepository = false;
+      try {
+        filesByRepository =
+          await multiRepositoryContextManager.groupFilesByRepository(
+            resourceStates,
+          );
+        isCrossRepository = filesByRepository.size > 1;
+        if (isCrossRepository) {
+          this.logger.info(
+            `[Chain] [CrossRepo] Detected ${filesByRepository.size} repositories`,
+          );
+        }
+      } catch (error) {
+        this.logger.warn(
+          `[Chain] [CrossRepo] Failed to group files by repository: ${error}`,
+        );
+      }
     }
 
     return {
       resourceStates,
-      repositoryPath,
-      scmType,
       filesByRepository,
       isCrossRepository,
     };
@@ -148,7 +168,7 @@ export class GenerateCommitCommand extends BaseCommand {
 
   /**
    * 处理跨仓库场景 - 遵循单一职责原则
-   * 注意：跨仓库场景下，每个仓库需要独立的 Provider 实例，因此不传递 aiProvider
+   * 复用 prepare() 已初始化的 AI 上下文，避免跨仓库重复模型验证
    */
   private async handleCrossRepositoryScenario(
     filesByRepository: Map<string, string[]> | undefined,
@@ -156,16 +176,15 @@ export class GenerateCommitCommand extends BaseCommand {
     model: string,
     providerConfig: any,
     aiProvider?: any,
-    selectedModel?: any
+    selectedModel?: any,
   ): Promise<void> {
     if (!filesByRepository) {
       this.logger.warn(
-        "No files by repository provided for cross-repository scenario"
+        "No files by repository provided for cross-repository scenario",
       );
       return;
     }
 
-    // 跨仓库场景：每个仓库独立创建 Provider，不传递 aiProvider/selectedModel
     this.logger.info(
       `[Chain] [CrossRepo] Starting cross-repository generation for ${filesByRepository.size} repositories`
     );
@@ -174,6 +193,9 @@ export class GenerateCommitCommand extends BaseCommand {
       filesByRepository,
       provider,
       model,
+      providerConfig,
+      aiProvider,
+      selectedModel,
       (
         progress,
         token,
@@ -185,7 +207,7 @@ export class GenerateCommitCommand extends BaseCommand {
         repoPath,
         providerConfig,
         aiProvider,
-        selectedModel
+        selectedModel,
       ) =>
         this.streamingHelper.performStreamingGeneration(
           progress,
@@ -197,9 +219,9 @@ export class GenerateCommitCommand extends BaseCommand {
           resources,
           repoPath,
           providerConfig,
-          undefined,  // 跨仓库场景：每个仓库独立创建
-          undefined   // 跨仓库场景：每个仓库独立创建
-        )
+          aiProvider,
+          selectedModel,
+        ),
     );
   }
 
@@ -207,36 +229,20 @@ export class GenerateCommitCommand extends BaseCommand {
    * 处理单仓库场景 - 遵循单一职责原则
    */
   private async handleSingleRepositoryScenario(
-    parsedArgs: any,
+    context: {
+      scmProvider: any;
+      selectedFiles?: string[];
+      repositoryPath?: string;
+    },
+    resourceStates: vscode.SourceControlResourceState[] | undefined,
     provider: string,
     model: string,
     providerConfig: any,
     aiProvider?: any,
-    selectedModel?: any
+    selectedModel?: any,
   ): Promise<void> {
-    let result: any;
-
-    if (parsedArgs.repositoryPath && parsedArgs.scmType) {
-      // 直接使用已知的仓库信息
-      result = await this.createSCMProviderFromKnownRepo(
-        parsedArgs.repositoryPath
-      );
-    } else {
-      // 通过resourceStates检测
-      result = await this.detectSCMProvider(parsedArgs.resourceStates);
-    }
-
-    if (!result) {
-      this.logger.warn("SCM provider not detected.");
-      return;
-    }
-
-    const {
-      scmProvider,
-      selectedFiles,
-      repositoryPath: finalRepoPath,
-    } = result;
-    console.log("finalRepoPath", finalRepoPath);
+    const { scmProvider, selectedFiles, repositoryPath: finalRepoPath } =
+      context;
 
     if (!finalRepoPath) {
       await notify.warn(
@@ -261,32 +267,13 @@ export class GenerateCommitCommand extends BaseCommand {
           model,
           scmProvider,
           selectedFiles,
-          parsedArgs.resourceStates || [],
+          resourceStates || [],
           finalRepoPath,
           providerConfig,
           aiProvider,
-          selectedModel
+          selectedModel,
         );
-      }
+      },
     );
-  }
-
-  /**
-   * 从已知仓库信息创建SCM提供器 - 遵循单一职责原则
-   */
-  private async createSCMProviderFromKnownRepo(
-    repositoryPath: string
-  ): Promise<any> {
-    const scmProvider = await SCMFactory.detectSCM(undefined, repositoryPath);
-    if (!scmProvider) {
-      await notify.error(getMessage("scm.not.detected"));
-      return null;
-    }
-
-    return {
-      scmProvider,
-      selectedFiles: undefined,
-      repositoryPath,
-    };
   }
 }

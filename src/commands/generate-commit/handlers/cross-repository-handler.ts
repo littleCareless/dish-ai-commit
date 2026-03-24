@@ -2,9 +2,8 @@ import * as vscode from "vscode";
 import * as path from "path";
 import { ISCMProvider } from "@/scm/scm-provider";
 import { SCMFactory } from "@/scm/scm-provider";
-import { multiRepositoryContextManager } from "@/scm/multi-repository-context-manager";
 import { ProgressHandler } from "@/utils/notification/progress-handler";
-import { getMessage, formatMessage } from "@/utils/i18n";
+import { getMessage } from "@/utils/i18n";
 import { notify } from "@/utils/notification/notification-manager";
 import { Logger } from "@/utils/logger";
 
@@ -29,6 +28,9 @@ export class CrossRepositoryHandler {
     filesByRepository: Map<string, string[]>,
     provider: string,
     model: string,
+    providerConfig: any,
+    aiProvider: any | undefined,
+    selectedModel: any | undefined,
     performStreamingGeneration: (
       progress: vscode.Progress<{ message?: string; increment?: number }>,
       token: vscode.CancellationToken,
@@ -90,6 +92,9 @@ export class CrossRepositoryHandler {
                 files,
                 provider,
                 model,
+                providerConfig,
+                aiProvider,
+                selectedModel,
                 token,
                 performStreamingGeneration
               );
@@ -163,6 +168,9 @@ export class CrossRepositoryHandler {
     files: string[],
     provider: string,
     model: string,
+    providerConfig: any,
+    aiProvider: any | undefined,
+    selectedModel: any | undefined,
     token: vscode.CancellationToken,
     performStreamingGeneration: (
       progress: vscode.Progress<{ message?: string; increment?: number }>,
@@ -209,7 +217,10 @@ export class CrossRepositoryHandler {
       scmProvider,
       files,
       resourceStates,
-      repoPath
+      repoPath,
+      providerConfig,
+      aiProvider,
+      selectedModel,
     );
     
     const duration = Date.now() - startTime;
