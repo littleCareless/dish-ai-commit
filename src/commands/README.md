@@ -476,10 +476,7 @@ class ContextCollector {
 
 | 命令 | 功能 |
 |------|------|
-| `select-model-command.ts` | 选择 AI 模型 |
-| `show-token-stats-command.ts` | 显示 Token 统计 |
-| `reset-token-stats-command.ts` | 重置 Token 统计 |
-| `update-model-info-command.ts` | 更新模型信息 |
+| `sync-model-catalog-command.ts` | 同步第三方模型目录 |
 
 ## 🎛️ 配置选项
 
