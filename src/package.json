@@ -626,11 +626,6 @@
         {
           "command": "dish-ai-commit.generateCommitMessage",
           "when": "scmProvider =~ /(git|svn)/",
-          "group": "navigation@-3"
-        },
-        {
-          "command": "dish-ai-commit.generateCommitMessage",
-          "when": "scmProvider =~ /(git|svn)/",
           "group": "2_z_dish@1"
         },
         {

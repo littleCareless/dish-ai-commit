@@ -10,6 +10,7 @@ import { promisify } from "util";
 import { exec } from "child_process";
 import { SvnUtilsHelper } from "@/scm/svn/helpers/svn-utils-helper";
 import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils";
+import { Logger } from "@/utils/logger";
 import {
   IMultiRepositoryContextManager,
   RepositoryInfo,
@@ -28,9 +29,13 @@ const readdirAsync = promisify(fs.readdir);
 export class MultiRepositoryContextManager
   implements IMultiRepositoryContextManager
 {
+  private static readonly staticLogger = Logger.getInstance(
+    "MultiRepositoryContextManager",
+  );
   private repositoryCache = new Map<string, RepositoryInfo>();
   private cacheTimestamp = 0;
   private readonly cacheTimeout = 30000; // 30 seconds cache
+  private readonly logger = Logger.getInstance("MultiRepositoryContextManager");
 
   /**
    * 规范化仓库路径，解决不同来源路径格式不一致的问题
@@ -58,13 +63,18 @@ export class MultiRepositoryContextManager
       } catch (error) {
         // 如果解析符号链接失败，使用原路径
         // 这通常发生在路径不存在或权限不足的情况下
-        console.warn(`Failed to resolve symbolic links for path: ${normalized}`, error);
+        this.staticLogger.warn(
+          `Failed to resolve symbolic links for path: ${normalized}`,
+          { error: error as Error },
+        );
       }
       
       return normalized;
     } catch (error) {
       // 如果规范化过程失败，返回原路径
-      console.warn(`Failed to normalize repository path: ${repoPath}`, error);
+      this.staticLogger.warn(`Failed to normalize repository path: ${repoPath}`, {
+        error: error as Error,
+      });
       return repoPath;
     }
   }
@@ -189,7 +199,9 @@ export class MultiRepositoryContextManager
         }
       } catch (error) {
         // Git extension not available or error accessing it
-        console.warn("Could not access git extension API:", error);
+        this.logger.warn("Could not access git extension API", {
+          error: error as Error,
+        });
       }
     }
 
@@ -256,7 +268,9 @@ export class MultiRepositoryContextManager
         }
       }
     } catch (error) {
-      console.warn(`Error discovering repositories in ${rootPath}:`, error);
+      this.logger.warn(`Error discovering repositories in ${rootPath}`, {
+        error: error as Error,
+      });
     }
 
     return repositories;
@@ -464,36 +478,47 @@ export class MultiRepositoryContextManager
     resourceStates: vscode.SourceControlResourceState[]
   ): Promise<Map<string, string[]>> {
     const filesByRepo = new Map<string, string[]>();
-    
-    console.log(`[MultiRepositoryContextManager] Grouping ${resourceStates.length} files by repository`);
-    
+
+    this.logger.info(
+      `[MultiRepositoryContextManager] Grouping ${resourceStates.length} files by repository`,
+    );
+
     for (const state of resourceStates) {
       const filePath = this.extractFilePath(state);
       if (!filePath) {
-        console.warn(`[MultiRepositoryContextManager] Skipping state without file path:`, state);
+        this.logger.warn(
+          "[MultiRepositoryContextManager] Skipping state without file path",
+          { data: { state: JSON.stringify(state) } },
+        );
         continue;
       }
-      
+
       // 识别文件所属仓库
       const repoPath = await this.getRepositoryFromResources([state]);
       if (!repoPath) {
-        console.warn(`[MultiRepositoryContextManager] Could not identify repository for file: ${filePath}`);
+        this.logger.warn(
+          `[MultiRepositoryContextManager] Could not identify repository for file: ${filePath}`,
+        );
         continue;
       }
-      
+
       // 添加到对应仓库的文件列表
       if (!filesByRepo.has(repoPath)) {
         filesByRepo.set(repoPath, []);
-        console.log(`[MultiRepositoryContextManager] Found new repository: ${repoPath}`);
+        this.logger.info(
+          `[MultiRepositoryContextManager] Found new repository: ${repoPath}`,
+        );
       }
       filesByRepo.get(repoPath)!.push(filePath);
     }
-    
-    console.log(`[MultiRepositoryContextManager] Grouping completed:`);
+
+    this.logger.info("[MultiRepositoryContextManager] Grouping completed");
     for (const [repoPath, files] of filesByRepo.entries()) {
-      console.log(`  - Repository: ${repoPath} (${files.length} files)`);
+      this.logger.info(
+        `Repository grouped: ${repoPath} (${files.length} files)`,
+      );
     }
-    
+
     return filesByRepo;
   }
 
@@ -512,33 +537,47 @@ export class MultiRepositoryContextManager
     files?: string[]
   ): Promise<string | undefined> {
     const startTime = Date.now();
-    console.log(`[Chain] [SCM-Detection] [MultiRepo] START - ResourceStates: ${!!resourceStates}, Files: ${!!files}`);
-    
+    this.logger.info(
+      `[Chain] [SCM-Detection] [MultiRepo] START - ResourceStates: ${!!resourceStates}, Files: ${!!files}`,
+    );
+
     // If files are not provided, extract from resourceStates
     if (!files && resourceStates) {
       files = this.getSelectedFiles(resourceStates);
-      console.log(`[MultiRepositoryContextManager] Extracted ${files?.length || 0} files from resourceStates`);
+      this.logger.debug(
+        `[MultiRepositoryContextManager] Extracted ${files?.length || 0} files from resourceStates`,
+      );
     }
 
     // Prioritize getting the repository path through the Git extension to ensure compatibility with Git
     const gitExtension = vscode.extensions.getExtension("vscode.git");
     if (gitExtension?.isActive) {
-      console.log(`[MultiRepositoryContextManager] Git extension is active, attempting to detect repository`);
+      this.logger.debug(
+        "[MultiRepositoryContextManager] Git extension is active, attempting to detect repository",
+      );
       try {
         const gitApi = gitExtension.exports.getAPI(1);
         const repositories = gitApi.repositories;
-        console.log(`[MultiRepositoryContextManager] Found ${repositories.length} Git repositories`);
-        
+        this.logger.debug(
+          `[MultiRepositoryContextManager] Found ${repositories.length} Git repositories`,
+        );
+
         if (repositories.length > 0) {
           if (files && files.length > 0) {
             for (const file of files) {
-              console.log(`[MultiRepositoryContextManager] Checking file: ${file}`);
+              this.logger.debug(
+                `[MultiRepositoryContextManager] Checking file: ${file}`,
+              );
               for (const repository of repositories) {
                 const repoPath = MultiRepositoryContextManager.normalizeRepositoryPath((repository as any).rootUri?.fsPath);
-                console.log(`[MultiRepositoryContextManager] Checking repository: ${repoPath}`);
+                this.logger.debug(
+                  `[MultiRepositoryContextManager] Checking repository: ${repoPath}`,
+                );
                 if (repoPath && file.startsWith(repoPath)) {
                   const duration = Date.now() - startTime;
-                  console.log(`[Chain] [SCM-Detection] [MultiRepo] COMPLETE - Duration: ${duration}ms, Result: ${repoPath}`);
+                  this.logger.info(
+                    `[Chain] [SCM-Detection] [MultiRepo] COMPLETE - Duration: ${duration}ms, Result: ${repoPath}`,
+                  );
                   return repoPath;
                 }
               }
@@ -546,10 +585,13 @@ export class MultiRepositoryContextManager
           }
         }
       } catch (error) {
-        console.warn("[MultiRepositoryContextManager] Failed to get repository from Git extension:", error);
+        this.logger.warn(
+          "[MultiRepositoryContextManager] Failed to get repository from Git extension",
+          { error: error as Error },
+        );
       }
     } else {
-      console.log(`[MultiRepositoryContextManager] Git extension is not active`);
+      this.logger.debug("[MultiRepositoryContextManager] Git extension is not active");
     }
 
     // Try to get the repository path through the SVN extension, compatible with multiple plugins
@@ -562,29 +604,41 @@ export class MultiRepositoryContextManager
       const extension = vscode.extensions.getExtension(id);
       if (extension) {
         svnExtension = extension;
-        console.log(`[MultiRepositoryContextManager] Found SVN extension: ${id}`);
+        this.logger.debug(
+          `[MultiRepositoryContextManager] Found SVN extension: ${id}`,
+        );
         break;
       }
     }
-    
+
     if (svnExtension?.isActive) {
-      console.log(`[MultiRepositoryContextManager] SVN extension is active, attempting to detect repository`);
+      this.logger.debug(
+        "[MultiRepositoryContextManager] SVN extension is active, attempting to detect repository",
+      );
       try {
         const svnScmApi = svnExtension.exports;
         if (svnScmApi && typeof svnScmApi.getRepositories === "function") {
           const repositories = await svnScmApi.getRepositories();
-          console.log(`[MultiRepositoryContextManager] Found ${repositories?.length || 0} SVN repositories`);
-          
+          this.logger.debug(
+            `[MultiRepositoryContextManager] Found ${repositories?.length || 0} SVN repositories`,
+          );
+
           if (repositories && repositories.length > 0) {
             if (files && files.length > 0) {
               for (const file of files) {
-                console.log(`[MultiRepositoryContextManager] Checking file against SVN repositories: ${file}`);
+                this.logger.debug(
+                  `[MultiRepositoryContextManager] Checking file against SVN repositories: ${file}`,
+                );
                 for (const repository of repositories) {
                   const repoPath = MultiRepositoryContextManager.normalizeRepositoryPath(repository.root);
-                  console.log(`[MultiRepositoryContextManager] Checking SVN repository: ${repoPath}`);
+                  this.logger.debug(
+                    `[MultiRepositoryContextManager] Checking SVN repository: ${repoPath}`,
+                  );
                   if (repoPath && file.startsWith(repoPath)) {
                     const duration = Date.now() - startTime;
-                    console.log(`[Chain] [SCM-Detection] [MultiRepo] COMPLETE - Duration: ${duration}ms, Result: ${repoPath}`);
+                    this.logger.info(
+                      `[Chain] [SCM-Detection] [MultiRepo] COMPLETE - Duration: ${duration}ms, Result: ${repoPath}`,
+                    );
                     return repoPath;
                   }
                 }
@@ -593,10 +647,13 @@ export class MultiRepositoryContextManager
           }
         }
       } catch (error) {
-        console.warn("[MultiRepositoryContextManager] Failed to get repository from SVN extension:", error);
+        this.logger.warn(
+          "[MultiRepositoryContextManager] Failed to get repository from SVN extension",
+          { error: error as Error },
+        );
       }
     } else {
-      console.log(`[MultiRepositoryContextManager] SVN extension is not active`);
+      this.logger.debug("[MultiRepositoryContextManager] SVN extension is not active");
     }
 
     // Try to get it directly from resourceStates
@@ -629,7 +686,9 @@ export class MultiRepositoryContextManager
     }
 
     const duration = Date.now() - startTime;
-    console.log(`[Chain] [SCM-Detection] [MultiRepo] COMPLETE - Duration: ${duration}ms, Result: not found`);
+    this.logger.info(
+      `[Chain] [SCM-Detection] [MultiRepo] COMPLETE - Duration: ${duration}ms, Result: not found`,
+    );
     return undefined;
   }
 
