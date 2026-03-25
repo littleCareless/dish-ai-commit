@@ -118,8 +118,15 @@ export class SettingsViewMessageHandler {
       return;
     }
 
+    const dataRequestId =
+      message?.data && typeof message.data === "object"
+        ? message.data.requestId
+        : undefined;
     const messageId =
-      message.messageId || `${message.command}_${JSON.stringify(message.data)}`;
+      message.messageId ||
+      message.requestId ||
+      dataRequestId ||
+      `${message.command}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
     try {
       await this._sessionManager.withIdempotency(messageId, async () => {

@@ -88,8 +88,6 @@ export const FeaturesSettings: React.FC = () => {
   useEffect(() => {
     if (hasLoadedRef.current) return;
     hasLoadedRef.current = true;
-    postMessage(UIRequest.FeaturesLoadSettings);
-
     const handleMessage = (event: MessageEvent) => {
       const message = event.data;
       if (
@@ -125,11 +123,12 @@ export const FeaturesSettings: React.FC = () => {
     };
 
     window.addEventListener("message", handleMessage);
+    postMessage(UIRequest.FeaturesLoadSettings);
     return () => {
       window.removeEventListener("message", handleMessage);
       hasLoadedRef.current = false;
     };
-  }, []);
+  }, [t]);
 
   const handleFeatureToggle = (
     feature: keyof typeof features,

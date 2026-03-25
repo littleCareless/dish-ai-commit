@@ -211,16 +211,14 @@ const SetupWizard = ({
       type: selectedProviderMeta?.type,
     };
 
-    postMessage("upsertApiConfiguration", {
-      text: currentApiConfigName,
-      apiConfiguration: finalConfig,
-    });
+    let finished = false;
 
     // 监听响应并处理
     const handleMessage = (event: MessageEvent) => {
       const message = event.data;
       if (message.command === "apiConfiguration.upserted") {
         window.removeEventListener("message", handleMessage);
+        finished = true;
 
         if (message.data?.success) {
           console.log("[SetupWizard] API configuration upserted successfully");
@@ -250,13 +248,19 @@ const SetupWizard = ({
 
     window.addEventListener("message", handleMessage);
 
+    postMessage("upsertApiConfiguration", {
+      text: currentApiConfigName,
+      apiConfiguration: finalConfig,
+    });
+
     // 超时处理
     setTimeout(() => {
-      window.removeEventListener("message", handleMessage);
-      if (isLoading) {
-        setError(t("errors.requestTimeout"));
-        setIsLoading(false);
+      if (finished) {
+        return;
       }
+      window.removeEventListener("message", handleMessage);
+      setError(t("errors.requestTimeout"));
+      setIsLoading(false);
     }, 10000);
   }, [
     apiConfiguration,
@@ -265,7 +269,6 @@ const SetupWizard = ({
     selectedProviderId,
     selectedProviderMeta,
     isFirstInstall,
-    isLoading,
     t,
   ]);
 

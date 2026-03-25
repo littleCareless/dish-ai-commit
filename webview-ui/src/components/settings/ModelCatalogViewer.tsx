@@ -24,12 +24,6 @@ export const ModelCatalogViewer: React.FC = () => {
   const [catalogSourceFilter, setCatalogSourceFilter] = useState("all");
 
   useEffect(() => {
-    postMessage(
-      UIRequest.FeaturesGetModelCatalog,
-      {},
-      { allowDuplicate: true },
-    );
-
     const handleMessage = (event: MessageEvent) => {
       const message = event.data;
       if (message.command === ExtensionResponse.FeaturesModelCatalogSynced) {
@@ -60,6 +54,11 @@ export const ModelCatalogViewer: React.FC = () => {
     };
 
     window.addEventListener("message", handleMessage);
+    postMessage(
+      UIRequest.FeaturesGetModelCatalog,
+      {},
+      { allowDuplicate: true },
+    );
     return () => window.removeEventListener("message", handleMessage);
   }, [t]);
 

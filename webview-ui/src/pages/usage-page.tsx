@@ -21,12 +21,9 @@ export const UsagePage: React.FC = () => {
   const [detailedStats, setDetailedStats] = useState<DailyUsageStats[]>([]);
 
   const fetchUsageStats = () => {
-    postMessage(UIRequest.UsageGetStats, {});
+    // Usage 页面需要支持重复进入时重新拉取，避免被消息去重拦截
+    postMessage(UIRequest.UsageGetStats, {}, { allowDuplicate: true });
   };
-
-  useEffect(() => {
-    fetchUsageStats();
-  }, []);
 
   useEvent("message", (event: MessageEvent) => {
     const message = event.data;
@@ -37,8 +34,12 @@ export const UsagePage: React.FC = () => {
     }
   });
 
+  useEffect(() => {
+    fetchUsageStats();
+  }, []);
+
   const handleReset = () => {
-    postMessage(UIRequest.UsageResetStats, {});
+    postMessage(UIRequest.UsageResetStats, {}, { allowDuplicate: true });
   };
 
   // Prepare data for lists
