@@ -105,6 +105,17 @@ export class OpenAIProvider extends BaseOpenAIProvider {
       providerName: "OpenAI",
       models: models,
       defaultModel: "gpt-3.5-turbo",
+      enableReasoningEffort: config?.enableReasoningEffort,
+      reasoningEffortLevel: config?.reasoningEffortLevel,
+      enableSmoothStreaming: config?.enableSmoothStreaming,
+      topP: config?.topP,
+      topK: config?.topK,
+      presencePenalty: config?.presencePenalty,
+      frequencyPenalty: config?.frequencyPenalty,
+      stopSequences: config?.stopSequences,
+      enableReasoningExtraction: config?.enableReasoningExtraction,
+      reasoningExtractionTagName: config?.reasoningExtractionTagName,
+      featureOverrides: config?.featureOverrides,
     });
   }
 

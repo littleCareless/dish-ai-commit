@@ -30,6 +30,7 @@ import { formatMessage } from "@/utils/i18n/localization-manager";
 import { Logger } from "@/utils/logger";
 import { tokenizerService } from "@/utils/tokenizer";
 import { PromptCategory, PromptKey } from "@shared/types/prompts";
+import { z } from "zod";
 
 /**
  * AI调用时的提示词信息接口
@@ -58,6 +59,14 @@ const PROMPT_KEY_MAP: Record<string, PromptKey> = {
   "layered-commit": PromptKey.LayeredCommitFile,
   "pr-summary": PromptKey.PRSummarySystem,
 };
+
+const BRANCH_NAME_OUTPUT_SCHEMA = z.object({
+  branchName: z.string().min(1),
+});
+
+const PR_SUMMARY_OUTPUT_SCHEMA = z.object({
+  summary: z.string().min(1),
+});
 
 /**
  * AI提供者的抽象基类
@@ -516,6 +525,10 @@ export abstract class AbstractAIProvider implements AIProvider {
           this.executeAIRequest(params, {
             temperature: preferences.branchNameTemperature,
             maxTokens,
+            outputSchema: {
+              schema: BRANCH_NAME_OUTPUT_SCHEMA,
+              key: "branchName",
+            },
           }),
         runtimeSettings,
       );
@@ -792,6 +805,7 @@ export abstract class AbstractAIProvider implements AIProvider {
         const response = await this.executeAIRequest(
           {
             ...params,
+            feature: "pr-summary",
             messages: [
               { role: "system", content: fullPrompt },
               { role: "user", content: `- ${userContent}` },
@@ -799,6 +813,10 @@ export abstract class AbstractAIProvider implements AIProvider {
           },
           {
             temperature: 0.7,
+            outputSchema: {
+              schema: PR_SUMMARY_OUTPUT_SCHEMA,
+              key: "summary",
+            },
           },
         );
 
@@ -975,6 +993,10 @@ export abstract class AbstractAIProvider implements AIProvider {
       temperature?: number;
       maxTokens?: number;
       tools?: any[];
+      outputSchema?: {
+        schema: any;
+        key?: string;
+      };
     },
   ): Promise<{
     content: string;

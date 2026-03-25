@@ -185,6 +185,17 @@ export interface ExtendedProviderConfig {
   retries?: number;
   temperature?: number;
   maxTokens?: number;
+  enableReasoningEffort?: boolean;
+  reasoningEffortLevel?: "low" | "medium" | "high" | string;
+  enableSmoothStreaming?: boolean;
+  topP?: number;
+  topK?: number;
+  presencePenalty?: number;
+  frequencyPenalty?: number;
+  stopSequences?: string;
+  enableReasoningExtraction?: boolean;
+  reasoningExtractionTagName?: string;
+  featureOverrides?: string | Record<string, unknown>;
 
   // 时间戳
   createdAt?: Date;

@@ -1,454 +1,456 @@
-import { postMessage, useMessageHandler } from "@/utils/vscode";
-import type { ChatMessage, CommitChatState } from "@shared/types/messages";
-import { VSCodeButton, VSCodeTextArea } from "@vscode/webview-ui-toolkit/react";
-import { Bot, Loader2, Send, User } from "lucide-react";
-import React, { useCallback, useEffect, useRef, useState } from "react";
-import { themeStyles } from "@/utils/theme";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { postMessage } from "@/utils/vscode";
+import { readUIMessageStream, UIMessage, UIMessageChunk } from "ai";
+import {
+  CommitChatGetChangedFilesResponse,
+  CommitChatSendMessageResponse,
+  ExtensionResponse,
+  UIRequest,
+} from "@shared/types/messages";
+import {
+  ArrowUp,
+  FileCode2,
+  GitCommitHorizontal,
+  Loader2,
+  X,
+} from "lucide-react";
+import React from "react";
 
-interface CommitChatViewProps {
-  className?: string;
-  onCommitMessageGenerated?: (message: string) => void;
-  onConfigurationChanged?: (config: Record<string, unknown>) => void;
-}
+type CommitChatMetadata = {
+  commitMessage?: string;
+  suggestions?: string[];
+  targetFiles?: string[];
+};
 
-const CommitChatView: React.FC<CommitChatViewProps> = ({
-  className = "",
-  onCommitMessageGenerated,
-  onConfigurationChanged,
-}) => {
-  const [state, setState] = useState<CommitChatState>({
-    messages: [],
-    inputValue: "",
-    isTyping: false,
-    selectedImages: [],
-    draftMessage: "",
-  });
+type CommitChatUIMessage = UIMessage<CommitChatMetadata>;
 
-  const messagesEndRef = useRef<HTMLDivElement>(null);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+const extractTextFromMessage = (message: CommitChatUIMessage): string => {
+  return message.parts
+    .filter((part) => part.type === "text")
+    .map((part) => part.text)
+    .join("");
+};
 
-  // 自动滚动到底部
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
+const parseDroppedFiles = (
+  event: React.DragEvent<HTMLDivElement>,
+): string[] => {
+  const uriList = event.dataTransfer.getData("text/uri-list");
+  const textPlain = event.dataTransfer.getData("text/plain");
+  const raw = `${uriList}\n${textPlain}`.trim();
 
-  useEffect(() => {
-    scrollToBottom();
-  }, [state.messages]);
+  if (!raw) {
+    return [];
+  }
 
-  // 处理消息发送
-  const handleSendMessage = async () => {
-    if (!state.inputValue.trim() || state.isTyping) return;
+  const filePaths = raw
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .flatMap((line) => {
+      if (line.startsWith("file://")) {
+        try {
+          return [decodeURIComponent(line.replace("file://", ""))];
+        } catch {
+          return [];
+        }
+      }
 
-    const userMessage: ChatMessage = {
-      id: `user-${Date.now()}`,
-      type: "user",
-      content: state.inputValue.trim(),
-      timestamp: new Date(),
+      if (line.includes("/") || line.includes("\\")) {
+        return [line.replace(/^[A-Z]\s+/, "")];
+      }
+
+      return [];
+    });
+
+  return [...new Set(filePaths)];
+};
+
+const sendRequest = <TData,>(
+  command: UIRequest,
+  expectedResponse: ExtensionResponse,
+  data?: unknown,
+): Promise<TData> => {
+  const requestId = `${command}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+
+  return new Promise<TData>((resolve, reject) => {
+    const timeout = window.setTimeout(() => {
+      window.removeEventListener("message", onMessage);
+      reject(new Error(`Request timeout: ${command}`));
+    }, 15000);
+
+    const onMessage = (event: MessageEvent) => {
+      const incoming = event.data;
+      if (
+        incoming?.command === expectedResponse &&
+        incoming?.requestId === requestId
+      ) {
+        window.clearTimeout(timeout);
+        window.removeEventListener("message", onMessage);
+        resolve(incoming.data as TData);
+      }
     };
 
-    // 添加用户消息
-    setState((prev: CommitChatState) => ({
-      ...prev,
-      messages: [...prev.messages, userMessage],
-      inputValue: "",
-      isTyping: true,
-    }));
+    window.addEventListener("message", onMessage);
+
+    postMessage(command, data, {
+      allowDuplicate: true,
+      requestId,
+    });
+  });
+};
+
+const CommitChatView: React.FC = () => {
+  const [messages, setMessages] = React.useState<CommitChatUIMessage[]>([]);
+  const [input, setInput] = React.useState("");
+  const [targetFiles, setTargetFiles] = React.useState<string[]>([]);
+  const [isPending, setIsPending] = React.useState(false);
+  const [isDragging, setIsDragging] = React.useState(false);
+  const scrollBottomRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    scrollBottomRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [messages]);
+
+  const appendDroppedFiles = React.useCallback((files: string[]) => {
+    if (!files.length) {
+      return;
+    }
+    setTargetFiles((prev) => [...new Set([...prev, ...files])]);
+  }, []);
+
+  const removeTargetFile = React.useCallback((file: string) => {
+    setTargetFiles((prev) => prev.filter((item) => item !== file));
+  }, []);
+
+  const handleFetchChangedFiles = React.useCallback(async () => {
+    const result = await sendRequest<CommitChatGetChangedFilesResponse>(
+      UIRequest.CommitChatGetChangedFiles,
+      ExtensionResponse.CommitChatChangedFilesLoaded,
+    );
+    appendDroppedFiles(result.files);
+  }, [appendDroppedFiles]);
+
+  const sendMessage = React.useCallback(async () => {
+    const userInput = input.trim();
+    if (!userInput || isPending) {
+      return;
+    }
+
+    const userMessage: CommitChatUIMessage = {
+      id: `user-${Date.now()}`,
+      role: "user",
+      parts: [{ type: "text", text: userInput }],
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setIsPending(true);
 
     try {
-      // 发送消息到后端处理
-      postMessage("commitChatMessage", {
-        message: userMessage.content,
-        context: {
-          messages: state.messages,
-          selectedImages: state.selectedImages,
+      const requestId = `${UIRequest.CommitChatSendMessage}-${Date.now()}-${Math.random().toString(16).slice(2)}`;
+      const textId = `text-${Date.now()}`;
+      let controllerRef: ReadableStreamDefaultController<
+        UIMessageChunk<CommitChatMetadata>
+      > | null = null;
+      let started = false;
+
+      const stream = new ReadableStream<UIMessageChunk<CommitChatMetadata>>({
+        start(controller) {
+          controllerRef = controller;
         },
       });
-    } catch (error) {
-      console.error("发送消息失败:", error);
-      setState((prev: CommitChatState) => ({
-        ...prev,
-        isTyping: false,
-      }));
-    }
-  };
 
-  // 处理键盘事件
-  const handleKeyDown = (e: React.KeyboardEvent) => {
-    if (e.key === "Enter" && !e.shiftKey) {
-      e.preventDefault();
-      handleSendMessage();
-    }
-  };
+      const completion = new Promise<CommitChatSendMessageResponse>(
+        (resolve, reject) => {
+          const timeout = window.setTimeout(() => {
+            window.removeEventListener("message", onMessage);
+            if (controllerRef) {
+              controllerRef.enqueue({
+                type: "error",
+                errorText: "Request timeout.",
+              });
+              controllerRef.close();
+            }
+            reject(new Error("Request timeout."));
+          }, 30000);
 
-  // 处理输入变化
-  const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    setState((prev: CommitChatState) => ({
-      ...prev,
-      inputValue: e.target.value,
-    }));
-  };
+          const onMessage = (event: MessageEvent) => {
+            const incoming = event.data;
+            if (incoming?.requestId !== requestId) {
+              return;
+            }
 
-  // 监听来自后端的消息
-  useMessageHandler(
-    useCallback(
-      (event: MessageEvent) => {
-        const message = event.data;
+            if (
+              incoming?.command === ExtensionResponse.CommitChatStreamStarted &&
+              controllerRef &&
+              !started
+            ) {
+              started = true;
+              controllerRef.enqueue({
+                type: "start",
+                messageMetadata: {
+                  targetFiles,
+                },
+              });
+              controllerRef.enqueue({ type: "text-start", id: textId });
+              return;
+            }
 
-        if (message.command === "commitChatResponse") {
-          const aiMessage: ChatMessage = {
-            id: `ai-${Date.now()}`,
-            type: "ai",
-            content: message.data.response,
-            timestamp: new Date(),
-            metadata: message.data.metadata,
+            if (
+              incoming?.command === ExtensionResponse.CommitChatStreamDelta &&
+              controllerRef
+            ) {
+              if (!started) {
+                started = true;
+                controllerRef.enqueue({
+                  type: "start",
+                  messageMetadata: {
+                    targetFiles,
+                  },
+                });
+                controllerRef.enqueue({ type: "text-start", id: textId });
+              }
+              controllerRef.enqueue({
+                type: "text-delta",
+                id: textId,
+                delta: incoming.data?.delta || "",
+              });
+              return;
+            }
+
+            if (
+              incoming?.command === ExtensionResponse.CommitChatStreamError &&
+              controllerRef
+            ) {
+              window.clearTimeout(timeout);
+              window.removeEventListener("message", onMessage);
+              controllerRef.enqueue({
+                type: "error",
+                errorText: incoming.data?.error || "Streaming error.",
+              });
+              controllerRef.close();
+              reject(new Error(incoming.data?.error || "Streaming error."));
+              return;
+            }
+
+            if (
+              incoming?.command === ExtensionResponse.CommitChatResponse &&
+              controllerRef
+            ) {
+              window.clearTimeout(timeout);
+              window.removeEventListener("message", onMessage);
+              if (!started) {
+                started = true;
+                controllerRef.enqueue({
+                  type: "start",
+                  messageMetadata: {
+                    targetFiles,
+                  },
+                });
+                controllerRef.enqueue({ type: "text-start", id: textId });
+                if (incoming.data?.reply) {
+                  controllerRef.enqueue({
+                    type: "text-delta",
+                    id: textId,
+                    delta: incoming.data.reply,
+                  });
+                }
+              }
+              controllerRef.enqueue({ type: "text-end", id: textId });
+              controllerRef.enqueue({
+                type: "finish",
+                finishReason: "stop",
+                messageMetadata: {
+                  commitMessage: incoming.data?.commitMessage,
+                  suggestions: incoming.data?.suggestions,
+                  targetFiles: incoming.data?.targetFiles || targetFiles,
+                },
+              });
+              controllerRef.close();
+              resolve(incoming.data as CommitChatSendMessageResponse);
+            }
           };
 
-          setState((prev: CommitChatState) => ({
-            ...prev,
-            messages: [...prev.messages, aiMessage],
-            isTyping: false,
-          }));
+          window.addEventListener("message", onMessage);
+          postMessage(
+            UIRequest.CommitChatSendMessage,
+            {
+              messages: [...messages, userMessage].map((msg) => ({
+                role: msg.role === "assistant" ? "assistant" : "user",
+                content: extractTextFromMessage(msg),
+              })),
+              targetFiles,
+            },
+            {
+              allowDuplicate: true,
+              requestId,
+            },
+          );
+        },
+      );
 
-          // 如果有生成的 commit message，通知父组件
-          if (
-            message.data.metadata?.commitMessage &&
-            onCommitMessageGenerated
-          ) {
-            onCommitMessageGenerated(message.data.metadata.commitMessage);
-          }
+      let currentAssistantId: string | null = null;
 
-          // 如果有配置变更，通知父组件
-          if (message.data.metadata?.configuration && onConfigurationChanged) {
-            onConfigurationChanged(message.data.metadata.configuration);
-          }
+      for await (const message of readUIMessageStream<CommitChatUIMessage>({
+        stream,
+      })) {
+        if (!currentAssistantId) {
+          currentAssistantId = message.id;
+          setMessages((prev) => [...prev, message]);
+          continue;
         }
-      },
-      [onCommitMessageGenerated, onConfigurationChanged],
-    ),
+
+        setMessages((prev) =>
+          prev.map((item) => (item.id === currentAssistantId ? message : item)),
+        );
+      }
+
+      await completion;
+    } catch (error) {
+      const errorMessage: CommitChatUIMessage = {
+        id: `error-${Date.now()}`,
+        role: "assistant",
+        parts: [
+          {
+            type: "text",
+            text:
+              error instanceof Error
+                ? error.message
+                : "Failed to get response.",
+          },
+        ],
+      };
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setIsPending(false);
+    }
+  }, [input, isPending, messages, targetFiles]);
+
+  const handleDrop = React.useCallback(
+    (event: React.DragEvent<HTMLDivElement>) => {
+      event.preventDefault();
+      setIsDragging(false);
+      appendDroppedFiles(parseDroppedFiles(event));
+    },
+    [appendDroppedFiles],
   );
 
-  // 渲染消息
-  const renderMessage = (message: ChatMessage) => {
-    const isUser = message.type === "user";
-
-    // 用户消息样式
-    const userStyles: React.CSSProperties = {
-      backgroundColor: "var(--chat-user-bg)",
-      color: "var(--chat-user-fg)",
-      border: `1px solid ${themeStyles.border("subtle")}`,
-    };
-
-    // AI 消息样式
-    const aiStyles: React.CSSProperties = {
-      backgroundColor: "var(--chat-ai-bg)",
-      color: "var(--chat-ai-fg)",
-      border: `1px solid ${themeStyles.border("subtle")}`,
-    };
-
-    return (
-      <div
-        key={message.id}
-        className={`flex ${isUser ? "justify-end" : "justify-start"}`}
-      >
-        <div
-          className={`flex items-start gap-3 max-w-[80%] ${
-            isUser ? "flex-row-reverse" : ""
-          }`}
-        >
-          <div
-            className={`w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0 ${
-              isUser
-                ? "bg-[hsl(var(--chat-user-bg))] text-[hsl(var(--chat-user-fg))]"
-                : "bg-[hsl(var(--chat-ai-bg))] text-[hsl(var(--chat-ai-fg))]"
-            }`}
-            style={{
-              backgroundColor: isUser
-                ? "var(--chat-user-bg)"
-                : "var(--chat-ai-bg)",
-              color: isUser ? "var(--chat-user-fg)" : "var(--chat-ai-fg)",
-            }}
-          >
-            {isUser ? (
-              <User className="w-4 h-4" />
-            ) : (
-              <Bot className="w-4 h-4" />
-            )}
-          </div>
-          <div
-            className="rounded-lg px-4 py-3"
-            style={isUser ? userStyles : aiStyles}
-          >
-            <div className="text-sm whitespace-pre-wrap leading-relaxed">
-              {message.content}
-            </div>
-
-            {/* Commit Message Display */}
-            {message.metadata?.commitMessage && (
-              <div
-                className="mt-3 p-3 rounded-lg border"
-                style={{
-                  backgroundColor: themeStyles.background(0.8),
-                  borderColor: themeStyles.border("normal"),
-                }}
-              >
-                <div
-                  className="text-xs mb-2 font-medium"
-                  style={{ color: "var(--vscode-descriptionForeground)" }}
-                >
-                  生成的 Commit Message:
-                </div>
-                <div
-                  className="font-mono text-sm p-2 rounded border"
-                  style={{
-                    backgroundColor: themeStyles.background(0.5),
-                    borderColor: themeStyles.border("normal"),
-                  }}
-                >
-                  {message.metadata.commitMessage}
-                </div>
-              </div>
-            )}
-
-            {/* Suggestions */}
-            {message.metadata?.suggestions &&
-              message.metadata.suggestions.length > 0 && (
-                <div className="mt-3">
-                  <div
-                    className="text-xs mb-2 font-medium"
-                    style={{ color: "var(--vscode-descriptionForeground)" }}
-                  >
-                    建议:
-                  </div>
-                  <div className="space-y-2">
-                    {message.metadata.suggestions.map(
-                      (suggestion: string, index: number) => (
-                        <div
-                          key={index}
-                          className="text-sm p-2 rounded border cursor-pointer transition-colors"
-                          style={{
-                            backgroundColor: themeStyles.background(0.8),
-                            borderColor: themeStyles.border("normal"),
-                            color: themeStyles.foreground(),
-                          }}
-                          onClick={() =>
-                            setState((prev: CommitChatState) => ({
-                              ...prev,
-                              inputValue: suggestion,
-                            }))
-                          }
-                          onMouseEnter={(e) => {
-                            e.currentTarget.style.backgroundColor =
-                              themeStyles.hover();
-                          }}
-                          onMouseLeave={(e) => {
-                            e.currentTarget.style.backgroundColor =
-                              themeStyles.background(0.8);
-                          }}
-                        >
-                          {suggestion}
-                        </div>
-                      ),
-                    )}
-                  </div>
-                </div>
-              )}
-
-            {/* Timestamp */}
-            <div
-              className="text-xs mt-2"
-              style={{
-                color: "var(--vscode-descriptionForeground)",
-                opacity: 0.7,
-              }}
-            >
-              {message.timestamp.toLocaleTimeString()}
-            </div>
-          </div>
-        </div>
-      </div>
-    );
-  };
-
   return (
-    <div
-      className={`h-full flex flex-col ${className}`}
-      style={{
-        backgroundColor: themeStyles.background(),
-        color: themeStyles.foreground(),
-      }}
-    >
-      {/* Header */}
+    <div className="h-full p-4">
       <div
-        className="border-b"
-        style={{
-          backgroundColor: themeStyles.background(0.95),
-          backdropFilter: "blur(8px)",
-          borderColor: themeStyles.border("normal"),
+        className={`flex h-full flex-col rounded-xl border bg-card ${
+          isDragging ? "border-primary ring-2 ring-primary/30" : ""
+        }`}
+        onDragOver={(event) => {
+          event.preventDefault();
+          setIsDragging(true);
         }}
+        onDragLeave={() => setIsDragging(false)}
+        onDrop={handleDrop}
       >
-        <div className="flex items-center gap-3 p-4">
-          <div
-            className="w-10 h-10 rounded-full flex items-center justify-center"
-            style={{
-              backgroundColor: "var(--primary)",
-              opacity: 0.1,
-              color: "var(--primary)",
-            }}
+        <div className="flex items-center justify-between border-b px-4 py-3">
+          <div className="flex items-center gap-2 text-sm font-medium">
+            <GitCommitHorizontal className="h-4 w-4" />
+            Commit Chat
+          </div>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            onClick={handleFetchChangedFiles}
           >
-            <Bot className="w-5 h-5" style={{ color: "var(--primary)" }} />
-          </div>
-          <div>
-            <h1 className="text-xl font-semibold">Commit Message 聊天助手</h1>
-            <p
-              className="text-sm"
-              style={{ color: "var(--vscode-descriptionForeground)" }}
-            >
-              智能生成和优化你的提交信息
-            </p>
-          </div>
+            Add Changed Files
+          </Button>
         </div>
-      </div>
 
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto">
-        <div className="p-4">
-          {state.messages.length === 0 ? (
-            <div className="flex flex-col items-center justify-center h-full min-h-[400px] text-center">
-              <div
-                className="w-20 h-20 rounded-full flex items-center justify-center mb-6"
-                style={{
-                  backgroundColor: themeStyles.background(0.5),
-                  color: themeStyles.foreground(0.5),
-                }}
-              >
-                <Bot className="w-10 h-10" />
+        {targetFiles.length > 0 && (
+          <div className="flex flex-wrap gap-2 border-b px-4 py-2">
+            {targetFiles.map((file) => (
+              <Badge key={file} variant="secondary" className="gap-1">
+                <FileCode2 className="h-3 w-3" />
+                {file}
+                <button
+                  type="button"
+                  className="ml-1 opacity-70 hover:opacity-100"
+                  onClick={() => removeTargetFile(file)}
+                >
+                  <X className="h-3 w-3" />
+                </button>
+              </Badge>
+            ))}
+          </div>
+        )}
+
+        <ScrollArea className="flex-1 px-4 py-3">
+          <div className="space-y-3">
+            {messages.length === 0 && (
+              <div className="rounded-lg border border-dashed p-4 text-sm text-muted-foreground">
+                Ask for a commit message, and drag files from the SCM diff list
+                into this panel to focus on specific files.
               </div>
-              <h3 className="text-xl font-semibold mb-2">
-                欢迎使用 Commit Message 聊天助手
-              </h3>
-              <p
-                className="mb-6 max-w-md"
-                style={{ color: "var(--vscode-descriptionForeground)" }}
-              >
-                告诉我你想要什么样的 commit
-                message，我会帮你生成和优化。你可以描述你的代码变更，或者指定你喜欢的提交信息风格。
-              </p>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-w-lg">
+            )}
+
+            {messages.map((message) => {
+              const isAssistant = message.role === "assistant";
+              const content = extractTextFromMessage(message);
+
+              return (
                 <div
-                  className="p-3 rounded-lg text-sm"
-                  style={{
-                    backgroundColor: themeStyles.background(0.5),
-                    borderColor: themeStyles.border("normal"),
-                  }}
+                  key={message.id}
+                  className={`rounded-lg border px-3 py-2 text-sm ${
+                    isAssistant
+                      ? "border-primary/20 bg-primary/5"
+                      : "border-border bg-background"
+                  }`}
                 >
-                  <strong>示例：</strong> 添加用户登录功能
-                </div>
-                <div
-                  className="p-3 rounded-lg text-sm"
-                  style={{
-                    backgroundColor: themeStyles.background(0.5),
-                    borderColor: themeStyles.border("normal"),
-                  }}
-                >
-                  <strong>示例：</strong> 修复登录页面的样式问题
-                </div>
-                <div
-                  className="p-3 rounded-lg text-sm"
-                  style={{
-                    backgroundColor: themeStyles.background(0.5),
-                    borderColor: themeStyles.border("normal"),
-                  }}
-                >
-                  <strong>示例：</strong> 使用 conventional commits 格式
-                </div>
-                <div
-                  className="p-3 rounded-lg text-sm"
-                  style={{
-                    backgroundColor: themeStyles.background(0.5),
-                    borderColor: themeStyles.border("normal"),
-                  }}
-                >
-                  <strong>示例：</strong> 生成简洁的提交信息
-                </div>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {state.messages.map(renderMessage)}
-              {state.isTyping && (
-                <div className="flex justify-start">
-                  <div className="flex items-start gap-3 max-w-[80%]">
-                    <div
-                      className="w-8 h-8 rounded-full flex items-center justify-center flex-shrink-0"
-                      style={{
-                        backgroundColor: "var(--chat-ai-bg)",
-                        color: "var(--chat-ai-fg)",
-                      }}
-                    >
-                      <Bot className="w-4 h-4" />
-                    </div>
-                    <div
-                      className="rounded-lg px-4 py-3"
-                      style={{
-                        backgroundColor: "var(--chat-ai-bg)",
-                        color: "var(--chat-ai-fg)",
-                        border: `1px solid ${themeStyles.border("subtle")}`,
-                      }}
-                    >
-                      <div className="flex items-center gap-2">
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                        <span className="text-sm">AI 正在思考...</span>
-                      </div>
-                    </div>
+                  <div className="mb-1 text-xs uppercase tracking-wide text-muted-foreground">
+                    {isAssistant ? "Assistant" : "You"}
                   </div>
+                  <div className="whitespace-pre-wrap">{content}</div>
+                  {isAssistant && message.metadata?.commitMessage && (
+                    <div className="mt-3 rounded-md border bg-background p-2 font-mono text-xs">
+                      {message.metadata.commitMessage}
+                    </div>
+                  )}
                 </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          )}
-        </div>
-      </div>
+              );
+            })}
 
-      {/* Input Area */}
-      <div
-        className="border-t"
-        style={{
-          backgroundColor: themeStyles.background(0.95),
-          backdropFilter: "blur(8px)",
-          borderColor: themeStyles.border("normal"),
-        }}
-      >
-        <div className="p-4">
-          <div className="flex gap-3">
-            <div className="flex-1 relative">
-              <VSCodeTextArea
-                ref={textareaRef as any}
-                value={state.inputValue}
-                onInput={(e: any) =>
-                  handleInputChange({
-                    target: { value: e.target.value },
-                  } as React.ChangeEvent<HTMLTextAreaElement>)
-                }
-                onKeyDown={handleKeyDown}
-                placeholder="描述你的代码变更，或者告诉我你想要的 commit message 风格..."
-                className="min-h-[60px] max-h-[120px] resize-none pr-12"
-                disabled={state.isTyping}
-              />
-              <div
-                className="absolute bottom-2 right-2 text-xs"
-                style={{ color: "var(--vscode-descriptionForeground)" }}
-              >
-                {state.inputValue.length}/500
+            {isPending && (
+              <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <Loader2 className="h-4 w-4 animate-spin" />
+                Generating...
               </div>
-            </div>
-            <VSCodeButton
-              onClick={handleSendMessage}
-              disabled={!state.inputValue.trim() || state.isTyping}
-              className="self-end h-[60px] w-[60px]"
+            )}
+            <div ref={scrollBottomRef} />
+          </div>
+        </ScrollArea>
+
+        <div className="border-t p-3">
+          <div className="flex items-center gap-2">
+            <Input
+              value={input}
+              onChange={(event: React.ChangeEvent<HTMLInputElement>) =>
+                setInput(event.target.value)
+              }
+              placeholder="Describe your changes and intent..."
+              onKeyDown={(event: React.KeyboardEvent<HTMLInputElement>) => {
+                if (event.key === "Enter" && !event.shiftKey) {
+                  event.preventDefault();
+                  void sendMessage();
+                }
+              }}
+            />
+            <Button
+              type="button"
+              onClick={() => void sendMessage()}
+              disabled={isPending || !input.trim()}
             >
-              <Send className="w-5 h-5" />
-            </VSCodeButton>
+              <ArrowUp className="h-4 w-4" />
+            </Button>
           </div>
         </div>
       </div>

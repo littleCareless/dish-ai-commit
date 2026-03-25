@@ -14,6 +14,8 @@
     "prompts_description": "管理和使用提示词",
     "modelRegistry": "模型目录",
     "modelRegistry_description": "管理自定义模型与同步模型目录",
+    "commit_chat": "提交聊天",
+    "commit_chat_description": "通过对话生成提交信息",
     "experimental": "实验性",
     "experimental_description": "尝试实验性功能",
     "indexing": "代码索引",

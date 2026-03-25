@@ -59,6 +59,26 @@ export const providerConfigSchema = z.object({
   includeMaxTokens: z.boolean().optional(),
   enableReasoningEffort: z.boolean().optional(),
   reasoningEffortLevel: z.string().optional(),
+  enableSmoothStreaming: z.boolean().optional(),
+  topP: z.number().optional(),
+  topK: z.number().optional(),
+  presencePenalty: z.number().optional(),
+  frequencyPenalty: z.number().optional(),
+  stopSequences: z.string().optional(),
+  enableReasoningExtraction: z.boolean().optional(),
+  reasoningExtractionTagName: z.string().optional(),
+  featureOverrides: z
+    .record(
+      z.string(),
+      z.object({
+        topP: z.number().optional(),
+        topK: z.number().optional(),
+        presencePenalty: z.number().optional(),
+        frequencyPenalty: z.number().optional(),
+        stopSequences: z.string().optional(),
+      }),
+    )
+    .optional(),
   customModelSupportsPromptCache: z.boolean().optional(),
   customModelMaxTokens: z.number().optional(),
   customModelContextWindow: z.number().optional(),

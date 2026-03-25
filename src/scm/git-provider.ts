@@ -151,7 +151,17 @@ export class GitProvider implements ISCMProvider {
    */
   async startStreamingInput(message: string): Promise<void> {
     const inputProvider = await this.resolveInputProvider();
-    return inputProvider?.startStreamingInput(message);
+    if (!inputProvider) {
+      return;
+    }
+
+    // Prefer the stable setter path; fallback keeps backward compatibility
+    // with mocks/legacy providers that only expose startStreamingInput.
+    if (typeof inputProvider.setCommitInput === "function") {
+      return inputProvider.setCommitInput(message);
+    }
+
+    return inputProvider.startStreamingInput(message);
   }
 
   setCurrentFiles(files?: string[]): void {

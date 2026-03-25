@@ -12,6 +12,8 @@
     "prompts_description": "Manage and use prompts",
     "modelRegistry": "Model Registry",
     "modelRegistry_description": "Manage custom models and synced model catalog",
+    "commit_chat": "Commit Chat",
+    "commit_chat_description": "Generate commit messages through chat",
     "experimental": "Experimental",
     "experimental_description": "Try experimental features",
     "indexing": "Code Indexing",

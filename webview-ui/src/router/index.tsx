@@ -5,6 +5,7 @@ import { MemoryRouter, Navigate, Route, Routes } from "react-router-dom";
 
 // 页面组件
 import { AboutPage } from "@/pages/about-page";
+import { CommitChatPage } from "@/pages/CommitChatPage";
 import { ContextPage } from "@/pages/context-page";
 import { ExperimentalPage } from "@/pages/experimental-page";
 import { IndexingPage } from "@/pages/indexing-page";
@@ -91,6 +92,12 @@ export const AppRouter: React.FC = () => {
                     <Route
                       path={routes.modelRegistry}
                       element={<ModelRegistryPage />}
+                    />
+
+                    {/* Commit Chat 页面 */}
+                    <Route
+                      path={routes.commitChat}
+                      element={<CommitChatPage />}
                     />
 
                     {/* 实验性页面 */}

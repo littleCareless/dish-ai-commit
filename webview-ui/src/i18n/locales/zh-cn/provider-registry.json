@@ -708,6 +708,49 @@
           "high": "高"
         }
       },
+      "enableSmoothStreaming": {
+        "label": "启用平滑流式输出",
+        "helpText": "对流式输出进行平滑处理，提升可读性"
+      },
+      "topP": {
+        "label": "Top-p",
+        "helpText": "核采样参数。设为 -1 表示禁用并使用提供商默认值。",
+        "placeholder": "例如 0.9（或 -1 禁用）"
+      },
+      "topK": {
+        "label": "Top-k",
+        "helpText": "Top-k 采样参数。设为 -1 表示禁用并使用提供商默认值。",
+        "placeholder": "例如 40（或 -1 禁用）"
+      },
+      "presencePenalty": {
+        "label": "存在惩罚",
+        "helpText": "惩罚重复话题，鼓励生成新内容。",
+        "placeholder": "例如 0"
+      },
+      "frequencyPenalty": {
+        "label": "频率惩罚",
+        "helpText": "惩罚重复 token，减少重复表达。",
+        "placeholder": "例如 0"
+      },
+      "stopSequences": {
+        "label": "停止序列",
+        "helpText": "停止序列，使用逗号或换行分隔。",
+        "placeholder": "END\\n###\\n<stop>"
+      },
+      "enableReasoningExtraction": {
+        "label": "启用推理提取",
+        "helpText": "从带标签的输出中提取推理片段到独立通道。"
+      },
+      "reasoningExtractionTagName": {
+        "label": "推理标签名",
+        "helpText": "提取中间件使用的标签名。",
+        "placeholder": "think"
+      },
+      "featureOverrides": {
+        "label": "功能级覆盖 (JSON)",
+        "helpText": "按功能覆盖 topP/topK/惩罚/stopSequences。使用 JSON 对象。",
+        "placeholder": "{\n  \"branch-name\": {\n    \"topP\": 0.8,\n    \"topK\": 40,\n    \"stopSequences\": \"\\n\"\n  },\n  \"pr-summary\": {\n    \"presencePenalty\": 0.2\n  }\n}"
+      },
       "customModelSupportsPromptCache": {
         "label": "支持 Prompt 缓存",
         "helpText": "为此模型启用 Prompt 缓存价格计算"

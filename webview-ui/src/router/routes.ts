@@ -6,6 +6,7 @@ export const routes = {
   context: "/context",
   prompts: "/prompts",
   modelRegistry: "/model-registry",
+  commitChat: "/commit-chat",
   experimental: "/experimental",
   about: "/about",
   indexing: "/indexing",

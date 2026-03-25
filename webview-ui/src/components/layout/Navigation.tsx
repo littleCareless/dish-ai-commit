@@ -15,6 +15,7 @@ import {
   Bug,
   Database,
   FlaskConical,
+  GitCommitHorizontal,
   Globe,
   Info,
   MessageSquare,
@@ -72,6 +73,12 @@ export const Navigation: React.FC = () => {
         label: t("nav.prompts"),
         icon: MessageSquare,
         description: t("nav.prompts_description"),
+      },
+      {
+        path: routes.commitChat,
+        label: t("nav.commit_chat"),
+        icon: GitCommitHorizontal,
+        description: t("nav.commit_chat_description"),
       },
       {
         path: routes.modelRegistry,

@@ -1,7 +1,12 @@
 import { Button } from "@/components/ui/button";
 import { Form } from "@/components/ui/form";
 import { providerRegistry } from "@/config/provider-registry";
-import { ExtendedProviderConfig } from "@/types/provider-metadata";
+import {
+  ExtendedProviderConfig,
+  FieldConfig,
+  FieldType,
+  ProviderType,
+} from "@/types/provider-metadata";
 import { canFetchModels } from "@/utils/config-validator";
 import {
   createProviderSchema,
@@ -31,6 +36,148 @@ interface ProviderConfigFormProps {
   onTestProvider: (providerId: string) => void;
   onOpenSettings: (providerId: string) => void;
 }
+
+const VERCEL_AI_ADVANCED_FIELDS: FieldConfig[] = [
+  {
+    key: "enableReasoningEffort",
+    type: FieldType.CHECKBOX,
+    label: "openai-compatible.fields.enableReasoningEffort.label",
+    required: false,
+    defaultValue: false,
+    helpText: "openai-compatible.fields.enableReasoningEffort.helpText",
+  },
+  {
+    key: "reasoningEffortLevel",
+    type: FieldType.SELECT,
+    label: "openai-compatible.fields.reasoningEffortLevel.label",
+    required: false,
+    defaultValue: "medium",
+    conditional: { field: "enableReasoningEffort", value: true },
+    options: [
+      {
+        value: "low",
+        label: "openai-compatible.fields.reasoningEffortLevel.options.low",
+      },
+      {
+        value: "medium",
+        label: "openai-compatible.fields.reasoningEffortLevel.options.medium",
+      },
+      {
+        value: "high",
+        label: "openai-compatible.fields.reasoningEffortLevel.options.high",
+      },
+    ],
+    helpText: "openai-compatible.fields.reasoningEffortLevel.helpText",
+  },
+  {
+    key: "enableSmoothStreaming",
+    type: FieldType.CHECKBOX,
+    label: "openai-compatible.fields.enableSmoothStreaming.label",
+    required: false,
+    defaultValue: false,
+    helpText: "openai-compatible.fields.enableSmoothStreaming.helpText",
+  },
+  {
+    key: "topP",
+    type: FieldType.NUMBER,
+    label: "openai-compatible.fields.topP.label",
+    required: false,
+    defaultValue: 1,
+    placeholder: "openai-compatible.fields.topP.placeholder",
+    helpText: "openai-compatible.fields.topP.helpText",
+    min: 0,
+    max: 1,
+    step: 0.1,
+  },
+  {
+    key: "topK",
+    type: FieldType.NUMBER,
+    label: "openai-compatible.fields.topK.label",
+    required: false,
+    defaultValue: 0,
+    placeholder: "openai-compatible.fields.topK.placeholder",
+    helpText: "openai-compatible.fields.topK.helpText",
+    min: 0,
+    step: 1,
+  },
+  {
+    key: "presencePenalty",
+    type: FieldType.NUMBER,
+    label: "openai-compatible.fields.presencePenalty.label",
+    required: false,
+    defaultValue: 0,
+    placeholder: "openai-compatible.fields.presencePenalty.placeholder",
+    helpText: "openai-compatible.fields.presencePenalty.helpText",
+    min: -2,
+    max: 2,
+    step: 0.1,
+  },
+  {
+    key: "frequencyPenalty",
+    type: FieldType.NUMBER,
+    label: "openai-compatible.fields.frequencyPenalty.label",
+    required: false,
+    defaultValue: 0,
+    placeholder: "openai-compatible.fields.frequencyPenalty.placeholder",
+    helpText: "openai-compatible.fields.frequencyPenalty.helpText",
+    min: -2,
+    max: 2,
+    step: 0.1,
+  },
+  {
+    key: "stopSequences",
+    type: FieldType.TEXT,
+    label: "openai-compatible.fields.stopSequences.label",
+    required: false,
+    defaultValue: "",
+    placeholder: "openai-compatible.fields.stopSequences.placeholder",
+    helpText: "openai-compatible.fields.stopSequences.helpText",
+  },
+  {
+    key: "enableReasoningExtraction",
+    type: FieldType.CHECKBOX,
+    label: "openai-compatible.fields.enableReasoningExtraction.label",
+    required: false,
+    defaultValue: false,
+    helpText: "openai-compatible.fields.enableReasoningExtraction.helpText",
+  },
+  {
+    key: "reasoningExtractionTagName",
+    type: FieldType.TEXT,
+    label: "openai-compatible.fields.reasoningExtractionTagName.label",
+    required: false,
+    defaultValue: "think",
+    conditional: { field: "enableReasoningExtraction", value: true },
+    placeholder:
+      "openai-compatible.fields.reasoningExtractionTagName.placeholder",
+    helpText: "openai-compatible.fields.reasoningExtractionTagName.helpText",
+  },
+  {
+    key: "featureOverrides",
+    type: FieldType.TEXTAREA,
+    label: "openai-compatible.fields.featureOverrides.label",
+    required: false,
+    defaultValue: "{}",
+    rows: 8,
+    placeholder: "openai-compatible.fields.featureOverrides.placeholder",
+    helpText: "openai-compatible.fields.featureOverrides.helpText",
+  },
+];
+
+const shouldInjectVercelAiFields = (
+  provider: ExtendedProviderConfig,
+): boolean => {
+  if (
+    provider.type === ProviderType.OPENAI_COMPATIBLE ||
+    provider.id === "openai-compatible" ||
+    provider.id === "openai" ||
+    provider.id === "azure" ||
+    provider.id === "azure-openai"
+  ) {
+    return true;
+  }
+  return false;
+};
 
 // 分离的错误 UI 组件
 const ProviderNotSupportedError: React.FC<{
@@ -73,18 +220,32 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
 
   // 3. 获取提供商元数据（可以为 null）
   const providerMeta = ProviderRegistry[provider.id];
+  const mergedFields = useMemo(() => {
+    if (!providerMeta) return [];
+
+    const baseFields = providerMeta.fields || [];
+    if (!shouldInjectVercelAiFields(provider)) {
+      return baseFields;
+    }
+
+    const existingKeys = new Set(baseFields.map((f) => f.key));
+    const missingAdvancedFields = VERCEL_AI_ADVANCED_FIELDS.filter(
+      (f) => !existingKeys.has(f.key),
+    );
+    return [...baseFields, ...missingAdvancedFields];
+  }, [providerMeta, provider]);
 
   // 4. 创建 schema 和类型（必须无条件调用）
   const providerSchema = useMemo(() => {
     const baseSchema = providerMeta
-      ? createProviderSchema(providerMeta.fields, t)
+      ? createProviderSchema(mergedFields, t)
       : z.object({});
 
     // 始终添加 model 字段作为可选字符串，以解决类型错误
     return baseSchema.extend({
       model: z.string().optional(),
     });
-  }, [providerMeta, t]);
+  }, [providerMeta, mergedFields, t]);
 
   type ProviderConfigFormData = z.infer<typeof providerSchema>;
 
@@ -94,9 +255,21 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
     const configData = config as Record<string, unknown>;
 
     if (providerMeta) {
-      providerMeta.fields.forEach((field) => {
-        defaults[field.key] =
-          configData?.[field.key] ?? getFieldDefaultValue(field);
+      mergedFields.forEach((field) => {
+        const fieldValue = configData?.[field.key];
+
+        if (field.key === "featureOverrides") {
+          if (typeof fieldValue === "string") {
+            defaults[field.key] = fieldValue;
+          } else if (fieldValue && typeof fieldValue === "object") {
+            defaults[field.key] = JSON.stringify(fieldValue, null, 2);
+          } else {
+            defaults[field.key] = getFieldDefaultValue(field);
+          }
+          return;
+        }
+
+        defaults[field.key] = fieldValue ?? getFieldDefaultValue(field);
       });
 
       // 如果当前 provider 有 baseUrl 设置的话，默认勾选 useCustomUrl
@@ -106,7 +279,7 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
         typeof configData.baseUrl === "string" &&
         configData.baseUrl.trim() !== "" &&
         configData?.useCustomUrl === undefined &&
-        providerMeta.fields.some((f) => f.key === "useCustomUrl")
+        mergedFields.some((f) => f.key === "useCustomUrl")
       ) {
         defaults["useCustomUrl"] = true;
       }
@@ -191,6 +364,26 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
       // 同时更新 defaultModel，以匹配 ProviderConfig 类型定义
       (newConfig as Record<string, unknown>)["defaultModel"] = value;
       form.setValue("model", value as never);
+    }
+
+    // featureOverrides 在 UI 中编辑为 JSON 字符串，保存时转换为对象
+    if (fieldKey === "featureOverrides" && typeof value === "string") {
+      const rawText = value.trim();
+      if (!rawText) {
+        (newConfig as Record<string, unknown>).featureOverrides = {};
+      } else {
+        try {
+          const parsed = JSON.parse(rawText);
+          if (parsed && typeof parsed === "object") {
+            (newConfig as Record<string, unknown>).featureOverrides = parsed;
+          } else {
+            (newConfig as Record<string, unknown>).featureOverrides = {};
+          }
+        } catch {
+          // 保留用户输入，后端会安全降级忽略非法 JSON
+          (newConfig as Record<string, unknown>).featureOverrides = value;
+        }
+      }
     }
 
     internalUpdateRef.current = true;
@@ -334,10 +527,24 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
     // 关键修复：直接从 form 中获取最新值，而不是依赖 watchedValues
     // 这使得 fetchModels 函数本身更稳定，不会在每次输入时都重新创建
     const currentValues = form.getValues() as Record<string, unknown>;
-    const apiKey = (currentValues.apiKey as string | undefined)?.trim();
-    const baseUrl =
+    const configData = config as Record<string, unknown>;
+    const formApiKey = (currentValues.apiKey as string | undefined)?.trim();
+    const configApiKey = (configData.apiKey as string | undefined)?.trim();
+    const apiKey = formApiKey || configApiKey;
+
+    const formBaseUrl =
       (currentValues.baseUrl as string | undefined)?.trim() ||
-      (currentValues.baseUrl as string | undefined)?.trim();
+      (currentValues.baseURL as string | undefined)?.trim();
+    const configBaseUrl =
+      (configData.baseUrl as string | undefined)?.trim() ||
+      (configData.baseURL as string | undefined)?.trim();
+    const baseUrl = formBaseUrl || configBaseUrl;
+
+    const valuesForValidation: Record<string, unknown> = {
+      ...currentValues,
+      apiKey,
+      baseUrl,
+    };
 
     // 新增：检查是否已获取过相同配置的模型列表
     const currentConfigKey = {
@@ -366,11 +573,14 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
       });
     }
 
-    const { canFetch } = canFetchModels(providerMeta, currentValues);
+    const { canFetch, reason } = canFetchModels(
+      providerMeta,
+      valuesForValidation,
+    );
 
     if (!canFetch) {
       setModels([]);
-      setModelError(null);
+      setModelError(reason || t("enterApiKeyOrBaseUrl"));
       return;
     }
 
@@ -491,10 +701,10 @@ export const ProviderConfigForm: React.FC<ProviderConfigFormProps> = ({
     <Form {...form}>
       <div className="flex flex-col gap-6 p-4 border rounded-lg">
         {/* Dynamic Form Fields */}
-        {providerMeta.fields.length > 0 && (
+        {mergedFields.length > 0 && (
           <DynamicFieldGroup
             key={i18n.language} // 语言切换时强制重新渲染
-            fields={providerMeta.fields}
+            fields={mergedFields}
             t={t}
             values={
               watchedValues as Record<

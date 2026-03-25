@@ -677,6 +677,56 @@ export const CONFIG_SCHEMA = {
           "Reasoning Effort Level (low/medium/high) / 推理强度级别（低/中/高）",
         enum: ["low", "medium", "high"],
       },
+      enableSmoothStreaming: {
+        type: "boolean",
+        default: false,
+        description:
+          "Enable smooth streaming output transform / 启用平滑流式输出转换",
+      },
+      topP: {
+        type: "number",
+        default: -1,
+        description: "Top-p sampling (-1 to disable) / Top-p 采样（-1 表示禁用）",
+      },
+      topK: {
+        type: "number",
+        default: -1,
+        description: "Top-k sampling (-1 to disable) / Top-k 采样（-1 表示禁用）",
+      },
+      presencePenalty: {
+        type: "number",
+        default: 0,
+        description: "Presence penalty / 存在惩罚参数",
+      },
+      frequencyPenalty: {
+        type: "number",
+        default: 0,
+        description: "Frequency penalty / 频率惩罚参数",
+      },
+      stopSequences: {
+        type: "string",
+        default: "",
+        description:
+          "Stop sequences (comma/newline separated) / 停止序列（逗号或换行分隔）",
+      },
+      enableReasoningExtraction: {
+        type: "boolean",
+        default: false,
+        description:
+          "Extract reasoning segments from model output / 提取模型输出中的推理片段",
+      },
+      reasoningExtractionTagName: {
+        type: "string",
+        default: "think",
+        description:
+          "Reasoning tag name for extraction middleware / 推理提取中间件使用的标签名",
+      },
+      featureOverrides: {
+        type: "object",
+        default: {},
+        description:
+          "Per-feature generation overrides (topP/topK/penalties/stopSequences) / 按功能覆盖生成参数（topP/topK/penalty/stopSequences）",
+      },
       rateLimitEnabled: {
         type: "boolean",
         default: false,
