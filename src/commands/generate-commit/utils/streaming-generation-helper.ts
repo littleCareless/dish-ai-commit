@@ -22,12 +22,13 @@ import { stagedContentDetector } from "@/scm/staged-content-detector";
 import { DiffTarget, RepositoryContext } from "@/scm/staged-detector-types";
 import { commitCacheService } from "@/services/cache/commit-cache-service";
 import { ContextInspectorService } from "@/services/context-inspector-service";
+import { PromptManagerService } from "@/services/core/prompt-manager-service";
 import { ContextManager, RequestTooLargeError } from "@/utils/context-manager";
 import { getMessage } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
 import { notify } from "@/utils/notification/notification-manager";
-import { showCommitSuccessNotification } from "@/utils/notification/system-notification";
 import { stateManager } from "@/utils/state/state-manager";
+import { PromptKey } from "@shared/types/prompts";
 import * as vscode from "vscode";
 import * as crypto from "crypto";
 
@@ -46,6 +47,11 @@ interface DiffSnapshot {
   combinedDiff: string | undefined;
   resolvedDiffTarget: "staged" | "all";
   fileDiffMap?: Map<string, string>;
+}
+
+interface ActivePromptContext {
+  promptContent: string;
+  promptFingerprint: string;
 }
 
 /**
@@ -136,6 +142,7 @@ export class StreamingGenerationHelper {
         configuration.features.commitFormat.enableLayeredCommit &&
         selectedFiles &&
         selectedFiles.length > 1;
+      const activePromptContext = await this.getActiveCommitPromptContext();
 
       if (!shouldUseLayeredCommit) {
         const cacheKey = commitCacheService.generateKey(
@@ -143,6 +150,7 @@ export class StreamingGenerationHelper {
           configuration,
           session.model,
           scmProvider.type ?? "git",
+          activePromptContext.promptFingerprint,
         );
         const cachedMessage = commitCacheService.get(cacheKey);
 
@@ -157,10 +165,6 @@ export class StreamingGenerationHelper {
           });
 
           await scmProvider.startStreamingInput(cachedMessage);
-          if (!options.suppressSuccessNotification) {
-            notify.info("commit.message.generated.from.cache");
-            showCommitSuccessNotification();
-          }
 
           return {
             status: "success",
@@ -171,6 +175,12 @@ export class StreamingGenerationHelper {
             model: session.selectedModel.id,
             message: cachedMessage,
             fromCache: true,
+            notification: options.suppressSuccessNotification
+              ? undefined
+              : {
+                level: "info",
+                key: "commit.message.generated.from.cache",
+              },
           };
         }
       }
@@ -209,6 +219,7 @@ export class StreamingGenerationHelper {
           selectedFiles,
           repositoryPath,
           scopedRequestId,
+          activePromptContext,
         );
 
       // 步骤4: 检查提示词长度并处理警告
@@ -245,6 +256,7 @@ export class StreamingGenerationHelper {
         progress,
         configuration,
         repositoryPath,
+        activePromptContext.promptFingerprint,
         modelConfig.provider,
         options,
         session,
@@ -289,9 +301,11 @@ export class StreamingGenerationHelper {
     const configuration = providerConfig;
 
     // 设置当前文件
-    if (scmProvider.setCurrentFiles && selectedFiles) {
+    if (scmProvider.setCurrentFiles) {
       this.logger.info(
-        `Setting current files for SCM provider: ${selectedFiles.join(", ")}`,
+        `Setting current files for SCM provider: ${
+          selectedFiles?.join(", ") || "<none>"
+        }`,
       );
       scmProvider.setCurrentFiles(selectedFiles);
     }
@@ -305,6 +319,8 @@ export class StreamingGenerationHelper {
     let diffContent: string | undefined;
     let resolvedDiffTarget: "staged" | "all" = "all";
     const diffTargetConfig = configuration.features.codeAnalysis.diffTarget;
+    const fallbackToAll =
+      configuration.features?.codeAnalysis?.fallbackToAll ?? true;
     this.logger.info(`diffTargetConfig: ${diffTargetConfig}`);
 
     if (diffTargetConfig === "auto") {
@@ -313,6 +329,7 @@ export class StreamingGenerationHelper {
         selectedFiles,
         repositoryContext,
         progress,
+        fallbackToAll,
       );
       diffContent = autoDiffResult.content;
       resolvedDiffTarget = autoDiffResult.target;
@@ -358,13 +375,16 @@ export class StreamingGenerationHelper {
     selectedFiles: string[] | undefined,
     repositoryContext: RepositoryContext | undefined,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
+    fallbackToAll: boolean,
   ): Promise<{ content: string | undefined; target: "staged" | "all" }> {
+    const fallbackTarget: "staged" | "all" = fallbackToAll ? "all" : "staged";
+
     try {
       if (!repositoryContext) {
         progress.report({ message: getMessage("progress.getting.diff") });
         return {
-          content: await scmProvider.getDiff(selectedFiles, "all"),
-          target: "all",
+          content: await scmProvider.getDiff(selectedFiles, fallbackTarget),
+          target: fallbackTarget,
         };
       }
 
@@ -396,12 +416,12 @@ export class StreamingGenerationHelper {
       };
     } catch (error) {
       this.logger.warn(
-        `Auto-detection failed, falling back to traditional method: ${error}`,
+        `Auto-detection failed, falling back to '${fallbackTarget}': ${error}`,
       );
       progress.report({ message: getMessage("progress.getting.diff") });
       return {
-        content: await scmProvider.getDiff(selectedFiles, "all"),
-        target: "all",
+        content: await scmProvider.getDiff(selectedFiles, fallbackTarget),
+        target: fallbackTarget,
       };
     }
   }
@@ -448,6 +468,7 @@ export class StreamingGenerationHelper {
     selectedFiles: string[] | undefined,
     repositoryPath: string | undefined,
     requestId: string,
+    activePromptContext?: ActivePromptContext,
   ): Promise<{ contextManager: ContextManager; requestParams: any }> {
     if (this.lastRequestId === requestId && this.lastContext) {
       this.logger.debug(
@@ -456,10 +477,15 @@ export class StreamingGenerationHelper {
       return this.lastContext;
     }
 
+    const promptContext =
+      activePromptContext || (await this.getActiveCommitPromptContext());
+
     // 构建并缓存 system prompt
     const systemPromptHash = this.getSystemPromptHash(
       configuration,
       scmProvider.type ?? "git",
+      repositoryPath,
+      promptContext.promptFingerprint,
     );
     if (
       !this._lastSystemPrompt ||
@@ -473,7 +499,13 @@ export class StreamingGenerationHelper {
         diff: diffContent,
       });
 
-      this._lastSystemPrompt = await getSystemPrompt(tempParams);
+      this._lastSystemPrompt = await getSystemPrompt(
+        tempParams,
+        false,
+        false,
+        undefined,
+        promptContext.promptContent,
+      );
       this._lastSystemPromptHash = systemPromptHash;
     }
 
@@ -571,9 +603,16 @@ export class StreamingGenerationHelper {
     });
   }
 
-  private getSystemPromptHash(config: any, scmType: string): string {
+  private getSystemPromptHash(
+    config: any,
+    scmType: string,
+    workspaceRoot?: string,
+    promptFingerprint?: string,
+  ): string {
     return JSON.stringify({
       scm: scmType || "git",
+      workspaceRoot: workspaceRoot || "",
+      promptFingerprint: promptFingerprint || "",
       language: config.base?.language,
       commitFormat: {
         enableEmoji: config.features?.commitFormat?.enableEmoji,
@@ -587,6 +626,33 @@ export class StreamingGenerationHelper {
         largePromptAction: config.features?.commitMessage?.largePromptAction,
       },
     });
+  }
+
+  private async getActiveCommitPromptContext(): Promise<ActivePromptContext> {
+    try {
+      const promptManager = PromptManagerService.getInstance();
+      const promptContent = await promptManager.getActivePromptContent(
+        PromptKey.GenerateCommitSystem,
+      );
+      const normalizedPrompt = promptContent || "";
+      return {
+        promptContent: normalizedPrompt,
+        promptFingerprint: this.getPromptFingerprint(normalizedPrompt),
+      };
+    } catch (error) {
+      this.logger.warn(
+        "[StreamingHelper] Failed to read active commit prompt for cache fingerprint, fallback to empty prompt fingerprint.",
+        { error: error as Error },
+      );
+      return {
+        promptContent: "",
+        promptFingerprint: this.getPromptFingerprint(""),
+      };
+    }
+  }
+
+  private getPromptFingerprint(promptContent: string): string {
+    return crypto.createHash("sha256").update(promptContent).digest("hex");
   }
 
   /**
@@ -814,6 +880,7 @@ export class StreamingGenerationHelper {
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     configuration: any,
     repositoryPath: string | undefined,
+    promptFingerprint: string | undefined,
     providerId: string,
     options: PerformGenerationOptions,
     session: GenerationSession,
@@ -839,6 +906,7 @@ export class StreamingGenerationHelper {
         configuration,
         selectedModel.id,
         scmProvider.type ?? "git",
+        promptFingerprint,
       );
     }
 
@@ -866,12 +934,18 @@ export class StreamingGenerationHelper {
         layeredResult.applied &&
         !options.suppressSuccessNotification
       ) {
-        notify.info("commit.message.generated.stream", [
-          scmProvider.type.toUpperCase(),
-          providerId,
-          selectedModel?.id || "default",
-        ]);
-        showCommitSuccessNotification();
+        return {
+          ...layeredResult,
+          notification: {
+            level: "info",
+            key: "commit.message.generated.stream",
+            args: [
+              scmProvider.type.toUpperCase(),
+              providerId,
+              selectedModel?.id || "default",
+            ],
+          },
+        };
       }
 
       return layeredResult;
@@ -886,7 +960,6 @@ export class StreamingGenerationHelper {
         token,
         progress,
         repositoryPath,
-        providerId,
       )
       : await this.handleStandardGeneration(
         aiProvider,
@@ -913,15 +986,6 @@ export class StreamingGenerationHelper {
       commitCacheService.set(cacheKey, normalizedMessage);
     }
 
-    if (!options.suppressSuccessNotification) {
-      notify.info("commit.message.generated.stream", [
-        scmProvider.type.toUpperCase(),
-        providerId,
-        selectedModel?.id || "default",
-      ]);
-      showCommitSuccessNotification();
-    }
-
     return {
       status: "success",
       applied: true,
@@ -930,6 +994,17 @@ export class StreamingGenerationHelper {
       provider: session.provider,
       model: session.selectedModel.id,
       message: normalizedMessage,
+      notification: options.suppressSuccessNotification
+        ? undefined
+        : {
+          level: "info",
+          key: "commit.message.generated.stream",
+          args: [
+            scmProvider.type.toUpperCase(),
+            providerId,
+            selectedModel?.id || "default",
+          ],
+        },
     };
   }
 
@@ -944,30 +1019,16 @@ export class StreamingGenerationHelper {
     token: vscode.CancellationToken,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     repositoryPath: string | undefined,
-    newProvider: string,
   ): Promise<string> {
     this.logger.info("Using function calling generation.");
 
-    if (!aiProvider.generateCommitWithFunctionCalling) {
-      this.logger.error(
-        `Provider ${newProvider} does not support function calling.`,
-      );
-      throw new Error(
-        `Provider ${newProvider} does not support function calling.`,
-      );
-    }
-
-    const messages = contextManager.buildMessages();
-    this.logger.info(
-      `Built messages for function calling. Total messages: ${messages.length}`,
-    );
-
     return await this.functionCallingHandler.handle(
       aiProvider,
-      { ...requestParams, messages },
+      requestParams,
       scmProvider,
       token,
       progress,
+      contextManager,
       repositoryPath,
     );
   }

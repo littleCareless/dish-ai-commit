@@ -5,6 +5,12 @@ import * as vscode from "vscode";
 
 export type GenerationStatus = "success" | "failed" | "cancelled" | "too_large";
 
+export interface GenerationNotification {
+  level: "info" | "warn" | "error";
+  key: string;
+  args?: Array<string | number>;
+}
+
 export interface GenerationResult {
   status: GenerationStatus;
   applied: boolean;
@@ -16,6 +22,7 @@ export interface GenerationResult {
   error?: string;
   errorCode?: string;
   fromCache?: boolean;
+  notification?: GenerationNotification;
 }
 
 export interface CrossRepositoryItemResult extends GenerationResult {

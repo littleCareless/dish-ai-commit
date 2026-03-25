@@ -1,7 +1,5 @@
 import * as vscode from "vscode";
-import * as path from "path";
 import { getMessage } from "@/utils/i18n";
-import { notify } from "@/utils/notification/notification-manager";
 
 /**
  * 提交消息构建器类，负责构建和展示提交消息相关内容
@@ -33,7 +31,5 @@ export class CommitMessageBuilder {
       language: "markdown",
     });
     await vscode.window.showTextDocument(document);
-    notify.info("layered.commit.details.generated");
   }
 }
-

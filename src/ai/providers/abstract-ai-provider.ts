@@ -386,6 +386,10 @@ export abstract class AbstractAIProvider implements AIProvider {
         "Failed to generate commit message with function calling.",
       );
     } catch (error) {
+      if (error instanceof ContextLengthExceededError) {
+        // 保留错误类型，交给上层 ContextManager 执行同构重试/截断逻辑。
+        throw error;
+      }
       this.logger.logError(
         error as Error,
         formatMessage("generation.failed", [

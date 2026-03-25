@@ -173,36 +173,59 @@ export class ContextManager {
         }
         return; // 成功，退出循环
       } catch (error: any) {
-        if (error instanceof ContextLengthExceededError) {
-          retries++;
-          if (retries > maxRetries) {
-            throw new RequestTooLargeError(
-              `Context length issue persists after ${maxRetries} retries. Please try a model with a larger context window or reduce the number of selected files.`,
-            );
-          }
-
-          if (Logger.isDevelopment()) {
-            logger.warn(
-              `Context too long, attempting retry ${retries}/${maxRetries}.`,
-            );
-          }
-          notify.warn(
-            `Context too long, attempting retry ${retries}/${maxRetries}.`,
-          );
-
-          // 智能截断逻辑
-          if (!this.smartTruncate()) {
-            // 如果无法再截断，则抛出错误
-            throw new RequestTooLargeError(
-              "Unable to truncate context further. Please reduce the number of selected files.",
-            );
-          }
+        if (this.isContextLengthError(error)) {
+          retries = this.handleContextLengthRetry(retries, maxRetries);
         } else {
           // 对于非上下文长度错误，直接抛出
           throw error;
         }
       }
     }
+  }
+
+  /**
+   * 使用重试逻辑构建并执行AI非流式请求（例如函数调用模式）
+   * @param requestParams - 原始请求参数
+   * @param executeRequest - 执行请求的函数
+   * @param maxRetries - 最大重试次数
+   * @returns AI 请求结果
+   */
+  public async executeWithRetry<T>(
+    requestParams: AIRequestParams,
+    executeRequest: (requestParams: AIRequestParams) => Promise<T>,
+    maxRetries: number = 3,
+  ): Promise<T> {
+    let retries = 0;
+
+    while (retries <= maxRetries) {
+      const messages = this.buildMessages();
+      const currentRequestParams = { ...requestParams, messages };
+
+      if (Logger.isDevelopment()) {
+        logger.debug("[ContextManager] executeWithRetry - currentRequestParams", {
+          data: {
+            feature: currentRequestParams.feature,
+            hasModel: !!currentRequestParams.model,
+            hasMessages: Array.isArray(currentRequestParams.messages),
+            messageCount: currentRequestParams.messages?.length,
+          },
+        });
+      }
+
+      try {
+        return await executeRequest(currentRequestParams);
+      } catch (error) {
+        if (this.isContextLengthError(error)) {
+          retries = this.handleContextLengthRetry(retries, maxRetries);
+          continue;
+        }
+        throw error;
+      }
+    }
+
+    throw new RequestTooLargeError(
+      `Context length issue persists after ${maxRetries} retries. Please try a model with a larger context window or reduce the number of selected files.`,
+    );
   }
 
   /**
@@ -347,6 +370,55 @@ export class ContextManager {
       this.invalidateBuildCache();
     }
     return truncated;
+  }
+
+  private isContextLengthError(error: unknown): boolean {
+    if (error instanceof ContextLengthExceededError) {
+      return true;
+    }
+
+    const message =
+      error instanceof Error
+        ? error.message.toLowerCase()
+        : String(error).toLowerCase();
+
+    return (
+      message.includes("contextlengthexceedederror") ||
+      message.includes("maximum context length") ||
+      message.includes("context length exceeded") ||
+      message.includes("exceeds token limit") ||
+      message.includes("is too large") ||
+      message.includes("input is too long") ||
+      ((message.includes("上下文") || message.includes("context")) &&
+        (message.includes("过长") ||
+          message.includes("超长") ||
+          message.includes("too long") ||
+          message.includes("超过") ||
+          message.includes("exceed")))
+    );
+  }
+
+  private handleContextLengthRetry(retries: number, maxRetries: number): number {
+    const nextRetry = retries + 1;
+    if (nextRetry > maxRetries) {
+      throw new RequestTooLargeError(
+        `Context length issue persists after ${maxRetries} retries. Please try a model with a larger context window or reduce the number of selected files.`,
+      );
+    }
+
+    if (Logger.isDevelopment()) {
+      logger.warn(`Context too long, attempting retry ${nextRetry}/${maxRetries}.`);
+    }
+    notify.warn(`Context too long, attempting retry ${nextRetry}/${maxRetries}.`);
+
+    // 智能截断逻辑
+    if (!this.smartTruncate()) {
+      throw new RequestTooLargeError(
+        "Unable to truncate context further. Please reduce the number of selected files.",
+      );
+    }
+
+    return nextRetry;
   }
 
   private invalidateBuildCache(): void {

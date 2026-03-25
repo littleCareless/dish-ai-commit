@@ -57,7 +57,8 @@ export class CommitCacheService {
     diff: string,
     configuration: any,
     modelId: string,
-    scmType: string = "git"
+    scmType: string = "git",
+    promptFingerprint: string = "",
   ): string {
     // 提取只影响生成内容的关键配置，避免无关配置变更导致缓存失效
     const relevantConfig = {
@@ -94,6 +95,7 @@ export class CommitCacheService {
       diff, // 这是最核心的，如果 diff 变了，必须重新生成
       modelId, // 模型不同，结果可能不同
       scmType: scmType || "git", // Git/SVN 提示词示例不同，必须隔离缓存
+      promptFingerprint, // Prompt 内容变化时应立即失效
       config: relevantConfig,
     });
 

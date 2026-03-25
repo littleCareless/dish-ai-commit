@@ -8,6 +8,7 @@ function createConfig() {
       commitFormat: {
         enableMergeCommit: false,
         enableEmoji: true,
+        enableGlobalContext: true,
       },
       commitMessage: {},
       codeAnalysis: {},
@@ -163,6 +164,48 @@ describe("LayeredCommitHandler", () => {
       args.progress,
       args.config,
       args.resultContext,
+    );
+  });
+
+  it("skips global context extraction when enableGlobalContext is false", async () => {
+    const handler = createHandler();
+    const args = createHandleArgs();
+    args.config.features.commitFormat.enableGlobalContext = false;
+
+    const extractGlobalContextSpy = vi
+      .spyOn((handler as any).globalContextExtractor, "extractGlobalContext")
+      .mockResolvedValue("should-not-be-used");
+    const processFilesInBatchesSpy = vi
+      .spyOn(handler as any, "processFilesInBatches")
+      .mockResolvedValue([]);
+
+    const result = await handler.handle(
+      args.aiProvider,
+      args.requestParams,
+      args.scmProvider,
+      args.selectedFiles,
+      args.token,
+      args.progress,
+      args.selectedModel,
+      args.config,
+      args.resultContext,
+      args.prefetchedDiffs,
+    );
+
+    expect(result.status).toBe("failed");
+    expect(result.errorCode).toBe("LAYERED_NO_FILE_DESCRIPTIONS");
+    expect(extractGlobalContextSpy).not.toHaveBeenCalled();
+    expect(processFilesInBatchesSpy).toHaveBeenCalledWith(
+      args.selectedFiles,
+      args.scmProvider,
+      args.aiProvider,
+      args.requestParams,
+      args.config,
+      "",
+      args.token,
+      args.progress,
+      args.selectedModel,
+      args.prefetchedDiffs,
     );
   });
 });

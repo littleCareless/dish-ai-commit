@@ -3,6 +3,7 @@ import { CrossRepositoryHandler } from "@/commands/generate-commit/handlers/cros
 import { CommitGenerationOrchestrator } from "@/commands/generate-commit/services/commit-generation-orchestrator";
 import {
   CrossRepositoryResult,
+  GenerationNotification,
   GenerationResult,
   GenerationSession,
   GenerationTargetContext,
@@ -12,6 +13,7 @@ import { StreamingGenerationHelper } from "@/commands/generate-commit/utils/stre
 import { formatMessage } from "@/utils/i18n";
 import { notify } from "@/utils/notification/notification-manager";
 import { ProgressHandler } from "@/utils/notification/progress-handler";
+import { showCommitSuccessNotification } from "@/utils/notification/system-notification";
 import * as path from "path";
 import * as vscode from "vscode";
 
@@ -96,11 +98,45 @@ export class GenerateCommitCommand extends BaseCommand {
   private async handleSingleRepositoryResult(
     result: GenerationResult,
   ): Promise<void> {
+    if (result.status === "success" && result.applied) {
+      if (result.notification) {
+        await this.dispatchGenerationNotification(result.notification);
+      }
+      showCommitSuccessNotification();
+      return;
+    }
+
+    if (result.status === "cancelled" || result.status === "too_large") {
+      return;
+    }
+
     if (result.status === "failed") {
+      if (result.notification) {
+        await this.dispatchGenerationNotification(result.notification);
+        return;
+      }
+
       await notify.error("generate.commit.failed", [
         result.error || "Unknown generation error.",
       ]);
     }
+  }
+
+  private async dispatchGenerationNotification(
+    notification: GenerationNotification,
+  ): Promise<void> {
+    const args = notification.args as any[] | undefined;
+    if (notification.level === "info") {
+      await notify.info(notification.key, args);
+      return;
+    }
+
+    if (notification.level === "warn") {
+      await notify.warn(notification.key, args);
+      return;
+    }
+
+    await notify.error(notification.key, args);
   }
 
   private async executeCrossRepositorySession(

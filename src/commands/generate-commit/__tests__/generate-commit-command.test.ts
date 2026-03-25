@@ -1,7 +1,8 @@
 import { GenerateCommitCommand } from "@/commands/generate-commit/generate-commit-command";
 import { CrossRepositoryResult } from "@/commands/generate-commit/types";
 import { notify } from "@/utils/notification/notification-manager";
-import { describe, expect, it, vi } from "vitest";
+import { showCommitSuccessNotification } from "@/utils/notification/system-notification";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 
 vi.mock("@/utils/notification/notification-manager", () => ({
   notify: {
@@ -9,6 +10,10 @@ vi.mock("@/utils/notification/notification-manager", () => ({
     warn: vi.fn(),
     error: vi.fn(),
   },
+}));
+
+vi.mock("@/utils/notification/system-notification", () => ({
+  showCommitSuccessNotification: vi.fn(),
 }));
 
 function createCrossRepoResult(
@@ -25,6 +30,10 @@ function createCrossRepoResult(
     ...overrides,
   };
 }
+
+beforeEach(() => {
+  vi.clearAllMocks();
+});
 
 describe("GenerateCommitCommand cross-repository summary", () => {
   it("does not report full success when cancelled repositories exist", async () => {
@@ -125,5 +134,53 @@ describe("GenerateCommitCommand cross-repository summary", () => {
       "generate.commit.cross.repository.partial",
       [1, 3],
     );
+  });
+});
+
+describe("GenerateCommitCommand single-repository notifications", () => {
+  it("uses result notification payload for warn-level failures", async () => {
+    const command = new GenerateCommitCommand({} as any);
+
+    await (command as any).handleSingleRepositoryResult({
+      status: "failed",
+      applied: false,
+      requestId: "req-1",
+      error: "Layered generation incomplete",
+      notification: {
+        level: "warn",
+        key: "warn.layered.file.descriptions.incomplete",
+        args: [1, 2],
+      },
+    });
+
+    expect(notify.warn).toHaveBeenCalledWith(
+      "warn.layered.file.descriptions.incomplete",
+      [1, 2],
+    );
+    expect(notify.error).not.toHaveBeenCalledWith(
+      "generate.commit.failed",
+      expect.anything(),
+    );
+  });
+
+  it("shows success info and system notification once for successful generation", async () => {
+    const command = new GenerateCommitCommand({} as any);
+
+    await (command as any).handleSingleRepositoryResult({
+      status: "success",
+      applied: true,
+      requestId: "req-1",
+      notification: {
+        level: "info",
+        key: "commit.message.generated.stream",
+        args: ["GIT", "openai", "gpt-4.1"],
+      },
+    });
+
+    expect(notify.info).toHaveBeenCalledWith(
+      "commit.message.generated.stream",
+      ["GIT", "openai", "gpt-4.1"],
+    );
+    expect(showCommitSuccessNotification).toHaveBeenCalledTimes(1);
   });
 });

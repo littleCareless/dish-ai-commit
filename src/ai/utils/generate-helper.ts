@@ -272,6 +272,7 @@ export async function getSystemPrompt(
   directOutput: boolean = false,
   useFallback: boolean = false,
   config?: any,
+  activePromptContentOverride?: string,
 ): Promise<string> {
   if (isGeneratingPrompt) {
     return ""; // 防止循环调用
@@ -290,10 +291,11 @@ export async function getSystemPrompt(
     // }
 
     // 2. 获取 Active Prompt (支持 .dish/prompts, Config, Default)
-    const promptManager = PromptManagerService.getInstance();
-    const activePromptContent = await promptManager.getActivePromptContent(
-      PromptKey.GenerateCommitSystem,
-    );
+    const activePromptContent =
+      activePromptContentOverride ??
+      (await PromptManagerService.getInstance().getActivePromptContent(
+        PromptKey.GenerateCommitSystem,
+      ));
 
     if (activePromptContent) {
       const {

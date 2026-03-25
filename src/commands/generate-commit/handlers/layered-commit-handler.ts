@@ -2,7 +2,10 @@ import { AIModel, AIProvider, AIRequestParams } from "@/ai/types";
 import { getSystemPrompt } from "@/ai/utils/generate-helper";
 import { CommitContextBuilder } from "@/commands/generate-commit/builders/context-builder";
 import { CommitMessageBuilder } from "@/commands/generate-commit/builders/message-builder";
-import { GenerationResult } from "@/commands/generate-commit/types";
+import {
+  GenerationNotification,
+  GenerationResult,
+} from "@/commands/generate-commit/types";
 import { assertNotCancelled } from "@/commands/generate-commit/utils/cancellation";
 import { GlobalContextExtractor } from "@/commands/generate-commit/services/global-context-extractor";
 import {
@@ -18,7 +21,6 @@ import { RateLimiterService } from "@/services/core/rate-limiter-service";
 import { PromptKey } from "@shared/types/prompts";
 import { getMessage, formatMessage } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
-import { notify } from "@/utils/notification/notification-manager";
 import { processPromptTemplate } from "@/utils/prompt-template";
 import * as vscode from "vscode";
 
@@ -83,11 +85,14 @@ export class LayeredCommitHandler {
       this.logger.warn("未选择文件", {
         operation: "handleLayeredCommit",
       });
-      notify.warn("no.files.selected.for.layered.commit");
       return this.createFailedResult(
         resultContext,
         "No files selected for layered commit generation.",
         "LAYERED_NO_FILES_SELECTED",
+        {
+          level: "warn",
+          key: "no.changes.selected",
+        },
       );
     }
 
@@ -95,6 +100,7 @@ export class LayeredCommitHandler {
       data: {
         enableMergeCommit: config.features.commitFormat.enableMergeCommit,
         enableEmoji: config.features.commitFormat.enableEmoji,
+        enableGlobalContext: config.features.commitFormat.enableGlobalContext,
       },
     });
 
@@ -107,26 +113,35 @@ export class LayeredCommitHandler {
       );
     }
 
-    // === 新增: 阶段0 - 全局上下文提取 ===
-    progress.report({
-      message: getMessage("progress.extracting.global.context"),
-    });
+    const enableGlobalContext =
+      config?.features?.commitFormat?.enableGlobalContext !== false;
+    let globalContext = "";
 
-    this.logger.info("开始提取全局上下文", {
-      data: { fileCount: selectedFiles.length },
-    });
+    // === 阶段0: 全局上下文提取（可配置） ===
+    if (enableGlobalContext) {
+      progress.report({
+        message: getMessage("progress.extracting.global.context"),
+      });
 
-    const globalContext =
-      await this.globalContextExtractor.extractGlobalContext(
+      this.logger.info("开始提取全局上下文", {
+        data: { fileCount: selectedFiles.length },
+      });
+
+      globalContext = await this.globalContextExtractor.extractGlobalContext(
         selectedFiles,
         fileDiffMap,
         selectedModel,
-        aiProvider
+        aiProvider,
       );
 
-    this.logger.debug("全局上下文提取完成", {
-      data: { contextLength: globalContext?.length || 0 },
-    });
+      this.logger.debug("全局上下文提取完成", {
+        data: { contextLength: globalContext?.length || 0 },
+      });
+    } else {
+      this.logger.info("跳过全局上下文提取（已关闭）", {
+        data: { fileCount: selectedFiles.length },
+      });
+    }
 
     // === 增强: 阶段1 - 为每个文件生成描述 (带全局上下文) ===
     this.logger.info("开始为每个文件生成描述", {
@@ -167,11 +182,14 @@ export class LayeredCommitHandler {
       this.logger.warn("未生成任何文件描述", {
         operation: "handleLayeredCommit",
       });
-      notify.warn("warn.no.file.descriptions.generated");
       return this.createFailedResult(
         resultContext,
         "No file descriptions generated for layered commit.",
         "LAYERED_NO_FILE_DESCRIPTIONS",
+        {
+          level: "warn",
+          key: "warn.no.file.descriptions.generated",
+        },
       );
     }
 
@@ -184,14 +202,15 @@ export class LayeredCommitHandler {
           missingFiles,
         },
       });
-      notify.warn("warn.layered.file.descriptions.incomplete", [
-        String(missingFiles.length),
-        String(selectedFiles.length),
-      ]);
       return this.createFailedResult(
         resultContext,
         this.createIncompleteDescriptionsErrorMessage(selectedFiles.length, missingFiles),
         "LAYERED_PARTIAL_FILE_DESCRIPTIONS",
+        {
+          level: "warn",
+          key: "warn.layered.file.descriptions.incomplete",
+          args: [missingFiles.length, selectedFiles.length],
+        },
       );
     }
 
@@ -341,7 +360,6 @@ export class LayeredCommitHandler {
       });
       // Fallback to showing raw details if applying fails
       await this.messageBuilder.showLayeredCommitDetails(fileChanges, true);
-      notify.error("error.applying.layered.summary");
       return this.createFailedResult(
         resultContext,
         error instanceof Error ? error.message : String(error),
@@ -775,12 +793,14 @@ export class LayeredCommitHandler {
     resultContext: LayeredResultContext,
     error: string,
     errorCode: string,
+    notification?: GenerationNotification,
   ): GenerationResult {
     return {
       status: "failed",
       applied: false,
       error,
       errorCode,
+      notification,
       ...resultContext,
     };
   }

@@ -1,10 +1,18 @@
-import { describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, vi } from "vitest";
 import { RequestTooLargeError } from "@/utils/context-manager";
 import { getMessage } from "@/utils/i18n";
 import { notify } from "@/utils/notification/notification-manager";
 
-const { getSystemPromptMock } = vi.hoisted(() => ({
+const {
+  getSystemPromptMock,
+  detectStagedContentMock,
+  selectDiffTargetMock,
+  getDiffWithTargetMock,
+} = vi.hoisted(() => ({
   getSystemPromptMock: vi.fn(async () => "fallback-system-prompt"),
+  detectStagedContentMock: vi.fn(),
+  selectDiffTargetMock: vi.fn(),
+  getDiffWithTargetMock: vi.fn(),
 }));
 
 vi.mock("@/ai/utils/generate-helper", () => ({
@@ -16,6 +24,19 @@ vi.mock("@/utils/notification/notification-manager", () => ({
     info: vi.fn(),
     warn: vi.fn(),
     error: vi.fn(),
+  },
+}));
+
+vi.mock("@/scm/staged-content-detector", () => ({
+  stagedContentDetector: {
+    detectStagedContent: detectStagedContentMock,
+  },
+}));
+
+vi.mock("@/scm/smart-diff-selector", () => ({
+  smartDiffSelector: {
+    selectDiffTarget: selectDiffTargetMock,
+    getDiffWithTarget: getDiffWithTargetMock,
   },
 }));
 
@@ -43,6 +64,10 @@ function createConfiguration() {
 }
 
 describe("StreamingGenerationHelper fallback prompt", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("builds different system prompt hash when scm type changes", () => {
     const helper = new StreamingGenerationHelper({
       info: vi.fn(),
@@ -57,6 +82,56 @@ describe("StreamingGenerationHelper fallback prompt", () => {
     const svnHash = (helper as any).getSystemPromptHash(config, "svn");
 
     expect(gitHash).not.toBe(svnHash);
+  });
+
+  it("builds different system prompt hash when workspace root changes", () => {
+    const helper = new StreamingGenerationHelper({
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+      logError: vi.fn(),
+    } as any);
+
+    const config = createConfiguration();
+    const repoAHash = (helper as any).getSystemPromptHash(
+      config,
+      "git",
+      "/repo/a",
+    );
+    const repoBHash = (helper as any).getSystemPromptHash(
+      config,
+      "git",
+      "/repo/b",
+    );
+
+    expect(repoAHash).not.toBe(repoBHash);
+  });
+
+  it("builds different system prompt hash when active prompt fingerprint changes", () => {
+    const helper = new StreamingGenerationHelper({
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+      logError: vi.fn(),
+    } as any);
+
+    const config = createConfiguration();
+    const promptV1Hash = (helper as any).getSystemPromptHash(
+      config,
+      "git",
+      "/repo/a",
+      "prompt-fingerprint-v1",
+    );
+    const promptV2Hash = (helper as any).getSystemPromptHash(
+      config,
+      "git",
+      "/repo/a",
+      "prompt-fingerprint-v2",
+    );
+
+    expect(promptV1Hash).not.toBe(promptV2Hash);
   });
 
   it("uses current scm type when building fallback prompt", async () => {
@@ -136,6 +211,60 @@ describe("StreamingGenerationHelper fallback prompt", () => {
     expect(scmProvider.getDiff).toHaveBeenNthCalledWith(1, ["a.txt", "b.txt"], "staged");
     expect(scmProvider.getDiff).toHaveBeenNthCalledWith(2, ["a.txt"], "staged");
     expect(scmProvider.getDiff).toHaveBeenNthCalledWith(3, ["b.txt"], "staged");
+  });
+
+  it("respects fallbackToAll=false when auto detection throws", async () => {
+    const helper = new StreamingGenerationHelper({
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+      logError: vi.fn(),
+    } as any);
+
+    const scmProvider = {
+      type: "git",
+      setCurrentFiles: vi.fn(),
+      getDiff: vi.fn(async (_files: string[] | undefined, target: string) => `mock-${target}-diff`),
+    } as any;
+
+    const progress = {
+      report: vi.fn(),
+    } as any;
+
+    detectStagedContentMock.mockRejectedValueOnce(new Error("auto detect failed"));
+
+    const configuration = {
+      ...createConfiguration(),
+      features: {
+        ...createConfiguration().features,
+        codeAnalysis: {
+          diffTarget: "auto",
+          fallbackToAll: false,
+        },
+      },
+    };
+
+    const result = await (helper as any).prepareConfigurationAndDiff(
+      progress,
+      scmProvider,
+      ["a.txt"],
+      configuration,
+      {
+        repository: {
+          path: "/repo",
+          name: "repo",
+          type: "git",
+          isActive: true,
+        },
+      },
+    );
+
+    expect(scmProvider.getDiff).toHaveBeenCalledWith(["a.txt"], "staged");
+    expect(result.snapshot.combinedDiff).toBe("mock-staged-diff");
+    expect(result.snapshot.resolvedDiffTarget).toBe("staged");
+    expect(selectDiffTargetMock).not.toHaveBeenCalled();
+    expect(getDiffWithTargetMock).not.toHaveBeenCalled();
   });
 
   it("maps RequestTooLargeError to too_large result instead of throwing", async () => {

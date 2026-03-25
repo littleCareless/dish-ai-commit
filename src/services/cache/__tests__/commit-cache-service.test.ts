@@ -103,4 +103,25 @@ describe("CommitCacheService.generateKey", () => {
 
     expect(keyA).not.toBe(keyB);
   });
+
+  it("changes key when prompt fingerprint changes", () => {
+    const config = createConfiguration();
+
+    const keyA = commitCacheService.generateKey(
+      "diff-content",
+      config,
+      "model-a",
+      "git",
+      "prompt-v1",
+    );
+    const keyB = commitCacheService.generateKey(
+      "diff-content",
+      config,
+      "model-a",
+      "git",
+      "prompt-v2",
+    );
+
+    expect(keyA).not.toBe(keyB);
+  });
 });
