@@ -7,7 +7,6 @@ import {
 } from "@shared/types/messages";
 import i18n from "../i18n/setup";
 import { convertTextMateToHljs } from "../utils/textMateToHljs";
-import { postMessage } from "../utils/vscode";
 
 import {
   ExtensionStateContext,
@@ -100,12 +99,11 @@ export const ExtensionStateContextProvider: React.FC<{
           break;
         }
         case ExtensionResponse.SystemMessageShown: {
-          // Assuming this is for theme changes
-          if (message.data) {
+          // Legacy: only handle string payload as theme json.
+          // Normal SystemMessageShown payload is { callbackId, selection }.
+          if (typeof message.data === "string") {
             try {
-              setTheme(
-                convertTextMateToHljs(JSON.parse(message.data as string)),
-              );
+              setTheme(convertTextMateToHljs(JSON.parse(message.data)));
             } catch (e) {
               console.error("Failed to parse or convert theme JSON", e);
               setTheme({});
@@ -120,6 +118,11 @@ export const ExtensionStateContextProvider: React.FC<{
           break;
         }
         case ExtensionResponse.ConnectionAllModelsLoaded: {
+          // Assuming this for command updates
+          setCommands(message.data ?? []);
+          break;
+        }
+        case ExtensionResponse.ConnectionAllModelsFetched: {
           // Assuming this for command updates
           setCommands(message.data ?? []);
           break;
@@ -210,7 +213,6 @@ export const ExtensionStateContextProvider: React.FC<{
       setState((prevState) => ({ ...prevState, language: value }));
       // 同步切换 i18next 语言
       i18n.changeLanguage(value);
-      postMessage("setLanguage", { value });
     },
   };
 

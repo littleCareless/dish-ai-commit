@@ -1,0 +1,19 @@
+{
+  "legacyCommands": [
+    "report",
+    "webviewDidLaunch"
+  ],
+  "fileScopedIgnores": [
+    {
+      "file": "webview-ui/src/pages/weekly-report-page.tsx",
+      "commands": ["report"],
+      "reason": "Weekly report page keeps backward compatibility for legacy extension payloads."
+    },
+    {
+      "file": "src/services/webview/handlers/settings-view-message-handler.ts",
+      "commands": ["webviewDidLaunch"],
+      "reason": "Legacy compatibility path kept for old webview handshake flow."
+    }
+  ],
+  "temporaryWaivers": []
+}

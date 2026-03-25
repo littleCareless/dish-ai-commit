@@ -26,6 +26,9 @@
   "extension.contributes.commands.dish-ai-commit.generatePRSummary.title": "[Dish] 使用 AI 生成 PR 摘要",
   "extension.contributes.commands.dish-ai-commit.generatePRSummary.category": "[Dish AI 提交]",
   "extension.contributes.commands.dish-ai-commit.generatePRSummary.description": "使用 AI 生成 PR 摘要",
+  "extension.contributes.commands.dish-ai-commit.syncModelCatalog.title": "[Dish] 同步模型目录",
+  "extension.contributes.commands.dish-ai-commit.syncModelCatalog.category": "[Dish AI 提交]",
+  "extension.contributes.commands.dish-ai-commit.syncModelCatalog.description": "从第三方来源同步模型目录",
 
   "extension.contributes.configuration.title": "Dish AI 提交",
   "extension.contributes.configuration.properties.dish-ai-commit.base.language.description": "提交信息语言",

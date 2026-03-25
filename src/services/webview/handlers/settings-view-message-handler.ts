@@ -5,12 +5,14 @@ import { CommitChatMessageHandler } from "@/services/webview/handlers/settings/c
 import { ContextMessageHandler } from "@/services/webview/handlers/settings/context-message-handler";
 import { FeaturesMessageHandler } from "@/services/webview/handlers/settings/features-message-handler";
 import { IndexingMessageHandler } from "@/services/webview/handlers/settings/indexing-message-handler";
+import { LanguageMessageHandler } from "@/services/webview/handlers/settings/language-message-handler";
 import { ModelCustomMessageHandler } from "@/services/webview/handlers/settings/model-custom-message-handler";
 import { NotificationMessageHandler } from "@/services/webview/handlers/settings/notification-message-handler";
 import { OnboardingMessageHandler } from "@/services/webview/handlers/settings/onboarding-message-handler";
 import { PreferencesMessageHandler } from "@/services/webview/handlers/settings/preferences-message-handler";
 import { ProfileMessageHandler } from "@/services/webview/handlers/settings/profile-message-handler";
 import { PromptMessageHandler } from "@/services/webview/handlers/settings/prompt-message-handler";
+import { AdvancedMessageHandler } from "@/services/webview/handlers/settings/advanced-message-handler";
 import { StorageMessageHandler } from "@/services/webview/handlers/settings/storage-message-handler";
 import { SystemMessageHandler } from "@/services/webview/handlers/settings/system-message-handler";
 import { UsageMessageHandler } from "@/services/webview/handlers/settings/usage-message-handler";
@@ -40,6 +42,8 @@ export class SettingsViewMessageHandler {
   private _onboardingHandler: OnboardingMessageHandler;
   private _preferencesHandler: PreferencesMessageHandler;
   private _modelCustomHandler: ModelCustomMessageHandler;
+  private _advancedHandler: AdvancedMessageHandler;
+  private _languageHandler: LanguageMessageHandler;
 
   constructor(
     extensionId: string,
@@ -67,6 +71,8 @@ export class SettingsViewMessageHandler {
     this._onboardingHandler = new OnboardingMessageHandler(_extensionContext);
     this._preferencesHandler = new PreferencesMessageHandler(_extensionContext);
     this._modelCustomHandler = new ModelCustomMessageHandler(_extensionContext);
+    this._advancedHandler = new AdvancedMessageHandler(_extensionContext);
+    this._languageHandler = new LanguageMessageHandler(_extensionContext);
   }
 
   public async handleMessage(
@@ -115,8 +121,15 @@ export class SettingsViewMessageHandler {
       return;
     }
 
+    const dataRequestId =
+      message?.data && typeof message.data === "object"
+        ? message.data.requestId
+        : undefined;
     const messageId =
-      message.messageId || `${message.command}_${JSON.stringify(message.data)}`;
+      message.messageId ||
+      message.requestId ||
+      dataRequestId ||
+      `${message.command}_${Date.now()}_${Math.random().toString(16).slice(2)}`;
 
     try {
       await this._sessionManager.withIdempotency(messageId, async () => {
@@ -186,6 +199,9 @@ export class SettingsViewMessageHandler {
           case UIRequest.FeaturesSetActivePrompt:
           case UIRequest.FeaturesGetWorkspaceInfo:
           case UIRequest.FeaturesGetAllWorkspaceStates:
+          case UIRequest.FeaturesSyncModelCatalog:
+          case UIRequest.FeaturesGetModelCatalog:
+          case UIRequest.FeaturesExecuteCommand:
             await this._featuresHandler.handle(message, webview);
             break;
 
@@ -232,6 +248,16 @@ export class SettingsViewMessageHandler {
           case UIRequest.ModelCustomImport:
           case UIRequest.ModelCustomGetProviders:
             await this._modelCustomHandler.handle(message, webview);
+            break;
+
+          case UIRequest.AdvancedLoadSettings:
+          case UIRequest.AdvancedSaveSettings:
+            await this._advancedHandler.handle(message, webview);
+            break;
+
+          case UIRequest.LanguageLoadSettings:
+          case UIRequest.LanguageSaveSettings:
+            await this._languageHandler.handle(message, webview);
             break;
 
           case "webviewDidLaunch":

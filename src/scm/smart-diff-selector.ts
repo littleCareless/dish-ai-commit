@@ -186,13 +186,7 @@ export class SmartDiffSelector implements ISmartDiffSelector {
     files?: string[]
   ): Promise<string> {
     const targetFiles = files || (await this.getStagedFilesList(provider));
-    if (
-      "getDiff" in provider &&
-      typeof (provider as any).getDiff === "function"
-    ) {
-      return (await (provider as any).getDiff(targetFiles, "staged")) || "";
-    }
-    return (await provider.getDiff(targetFiles)) || "";
+    return (await provider.getDiff(targetFiles, "staged")) || "";
   }
 
   /**
@@ -204,13 +198,7 @@ export class SmartDiffSelector implements ISmartDiffSelector {
     files?: string[]
   ): Promise<string> {
     const targetFiles = files || (await this.getAllChangedFilesList(provider));
-    if (
-      "getDiff" in provider &&
-      typeof (provider as any).getDiff === "function"
-    ) {
-      return (await (provider as any).getDiff(targetFiles, "all")) || "";
-    }
-    return (await provider.getDiff(targetFiles)) || "";
+    return (await provider.getDiff(targetFiles, "all")) || "";
   }
 
   /**

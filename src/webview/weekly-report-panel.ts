@@ -43,10 +43,14 @@ export class WeeklyReportPanel {
     panel.webview.onDidReceiveMessage(
       async (message) => {
         if (message.command === "webview.handshake") {
+          const sessionId = message?.data?.sessionId ?? message?.sessionId;
           panel.webview.postMessage({
             command: "webview.handshake.ack",
-            sessionId: message.sessionId,
-            timestamp: Date.now(),
+            data: {
+              sessionId,
+              timestamp: Date.now(),
+              success: true,
+            },
           });
           return;
         }

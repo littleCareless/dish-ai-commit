@@ -143,6 +143,10 @@ export const featuresSchema = z.object({
   enableLayeredCommit: z.boolean(),
   enableGlobalContext: z.boolean(),
   useRecentCommitsAsReference: z.boolean(),
+  enableThirdPartyModelCatalog: z.boolean(),
+  enableAdaptiveInputLimitLearning: z.boolean(),
+  diffTruncationStrategy: z.enum(["semantic", "direct"]),
+  maxInputTokensPerRequest: z.number(),
   simplifyDiff: z.boolean(),
   autoDetectStaged: z.boolean(),
   fallbackToAll: z.boolean(),
@@ -339,6 +343,10 @@ export interface FeatureSettings {
   enableLayeredCommit: boolean;
   enableGlobalContext: boolean;
   useRecentCommitsAsReference: boolean;
+  enableThirdPartyModelCatalog: boolean;
+  enableAdaptiveInputLimitLearning: boolean;
+  diffTruncationStrategy: "semantic" | "direct";
+  maxInputTokensPerRequest: number;
   simplifyDiff: boolean;
   autoDetectStaged: boolean;
   fallbackToAll: boolean;

@@ -90,7 +90,7 @@ export class CliSvnProvider implements ISvnProvider {
         return undefined;
       }
 
-      return DiffProcessor.process(rawDiff.toString(), "svn");
+      return DiffProcessor.process(rawDiff.toString(), "svn", this.workspaceRoot);
     } catch (error) {
       this.logger.logError(error as Error, "获取SVN差异失败");
       return undefined;

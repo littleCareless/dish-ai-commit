@@ -140,14 +140,7 @@ export class GitRepositoryManager {
       return repositories.get(normalizedPath);
     }
 
-    // 检查是否是子目录
-    for (const [rootPath, repoInfo] of repositories.entries()) {
-      if (normalizedPath.startsWith(ImprovedPathUtils.normalizePath(rootPath))) {
-        return repoInfo;
-      }
-    }
-
-    return undefined;
+    return this.findBestRepositoryForPath(normalizedPath, repositories);
   }
 
   /**
@@ -159,11 +152,12 @@ export class GitRepositoryManager {
     const repositories = await this.discoverRepositories();
     const normalizedFilePath = ImprovedPathUtils.normalizePath(filePath);
     
-    // 检查文件是否在某个仓库中
-    for (const [rootPath, repoInfo] of repositories.entries()) {
-      if (normalizedFilePath.startsWith(ImprovedPathUtils.normalizePath(rootPath))) {
-        return repoInfo;
-      }
+    const matchedRepo = this.findBestRepositoryForPath(
+      normalizedFilePath,
+      repositories,
+    );
+    if (matchedRepo) {
+      return matchedRepo;
     }
 
     // 如果找不到匹配的仓库，尝试执行 git 命令获取仓库根路径
@@ -205,6 +199,28 @@ export class GitRepositoryManager {
     }
 
     return undefined;
+  }
+
+  private findBestRepositoryForPath(
+    targetPath: string,
+    repositories: Map<string, GitRepositoryInfo>,
+  ): GitRepositoryInfo | undefined {
+    let bestRepo: GitRepositoryInfo | undefined;
+    let bestMatchLength = -1;
+
+    for (const [rootPath, repoInfo] of repositories.entries()) {
+      const normalizedRootPath = ImprovedPathUtils.normalizePath(rootPath);
+      if (!ImprovedPathUtils.isPathInside(targetPath, normalizedRootPath)) {
+        continue;
+      }
+
+      if (normalizedRootPath.length > bestMatchLength) {
+        bestRepo = repoInfo;
+        bestMatchLength = normalizedRootPath.length;
+      }
+    }
+
+    return bestRepo;
   }
 
   /**

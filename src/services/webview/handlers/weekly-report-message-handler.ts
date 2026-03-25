@@ -24,11 +24,13 @@ export class WeeklyReportMessageHandler {
       case UIRequest.WeeklyReportGetUsers: // 新增 getUsers command
         await this.handleGetUsersCommand(webview);
         break;
-      case UIRequest.WeeklyReportNotification:
-        if (message.text) {
-          notify.info(message.text, message.args || []);
+      case UIRequest.WeeklyReportNotification: {
+        const payload = message.data || message;
+        if (payload?.text) {
+          notify.info(payload.text, payload.args || []);
         }
         break;
+      }
     }
   }
 
@@ -57,10 +59,19 @@ export class WeeklyReportMessageHandler {
   ) {
     // 重命名方法
     try {
+      const payload = message.data || {};
+      if (
+        !payload.period?.startDate ||
+        !payload.period?.endDate ||
+        !Array.isArray(payload.users) ||
+        payload.users.length === 0
+      ) {
+        throw new Error("Invalid weekly report request payload");
+      }
       const report = await this.generator.generateTeamReport(
         // 修改调用
-        message.data.period,
-        message.data.users, // 传递 users
+        payload.period,
+        payload.users, // 传递 users
       );
       // const author = await this.generator.getCurrentAuthor(); // 对于团队报告，可能不需要单个 author
 
@@ -68,11 +79,11 @@ export class WeeklyReportMessageHandler {
         command: ExtensionResponse.WeeklyReportGenerated,
         data: report,
       });
-      const formattedPeriod = this.formatPeriod(message.data.period);
+      const formattedPeriod = this.formatPeriod(payload.period);
       // 可以考虑修改通知信息，比如指明是为哪些用户生成的报告
       notify.info("weeklyReport.teamGeneration.success", [
         formattedPeriod,
-        message.data.users.join(", "),
+        (payload.users || []).join(", "),
       ]);
       showWeeklyReportSuccessNotification();
     } catch (error: any) {

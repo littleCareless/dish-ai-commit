@@ -124,6 +124,16 @@
           "dark": "images/dark/git-pull-request.svg"
         },
         "description": "%extension.contributes.commands.dish-ai-commit.generatePRSummary.description%"
+      },
+      {
+        "command": "dish-ai-commit.syncModelCatalog",
+        "title": "%extension.contributes.commands.dish-ai-commit.syncModelCatalog.title%",
+        "category": "%extension.contributes.commands.dish-ai-commit.syncModelCatalog.category%",
+        "icon": {
+          "light": "images/light/brain.svg",
+          "dark": "images/dark/brain.svg"
+        },
+        "description": "%extension.contributes.commands.dish-ai-commit.syncModelCatalog.description%"
       }
     ],
     "configuration": {
@@ -616,11 +626,6 @@
         {
           "command": "dish-ai-commit.generateCommitMessage",
           "when": "scmProvider =~ /(git|svn)/",
-          "group": "navigation@-3"
-        },
-        {
-          "command": "dish-ai-commit.generateCommitMessage",
-          "when": "scmProvider =~ /(git|svn)/",
           "group": "2_z_dish@1"
         },
         {
@@ -713,6 +718,9 @@
         },
         {
           "command": "dish-ai-commit.reviewCode"
+        },
+        {
+          "command": "dish-ai-commit.syncModelCatalog"
         }
       ]
     }
@@ -754,7 +762,9 @@
     "prepare": "husky",
     "commit": "git add . && git-cz",
     "changelog": "standard-version -i CHANGELOG.zh-CN.md",
-    "update-config": "ts-node ./scripts/update-config.ts"
+    "update-config": "ts-node ./scripts/update-config.ts",
+    "protocol:audit": "ts-node ./scripts/protocol-audit.ts --format both",
+    "protocol:check": "ts-node ./scripts/protocol-audit.ts --format both --ci"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.4.1",
@@ -765,8 +775,8 @@
     "@types/mocha": "^10.0.10",
     "@types/node": "~25.2.3",
     "@types/vscode": "1.90.0",
-    "@typescript-eslint/eslint-plugin": "^8.55.0",
-    "@typescript-eslint/parser": "^8.55.0",
+    "@typescript-eslint/eslint-plugin": "^8.57.2",
+    "@typescript-eslint/parser": "8.57.2",
     "@typescript/native-preview": "7.0.0-dev.20260214.1",
     "@vitest/coverage-v8": "4.0.18",
     "@vscode/test-cli": "^0.0.12",
@@ -801,7 +811,7 @@
     "@google-cloud/vertexai": "^1.10.0",
     "@google/genai": "^1.41.0",
     "@mistralai/mistralai": "^1.14.0",
-    "@qdrant/js-client-rest": "^1.16.2",
+    "@qdrant/js-client-rest": "^1.17.0",
     "@types/node-notifier": "^8.0.5",
     "cosmiconfig": "^9.0.0",
     "fast-deep-equal": "^3.1.3",

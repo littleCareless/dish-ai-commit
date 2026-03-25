@@ -1,6 +1,7 @@
 import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
 import { AIRequestParams } from "@/ai/types";
-import { filterCodeBlockMarkers } from "@/commands/generate-commit/utils/commit-formatter";
+import { assertNotCancelled } from "@/commands/generate-commit/utils/cancellation";
+import { applyCommitMessageToInput } from "@/commands/generate-commit/utils/commit-formatter";
 import { ISCMProvider } from "@/scm/scm-provider";
 import { ContextManager } from "@/utils/context-manager";
 import { getMessage } from "@/utils/i18n";
@@ -34,9 +35,9 @@ export class StreamingHandler {
     token: vscode.CancellationToken,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     contextManager: ContextManager,
-    repositoryPath?: string
+    _repositoryPath?: string
   ): Promise<string> {
-    this.throwIfCancelled(token);
+    assertNotCancelled(token, this.logger);
     progress.report({
       message: getMessage("progress.calling.ai.stream"),
     });
@@ -46,30 +47,19 @@ export class StreamingHandler {
 
     let accumulatedMessage = "";
     for await (const chunk of stream) {
-      this.throwIfCancelled(token);
+      assertNotCancelled(token, this.logger);
       accumulatedMessage += chunk;
       // During streaming, we show the raw output from the AI.
       await scmProvider.startStreamingInput(accumulatedMessage);
     }
 
-    this.throwIfCancelled(token);
+    assertNotCancelled(token, this.logger);
 
-    // After the stream is complete, filter the final message and apply it.
-    const finalMessage = filterCodeBlockMarkers(accumulatedMessage);
-    // Persist final message with the provider's stable setter path.
-    await scmProvider.setCommitInput(finalMessage);
-
-    return finalMessage;
-  }
-
-  /**
-   * 检查操作是否已被用户取消
-   * @param token - VS Code 取消令牌
-   */
-  private throwIfCancelled(token: vscode.CancellationToken): void {
-    if (token.isCancellationRequested) {
-      this.logger.info(getMessage("user.cancelled.operation.log"));
-      throw new Error(getMessage("user.cancelled.operation.error"));
-    }
+    // After the stream is complete, normalize and apply the final message once.
+    const { message } = await applyCommitMessageToInput(
+      scmProvider,
+      accumulatedMessage,
+    );
+    return message;
   }
 }

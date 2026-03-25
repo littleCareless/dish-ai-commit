@@ -24,6 +24,21 @@ export class ConnectionMessageHandler extends BaseMessageHandler {
       case UIRequest.ConnectionFetchProviderModels:
         await this.fetchProviderModels(message, webview);
         break;
+      case UIRequest.ConnectionGetModelsForProvider:
+      case UIRequest.ConnectionGetAllModels: {
+        const normalizedMessage = {
+          ...message,
+          data: {
+            ...(message.data || {}),
+            providerId:
+              message.data?.providerId ||
+              message.data?.provider ||
+              message.data?.service,
+          },
+        } as UIRequestMessage;
+        await this.fetchProviderModels(normalizedMessage, webview);
+        break;
+      }
     }
   }
 
@@ -215,10 +230,12 @@ export class ConnectionMessageHandler extends BaseMessageHandler {
         `[ConnectionMessageHandler] 成功获取 ${modelsCount} 个模型，准备发送响应`
       );
 
-      webview.postMessage({
-        command: ExtensionResponse.ConnectionAllModelsFetched,
-        data: { providerId, models: models || [], success: true },
-      });
+      const responsePayload = {
+        providerId,
+        models: models || [],
+        success: true,
+      };
+      this.postAllModelsResponses(webview, responsePayload);
       console.log(
         `[ConnectionMessageHandler] 成功发送模型列表响应 (${ExtensionResponse.ConnectionAllModelsFetched})`
       );
@@ -236,15 +253,34 @@ export class ConnectionMessageHandler extends BaseMessageHandler {
         }
       );
 
-      webview.postMessage({
-        command: ExtensionResponse.ConnectionAllModelsFetched,
-        data: {
-          providerId,
-          models: [],
-          success: false,
-          error: errorMessage,
-        },
-      });
+      const responsePayload = {
+        providerId,
+        models: [],
+        success: false,
+        error: errorMessage,
+      };
+      this.postAllModelsResponses(webview, responsePayload);
     }
+  }
+
+  private postAllModelsResponses(
+    webview: vscode.Webview,
+    payload: {
+      providerId: string;
+      models: unknown[];
+      success: boolean;
+      error?: string;
+    }
+  ): void {
+    webview.postMessage({
+      command: ExtensionResponse.ConnectionAllModelsFetched,
+      data: payload,
+    });
+
+    // 兼容旧 UI 监听逻辑（ConnectionAllModelsLoaded）
+    webview.postMessage({
+      command: ExtensionResponse.ConnectionAllModelsLoaded,
+      data: payload.models,
+    });
   }
 }

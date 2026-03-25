@@ -1,4 +1,5 @@
-import { useCallback, useEffect } from "react";
+import { useCallback, useLayoutEffect } from "react";
+import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 
 declare const acquireVsCodeApi: () => {
   postMessage(message: {
@@ -46,12 +47,11 @@ export function postMessage(
 ) {
   const now = Date.now();
   const { allowDuplicate = false, requestId } = options ?? {};
-  const providedMessageId = options?.messageId;
+  // Always provide a unique messageId so backend idempotency won't treat
+  // independent requests as duplicates across page re-entry/navigation.
   const messageId =
-    providedMessageId ??
-    (allowDuplicate
-      ? `${command}-${now}-${Math.random().toString(16).slice(2)}`
-      : undefined);
+    options?.messageId ??
+    `${command}-${now}-${Math.random().toString(16).slice(2)}`;
   if (
     !allowDuplicate &&
     lastMessage &&
@@ -94,7 +94,8 @@ export function useMessageHandler(
     [messageCallback],
   );
 
-  useEffect(() => {
+  // Register as early as possible to avoid missing fast extension responses.
+  useLayoutEffect(() => {
     window.addEventListener("message", memoizedCallback);
     return () => {
       window.removeEventListener("message", memoizedCallback);
@@ -116,10 +117,10 @@ export function showInformationMessage(
     const callbackId = `callback_${Date.now()}_${Math.random()}`;
 
     const handler = (event: MessageEvent) => {
-      const { type, data } = event.data;
+      const { command, data } = event.data || {};
       if (
-        type === "showInformationMessageResponse" &&
-        data.callbackId === callbackId
+        command === ExtensionResponse.SystemMessageShown &&
+        data?.callbackId === callbackId
       ) {
         window.removeEventListener("message", handler);
         resolve(data.selection);
@@ -128,6 +129,6 @@ export function showInformationMessage(
 
     window.addEventListener("message", handler);
 
-    postMessage("showInformationMessage", { message, options, callbackId });
+    postMessage(UIRequest.SystemShowMessage, { message, options, callbackId });
   });
 }

@@ -1,26 +1,58 @@
 import { getAccurateTokenLimits } from "@/ai/model-registry";
+import { AdaptiveModelLimitService } from "@/ai/model-registry/adaptive-model-limit-service";
+import { ModelCatalogService } from "@/ai/model-registry/model-catalog-service";
 import { AIModel, AIProvider } from "@/ai/types";
 import { getSystemPrompt } from "@/ai/utils/generate-helper";
 import { CommitContextBuilder } from "@/commands/generate-commit/builders/context-builder";
 import { FunctionCallingHandler } from "@/commands/generate-commit/handlers/function-calling-handler";
 import { LayeredCommitHandler } from "@/commands/generate-commit/handlers/layered-commit-handler";
+import {
+  GenerationResult,
+  GenerationSession,
+  GenerationTargetContext,
+} from "@/commands/generate-commit/types";
+import {
+  assertNotCancelled,
+  isCancellationError,
+} from "@/commands/generate-commit/utils/cancellation";
 import { StreamingHandler } from "@/commands/generate-commit/handlers/streaming-handler";
-import { multiRepositoryContextManager } from "@/scm/multi-repository-context-manager";
 import { ISCMProvider } from "@/scm/scm-provider";
 import { smartDiffSelector } from "@/scm/smart-diff-selector";
 import { stagedContentDetector } from "@/scm/staged-content-detector";
-import { DiffTarget } from "@/scm/staged-detector-types";
+import { DiffTarget, RepositoryContext } from "@/scm/staged-detector-types";
 import { commitCacheService } from "@/services/cache/commit-cache-service";
 import { ContextInspectorService } from "@/services/context-inspector-service";
+import { PromptManagerService } from "@/services/core/prompt-manager-service";
 import { ContextManager, RequestTooLargeError } from "@/utils/context-manager";
 import { getMessage } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
 import { notify } from "@/utils/notification/notification-manager";
-import { showCommitSuccessNotification } from "@/utils/notification/system-notification";
 import { stateManager } from "@/utils/state/state-manager";
-import { GenerationGate } from "@/core/generation-gate";
+import { PromptKey } from "@shared/types/prompts";
 import * as vscode from "vscode";
 import * as crypto from "crypto";
+
+const DEFAULT_REQUEST_INPUT_TOKEN_LIMIT = 120000;
+const MODEL_INPUT_TOKEN_SAFETY_RATIO = 0.88;
+const PROVIDER_REQUEST_INPUT_LIMITS: Record<string, number> = {
+  gemini: 250000,
+  vertexai: 250000,
+};
+
+interface PerformGenerationOptions {
+  suppressSuccessNotification?: boolean;
+}
+
+interface DiffSnapshot {
+  combinedDiff: string | undefined;
+  resolvedDiffTarget: "staged" | "all";
+  fileDiffMap?: Map<string, string>;
+}
+
+interface ActivePromptContext {
+  promptContent: string;
+  promptFingerprint: string;
+}
 
 /**
  * 流式生成辅助类 - 遵循单一职责原则
@@ -31,7 +63,6 @@ export class StreamingGenerationHelper {
   private layeredCommitHandler: LayeredCommitHandler;
   private streamingHandler: StreamingHandler;
   private functionCallingHandler: FunctionCallingHandler;
-  private generationGate = GenerationGate.getInstance();
   private lastRequestId: string | null = null;
   private lastContext: {
     contextManager: ContextManager;
@@ -40,9 +71,12 @@ export class StreamingGenerationHelper {
 
   // 配置缓存
   private _baseRequestParams: any | null = null;
-  private _lastConfigHash: string | null = null;
+  private _lastRequestParamsHash: string | null = null;
   private _lastSystemPrompt: string | null = null;
+  private _lastSystemPromptHash: string | null = null;
   private contextInspectorService = ContextInspectorService.getInstance();
+  private adaptiveModelLimitService = AdaptiveModelLimitService.getInstance();
+  private modelCatalogService = ModelCatalogService.getInstance();
 
   constructor(private logger: Logger) {
     this.contextBuilder = new CommitContextBuilder();
@@ -53,141 +87,191 @@ export class StreamingGenerationHelper {
 
   /**
    * 执行流式生成 - 遵循单一职责原则
-   * @param aiProvider - 已创建的AI提供者实例（避免重复创建）
-   * @param selectedModel - 已验证的模型对象（可选，如果未提供则从配置中获取）
+   * 仅消费由编排器产出的 session，不再在此处重复进行模型/仓库识别
    */
   async performStreamingGeneration(
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     token: vscode.CancellationToken,
-    provider: string,
-    model: string,
-    scmProvider: ISCMProvider,
-    selectedFiles: string[] | undefined,
-    resources: vscode.SourceControlResourceState[],
-    repositoryPath: string | undefined,
-    providerConfig: any,
-    aiProvider?: AIProvider,
-    selectedModel?: AIModel,
-  ): Promise<void> {
-    this.logger.info("Performing streaming generation...");
+    session: GenerationSession,
+    target: GenerationTargetContext,
+    options: PerformGenerationOptions = {},
+  ): Promise<GenerationResult> {
+    this.logger.info(
+      `[Chain] [Generation] START - requestId=${session.requestId}, repository=${target.repositoryPath}`,
+    );
+
+    if (!target.scmProvider) {
+      return this.createFailedResult(
+        session,
+        target,
+        target.detectionError || "SCM provider is missing.",
+      );
+    }
+
+    const scmProvider = target.scmProvider;
+    const selectedFiles = target.selectedFiles;
+    const repositoryPath = target.repositoryPath;
 
     // 阶段1: 初始化
     progress.report({
       message: getMessage("progress.stage.initializing") || "[1/4] 初始化...",
     });
 
-    // 步骤1: 获取配置和diff内容
-    const { configuration, diffContent } =
-      await this.prepareConfigurationAndDiff(
-        progress,
-        scmProvider,
-        selectedFiles,
-        resources,
-        providerConfig,
-      );
-
-    if (!diffContent) {
-      return;
-    }
-
-    // 步骤1.5: 极速缓存检查 (🔥 优化：在模型验证和构建上下文之前检查)
-    // 只要有 diff 和配置，就不需要等待模型验证，直接尝试命中缓存
-    const shouldUseLayeredCommit =
-      configuration.features.commitFormat.enableLayeredCommit &&
-      selectedFiles &&
-      selectedFiles.length > 1;
-
-    if (!shouldUseLayeredCommit) {
-      // 使用传入的 model 参数作为 ID，跳过模型验证对象的获取
-      const cacheKey = commitCacheService.generateKey(
-        diffContent,
-        configuration,
-        model,
-      );
-      const cachedMessage = commitCacheService.get(cacheKey);
-
-      if (cachedMessage) {
-        this.logger.info(
-          "Cache hit! Using cached commit message (ultra-early check).",
+    try {
+      // 步骤1: 获取配置和diff内容
+      const { configuration, snapshot } =
+        await this.prepareConfigurationAndDiff(
+          progress,
+          scmProvider,
+          selectedFiles,
+          session.providerConfig,
+          target.repositoryContext,
         );
-        progress.report({
-          message:
-            getMessage("progress.stage.generating") || "[4/4] 生成提交消息...",
-          increment: 100,
-        });
+      const { combinedDiff: diffContent, fileDiffMap } = snapshot;
 
-        await scmProvider.startStreamingInput(cachedMessage);
-        notify.info("commit.message.generated.from.cache");
-        showCommitSuccessNotification();
-        return;
+      if (!diffContent) {
+        return this.createFailedResult(
+          session,
+          target,
+          "No diff content available for commit generation.",
+        );
       }
-    }
 
-    // 阶段2: 分析变更
-    progress.report({
-      message: getMessage("progress.stage.analyzing") || "[2/4] 分析变更...",
-    });
-    const modelConfig = await this.processModelConfiguration(
-      progress,
-      provider,
-      model,
-      providerConfig,
-      aiProvider,
-      selectedModel,
-    );
+      // 步骤1.5: 极速缓存检查 (在上下文构建前)
+      const shouldUseLayeredCommit =
+        configuration.features.commitFormat.enableLayeredCommit &&
+        selectedFiles &&
+        selectedFiles.length > 1;
+      const activePromptContext = await this.getActiveCommitPromptContext();
 
-    // 阶段3: 构建上下文
-    progress.report({
-      message:
-        getMessage("progress.stage.buildingContext") || "[3/4] 构建上下文...",
-    });
-    const requestId = crypto.randomUUID();
-    const { contextManager, requestParams } =
-      await this.preparePromptAndContext(
+      if (!shouldUseLayeredCommit) {
+        const cacheKey = commitCacheService.generateKey(
+          diffContent,
+          configuration,
+          session.model,
+          scmProvider.type ?? "git",
+          activePromptContext.promptFingerprint,
+        );
+        const cachedMessage = commitCacheService.get(cacheKey);
+
+        if (cachedMessage) {
+          this.logger.info(
+            "Cache hit! Using cached commit message (ultra-early check).",
+          );
+          progress.report({
+            message:
+              getMessage("progress.stage.generating") || "[4/4] 生成提交消息...",
+            increment: 100,
+          });
+
+          await scmProvider.startStreamingInput(cachedMessage);
+
+          return {
+            status: "success",
+            applied: true,
+            requestId: session.requestId,
+            repositoryPath,
+            provider: session.provider,
+            model: session.selectedModel.id,
+            message: cachedMessage,
+            fromCache: true,
+            notification: options.suppressSuccessNotification
+              ? undefined
+              : {
+                level: "info",
+                key: "commit.message.generated.from.cache",
+              },
+          };
+        }
+      }
+
+      // 阶段2: 分析变更
+      progress.report({
+        message: getMessage("progress.stage.analyzing") || "[2/4] 分析变更...",
+      });
+      const modelConfig = this.processModelConfiguration(
+        progress,
+        session.provider,
+        session.model,
+        session.aiProvider,
+        session.selectedModel,
+      );
+      const contextModel = await this.getContextModelWithSafeInputLimit(
         modelConfig.selectedModel,
-        scmProvider,
-        diffContent,
         configuration,
-        selectedFiles,
-        repositoryPath,
-        requestId,
       );
 
-    // 步骤4: 检查提示词长度并处理警告
-    await this.checkPromptLengthAndHandleWarnings(
-      contextManager,
-      modelConfig.selectedModel,
-      configuration,
-    );
+      // 阶段3: 构建上下文
+      progress.report({
+        message:
+          getMessage("progress.stage.buildingContext") || "[3/4] 构建上下文...",
+      });
+      const scopedRequestId = repositoryPath
+        ? `${session.requestId}:${repositoryPath}`
+        : session.requestId;
+      const { contextManager, requestParams } =
+        await this.preparePromptAndContext(
+          contextModel,
+          modelConfig.selectedModel,
+          scmProvider,
+          diffContent,
+          configuration,
+          selectedFiles,
+          repositoryPath,
+          scopedRequestId,
+          activePromptContext,
+        );
 
-    this.contextInspectorService.storeSnapshot({
-      requestId,
-      provider: modelConfig.provider,
-      model: modelConfig.selectedModel,
-      contextManager,
-      suppressNonCriticalWarnings:
-        configuration.features?.suppressNonCriticalWarnings ?? false,
-    });
+      // 步骤4: 检查提示词长度并处理警告
+      await this.checkPromptLengthAndHandleWarnings(
+        contextManager,
+        contextModel,
+        configuration,
+        scmProvider.type ?? "git",
+      );
 
-    // 阶段4: 生成提交消息
-    progress.report({
-      message:
-        getMessage("progress.stage.generating") || "[4/4] 生成提交消息...",
-    });
+      this.contextInspectorService.storeSnapshot({
+        requestId: scopedRequestId,
+        provider: modelConfig.provider,
+        model: modelConfig.selectedModel,
+        contextManager,
+        suppressNonCriticalWarnings:
+          configuration.features?.suppressNonCriticalWarnings ?? false,
+      });
 
-    await this.executeGenerationFlow(
-      modelConfig.aiProvider,
-      requestParams,
-      scmProvider,
-      contextManager,
-      selectedFiles,
-      modelConfig.selectedModel,
-      token,
-      progress,
-      configuration,
-      repositoryPath,
-      modelConfig.provider,
-    );
+      // 阶段4: 生成提交消息
+      progress.report({
+        message:
+          getMessage("progress.stage.generating") || "[4/4] 生成提交消息...",
+      });
+
+      return await this.executeGenerationFlow(
+        modelConfig.aiProvider,
+        requestParams,
+        scmProvider,
+        contextManager,
+        selectedFiles,
+        contextModel,
+        token,
+        progress,
+        configuration,
+        repositoryPath,
+        activePromptContext.promptFingerprint,
+        modelConfig.provider,
+        options,
+        session,
+        target,
+        fileDiffMap,
+      );
+    } catch (error) {
+      return await this.handleGenerationError(
+        error,
+        session.selectedModel,
+        session.providerConfig,
+        session,
+        target,
+      );
+    }
   }
 
   /**
@@ -197,9 +281,12 @@ export class StreamingGenerationHelper {
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     scmProvider: ISCMProvider,
     selectedFiles: string[] | undefined,
-    resources: vscode.SourceControlResourceState[],
     providerConfig: any,
-  ): Promise<{ configuration: any; diffContent: string | undefined }> {
+    repositoryContext?: RepositoryContext,
+  ): Promise<{
+    configuration: any;
+    snapshot: DiffSnapshot;
+  }> {
     if (!providerConfig) {
       this.logger.error(
         "Provider config not found in prepareConfigurationAndDiff",
@@ -214,9 +301,11 @@ export class StreamingGenerationHelper {
     const configuration = providerConfig;
 
     // 设置当前文件
-    if (scmProvider.setCurrentFiles && selectedFiles) {
+    if (scmProvider.setCurrentFiles) {
       this.logger.info(
-        `Setting current files for SCM provider: ${selectedFiles.join(", ")}`,
+        `Setting current files for SCM provider: ${
+          selectedFiles?.join(", ") || "<none>"
+        }`,
       );
       scmProvider.setCurrentFiles(selectedFiles);
     }
@@ -228,22 +317,226 @@ export class StreamingGenerationHelper {
     });
 
     let diffContent: string | undefined;
+    let resolvedDiffTarget: "staged" | "all" = "all";
     const diffTargetConfig = configuration.features.codeAnalysis.diffTarget;
+    const fallbackToAll =
+      configuration.features?.codeAnalysis?.fallbackToAll ?? true;
     this.logger.info(`diffTargetConfig: ${diffTargetConfig}`);
 
     if (diffTargetConfig === "auto") {
-      diffContent = await this.getDiffWithAutoDetection(
+      const autoDiffResult = await this.getDiffWithAutoDetection(
         scmProvider,
         selectedFiles,
-        resources,
+        repositoryContext,
         progress,
+        fallbackToAll,
       );
+      diffContent = autoDiffResult.content;
+      resolvedDiffTarget = autoDiffResult.target;
     } else {
+      const explicitTarget =
+        diffTargetConfig === "staged" ? "staged" : "all";
       progress.report({ message: getMessage("progress.getting.diff") });
-      diffContent = await scmProvider.getDiff(selectedFiles);
+      diffContent = await scmProvider.getDiff(selectedFiles, explicitTarget);
+      resolvedDiffTarget = explicitTarget;
     }
 
-    return { configuration, diffContent };
+    let fileDiffMap: Map<string, string> | undefined;
+    const shouldBuildFileDiffMap =
+      configuration.features?.commitFormat?.enableLayeredCommit &&
+      selectedFiles &&
+      selectedFiles.length > 1;
+
+    if (shouldBuildFileDiffMap) {
+      fileDiffMap = this.buildFileDiffSnapshotFromCombinedDiff(
+        diffContent,
+        selectedFiles,
+      );
+    }
+
+    return {
+      configuration,
+      snapshot: {
+        combinedDiff: diffContent,
+        resolvedDiffTarget,
+        fileDiffMap,
+      },
+    };
+  }
+
+  /**
+   * 从一次性获取到的 processed diff 中重建按文件的快照，避免额外 N+1 SCM 调用。
+   */
+  private buildFileDiffSnapshotFromCombinedDiff(
+    combinedDiff: string | undefined,
+    selectedFiles: string[],
+  ): Map<string, string> {
+    const fileDiffMap = new Map<string, string>();
+    if (!combinedDiff?.trim()) {
+      return fileDiffMap;
+    }
+
+    const originalCodeBlocks = this.parseProcessedDiffFileBlocks(
+      this.extractProcessedDiffSection(combinedDiff, "original-code"),
+    );
+    const codeChangesBlocks = this.parseProcessedDiffFileBlocks(
+      this.extractProcessedDiffSection(combinedDiff, "code-changes"),
+    );
+
+    const orderedCodeChangeEntries = Array.from(codeChangesBlocks.entries());
+    const unresolvedFiles = new Set(
+      orderedCodeChangeEntries.map(([filePath]) => filePath),
+    );
+
+    for (let index = 0; index < selectedFiles.length; index++) {
+      const selectedFile = selectedFiles[index];
+      const matchedFile = this.resolveMatchedDiffFile(
+        selectedFile,
+        unresolvedFiles,
+        orderedCodeChangeEntries,
+        selectedFiles.length - index,
+      );
+      if (!matchedFile) {
+        continue;
+      }
+
+      unresolvedFiles.delete(matchedFile);
+      const codeChangesBlock = codeChangesBlocks.get(matchedFile);
+      if (!codeChangesBlock) {
+        continue;
+      }
+
+      fileDiffMap.set(
+        selectedFile,
+        this.composeSingleFileProcessedDiff(
+          originalCodeBlocks.get(matchedFile),
+          codeChangesBlock,
+        ),
+      );
+    }
+
+    return fileDiffMap;
+  }
+
+  private extractProcessedDiffSection(
+    processedDiff: string,
+    sectionName: "original-code" | "code-changes",
+  ): string | undefined {
+    const sectionMatch = processedDiff.match(
+      new RegExp(`<${sectionName}>\\s*([\\s\\S]*?)\\s*</${sectionName}>`),
+    );
+    return sectionMatch?.[1]?.trim();
+  }
+
+  private parseProcessedDiffFileBlocks(
+    sectionContent: string | undefined,
+  ): Map<string, string> {
+    const fileBlocks = new Map<string, string>();
+    if (!sectionContent?.trim()) {
+      return fileBlocks;
+    }
+
+    const lines = sectionContent.split("\n");
+    let currentFilePath: string | undefined;
+    let currentBlockLines: string[] = [];
+
+    const flushCurrentBlock = () => {
+      if (!currentFilePath || currentBlockLines.length === 0) {
+        return;
+      }
+      fileBlocks.set(currentFilePath, currentBlockLines.join("\n").trim());
+      currentFilePath = undefined;
+      currentBlockLines = [];
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const fileMatch = line.match(/^# FILE:\s+(.+)$/);
+      const nextLine = lines[i + 1]?.trim() ?? "";
+      const isSectionHeader =
+        !!fileMatch &&
+        (nextLine === "# ORIGINAL CODE:" || nextLine === "# CODE CHANGES:");
+
+      if (isSectionHeader) {
+        flushCurrentBlock();
+        currentFilePath = fileMatch[1]?.trim();
+      }
+
+      if (currentFilePath) {
+        currentBlockLines.push(line);
+      }
+    }
+
+    flushCurrentBlock();
+
+    return fileBlocks;
+  }
+
+  private composeSingleFileProcessedDiff(
+    originalCodeBlock: string | undefined,
+    codeChangesBlock: string,
+  ): string {
+    const parts: string[] = [];
+    if (originalCodeBlock) {
+      parts.push(`<original-code>\n${originalCodeBlock}\n</original-code>`);
+    }
+    parts.push(`<code-changes>\n${codeChangesBlock}\n</code-changes>`);
+    return `<changes>\n${parts.join("\n")}\n</changes>\n`;
+  }
+
+  private resolveMatchedDiffFile(
+    selectedFile: string,
+    unresolvedDiffFiles: Set<string>,
+    orderedCodeChangeEntries: Array<[string, string]>,
+    remainingSelectedFileCount: number,
+  ): string | undefined {
+    if (unresolvedDiffFiles.has(selectedFile)) {
+      return selectedFile;
+    }
+
+    const normalizedSelectedFile =
+      this.normalizeFilePathForDiffLookup(selectedFile);
+    const normalizedMatches = Array.from(unresolvedDiffFiles).filter(
+      (diffFile) => {
+        const normalizedDiffFile = this.normalizeFilePathForDiffLookup(diffFile);
+        return (
+          normalizedDiffFile === normalizedSelectedFile ||
+          normalizedSelectedFile.endsWith(`/${normalizedDiffFile}`) ||
+          normalizedDiffFile.endsWith(`/${normalizedSelectedFile}`)
+        );
+      },
+    );
+
+    if (normalizedMatches.length === 1) {
+      return normalizedMatches[0];
+    }
+
+    if (normalizedMatches.length > 1) {
+      const suffixMatches = normalizedMatches.filter((diffFile) =>
+        normalizedSelectedFile.endsWith(
+          `/${this.normalizeFilePathForDiffLookup(diffFile)}`,
+        ),
+      );
+      if (suffixMatches.length === 1) {
+        return suffixMatches[0];
+      }
+    }
+
+    // 最后兜底：仅当剩余数量一致时，按 combined diff 的顺序对齐。
+    if (
+      unresolvedDiffFiles.size > 0 &&
+      unresolvedDiffFiles.size === remainingSelectedFileCount
+    ) {
+      return orderedCodeChangeEntries.find(([diffFile]) =>
+        unresolvedDiffFiles.has(diffFile),
+      )?.[0];
+    }
+
+    return undefined;
+  }
+
+  private normalizeFilePathForDiffLookup(filePath: string): string {
+    return filePath.replace(/\\/g, "/").replace(/^\.\//, "").trim();
   }
 
   /**
@@ -252,16 +545,20 @@ export class StreamingGenerationHelper {
   private async getDiffWithAutoDetection(
     scmProvider: ISCMProvider,
     selectedFiles: string[] | undefined,
-    resources: vscode.SourceControlResourceState[],
+    repositoryContext: RepositoryContext | undefined,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
-  ): Promise<string | undefined> {
+    fallbackToAll: boolean,
+  ): Promise<{ content: string | undefined; target: "staged" | "all" }> {
+    const fallbackTarget: "staged" | "all" = fallbackToAll ? "all" : "staged";
+
     try {
-      const repositoryContext =
-        await multiRepositoryContextManager.identifyRepository(
-          selectedFiles,
-          vscode.window.activeTextEditor,
-          resources,
-        );
+      if (!repositoryContext) {
+        progress.report({ message: getMessage("progress.getting.diff") });
+        return {
+          content: await scmProvider.getDiff(selectedFiles, fallbackTarget),
+          target: fallbackTarget,
+        };
+      }
 
       const detectionResult = await stagedContentDetector.detectStagedContent({
         repository: repositoryContext,
@@ -285,13 +582,19 @@ export class StreamingGenerationHelper {
         `Auto-detection selected target: ${selectedTarget}, files: ${diffResult.files.length}`,
       );
 
-      return diffResult.content;
+      return {
+        content: diffResult.content,
+        target: selectedTarget === "staged" ? "staged" : "all",
+      };
     } catch (error) {
       this.logger.warn(
-        `Auto-detection failed, falling back to traditional method: ${error}`,
+        `Auto-detection failed, falling back to '${fallbackTarget}': ${error}`,
       );
       progress.report({ message: getMessage("progress.getting.diff") });
-      return await scmProvider.getDiff(selectedFiles);
+      return {
+        content: await scmProvider.getDiff(selectedFiles, fallbackTarget),
+        target: fallbackTarget,
+      };
     }
   }
 
@@ -299,70 +602,29 @@ export class StreamingGenerationHelper {
    * 处理模型配置 - 遵循单一职责原则
    * 优先使用传入的 aiProvider 和 selectedModel，避免重复创建
    */
-  private async processModelConfiguration(
+  private processModelConfiguration(
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     provider: string,
     model: string,
-    providerConfig: any,
-    aiProvider?: AIProvider,
-    selectedModel?: AIModel,
-  ): Promise<{
+    aiProvider: AIProvider,
+    selectedModel: AIModel,
+  ): {
     provider: string;
     model: string;
     aiProvider: AIProvider;
     selectedModel: AIModel;
-  }> {
+  } {
     progress.report({ message: getMessage("progress.updating.model.config") });
 
-    // 如果已提供 aiProvider 和 selectedModel，直接使用（避免重复创建）
-    if (aiProvider && selectedModel) {
-      this.logger.info(
-        `[Chain] [StreamingHelper] Using pre-initialized AI provider: ${aiProvider.getName?.() || provider}, model: ${selectedModel.id}`,
-      );
-
-      if (!aiProvider.generateCommitStream) {
-        this.logger.error(`Provider ${provider} does not support streaming.`);
-        notify.error("provider.does.not.support.streaming", [provider]);
-        throw new Error(`Provider ${provider} does not support streaming.`);
-      }
-
-      return {
-        provider,
-        model,
-        aiProvider,
-        selectedModel,
-      };
-    }
-
-    // 否则，使用统一的模型验证服务（兼容旧流程）
-    this.logger.warn(
-      `[Chain] [StreamingHelper] ⚠ No pre-initialized AI provider provided, entering fallback mode. This should rarely happen.`,
+    this.logger.info(
+      `[Chain] [StreamingHelper] Using orchestrated AI provider: ${aiProvider.getName?.() || provider}, model: ${selectedModel.id}`,
     );
-    const { ModelValidationService } =
-      await import("@/services/core/model-validation-service");
-    const { aiProvider: newProvider, selectedModel: newModel } =
-      await ModelValidationService.validateModel(
-        provider,
-        model,
-        providerConfig,
-      );
-
-    if (!newModel) {
-      this.logger.error("No model selected.");
-      throw new Error(getMessage("no.model.selected"));
-    }
-
-    if (!newProvider.generateCommitStream) {
-      this.logger.error(`Provider ${provider} does not support streaming.`);
-      notify.error("provider.does.not.support.streaming", [provider]);
-      throw new Error(`Provider ${provider} does not support streaming.`);
-    }
 
     return {
       provider,
       model,
-      aiProvider: newProvider,
-      selectedModel: newModel,
+      aiProvider,
+      selectedModel,
     };
   }
 
@@ -370,13 +632,15 @@ export class StreamingGenerationHelper {
    * 准备提示词和上下文 - 遵循单一职责原则
    */
   private async preparePromptAndContext(
-    selectedModel: AIModel,
+    contextModel: AIModel,
+    requestModel: AIModel,
     scmProvider: ISCMProvider,
     diffContent: string,
     configuration: any,
     selectedFiles: string[] | undefined,
     repositoryPath: string | undefined,
     requestId: string,
+    activePromptContext?: ActivePromptContext,
   ): Promise<{ contextManager: ContextManager; requestParams: any }> {
     if (this.lastRequestId === requestId && this.lastContext) {
       this.logger.debug(
@@ -385,24 +649,40 @@ export class StreamingGenerationHelper {
       return this.lastContext;
     }
 
+    const promptContext =
+      activePromptContext || (await this.getActiveCommitPromptContext());
+
     // 构建并缓存 system prompt
+    const systemPromptHash = this.getSystemPromptHash(
+      configuration,
+      scmProvider.type ?? "git",
+      repositoryPath,
+      promptContext.promptFingerprint,
+    );
     if (
       !this._lastSystemPrompt ||
-      this._lastConfigHash !== this.getConfigHash(configuration)
+      this._lastSystemPromptHash !== systemPromptHash
     ) {
       const tempParams = this.buildRequestParams(configuration, {
-        model: selectedModel,
+        model: requestModel,
         scm: scmProvider.type ?? "git",
         workspaceRoot: repositoryPath,
         changeFiles: selectedFiles || [],
         diff: diffContent,
       });
 
-      this._lastSystemPrompt = await getSystemPrompt(tempParams);
+      this._lastSystemPrompt = await getSystemPrompt(
+        tempParams,
+        false,
+        false,
+        undefined,
+        promptContext.promptContent,
+      );
+      this._lastSystemPromptHash = systemPromptHash;
     }
 
     const contextManager = await this.contextBuilder.buildContextManager(
-      selectedModel,
+      contextModel,
       this._lastSystemPrompt,
       scmProvider,
       diffContent,
@@ -419,7 +699,7 @@ export class StreamingGenerationHelper {
     );
 
     const requestParams = this.buildRequestParams(configuration, {
-      model: selectedModel,
+      model: requestModel,
       scm: scmProvider.type ?? "git",
       workspaceRoot: repositoryPath,
       changeFiles: selectedFiles || [],
@@ -437,14 +717,6 @@ export class StreamingGenerationHelper {
     return { contextManager, requestParams };
   }
 
-  private computeChangeHash(
-    selectedFiles?: string[],
-    repositoryPath?: string,
-  ): string {
-    const input = `${repositoryPath}:${selectedFiles?.join(",") || ""}`;
-    return Buffer.from(input).toString("base64").substring(0, 16);
-  }
-
   /**
    * 构建请求参数 - 避免重复解构配置
    */
@@ -452,10 +724,10 @@ export class StreamingGenerationHelper {
     configuration: any,
     overrides: Partial<any> = {},
   ): any {
-    const currentConfigHash = this.getConfigHash(configuration);
+    const currentConfigHash = this.getRequestParamsHash(configuration);
     if (
       !this._baseRequestParams ||
-      this._lastConfigHash !== currentConfigHash
+      this._lastRequestParamsHash !== currentConfigHash
     ) {
       this._baseRequestParams = {
         ...configuration.features.commitMessage,
@@ -463,7 +735,7 @@ export class StreamingGenerationHelper {
         ...configuration.features.codeAnalysis,
         languages: configuration.base.language,
       };
-      this._lastConfigHash = currentConfigHash;
+      this._lastRequestParamsHash = currentConfigHash;
     }
 
     return {
@@ -472,16 +744,87 @@ export class StreamingGenerationHelper {
     };
   }
 
-  /**
-   * 计算配置哈希，用于检测配置变化
-   */
-  private getConfigHash(config: any): string {
+  private getRequestParamsHash(config: any): string {
     return JSON.stringify({
       language: config.base?.language,
-      emoji: config.features?.commitFormat?.enableEmoji,
-      body: config.features?.commitFormat?.enableBody,
-      rule: config.features?.commitMessage?.rule,
+      commitFormat: {
+        enableEmoji: config.features?.commitFormat?.enableEmoji,
+        enableBody: config.features?.commitFormat?.enableBody,
+        enableMergeCommit: config.features?.commitFormat?.enableMergeCommit,
+        enableLayeredCommit:
+          config.features?.commitFormat?.enableLayeredCommit,
+        enableGlobalContext:
+          config.features?.commitFormat?.enableGlobalContext,
+      },
+      commitMessage: {
+        rule: config.features?.commitMessage?.rule,
+        useRecentCommitsAsReference:
+          config.features?.commitMessage?.useRecentCommitsAsReference,
+        diffTruncationStrategy:
+          config.features?.commitMessage?.diffTruncationStrategy,
+        maxInputTokensPerRequest:
+          config.features?.commitMessage?.maxInputTokensPerRequest,
+        largePromptAction: config.features?.commitMessage?.largePromptAction,
+      },
+      codeAnalysis: {
+        diffTarget: config.features?.codeAnalysis?.diffTarget,
+        autoDetectStaged: config.features?.codeAnalysis?.autoDetectStaged,
+        fallbackToAll: config.features?.codeAnalysis?.fallbackToAll,
+        simplifyDiff: config.features?.codeAnalysis?.simplifyDiff,
+      },
     });
+  }
+
+  private getSystemPromptHash(
+    config: any,
+    scmType: string,
+    workspaceRoot?: string,
+    promptFingerprint?: string,
+  ): string {
+    return JSON.stringify({
+      scm: scmType || "git",
+      workspaceRoot: workspaceRoot || "",
+      promptFingerprint: promptFingerprint || "",
+      language: config.base?.language,
+      commitFormat: {
+        enableEmoji: config.features?.commitFormat?.enableEmoji,
+        enableBody: config.features?.commitFormat?.enableBody,
+        enableMergeCommit: config.features?.commitFormat?.enableMergeCommit,
+      },
+      commitMessage: {
+        rule: config.features?.commitMessage?.rule,
+        useRecentCommitsAsReference:
+          config.features?.commitMessage?.useRecentCommitsAsReference,
+        largePromptAction: config.features?.commitMessage?.largePromptAction,
+      },
+    });
+  }
+
+  private async getActiveCommitPromptContext(): Promise<ActivePromptContext> {
+    try {
+      const promptManager = PromptManagerService.getInstance();
+      const promptContent = await promptManager.getActivePromptContent(
+        PromptKey.GenerateCommitSystem,
+      );
+      const normalizedPrompt = promptContent || "";
+      return {
+        promptContent: normalizedPrompt,
+        promptFingerprint: this.getPromptFingerprint(normalizedPrompt),
+      };
+    } catch (error) {
+      this.logger.warn(
+        "[StreamingHelper] Failed to read active commit prompt for cache fingerprint, fallback to empty prompt fingerprint.",
+        { error: error as Error },
+      );
+      return {
+        promptContent: "",
+        promptFingerprint: this.getPromptFingerprint(""),
+      };
+    }
+  }
+
+  private getPromptFingerprint(promptContent: string): string {
+    return crypto.createHash("sha256").update(promptContent).digest("hex");
   }
 
   /**
@@ -491,15 +834,20 @@ export class StreamingGenerationHelper {
     contextManager: ContextManager,
     selectedModel: AIModel,
     configuration: any,
+    scmType: "git" | "svn",
   ): Promise<void> {
     const promptLength = contextManager.getEstimatedRawTokenCount();
     this.logger.info(`Estimated prompt length: ${promptLength} tokens.`);
 
-    const tokenLimits = await getAccurateTokenLimits(
+    const rawInputLimit = await this.resolveModelInputLimit(
       selectedModel,
       configuration,
     );
-    const maxTokens = tokenLimits.input;
+    const maxTokens = this.getEffectiveInputTokenLimit(
+      selectedModel,
+      rawInputLimit,
+      configuration,
+    );
     const largePromptAction =
       configuration.features?.commitMessage?.largePromptAction ?? "useFallback";
 
@@ -508,7 +856,12 @@ export class StreamingGenerationHelper {
     }
 
     if (largePromptAction === "useFallback") {
-      await this.applyFallbackSystemPrompt(contextManager, selectedModel, configuration);
+      await this.applyFallbackSystemPrompt(
+        contextManager,
+        selectedModel,
+        configuration,
+        scmType,
+      );
       return;
     }
 
@@ -527,7 +880,12 @@ export class StreamingGenerationHelper {
       );
 
       if (choice === useFallbackChoice) {
-        await this.applyFallbackSystemPrompt(contextManager, selectedModel, configuration);
+        await this.applyFallbackSystemPrompt(
+          contextManager,
+          selectedModel,
+          configuration,
+          scmType,
+        );
       } else if (choice !== continueAnyway) {
         throw new Error(getMessage("prompt.user.cancelled"));
       }
@@ -538,10 +896,11 @@ export class StreamingGenerationHelper {
     contextManager: ContextManager,
     selectedModel: AIModel,
     configuration: any,
+    scmType: "git" | "svn",
   ): Promise<void> {
     const tempParams = this.buildRequestParams(configuration, {
       model: selectedModel,
-      scm: "git",
+      scm: scmType,
       workspaceRoot: undefined,
       changeFiles: [],
       diff: "",
@@ -551,6 +910,132 @@ export class StreamingGenerationHelper {
     const fallbackSystemPrompt = await getSystemPrompt(tempParams, true, true);
     contextManager.setSystemPrompt(fallbackSystemPrompt);
     notify.info("info.using.fallback.prompt");
+  }
+
+  private async getContextModelWithSafeInputLimit(
+    selectedModel: AIModel,
+    configuration: any,
+  ): Promise<AIModel> {
+    const rawInputLimit = await this.resolveModelInputLimit(
+      selectedModel,
+      configuration,
+    );
+    const effectiveInputLimit = this.getEffectiveInputTokenLimit(
+      selectedModel,
+      rawInputLimit,
+      configuration,
+    );
+
+    if (effectiveInputLimit >= selectedModel.maxTokens.input) {
+      return selectedModel;
+    }
+
+    this.logger.warn(
+      `[StreamingHelper] Reducing context input limit for ${selectedModel.provider.id}/${selectedModel.id}: ${selectedModel.maxTokens.input} -> ${effectiveInputLimit}`,
+    );
+
+    return {
+      ...selectedModel,
+      maxTokens: {
+        ...selectedModel.maxTokens,
+        input: effectiveInputLimit,
+      },
+    };
+  }
+
+  private getEffectiveInputTokenLimit(
+    selectedModel: AIModel,
+    modelInputLimit: number,
+    configuration?: any,
+  ): number {
+    const providerId = selectedModel.provider?.id?.toLowerCase?.() ?? "";
+    const modelId = selectedModel.id?.toLowerCase?.() ?? "";
+    const modelSafetyLimit = Math.floor(
+      modelInputLimit * MODEL_INPUT_TOKEN_SAFETY_RATIO,
+    );
+    const providerLimit =
+      PROVIDER_REQUEST_INPUT_LIMITS[providerId] ??
+      (modelId.includes("gemini")
+        ? PROVIDER_REQUEST_INPUT_LIMITS.gemini
+        : undefined);
+    const providerSafetyLimit = providerLimit
+      ? Math.floor(providerLimit * MODEL_INPUT_TOKEN_SAFETY_RATIO)
+      : Number.POSITIVE_INFINITY;
+    const configuredLimit = Number(
+      configuration?.features?.commitMessage?.maxInputTokensPerRequest,
+    );
+    const configSafetyLimit =
+      Number.isFinite(configuredLimit) && configuredLimit > 0
+        ? Math.floor(configuredLimit)
+        : Number.POSITIVE_INFINITY;
+    const learnedInputLimit =
+      this.adaptiveModelLimitService.getLearnedInputLimit(providerId, modelId);
+    const learnedSafetyLimit =
+      learnedInputLimit && Number.isFinite(learnedInputLimit)
+        ? Math.floor(learnedInputLimit * MODEL_INPUT_TOKEN_SAFETY_RATIO)
+        : Number.POSITIVE_INFINITY;
+
+    return Math.max(
+      4096,
+      Math.min(
+        modelInputLimit,
+        modelSafetyLimit,
+        DEFAULT_REQUEST_INPUT_TOKEN_LIMIT,
+        providerSafetyLimit,
+        configSafetyLimit,
+        learnedSafetyLimit,
+      ),
+    );
+  }
+
+  private async resolveModelInputLimit(
+    selectedModel: AIModel,
+    configuration: any,
+  ): Promise<number> {
+    const enableThirdPartyModelCatalog =
+      configuration?.features?.commitMessage?.enableThirdPartyModelCatalog !==
+      false;
+    const catalogResolved = await this.modelCatalogService.resolveInputLimit(
+      selectedModel,
+      { enableSyncedCatalog: enableThirdPartyModelCatalog },
+    );
+    const runtimeLimit = Number(selectedModel?.maxTokens?.input);
+    if (catalogResolved?.inputLimit) {
+      if (Number.isFinite(runtimeLimit) && runtimeLimit > 0) {
+        const merged = Math.min(runtimeLimit, catalogResolved.inputLimit);
+        this.logger.info(
+          `[StreamingHelper] Input limit resolved via catalog (${catalogResolved.source}, ${catalogResolved.confidence}): runtime=${runtimeLimit}, catalog=${catalogResolved.inputLimit}, using=${merged}`,
+        );
+        return merged;
+      }
+
+      this.logger.info(
+        `[StreamingHelper] Input limit resolved via catalog (${catalogResolved.source}, ${catalogResolved.confidence}): ${catalogResolved.inputLimit}`,
+      );
+      return catalogResolved.inputLimit;
+    }
+
+    if (Number.isFinite(runtimeLimit) && runtimeLimit > 0) {
+      return runtimeLimit;
+    }
+
+    try {
+      const tokenLimits = await getAccurateTokenLimits(
+        selectedModel,
+        configuration,
+      );
+      const inferredLimit = Number(tokenLimits?.input);
+      if (Number.isFinite(inferredLimit) && inferredLimit > 0) {
+        return inferredLimit;
+      }
+    } catch (error) {
+      this.logger.warn(
+        `[StreamingHelper] Failed to resolve input limit from model registry for ${selectedModel.provider.id}/${selectedModel.id}, fallback to safe default.`,
+        { error: error as Error },
+      );
+    }
+
+    return 8192;
   }
 
   /**
@@ -567,81 +1052,132 @@ export class StreamingGenerationHelper {
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     configuration: any,
     repositoryPath: string | undefined,
-    newProvider: string,
-  ): Promise<void> {
-    try {
-      this.throwIfCancelled(token);
+    promptFingerprint: string | undefined,
+    providerId: string,
+    options: PerformGenerationOptions,
+    session: GenerationSession,
+    target: GenerationTargetContext,
+    fileDiffMap?: Map<string, string>,
+  ): Promise<GenerationResult> {
+    assertNotCancelled(token, this.logger);
 
-      const useFunctionCalling =
-        stateManager.getWorkspace<boolean>(
-          "experimental.commitWithFunctionCalling.enabled",
-        ) ?? false;
+    const useFunctionCalling =
+      stateManager.getWorkspace<boolean>(
+        "experimental.commitWithFunctionCalling.enabled",
+      ) ?? false;
 
-      // === 缓存检查 ===
-      // 目前只支持标准生成和函数调用生成的缓存，分层提交因复杂性暂不支持
-      // 注意：读取缓存的逻辑已移动到 performStreamingGeneration 以提高性能
-      const shouldUseLayeredCommit =
-        configuration.features.commitFormat.enableLayeredCommit &&
-        selectedFiles &&
-        selectedFiles.length > 1;
+    const shouldUseLayeredCommit =
+      configuration.features.commitFormat.enableLayeredCommit &&
+      selectedFiles &&
+      selectedFiles.length > 1;
 
-      let cacheKey: string | undefined;
-
-      // 只有非分层提交才生成 cacheKey (用于后续写入)
-      if (!shouldUseLayeredCommit) {
-        cacheKey = commitCacheService.generateKey(
-          requestParams.diff || "", // 核心是 Diff 内容
-          configuration,
-          selectedModel.id,
-        );
-      }
-      // =================
-
-      let generatedMessage: string | undefined;
-
-      if (useFunctionCalling) {
-        generatedMessage = await this.handleFunctionCallingGeneration(
-          aiProvider,
-          requestParams,
-          scmProvider,
-          contextManager,
-          token,
-          progress,
-          repositoryPath,
-          newProvider,
-        );
-      } else {
-        generatedMessage = await this.handleStandardGeneration(
-          aiProvider,
-          requestParams,
-          scmProvider,
-          contextManager,
-          selectedFiles,
-          selectedModel,
-          token,
-          progress,
-          configuration,
-          repositoryPath,
-        );
-      }
-
-      // === 写入缓存 ===
-      if (cacheKey && generatedMessage && !shouldUseLayeredCommit) {
-        this.logger.info("Caching generated commit message.");
-        commitCacheService.set(cacheKey, generatedMessage);
-      }
-      // ================
-
-      notify.info("commit.message.generated.stream", [
-        scmProvider.type.toUpperCase(),
-        newProvider,
-        selectedModel?.id || "default",
-      ]);
-
-      showCommitSuccessNotification();
-    } catch (error) {
-      await this.handleGenerationError(error);
+    let cacheKey: string | undefined;
+    if (!shouldUseLayeredCommit) {
+      cacheKey = commitCacheService.generateKey(
+        requestParams.diff || "",
+        configuration,
+        selectedModel.id,
+        scmProvider.type ?? "git",
+        promptFingerprint,
+      );
     }
+
+    if (!useFunctionCalling && shouldUseLayeredCommit) {
+      const layeredResult = await this.layeredCommitHandler.handle(
+        aiProvider,
+        requestParams,
+        scmProvider,
+        selectedFiles,
+        token,
+        progress,
+        selectedModel,
+        configuration,
+        {
+          requestId: session.requestId,
+          repositoryPath: target.repositoryPath,
+          provider: session.provider,
+          model: session.selectedModel.id,
+        },
+        fileDiffMap,
+      );
+
+      if (
+        layeredResult.status === "success" &&
+        layeredResult.applied &&
+        !options.suppressSuccessNotification
+      ) {
+        return {
+          ...layeredResult,
+          notification: {
+            level: "info",
+            key: "commit.message.generated.stream",
+            args: [
+              scmProvider.type.toUpperCase(),
+              providerId,
+              selectedModel?.id || "default",
+            ],
+          },
+        };
+      }
+
+      return layeredResult;
+    }
+
+    const generatedMessage = useFunctionCalling
+      ? await this.handleFunctionCallingGeneration(
+        aiProvider,
+        requestParams,
+        scmProvider,
+        contextManager,
+        token,
+        progress,
+        repositoryPath,
+      )
+      : await this.handleStandardGeneration(
+        aiProvider,
+        requestParams,
+        scmProvider,
+        contextManager,
+        token,
+        progress,
+        repositoryPath,
+      );
+
+    const normalizedMessage = generatedMessage?.trim();
+    if (!normalizedMessage) {
+      return this.createFailedResult(
+        session,
+        target,
+        "Generated commit message is empty.",
+        "EMPTY_GENERATED_MESSAGE",
+      );
+    }
+
+    if (cacheKey) {
+      this.logger.info("Caching generated commit message.");
+      commitCacheService.set(cacheKey, normalizedMessage);
+    }
+
+    return {
+      status: "success",
+      applied: true,
+      requestId: session.requestId,
+      repositoryPath: target.repositoryPath,
+      provider: session.provider,
+      model: session.selectedModel.id,
+      message: normalizedMessage,
+      notification: options.suppressSuccessNotification
+        ? undefined
+        : {
+          level: "info",
+          key: "commit.message.generated.stream",
+          args: [
+            scmProvider.type.toUpperCase(),
+            providerId,
+            selectedModel?.id || "default",
+          ],
+        },
+    };
   }
 
   /**
@@ -655,30 +1191,16 @@ export class StreamingGenerationHelper {
     token: vscode.CancellationToken,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     repositoryPath: string | undefined,
-    newProvider: string,
   ): Promise<string> {
     this.logger.info("Using function calling generation.");
 
-    if (!aiProvider.generateCommitWithFunctionCalling) {
-      this.logger.error(
-        `Provider ${newProvider} does not support function calling.`,
-      );
-      throw new Error(
-        `Provider ${newProvider} does not support function calling.`,
-      );
-    }
-
-    const messages = contextManager.buildMessages();
-    this.logger.info(
-      `Built messages for function calling. Total messages: ${messages.length}`,
-    );
-
     return await this.functionCallingHandler.handle(
       aiProvider,
-      { ...requestParams, messages },
+      requestParams,
       scmProvider,
       token,
       progress,
+      contextManager,
       repositoryPath,
     );
   }
@@ -691,49 +1213,58 @@ export class StreamingGenerationHelper {
     requestParams: any,
     scmProvider: ISCMProvider,
     contextManager: ContextManager,
-    selectedFiles: string[] | undefined,
-    selectedModel: AIModel,
     token: vscode.CancellationToken,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
-    configuration: any,
     repositoryPath: string | undefined,
-  ): Promise<string | undefined> {
-    const shouldUseLayeredCommit =
-      configuration.features.commitFormat.enableLayeredCommit &&
-      selectedFiles &&
-      selectedFiles.length > 1;
-
-    if (shouldUseLayeredCommit) {
-      this.logger.info("Performing layered file commit generation.");
-      await this.layeredCommitHandler.handle(
-        aiProvider,
-        requestParams,
-        scmProvider,
-        selectedFiles,
-        token,
-        progress,
-        selectedModel,
-        configuration,
-      );
-      return undefined; // Layered commit handler manages its own output and doesn't return a single string
-    } else {
-      this.logger.info("Performing standard streaming generation.");
-      return await this.streamingHandler.handle(
-        aiProvider as any,
-        requestParams,
-        scmProvider,
-        token,
-        progress,
-        contextManager,
-        repositoryPath,
+  ): Promise<string> {
+    if (!aiProvider.generateCommitStream) {
+      throw new Error(
+        `Provider ${aiProvider.getId()} does not support streaming.`,
       );
     }
+
+    this.logger.info("Performing standard streaming generation.");
+    return await this.streamingHandler.handle(
+      aiProvider as any,
+      requestParams,
+      scmProvider,
+      token,
+      progress,
+      contextManager,
+      repositoryPath,
+    );
   }
 
   /**
    * 处理生成错误 - 遵循单一职责原则
    */
-  private async handleGenerationError(error: any): Promise<void> {
+  private async handleGenerationError(
+    error: any,
+    selectedModel?: AIModel,
+    configuration?: any,
+    session?: GenerationSession,
+    target?: GenerationTargetContext,
+  ): Promise<GenerationResult> {
+    if (isCancellationError(error)) {
+      return {
+        status: "cancelled",
+        applied: false,
+        requestId: session?.requestId || crypto.randomUUID(),
+        repositoryPath: target?.repositoryPath,
+        provider: session?.provider,
+        model: session?.selectedModel?.id,
+        error: error.message,
+      };
+    }
+
+    if (selectedModel) {
+      await this.learnInputLimitFromRuntimeError(
+        error,
+        selectedModel,
+        configuration,
+      );
+    }
+
     if (error instanceof RequestTooLargeError) {
       const switchToLargerModel = getMessage("error.switch.to.larger.model");
       const choice = await notify.error(
@@ -747,19 +1278,132 @@ export class StreamingGenerationHelper {
           "workbench.view.extension.dish-ai-commitActivityBar",
         );
       }
+      return {
+        status: "too_large",
+        applied: false,
+        requestId: session?.requestId || crypto.randomUUID(),
+        repositoryPath: target?.repositoryPath,
+        provider: session?.provider,
+        model: session?.selectedModel?.id,
+        error: error.message,
+      };
     } else {
       this.logger.logError(error as Error, "流式生成失败");
-      throw error;
+      return this.createFailedResult(
+        session,
+        target,
+        this.extractErrorMessage(error),
+      );
     }
   }
 
-  /**
-   * 检查操作是否已被用户取消
-   */
-  private throwIfCancelled(token: vscode.CancellationToken): void {
-    if (token.isCancellationRequested) {
-      this.logger.info(getMessage("user.cancelled.operation.log"));
-      throw new Error(getMessage("user.cancelled.operation.error"));
+  private async learnInputLimitFromRuntimeError(
+    error: any,
+    selectedModel: AIModel,
+    configuration?: any,
+  ): Promise<void> {
+    if (
+      configuration?.features?.commitMessage?.enableAdaptiveInputLimitLearning ===
+      false
+    ) {
+      return;
     }
+
+    if (!this.isInputLimit429Error(error)) {
+      return;
+    }
+
+    const message = this.extractErrorMessage(error);
+    const learnedLimit = this.extractInputLimitFromErrorMessage(message);
+    if (!learnedLimit) {
+      return;
+    }
+
+    await this.adaptiveModelLimitService.recordLearnedInputLimit(
+      selectedModel.provider.id,
+      selectedModel.id as string,
+      learnedLimit,
+      message,
+    );
+
+    this.logger.warn(
+      `[StreamingHelper] Learned input limit from runtime error for ${selectedModel.provider.id}/${selectedModel.id}: ${learnedLimit}`,
+    );
+  }
+
+  private isInputLimit429Error(error: any): boolean {
+    const statusCode =
+      Number(error?.status) ||
+      Number(error?.statusCode) ||
+      Number(error?.response?.status);
+
+    if (statusCode !== 429) {
+      return false;
+    }
+
+    const message = this.extractErrorMessage(error).toLowerCase();
+    return (
+      message.includes("input token") ||
+      message.includes("tokens per minute") ||
+      message.includes("token limit") ||
+      message.includes("quota")
+    );
+  }
+
+  private extractErrorMessage(error: any): string {
+    if (typeof error?.message === "string" && error.message.trim()) {
+      return error.message;
+    }
+
+    const responseText = error?.response?.data || error?.response?.body;
+    if (typeof responseText === "string" && responseText.trim()) {
+      return responseText;
+    }
+
+    return String(error ?? "");
+  }
+
+  private extractInputLimitFromErrorMessage(message: string): number | null {
+    if (!message) {
+      return null;
+    }
+
+    const patterns = [
+      /(?:at most|limit of)\s*([0-9][0-9,]*)\s*(?:input\s+)?tokens/i,
+      /([0-9][0-9,]*)\s*(?:input\s+)?tokens\s+per\s+minute/i,
+      /(?:maximum|max)\s*(?:input\s+)?tokens(?:\s*[:=]|\s+is\s+)\s*([0-9][0-9,]*)/i,
+    ];
+
+    for (const pattern of patterns) {
+      const match = message.match(pattern);
+      if (!match?.[1]) {
+        continue;
+      }
+
+      const parsed = Number(match[1].replace(/,/g, ""));
+      if (Number.isFinite(parsed)) {
+        return parsed;
+      }
+    }
+
+    return null;
+  }
+
+  private createFailedResult(
+    session: GenerationSession | undefined,
+    target: GenerationTargetContext | undefined,
+    error: string,
+    errorCode?: string,
+  ): GenerationResult {
+    return {
+      status: "failed",
+      applied: false,
+      requestId: session?.requestId || crypto.randomUUID(),
+      repositoryPath: target?.repositoryPath,
+      provider: session?.provider,
+      model: session?.selectedModel?.id,
+      error,
+      errorCode,
+    };
   }
 }

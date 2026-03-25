@@ -198,7 +198,6 @@ export class StagedContentDetector implements IStagedContentDetector {
     await this.validateRepository(repositoryPath);
 
     const stagedFiles = await this.getStagedFiles(repositoryPath);
-    console.log("stagedFiles", stagedFiles);
     const hasStagedContent = stagedFiles.length > 0;
 
     // Determine recommended target based on configuration and detection result

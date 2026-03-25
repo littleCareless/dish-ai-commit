@@ -30,44 +30,59 @@ function WeeklyReportPage() {
   }, []);
 
   useMessageHandler(
-    useCallback(
-      (event: MessageEvent) => {
-        const message = event.data;
+    useCallback((event: MessageEvent) => {
+      const message = event.data;
+      const payload = message?.data;
 
-        switch (message.command) {
-          case "report":
-            // 更新编辑器内容
-            setContent(message.data);
-            break;
-          case ExtensionResponse.WeeklyReportUsersListLoaded: // 新增处理用户列表的 case
-            setAllUsers(message.data.users || []);
-            if (
-              message.data.currentUser &&
-              !selectedUsers.includes(message.data.currentUser)
-            ) {
-              // 确保只在初始时或 currentUser 变化时设置
-              setSelectedUsers([message.data.currentUser]); // 默认选中当前用户
-            }
-            break;
-          // 可以添加其他消息类型的处理
-        }
-      },
-      [selectedUsers],
-    ),
+      switch (message.command) {
+        case ExtensionResponse.WeeklyReportGenerated:
+        case "report":
+          // 更新编辑器内容
+          setContent(typeof payload === "string" ? payload : "");
+          break;
+        case ExtensionResponse.WeeklyReportUsersListLoaded: // 新增处理用户列表的 case
+          setAllUsers(Array.isArray(payload?.users) ? payload.users : []);
+          if (payload?.currentUser) {
+            setSelectedUsers((prev) =>
+              prev.includes(payload.currentUser) ? prev : [payload.currentUser],
+            );
+          }
+          break;
+        // 可以添加其他消息类型的处理
+      }
+    }, []),
   );
 
-  const handleSave = () => {
-    // Send save message to VSCode
-    postMessage("save", { content });
-    toast({
-      title: t("toast.saveSuccessTitle"),
-      description: t("toast.saveSuccessDescription"),
-    });
+  const handleSave = async () => {
+    try {
+      await navigator.clipboard.writeText(content ?? "");
+      toast({
+        title: t("toast.saveSuccessTitle"),
+        description: t("toast.saveSuccessDescription"),
+      });
+    } catch (error) {
+      toast({
+        title: t("toast.error"),
+        description: error instanceof Error ? error.message : String(error),
+        variant: "destructive",
+      });
+    }
   };
 
   const handleExport = () => {
-    // Send export message to VSCode
-    postMessage("export", { content });
+    const start = dateRange?.[0]?.format("YYYYMMDD") || "start";
+    const end = dateRange?.[1]?.format("YYYYMMDD") || "end";
+    const fileName = `weekly-report-${start}-${end}.md`;
+    const blob = new Blob([content ?? ""], {
+      type: "text/markdown;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = fileName;
+    link.click();
+    URL.revokeObjectURL(url);
+
     toast({
       title: t("toast.exportSuccessTitle"),
       description: t("toast.exportSuccessDescription"),
@@ -122,12 +137,6 @@ function WeeklyReportPage() {
     dates: dayjs.Dayjs[],
   ) => {
     setDateRange(dates); // 保存选中的日期范围
-    if (dates) {
-      postMessage("dateChange", {
-        startDate: dates[0],
-        endDate: dates[1],
-      });
-    }
   };
 
   return (

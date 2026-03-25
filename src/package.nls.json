@@ -26,6 +26,9 @@
   "extension.contributes.commands.dish-ai-commit.generatePRSummary.title": "[Dish] Generate PR Summary with AI",
   "extension.contributes.commands.dish-ai-commit.generatePRSummary.category": "[Dish AI Commit]",
   "extension.contributes.commands.dish-ai-commit.generatePRSummary.description": "Generate PR summary with AI",
+  "extension.contributes.commands.dish-ai-commit.syncModelCatalog.title": "[Dish] Sync Model Catalog",
+  "extension.contributes.commands.dish-ai-commit.syncModelCatalog.category": "[Dish AI Commit]",
+  "extension.contributes.commands.dish-ai-commit.syncModelCatalog.description": "Sync model catalog from third-party sources",
 
   "extension.contributes.configuration.title": "Dish AI Commit",
   "extension.contributes.configuration.properties.dish-ai-commit.base.language.description": "Commit message language",

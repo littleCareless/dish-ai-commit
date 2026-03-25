@@ -72,6 +72,9 @@ export interface BlockProcessingResult {
 export interface HunkInfo {
   content: string;
   tokens: number;
+  filePath?: string;
+  order?: number;
+  semanticScore?: number;
 }
 
 /**

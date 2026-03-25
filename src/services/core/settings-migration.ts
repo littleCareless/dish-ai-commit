@@ -253,6 +253,22 @@ export class SettingsMigration {
         "features.commitMessage.useRecentCommitsAsReference",
         false
       ),
+      enableThirdPartyModelCatalog: config.get(
+        "features.commitMessage.enableThirdPartyModelCatalog",
+        true
+      ),
+      enableAdaptiveInputLimitLearning: config.get(
+        "features.commitMessage.enableAdaptiveInputLimitLearning",
+        true
+      ),
+      diffTruncationStrategy: config.get(
+        "features.commitMessage.diffTruncationStrategy",
+        "semantic"
+      ) as "semantic" | "direct",
+      maxInputTokensPerRequest: config.get(
+        "features.commitMessage.maxInputTokensPerRequest",
+        0
+      ),
       simplifyDiff: config.get("features.codeAnalysis.simplifyDiff", false),
       autoDetectStaged: config.get(
         "features.codeAnalysis.autoDetectStaged",

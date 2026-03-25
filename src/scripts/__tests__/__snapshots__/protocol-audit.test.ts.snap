@@ -1,0 +1,40 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`protocol-audit > formats markdown output 1`] = `
+"# Message Protocol Audit Report
+
+Summary: ERROR 3 | WARN 1 | INFO 2 | TOTAL 6
+
+Scanned: 2 files, skipped: 0
+Usage points: ui-send 3, ui-receive 3, extension-send 1, extension-receive 2
+
+## Findings
+
+- [ERROR] missing-extension-receiver \`feature.b\` (<ROOT>/webview-ui/src/page.tsx:6)
+  - Reason: UI sends this UIRequest command, but extension side does not receive it.
+  - Suggestion: Add extension handler route for this UIRequest or stop sending this command.
+- [ERROR] missing-extension-sender \`feature.y\` (<ROOT>/webview-ui/src/page.tsx:13)
+  - Reason: UI expects this ExtensionResponse command, but extension side does not send it.
+  - Suggestion: Emit this ExtensionResponse in extension flow or remove stale UI receiver.
+- [ERROR] unknown-string-command \`unknownRecv\` (<ROOT>/webview-ui/src/page.tsx:16)
+  - Reason: String command is not declared in UIRequest/ExtensionResponse and is not allowlisted.
+  - Suggestion: Use shared enum command or add a time-bounded allowlist entry with migration owner.
+- [WARN] unused-ui-request \`feature.c\` (<ROOT>/shared/types/messages.ts:5)
+  - Reason: UIRequest enum command is declared but never sent by UI.
+  - Suggestion: Remove dead enum entry or implement the corresponding UI sender.
+- [INFO] legacy-allowlisted-command \`legacyCommand\` (<ROOT>/src/services/webview/handler.ts:8)
+  - Reason: Legacy command is allowlisted via legacyCommands.
+  - Suggestion: Replace with UIRequest/ExtensionResponse enum command and remove allowlist entry when migration finishes.
+- [INFO] legacy-allowlisted-command \`legacyCommand\` (<ROOT>/webview-ui/src/page.tsx:7)
+  - Reason: Legacy command is allowlisted via legacyCommands.
+  - Suggestion: Replace with UIRequest/ExtensionResponse enum command and remove allowlist entry when migration finishes.
+
+## Uncovered
+
+- declaredOnly.uiRequests: 1
+- declaredOnly.extensionResponses: 2
+- sentOnly.uiRequests: 1
+- sentOnly.extensionResponses: 0
+- receivedOnly.uiRequests: 0
+- receivedOnly.extensionResponses: 1"
+`;

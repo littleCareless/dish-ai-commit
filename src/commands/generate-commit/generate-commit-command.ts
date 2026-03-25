@@ -1,292 +1,197 @@
 import { BaseCommand } from "@/commands/base-command";
 import { CrossRepositoryHandler } from "@/commands/generate-commit/handlers/cross-repository-handler";
+import { CommitGenerationOrchestrator } from "@/commands/generate-commit/services/commit-generation-orchestrator";
+import {
+  CrossRepositoryResult,
+  GenerationNotification,
+  GenerationResult,
+  GenerationSession,
+  GenerationTargetContext,
+} from "@/commands/generate-commit/types";
+import { normalizeGenerateCommitInput } from "@/commands/generate-commit/utils/input-normalizer";
 import { StreamingGenerationHelper } from "@/commands/generate-commit/utils/streaming-generation-helper";
-import { SCMFactory } from "@/scm/scm-provider";
-import { formatMessage, getMessage } from "@/utils/i18n";
+import { formatMessage } from "@/utils/i18n";
 import { notify } from "@/utils/notification/notification-manager";
 import { ProgressHandler } from "@/utils/notification/progress-handler";
+import { showCommitSuccessNotification } from "@/utils/notification/system-notification";
+import * as path from "path";
 import * as vscode from "vscode";
 
 /**
- * 提交信息生成命令类 - 遵循单一职责原则的简洁版本
- * 只负责命令入口和基本验证，具体执行委托给编排器
+ * 提交信息生成命令类
+ * 仅负责：参数归一化、编排器调度、统一错误出口
  */
 export class GenerateCommitCommand extends BaseCommand {
   private crossRepoHandler: CrossRepositoryHandler;
   private streamingHelper: StreamingGenerationHelper;
+  private orchestrator: CommitGenerationOrchestrator;
 
-  /**
-   * 创建命令实例
-   * @param context - VSCode扩展上下文
-   */
   constructor(context: vscode.ExtensionContext) {
     super(context);
     this.crossRepoHandler = new CrossRepositoryHandler(this.logger);
     this.streamingHelper = new StreamingGenerationHelper(this.logger);
+    this.orchestrator = new CommitGenerationOrchestrator({
+      prepare: (arg, options) => this.prepare(arg, options),
+      logger: this.logger,
+    });
   }
 
-  /**
-   * 执行提交信息生成命令 - 遵循单一职责原则的简洁版本
-   * @param arg - 参数可以是:
-   *   - vscode.SourceControlResourceState[]: 来自scm/resourceState/context或scm/resourceFolder/context
-   *   - sourceControl对象: 来自scm/title,包含{id, rootUri, ...}
-   *   - undefined: 无参数情况
-   */
-  async execute(arg?: any): Promise<void> {
+  async execute(...rawArgs: any[]): Promise<void> {
     this.logger.info("Executing GenerateCommitCommand...");
+    const normalizedInput = normalizeGenerateCommitInput(rawArgs);
 
-    // 使用 prepare 方法进行前置检查
-    // 注意：GenerateCommitCommand 的参数 arg 比较特殊，可能是 resourceStates 数组，也可能是 sourceControl 对象
-    // prepare 方法已经处理了这两种情况
-    const context = await this.prepare(arg, {
-      requireSelectedFiles: false, // 提交生成不一定强制需要选中的文件（比如可能是全部更改）
-      validateModel: true,
-    });
-
-    if (!context) {
-      return;
-    }
-
-    const { provider, model, providerConfig, aiProvider, selectedModel } = context;
-    this.logger.info(`Using AI provider: ${provider}, model: ${model}`);
-
-    // 步骤3: 处理具体执行逻辑
     try {
-      await this.executeCommitGeneration(arg, provider, model, providerConfig, aiProvider, selectedModel);
+      const session = await this.orchestrator.createSession(normalizedInput);
+      if (!session) {
+        return;
+      }
+
+      this.logger.info(
+        `[Chain] [CommitGeneration] START - requestId=${session.requestId}, mode=${session.scmContext.mode}`,
+      );
+
+      if (session.scmContext.mode === "cross") {
+        await this.executeCrossRepositorySession(session);
+        return;
+      }
+
+      await this.executeSingleRepositorySession(session);
     } catch (error) {
       this.logger.logError(error as Error, "生成提交信息失败");
       if (error instanceof Error) {
-        notify.error("generate.commit.failed", [error.message]);
+        await notify.error("generate.commit.failed", [error.message]);
       }
     }
   }
 
-  /**
-   * 执行提交生成的主要逻辑 - 遵循单一职责原则
-   */
-  private async executeCommitGeneration(
-    arg: any,
-    provider: string,
-    model: string,
-    providerConfig: any,
-    aiProvider?: any,
-    selectedModel?: any
+  private async executeSingleRepositorySession(
+    session: GenerationSession,
   ): Promise<void> {
-    // 解析参数
-    const parsedArgs = this.parseArguments(arg);
-
-    // 检测是否为跨仓库场景
-    if (parsedArgs.isCrossRepository) {
-      await this.handleCrossRepositoryScenario(
-        parsedArgs.filesByRepository,
-        provider,
-        model,
-        providerConfig,
-        aiProvider,
-        selectedModel
-      );
+    if (session.scmContext.mode !== "single") {
       return;
     }
 
-    // 处理单仓库场景
-    await this.handleSingleRepositoryScenario(
-      parsedArgs,
-      provider,
-      model,
-      providerConfig,
-      aiProvider,
-      selectedModel
-    );
-  }
-
-  /**
-   * 解析参数 - 遵循单一职责原则
-   */
-  private parseArguments(arg: any): {
-    resourceStates?: vscode.SourceControlResourceState[];
-    repositoryPath?: string;
-    scmType?: "git" | "svn";
-    filesByRepository?: Map<string, string[]>;
-    isCrossRepository: boolean;
-  } {
-    let resourceStates: vscode.SourceControlResourceState[] | undefined;
-    let repositoryPath: string | undefined;
-    let scmType: "git" | "svn" | undefined;
-    let filesByRepository: Map<string, string[]> | undefined;
-    let isCrossRepository = false;
-
-    if (Array.isArray(arg)) {
-      resourceStates = arg;
-      this.logger.info(
-        `Received resourceStates array with ${arg.length} items`
-      );
-    } else if (arg?.rootUri) {
-      repositoryPath = arg.rootUri.fsPath;
-      scmType = arg.id;
-      this.logger.info(
-        `Received sourceControl object: ${scmType} at ${repositoryPath}`
-      );
-    } else {
-      this.logger.info("No valid arguments provided, will use fallback logic");
-    }
-
-    // 检查跨仓库场景
-    if (resourceStates && resourceStates.length > 0) {
-      // 这里需要异步处理，但我们先简化处理
-      // 实际实现中需要await multiRepositoryContextManager.groupFilesByRepository(resourceStates)
-      isCrossRepository = false;
-    }
-
-    return {
-      resourceStates,
-      repositoryPath,
-      scmType,
-      filesByRepository,
-      isCrossRepository,
-    };
-  }
-
-  /**
-   * 处理跨仓库场景 - 遵循单一职责原则
-   * 注意：跨仓库场景下，每个仓库需要独立的 Provider 实例，因此不传递 aiProvider
-   */
-  private async handleCrossRepositoryScenario(
-    filesByRepository: Map<string, string[]> | undefined,
-    provider: string,
-    model: string,
-    providerConfig: any,
-    aiProvider?: any,
-    selectedModel?: any
-  ): Promise<void> {
-    if (!filesByRepository) {
-      this.logger.warn(
-        "No files by repository provided for cross-repository scenario"
-      );
+    const target = session.scmContext.target;
+    if (!target.scmProvider) {
+      await notify.error("scm.not.detected");
       return;
     }
 
-    // 跨仓库场景：每个仓库独立创建 Provider，不传递 aiProvider/selectedModel
-    this.logger.info(
-      `[Chain] [CrossRepo] Starting cross-repository generation for ${filesByRepository.size} repositories`
-    );
+    const title = formatMessage("progress.generating.commit", [
+      target.scmProvider.type.toUpperCase(),
+    ]);
 
-    await this.crossRepoHandler.handle(
-      filesByRepository,
-      provider,
-      model,
-      (
-        progress,
-        token,
-        provider,
-        model,
-        scmProvider,
-        selectedFiles,
-        resources,
-        repoPath,
-        providerConfig,
-        aiProvider,
-        selectedModel
-      ) =>
+    const result = await ProgressHandler.withProgress(
+      title,
+      async (progress, token) =>
         this.streamingHelper.performStreamingGeneration(
           progress,
           token,
-          provider,
-          model,
-          scmProvider,
-          selectedFiles,
-          resources,
-          repoPath,
-          providerConfig,
-          undefined,  // 跨仓库场景：每个仓库独立创建
-          undefined   // 跨仓库场景：每个仓库独立创建
-        )
+          session,
+          target,
+        ),
     );
+
+    await this.handleSingleRepositoryResult(result);
   }
 
-  /**
-   * 处理单仓库场景 - 遵循单一职责原则
-   */
-  private async handleSingleRepositoryScenario(
-    parsedArgs: any,
-    provider: string,
-    model: string,
-    providerConfig: any,
-    aiProvider?: any,
-    selectedModel?: any
+  private async handleSingleRepositoryResult(
+    result: GenerationResult,
   ): Promise<void> {
-    let result: any;
-
-    if (parsedArgs.repositoryPath && parsedArgs.scmType) {
-      // 直接使用已知的仓库信息
-      result = await this.createSCMProviderFromKnownRepo(
-        parsedArgs.repositoryPath
-      );
-    } else {
-      // 通过resourceStates检测
-      result = await this.detectSCMProvider(parsedArgs.resourceStates);
-    }
-
-    if (!result) {
-      this.logger.warn("SCM provider not detected.");
+    if (result.status === "success" && result.applied) {
+      if (result.notification) {
+        await this.dispatchGenerationNotification(result.notification);
+      }
+      showCommitSuccessNotification();
       return;
     }
 
-    const {
-      scmProvider,
-      selectedFiles,
-      repositoryPath: finalRepoPath,
-    } = result;
-    console.log("finalRepoPath", finalRepoPath);
-
-    if (!finalRepoPath) {
-      await notify.warn(
-        formatMessage("scm.repository.not.found", [
-          scmProvider.type.toUpperCase(),
-        ])
-      );
+    if (result.status === "cancelled" || result.status === "too_large") {
       return;
     }
 
-    this.logger.info(`Working with repository: ${finalRepoPath}`);
+    if (result.status === "failed") {
+      if (result.notification) {
+        await this.dispatchGenerationNotification(result.notification);
+        return;
+      }
 
-    await ProgressHandler.withProgress(
-      formatMessage("progress.generating.commit", [
-        scmProvider.type.toLocaleUpperCase(),
-      ]),
-      async (progress, token) => {
-        await this.streamingHelper.performStreamingGeneration(
+      await notify.error("generate.commit.failed", [
+        result.error || "Unknown generation error.",
+      ]);
+    }
+  }
+
+  private async dispatchGenerationNotification(
+    notification: GenerationNotification,
+  ): Promise<void> {
+    const args = notification.args as any[] | undefined;
+    if (notification.level === "info") {
+      await notify.info(notification.key, args);
+      return;
+    }
+
+    if (notification.level === "warn") {
+      await notify.warn(notification.key, args);
+      return;
+    }
+
+    await notify.error(notification.key, args);
+  }
+
+  private async executeCrossRepositorySession(
+    session: GenerationSession,
+  ): Promise<void> {
+    if (session.scmContext.mode !== "cross") {
+      return;
+    }
+
+    const result = await this.crossRepoHandler.handle(
+      session,
+      (
+        progress,
+        token,
+        target: GenerationTargetContext,
+      ): Promise<GenerationResult> =>
+        this.streamingHelper.performStreamingGeneration(
           progress,
           token,
-          provider,
-          model,
-          scmProvider,
-          selectedFiles,
-          parsedArgs.resourceStates || [],
-          finalRepoPath,
-          providerConfig,
-          aiProvider,
-          selectedModel
-        );
-      }
+          session,
+          target,
+          { suppressSuccessNotification: true },
+        ),
     );
+
+    await this.notifyCrossRepositorySummary(result);
   }
 
-  /**
-   * 从已知仓库信息创建SCM提供器 - 遵循单一职责原则
-   */
-  private async createSCMProviderFromKnownRepo(
-    repositoryPath: string
-  ): Promise<any> {
-    const scmProvider = await SCMFactory.detectSCM(undefined, repositoryPath);
-    if (!scmProvider) {
-      await notify.error(getMessage("scm.not.detected"));
-      return null;
+  private async notifyCrossRepositorySummary(
+    result: CrossRepositoryResult,
+  ): Promise<void> {
+    const nonSuccessCount = Math.max(result.total - result.successCount, 0);
+
+    if (nonSuccessCount === 0) {
+      await notify.info("generate.commit.cross.repository.success", [
+        result.successCount,
+      ]);
+      return;
     }
 
-    return {
-      scmProvider,
-      selectedFiles: undefined,
-      repositoryPath,
-    };
+    await notify.warn("generate.commit.cross.repository.partial", [
+      result.successCount,
+      nonSuccessCount,
+    ]);
+
+    const failedRepoNames = result.results
+      .filter((item) => item.status !== "success")
+      .map((item) => path.basename(item.repoPath))
+      .slice(0, 5)
+      .join(", ");
+
+    if (failedRepoNames) {
+      await notify.warn("generate.commit.cross.repository.failed.list", [
+        failedRepoNames,
+      ]);
+    }
   }
 }

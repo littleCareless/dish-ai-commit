@@ -269,11 +269,11 @@ export abstract class AbstractAIProvider implements AIProvider {
             params,
           );
         } catch (e) {
-          if (Logger.isDevelopment()) {
-            console.warn("Failed to record token usage for stream:", e);
-          }
           self.logger.warn("Failed to record token usage for stream", {
             error: e as Error,
+            data: {
+              development: Logger.isDevelopment(),
+            },
           });
         }
       }
@@ -395,6 +395,10 @@ export abstract class AbstractAIProvider implements AIProvider {
         "Failed to generate commit message with function calling.",
       );
     } catch (error) {
+      if (error instanceof ContextLengthExceededError) {
+        // 保留错误类型，交给上层 ContextManager 执行同构重试/截断逻辑。
+        throw error;
+      }
       this.logger.logError(
         error as Error,
         formatMessage("generation.failed", [
@@ -606,17 +610,27 @@ export abstract class AbstractAIProvider implements AIProvider {
       const result = await this.advancedRuntime.executeWithControls(
         this.getId(),
         () =>
-          this.executeAIRequest(
+          generateWithRetry(
+            params,
+            async (truncatedContent: string) =>
+              this.executeAIRequest(
+                {
+                  ...params,
+                  messages: [
+                    { role: "system", content: finalSystemPrompt },
+                    { role: "user", content: truncatedContent },
+                  ],
+                },
+                {
+                  temperature: preferences.weeklyReportTemperature,
+                  maxTokens,
+                },
+              ),
             {
-              ...params,
-              messages: [
-                { role: "system", content: finalSystemPrompt },
-                { role: "user", content: userContent },
-              ],
-            },
-            {
-              temperature: preferences.weeklyReportTemperature,
-              maxTokens,
+              initialMaxLength: Math.max(1, userContent.length),
+              provider: this.getId(),
+              maxRetries: 2,
+              reductionFactor: 0.7,
             },
           ),
         runtimeSettings,
@@ -834,12 +848,12 @@ export abstract class AbstractAIProvider implements AIProvider {
         "unknown-model";
       const feature = params.feature || "unknown";
 
-      console.log(
-        `[AbstractAIProvider] Recording token usage for ${this.getId()}:`,
+      this.logger.debug(
+        `[AbstractAIProvider] Recording token usage for provider=${this.getId()} model=${model} feature=${feature}`,
         {
-          tokens: result.usage.totalTokens,
-          model,
-          feature,
+          data: {
+            totalTokens: result.usage.totalTokens,
+          },
         },
       );
 
@@ -892,10 +906,9 @@ export abstract class AbstractAIProvider implements AIProvider {
         promptSource,
       };
     } catch (error) {
-      console.warn(
-        "[AbstractAIProvider] Failed to get prompt log info:",
-        error,
-      );
+      this.logger.warn("[AbstractAIProvider] Failed to get prompt log info", {
+        error: error as Error,
+      });
       return null;
     }
   }
@@ -1060,7 +1073,7 @@ export abstract class AbstractAIProvider implements AIProvider {
     const model = params.model || this.getDefaultModel();
 
     if (!params.messages || params.messages.length === 0) {
-      console.warn(
+      this.logger.warn(
         `countTokens called with no messages for ${this.getName()}.`,
       );
       return { totalTokens: 0 };

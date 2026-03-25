@@ -45,11 +45,6 @@ export class DeepseekAIProvider extends BaseOpenAIProvider {
     // 调试日志
     if (process.env.NODE_ENV === "development" || !apiKey) {
       logConfigParsing(config, "deepseek", { apiKey, apiVersion });
-      if (!apiKey) {
-        console.log("[DeepseekAIProvider] No API key found, likely called for metadata", {
-          stack: new Error().stack?.split("\n").slice(1, 3).join("\n"),
-        });
-      }
     }
 
     super({
@@ -80,7 +75,12 @@ export class DeepseekAIProvider extends BaseOpenAIProvider {
       );
       return true;
     } catch (error) {
-      console.error(`[DeepseekAIProvider] Availability check failed:`, error);
+      this.logger.error("[DeepseekAIProvider] Availability check failed", {
+        error: error as Error,
+        data: {
+          providerId: this.getId(),
+        },
+      });
       return false;
     }
   }
@@ -92,8 +92,15 @@ export class DeepseekAIProvider extends BaseOpenAIProvider {
   protected handleApiError(error: any): void {
     if (error.status) {
       const errorMessage = this.mapHttpStatusToMessage(error.status);
-      console.error(
-        `[DeepseekAIProvider] HTTP Error: ${errorMessage} (Status: ${error.status})`
+      this.logger.error(
+        `[DeepseekAIProvider] HTTP Error: ${errorMessage} (Status: ${error.status})`,
+        {
+          error: error as Error,
+          data: {
+            providerId: this.getId(),
+            status: error.status,
+          },
+        },
       );
       throw new Error(errorMessage);
     }

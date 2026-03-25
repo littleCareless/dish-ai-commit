@@ -82,7 +82,11 @@ export class AdvancedSettingsRuntime {
         return result;
       } catch (error) {
         lastError = error;
+        const errorSummary = this.getErrorSummary(error);
         const failures = this.incrementFailures(providerId);
+        this.logger.warn(
+          `AI request failed (provider: ${providerId}, attempt: ${attempt}/${attempts}, consecutive failures: ${failures}). Last error: ${errorSummary}`,
+        );
 
         if (
           runtime.consecutiveMistakeLimit > 0 &&
@@ -92,7 +96,7 @@ export class AdvancedSettingsRuntime {
             `Provider ${providerId} reached consecutive failure limit (${runtime.consecutiveMistakeLimit}).`,
           );
           throw new Error(
-            `AI调用连续失败 ${failures} 次，已达到上限（${runtime.consecutiveMistakeLimit}）。请检查网络或提供商设置。`,
+            `AI调用连续失败 ${failures} 次，已达到上限（${runtime.consecutiveMistakeLimit}）。最近一次错误：${errorSummary}。请检查网络或提供商设置。`,
           );
         }
 
@@ -141,6 +145,28 @@ export class AdvancedSettingsRuntime {
 
   private delay(ms: number): Promise<void> {
     return new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private getErrorSummary(error: unknown): string {
+    let message = "";
+    if (error instanceof Error) {
+      message = error.message || error.name;
+    } else {
+      try {
+        message = JSON.stringify(error);
+      } catch {
+        message = String(error);
+      }
+    }
+
+    if (!message || message.trim().length === 0) {
+      return "unknown error";
+    }
+
+    const normalized = message.replace(/\s+/g, " ").trim();
+    return normalized.length > 300
+      ? `${normalized.slice(0, 297)}...`
+      : normalized;
   }
 
   private applyVerbosity(level: number): void {

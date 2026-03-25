@@ -40,11 +40,15 @@ export const KeyValueField: React.FC<KeyValueFieldProps> = ({
       value && typeof value === "object" && !Array.isArray(value)
         ? Object.entries(value as Record<string, string>)
         : [];
-    // Avoid unnecessary re-renders if the value hasn't changed
-    if (JSON.stringify(newHeaders) !== JSON.stringify(localHeaders)) {
-      setLocalHeaders(newHeaders);
-    }
-  }, [value, localHeaders]);
+    // Avoid synchronous setState directly inside effects.
+    queueMicrotask(() => {
+      setLocalHeaders((prevHeaders) =>
+        JSON.stringify(newHeaders) === JSON.stringify(prevHeaders)
+          ? prevHeaders
+          : newHeaders,
+      );
+    });
+  }, [value]);
 
   const handleAddRow = () => {
     const newHeaders = [...localHeaders, ["", ""] as [string, string]];

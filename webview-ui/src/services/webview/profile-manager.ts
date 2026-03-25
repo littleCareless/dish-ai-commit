@@ -29,10 +29,14 @@ const commandToResponse: Record<string, ExtensionResponse> = {
 function invoke<T>(
   command: string,
   data?: Record<string, unknown>,
+  options?: {
+    timeoutMs?: number;
+  },
 ): Promise<T> {
   return new Promise((resolve, reject) => {
     const requestId = uuidv4();
     const expectedResponse = commandToResponse[command];
+    const timeoutMs = options?.timeoutMs ?? 15000;
 
     if (!expectedResponse) {
       reject(new Error(`No response mapping found for command: ${command}`));
@@ -60,7 +64,7 @@ function invoke<T>(
     setTimeout(() => {
       window.removeEventListener("message", handleResponse);
       reject(new Error(`Request for command '${command}' timed out.`));
-    }, 15000); // 15-second timeout
+    }, timeoutMs);
 
     postMessage(command, { ...data, requestId });
   });
@@ -79,60 +83,52 @@ export class ProfileManager {
     activeProfileId: string;
   }> {
     return invoke<{ profiles: Profile[]; activeProfileId: string }>(
-      "profile.loadAll",
+      UIRequest.ProfileLoadAll,
     );
   }
 
   async saveProfile(profile: Profile): Promise<void> {
-    return invoke<void>("profile.save", { profile });
+    return invoke<void>(UIRequest.ProfileSave, { profile });
   }
 
   async deleteProfile(profileId: string): Promise<void> {
-    return invoke<void>("profile.delete", { profileId });
+    return invoke<void>(UIRequest.ProfileDelete, { profileId });
   }
 
   async setActiveProfile(profileId: string): Promise<void> {
-    return invoke<void>("profile.setActive", { profileId });
+    return invoke<void>(UIRequest.ProfileSetActive, { profileId });
   }
 
   async getAllProviders(): Promise<ProviderConfig[]> {
-    return invoke<ProviderConfig[]>("profile.getAllProviders");
+    return invoke<ProviderConfig[]>(UIRequest.ProfileGetAllProviders);
   }
 
   async exportProfile(profileId: string): Promise<void> {
-    // This is a fire-and-forget command that triggers a VS Code dialog
-    postMessage("profile.export", { profileId });
+    await invoke<{ success: boolean; canceled?: boolean }>(
+      UIRequest.ProfileExport,
+      { profileId },
+      { timeoutMs: 300000 },
+    );
   }
 
-  async importProfile(): Promise<Profile> {
-    // This triggers a dialog and the result is pushed from the extension
-    // The UI should listen for a "profileImported" message
-    return new Promise((resolve, reject) => {
-      const handleResponse = (event: MessageEvent) => {
-        const message = event.data as {
-          command: string;
-          data: { profile: Profile; success: boolean; error?: string };
-        };
-        if (message.command === "profileImported") {
-          window.removeEventListener("message", handleResponse);
-          if (message.data.success) {
-            resolve(message.data.profile);
-          } else {
-            reject(new Error(message.data.error));
-          }
-        }
-      };
-      window.addEventListener("message", handleResponse);
-      postMessage("profile.import");
-    });
+  async importProfile(): Promise<void> {
+    const result = await invoke<{
+      success: boolean;
+      canceled?: boolean;
+      error?: string;
+    }>(UIRequest.ProfileImport, undefined, { timeoutMs: 300000 });
+
+    if (result && result.success === false && !result.canceled) {
+      throw new Error(result.error || "Import profile failed");
+    }
   }
 
   async migrateSettings(): Promise<Profile | null> {
-    return invoke<Profile | null>("profile.migrateSettings");
+    return invoke<Profile | null>(UIRequest.ProfileMigrateSettings);
   }
 
   async resetToDefaults(): Promise<void> {
-    return invoke<void>("profile.resetDefaults");
+    return invoke<void>(UIRequest.ProfileResetDefaults);
   }
 
   // Utility methods can remain if they are pure functions

@@ -23,6 +23,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const editingProfileId = editingProfile?.id ?? null;
 
   const activeProfile =
     availableProfiles.find((p) => p.id === activeProfileId) || null;
@@ -45,7 +46,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
 
       // 如果当前没有正在编辑的配置，或正在编辑的配置已被删除，则重置为新的活跃配置
       const editingProfileStillExists = data.profiles.some(
-        (p) => p.id === editingProfile?.id,
+        (p) => p.id === editingProfileId,
       );
 
       if (!editingProfileStillExists) {
@@ -58,7 +59,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
         setHasUnsavedChanges(false);
       }
     },
-    [editingProfile?.id],
+    [editingProfileId],
   );
 
   // 加载初始数据
@@ -82,26 +83,12 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
     }
   }, [handleProfilesUpdate]);
 
-  // 监听来自 VS Code 扩展的消息
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      const message = event.data;
-      if (message.command === "profilesUpdated") {
-        handleProfilesUpdate(
-          message.payload as { profiles: Profile[]; activeProfileId: string },
-        );
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
-    return () => {
-      window.removeEventListener("message", handleMessage);
-    };
-  }, [handleProfilesUpdate]);
-
   // 组件挂载时加载数据
   useEffect(() => {
-    loadData();
+    const timer = setTimeout(() => {
+      void loadData();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [loadData]);
 
   // ==================== 操作方法 ====================
@@ -117,7 +104,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
           prev.map((p) => (p.id === profile.id ? { ...profile } : p)),
         );
 
-        if (profile.id === editingProfile?.id) {
+        if (profile.id === editingProfileId) {
           setEditingProfileState({ ...profile });
           setHasUnsavedChanges(false);
         }
@@ -131,7 +118,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
         throw err;
       }
     },
-    [editingProfile?.id],
+    [editingProfileId],
   );
 
   const activateProfile = useCallback(
@@ -156,7 +143,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
         }
 
         await profileManager.setActiveProfile(profileId);
-        // 状态更新将由 'profilesUpdated' 消息触发
+        await loadData();
         console.log(
           "[SettingsContext] Profile activation requested:",
           profileId,
@@ -169,7 +156,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
         throw err;
       }
     },
-    [availableProfiles, editingProfile, hasUnsavedChanges],
+    [availableProfiles, editingProfile, hasUnsavedChanges, loadData],
   );
 
   const setEditingProfile = useCallback(
@@ -208,7 +195,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
           description,
         );
         await profileManager.saveProfile(newProfile);
-        // 状态更新将由 'profilesUpdated' 消息触发
+        await loadData();
         console.log(
           "[SettingsContext] Profile creation requested:",
           newProfile.id,
@@ -222,7 +209,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
         throw err;
       }
     },
-    [],
+    [loadData],
   );
 
   const deleteProfile = useCallback(
@@ -236,7 +223,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
           throw new Error("Cannot delete active profile");
         }
         await profileManager.deleteProfile(profileId);
-        // 状态更新将由 'profilesUpdated' 消息触发
+        await loadData();
         console.log("[SettingsContext] Profile deletion requested:", profileId);
       } catch (err) {
         const errorMsg =
@@ -246,7 +233,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
         throw err;
       }
     },
-    [availableProfiles, activeProfileId],
+    [availableProfiles, activeProfileId, loadData],
   );
 
   const updatePreferencesHandler = useCallback(

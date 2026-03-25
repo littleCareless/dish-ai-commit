@@ -15,6 +15,10 @@ export interface FeaturesSettings {
   enableLayeredCommit: boolean;
   enableGlobalContext: boolean;
   useRecentCommitsAsReference: boolean;
+  enableThirdPartyModelCatalog: boolean;
+  enableAdaptiveInputLimitLearning: boolean;
+  diffTruncationStrategy: "semantic" | "direct";
+  maxInputTokensPerRequest: number;
 
   // Code Analysis
   simplifyDiff: boolean;
@@ -41,6 +45,10 @@ const DEFAULT_FEATURE_SETTINGS: FeaturesSettings = {
   enableLayeredCommit: false,
   enableGlobalContext: true,
   useRecentCommitsAsReference: false,
+  enableThirdPartyModelCatalog: true,
+  enableAdaptiveInputLimitLearning: true,
+  diffTruncationStrategy: "semantic",
+  maxInputTokensPerRequest: 0,
   simplifyDiff: false,
   autoDetectStaged: true,
   fallbackToAll: true,

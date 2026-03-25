@@ -10,6 +10,7 @@ import { ContextPage } from "@/pages/context-page";
 import { ExperimentalPage } from "@/pages/experimental-page";
 import { IndexingPage } from "@/pages/indexing-page";
 import MigrationPage from "@/pages/migration-page";
+import { ModelRegistryPage } from "@/pages/model-registry-page";
 import { NotificationsPage } from "@/pages/notifications-page";
 import { PromptsPage } from "@/pages/prompts-page";
 import { SettingsPage } from "@/pages/settings/SettingsPage";
@@ -86,6 +87,12 @@ export const AppRouter: React.FC = () => {
 
                     {/* 提示词页面 */}
                     <Route path={routes.prompts} element={<PromptsPage />} />
+
+                    {/* 模型目录页面 */}
+                    <Route
+                      path={routes.modelRegistry}
+                      element={<ModelRegistryPage />}
+                    />
 
                     {/* Commit Chat 页面 */}
                     <Route

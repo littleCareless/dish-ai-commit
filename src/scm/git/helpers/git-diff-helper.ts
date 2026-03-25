@@ -154,6 +154,10 @@ export class GitDiffHelper {
         throw new Error(formatMessage("scm.repository.not.found", ["Git"]));
       }
       const currentWorkspaceRoot = repository.rootUri.fsPath;
+      const diffTarget = await this.resolveDiffTarget(
+        target,
+        currentWorkspaceRoot,
+      );
 
       let diffOutput = "";
 
@@ -174,6 +178,14 @@ export class GitDiffHelper {
         for (const file of files) {
           // 构建完整文件路径
           const fullFilePath = path.join(currentWorkspaceRoot, file);
+          const escapedFile = ImprovedPathUtils.escapeShellPath(file);
+
+          if (
+            diffTarget === "staged" &&
+            !(await this.hasStagedChangeForFile(escapedFile, currentWorkspaceRoot))
+          ) {
+            continue;
+          }
 
           // 检查是否应该跳过 diff 生成
           if (
@@ -196,118 +208,21 @@ export class GitDiffHelper {
             file,
             currentWorkspaceRoot
           );
-          const escapedFile = ImprovedPathUtils.escapeShellPath(file);
-
-          // 根据文件状态选择合适的diff命令
-          let stdout = "";
-
-          if (fileStatus === "Renamed File") {
-            this.logger.info(`[DEBUG] Processing rename file: ${file}`);
-            // ===== 新增：处理 rename 文件 =====
-            // 对于 rename，不能指定文件名，需要从完整 diff 中提取
-            const { stdout: fullDiff } = await exec(`git diff --cached`, {
-              ...ImprovedPathUtils.createExecOptions(currentWorkspaceRoot),
-              encoding: "utf8",
-            });
-
-            this.logger.info(
-              `[DEBUG] Full diff length: ${fullDiff.toString().length}`
-            );
-
-            // 从完整 diff 中提取这个文件的 rename 信息
-            stdout = this.extractRenameDiffForFile(
-              fullDiff.toString(),
-              file,
-              currentWorkspaceRoot
-            );
-
-            this.logger.info(`[DEBUG] Extracted diff length: ${stdout.length}`);
-            this.logger.info(`[DEBUG] Extracted diff content: ${stdout}`);
-
-            // 如果提取成功，添加特殊标记
-            if (stdout) {
-              // 解析出原文件名和新文件名
-              const renameInfo = this.parseRenameInfo(stdout, file);
-              if (renameInfo) {
-                this.logger.info(
-                  `[DEBUG] Parsed rename info: ${renameInfo.oldPath} -> ${renameInfo.newPath}`
+          const stdout =
+            diffTarget === "staged"
+              ? await this.getStagedFileDiff(
+                  file,
+                  fileStatus,
+                  escapedFile,
+                  currentWorkspaceRoot,
+                )
+              : await this.getAllFileDiff(
+                  file,
+                  fileStatus,
+                  escapedFile,
+                  currentWorkspaceRoot,
+                  hasInitialCommit,
                 );
-                diffOutput += `\n### RENAME OPERATION ###\n`;
-                diffOutput += `# File renamed from: ${renameInfo.oldPath}\n`;
-                diffOutput += `# File renamed to: ${renameInfo.newPath}\n`;
-                diffOutput += `${stdout}`;
-                diffOutput += `\n### END RENAME ###\n`;
-                continue; // 跳过后续处理
-              } else {
-                this.logger.warn(
-                  `[DEBUG] Failed to parse rename info for file: ${file}`
-                );
-              }
-            } else {
-              this.logger.warn(
-                `[DEBUG] Failed to extract rename diff for file: ${file}`
-              );
-            }
-          } else if (fileStatus === "New File") {
-            // 处理未跟踪的新文件
-            try {
-              const result = await exec(
-                `git diff --no-index /dev/null ${escapedFile}`,
-                {
-                  ...ImprovedPathUtils.createExecOptions(currentWorkspaceRoot),
-                  encoding: "utf8",
-                }
-              );
-              stdout = result.stdout.toString();
-            } catch (error) {
-              // git diff --no-index 在有差异时会返回非零状态码，需要捕获异常
-              if (error instanceof Error && "stdout" in error) {
-                stdout = (error as any).stdout;
-              }
-            }
-          } else if (fileStatus === "Added File") {
-            // 处理已暂存的新文件
-            const result = await exec(`git diff --cached -- ${escapedFile}`, {
-              ...ImprovedPathUtils.createExecOptions(currentWorkspaceRoot),
-              encoding: "utf8",
-            });
-            stdout = result.stdout.toString();
-          } else {
-            // 处理已跟踪且修改的文件
-            try {
-              // 尝试使用 HEAD 引用
-              if (hasInitialCommit) {
-                const result = await exec(`git diff HEAD -- ${escapedFile}`, {
-                  cwd: currentWorkspaceRoot,
-                  maxBuffer: 1024 * 1024 * 10,
-                });
-                stdout = result.stdout.toString();
-              } else {
-                // 如果没有初始提交，则使用不带HEAD的diff命令
-                const result = await exec(`git diff -- ${escapedFile}`, {
-                  cwd: currentWorkspaceRoot,
-                  maxBuffer: 1024 * 1024 * 10,
-                  encoding: "utf8",
-                });
-                stdout = result.stdout.toString();
-              }
-            } catch (error) {
-              // 如果出现"bad revision 'HEAD'"错误，回退到不带HEAD的diff命令
-              if (
-                error instanceof Error &&
-                error.message.includes("bad revision 'HEAD'")
-              ) {
-                const result = await exec(`git diff -- ${escapedFile}`, {
-                  cwd: currentWorkspaceRoot,
-                  maxBuffer: 1024 * 1024 * 10,
-                  encoding: "utf8",
-                });
-                stdout = result.stdout.toString();
-              } else {
-                throw error;
-              }
-            }
-          }
 
           // 添加文件状态和差异信息
           if (stdout?.trim()) {
@@ -315,22 +230,6 @@ export class GitDiffHelper {
           }
         }
       } else {
-        // 确定目标差异类型
-        let diffTarget: "staged" | "all" =
-          target === "staged"
-            ? "staged"
-            : target === "all"
-              ? "all"
-              : undefined === "staged"
-                ? "staged"
-                : "all";
-
-        // 如果使用 "auto" 模式，先检查暂存区是否有文件
-        if (target === "auto") {
-          const stagedFiles = await this.getStagedFiles(currentWorkspaceRoot);
-          diffTarget = stagedFiles.length > 0 ? "staged" : "all";
-        }
-
         if (diffTarget === "staged") {
           try {
             let stagedFilesOutput = "";
@@ -509,12 +408,152 @@ export class GitDiffHelper {
       }
 
       // Process the diff to get structured data, including original file content.
-      return DiffProcessor.process(diffOutput, "git");
+      return DiffProcessor.process(diffOutput, "git", currentWorkspaceRoot);
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error(`Failed to get Git diff: ${error.message}`);
         notify.error(formatMessage("scm.diff.failed", ["Git", error.message]));
       }
+      throw error;
+    }
+  }
+
+  private async resolveDiffTarget(
+    target: "staged" | "all" | "auto" | undefined,
+    repositoryPath: string,
+  ): Promise<"staged" | "all"> {
+    if (target === "staged") {
+      return "staged";
+    }
+    if (target === "all" || !target) {
+      return "all";
+    }
+
+    const stagedFiles = await this.getStagedFiles(repositoryPath);
+    return stagedFiles.length > 0 ? "staged" : "all";
+  }
+
+  private async hasStagedChangeForFile(
+    escapedFile: string,
+    repositoryPath: string,
+  ): Promise<boolean> {
+    const { stdout } = await exec(`git diff --cached --name-only -- ${escapedFile}`, {
+      ...ImprovedPathUtils.createExecOptions(repositoryPath),
+      encoding: "utf8",
+    });
+    return String(stdout).trim().length > 0;
+  }
+
+  private async getStagedFileDiff(
+    file: string,
+    fileStatus: string,
+    escapedFile: string,
+    repositoryPath: string,
+  ): Promise<string> {
+    if (fileStatus === "Renamed File") {
+      const { stdout: fullDiff } = await exec("git diff --cached", {
+        ...ImprovedPathUtils.createExecOptions(repositoryPath),
+        encoding: "utf8",
+      });
+
+      const extractedDiff = this.extractRenameDiffForFile(
+        fullDiff.toString(),
+        file,
+        repositoryPath,
+      );
+
+      if (!extractedDiff) {
+        return "";
+      }
+
+      const renameInfo = this.parseRenameInfo(extractedDiff, file);
+      if (!renameInfo) {
+        return extractedDiff;
+      }
+
+      return [
+        "### RENAME OPERATION ###",
+        `# File renamed from: ${renameInfo.oldPath}`,
+        `# File renamed to: ${renameInfo.newPath}`,
+        extractedDiff,
+        "### END RENAME ###",
+      ].join("\n");
+    }
+
+    const result = await exec(`git diff --cached -- ${escapedFile}`, {
+      ...ImprovedPathUtils.createExecOptions(repositoryPath),
+      encoding: "utf8",
+    });
+    return result.stdout.toString();
+  }
+
+  private async getAllFileDiff(
+    file: string,
+    fileStatus: string,
+    escapedFile: string,
+    repositoryPath: string,
+    hasInitialCommit: boolean,
+  ): Promise<string> {
+    if (fileStatus === "Renamed File") {
+      return this.getStagedFileDiff(
+        file,
+        fileStatus,
+        escapedFile,
+        repositoryPath,
+      );
+    }
+
+    if (fileStatus === "New File") {
+      try {
+        const result = await exec(`git diff --no-index /dev/null ${escapedFile}`, {
+          ...ImprovedPathUtils.createExecOptions(repositoryPath),
+          encoding: "utf8",
+        });
+        return result.stdout.toString();
+      } catch (error) {
+        if (error instanceof Error && "stdout" in error) {
+          return (error as any).stdout;
+        }
+        return "";
+      }
+    }
+
+    if (fileStatus === "Added File") {
+      const result = await exec(`git diff --cached -- ${escapedFile}`, {
+        ...ImprovedPathUtils.createExecOptions(repositoryPath),
+        encoding: "utf8",
+      });
+      return result.stdout.toString();
+    }
+
+    try {
+      if (hasInitialCommit) {
+        const result = await exec(`git diff HEAD -- ${escapedFile}`, {
+          cwd: repositoryPath,
+          maxBuffer: 1024 * 1024 * 10,
+        });
+        return result.stdout.toString();
+      }
+
+      const result = await exec(`git diff -- ${escapedFile}`, {
+        cwd: repositoryPath,
+        maxBuffer: 1024 * 1024 * 10,
+        encoding: "utf8",
+      });
+      return result.stdout.toString();
+    } catch (error) {
+      if (
+        error instanceof Error &&
+        error.message.includes("bad revision 'HEAD'")
+      ) {
+        const result = await exec(`git diff -- ${escapedFile}`, {
+          cwd: repositoryPath,
+          maxBuffer: 1024 * 1024 * 10,
+          encoding: "utf8",
+        });
+        return result.stdout.toString();
+      }
+
       throw error;
     }
   }

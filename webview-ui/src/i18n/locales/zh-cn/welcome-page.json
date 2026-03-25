@@ -157,6 +157,23 @@
       }
     }
   },
+  "quickActions": {
+    "title": "快捷操作",
+    "description": "在首页直接执行常用命令。",
+    "buttonRunning": "执行中...",
+    "actions": {
+      "generateCommit": "生成提交信息",
+      "reviewCode": "代码审查",
+      "generateBranchName": "生成分支名",
+      "generatePRSummary": "生成 PR 摘要",
+      "generateWeeklyReport": "生成周报"
+    },
+    "result": {
+      "running": "正在执行：{{action}}...",
+      "success": "{{action}} 执行完成。",
+      "failed": "{{action}} 执行失败：{{error}}"
+    }
+  },
   "footer": {
     "title": "Dish AI Commit Message Generator",
     "madeWith": "Made with ❤️ by"

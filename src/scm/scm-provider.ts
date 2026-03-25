@@ -1,5 +1,6 @@
 import { SvnProvider } from "@/scm/svn-provider";
 import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils";
+import { Logger } from "@/utils/logger";
 import { exec } from "child_process";
 import * as path from "path";
 import * as vscode from "vscode";
@@ -56,7 +57,10 @@ export interface ISCMProvider {
   init(): Promise<void>;
 
   /** 获取文件差异 */
-  getDiff(files?: string[]): Promise<string | undefined>;
+  getDiff(
+    files?: string[],
+    target?: "staged" | "all" | "auto",
+  ): Promise<string | undefined>;
 
   /** 提交更改 */
   commit(message: string, files?: string[]): Promise<void>;
@@ -127,6 +131,7 @@ export class SCMFactory {
 
   /** 当前使用的仓库路径 */
   private static currentRepositoryPath: string | undefined;
+  private static readonly logger = Logger.getInstance("SCMFactory");
 
   /**
    * 获取当前使用的仓库路径
@@ -192,7 +197,7 @@ export class SCMFactory {
         }
 
         // 如果无法确定，返回第一个工作区（保持向后兼容）
-        console.warn(
+        this.logger.warn(
           "Multiple workspaces found, using first workspace as fallback"
         );
       }
@@ -321,7 +326,9 @@ export class SCMFactory {
 
       return undefined;
     } catch (error) {
-      console.error("Failed to detect SCM from directory:", error);
+      this.logger.error("Failed to detect SCM from directory", {
+        error: error as Error,
+      });
       return undefined;
     }
   }
@@ -358,12 +365,12 @@ export class SCMFactory {
 
     // 1. 尝试使用 MultiRepositoryContextManager 获取仓库
     try {
-      console.log(
+      this.logger.debug(
         "[SCMFactory] Detecting repositories via MultiRepositoryContextManager..."
       );
       const detectedRepos =
         await multiRepositoryContextManager.getAllRepositories();
-      console.log(
+      this.logger.debug(
         `[SCMFactory] MultiRepositoryContextManager found ${detectedRepos.length} repositories`
       );
 
@@ -377,9 +384,9 @@ export class SCMFactory {
         }
       }
     } catch (error) {
-      console.error(
+      this.logger.error(
         "[SCMFactory] Failed to detect repositories via MultiRepositoryContextManager:",
-        error
+        { error: error as Error }
       );
     }
 
@@ -389,7 +396,7 @@ export class SCMFactory {
     }
 
     // 2. 回退到 vscode.scm.sourceControls (在 VS Code 1.90+ 中可用)
-    console.log(
+    this.logger.debug(
       "[SCMFactory] Falling back to vscode.scm.sourceControls detection..."
     );
     const sourceControls = (vscode.scm as any).sourceControls as
@@ -520,9 +527,9 @@ export class SCMFactory {
         }
       }
     } catch (error) {
-      console.warn(
+      this.logger.warn(
         "[SCMFactory] Failed to infer repository from primary context:",
-        error
+        { error: error as Error }
       );
     }
 
@@ -542,21 +549,23 @@ export class SCMFactory {
     repositoryPath?: string
   ): Promise<ISCMProvider | undefined> {
     const startTime = Date.now();
-    console.log(`[Chain] [SCM-Detection] [Factory] START - Files: ${selectedFiles?.length || 0}, RepoPath: ${repositoryPath || 'auto'}`);
+    this.logger.info(
+      `[Chain] [SCM-Detection] [Factory] START - Files: ${selectedFiles?.length || 0}, RepoPath: ${repositoryPath || "auto"}`,
+    );
 
     try {
       // 如果没有提供任何参数，尝试使用 vscode.scm API 检测仓库
       if (!selectedFiles && !repositoryPath) {
-        console.log(
+        this.logger.debug(
           "[SCMFactory] No args provided, detecting all repositories..."
         );
         const repositories = await this.detectAllRepositories();
-        console.log(
+        this.logger.debug(
           `[SCMFactory] Detected ${repositories.length} repositories`
         );
 
         if (repositories.length === 0) {
-          console.log(
+          this.logger.debug(
             "[SCMFactory] No repositories found, falling back to workspace root detection"
           );
           // 没有检测到任何仓库，回退到原有逻辑
@@ -574,7 +583,7 @@ export class SCMFactory {
             this.currentProvider = provider;
             // 确保在这里也设置 currentRepositoryPath
             this.currentRepositoryPath = normalizedWorkspaceRoot;
-            console.log(
+            this.logger.debug(
               `[SCMFactory] Provider created via fallback, currentRepositoryPath set to: ${this.currentRepositoryPath}`
             );
           }
@@ -582,7 +591,7 @@ export class SCMFactory {
         } else if (repositories.length === 1) {
           // 只有一个仓库，直接使用
           repositoryPath = repositories[0].rootUri.fsPath;
-          console.log(
+          this.logger.debug(
             `[SCMFactory] Single repository found: ${repositoryPath}`
           );
         } else {
@@ -596,7 +605,7 @@ export class SCMFactory {
             return undefined;
           }
           repositoryPath = selected.rootUri.fsPath;
-          console.log(
+          this.logger.debug(
             autoSelected
               ? `[SCMFactory] Auto selected repository: ${repositoryPath}`
               : `[SCMFactory] User selected repository: ${repositoryPath}`
@@ -608,11 +617,13 @@ export class SCMFactory {
       const workspaceRoot =
         repositoryPath || this.findWorkspaceRoot(selectedFiles);
 
-      console.log(`[SCMFactory] Workspace root determined: ${workspaceRoot}`);
+      this.logger.debug(`[SCMFactory] Workspace root determined: ${workspaceRoot}`);
 
       if (!workspaceRoot || !ImprovedPathUtils.isValidPath(workspaceRoot)) {
         const duration = Date.now() - startTime;
-        console.log(`[Chain] [SCM-Detection] [Factory] COMPLETE - Duration: ${duration}ms, Result: invalid workspace`);
+        this.logger.info(
+          `[Chain] [SCM-Detection] [Factory] COMPLETE - Duration: ${duration}ms, Result: invalid workspace`,
+        );
         return undefined;
       }
 
@@ -622,7 +633,7 @@ export class SCMFactory {
 
       // 保存当前使用的仓库路径
       this.currentRepositoryPath = normalizedWorkspaceRoot;
-      console.log(
+      this.logger.debug(
         `[SCMFactory] Setting currentRepositoryPath to: ${this.currentRepositoryPath}`
       );
 
@@ -635,18 +646,83 @@ export class SCMFactory {
       if (provider) {
         this.currentProvider = provider;
         const duration = Date.now() - startTime;
-        console.log(`[Chain] [SCM-Detection] [Factory] COMPLETE - Duration: ${duration}ms, Result: ${provider.type}, Path: ${this.currentRepositoryPath}`);
+        this.logger.info(
+          `[Chain] [SCM-Detection] [Factory] COMPLETE - Duration: ${duration}ms, Result: ${provider.type}, Path: ${this.currentRepositoryPath}`,
+        );
       } else {
         const duration = Date.now() - startTime;
-        console.log(`[Chain] [SCM-Detection] [Factory] COMPLETE - Duration: ${duration}ms, Result: no provider`);
+        this.logger.info(
+          `[Chain] [SCM-Detection] [Factory] COMPLETE - Duration: ${duration}ms, Result: no provider`,
+        );
       }
 
       return provider;
     } catch (error) {
       const duration = Date.now() - startTime;
-      console.error(
+      this.logger.error(
         `[Chain] [SCM-Detection] [Factory] FAILED - Duration: ${duration}ms`,
-        error instanceof Error ? error.message : error
+        {
+          error:
+            error instanceof Error ? error : new Error(String(error)),
+        },
+      );
+      return undefined;
+    }
+  }
+
+  /**
+   * 直接基于已知 SCM 类型创建 provider（避免重复 SCM 检测）。
+   *
+   * @param repositoryPath 仓库根路径
+   * @param scmType 已知的 SCM 类型
+   */
+  static async createProviderForRepository(
+    repositoryPath: string,
+    scmType: "git" | "svn",
+  ): Promise<ISCMProvider | undefined> {
+    const startTime = Date.now();
+    this.logger.info(
+      `[Chain] [SCM-Detection] [Factory] DIRECT START - Type: ${scmType}, RepoPath: ${repositoryPath}`,
+    );
+
+    try {
+      if (!repositoryPath || !ImprovedPathUtils.isValidPath(repositoryPath)) {
+        const duration = Date.now() - startTime;
+        this.logger.info(
+          `[Chain] [SCM-Detection] [Factory] DIRECT COMPLETE - Duration: ${duration}ms, Result: invalid workspace`,
+        );
+        return undefined;
+      }
+
+      const normalizedWorkspaceRoot =
+        ImprovedPathUtils.normalizePath(repositoryPath);
+      this.currentRepositoryPath = normalizedWorkspaceRoot;
+
+      const provider = await this.createProviderByScmType(
+        scmType,
+        normalizedWorkspaceRoot,
+      );
+      if (provider) {
+        this.currentProvider = provider;
+        const duration = Date.now() - startTime;
+        this.logger.info(
+          `[Chain] [SCM-Detection] [Factory] DIRECT COMPLETE - Duration: ${duration}ms, Result: ${provider.type}, Path: ${this.currentRepositoryPath}`,
+        );
+        return provider;
+      }
+
+      const duration = Date.now() - startTime;
+      this.logger.info(
+        `[Chain] [SCM-Detection] [Factory] DIRECT COMPLETE - Duration: ${duration}ms, Result: no provider`,
+      );
+      return undefined;
+    } catch (error) {
+      const duration = Date.now() - startTime;
+      this.logger.error(
+        `[Chain] [SCM-Detection] [Factory] DIRECT FAILED - Duration: ${duration}ms`,
+        {
+          error: error instanceof Error ? error : new Error(String(error)),
+        },
       );
       return undefined;
     }
@@ -679,7 +755,9 @@ export class SCMFactory {
   ): Promise<ISCMProvider | undefined> {
     try {
       if (!ImprovedPathUtils.isValidPath(workspaceRoot)) {
-        console.error("Invalid workspace root path:", workspaceRoot);
+        this.logger.error("Invalid workspace root path", {
+          data: { workspaceRoot },
+        });
         return undefined;
       }
 
@@ -691,83 +769,72 @@ export class SCMFactory {
         normalizedWorkspaceRoot,
         selectedFiles
       );
-
-      const gitExtension = vscode.extensions.getExtension("vscode.git");
-      const svnExtension = vscode.extensions.getExtension(
-        "littleCareless.svn-scm-ai"
-      );
-
-      let provider: ISCMProvider | undefined;
-
-      // 如果检测到Git
-      if (scmType === "git") {
-        try {
-          const git = gitExtension?.exports
-            ? new GitProvider(gitExtension.exports, normalizedWorkspaceRoot)
-            : undefined;
-          if (git) {
-            await this.withTimeout(git.init());
-            if (await this.withTimeout(git.isAvailable())) {
-              provider = git;
-            }
-          }
-        } catch (error) {
-          console.error("Git provider initialization failed:", error);
-          // Continue to try other providers
-        }
-      }
-
-      // 如果检测到SVN
-      if (scmType === "svn") {
-        // 先尝试使用SVN插件
-        try {
-          // const svn = svnExtension?.exports
-          //   ? new SvnProvider(svnExtension.exports, normalizedWorkspaceRoot)
-          //   : undefined;
-          const svn = new SvnProvider(
-            svnExtension?.exports,
-            normalizedWorkspaceRoot
-          );
-          if (svn) {
-            await this.withTimeout(svn.init());
-            if (await this.withTimeout(svn.isAvailable())) {
-              provider = svn;
-            }
-          }
-        } catch (error) {
-          console.error("SVN provider initialization failed:", error);
-          // Continue to try CLI SVN
-        }
-
-        // // 如果没有插件但系统有SVN命令,使用命令行方式
-        // if (!provider) {
-        //   try {
-        //     if (await this.withTimeout(this.checkSCMCommand("svn"))) {
-        //       const cliSvn = new CliSvnProvider(normalizedWorkspaceRoot);
-        //       await this.withTimeout(cliSvn.init());
-        //       if (await this.withTimeout(cliSvn.isAvailable())) {
-        //         provider = cliSvn;
-        //       }
-        //     }
-        //   } catch (error) {
-        //     console.error("CLI SVN provider initialization failed:", error);
-        //   }
-        // }
-      }
-
-      if (provider) {
-        // 直接返回新创建的Provider实例，不进行缓存
-        return provider;
-      }
-
-      return undefined;
+      return this.createProviderByScmType(scmType, normalizedWorkspaceRoot);
     } catch (error) {
-      console.error(
+      this.logger.error(
         "SCM detection failed:",
-        error instanceof Error ? error.message : error
+        {
+          error:
+            error instanceof Error ? error : new Error(String(error)),
+        },
       );
       return undefined;
     }
+  }
+
+  private static async createProviderByScmType(
+    scmType: "git" | "svn" | undefined,
+    normalizedWorkspaceRoot: string,
+  ): Promise<ISCMProvider | undefined> {
+    if (!scmType) {
+      return undefined;
+    }
+
+    const gitExtension = vscode.extensions.getExtension("vscode.git");
+    const svnExtension = vscode.extensions.getExtension(
+      "littleCareless.svn-scm-ai",
+    );
+
+    let provider: ISCMProvider | undefined;
+
+    if (scmType === "git") {
+      try {
+        const git = gitExtension?.exports
+          ? new GitProvider(gitExtension.exports, normalizedWorkspaceRoot)
+          : undefined;
+        if (git) {
+          await this.withTimeout(git.init());
+          if (await this.withTimeout(git.isAvailable())) {
+            provider = git;
+          }
+        }
+      } catch (error) {
+        this.logger.error("Git provider initialization failed", {
+          error: error as Error,
+        });
+      }
+    }
+
+    if (scmType === "svn") {
+      try {
+        const svn = new SvnProvider(
+          svnExtension?.exports,
+          normalizedWorkspaceRoot,
+        );
+        if (svn) {
+          await this.withTimeout(svn.init());
+          if (await this.withTimeout(svn.isAvailable())) {
+            provider = svn;
+          }
+        }
+      } catch (error) {
+        this.logger.error("SVN provider initialization failed", {
+          error: error as Error,
+        });
+      }
+    }
+
+    return provider;
   }
 
   /**

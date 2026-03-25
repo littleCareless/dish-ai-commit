@@ -30,9 +30,12 @@ import {
 import { PromptManagerService } from "@/services/core/prompt-manager-service";
 import { loadCommitlintConfig } from "@/utils/commitlint";
 import { getMessage } from "@/utils/i18n";
+import { Logger } from "@/utils/logger";
 import { notify } from "@/utils/notification/notification-manager";
 import { processPromptTemplate } from "@/utils/prompt-template";
 import { PromptKey } from "@shared/types/prompts";
+
+const logger = Logger.getInstance("GenerateHelper");
 
 /**
  * AI 生成过程中可能遇到的错误类型枚举
@@ -108,7 +111,9 @@ export async function generateWithRetry<T>(
 
       return await generateFn(truncatedPrompt);
     } catch (error: any) {
-      console.log("error", error);
+      logger.warn("Generation failed during retry loop", {
+        error: error as Error,
+      });
 
       // 检查是否是可重试的错误类型且未超过最大重试次数
       if (
@@ -171,7 +176,9 @@ export async function* generateStreamWithRetry(
       }
       return; // 成功完成，退出循环
     } catch (error: any) {
-      console.error("Error during stream generation:", error);
+      logger.error("Error during stream generation", {
+        error: error as Error,
+      });
 
       if (
         retries < maxRetries &&
@@ -265,6 +272,7 @@ export async function getSystemPrompt(
   directOutput: boolean = false,
   useFallback: boolean = false,
   config?: any,
+  activePromptContentOverride?: string,
 ): Promise<string> {
   if (isGeneratingPrompt) {
     return ""; // 防止循环调用
@@ -283,10 +291,11 @@ export async function getSystemPrompt(
     // }
 
     // 2. 获取 Active Prompt (支持 .dish/prompts, Config, Default)
-    const promptManager = PromptManagerService.getInstance();
-    const activePromptContent = await promptManager.getActivePromptContent(
-      PromptKey.GenerateCommitSystem,
-    );
+    const activePromptContent =
+      activePromptContentOverride ??
+      (await PromptManagerService.getInstance().getActivePromptContent(
+        PromptKey.GenerateCommitSystem,
+      ));
 
     if (activePromptContent) {
       const {
