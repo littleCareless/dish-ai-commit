@@ -157,6 +157,7 @@ export class StreamingGenerationHelper {
 
           return {
             status: "success",
+            applied: true,
             requestId: session.requestId,
             repositoryPath,
             provider: session.provider,
@@ -862,6 +863,7 @@ export class StreamingGenerationHelper {
 
     return {
       status: "success",
+      applied: true,
       requestId: session.requestId,
       repositoryPath: target.repositoryPath,
       provider: session.provider,
@@ -971,6 +973,7 @@ export class StreamingGenerationHelper {
     if (isCancellationError(error)) {
       return {
         status: "cancelled",
+        applied: false,
         requestId: session?.requestId || crypto.randomUUID(),
         repositoryPath: target?.repositoryPath,
         provider: session?.provider,
@@ -1002,6 +1005,7 @@ export class StreamingGenerationHelper {
       }
       return {
         status: "too_large",
+        applied: false,
         requestId: session?.requestId || crypto.randomUUID(),
         repositoryPath: target?.repositoryPath,
         provider: session?.provider,
@@ -1117,6 +1121,7 @@ export class StreamingGenerationHelper {
   ): GenerationResult {
     return {
       status: "failed",
+      applied: false,
       requestId: session?.requestId || crypto.randomUUID(),
       repositoryPath: target?.repositoryPath,
       provider: session?.provider,

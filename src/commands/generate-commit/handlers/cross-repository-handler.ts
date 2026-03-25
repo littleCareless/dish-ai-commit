@@ -28,6 +28,7 @@ export class CrossRepositoryHandler {
         total: 0,
         successCount: 0,
         failureCount: 0,
+        cancelledCount: 0,
         cancelled: false,
         results: [],
       };
@@ -51,6 +52,7 @@ export class CrossRepositoryHandler {
               repoPath: target.repositoryPath,
               requestId: session.requestId,
               status: "cancelled",
+              applied: false,
               repositoryPath: target.repositoryPath,
             });
             break;
@@ -68,6 +70,7 @@ export class CrossRepositoryHandler {
               repoPath: target.repositoryPath,
               requestId: session.requestId,
               status: "failed",
+              applied: false,
               repositoryPath: target.repositoryPath,
               error:
                 target.detectionError ||
@@ -95,6 +98,7 @@ export class CrossRepositoryHandler {
               repoPath: target.repositoryPath,
               requestId: session.requestId,
               status: "failed",
+              applied: false,
               repositoryPath: target.repositoryPath,
               error: error instanceof Error ? error.message : String(error),
             });
@@ -111,15 +115,18 @@ export class CrossRepositoryHandler {
     const failureCount = results.filter(
       (result) => result.status === "failed" || result.status === "too_large",
     ).length;
+    const cancelledCount = results.filter(
+      (result) => result.status === "cancelled",
+    ).length;
 
     return {
       requestId: session.requestId,
       total,
       successCount,
       failureCount,
-      cancelled,
+      cancelledCount,
+      cancelled: cancelled || cancelledCount > 0,
       results,
     };
   }
 }
-
