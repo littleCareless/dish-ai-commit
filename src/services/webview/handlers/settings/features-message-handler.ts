@@ -1,4 +1,5 @@
 import { DISH_CONFIG_PREFIX } from "@/config/constants";
+import type { CommandExecutionResult } from "@/commands";
 import { FeaturesSettingsManager } from "@/services/settings/features-settings-manager";
 import { ActivePromptStore } from "@/services/settings/active-prompt-store";
 import { workspaceManager } from "@/services/core/workspace-manager";
@@ -180,7 +181,15 @@ export class FeaturesMessageHandler {
 
       case UIRequest.FeaturesSyncModelCatalog:
         try {
-          await vscode.commands.executeCommand(COMMANDS.MODEL_CATALOG.SYNC);
+          const commandResult = await this.executeFeatureCommand(
+            COMMANDS.MODEL_CATALOG.SYNC,
+          );
+          if (!commandResult.success) {
+            throw new Error(
+              commandResult.error || "Model catalog sync command failed",
+            );
+          }
+
           const summary = this.catalogSyncService.getSummary();
           await webview.postMessage({
             command: ExtensionResponse.FeaturesModelCatalogSynced,
@@ -267,7 +276,13 @@ export class FeaturesMessageHandler {
           }
 
           await this.recordQuickActionUsage(action, source);
-          await vscode.commands.executeCommand(commandId);
+          const commandResult = await this.executeFeatureCommand(commandId);
+          if (!commandResult.success) {
+            throw new Error(
+              commandResult.error || `Quick action command failed: ${commandId}`,
+            );
+          }
+
           await webview.postMessage({
             command: ExtensionResponse.FeaturesCommandExecuted,
             data: { action, source, success: true },
@@ -355,5 +370,30 @@ export class FeaturesMessageHandler {
       FeaturesMessageHandler.QUICK_ACTION_STATS_KEY,
       next,
     );
+  }
+
+  private async executeFeatureCommand(
+    commandId: string,
+  ): Promise<CommandExecutionResult> {
+    const executionResult = await vscode.commands.executeCommand<unknown>(
+      commandId,
+    );
+
+    if (this.isCommandExecutionResult(executionResult)) {
+      return executionResult;
+    }
+
+    return { success: true };
+  }
+
+  private isCommandExecutionResult(
+    value: unknown,
+  ): value is CommandExecutionResult {
+    if (!value || typeof value !== "object") {
+      return false;
+    }
+
+    const result = value as Partial<CommandExecutionResult>;
+    return result.success === true || result.success === false;
   }
 }
