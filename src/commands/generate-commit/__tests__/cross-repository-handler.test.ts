@@ -26,7 +26,6 @@ function createSession(): GenerationSession {
         {
           repositoryPath: "/repo-a",
           selectedFiles: ["/repo-a/a.ts"],
-          resources: [],
           repositoryContext: {
             repository: {
               path: "/repo-a",
@@ -40,7 +39,6 @@ function createSession(): GenerationSession {
         {
           repositoryPath: "/repo-b",
           selectedFiles: ["/repo-b/b.ts"],
-          resources: [],
           scmProvider: { type: "git" } as any,
           repositoryContext: {
             repository: {
@@ -54,7 +52,6 @@ function createSession(): GenerationSession {
         {
           repositoryPath: "/repo-c",
           selectedFiles: ["/repo-c/c.ts"],
-          resources: [],
           scmProvider: { type: "git" } as any,
           repositoryContext: {
             repository: {

@@ -130,7 +130,6 @@ describe("StreamingGenerationHelper fallback prompt", () => {
       progress,
       scmProvider,
       ["a.txt", "b.txt"],
-      [],
       configuration,
     );
 

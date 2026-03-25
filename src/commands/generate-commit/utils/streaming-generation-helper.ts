@@ -118,7 +118,6 @@ export class StreamingGenerationHelper {
           progress,
           scmProvider,
           selectedFiles,
-          target.resources,
           session.providerConfig,
           target.repositoryContext,
         );
@@ -270,7 +269,6 @@ export class StreamingGenerationHelper {
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     scmProvider: ISCMProvider,
     selectedFiles: string[] | undefined,
-    _resources: vscode.SourceControlResourceState[],
     providerConfig: any,
     repositoryContext?: RepositoryContext,
   ): Promise<{

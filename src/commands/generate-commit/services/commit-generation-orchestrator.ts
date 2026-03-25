@@ -7,8 +7,6 @@ import {
 import { ISCMProvider, SCMFactory } from "@/scm/scm-provider";
 import { multiRepositoryContextManager } from "@/scm/multi-repository-context-manager";
 import { RepositoryContext } from "@/scm/staged-detector-types";
-import { extractResourceFilePath } from "@/scm/utils/resource-state-utils";
-import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils";
 import { getMessage } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
 import { notify } from "@/utils/notification/notification-manager";
@@ -72,10 +70,7 @@ export class CommitGenerationOrchestrator {
     }
 
     if (isCrossRepository && filesByRepository) {
-      const targets = await this.buildCrossRepositoryTargets(
-        filesByRepository,
-        input.resourceStates,
-      );
+      const targets = await this.buildCrossRepositoryTargets(filesByRepository);
 
       if (targets.length === 0) {
         await notify.error(getMessage("scm.not.detected"));
@@ -135,7 +130,6 @@ export class CommitGenerationOrchestrator {
       repositoryPath,
       scmProvider,
       selectedFiles,
-      resources: input.resourceStates,
       repositoryContext: this.createRepositoryContext(
         repositoryPath,
         scmProvider,
@@ -146,7 +140,6 @@ export class CommitGenerationOrchestrator {
 
   private async buildCrossRepositoryTargets(
     filesByRepository: Map<string, string[]>,
-    resourceStates: vscode.SourceControlResourceState[],
   ): Promise<GenerationTargetContext[]> {
     const targets: GenerationTargetContext[] = [];
 
@@ -163,16 +156,10 @@ export class CommitGenerationOrchestrator {
         detectionError = error instanceof Error ? error.message : String(error);
       }
 
-      const scopedResources = this.filterResourceStatesByRepository(
-        resourceStates,
-        repositoryPath,
-      );
-
       targets.push({
         repositoryPath,
         scmProvider,
         selectedFiles: files,
-        resources: scopedResources,
         repositoryContext: this.createRepositoryContext(
           repositoryPath,
           scmProvider,
@@ -183,23 +170,6 @@ export class CommitGenerationOrchestrator {
     }
 
     return targets;
-  }
-
-  private filterResourceStatesByRepository(
-    resourceStates: vscode.SourceControlResourceState[],
-    repositoryPath: string,
-  ): vscode.SourceControlResourceState[] {
-    const normalizedRepositoryPath =
-      ImprovedPathUtils.normalizePath(repositoryPath);
-    return resourceStates.filter((state) => {
-      const filePath = extractResourceFilePath(state);
-      if (!filePath) {
-        return false;
-      }
-      return ImprovedPathUtils.normalizePath(filePath).startsWith(
-        normalizedRepositoryPath,
-      );
-    });
   }
 
   private createRepositoryContext(
@@ -229,4 +199,3 @@ export class CommitGenerationOrchestrator {
     };
   }
 }
-

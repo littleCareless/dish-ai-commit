@@ -54,7 +54,6 @@ export interface GenerationTargetContext {
   repositoryPath: string;
   scmProvider?: ISCMProvider;
   selectedFiles?: string[];
-  resources: vscode.SourceControlResourceState[];
   repositoryContext: RepositoryContext;
   detectionError?: string;
 }
