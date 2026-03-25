@@ -24,6 +24,7 @@ export class GitProvider implements ISCMProvider {
   private providerCache = new Map<string, IGitProvider>();
   private initPromise: Promise<void> | undefined;
   private defaultRepositoryPath?: string;
+  private currentFiles?: string[];
 
   /**
    * 创建Git提供者实例
@@ -125,28 +126,8 @@ export class GitProvider implements ISCMProvider {
    */
   async setCommitInput(message: string): Promise<void> {
     try {
-      // 如果提供了repositoryPath,直接定位到对应的仓库
-      if (this.repositoryPath) {
-        const gitApi = this.gitExtension.getAPI(1);
-        if (gitApi && gitApi.repositories) {
-          // 根据repositoryPath找到对应的repository对象
-          const targetRepo = gitApi.repositories.find(
-            (repo: any) => repo.rootUri?.fsPath === this.repositoryPath
-          );
-          
-          if (targetRepo) {
-            targetRepo.inputBox.value = message;
-            this.logger.info(`Successfully set commit message for repository: ${this.repositoryPath}`);
-            return;
-          } else {
-            throw new Error(`Repository not found: ${this.repositoryPath}`);
-          }
-        }
-      }
-      
-      // 回退到原有逻辑
-      await this.ensureDefaultProvider();
-      return this.gitProvider?.setCommitInput(message);
+      const inputProvider = await this.resolveInputProvider();
+      return inputProvider?.setCommitInput(message);
     } catch (error) {
       this.logger.error(`Failed to set commit input: ${error}`);
       throw error;
@@ -169,10 +150,12 @@ export class GitProvider implements ISCMProvider {
    * @param {string} message - 要设置的提交信息
    */
   async startStreamingInput(message: string): Promise<void> {
-    // 每次重新初始化提供者
-    await this.ensureDefaultProvider();
-    
-    return this.gitProvider?.startStreamingInput(message);
+    const inputProvider = await this.resolveInputProvider();
+    return inputProvider?.startStreamingInput(message);
+  }
+
+  setCurrentFiles(files?: string[]): void {
+    this.currentFiles = files?.length ? [...files] : undefined;
   }
 
   /**
@@ -386,6 +369,19 @@ export class GitProvider implements ISCMProvider {
       );
     }
     return this.repositoryManager;
+  }
+
+  private async resolveInputProvider(): Promise<IGitProvider | undefined> {
+    if (this.currentFiles && this.currentFiles.length > 0) {
+      const providerForFiles = await this.getProviderForFiles(this.currentFiles);
+      if (providerForFiles) {
+        return providerForFiles;
+      }
+    }
+
+    // 每次重新初始化提供者
+    await this.ensureDefaultProvider();
+    return this.gitProvider;
   }
 
   private async getOrCreateProvider(

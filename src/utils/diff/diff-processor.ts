@@ -13,16 +13,21 @@ export class DiffProcessor {
    *
    * @param diff - The raw diff string.
    * @param type - The type of SCM ('git' or 'svn').
+   * @param repositoryRoot - Optional repository root path used to fetch original content.
    * @returns The processed diff as a single formatted string.
    */
-  static process(diff: string, type: "git" | "svn"): string {
+  static process(
+    diff: string,
+    type: "git" | "svn",
+    repositoryRoot?: string
+  ): string {
     const chunks =
       type === "git"
         ? DiffSplitter.splitGitDiff(diff)
         : DiffSplitter.splitSvnDiff(diff);
 
     const processedParts = chunks
-      .map((chunk) => this.processChunk(chunk, type))
+      .map((chunk) => this.processChunk(chunk, type, repositoryRoot))
       .filter(
         (
           part
@@ -62,7 +67,8 @@ export class DiffProcessor {
    */
   private static processChunk(
     chunk: DiffChunk,
-    type: "git" | "svn"
+    type: "git" | "svn",
+    repositoryRoot?: string
   ): { originalCode: string | null; codeChanges: string } | null {
     // 检查是否为非代码文件
     if (chunk.isNonCodeFile) {
@@ -125,7 +131,8 @@ export class DiffProcessor {
     const language = chunk.filename?.split(".").pop() || "";
 
     // Generate # ORIGINAL CODE: block
-    const workspaceRoot = vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
+    const workspaceRoot =
+      repositoryRoot || vscode.workspace.workspaceFolders?.[0]?.uri.fsPath;
     if (!workspaceRoot) {
       return null; // Cannot proceed without workspace root
     }

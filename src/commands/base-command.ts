@@ -1,8 +1,11 @@
 import { AIModel, AIProvider } from "@/ai/types";
 
 import { DISH_CONFIG_PREFIX } from "@/config/constants";
-import { ISCMProvider, SCMFactory } from "@/scm/scm-provider";
-import { SCMDetectorService } from "@/services/core/scm-detector-service";
+import { ISCMProvider } from "@/scm/scm-provider";
+import {
+  ExplicitSCMDetectionContext,
+  SCMDetectorService,
+} from "@/services/core/scm-detector-service";
 import { ProfileManagerService } from "@/services/profile-manager/profile-manager-service";
 import { PreferencesSettingsManager } from "@/services/settings/preferences-settings-manager";
 import { getMessage } from "@/utils/i18n";
@@ -282,6 +285,7 @@ export abstract class BaseCommand {
       | vscode.SourceControlResourceState
       | vscode.SourceControlResourceState[]
       | string[]
+      | ExplicitSCMDetectionContext
   ) {
     return SCMDetectorService.getInstance().detectSCMProvider(resourcesOrFiles);
   }
@@ -478,13 +482,19 @@ export abstract class BaseCommand {
   > {
     // 1. 如果是SourceControl对象 (来自SCM标题菜单)
     if (arg && arg.rootUri && arg.id) {
-      const repositoryPath = arg.rootUri.fsPath;
-      const scmProvider = await SCMFactory.detectSCM(undefined, repositoryPath);
-      if (!scmProvider) {
-        await notify.error(getMessage("scm.not.detected"));
-        return undefined;
-      }
-      return { scmProvider, selectedFiles: undefined, repositoryPath };
+      const repositoryPath = arg.rootUri.fsPath as string | undefined;
+      const sourceControlId = String(arg.id || "").toLowerCase();
+      const scmType =
+        sourceControlId === "git" || sourceControlId.includes("git")
+          ? "git"
+          : sourceControlId === "svn" || sourceControlId.includes("svn")
+            ? "svn"
+            : undefined;
+
+      return SCMDetectorService.getInstance().detectSCMProvider({
+        repositoryPath,
+        scmType,
+      });
     }
 
     // 2. 委托给SCMDetectorService处理资源状态或undefined

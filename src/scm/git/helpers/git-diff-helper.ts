@@ -408,7 +408,7 @@ export class GitDiffHelper {
       }
 
       // Process the diff to get structured data, including original file content.
-      return DiffProcessor.process(diffOutput, "git");
+      return DiffProcessor.process(diffOutput, "git", currentWorkspaceRoot);
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error(`Failed to get Git diff: ${error.message}`);

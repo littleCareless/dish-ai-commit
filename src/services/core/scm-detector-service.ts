@@ -6,6 +6,26 @@ import { getMessage } from "@/utils/i18n";
 import { notify } from "@/utils/notification/notification-manager";
 import { Logger } from "@/utils/logger";
 import { SCMContextCache } from "@/core/scm-context-cache";
+import * as path from "path";
+
+export interface ExplicitSCMDetectionContext {
+  selectedFiles?: string[];
+  repositoryPath?: string;
+  scmType?: "git" | "svn";
+  suppressNotifications?: boolean;
+}
+
+export interface SCMDetectionResult {
+  scmProvider: ISCMProvider;
+  selectedFiles: string[] | undefined;
+  repositoryPath: string | undefined;
+}
+
+type SCMDetectionInput =
+  | vscode.SourceControlResourceState
+  | vscode.SourceControlResourceState[]
+  | string[]
+  | ExplicitSCMDetectionContext;
 
 /**
  * SCM检测器服务 - 单例模式
@@ -47,60 +67,219 @@ export class SCMDetectorService {
     return extractResourceFilePathsOrUndefined(resourceStates);
   }
 
+  private isFileInsideRepository(
+    filePath: string,
+    repositoryPath: string,
+  ): boolean {
+    if (!filePath || !repositoryPath || !path.isAbsolute(filePath)) {
+      return true;
+    }
+
+    const normalizedRepositoryPath = path.resolve(repositoryPath);
+    const normalizedFilePath = path.resolve(filePath);
+    const relativePath = path.relative(
+      normalizedRepositoryPath,
+      normalizedFilePath,
+    );
+
+    return (
+      relativePath === "" ||
+      (!relativePath.startsWith("..") && !path.isAbsolute(relativePath))
+    );
+  }
+
+  private async sanitizeSelectedFilesForRepository(
+    selectedFiles: string[] | undefined,
+    repositoryPath: string | undefined,
+    suppressNotifications = false,
+  ): Promise<{
+    selectedFiles: string[] | undefined;
+    invalidSelection: boolean;
+  }> {
+    if (!repositoryPath || !selectedFiles || selectedFiles.length === 0) {
+      return { selectedFiles, invalidSelection: false };
+    }
+
+    const filesWithinRepository = selectedFiles.filter((filePath) =>
+      this.isFileInsideRepository(filePath, repositoryPath),
+    );
+    const excludedCount = selectedFiles.length - filesWithinRepository.length;
+
+    if (excludedCount === 0) {
+      return { selectedFiles, invalidSelection: false };
+    }
+
+    this.logger.warn("Detected selected files outside repository boundary", {
+      data: {
+        repositoryPath,
+        totalFiles: selectedFiles.length,
+        keptFiles: filesWithinRepository.length,
+        excludedFiles: excludedCount,
+      },
+    });
+
+    if (filesWithinRepository.length === 0) {
+      if (!suppressNotifications) {
+        await notify.error("generate.commit.selected.files.outside.repository", [
+          repositoryPath,
+        ]);
+      }
+      return { selectedFiles: undefined, invalidSelection: true };
+    }
+
+    if (!suppressNotifications) {
+      await notify.warn("generate.commit.selected.files.filtered", [
+        excludedCount,
+        repositoryPath,
+      ]);
+    }
+
+    return {
+      selectedFiles: filesWithinRepository,
+      invalidSelection: false,
+    };
+  }
+
+  private isExplicitDetectionContext(
+    input: SCMDetectionInput | undefined,
+  ): input is ExplicitSCMDetectionContext {
+    if (!input || Array.isArray(input) || typeof input !== "object") {
+      return false;
+    }
+
+    return (
+      "selectedFiles" in input ||
+      "repositoryPath" in input ||
+      "scmType" in input ||
+      "suppressNotifications" in input
+    );
+  }
+
+  private async detectFromResolvedContext(
+    input: ExplicitSCMDetectionContext,
+    startTime: number,
+  ): Promise<SCMDetectionResult | undefined> {
+    let {
+      selectedFiles,
+      repositoryPath,
+      scmType,
+      suppressNotifications = false,
+    } = input;
+
+    const initialSanitizedSelection =
+      await this.sanitizeSelectedFilesForRepository(
+        selectedFiles,
+        repositoryPath,
+        suppressNotifications,
+      );
+    if (initialSanitizedSelection.invalidSelection) {
+      return undefined;
+    }
+    selectedFiles = initialSanitizedSelection.selectedFiles;
+
+    const scmProvider =
+      scmType && repositoryPath
+        ? await SCMFactory.createProviderForRepository(repositoryPath, scmType)
+        : await SCMFactory.detectSCM(selectedFiles, repositoryPath);
+
+    if (!scmProvider) {
+      const duration = Date.now() - startTime;
+      this.logger.error("SCM detection failed", {
+        data: { duration: `${duration}ms`, repositoryPath, scmType },
+      });
+      if (!suppressNotifications) {
+        await notify.error(getMessage("scm.not.detected"));
+      }
+      return undefined;
+    }
+
+    if (!repositoryPath) {
+      repositoryPath = SCMFactory.getCurrentRepositoryPath();
+    }
+
+    const finalSanitizedSelection =
+      await this.sanitizeSelectedFilesForRepository(
+        selectedFiles,
+        repositoryPath,
+        suppressNotifications,
+      );
+    if (finalSanitizedSelection.invalidSelection) {
+      return undefined;
+    }
+    selectedFiles = finalSanitizedSelection.selectedFiles;
+
+    const result: SCMDetectionResult = {
+      scmProvider,
+      selectedFiles,
+      repositoryPath,
+    };
+
+    if (repositoryPath) {
+      this.scmCache.set(repositoryPath, {
+        provider: scmProvider,
+        repositoryPath,
+        selectedFiles: selectedFiles || [],
+        timestamp: Date.now(),
+      });
+    }
+
+    return result;
+  }
+
   /**
    * 检测并获取SCM提供程序
    * 链路追踪日志：[Chain] [SCM-Detection]
    *
-   * 优化点：
-   * 1. 移除重复检测逻辑（协调器确保只调用一次）
-   * 2. 简化参数处理
-   * 3. 使用 logger 替代 console.log
-   *
-   * @param resourcesOrFiles - 可选的资源状态、文件路径列表或字符串数组
+   * @param resourcesOrFiles - 可选的资源状态、文件路径列表、或显式上下文
    * @returns SCM提供程序实例和相关信息
    */
   public async detectSCMProvider(
-    resourcesOrFiles?:
-      | vscode.SourceControlResourceState
-      | vscode.SourceControlResourceState[]
-      | string[],
-  ): Promise<
-    | {
-        scmProvider: ISCMProvider;
-        selectedFiles: string[] | undefined;
-        repositoryPath: string | undefined;
-      }
-    | undefined
-  > {
+    resourcesOrFiles?: SCMDetectionInput,
+  ): Promise<SCMDetectionResult | undefined> {
     const startTime = Date.now();
     this.logger.info("[SCM-Detection] START", {
       data: {
         inputType: Array.isArray(resourcesOrFiles)
           ? `Array(${resourcesOrFiles.length})`
-          : resourcesOrFiles
-            ? "Resources"
-            : "None",
+          : this.isExplicitDetectionContext(resourcesOrFiles)
+            ? "ExplicitContext"
+            : resourcesOrFiles
+              ? "Resources"
+              : "None",
       },
     });
 
     let selectedFiles: string[] | undefined;
     let repositoryPath: string | undefined;
+    let scmType: "git" | "svn" | undefined;
+    let suppressNotifications = false;
 
-    // 1. 提取文件路径
-    if (resourcesOrFiles) {
+    if (this.isExplicitDetectionContext(resourcesOrFiles)) {
+      ({
+        selectedFiles,
+        repositoryPath,
+        scmType,
+        suppressNotifications = false,
+      } = resourcesOrFiles);
+      if (selectedFiles?.length) {
+        this.logger.debug("Using explicit selected files", {
+          data: { count: selectedFiles.length, repositoryPath, scmType },
+        });
+      }
+    } else if (resourcesOrFiles) {
       if (
         Array.isArray(resourcesOrFiles) &&
         typeof resourcesOrFiles[0] === "string"
       ) {
-        // 字符串数组，直接使用
         selectedFiles = resourcesOrFiles as string[];
         this.logger.debug("Extracted files from string array", {
           data: { count: selectedFiles.length },
         });
       } else {
-        // 资源状态，提取文件和仓库信息
         const resources =
-          resourcesOrFiles as vscode.SourceControlResourceState[];
+          resourcesOrFiles as
+            | vscode.SourceControlResourceState
+            | vscode.SourceControlResourceState[];
         selectedFiles = SCMDetectorService.getSelectedFiles(resources);
 
         repositoryPath =
@@ -115,49 +294,28 @@ export class SCMDetectorService {
       }
     }
 
-    // 2. 检测 SCM Provider
-    const scmProvider = await SCMFactory.detectSCM(
-      selectedFiles,
-      repositoryPath,
+    const result = await this.detectFromResolvedContext(
+      {
+        selectedFiles,
+        repositoryPath,
+        scmType,
+        suppressNotifications,
+      },
+      startTime,
     );
 
-    if (!scmProvider) {
-      const duration = Date.now() - startTime;
-      this.logger.error("SCM detection failed", {
-        data: { duration: `${duration}ms` },
-      });
-      await notify.error(getMessage("scm.not.detected"));
+    if (!result) {
       return undefined;
-    }
-
-    // 3. 获取最终仓库路径
-    if (!repositoryPath) {
-      repositoryPath = SCMFactory.getCurrentRepositoryPath();
     }
 
     const duration = Date.now() - startTime;
     this.logger.info("SCM-Detection] COMPLETE", {
       data: {
         duration: `${duration}ms`,
-        scmType: scmProvider.type,
-        repositoryPath,
+        scmType: result.scmProvider.type,
+        repositoryPath: result.repositoryPath,
       },
     });
-
-    const result = {
-      scmProvider,
-      selectedFiles,
-      repositoryPath,
-    };
-
-    if (repositoryPath) {
-      this.scmCache.set(repositoryPath, {
-        provider: scmProvider,
-        repositoryPath,
-        selectedFiles: selectedFiles || [],
-        timestamp: Date.now(),
-      });
-    }
 
     return result;
   }

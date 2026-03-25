@@ -4,6 +4,10 @@ import * as path from "path";
 import { execSync } from "child_process";
 import { afterEach, describe, expect, it, vi } from "vitest";
 
+const { processDiffMock } = vi.hoisted(() => ({
+  processDiffMock: vi.fn((diff: string) => diff),
+}));
+
 vi.mock("@/utils/logger", () => ({
   Logger: {
     getInstance: () => ({
@@ -30,7 +34,7 @@ vi.mock("@/utils/notification/notification-manager", () => ({
 
 vi.mock("@/utils/diff/diff-processor", () => ({
   DiffProcessor: {
-    process: (diff: string) => diff,
+    process: processDiffMock,
   },
 }));
 
@@ -76,6 +80,7 @@ describe("GitDiffHelper file target behavior", () => {
     for (const repo of tempRepos.splice(0, tempRepos.length)) {
       fs.rmSync(repo, { recursive: true, force: true });
     }
+    processDiffMock.mockClear();
   });
 
   it("returns only staged file diff when target is staged", async () => {
@@ -94,6 +99,11 @@ describe("GitDiffHelper file target behavior", () => {
 
     expect(diff).toContain("a.txt");
     expect(diff).not.toContain("b.txt");
+    expect(processDiffMock).toHaveBeenCalledWith(
+      expect.any(String),
+      "git",
+      repoPath
+    );
   });
 
   it("returns both staged and unstaged file diffs when target is all", async () => {
@@ -112,5 +122,10 @@ describe("GitDiffHelper file target behavior", () => {
 
     expect(diff).toContain("a.txt");
     expect(diff).toContain("b.txt");
+    expect(processDiffMock).toHaveBeenCalledWith(
+      expect.any(String),
+      "git",
+      repoPath
+    );
   });
 });

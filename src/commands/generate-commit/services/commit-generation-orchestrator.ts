@@ -4,8 +4,12 @@ import {
   GenerationTargetContext,
   NormalizedCommandInput,
 } from "@/commands/generate-commit/types";
-import { ISCMProvider, SCMFactory } from "@/scm/scm-provider";
-import { multiRepositoryContextManager } from "@/scm/multi-repository-context-manager";
+import { ISCMProvider } from "@/scm/scm-provider";
+import {
+  GroupedRepositoryState,
+  multiRepositoryContextManager,
+} from "@/scm/multi-repository-context-manager";
+import { SCMDetectorService } from "@/services/core/scm-detector-service";
 import { RepositoryContext } from "@/scm/staged-detector-types";
 import { getMessage } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
@@ -37,25 +41,35 @@ export class CommitGenerationOrchestrator {
   ): Promise<GenerationSession | undefined> {
     const requestId = crypto.randomUUID();
 
-    let filesByRepository: Map<string, string[]> | undefined;
+    let groupedRepositories: Map<string, GroupedRepositoryState> | undefined;
+    let groupingError: unknown;
     if (input.resourceStates.length > 0) {
       try {
-        filesByRepository =
-          await multiRepositoryContextManager.groupFilesByRepository(
+        groupedRepositories =
+          await multiRepositoryContextManager.groupResourceStatesByRepository(
             input.resourceStates,
           );
       } catch (error) {
+        groupingError = error;
         this.deps.logger.warn(
           `[Chain] [Orchestrator] Failed to group files by repository: ${error}`,
         );
       }
     }
-    const isCrossRepository = (filesByRepository?.size ?? 0) > 1;
+
+    if (groupingError && input.resourceStates.length > 1) {
+      await notify.error("generate.commit.repository.grouping.failed");
+      return undefined;
+    }
+
+    const groupedRepositoryCount = groupedRepositories?.size ?? 0;
+    const hasGroupedRepositories = groupedRepositoryCount > 0;
+    const isCrossRepository = groupedRepositoryCount > 1;
 
     const context = await this.deps.prepare(input.prepareArg, {
       requireSelectedFiles: false,
       validateModel: true,
-      skipSCMDetection: isCrossRepository,
+      skipSCMDetection: hasGroupedRepositories,
     });
     if (!context) {
       return undefined;
@@ -69,8 +83,9 @@ export class CommitGenerationOrchestrator {
       return undefined;
     }
 
-    if (isCrossRepository && filesByRepository) {
-      const targets = await this.buildCrossRepositoryTargets(filesByRepository);
+    if (isCrossRepository && groupedRepositories) {
+      const targets =
+        await this.buildCrossRepositoryTargets(groupedRepositories);
 
       if (targets.length === 0) {
         await notify.error(getMessage("scm.not.detected"));
@@ -88,6 +103,28 @@ export class CommitGenerationOrchestrator {
         scmContext: {
           mode: "cross",
           targets,
+        },
+      };
+    }
+
+    if (hasGroupedRepositories && groupedRepositoryCount === 1 && groupedRepositories) {
+      const singleTarget =
+        await this.buildSingleRepositoryTargetFromGrouped(groupedRepositories);
+      if (!singleTarget) {
+        return undefined;
+      }
+
+      return {
+        requestId,
+        provider,
+        model,
+        providerConfig,
+        aiProvider,
+        selectedModel,
+        input,
+        scmContext: {
+          mode: "single",
+          target: singleTarget,
         },
       };
     }
@@ -139,43 +176,91 @@ export class CommitGenerationOrchestrator {
   }
 
   private async buildCrossRepositoryTargets(
-    filesByRepository: Map<string, string[]>,
+    groupedRepositories: Map<string, GroupedRepositoryState>,
   ): Promise<GenerationTargetContext[]> {
     const targets: GenerationTargetContext[] = [];
 
-    for (const [repositoryPath, files] of filesByRepository.entries()) {
-      let scmProvider: ISCMProvider | undefined;
-      let detectionError: string | undefined;
-
-      try {
-        scmProvider = await SCMFactory.detectSCM(files, repositoryPath);
-        if (!scmProvider) {
-          detectionError = `SCM provider not detected for ${repositoryPath}`;
-        }
-      } catch (error) {
-        detectionError = error instanceof Error ? error.message : String(error);
-      }
-
-      targets.push({
-        repositoryPath,
-        scmProvider,
-        selectedFiles: files,
-        repositoryContext: this.createRepositoryContext(
-          repositoryPath,
-          scmProvider,
-          files,
-        ),
-        detectionError,
-      });
+    for (const [repositoryPath, repositoryState] of groupedRepositories.entries()) {
+      targets.push(
+        await this.buildTargetForRepository(repositoryPath, repositoryState),
+      );
     }
 
     return targets;
+  }
+
+  private async buildSingleRepositoryTargetFromGrouped(
+    groupedRepositories: Map<string, GroupedRepositoryState>,
+  ): Promise<GenerationTargetContext | undefined> {
+    const firstEntry = groupedRepositories.entries().next().value as
+      | [string, GroupedRepositoryState]
+      | undefined;
+
+    if (!firstEntry) {
+      return undefined;
+    }
+
+    const [repositoryPath, repositoryState] = firstEntry;
+    const target = await this.buildTargetForRepository(
+      repositoryPath,
+      repositoryState,
+    );
+
+    if (!target.scmProvider) {
+      await notify.error(getMessage("scm.not.detected"));
+      return undefined;
+    }
+
+    return target;
+  }
+
+  private async buildTargetForRepository(
+    repositoryPath: string,
+    repositoryState: GroupedRepositoryState,
+  ): Promise<GenerationTargetContext> {
+    const { files, scmType } = repositoryState;
+    let scmProvider: ISCMProvider | undefined;
+    let selectedFiles = files;
+    let resolvedRepositoryPath = repositoryPath;
+    let detectionError: string | undefined;
+
+    try {
+      const detectionResult =
+        await SCMDetectorService.getInstance().detectSCMProvider({
+          selectedFiles: files,
+          repositoryPath,
+          scmType,
+          suppressNotifications: true,
+        });
+      scmProvider = detectionResult?.scmProvider;
+      selectedFiles = detectionResult?.selectedFiles || files;
+      resolvedRepositoryPath = detectionResult?.repositoryPath || repositoryPath;
+      if (!scmProvider) {
+        detectionError = `SCM provider not detected for ${repositoryPath}`;
+      }
+    } catch (error) {
+      detectionError = error instanceof Error ? error.message : String(error);
+    }
+
+    return {
+      repositoryPath: resolvedRepositoryPath,
+      scmProvider,
+      selectedFiles,
+      repositoryContext: this.createRepositoryContext(
+        resolvedRepositoryPath,
+        scmProvider,
+        selectedFiles,
+        scmType,
+      ),
+      detectionError,
+    };
   }
 
   private createRepositoryContext(
     repositoryPath: string,
     scmProvider: ISCMProvider | undefined,
     selectedFiles?: string[],
+    fallbackType?: "git" | "svn",
   ): RepositoryContext {
     const activeFile = vscode.window.activeTextEditor?.document?.fileName;
     const firstFile = selectedFiles?.[0] || activeFile;
@@ -187,7 +272,7 @@ export class CommitGenerationOrchestrator {
       repository: {
         path: repositoryPath,
         name: path.basename(repositoryPath),
-        type: scmProvider?.type || "unknown",
+        type: scmProvider?.type || fallbackType || "unknown",
         isActive: false,
       },
       selectedFiles: selectedFiles?.length ? selectedFiles : undefined,

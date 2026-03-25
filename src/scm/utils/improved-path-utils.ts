@@ -184,6 +184,60 @@ export class ImprovedPathUtils {
   }
 
   /**
+   * 检查 childPath 是否位于 parentPath 内部（含等值），并保证路径边界匹配
+   * 例如 /repo 不会错误匹配 /repo-tools
+   * @param childPath 子路径
+   * @param parentPath 父路径
+   * @returns 是否包含关系成立
+   */
+  static isPathInside(childPath: string, parentPath: string): boolean {
+    if (!childPath || !parentPath) {
+      return false;
+    }
+
+    const normalizedChildPath = this.normalizePath(childPath);
+    const normalizedParentPath = this.normalizePath(parentPath);
+
+    if (this.pathsEqual(normalizedChildPath, normalizedParentPath)) {
+      return true;
+    }
+
+    const parentWithSeparator = normalizedParentPath.endsWith(path.sep)
+      ? normalizedParentPath
+      : `${normalizedParentPath}${path.sep}`;
+
+    return this.pathStartsWith(normalizedChildPath, parentWithSeparator);
+  }
+
+  /**
+   * 在候选路径中寻找最具体（最长）的包含路径
+   * @param childPath 子路径
+   * @param candidates 候选父路径数组
+   * @returns 最佳匹配路径或 undefined
+   */
+  static findBestContainingPath(
+    childPath: string,
+    candidates: string[],
+  ): string | undefined {
+    let bestMatch: string | undefined;
+    let bestLength = -1;
+
+    for (const candidate of candidates) {
+      if (!this.isPathInside(childPath, candidate)) {
+        continue;
+      }
+
+      const normalizedCandidate = this.normalizePath(candidate);
+      if (normalizedCandidate.length > bestLength) {
+        bestMatch = normalizedCandidate;
+        bestLength = normalizedCandidate.length;
+      }
+    }
+
+    return bestMatch;
+  }
+
+  /**
    * 改进的路径规范化方法
    * @param p 需要标准化的路径
    * @returns 标准化后的路径

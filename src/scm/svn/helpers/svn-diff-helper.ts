@@ -184,7 +184,7 @@ export class SvnDiffHelper {
 
       // 处理diff以获取结构化数据，包括原始文件内容
       // Diff simplification removed - use DiffProcessor directly
-      return DiffProcessor.process(diffOutput, "svn");
+      return DiffProcessor.process(diffOutput, "svn", repositoryPath);
     } catch (error) {
       if (error instanceof Error) {
         this.logger.error(formatMessage("scm.diff.error", ["SVN", error]));
