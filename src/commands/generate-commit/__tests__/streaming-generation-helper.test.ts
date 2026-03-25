@@ -43,6 +43,22 @@ function createConfiguration() {
 }
 
 describe("StreamingGenerationHelper fallback prompt", () => {
+  it("builds different system prompt hash when scm type changes", () => {
+    const helper = new StreamingGenerationHelper({
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+      logError: vi.fn(),
+    } as any);
+
+    const config = createConfiguration();
+    const gitHash = (helper as any).getSystemPromptHash(config, "git");
+    const svnHash = (helper as any).getSystemPromptHash(config, "svn");
+
+    expect(gitHash).not.toBe(svnHash);
+  });
+
   it("uses current scm type when building fallback prompt", async () => {
     const helper = new StreamingGenerationHelper({
       info: vi.fn(),

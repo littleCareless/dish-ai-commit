@@ -386,7 +386,8 @@ export class LayeredCommitHandler {
       const cacheKey = commitCacheService.generateKey(
         diff,
         config,
-        selectedModel.id + "-layered-file"
+        selectedModel.id + "-layered-file",
+        scmProvider.type ?? "git",
       );
 
       const cachedDescription = commitCacheService.get(cacheKey);

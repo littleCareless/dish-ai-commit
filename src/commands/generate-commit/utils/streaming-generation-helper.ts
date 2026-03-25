@@ -143,6 +143,7 @@ export class StreamingGenerationHelper {
           diffContent,
           configuration,
           session.model,
+          scmProvider.type ?? "git",
         );
         const cachedMessage = commitCacheService.get(cacheKey);
 
@@ -458,7 +459,10 @@ export class StreamingGenerationHelper {
     }
 
     // 构建并缓存 system prompt
-    const systemPromptHash = this.getSystemPromptHash(configuration);
+    const systemPromptHash = this.getSystemPromptHash(
+      configuration,
+      scmProvider.type ?? "git",
+    );
     if (
       !this._lastSystemPrompt ||
       this._lastSystemPromptHash !== systemPromptHash
@@ -569,8 +573,9 @@ export class StreamingGenerationHelper {
     });
   }
 
-  private getSystemPromptHash(config: any): string {
+  private getSystemPromptHash(config: any, scmType: string): string {
     return JSON.stringify({
+      scm: scmType || "git",
       language: config.base?.language,
       commitFormat: {
         enableEmoji: config.features?.commitFormat?.enableEmoji,
@@ -835,6 +840,7 @@ export class StreamingGenerationHelper {
         requestParams.diff || "",
         configuration,
         selectedModel.id,
+        scmProvider.type ?? "git",
       );
     }
 

@@ -84,4 +84,23 @@ describe("CommitCacheService.generateKey", () => {
 
     expect(keyA).not.toBe(keyB);
   });
+
+  it("changes key when scm type changes", () => {
+    const config = createConfiguration();
+
+    const keyA = commitCacheService.generateKey(
+      "diff-content",
+      config,
+      "model-a",
+      "git",
+    );
+    const keyB = commitCacheService.generateKey(
+      "diff-content",
+      config,
+      "model-a",
+      "svn",
+    );
+
+    expect(keyA).not.toBe(keyB);
+  });
 });
