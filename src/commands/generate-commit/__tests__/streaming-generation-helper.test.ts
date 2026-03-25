@@ -77,7 +77,7 @@ describe("StreamingGenerationHelper fallback prompt", () => {
     );
   });
 
-  it("passes explicit diffTarget to scm provider when diffTarget is not auto", async () => {
+  it("uses resolved explicit diffTarget for combined diff and per-file snapshot", async () => {
     const helper = new StreamingGenerationHelper({
       info: vi.fn(),
       warn: vi.fn(),
@@ -100,6 +100,10 @@ describe("StreamingGenerationHelper fallback prompt", () => {
       ...createConfiguration(),
       features: {
         ...createConfiguration().features,
+        commitFormat: {
+          ...createConfiguration().features.commitFormat,
+          enableLayeredCommit: true,
+        },
         codeAnalysis: {
           diffTarget: "staged",
         },
@@ -109,12 +113,14 @@ describe("StreamingGenerationHelper fallback prompt", () => {
     await (helper as any).prepareConfigurationAndDiff(
       progress,
       scmProvider,
-      ["a.txt"],
+      ["a.txt", "b.txt"],
       [],
       configuration,
     );
 
-    expect(scmProvider.getDiff).toHaveBeenCalledWith(["a.txt"], "staged");
+    expect(scmProvider.getDiff).toHaveBeenNthCalledWith(1, ["a.txt", "b.txt"], "staged");
+    expect(scmProvider.getDiff).toHaveBeenNthCalledWith(2, ["a.txt"], "staged");
+    expect(scmProvider.getDiff).toHaveBeenNthCalledWith(3, ["b.txt"], "staged");
   });
 
   it("maps RequestTooLargeError to too_large result instead of throwing", async () => {

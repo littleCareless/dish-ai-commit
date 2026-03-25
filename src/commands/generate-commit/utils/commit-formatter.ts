@@ -1,4 +1,5 @@
 import { LayeredCommitMessage } from "@/ai/types";
+import { ISCMProvider } from "@/scm/scm-provider";
 
 /**
  * 将分层提交信息格式化为结构化的提交信息文本
@@ -40,3 +41,33 @@ export function filterCodeBlockMarkers(commitMessage: string): string {
   return cleanedMessage?.trim();
 }
 
+export interface CommitApplyResult {
+  message: string;
+  applied: boolean;
+}
+
+/**
+ * 标准化提交消息文本，保证后续链路的空值判断一致
+ */
+export function normalizeCommitMessage(commitMessage?: string | null): string {
+  if (!commitMessage) {
+    return "";
+  }
+  return filterCodeBlockMarkers(commitMessage).trim();
+}
+
+/**
+ * 统一将提交消息写入 SCM 输入框
+ */
+export async function applyCommitMessageToInput(
+  scmProvider: ISCMProvider,
+  commitMessage?: string | null,
+): Promise<CommitApplyResult> {
+  const normalized = normalizeCommitMessage(commitMessage);
+  if (!normalized) {
+    return { message: "", applied: false };
+  }
+
+  await scmProvider.startStreamingInput(normalized);
+  return { message: normalized, applied: true };
+}

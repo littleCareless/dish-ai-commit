@@ -1,6 +1,6 @@
 import { AIMessage, AIProvider, AIRequestParams } from "@/ai/types";
 import { assertNotCancelled } from "@/commands/generate-commit/utils/cancellation";
-import { filterCodeBlockMarkers } from "@/commands/generate-commit/utils/commit-formatter";
+import { applyCommitMessageToInput } from "@/commands/generate-commit/utils/commit-formatter";
 import { ISCMProvider } from "@/scm/scm-provider";
 import { getMessage } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
@@ -32,7 +32,7 @@ export class FunctionCallingHandler {
     scmProvider: ISCMProvider,
     token: vscode.CancellationToken,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
-    repositoryPath?: string
+    _repositoryPath?: string
   ): Promise<string> {
     assertNotCancelled(token, this.logger);
     progress.report({
@@ -50,9 +50,10 @@ export class FunctionCallingHandler {
 
     assertNotCancelled(token, this.logger);
 
-    const finalMessage = filterCodeBlockMarkers(aiResponse.content)?.trim();
-    await scmProvider.startStreamingInput(finalMessage);
-
-    return finalMessage;
+    const { message } = await applyCommitMessageToInput(
+      scmProvider,
+      aiResponse.content,
+    );
+    return message;
   }
 }

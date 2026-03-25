@@ -245,6 +245,7 @@
   "progress.complete": "Complete",
   "error.generating.commit.for.file": "Error generating commit for {0}: {1}",
   "warn.no.file.descriptions.generated": "Could not generate any file descriptions. Aborting.",
+  "warn.layered.file.descriptions.incomplete": "Failed to generate descriptions for {0} of {1} selected files. Layered commit generation was aborted to avoid incomplete summaries.",
   "error.parsing.layered.summary": "Failed to parse layered commit summary from AI. Showing raw details as a fallback.",
   "layered.commit.fallback.title": "Layered Commit Details (Fallback)",
   "layered.commit.fallback.description": "The AI failed to generate a structured summary. Below are the raw, per-file descriptions. You can use these to manually craft your commit message.",

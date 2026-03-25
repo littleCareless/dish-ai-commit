@@ -132,7 +132,9 @@ export class GenerateCommitCommand extends BaseCommand {
   private async notifyCrossRepositorySummary(
     result: CrossRepositoryResult,
   ): Promise<void> {
-    if (result.failureCount === 0) {
+    const nonSuccessCount = Math.max(result.total - result.successCount, 0);
+
+    if (nonSuccessCount === 0) {
       await notify.info("generate.commit.cross.repository.success", [
         result.successCount,
       ]);
@@ -141,7 +143,7 @@ export class GenerateCommitCommand extends BaseCommand {
 
     await notify.warn("generate.commit.cross.repository.partial", [
       result.successCount,
-      result.failureCount,
+      nonSuccessCount,
     ]);
 
     const failedRepoNames = result.results

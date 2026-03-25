@@ -2,9 +2,13 @@ import { AIModel, AIProvider, AIRequestParams } from "@/ai/types";
 import { getSystemPrompt } from "@/ai/utils/generate-helper";
 import { CommitContextBuilder } from "@/commands/generate-commit/builders/context-builder";
 import { CommitMessageBuilder } from "@/commands/generate-commit/builders/message-builder";
+import { GenerationResult } from "@/commands/generate-commit/types";
 import { assertNotCancelled } from "@/commands/generate-commit/utils/cancellation";
 import { GlobalContextExtractor } from "@/commands/generate-commit/services/global-context-extractor";
-import { filterCodeBlockMarkers } from "@/commands/generate-commit/utils/commit-formatter";
+import {
+  applyCommitMessageToInput,
+  normalizeCommitMessage,
+} from "@/commands/generate-commit/utils/commit-formatter";
 import { getLayeredCommitVariables } from "@/prompt/layered-commit-file";
 import { getLayeredCommitBatchVariables } from "@/prompt/layered-commit-batch";
 import { ISCMProvider } from "@/scm/scm-provider";
@@ -17,6 +21,13 @@ import { Logger } from "@/utils/logger";
 import { notify } from "@/utils/notification/notification-manager";
 import { processPromptTemplate } from "@/utils/prompt-template";
 import * as vscode from "vscode";
+
+interface LayeredResultContext {
+  requestId: string;
+  repositoryPath?: string;
+  provider?: string;
+  model?: string;
+}
 
 /**
  * 分层提交处理器类，负责处理分层提交信息生成
@@ -53,8 +64,9 @@ export class LayeredCommitHandler {
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     selectedModel: AIModel,
     config: any,
+    resultContext: LayeredResultContext,
     prefetchedDiffs?: Map<string, string>,
-  ): Promise<void> {
+  ): Promise<GenerationResult> {
     this.logger.logOperationStart("handleLayeredCommit", {
       data: {
         provider: aiProvider.getId(),
@@ -72,7 +84,11 @@ export class LayeredCommitHandler {
         operation: "handleLayeredCommit",
       });
       notify.warn("no.files.selected.for.layered.commit");
-      return;
+      return this.createFailedResult(
+        resultContext,
+        "No files selected for layered commit generation.",
+        "LAYERED_NO_FILES_SELECTED",
+      );
     }
 
     this.logger.debug("获取配置完成", {
@@ -81,6 +97,15 @@ export class LayeredCommitHandler {
         enableEmoji: config.features.commitFormat.enableEmoji,
       },
     });
+
+    const fileDiffMap = prefetchedDiffs ?? new Map<string, string>();
+    if (fileDiffMap.size === 0) {
+      return this.createFailedResult(
+        resultContext,
+        "No prefetched diff snapshot available for layered generation.",
+        "LAYERED_DIFF_SNAPSHOT_MISSING",
+      );
+    }
 
     // === 新增: 阶段0 - 全局上下文提取 ===
     progress.report({
@@ -94,7 +119,7 @@ export class LayeredCommitHandler {
     const globalContext =
       await this.globalContextExtractor.extractGlobalContext(
         selectedFiles,
-        scmProvider,
+        fileDiffMap,
         selectedModel,
         aiProvider
       );
@@ -123,37 +148,80 @@ export class LayeredCommitHandler {
       token,
       progress,
       selectedModel,
-      prefetchedDiffs,
+      fileDiffMap,
     );
+
+    const { completeFileDescriptions, missingFiles } =
+      this.normalizeFileDescriptions(selectedFiles, fileDescriptions);
 
     this.logger.info("文件描述生成完成", {
       data: {
         totalFiles: selectedFiles.length,
-        successCount: fileDescriptions.length,
-        failedCount: selectedFiles.length - fileDescriptions.length,
+        successCount: completeFileDescriptions.length,
+        failedCount: missingFiles.length,
+        droppedCount: fileDescriptions.length - completeFileDescriptions.length,
       },
     });
 
-    if (fileDescriptions.length > 0) {
-      await this.generateAndApplyLayeredSummary(
-        aiProvider,
-        requestParams,
-        scmProvider,
-        fileDescriptions,
-        token,
-        progress,
-        config
-      );
-
-      this.logger.logOperationEnd("handleLayeredCommit", undefined, {
-        data: { fileCount: fileDescriptions.length },
-      });
-    } else {
+    if (completeFileDescriptions.length === 0) {
       this.logger.warn("未生成任何文件描述", {
         operation: "handleLayeredCommit",
       });
       notify.warn("warn.no.file.descriptions.generated");
+      return this.createFailedResult(
+        resultContext,
+        "No file descriptions generated for layered commit.",
+        "LAYERED_NO_FILE_DESCRIPTIONS",
+      );
     }
+
+    if (missingFiles.length > 0) {
+      this.logger.warn("Layered commit file description coverage incomplete", {
+        operation: "handleLayeredCommit",
+        data: {
+          totalFiles: selectedFiles.length,
+          generatedFiles: completeFileDescriptions.length,
+          missingFiles,
+        },
+      });
+      notify.warn("warn.layered.file.descriptions.incomplete", [
+        String(missingFiles.length),
+        String(selectedFiles.length),
+      ]);
+      return this.createFailedResult(
+        resultContext,
+        this.createIncompleteDescriptionsErrorMessage(selectedFiles.length, missingFiles),
+        "LAYERED_PARTIAL_FILE_DESCRIPTIONS",
+      );
+    }
+
+    if (completeFileDescriptions.length > 0) {
+      const layeredResult = await this.generateAndApplyLayeredSummary(
+        aiProvider,
+        requestParams,
+        scmProvider,
+        completeFileDescriptions,
+        token,
+        progress,
+        config,
+        resultContext,
+      );
+
+      if (layeredResult.status === "success") {
+        this.logger.logOperationEnd("handleLayeredCommit", undefined, {
+          data: { fileCount: fileDescriptions.length },
+        });
+      }
+
+      return layeredResult;
+    }
+
+    // Kept for type-safety; should be unreachable due to the guards above.
+    return this.createFailedResult(
+      resultContext,
+      "Layered commit generation ended in an unexpected state.",
+      "LAYERED_UNEXPECTED_STATE",
+    );
   }
 
   /**
@@ -172,8 +240,9 @@ export class LayeredCommitHandler {
     fileChanges: { filePath: string; description: string }[],
     token: vscode.CancellationToken,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
-    config: any
-  ): Promise<void> {
+    config: any,
+    resultContext: LayeredResultContext,
+  ): Promise<GenerationResult> {
     this.logger.logOperationStart("generateAndApplyLayeredSummary", {
       data: { fileCount: fileChanges.length },
     });
@@ -224,8 +293,10 @@ export class LayeredCommitHandler {
       this.logger.error("Provider 不支持非流式生成", {
         data: { provider: aiProvider.getId() },
       });
-      throw new Error(
-        `Provider ${aiProvider.getId()} does not support non-streaming for layered commit summary.`
+      return this.createFailedResult(
+        resultContext,
+        `Provider ${aiProvider.getId()} does not support non-streaming for layered commit summary.`,
+        "LAYERED_PROVIDER_UNSUPPORTED",
       );
     }
 
@@ -242,18 +313,27 @@ export class LayeredCommitHandler {
     this.throwIfCancelled(token);
 
     try {
-      const finalMessage = summaryResponse.content;
-      const filteredMessage = filterCodeBlockMarkers(finalMessage);
-
-      this.logger.debug("应用分层摘要到 SCM", {
-        data: { messageLength: filteredMessage?.length || 0 },
-      });
-
-      await scmProvider.startStreamingInput(filteredMessage?.trim());
+      const { message, applied } = await applyCommitMessageToInput(
+        scmProvider,
+        summaryResponse.content,
+      );
+      if (!applied) {
+        return this.createFailedResult(
+          resultContext,
+          "Layered summary is empty after normalization.",
+          "LAYERED_SUMMARY_EMPTY",
+        );
+      }
 
       this.logger.logOperationEnd("generateAndApplyLayeredSummary", undefined, {
         data: { fileCount: fileChanges.length },
       });
+      return {
+        status: "success",
+        applied: true,
+        message,
+        ...resultContext,
+      };
     } catch (error) {
       this.logger.logError(error as Error, "应用分层提交摘要失败", {
         operation: "generateAndApplyLayeredSummary",
@@ -262,6 +342,11 @@ export class LayeredCommitHandler {
       // Fallback to showing raw details if applying fails
       await this.messageBuilder.showLayeredCommitDetails(fileChanges, true);
       notify.error("error.applying.layered.summary");
+      return this.createFailedResult(
+        resultContext,
+        error instanceof Error ? error.message : String(error),
+        "LAYERED_APPLY_SUMMARY_FAILED",
+      );
     }
   }
 
@@ -278,7 +363,7 @@ export class LayeredCommitHandler {
     token: vscode.CancellationToken,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     selectedModel: AIModel,
-    prefetchedDiffs?: Map<string, string>,
+    fileDiffMap: Map<string, string>,
   ): Promise<{ filePath: string; description: string }[]> {
     const results: { filePath: string; description: string }[] = [];
     const filesToProcess: {
@@ -289,16 +374,14 @@ export class LayeredCommitHandler {
     const failureReasons = new Map<string, string>();
     const MAX_BATCH_SIZE = 15000; // chars
     const MAX_FILES_PER_BATCH = 10;
-    const fileDiffMap = new Map<string, string>();
 
     // 1. Collect per-file diff once + cache filter
     for (const file of files) {
-      const diff = prefetchedDiffs?.get(file) || (await scmProvider.getDiff([file]));
+      const diff = fileDiffMap.get(file);
       if (!diff) {
         failureReasons.set(file, "diff_unavailable");
         continue;
       }
-      fileDiffMap.set(file, diff);
 
       const cacheKey = commitCacheService.generateKey(
         diff,
@@ -619,7 +702,7 @@ export class LayeredCommitHandler {
           messages: contextManager.buildMessages(),
           diff: "",
         });
-        const description = filterCodeBlockMarkers(response.content)?.trim();
+        const description = normalizeCommitMessage(response.content);
 
         if (description) {
           fallbackResults.push({ filePath, description });
@@ -635,6 +718,70 @@ export class LayeredCommitHandler {
     }
 
     return fallbackResults;
+  }
+
+  private normalizeFileDescriptions(
+    selectedFiles: string[],
+    fileDescriptions: { filePath: string; description: string }[],
+  ): {
+    completeFileDescriptions: { filePath: string; description: string }[];
+    missingFiles: string[];
+  } {
+    const selectedFileSet = new Set(selectedFiles);
+    const descriptionMap = new Map<string, string>();
+
+    for (const item of fileDescriptions) {
+      if (!selectedFileSet.has(item.filePath)) {
+        continue;
+      }
+      const normalizedDescription = item.description?.trim();
+      if (!normalizedDescription) {
+        continue;
+      }
+      // Keep the last valid description for a file to avoid duplicate entries.
+      descriptionMap.set(item.filePath, normalizedDescription);
+    }
+
+    const completeFileDescriptions: { filePath: string; description: string }[] = [];
+    const missingFiles: string[] = [];
+    for (const filePath of selectedFiles) {
+      const description = descriptionMap.get(filePath);
+      if (description) {
+        completeFileDescriptions.push({ filePath, description });
+      } else {
+        missingFiles.push(filePath);
+      }
+    }
+
+    return {
+      completeFileDescriptions,
+      missingFiles,
+    };
+  }
+
+  private createIncompleteDescriptionsErrorMessage(
+    totalFiles: number,
+    missingFiles: string[],
+  ): string {
+    const previewLimit = 5;
+    const missingPreview = missingFiles.slice(0, previewLimit).join(", ");
+    const remainingCount = missingFiles.length - previewLimit;
+    const remainingMessage = remainingCount > 0 ? ` (+${remainingCount} more)` : "";
+    return `Layered commit requires descriptions for all selected files, but failed to generate ${missingFiles.length} of ${totalFiles}: ${missingPreview}${remainingMessage}.`;
+  }
+
+  private createFailedResult(
+    resultContext: LayeredResultContext,
+    error: string,
+    errorCode: string,
+  ): GenerationResult {
+    return {
+      status: "failed",
+      applied: false,
+      error,
+      errorCode,
+      ...resultContext,
+    };
   }
 
   /**

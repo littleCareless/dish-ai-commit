@@ -1,5 +1,4 @@
 import { AIModel, AIProvider } from "@/ai/types";
-import { ISCMProvider } from "@/scm/scm-provider";
 import {
   DiffStructureExtractor,
   FileSummary,
@@ -21,14 +20,14 @@ export class GlobalContextExtractor {
   /**
    * 提取全局上下文
    * @param selectedFiles - 选中的文件列表
-   * @param scmProvider - SCM 提供者
+   * @param fileDiffMap - 预取的文件 diff 快照
    * @param selectedModel - 选中的 AI 模型
    * @param aiProvider - AI 提供者
    * @returns 全局上下文字符串
    */
   async extractGlobalContext(
     selectedFiles: string[],
-    scmProvider: ISCMProvider,
+    fileDiffMap: Map<string, string>,
     selectedModel: AIModel,
     aiProvider: AIProvider
   ): Promise<string> {
@@ -47,7 +46,7 @@ export class GlobalContextExtractor {
 
     const fileOverviews = await this.generateFileOverviews(
       selectedFiles,
-      scmProvider
+      fileDiffMap,
     );
     const estimatedTokens = this.estimateTokens(fileOverviews);
 
@@ -90,21 +89,30 @@ export class GlobalContextExtractor {
    */
   private async generateFileOverviews(
     selectedFiles: string[],
-    scmProvider: ISCMProvider
+    fileDiffMap: Map<string, string>,
   ): Promise<FileSummary[]> {
     const overviews: FileSummary[] = [];
 
     for (const filePath of selectedFiles) {
+      const fileDiff = fileDiffMap.get(filePath);
+      if (!fileDiff) {
+        overviews.push({
+          filePath,
+          changedClasses: [],
+          changedFunctions: [],
+          changeType: "modified",
+          estimatedTokens: 20,
+        });
+        continue;
+      }
+
       try {
-        const fileDiff = await scmProvider.getDiff([filePath]);
-        if (fileDiff) {
-          const overview =
-            await DiffStructureExtractor.extractStructuralSummary(
-              fileDiff,
-              filePath
-            );
-          overviews.push(overview);
-        }
+        const overview =
+          await DiffStructureExtractor.extractStructuralSummary(
+            fileDiff,
+            filePath
+          );
+        overviews.push(overview);
       } catch (error) {
         this.logger.warn(
           `Failed to generate overview for ${filePath}:${error}`

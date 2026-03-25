@@ -42,6 +42,12 @@ interface PerformGenerationOptions {
   suppressSuccessNotification?: boolean;
 }
 
+interface DiffSnapshot {
+  combinedDiff: string | undefined;
+  resolvedDiffTarget: "staged" | "all";
+  fileDiffMap?: Map<string, string>;
+}
+
 /**
  * 流式生成辅助类 - 遵循单一职责原则
  * 只负责流式生成的逻辑，不包含其他职责
@@ -107,7 +113,7 @@ export class StreamingGenerationHelper {
 
     try {
       // 步骤1: 获取配置和diff内容
-      const { configuration, diffContent, fileDiffMap } =
+      const { configuration, snapshot } =
         await this.prepareConfigurationAndDiff(
           progress,
           scmProvider,
@@ -116,6 +122,7 @@ export class StreamingGenerationHelper {
           session.providerConfig,
           target.repositoryContext,
         );
+      const { combinedDiff: diffContent, fileDiffMap } = snapshot;
 
       if (!diffContent) {
         return this.createFailedResult(
@@ -267,8 +274,7 @@ export class StreamingGenerationHelper {
     repositoryContext?: RepositoryContext,
   ): Promise<{
     configuration: any;
-    diffContent: string | undefined;
-    fileDiffMap?: Map<string, string>;
+    snapshot: DiffSnapshot;
   }> {
     if (!providerConfig) {
       this.logger.error(
@@ -298,21 +304,25 @@ export class StreamingGenerationHelper {
     });
 
     let diffContent: string | undefined;
+    let resolvedDiffTarget: "staged" | "all" = "all";
     const diffTargetConfig = configuration.features.codeAnalysis.diffTarget;
     this.logger.info(`diffTargetConfig: ${diffTargetConfig}`);
 
     if (diffTargetConfig === "auto") {
-      diffContent = await this.getDiffWithAutoDetection(
+      const autoDiffResult = await this.getDiffWithAutoDetection(
         scmProvider,
         selectedFiles,
         repositoryContext,
         progress,
       );
+      diffContent = autoDiffResult.content;
+      resolvedDiffTarget = autoDiffResult.target;
     } else {
       const explicitTarget =
         diffTargetConfig === "staged" ? "staged" : "all";
       progress.report({ message: getMessage("progress.getting.diff") });
       diffContent = await scmProvider.getDiff(selectedFiles, explicitTarget);
+      resolvedDiffTarget = explicitTarget;
     }
 
     let fileDiffMap: Map<string, string> | undefined;
@@ -324,14 +334,21 @@ export class StreamingGenerationHelper {
     if (shouldBuildFileDiffMap) {
       fileDiffMap = new Map<string, string>();
       for (const file of selectedFiles) {
-        const fileDiff = await scmProvider.getDiff([file]);
+        const fileDiff = await scmProvider.getDiff([file], resolvedDiffTarget);
         if (fileDiff) {
           fileDiffMap.set(file, fileDiff);
         }
       }
     }
 
-    return { configuration, diffContent, fileDiffMap };
+    return {
+      configuration,
+      snapshot: {
+        combinedDiff: diffContent,
+        resolvedDiffTarget,
+        fileDiffMap,
+      },
+    };
   }
 
   /**
@@ -342,11 +359,14 @@ export class StreamingGenerationHelper {
     selectedFiles: string[] | undefined,
     repositoryContext: RepositoryContext | undefined,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
-  ): Promise<string | undefined> {
+  ): Promise<{ content: string | undefined; target: "staged" | "all" }> {
     try {
       if (!repositoryContext) {
         progress.report({ message: getMessage("progress.getting.diff") });
-        return await scmProvider.getDiff(selectedFiles, "all");
+        return {
+          content: await scmProvider.getDiff(selectedFiles, "all"),
+          target: "all",
+        };
       }
 
       const detectionResult = await stagedContentDetector.detectStagedContent({
@@ -371,13 +391,19 @@ export class StreamingGenerationHelper {
         `Auto-detection selected target: ${selectedTarget}, files: ${diffResult.files.length}`,
       );
 
-      return diffResult.content;
+      return {
+        content: diffResult.content,
+        target: selectedTarget === "staged" ? "staged" : "all",
+      };
     } catch (error) {
       this.logger.warn(
         `Auto-detection failed, falling back to traditional method: ${error}`,
       );
       progress.report({ message: getMessage("progress.getting.diff") });
-      return await scmProvider.getDiff(selectedFiles, "all");
+      return {
+        content: await scmProvider.getDiff(selectedFiles, "all"),
+        target: "all",
+      };
     }
   }
 
@@ -402,12 +428,6 @@ export class StreamingGenerationHelper {
     this.logger.info(
       `[Chain] [StreamingHelper] Using orchestrated AI provider: ${aiProvider.getName?.() || provider}, model: ${selectedModel.id}`,
     );
-
-    if (!aiProvider.generateCommitStream) {
-      this.logger.error(`Provider ${provider} does not support streaming.`);
-      notify.error("provider.does.not.support.streaming", [provider]);
-      throw new Error(`Provider ${provider} does not support streaming.`);
-    }
 
     return {
       provider,
@@ -818,10 +838,43 @@ export class StreamingGenerationHelper {
       );
     }
 
-    let generatedMessage: string | undefined;
+    if (!useFunctionCalling && shouldUseLayeredCommit) {
+      const layeredResult = await this.layeredCommitHandler.handle(
+        aiProvider,
+        requestParams,
+        scmProvider,
+        selectedFiles,
+        token,
+        progress,
+        selectedModel,
+        configuration,
+        {
+          requestId: session.requestId,
+          repositoryPath: target.repositoryPath,
+          provider: session.provider,
+          model: session.selectedModel.id,
+        },
+        fileDiffMap,
+      );
 
-    if (useFunctionCalling) {
-      generatedMessage = await this.handleFunctionCallingGeneration(
+      if (
+        layeredResult.status === "success" &&
+        layeredResult.applied &&
+        !options.suppressSuccessNotification
+      ) {
+        notify.info("commit.message.generated.stream", [
+          scmProvider.type.toUpperCase(),
+          providerId,
+          selectedModel?.id || "default",
+        ]);
+        showCommitSuccessNotification();
+      }
+
+      return layeredResult;
+    }
+
+    const generatedMessage = useFunctionCalling
+      ? await this.handleFunctionCallingGeneration(
         aiProvider,
         requestParams,
         scmProvider,
@@ -830,26 +883,30 @@ export class StreamingGenerationHelper {
         progress,
         repositoryPath,
         providerId,
-      );
-    } else {
-      generatedMessage = await this.handleStandardGeneration(
+      )
+      : await this.handleStandardGeneration(
         aiProvider,
         requestParams,
         scmProvider,
         contextManager,
-        selectedFiles,
-        selectedModel,
         token,
         progress,
-        configuration,
         repositoryPath,
-        fileDiffMap,
+      );
+
+    const normalizedMessage = generatedMessage?.trim();
+    if (!normalizedMessage) {
+      return this.createFailedResult(
+        session,
+        target,
+        "Generated commit message is empty.",
+        "EMPTY_GENERATED_MESSAGE",
       );
     }
 
-    if (cacheKey && generatedMessage && !shouldUseLayeredCommit) {
+    if (cacheKey) {
       this.logger.info("Caching generated commit message.");
-      commitCacheService.set(cacheKey, generatedMessage);
+      commitCacheService.set(cacheKey, normalizedMessage);
     }
 
     if (!options.suppressSuccessNotification) {
@@ -868,7 +925,7 @@ export class StreamingGenerationHelper {
       repositoryPath: target.repositoryPath,
       provider: session.provider,
       model: session.selectedModel.id,
-      message: generatedMessage,
+      message: normalizedMessage,
     };
   }
 
@@ -919,45 +976,26 @@ export class StreamingGenerationHelper {
     requestParams: any,
     scmProvider: ISCMProvider,
     contextManager: ContextManager,
-    selectedFiles: string[] | undefined,
-    selectedModel: AIModel,
     token: vscode.CancellationToken,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
-    configuration: any,
     repositoryPath: string | undefined,
-    fileDiffMap?: Map<string, string>,
-  ): Promise<string | undefined> {
-    const shouldUseLayeredCommit =
-      configuration.features.commitFormat.enableLayeredCommit &&
-      selectedFiles &&
-      selectedFiles.length > 1;
-
-    if (shouldUseLayeredCommit) {
-      this.logger.info("Performing layered file commit generation.");
-      await this.layeredCommitHandler.handle(
-        aiProvider,
-        requestParams,
-        scmProvider,
-        selectedFiles,
-        token,
-        progress,
-        selectedModel,
-        configuration,
-        fileDiffMap,
-      );
-      return undefined; // Layered commit handler manages its own output and doesn't return a single string
-    } else {
-      this.logger.info("Performing standard streaming generation.");
-      return await this.streamingHandler.handle(
-        aiProvider as any,
-        requestParams,
-        scmProvider,
-        token,
-        progress,
-        contextManager,
-        repositoryPath,
+  ): Promise<string> {
+    if (!aiProvider.generateCommitStream) {
+      throw new Error(
+        `Provider ${aiProvider.getId()} does not support streaming.`,
       );
     }
+
+    this.logger.info("Performing standard streaming generation.");
+    return await this.streamingHandler.handle(
+      aiProvider as any,
+      requestParams,
+      scmProvider,
+      token,
+      progress,
+      contextManager,
+      repositoryPath,
+    );
   }
 
   /**
@@ -1118,6 +1156,7 @@ export class StreamingGenerationHelper {
     session: GenerationSession | undefined,
     target: GenerationTargetContext | undefined,
     error: string,
+    errorCode?: string,
   ): GenerationResult {
     return {
       status: "failed",
@@ -1127,6 +1166,7 @@ export class StreamingGenerationHelper {
       provider: session?.provider,
       model: session?.selectedModel?.id,
       error,
+      errorCode,
     };
   }
 }

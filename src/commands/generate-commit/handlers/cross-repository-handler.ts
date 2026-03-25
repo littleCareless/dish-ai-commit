@@ -14,6 +14,24 @@ import * as vscode from "vscode";
 export class CrossRepositoryHandler {
   constructor(private readonly logger: Logger) {}
 
+  private appendCancelledFromIndex(
+    session: GenerationSession,
+    targets: GenerationTargetContext[],
+    startIndex: number,
+    results: CrossRepositoryItemResult[],
+  ): void {
+    for (let index = startIndex; index < targets.length; index++) {
+      const target = targets[index];
+      results.push({
+        repoPath: target.repositoryPath,
+        requestId: session.requestId,
+        status: "cancelled",
+        applied: false,
+        repositoryPath: target.repositoryPath,
+      });
+    }
+  }
+
   async handle(
     session: GenerationSession,
     performGeneration: (
@@ -48,13 +66,7 @@ export class CrossRepositoryHandler {
 
           if (token.isCancellationRequested) {
             cancelled = true;
-            results.push({
-              repoPath: target.repositoryPath,
-              requestId: session.requestId,
-              status: "cancelled",
-              applied: false,
-              repositoryPath: target.repositoryPath,
-            });
+            this.appendCancelledFromIndex(session, targets, index, results);
             break;
           }
 
@@ -90,6 +102,13 @@ export class CrossRepositoryHandler {
               repoPath: target.repositoryPath,
               repositoryPath: target.repositoryPath,
             });
+
+            if (generationResult.status === "cancelled") {
+              cancelled = true;
+              this.appendCancelledFromIndex(session, targets, index + 1, results);
+              break;
+            }
+
             this.logger.info(
               `[CrossRepo] Repository processed: ${target.repositoryPath} (${Date.now() - startTime}ms), status=${generationResult.status}`,
             );

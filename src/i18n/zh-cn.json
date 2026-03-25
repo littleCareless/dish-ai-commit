@@ -255,6 +255,7 @@
   "progress.complete": "完成",
   "error.generating.commit.for.file": "为 {0} 生成提交时出错：{1}",
   "warn.no.file.descriptions.generated": "无法生成任何文件描述。正在中止。",
+  "warn.layered.file.descriptions.incomplete": "有 {0}/{1} 个选中文件未生成描述。为避免摘要不完整，已中止分层提交生成。",
   "error.parsing.layered.summary": "从 AI 解析分层提交摘要失败。显示原始详细信息作为后备。",
   "layered.commit.fallback.title": "分层提交详情（后备）",
   "layered.commit.fallback.description": "AI 未能生成结构化摘要。以下是原始的、按文件分的描述。您可以使用这些来手动创建提交信息。",

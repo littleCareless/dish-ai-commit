@@ -1,7 +1,7 @@
 import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
 import { AIRequestParams } from "@/ai/types";
 import { assertNotCancelled } from "@/commands/generate-commit/utils/cancellation";
-import { filterCodeBlockMarkers } from "@/commands/generate-commit/utils/commit-formatter";
+import { applyCommitMessageToInput } from "@/commands/generate-commit/utils/commit-formatter";
 import { ISCMProvider } from "@/scm/scm-provider";
 import { ContextManager } from "@/utils/context-manager";
 import { getMessage } from "@/utils/i18n";
@@ -35,7 +35,7 @@ export class StreamingHandler {
     token: vscode.CancellationToken,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     contextManager: ContextManager,
-    repositoryPath?: string
+    _repositoryPath?: string
   ): Promise<string> {
     assertNotCancelled(token, this.logger);
     progress.report({
@@ -55,10 +55,11 @@ export class StreamingHandler {
 
     assertNotCancelled(token, this.logger);
 
-    // After the stream is complete, filter the final message and apply it.
-    const finalMessage = filterCodeBlockMarkers(accumulatedMessage);
-    await scmProvider.startStreamingInput(finalMessage);
-
-    return finalMessage;
+    // After the stream is complete, normalize and apply the final message once.
+    const { message } = await applyCommitMessageToInput(
+      scmProvider,
+      accumulatedMessage,
+    );
+    return message;
   }
 }
