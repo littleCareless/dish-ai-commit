@@ -234,10 +234,14 @@ export class GeminiAIProvider extends AbstractAIProvider {
       contents: Content[];
     };
 
-    console.log(
-      "Final messages for AI:",
-      JSON.stringify({ systemInstruction, contents }, null, 2),
-    );
+    this.logger.debug("[GeminiAIProvider] executeAIRequest", {
+      data: {
+        providerId: this.provider.id,
+        modelId,
+        messageCount: contents.length,
+        hasSystemInstruction: Boolean(systemInstruction),
+      },
+    });
 
     try {
       // 使用systemPrompt作为系统指令，使用combinedUserContent作为用户输入
@@ -278,7 +282,13 @@ export class GeminiAIProvider extends AbstractAIProvider {
 
       return { content: content ?? "", usage };
     } catch (error) {
-      console.error("Gemini API request failed:", error);
+      this.logger.error("Gemini API request failed", {
+        error: error as Error,
+        data: {
+          providerId: this.provider.id,
+          modelId,
+        },
+      });
       throw error;
     }
   }
@@ -313,10 +323,14 @@ export class GeminiAIProvider extends AbstractAIProvider {
       this: GeminiAIProvider,
     ): AsyncIterable<string> {
       try {
-        console.log(
-          "Final messages for AI:",
-          JSON.stringify({ systemInstruction, contents }, null, 2),
-        );
+        this.logger.debug("[GeminiAIProvider] executeAIStreamRequest", {
+          data: {
+            providerId: this.provider.id,
+            modelId,
+            messageCount: contents.length,
+            hasSystemInstruction: Boolean(systemInstruction),
+          },
+        });
         const streamResult = await genAI.models.generateContentStream({
           model: modelId,
           contents: contents,
@@ -356,7 +370,13 @@ export class GeminiAIProvider extends AbstractAIProvider {
           }
         }
       } catch (error) {
-        console.error("Gemini API stream request failed:", error);
+        this.logger.error("Gemini API stream request failed", {
+          error: error as Error,
+          data: {
+            providerId: this.provider.id,
+            modelId,
+          },
+        });
         throw error;
       }
     };
@@ -420,7 +440,9 @@ export class GeminiAIProvider extends AbstractAIProvider {
       return models;
     } catch (error) {
       // 如果通过 API 获取失败，则返回配置的静态列表
-      console.warn("获取模型列表失败：", this.config.providerName, error);
+      this.logger.warn(`获取模型列表失败：${this.config.providerName}`, {
+        error: error as Error,
+      });
       return this.config.models;
     }
   }
@@ -483,8 +505,13 @@ export class GeminiAIProvider extends AbstractAIProvider {
     params: AIRequestParams,
     commitMessages: string[],
   ): Promise<import("../types").AIResponse> {
-    console.warn(
+    this.logger.warn(
       "generatePRSummary is not fully implemented for GeminiAIProvider and will return an empty response.",
+      {
+        data: {
+          providerId: this.provider.id,
+        },
+      },
     );
     const systemPrompt =
       params.systemPrompt ||
@@ -604,7 +631,13 @@ export class GeminiAIProvider extends AbstractAIProvider {
       });
       return { totalTokens: countTokensResponse.totalTokens ?? 0 };
     } catch (error) {
-      console.error("Gemini countTokens failed:", error);
+      this.logger.error("Gemini countTokens failed", {
+        error: error as Error,
+        data: {
+          providerId: this.provider.id,
+          modelId,
+        },
+      });
       throw error;
     }
   }

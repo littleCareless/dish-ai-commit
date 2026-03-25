@@ -4,6 +4,7 @@ import * as fs from "fs";
 import * as path from "path";
 import * as vscode from "vscode";
 import { getMessage, formatMessage } from "@/utils/i18n";
+import { Logger as AppLogger } from "@/utils/logger";
 import { notify } from "@/utils/notification/notification-manager";
 
 const execAsync = promisify(exec);
@@ -16,18 +17,40 @@ const enum LogLevel {
 }
 
 class Logger {
+  private static readonly logger = AppLogger.getInstance("SvnUtilsHelper");
+
+  private static normalizeArg(arg: any): string {
+    if (arg instanceof Error) {
+      return arg.message;
+    }
+    if (typeof arg === "string") {
+      return arg;
+    }
+    try {
+      return JSON.stringify(arg);
+    } catch {
+      return String(arg);
+    }
+  }
+
   static log(level: LogLevel, message: string, ...args: any[]) {
+    const suffix =
+      args.length > 0
+        ? ` ${args.map((arg) => this.normalizeArg(arg)).join(" ")}`
+        : "";
+    const fullMessage = `${message}${suffix}`;
+
     switch (level) {
       case LogLevel.Info:
         if (process.env.NODE_ENV !== "production") {
-          console.log(message, ...args);
+          this.logger.info(fullMessage);
         }
         break;
       case LogLevel.Warning:
-        console.warn(message, ...args);
+        this.logger.warn(fullMessage);
         break;
       case LogLevel.Error:
-        console.error(message, ...args);
+        this.logger.error(fullMessage);
         break;
     }
   }

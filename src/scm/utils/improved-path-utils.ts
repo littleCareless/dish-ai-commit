@@ -2,12 +2,14 @@ import * as path from "path";
 import * as fs from "fs";
 import { tmpdir } from "os";
 import { randomBytes } from "crypto";
+import { Logger } from "@/utils/logger";
 
 /**
  * 改进的跨平台路径处理工具类
  * 解决了原有PathUtils中的跨平台兼容性问题
  */
 export class ImprovedPathUtils {
+  private static readonly logger = Logger.getInstance("ImprovedPathUtils");
   // Windows长路径前缀
   private static readonly WINDOWS_LONG_PATH_PREFIX = "\\\\?\\";
   // Windows最大路径长度（不含长路径前缀）
@@ -320,7 +322,7 @@ export class ImprovedPathUtils {
         !filePath.startsWith(this.WINDOWS_LONG_PATH_PREFIX)
       ) {
         // 路径过长但没有长路径前缀，可能有问题
-        console.warn(`Path may be too long for Windows: ${filePath}`);
+        this.logger.warn(`Path may be too long for Windows: ${filePath}`);
       }
 
       return true;

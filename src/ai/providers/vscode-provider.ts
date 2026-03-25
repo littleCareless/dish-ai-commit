@@ -56,7 +56,13 @@ export class VSCodeProvider extends AbstractAIProvider {
       params
     )) as vscode.LanguageModelChatMessage[];
 
-    console.log("Final messages for AI:", JSON.stringify(messages, null, 2));
+    this.logger.debug("[VSCodeProvider] executeAIRequest", {
+      data: {
+        providerId: this.provider.id,
+        modelId: chatModel.id,
+        messageCount: messages.length,
+      },
+    });
 
     // try {
     // if (userContent.length > maxCodeCharacters) {
@@ -82,7 +88,12 @@ export class VSCodeProvider extends AbstractAIProvider {
         const jsonMatch = result.match(/\{[\s\S]*\}/);
         jsonContent = jsonMatch ? JSON.parse(jsonMatch[0]) : JSON.parse(result);
       } catch (e) {
-        console.warn("Failed to parse response as JSON", e);
+        this.logger.warn("Failed to parse response as JSON", {
+          error: e as Error,
+          data: {
+            providerId: this.provider.id,
+          },
+        });
       }
     }
 
@@ -130,7 +141,13 @@ export class VSCodeProvider extends AbstractAIProvider {
       params
     )) as vscode.LanguageModelChatMessage[];
 
-    console.log("Final messages for AI:", JSON.stringify(messages, null, 2));
+    this.logger.debug("[VSCodeProvider] executeAIStreamRequest", {
+      data: {
+        providerId: this.provider.id,
+        modelId: chatModel.id,
+        messageCount: messages.length,
+      },
+    });
 
     const response = await chatModel.sendRequest(messages, {
       modelOptions: {

@@ -108,7 +108,13 @@ export class OllamaProvider extends AbstractAIProvider {
     const model = params.model || this.getDefaultModel();
     const messages = await this.buildProviderMessages(params);
 
-    console.log("Final messages for AI:", JSON.stringify(messages, null, 2));
+    this.logger.debug("[OllamaProvider] executeAIRequest", {
+      data: {
+        providerId: this.provider.id,
+        modelId: model.id,
+        messageCount: messages.length,
+      },
+    });
 
     const response = await this.ollama.chat({
       model: model.id,
@@ -141,7 +147,12 @@ export class OllamaProvider extends AbstractAIProvider {
             parsedJsonContent = JSON.parse(jsonMatch[0]);
           }
         } catch (nestedError) {
-          console.warn("Failed to parse response as JSON", nestedError);
+          this.logger.warn("Failed to parse response as JSON", {
+            error: nestedError as Error,
+            data: {
+              providerId: this.provider.id,
+            },
+          });
         }
       }
     }
@@ -182,7 +193,13 @@ export class OllamaProvider extends AbstractAIProvider {
       const model = params.model || self.getDefaultModel();
       const messages = await self.buildProviderMessages(params);
 
-      console.log("Final messages for AI:", JSON.stringify(messages, null, 2));
+      self.logger.debug("[OllamaProvider] executeAIStreamRequest", {
+        data: {
+          providerId: self.provider.id,
+          modelId: model.id,
+          messageCount: messages.length,
+        },
+      });
 
       const stream = await self.ollama.chat({
         model: model.id,
@@ -252,7 +269,12 @@ export class OllamaProvider extends AbstractAIProvider {
         }))
       );
     } catch (error) {
-      console.error("Failed to fetch Ollama models:", error);
+      this.logger.error("Failed to fetch Ollama models", {
+        error: error as Error,
+        data: {
+          providerId: this.provider.id,
+        },
+      });
       notify.error("ollama.models.fetch.failed");
       return Promise.reject(error);
     }

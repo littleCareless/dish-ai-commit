@@ -74,10 +74,14 @@ export class GroqAIProvider extends AbstractAIProvider {
       params
     );
 
-    console.log(
-      "Final messages for AI:",
-      JSON.stringify({ systemInstruction, contents }, null, 2)
-    );
+    this.logger.debug("[GroqAIProvider] executeAIRequest", {
+      data: {
+        providerId: this.provider.id,
+        modelId,
+        messageCount: contents.length,
+        hasSystemInstruction: Boolean(systemInstruction),
+      },
+    });
 
     try {
       const chatCompletion = await groq.chat.completions.create(
@@ -100,11 +104,21 @@ export class GroqAIProvider extends AbstractAIProvider {
 
       return { content: response ?? "", usage };
     } catch (error: any) {
-      console.error("Groq API request failed:", error);
+      this.logger.error("Groq API request failed", {
+        error: error as Error,
+        data: {
+          providerId: this.provider.id,
+          modelId,
+        },
+      });
       if (error instanceof Groq.APIError) {
-        console.log(error.status);
-        console.log(error.name);
-        console.log(error.headers);
+        this.logger.warn("[GroqAIProvider] API error details", {
+          data: {
+            providerId: this.provider.id,
+            status: error.status,
+            name: error.name,
+          },
+        });
       }
       throw error;
     }
@@ -134,10 +148,14 @@ export class GroqAIProvider extends AbstractAIProvider {
       this: GroqAIProvider
     ): AsyncIterable<string> {
       try {
-        console.log(
-          "Final messages for AI:",
-          JSON.stringify({ systemInstruction, contents }, null, 2)
-        );
+        this.logger.debug("[GroqAIProvider] executeAIStreamRequest", {
+          data: {
+            providerId: this.provider.id,
+            modelId,
+            messageCount: contents.length,
+            hasSystemInstruction: Boolean(systemInstruction),
+          },
+        });
 
         const stream = await groq.chat.completions.create(
           {
@@ -154,11 +172,21 @@ export class GroqAIProvider extends AbstractAIProvider {
           yield chunk.choices[0]?.delta?.content || "";
         }
       } catch (error: any) {
-        console.error("Groq API stream request failed:", error);
+        this.logger.error("Groq API stream request failed", {
+          error: error as Error,
+          data: {
+            providerId: this.provider.id,
+            modelId,
+          },
+        });
         if (error instanceof Groq.APIError) {
-          console.log(error.status);
-          console.log(error.name);
-          console.log(error.headers);
+          this.logger.warn("[GroqAIProvider] Stream API error details", {
+            data: {
+              providerId: this.provider.id,
+              status: error.status,
+              name: error.name,
+            },
+          });
         }
         throw error;
       }
@@ -203,8 +231,13 @@ export class GroqAIProvider extends AbstractAIProvider {
     params: AIRequestParams,
     commitMessages: string[]
   ): Promise<import("../types").AIResponse> {
-    console.warn(
-      "generatePRSummary is not fully implemented for GroqAIProvider and will return an empty response."
+    this.logger.warn(
+      "generatePRSummary is not fully implemented for GroqAIProvider and will return an empty response.",
+      {
+        data: {
+          providerId: this.provider.id,
+        },
+      },
     );
     const systemPrompt =
       params.systemPrompt ||

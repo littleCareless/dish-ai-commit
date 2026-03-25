@@ -113,10 +113,14 @@ export class AnthropicAIProvider extends AbstractAIProvider {
       contents: Anthropic.Messages.MessageParam[];
     };
 
-    console.log(
-      "Final messages for AI:",
-      JSON.stringify({ systemInstruction, contents }, null, 2)
-    );
+    this.logger.debug("[AnthropicAIProvider] executeAIRequest", {
+      data: {
+        providerId: this.provider.id,
+        modelId,
+        messageCount: contents.length,
+        hasSystemInstruction: Boolean(systemInstruction),
+      },
+    });
 
     try {
       const messages = contents.map((content) => ({
@@ -143,7 +147,13 @@ export class AnthropicAIProvider extends AbstractAIProvider {
         response.content[0]?.type === "text" ? response.content[0].text : "";
       return { content, usage };
     } catch (error) {
-      console.error("Anthropic API request failed:", error);
+      this.logger.error("Anthropic API request failed", {
+        error: error as Error,
+        data: {
+          providerId: this.provider.id,
+          modelId,
+        },
+      });
       throw error;
     }
   }
@@ -178,10 +188,14 @@ export class AnthropicAIProvider extends AbstractAIProvider {
       this: AnthropicAIProvider
     ): AsyncIterable<string> {
       try {
-        console.log(
-          "Final messages for AI:",
-          JSON.stringify({ systemInstruction, contents }, null, 2)
-        );
+        this.logger.debug("[AnthropicAIProvider] executeAIStreamRequest", {
+          data: {
+            providerId: this.provider.id,
+            modelId,
+            messageCount: contents.length,
+            hasSystemInstruction: Boolean(systemInstruction),
+          },
+        });
 
         const messages = contents.map((content) => ({
           role: content.role,
@@ -206,7 +220,13 @@ export class AnthropicAIProvider extends AbstractAIProvider {
           }
         }
       } catch (error) {
-        console.error("Anthropic API stream request failed:", error);
+        this.logger.error("Anthropic API stream request failed", {
+          error: error as Error,
+          data: {
+            providerId: this.provider.id,
+            modelId,
+          },
+        });
         throw error;
       }
     };
@@ -239,7 +259,9 @@ export class AnthropicAIProvider extends AbstractAIProvider {
       return Promise.resolve(this.config.models);
     } catch (error) {
       // 如果通过 API 获取失败，则返回配置的静态列表
-      console.warn("获取模型列表失败：", this.config.providerName, error);
+      this.logger.warn(`获取模型列表失败：${this.config.providerName}`, {
+        error: error as Error,
+      });
       return this.config.models;
     }
   }
@@ -296,7 +318,12 @@ export class AnthropicAIProvider extends AbstractAIProvider {
         throw new Error("Invalid response format from Anthropic API");
       }
     } catch (error) {
-      console.error("Failed to refresh Anthropic models:", error);
+      this.logger.error("Failed to refresh Anthropic models", {
+        error: error as Error,
+        data: {
+          providerId: this.provider.id,
+        },
+      });
       throw error;
     }
   }

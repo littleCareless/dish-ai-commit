@@ -239,15 +239,26 @@ export class OpenAICompatibleProvider extends BaseOpenAIProvider {
           const jsonString = content.replace(/^```json\n|\n```$/g, "").trim();
           jsonContent = JSON.parse(jsonString);
         } catch (e) {
-          console.warn("Failed to parse response as JSON", e);
+          this.logger.warn("Failed to parse response as JSON", {
+            error: e as Error,
+            data: {
+              providerId: this.provider.id,
+            },
+          });
         }
       }
 
       return { content, usage, jsonContent };
     } catch (error: any) {
       if (enableR1Models && error.status === 400) {
-        console.warn(
-          "R1 model 400 error. If this is a parameter error, try disabling 'Enable R1 Model Parameters' or adjusting settings."
+        this.logger.warn(
+          "R1 model 400 error. If this is a parameter error, try disabling 'Enable R1 Model Parameters' or adjusting settings.",
+          {
+            error: error as Error,
+            data: {
+              providerId: this.provider.id,
+            },
+          },
         );
       }
       throw error;
@@ -442,9 +453,18 @@ export class OpenAICompatibleProvider extends BaseOpenAIProvider {
           }) as AIModel
       );
     } catch (error) {
-      console.warn("Failed to fetch models for OpenAI Compatible:", error);
+      this.logger.warn("Failed to fetch models for OpenAI Compatible", {
+        error: error as Error,
+        data: {
+          providerId: this.provider.id,
+        },
+      });
       // 使用配置中实际指定的模型作为后备,而不是硬编码的默认值
-      console.warn(`Using configured model as fallback: ${configuredModel}`);
+      this.logger.warn(`Using configured model as fallback: ${configuredModel}`, {
+        data: {
+          providerId: this.provider.id,
+        },
+      });
       return [
         {
           id: configuredModel,

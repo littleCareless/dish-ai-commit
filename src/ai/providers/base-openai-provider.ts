@@ -1,7 +1,6 @@
 import { AbstractAIProvider } from "@/ai/providers/abstract-ai-provider";
 import { AIModel, AIRequestParams } from "@/ai/types";
 import { getSystemPrompt } from "@/ai/utils/generate-helper";
-import { Logger } from "@/utils/logger";
 import OpenAI from "openai";
 import { ChatCompletionMessageParam } from "openai/resources";
 
@@ -71,20 +70,18 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
    */
   protected createClient(): OpenAI {
     const apiKey = this.config.apiKey ?? "local-dummy-key";
-    const logger = Logger.getInstance("Svn Commit-Gen AI");
     const config: any = {
       apiKey: apiKey,
-      logLevel: "debug",
+      logLevel: "error",
       timeout: this.config.timeout ?? this.TIMEOUT,
       maxRetries: this.config.maxRetries ?? this.MAX_RETRIES,
       logger: {
-        error: (msg: string) => logger.error(msg),
-        warn: (msg: string) => logger.warn(msg),
-        info: (msg: string) => logger.info(msg),
-        debug: (msg: string) => logger.debug(msg),
+        error: (msg: string) => this.logger.error(msg),
+        warn: (msg: string) => this.logger.warn(msg),
+        info: (msg: string) => this.logger.info(msg),
+        debug: (msg: string) => this.logger.debug(msg),
       },
     };
-    console.log("config", config, this);
 
     if (this.config.baseUrl) {
       config.baseURL = this.config.baseUrl;
@@ -96,27 +93,11 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       };
     }
 
-    const loggableConfig = { ...config };
-    // if (loggableConfig.apiKey) {
-    //   loggableConfig.apiKey = "REDACTED";
-    // }
-    // if (loggableConfig.defaultHeaders?.["api-key"]) {
-    //   // To avoid modifying the original config object, create a new defaultHeaders object
-    //   loggableConfig.defaultHeaders = {
-    //     ...loggableConfig.defaultHeaders,
-    //     "api-key": "REDACTED",
-    //   };
-    // }
-
-    console.log(
-      `[BaseOpenAIProvider] Creating OpenAI client with config:`,
-      JSON.stringify(loggableConfig, null, 2)
-    );
-    console.log("[BaseOpenAIProvider] createClient this.config:", {
-      baseUrl: this.config.baseUrl,
-      hasBaseUrl: !!this.config.baseUrl,
-      apiKey: this.config.apiKey ? "***" : undefined,
-      providerId: this.config.providerId,
+    this.logger.debug("[BaseOpenAIProvider] createClient", {
+      data: {
+        providerId: this.config.providerId,
+        hasBaseUrl: Boolean(this.config.baseUrl),
+      },
     });
 
     return new OpenAI(config);
@@ -146,16 +127,12 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
         Authorization: `Bearer ${apiKey}`,
       };
     }
-    console.log("[BaseOpenAIProvider] createClientForModel config:", {
-      hasApiKey: !!apiKey,
-      hasBaseUrl: !!baseUrl,
-      baseUrl: baseUrl,
-      hasDefaultHeaders: !!config.defaultHeaders,
-      defaultHeaders: config.defaultHeaders,
-      modelId: model?.id,
-      modelBaseUrl: model?.baseUrl,
-      configBaseUrl: this.config.baseUrl,
-      thisConfigKeys: Object.keys(this.config),
+    this.logger.debug("[BaseOpenAIProvider] createClientForModel", {
+      data: {
+        providerId: this.config.providerId,
+        modelId: model?.id,
+        hasBaseUrl: Boolean(baseUrl),
+      },
     });
     return new OpenAI(config);
   }
@@ -176,10 +153,14 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       params
     )) as ChatCompletionMessageParam[];
 
-    console.log(
-      `[BaseOpenAIProvider] executeAIRequest called at ${new Date().toISOString()} `
-    );
-    console.log("Final messages for AI:", JSON.stringify(messages, null, 2));
+    this.logger.debug("[BaseOpenAIProvider] executeAIRequest", {
+      data: {
+        providerId: this.config.providerId,
+        modelId:
+          params.model?.id || this.config.defaultModel || "gpt-3.5-turbo",
+        messageCount: messages.length,
+      },
+    });
 
     const client = this.createClientForModel(params.model);
     const completion = await client.chat.completions.create({
@@ -203,7 +184,12 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       try {
         jsonContent = JSON.parse(content);
       } catch (e) {
-        console.warn("Failed to parse response as JSON", e);
+        this.logger.warn("Failed to parse response as JSON", {
+          error: e as Error,
+          data: {
+            providerId: this.config.providerId,
+          },
+        });
       }
     }
 
@@ -246,10 +232,14 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       this: BaseOpenAIProvider
     ): AsyncIterable<string> {
       try {
-        console.log(
-          "Final messages for AI:",
-          JSON.stringify(filteredMessages, null, 2)
-        );
+        this.logger.debug("[BaseOpenAIProvider] executeAIStreamRequest", {
+          data: {
+            providerId: this.config.providerId,
+            modelId:
+              params.model?.id || this.config.defaultModel || "gpt-3.5-turbo",
+            messageCount: filteredMessages.length,
+          },
+        });
         const client = this.createClientForModel(params.model);
         const stream = await client.chat.completions.create({
           model:
@@ -270,15 +260,15 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
           }
         }
       } catch (error: any) {
-        console.log("[BaseOpenAIProvider] Stream request error:", {
-          error: error,
-          errorType: typeof error,
-          errorKeys: error ? Object.keys(error) : [],
-          status: error?.status,
-          code: error?.code,
-          message: error?.message,
-          hasConfig: !!this.config,
-          configApiKey: this.config?.apiKey ? "***" : undefined,
+        this.logger.error("[BaseOpenAIProvider] Stream request error", {
+          error: error as Error,
+          data: {
+            providerId: this.config.providerId,
+            modelId:
+              params.model?.id || this.config.defaultModel || "gpt-3.5-turbo",
+            status: error?.status,
+            code: error?.code,
+          },
         });
         this.handleApiError(error);
       }
@@ -313,8 +303,8 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
   async getModels(): Promise<AIModel[]> {
     // 如果没有提供API密钥，立即返回静态模型列表，避免不必要的API调用
     if (!this.config.apiKey) {
-      console.warn(
-        `[BaseOpenAIProvider] No API key for ${this.config.providerName}, returning static model list.`
+      this.logger.warn(
+        `[BaseOpenAIProvider] No API key for ${this.config.providerName}, returning static model list.`,
       );
       return this.config.models as AIModel[];
     }
@@ -324,8 +314,8 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       const models = response.data;
 
       if (!models || models.length === 0) {
-        console.warn(
-          `API for ${this.config.providerName} returned no models, falling back to static list.`
+        this.logger.warn(
+          `API for ${this.config.providerName} returned no models, falling back to static list.`,
         );
         return this.config.models as AIModel[];
       }
@@ -347,8 +337,11 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       );
     } catch (error) {
       // _fetchModelsFromApi 已经记录了详细错误, 这里只记录回退行为
-      console.warn(
-        `[BaseOpenAIProvider] Falling back to static model list for ${this.config.providerName} due to API error.`
+      this.logger.warn(
+        `[BaseOpenAIProvider] Falling back to static model list for ${this.config.providerName} due to API error.`,
+        {
+          error: error as Error,
+        },
       );
       return this.config.models as AIModel[];
     }
@@ -364,8 +357,11 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
       return response.data.map((model) => model.id);
     } catch (error) {
       // _fetchModelsFromApi 已经记录了详细错误, 这里只返回空数组
-      console.warn(
-        `[BaseOpenAIProvider] Falling back to static model list for ${this.config.providerName} due to API error.`
+      this.logger.warn(
+        `[BaseOpenAIProvider] Falling back to static model list for ${this.config.providerName} due to API error.`,
+        {
+          error: error as Error,
+        },
       );
       return [];
     }
@@ -415,17 +411,20 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
     } catch (error) {
       if (retries > 0) {
         const delay = Math.min(1000 * (this.MAX_RETRIES - retries + 1), 3000);
-        console.warn(
-          `[BaseOpenAIProvider] Attempt for ${operationName} failed. Retrying in ${delay}ms... (${
-            retries - 1
-          } retries left). Error:`,
-          error
+        this.logger.warn(
+          `[BaseOpenAIProvider] Attempt for ${operationName} failed. Retrying in ${delay}ms... (${retries - 1} retries left).`,
+          {
+            error: error as Error,
+            data: {
+              providerId: this.config.providerId,
+            },
+          },
         );
         await new Promise((resolve) => setTimeout(resolve, delay));
         return this.withRetry(operation, retries - 1, operationName);
       }
-      console.error(
-        `[BaseOpenAIProvider] All retries for ${operationName} failed.`
+      this.logger.error(
+        `[BaseOpenAIProvider] All retries for ${operationName} failed.`,
       );
       throw error;
     }
@@ -468,7 +467,12 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
     if (error.code === "context_length_exceeded") {
       this.handleContextLengthError(error, "unknown");
     } else {
-      console.error(`[BaseOpenAIProvider] API Error: ${error.message}`);
+      this.logger.error(`[BaseOpenAIProvider] API Error: ${error.message}`, {
+        error: error as Error,
+        data: {
+          providerId: this.config.providerId,
+        },
+      });
       throw error;
     }
   }
@@ -479,8 +483,15 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
    * @param modelId - 当前使用的模型ID
    */
   protected handleContextLengthError(error: any, modelId: string): void {
-    console.error(
-      `[BaseOpenAIProvider] Context length exceeded for model ${modelId}: ${error.message}`
+    this.logger.error(
+      `[BaseOpenAIProvider] Context length exceeded for model ${modelId}: ${error.message}`,
+      {
+        error: error as Error,
+        data: {
+          providerId: this.config.providerId,
+          modelId,
+        },
+      },
     );
     throw new Error(
       `Context length exceeded for model ${modelId}. Please reduce the input size.`
@@ -495,19 +506,23 @@ export abstract class BaseOpenAIProvider extends AbstractAIProvider {
    */
   protected async _fetchModelsFromApi(): Promise<OpenAI.Models.ModelsPage> {
     try {
-      console.log(
-        `[BaseOpenAIProvider] Attempting to fetch models from API for provider: ${this.config.providerName}`
+      this.logger.debug(
+        `[BaseOpenAIProvider] Attempting to fetch models from API for provider: ${this.config.providerName}`,
       );
       const response = await this.openai.models.list();
-      console.log(
-        `[BaseOpenAIProvider] Successfully fetched models from API for provider: ${this.config.providerName}`
+      this.logger.debug(
+        `[BaseOpenAIProvider] Successfully fetched models from API for provider: ${this.config.providerName}`,
       );
       return response;
     } catch (error) {
-      console.dir(error);
-      console.error(
-        `[BaseOpenAIProvider] Failed to fetch models for provider: ${this.config.providerName}. Full error:`,
-        error
+      this.logger.error(
+        `[BaseOpenAIProvider] Failed to fetch models for provider: ${this.config.providerName}.`,
+        {
+          error: error as Error,
+          data: {
+            providerId: this.config.providerId,
+          },
+        },
       );
       // 向上抛出错误，由调用方（getModels/refreshModels）决定如何处理
       throw error;

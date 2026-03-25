@@ -26,9 +26,44 @@ import {
   normalizeProviderType,
 } from "@/config/provider-definitions";
 import { ProviderConfig } from "@/types/provider-config";
+import { Logger } from "@/utils/logger";
 import { formatMessage } from "@/utils/i18n/localization-manager";
 import { PerplexityAIProvider } from "./providers/perplexity-provider";
 import { PremAIProvider } from "./providers/premai-provider";
+
+const logger = Logger.getInstance("Dish AI Commit Gen");
+
+function maskSensitiveValue(value: unknown): unknown {
+  if (typeof value !== "string") {
+    return value;
+  }
+  if (value.length <= 8) {
+    return "***";
+  }
+  return `${value.slice(0, 3)}***${value.slice(-2)}`;
+}
+
+function sanitizeConfigForLog(config: ProviderConfig): Record<string, unknown> {
+  const sensitiveKeyPattern = /(api[-_]?key|token|secret|password)/i;
+
+  return Object.entries(config || {}).reduce<Record<string, unknown>>(
+    (acc, [key, value]) => {
+      if (sensitiveKeyPattern.test(key)) {
+        acc[key] = maskSensitiveValue(value);
+        return acc;
+      }
+
+      if (typeof value === "object" && value !== null) {
+        acc[key] = "[object]";
+        return acc;
+      }
+
+      acc[key] = value;
+      return acc;
+    },
+    {},
+  );
+}
 
 /**
  * AI提供者工厂类，负责按需创建AI服务提供者的实时实例。
@@ -64,8 +99,12 @@ export class AIProviderFactory {
     const providerId = providerDef.id;
     let provider: AIProviderInterface;
 
-    console.log("[ai-provider-factory]providerId", providerId);
-    console.log("[ai-provider-factory]effectiveConfig", effectiveConfig);
+    logger.debug("[AIProviderFactory] Creating provider", {
+      data: {
+        providerId,
+        config: sanitizeConfigForLog(effectiveConfig),
+      },
+    });
 
     switch (providerId) {
       case "anthropic":
@@ -321,9 +360,8 @@ export class AIProviderFactory {
           const models = await provider.getEmbeddingModels();
           allEmbeddingModels.push(...models);
         } catch (error) {
-          console.error(
-            `Failed to get embedding models from ${provider.getName()}:`,
-            error
+          logger.warn(
+            `Failed to get embedding models from ${provider.getName()}: ${error instanceof Error ? error.message : String(error)}`,
           );
         }
       }

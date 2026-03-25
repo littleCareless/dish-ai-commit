@@ -26,6 +26,8 @@ import {
 } from "@/utils/context-manager/types";
 import { Logger } from "./logger";
 
+const logger = Logger.getInstance("Dish AI Commit Gen");
+
 // 重新导出类型和枚举以保持向后兼容
 export {
   ContextBlock,
@@ -153,11 +155,13 @@ export class ContextManager {
       const currentRequestParams = { ...requestParams, messages };
 
       if (Logger.isDevelopment()) {
-        console.log("[ContextManager] buildWithRetry - currentRequestParams:", {
-          feature: currentRequestParams.feature,
-          hasModel: !!currentRequestParams.model,
-          hasMessages: Array.isArray(currentRequestParams.messages),
-          messageCount: currentRequestParams.messages?.length,
+        logger.debug("[ContextManager] buildWithRetry - currentRequestParams", {
+          data: {
+            feature: currentRequestParams.feature,
+            hasModel: !!currentRequestParams.model,
+            hasMessages: Array.isArray(currentRequestParams.messages),
+            messageCount: currentRequestParams.messages?.length,
+          },
         });
       }
 
@@ -178,7 +182,7 @@ export class ContextManager {
           }
 
           if (Logger.isDevelopment()) {
-            console.warn(
+            logger.warn(
               `Context too long, attempting retry ${retries}/${maxRetries}.`,
             );
           }

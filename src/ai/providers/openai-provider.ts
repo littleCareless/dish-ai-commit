@@ -137,7 +137,12 @@ export class OpenAIProvider extends BaseOpenAIProvider {
         try {
           await checkPromise;
         } catch (error) {
-          console.error("Background availability check failed:", error);
+          this.logger.warn("Background availability check failed", {
+            error: error as Error,
+            data: {
+              providerId: this.getId(),
+            },
+          });
         }
       });
 

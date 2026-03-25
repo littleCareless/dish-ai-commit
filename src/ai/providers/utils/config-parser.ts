@@ -3,6 +3,10 @@
  * 统一处理所有 Provider 的配置结构，确保一致性
  */
 
+import { Logger } from "@/utils/logger";
+
+const logger = Logger.getInstance("ConfigParser");
+
 /**
  * 标准化的 Provider 配置接口
  */
@@ -154,13 +158,15 @@ export function logConfigParsing(
   result: StandardProviderConfig
 ): void {
   if (process.env.NODE_ENV === "development") {
-    console.log(`[ConfigParser:${providerId}]`, {
-      hasConfig: !!config,
-      hasApiKey: !!result.apiKey,
-      configKeys: config ? Object.keys(config) : [],
-      hasProviders: !!config?.providers,
-      hasNestedConfig: !!(config?.providers && config.providers[providerId]),
-      resultKeys: Object.keys(result),
+    logger.debug(`[ConfigParser:${providerId}]`, {
+      data: {
+        hasConfig: !!config,
+        hasApiKey: !!result.apiKey,
+        configKeys: config ? Object.keys(config) : [],
+        hasProviders: !!config?.providers,
+        hasNestedConfig: !!(config?.providers && config.providers[providerId]),
+        resultKeys: Object.keys(result),
+      },
     });
   }
 }

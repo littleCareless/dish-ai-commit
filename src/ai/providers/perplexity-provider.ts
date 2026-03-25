@@ -76,7 +76,7 @@ export class PerplexityAIProvider extends AbstractAIProvider {
         chat: {
           completions: {
             create: async (options: any) => {
-              console.warn(
+              this.logger.warn(
                 "Perplexity client not fully initialized. Returning mock response."
               );
               return {
@@ -116,10 +116,14 @@ export class PerplexityAIProvider extends AbstractAIProvider {
       contents: any[];
     };
 
-    console.log(
-      "Final messages for AI:",
-      JSON.stringify({ systemInstruction, contents }, null, 2)
-    );
+    this.logger.debug("[PerplexityAIProvider] executeAIRequest", {
+      data: {
+        providerId: this.provider.id,
+        modelId,
+        messageCount: Array.isArray(contents) ? contents.length : 0,
+        hasSystemInstruction: Boolean(systemInstruction),
+      },
+    });
 
     try {
       // 使用Perplexity AI API发送请求
@@ -141,7 +145,13 @@ export class PerplexityAIProvider extends AbstractAIProvider {
 
       return { content: response ?? "", usage };
     } catch (error) {
-      console.error("Perplexity AI API request failed:", error);
+      this.logger.error("Perplexity AI API request failed", {
+        error: error as Error,
+        data: {
+          providerId: this.provider.id,
+          modelId,
+        },
+      });
       throw error;
     }
   }
@@ -228,8 +238,13 @@ export class PerplexityAIProvider extends AbstractAIProvider {
     params: AIRequestParams,
     commitMessages: string[]
   ): Promise<import("../types").AIResponse> {
-    console.warn(
-      "generatePRSummary is not fully implemented for PerplexityAIProvider and will return an empty response."
+    this.logger.warn(
+      "generatePRSummary is not fully implemented for PerplexityAIProvider and will return an empty response.",
+      {
+        data: {
+          providerId: this.provider.id,
+        },
+      },
     );
     const systemPrompt =
       params.systemPrompt ||
