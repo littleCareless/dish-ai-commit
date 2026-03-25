@@ -177,10 +177,40 @@ describe("StreamingGenerationHelper fallback prompt", () => {
       logError: vi.fn(),
     } as any);
 
+    const combinedDiff = `<changes>
+<original-code>
+# FILE: a.txt
+# ORIGINAL CODE:
+\`\`\`txt
+a-old
+\`\`\`
+
+# FILE: b.txt
+# ORIGINAL CODE:
+\`\`\`txt
+b-old
+\`\`\`
+</original-code>
+<code-changes>
+# FILE: a.txt
+# CODE CHANGES:
+\`\`\`diff
++a-new
+\`\`\`
+
+# FILE: b.txt
+# CODE CHANGES:
+\`\`\`diff
++b-new
+\`\`\`
+</code-changes>
+</changes>
+`;
+
     const scmProvider = {
       type: "git",
       setCurrentFiles: vi.fn(),
-      getDiff: vi.fn(async () => "mock-diff"),
+      getDiff: vi.fn(async () => combinedDiff),
     } as any;
 
     const progress = {
@@ -201,16 +231,91 @@ describe("StreamingGenerationHelper fallback prompt", () => {
       },
     };
 
-    await (helper as any).prepareConfigurationAndDiff(
+    const result = await (helper as any).prepareConfigurationAndDiff(
       progress,
       scmProvider,
       ["a.txt", "b.txt"],
       configuration,
     );
 
-    expect(scmProvider.getDiff).toHaveBeenNthCalledWith(1, ["a.txt", "b.txt"], "staged");
-    expect(scmProvider.getDiff).toHaveBeenNthCalledWith(2, ["a.txt"], "staged");
-    expect(scmProvider.getDiff).toHaveBeenNthCalledWith(3, ["b.txt"], "staged");
+    expect(scmProvider.getDiff).toHaveBeenCalledTimes(1);
+    expect(scmProvider.getDiff).toHaveBeenNthCalledWith(
+      1,
+      ["a.txt", "b.txt"],
+      "staged",
+    );
+    expect(result.snapshot.fileDiffMap?.size).toBe(2);
+    expect(result.snapshot.fileDiffMap?.get("a.txt")).toContain("# FILE: a.txt");
+    expect(result.snapshot.fileDiffMap?.get("a.txt")).not.toContain(
+      "# FILE: b.txt",
+    );
+    expect(result.snapshot.fileDiffMap?.get("b.txt")).toContain("# FILE: b.txt");
+  });
+
+  it("maps structured combined diff blocks back to absolute selected files", async () => {
+    const helper = new StreamingGenerationHelper({
+      info: vi.fn(),
+      warn: vi.fn(),
+      error: vi.fn(),
+      debug: vi.fn(),
+      logError: vi.fn(),
+    } as any);
+
+    const scmProvider = {
+      type: "git",
+      setCurrentFiles: vi.fn(),
+      getDiff: vi.fn(
+        async () => `<changes>
+<code-changes>
+# FILE: src/a.ts
+# CODE CHANGES:
+\`\`\`diff
++const a = 1;
+\`\`\`
+
+# FILE: src/nested/b.ts
+# CODE CHANGES:
+\`\`\`diff
++const b = 2;
+\`\`\`
+</code-changes>
+</changes>
+`,
+      ),
+    } as any;
+
+    const progress = {
+      report: vi.fn(),
+    } as any;
+
+    const configuration = {
+      ...createConfiguration(),
+      features: {
+        ...createConfiguration().features,
+        commitFormat: {
+          ...createConfiguration().features.commitFormat,
+          enableLayeredCommit: true,
+        },
+        codeAnalysis: {
+          diffTarget: "all",
+        },
+      },
+    };
+
+    const result = await (helper as any).prepareConfigurationAndDiff(
+      progress,
+      scmProvider,
+      ["/repo/src/a.ts", "/repo/src/nested/b.ts"],
+      configuration,
+    );
+
+    expect(result.snapshot.fileDiffMap?.size).toBe(2);
+    expect(result.snapshot.fileDiffMap?.get("/repo/src/a.ts")).toContain(
+      "# FILE: src/a.ts",
+    );
+    expect(result.snapshot.fileDiffMap?.get("/repo/src/nested/b.ts")).toContain(
+      "# FILE: src/nested/b.ts",
+    );
   });
 
   it("respects fallbackToAll=false when auto detection throws", async () => {

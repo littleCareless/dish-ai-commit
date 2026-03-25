@@ -1,5 +1,17 @@
+import { beforeEach, describe, expect, it, vi } from "vitest";
+
+const { getSystemPromptMock } = vi.hoisted(() => ({
+  getSystemPromptMock: vi.fn(async () => "summary-system-prompt"),
+}));
+
+vi.mock("@/ai/utils/generate-helper", () => ({
+  getSystemPrompt: getSystemPromptMock,
+}));
+
 import { LayeredCommitHandler } from "@/commands/generate-commit/handlers/layered-commit-handler";
-import { describe, expect, it, vi } from "vitest";
+import { PromptManagerService } from "@/services/core/prompt-manager-service";
+import { RateLimiterService } from "@/services/core/rate-limiter-service";
+import * as vscode from "vscode";
 
 function createConfig() {
   return {
@@ -52,6 +64,10 @@ function createHandleArgs() {
 }
 
 describe("LayeredCommitHandler", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
   it("returns failed result when no file descriptions are generated", async () => {
     const handler = createHandler();
     const args = createHandleArgs();
@@ -155,6 +171,7 @@ describe("LayeredCommitHandler", () => {
     expect(generateSummarySpy).toHaveBeenCalledWith(
       args.aiProvider,
       args.requestParams,
+      args.selectedModel,
       args.scmProvider,
       [
         { filePath: "a.ts", description: "Update A (latest)" },
@@ -164,6 +181,86 @@ describe("LayeredCommitHandler", () => {
       args.progress,
       args.config,
       args.resultContext,
+    );
+  });
+
+  it("uses selectedModel for layered summary context and generation request", async () => {
+    const handler = createHandler();
+    const requestModel = {
+      id: "test-model",
+      provider: { id: "openai", name: "OpenAI" },
+      maxTokens: { input: 300000, output: 8192 },
+    } as any;
+    const safeContextModel = {
+      ...requestModel,
+      maxTokens: { input: 120000, output: 8192 },
+    } as any;
+
+    const requestParams = {
+      model: requestModel,
+      workspaceRoot: "/repo",
+      diff: "",
+      additionalContext: "",
+    } as any;
+    const scmProvider = {
+      type: "git",
+      startStreamingInput: vi.fn(),
+    } as any;
+    const aiProvider = {
+      getId: () => "openai",
+      generateCommit: vi.fn(async () => ({ content: "feat: layered summary" })),
+    } as any;
+    const progress = { report: vi.fn() } as any;
+    const token = { isCancellationRequested: false } as any;
+    const resultContext = {
+      requestId: "req-1",
+      repositoryPath: "/repo",
+      provider: "openai",
+      model: "test-model",
+    };
+
+    const buildSummaryContextSpy = vi
+      .spyOn(
+        (handler as any).contextBuilder,
+        "buildLayeredSummaryContextManager",
+      )
+      .mockResolvedValue({
+        buildMessages: () => [
+          { role: "system", content: "system" },
+          { role: "user", content: "user" },
+        ],
+      } as any);
+
+    const result = await (handler as any).generateAndApplyLayeredSummary(
+      aiProvider,
+      requestParams,
+      safeContextModel,
+      scmProvider,
+      [{ filePath: "a.ts", description: "update a.ts" }],
+      token,
+      progress,
+      createConfig(),
+      resultContext,
+    );
+
+    expect(result.status).toBe("success");
+    expect(getSystemPromptMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: safeContextModel,
+      }),
+    );
+    expect(buildSummaryContextSpy).toHaveBeenCalledWith(
+      safeContextModel,
+      "summary-system-prompt",
+      scmProvider,
+      expect.stringContaining("File: a.ts"),
+      expect.any(Object),
+    );
+    expect(aiProvider.generateCommit).toHaveBeenCalledWith(
+      expect.objectContaining({
+        model: safeContextModel,
+        diff: "",
+      }),
     );
   });
 
@@ -207,5 +304,108 @@ describe("LayeredCommitHandler", () => {
       args.selectedModel,
       args.prefetchedDiffs,
     );
+  });
+
+  it("uses profile-derived rate limit config for layered batch processing", async () => {
+    const handler = createHandler();
+    const acquireMock = vi.fn(async () => {});
+    vi.spyOn(RateLimiterService, "getInstance").mockReturnValue({
+      acquire: acquireMock,
+    } as any);
+
+    const getConfigurationSpy = vi.spyOn(vscode.workspace, "getConfiguration");
+    vi.spyOn(PromptManagerService, "getInstance").mockReturnValue({
+      getActivePromptContent: vi.fn(async () => "System: {{language}}"),
+    } as any);
+
+    vi.spyOn((handler as any).contextBuilder, "buildContextManager").mockResolvedValue({
+      buildMessages: () => [{ role: "system", content: "sys" }],
+    } as any);
+
+    const aiProvider = {
+      getId: () => "openai",
+      generateCommit: vi.fn(async () => ({
+        content: '[{"filePath":"a.ts","description":"desc a"}]',
+      })),
+    } as any;
+
+    const config = createConfig();
+    config.rateLimitEnabled = true;
+    config.rateLimitMax = 3;
+    config.rateLimitWindow = 11;
+
+    const results = await (handler as any).processFilesInBatches(
+      ["a.ts"],
+      { type: "git" } as any,
+      aiProvider,
+      {} as any,
+      config,
+      "",
+      { isCancellationRequested: false } as any,
+      { report: vi.fn() } as any,
+      { id: "test-model" } as any,
+      new Map([["a.ts", "diff-a"]]),
+    );
+
+    expect(results).toEqual([{ filePath: "a.ts", description: "desc a" }]);
+    expect(acquireMock).toHaveBeenCalledWith(
+      "openai",
+      3,
+      11,
+      expect.any(Function),
+    );
+    expect(getConfigurationSpy).not.toHaveBeenCalledWith(
+      "dish-ai-commit.providers",
+    );
+  });
+
+  it("does not fallback to workspace provider rate limits when unified config disables it", async () => {
+    const handler = createHandler();
+    const acquireMock = vi.fn(async () => {});
+    vi.spyOn(RateLimiterService, "getInstance").mockReturnValue({
+      acquire: acquireMock,
+    } as any);
+
+    vi.spyOn(vscode.workspace, "getConfiguration").mockReturnValue({
+      get: vi.fn(() => ({
+        rateLimitEnabled: true,
+        rateLimitMax: 99,
+        rateLimitWindow: 88,
+      })),
+      update: vi.fn(),
+    } as any);
+
+    vi.spyOn(PromptManagerService, "getInstance").mockReturnValue({
+      getActivePromptContent: vi.fn(async () => "System"),
+    } as any);
+    vi.spyOn((handler as any).contextBuilder, "buildContextManager").mockResolvedValue({
+      buildMessages: () => [{ role: "system", content: "sys" }],
+    } as any);
+
+    const aiProvider = {
+      getId: () => "openai",
+      generateCommit: vi.fn(async () => ({
+        content: '[{"filePath":"a.ts","description":"desc a"}]',
+      })),
+    } as any;
+
+    const config = createConfig();
+    config.rateLimitEnabled = false;
+
+    const results = await (handler as any).processFilesInBatches(
+      ["a.ts"],
+      { type: "git" } as any,
+      aiProvider,
+      {} as any,
+      config,
+      "",
+      { isCancellationRequested: false } as any,
+      { report: vi.fn() } as any,
+      { id: "test-model" } as any,
+      new Map([["a.ts", "diff-a"]]),
+    );
+
+    expect(results).toEqual([{ filePath: "a.ts", description: "desc a" }]);
+    expect(acquireMock).not.toHaveBeenCalled();
   });
 });

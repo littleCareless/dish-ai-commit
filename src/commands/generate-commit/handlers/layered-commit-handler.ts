@@ -218,6 +218,7 @@ export class LayeredCommitHandler {
       const layeredResult = await this.generateAndApplyLayeredSummary(
         aiProvider,
         requestParams,
+        selectedModel,
         scmProvider,
         completeFileDescriptions,
         token,
@@ -255,6 +256,7 @@ export class LayeredCommitHandler {
   private async generateAndApplyLayeredSummary(
     aiProvider: AIProvider,
     requestParams: AIRequestParams,
+    selectedModel: AIModel,
     scmProvider: ISCMProvider,
     fileChanges: { filePath: string; description: string }[],
     token: vscode.CancellationToken,
@@ -283,7 +285,7 @@ export class LayeredCommitHandler {
       ...config.features.commitMessage,
       ...config.features.commitFormat,
       ...config.features.codeAnalysis,
-      model: requestParams.model,
+      model: selectedModel,
       scm: scmProvider.type ?? "git",
       changeFiles: fileChanges.map((fc) => fc.filePath),
       language: config.base.language,
@@ -299,7 +301,7 @@ export class LayeredCommitHandler {
 
     const summaryContextManager =
       await this.contextBuilder.buildLayeredSummaryContextManager(
-        requestParams.model as AIModel,
+        selectedModel,
         summarySystemPrompt,
         scmProvider,
         formattedFileChanges,
@@ -325,6 +327,7 @@ export class LayeredCommitHandler {
 
     const summaryResponse = await aiProvider.generateCommit({
       ...requestParams,
+      model: selectedModel,
       messages,
       diff: "", // Not needed for summary
     });
@@ -468,17 +471,20 @@ export class LayeredCommitHandler {
       assertNotCancelled(token, this.logger);
 
       // === Rate Limiting ===
+      // Always use the unified profile-derived config passed from BaseCommand.
+      // This keeps layered and non-layered generation behavior consistent.
       const providerId = aiProvider.getId();
-      const providerConfig = vscode.workspace
-        .getConfiguration("dish-ai-commit.providers")
-        .get<any>(providerId);
-
-      if (providerConfig && providerConfig.rateLimitEnabled) {
+      if (config?.rateLimitEnabled === true) {
+        const maxRequests = this.resolveRateLimitValue(config.rateLimitMax, 20);
+        const windowSeconds = this.resolveRateLimitValue(
+          config.rateLimitWindow,
+          60,
+        );
         const rateLimiter = RateLimiterService.getInstance();
         await rateLimiter.acquire(
           providerId,
-          providerConfig.rateLimitMax || 20,
-          providerConfig.rateLimitWindow || 60,
+          maxRequests,
+          windowSeconds,
           (waitTimeMs) => {
             progress.report({
               message: formatMessage("progress.rate.limit.waiting", [
@@ -581,16 +587,12 @@ export class LayeredCommitHandler {
             failureReasons,
           );
 
-          for (const fallbackResult of fallbackResults) {
-            results.push(fallbackResult);
-            const fileData = filesToProcess.find(
-              (f) => f.filePath === fallbackResult.filePath,
-            );
-            if (fileData) {
-              commitCacheService.set(fileData.cacheKey, fallbackResult.description);
-            }
-            failureReasons.delete(fallbackResult.filePath);
-          }
+          this.mergeFallbackResultsAndSyncCache(
+            fallbackResults,
+            results,
+            filesToProcess,
+            failureReasons,
+          );
           continue;
         }
 
@@ -637,16 +639,12 @@ export class LayeredCommitHandler {
               failureReasons,
             );
 
-            for (const fallbackResult of fallbackResults) {
-              results.push(fallbackResult);
-              const fileData = filesToProcess.find(
-                (f) => f.filePath === fallbackResult.filePath,
-              );
-              if (fileData) {
-                commitCacheService.set(fileData.cacheKey, fallbackResult.description);
-              }
-              failureReasons.delete(fallbackResult.filePath);
-            }
+            this.mergeFallbackResultsAndSyncCache(
+              fallbackResults,
+              results,
+              filesToProcess,
+              failureReasons,
+            );
           }
         }
       } catch (error) {
@@ -664,6 +662,24 @@ export class LayeredCommitHandler {
     }
 
     return results;
+  }
+
+  private mergeFallbackResultsAndSyncCache(
+    fallbackResults: { filePath: string; description: string }[],
+    results: { filePath: string; description: string }[],
+    filesToProcess: { filePath: string; diff: string; cacheKey: string }[],
+    failureReasons: Map<string, string>,
+  ): void {
+    for (const fallbackResult of fallbackResults) {
+      results.push(fallbackResult);
+      const fileData = filesToProcess.find(
+        (file) => file.filePath === fallbackResult.filePath,
+      );
+      if (fileData) {
+        commitCacheService.set(fileData.cacheKey, fallbackResult.description);
+      }
+      failureReasons.delete(fallbackResult.filePath);
+    }
   }
 
   private async generateFallbackForBatchFiles(
@@ -803,6 +819,14 @@ export class LayeredCommitHandler {
       notification,
       ...resultContext,
     };
+  }
+
+  private resolveRateLimitValue(value: unknown, fallback: number): number {
+    const normalized = Number(value);
+    if (Number.isFinite(normalized) && normalized > 0) {
+      return normalized;
+    }
+    return fallback;
   }
 
   /**

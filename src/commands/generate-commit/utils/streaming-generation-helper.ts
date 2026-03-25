@@ -348,13 +348,10 @@ export class StreamingGenerationHelper {
       selectedFiles.length > 1;
 
     if (shouldBuildFileDiffMap) {
-      fileDiffMap = new Map<string, string>();
-      for (const file of selectedFiles) {
-        const fileDiff = await scmProvider.getDiff([file], resolvedDiffTarget);
-        if (fileDiff) {
-          fileDiffMap.set(file, fileDiff);
-        }
-      }
+      fileDiffMap = this.buildFileDiffSnapshotFromCombinedDiff(
+        diffContent,
+        selectedFiles,
+      );
     }
 
     return {
@@ -365,6 +362,181 @@ export class StreamingGenerationHelper {
         fileDiffMap,
       },
     };
+  }
+
+  /**
+   * 从一次性获取到的 processed diff 中重建按文件的快照，避免额外 N+1 SCM 调用。
+   */
+  private buildFileDiffSnapshotFromCombinedDiff(
+    combinedDiff: string | undefined,
+    selectedFiles: string[],
+  ): Map<string, string> {
+    const fileDiffMap = new Map<string, string>();
+    if (!combinedDiff?.trim()) {
+      return fileDiffMap;
+    }
+
+    const originalCodeBlocks = this.parseProcessedDiffFileBlocks(
+      this.extractProcessedDiffSection(combinedDiff, "original-code"),
+    );
+    const codeChangesBlocks = this.parseProcessedDiffFileBlocks(
+      this.extractProcessedDiffSection(combinedDiff, "code-changes"),
+    );
+
+    const orderedCodeChangeEntries = Array.from(codeChangesBlocks.entries());
+    const unresolvedFiles = new Set(
+      orderedCodeChangeEntries.map(([filePath]) => filePath),
+    );
+
+    for (let index = 0; index < selectedFiles.length; index++) {
+      const selectedFile = selectedFiles[index];
+      const matchedFile = this.resolveMatchedDiffFile(
+        selectedFile,
+        unresolvedFiles,
+        orderedCodeChangeEntries,
+        selectedFiles.length - index,
+      );
+      if (!matchedFile) {
+        continue;
+      }
+
+      unresolvedFiles.delete(matchedFile);
+      const codeChangesBlock = codeChangesBlocks.get(matchedFile);
+      if (!codeChangesBlock) {
+        continue;
+      }
+
+      fileDiffMap.set(
+        selectedFile,
+        this.composeSingleFileProcessedDiff(
+          originalCodeBlocks.get(matchedFile),
+          codeChangesBlock,
+        ),
+      );
+    }
+
+    return fileDiffMap;
+  }
+
+  private extractProcessedDiffSection(
+    processedDiff: string,
+    sectionName: "original-code" | "code-changes",
+  ): string | undefined {
+    const sectionMatch = processedDiff.match(
+      new RegExp(`<${sectionName}>\\s*([\\s\\S]*?)\\s*</${sectionName}>`),
+    );
+    return sectionMatch?.[1]?.trim();
+  }
+
+  private parseProcessedDiffFileBlocks(
+    sectionContent: string | undefined,
+  ): Map<string, string> {
+    const fileBlocks = new Map<string, string>();
+    if (!sectionContent?.trim()) {
+      return fileBlocks;
+    }
+
+    const lines = sectionContent.split("\n");
+    let currentFilePath: string | undefined;
+    let currentBlockLines: string[] = [];
+
+    const flushCurrentBlock = () => {
+      if (!currentFilePath || currentBlockLines.length === 0) {
+        return;
+      }
+      fileBlocks.set(currentFilePath, currentBlockLines.join("\n").trim());
+      currentFilePath = undefined;
+      currentBlockLines = [];
+    };
+
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[i];
+      const fileMatch = line.match(/^# FILE:\s+(.+)$/);
+      const nextLine = lines[i + 1]?.trim() ?? "";
+      const isSectionHeader =
+        !!fileMatch &&
+        (nextLine === "# ORIGINAL CODE:" || nextLine === "# CODE CHANGES:");
+
+      if (isSectionHeader) {
+        flushCurrentBlock();
+        currentFilePath = fileMatch[1]?.trim();
+      }
+
+      if (currentFilePath) {
+        currentBlockLines.push(line);
+      }
+    }
+
+    flushCurrentBlock();
+
+    return fileBlocks;
+  }
+
+  private composeSingleFileProcessedDiff(
+    originalCodeBlock: string | undefined,
+    codeChangesBlock: string,
+  ): string {
+    const parts: string[] = [];
+    if (originalCodeBlock) {
+      parts.push(`<original-code>\n${originalCodeBlock}\n</original-code>`);
+    }
+    parts.push(`<code-changes>\n${codeChangesBlock}\n</code-changes>`);
+    return `<changes>\n${parts.join("\n")}\n</changes>\n`;
+  }
+
+  private resolveMatchedDiffFile(
+    selectedFile: string,
+    unresolvedDiffFiles: Set<string>,
+    orderedCodeChangeEntries: Array<[string, string]>,
+    remainingSelectedFileCount: number,
+  ): string | undefined {
+    if (unresolvedDiffFiles.has(selectedFile)) {
+      return selectedFile;
+    }
+
+    const normalizedSelectedFile =
+      this.normalizeFilePathForDiffLookup(selectedFile);
+    const normalizedMatches = Array.from(unresolvedDiffFiles).filter(
+      (diffFile) => {
+        const normalizedDiffFile = this.normalizeFilePathForDiffLookup(diffFile);
+        return (
+          normalizedDiffFile === normalizedSelectedFile ||
+          normalizedSelectedFile.endsWith(`/${normalizedDiffFile}`) ||
+          normalizedDiffFile.endsWith(`/${normalizedSelectedFile}`)
+        );
+      },
+    );
+
+    if (normalizedMatches.length === 1) {
+      return normalizedMatches[0];
+    }
+
+    if (normalizedMatches.length > 1) {
+      const suffixMatches = normalizedMatches.filter((diffFile) =>
+        normalizedSelectedFile.endsWith(
+          `/${this.normalizeFilePathForDiffLookup(diffFile)}`,
+        ),
+      );
+      if (suffixMatches.length === 1) {
+        return suffixMatches[0];
+      }
+    }
+
+    // 最后兜底：仅当剩余数量一致时，按 combined diff 的顺序对齐。
+    if (
+      unresolvedDiffFiles.size > 0 &&
+      unresolvedDiffFiles.size === remainingSelectedFileCount
+    ) {
+      return orderedCodeChangeEntries.find(([diffFile]) =>
+        unresolvedDiffFiles.has(diffFile),
+      )?.[0];
+    }
+
+    return undefined;
+  }
+
+  private normalizeFilePathForDiffLookup(filePath: string): string {
+    return filePath.replace(/\\/g, "/").replace(/^\.\//, "").trim();
   }
 
   /**
