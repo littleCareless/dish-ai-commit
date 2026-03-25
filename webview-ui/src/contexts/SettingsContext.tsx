@@ -23,6 +23,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const editingProfileId = editingProfile?.id ?? null;
 
   const activeProfile =
     availableProfiles.find((p) => p.id === activeProfileId) || null;
@@ -45,7 +46,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
 
       // 如果当前没有正在编辑的配置，或正在编辑的配置已被删除，则重置为新的活跃配置
       const editingProfileStillExists = data.profiles.some(
-        (p) => p.id === editingProfile?.id,
+        (p) => p.id === editingProfileId,
       );
 
       if (!editingProfileStillExists) {
@@ -58,7 +59,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
         setHasUnsavedChanges(false);
       }
     },
-    [editingProfile?.id],
+    [editingProfileId],
   );
 
   // 加载初始数据
@@ -84,7 +85,10 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
 
   // 组件挂载时加载数据
   useEffect(() => {
-    loadData();
+    const timer = setTimeout(() => {
+      void loadData();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [loadData]);
 
   // ==================== 操作方法 ====================
@@ -100,7 +104,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
           prev.map((p) => (p.id === profile.id ? { ...profile } : p)),
         );
 
-        if (profile.id === editingProfile?.id) {
+        if (profile.id === editingProfileId) {
           setEditingProfileState({ ...profile });
           setHasUnsavedChanges(false);
         }
@@ -114,7 +118,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
         throw err;
       }
     },
-    [editingProfile?.id],
+    [editingProfileId],
   );
 
   const activateProfile = useCallback(

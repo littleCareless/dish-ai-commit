@@ -25,6 +25,12 @@ export const StorageLevelModal: React.FC<StorageLevelModalProps> = ({
     string | undefined
   >();
 
+  const handleClose = React.useCallback(() => {
+    setSelectedLevel("global");
+    setSelectedWorkspace(undefined);
+    onClose();
+  }, [onClose]);
+
   const handleConfirm = () => {
     if (
       (selectedLevel === "workspace" || selectedLevel === "project") &&
@@ -38,16 +44,8 @@ export const StorageLevelModal: React.FC<StorageLevelModalProps> = ({
       selectedWorkspace,
     );
     onSelect(selectedLevel, selectedWorkspace);
-    onClose();
+    handleClose();
   };
-
-  // 重置状态当模态框关闭时
-  React.useEffect(() => {
-    if (!isOpen) {
-      setSelectedLevel("global");
-      setSelectedWorkspace(undefined);
-    }
-  }, [isOpen]);
 
   if (!isOpen) return null;
 
@@ -56,13 +54,13 @@ export const StorageLevelModal: React.FC<StorageLevelModalProps> = ({
       className="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
       onClick={(e) => {
         if (e.target === e.currentTarget) {
-          onClose();
+          handleClose();
         }
       }}
     >
       <div className="bg-[var(--vscode-editor-background)] border border-[var(--vscode-widget-border)] rounded-lg p-6 max-w-md w-full mx-4 shadow-2xl relative">
         <button
-          onClick={onClose}
+          onClick={handleClose}
           className="absolute right-4 top-4 w-6 h-6 flex items-center justify-center rounded hover:bg-[var(--vscode-list-hoverBackground)] text-[var(--vscode-foreground)]"
           aria-label="Close dialog"
         >
@@ -209,7 +207,7 @@ export const StorageLevelModal: React.FC<StorageLevelModalProps> = ({
         {/* 按钮区域 */}
         <div className="flex justify-end space-x-2 mt-6">
           <button
-            onClick={onClose}
+            onClick={handleClose}
             className="px-4 py-2 rounded bg-[var(--vscode-button-secondary-background)] text-[var(--vscode-button-secondary-foreground)] hover:bg-[var(--vscode-button-secondary-hover-background)] border border-[var(--vscode-button-border)]"
           >
             {t("cancel")}

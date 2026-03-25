@@ -106,7 +106,10 @@ export const SettingsPage: React.FC = () => {
   }, [t]);
 
   useEffect(() => {
-    loadData();
+    const timer = setTimeout(() => {
+      void loadData();
+    }, 0);
+    return () => clearTimeout(timer);
   }, [loadData]);
 
   useEffect(() => {
@@ -118,7 +121,9 @@ export const SettingsPage: React.FC = () => {
       "advanced",
     ]);
     if (tab && validTabs.has(tab)) {
-      setSelectedTab(tab);
+      queueMicrotask(() => {
+        setSelectedTab((prevTab) => (prevTab === tab ? prevTab : tab));
+      });
     }
   }, [location.search]);
 
