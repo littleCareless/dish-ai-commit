@@ -1,4 +1,5 @@
 import { AIMessage, AIProvider, AIRequestParams } from "@/ai/types";
+import { assertNotCancelled } from "@/commands/generate-commit/utils/cancellation";
 import { filterCodeBlockMarkers } from "@/commands/generate-commit/utils/commit-formatter";
 import { ISCMProvider } from "@/scm/scm-provider";
 import { getMessage } from "@/utils/i18n";
@@ -33,7 +34,7 @@ export class FunctionCallingHandler {
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     repositoryPath?: string
   ): Promise<string> {
-    this.throwIfCancelled(token);
+    assertNotCancelled(token, this.logger);
     progress.report({
       message: getMessage("progress.calling.ai.function"),
     });
@@ -47,22 +48,11 @@ export class FunctionCallingHandler {
     const aiResponse =
       await aiProvider.generateCommitWithFunctionCalling(requestParams);
 
-    this.throwIfCancelled(token);
+    assertNotCancelled(token, this.logger);
 
     const finalMessage = filterCodeBlockMarkers(aiResponse.content)?.trim();
     await scmProvider.startStreamingInput(finalMessage);
 
     return finalMessage;
-  }
-
-  /**
-   * 检查操作是否已被用户取消
-   * @param token - VS Code 取消令牌
-   */
-  private throwIfCancelled(token: vscode.CancellationToken): void {
-    if (token.isCancellationRequested) {
-      this.logger.info(getMessage("user.cancelled.operation.log"));
-      throw new Error(getMessage("user.cancelled.operation.error"));
-    }
   }
 }

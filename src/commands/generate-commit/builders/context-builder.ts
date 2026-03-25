@@ -131,11 +131,6 @@ export class CommitContextBuilder {
       });
     }
 
-    // 记录日志
-    if (requestId) {
-      console.log(`[ContextBuilder] Built context for requestId=${requestId}`);
-    }
-
     return contextManager;
   }
 

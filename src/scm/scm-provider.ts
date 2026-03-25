@@ -57,7 +57,10 @@ export interface ISCMProvider {
   init(): Promise<void>;
 
   /** 获取文件差异 */
-  getDiff(files?: string[]): Promise<string | undefined>;
+  getDiff(
+    files?: string[],
+    target?: "staged" | "all" | "auto",
+  ): Promise<string | undefined>;
 
   /** 提交更改 */
   commit(message: string, files?: string[]): Promise<void>;

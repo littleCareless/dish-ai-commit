@@ -50,9 +50,9 @@ export class CommandManager implements vscode.Disposable {
         // 注册生成commit信息命令
         vscode.commands.registerCommand(
           COMMANDS.COMMIT.GENERATE,
-          async (...resources: vscode.SourceControlResourceState[]) => {
+          async (...args: any[]) => {
             try {
-              await generateCommand.execute(resources);
+              await generateCommand.execute(...args);
             } catch (error) {
               // 处理commit生成失败
               notify.error("command.generate.failed", [

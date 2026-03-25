@@ -10,6 +10,10 @@ import { promisify } from "util";
 import { exec } from "child_process";
 import { SvnUtilsHelper } from "@/scm/svn/helpers/svn-utils-helper";
 import { ImprovedPathUtils } from "@/scm/utils/improved-path-utils";
+import {
+  extractResourceFilePath,
+  extractResourceFilePaths,
+} from "@/scm/utils/resource-state-utils";
 import { Logger } from "@/utils/logger";
 import {
   IMultiRepositoryContextManager,
@@ -127,7 +131,7 @@ export class MultiRepositoryContextManager
     // or what can be inferred from the SCM view.
     const finalSelectedFiles =
       selectedFiles ||
-      (resourceStates ? this.getSelectedFiles(resourceStates) : []);
+      (resourceStates ? extractResourceFilePaths(resourceStates) : []);
 
     return {
       repository: targetRepository,
@@ -427,49 +431,6 @@ export class MultiRepositoryContextManager
   }
 
   /**
-   * 提取文件路径，优先使用 renameResourceUri（重命名后的文件）
-   */
-  private extractFilePath(state: vscode.SourceControlResourceState): string | undefined {
-    const renamedPath = (state as any)?.renameResourceUri?.fsPath;
-    if (renamedPath) {
-      return renamedPath;
-    }
-    return (state as any)?._resourceUri?.fsPath || state?.resourceUri?.fsPath;
-  }
-
-  /**
-   * Extracts file paths from SCM resource states.
-   * @param resourceStates - The SCM resource states.
-   * @returns An array of file paths.
-   */
-  private getSelectedFiles(
-    resourceStates:
-      | vscode.SourceControlResourceState
-      | vscode.SourceControlResourceState[]
-  ): string[] {
-    if (!resourceStates) {
-      return [];
-    }
-    const states = (
-      Array.isArray(resourceStates) ? resourceStates : [resourceStates]
-    ).filter(Boolean);
-
-    if (states.length === 0) {
-      return [];
-    }
-
-    const files = [
-      ...new Set(
-        states
-          .map((state) => this.extractFilePath(state))
-          .filter((path): path is string => Boolean(path))
-      ),
-    ];
-
-    return files;
-  }
-
-  /**
    * Group files by repository for cross-repository scenarios
    * @param resourceStates - Source control resource states
    * @returns Map of repository path to file paths
@@ -478,13 +439,14 @@ export class MultiRepositoryContextManager
     resourceStates: vscode.SourceControlResourceState[]
   ): Promise<Map<string, string[]>> {
     const filesByRepo = new Map<string, string[]>();
+    const perRequestRepoCache = new Map<string, string | undefined>();
 
     this.logger.info(
       `[MultiRepositoryContextManager] Grouping ${resourceStates.length} files by repository`,
     );
 
     for (const state of resourceStates) {
-      const filePath = this.extractFilePath(state);
+      const filePath = extractResourceFilePath(state);
       if (!filePath) {
         this.logger.warn(
           "[MultiRepositoryContextManager] Skipping state without file path",
@@ -493,8 +455,25 @@ export class MultiRepositoryContextManager
         continue;
       }
 
-      // 识别文件所属仓库
-      const repoPath = await this.getRepositoryFromResources([state]);
+      const stateRootRaw =
+        (state as any)?.resourceGroup?.sourceControl?.rootUri?.fsPath ||
+        (state as any)?.rootUri?.fsPath;
+      const stateRoot = stateRootRaw
+        ? MultiRepositoryContextManager.normalizeRepositoryPath(stateRootRaw)
+        : undefined;
+      const cacheKey = stateRoot || path.dirname(filePath);
+
+      let repoPath: string | undefined = stateRoot;
+      if (!repoPath && perRequestRepoCache.has(cacheKey)) {
+        repoPath = perRequestRepoCache.get(cacheKey);
+      } else if (!repoPath) {
+        // 识别文件所属仓库
+        repoPath = await this.getRepositoryFromResources([state]);
+        perRequestRepoCache.set(cacheKey, repoPath);
+      } else {
+        perRequestRepoCache.set(cacheKey, repoPath);
+      }
+
       if (!repoPath) {
         this.logger.warn(
           `[MultiRepositoryContextManager] Could not identify repository for file: ${filePath}`,
@@ -543,7 +522,7 @@ export class MultiRepositoryContextManager
 
     // If files are not provided, extract from resourceStates
     if (!files && resourceStates) {
-      files = this.getSelectedFiles(resourceStates);
+      files = extractResourceFilePaths(resourceStates);
       this.logger.debug(
         `[MultiRepositoryContextManager] Extracted ${files?.length || 0} files from resourceStates`,
       );
@@ -673,7 +652,7 @@ export class MultiRepositoryContextManager
           return MultiRepositoryContextManager.normalizeRepositoryPath((state as any)?.rootUri?.fsPath);
         }
         // Final backup plan: find the SVN root directory upwards from resourceUri
-        const resourceUriPath = this.extractFilePath(state);
+        const resourceUriPath = extractResourceFilePath(state);
         if (resourceUriPath) {
           // Use SvnUtilsHelper.findSvnRoot to recursively find the .svn directory upwards,
           // This is the most reliable way to handle file or subdirectory paths.

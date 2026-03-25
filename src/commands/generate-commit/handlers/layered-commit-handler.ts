@@ -2,8 +2,10 @@ import { AIModel, AIProvider, AIRequestParams } from "@/ai/types";
 import { getSystemPrompt } from "@/ai/utils/generate-helper";
 import { CommitContextBuilder } from "@/commands/generate-commit/builders/context-builder";
 import { CommitMessageBuilder } from "@/commands/generate-commit/builders/message-builder";
+import { assertNotCancelled } from "@/commands/generate-commit/utils/cancellation";
 import { GlobalContextExtractor } from "@/commands/generate-commit/services/global-context-extractor";
 import { filterCodeBlockMarkers } from "@/commands/generate-commit/utils/commit-formatter";
+import { getLayeredCommitVariables } from "@/prompt/layered-commit-file";
 import { getLayeredCommitBatchVariables } from "@/prompt/layered-commit-batch";
 import { ISCMProvider } from "@/scm/scm-provider";
 import { commitCacheService } from "@/services/cache/commit-cache-service";
@@ -50,7 +52,8 @@ export class LayeredCommitHandler {
     token: vscode.CancellationToken,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     selectedModel: AIModel,
-    config: any
+    config: any,
+    prefetchedDiffs?: Map<string, string>,
   ): Promise<void> {
     this.logger.logOperationStart("handleLayeredCommit", {
       data: {
@@ -119,7 +122,8 @@ export class LayeredCommitHandler {
       globalContext,
       token,
       progress,
-      selectedModel
+      selectedModel,
+      prefetchedDiffs,
     );
 
     this.logger.info("文件描述生成完成", {
@@ -273,7 +277,8 @@ export class LayeredCommitHandler {
     globalContext: string | undefined,
     token: vscode.CancellationToken,
     progress: vscode.Progress<{ message?: string; increment?: number }>,
-    selectedModel: AIModel
+    selectedModel: AIModel,
+    prefetchedDiffs?: Map<string, string>,
   ): Promise<{ filePath: string; description: string }[]> {
     const results: { filePath: string; description: string }[] = [];
     const filesToProcess: {
@@ -281,17 +286,20 @@ export class LayeredCommitHandler {
       diff: string;
       cacheKey: string;
     }[] = [];
+    const failureReasons = new Map<string, string>();
     const MAX_BATCH_SIZE = 15000; // chars
     const MAX_FILES_PER_BATCH = 10;
+    const fileDiffMap = new Map<string, string>();
 
-    // 1. Check Cache & Filter Files
+    // 1. Collect per-file diff once + cache filter
     for (const file of files) {
-      const diff = await scmProvider.getDiff([file]);
+      const diff = prefetchedDiffs?.get(file) || (await scmProvider.getDiff([file]));
       if (!diff) {
+        failureReasons.set(file, "diff_unavailable");
         continue;
       }
+      fileDiffMap.set(file, diff);
 
-      // Generate cache key for each individual file
       const cacheKey = commitCacheService.generateKey(
         diff,
         config,
@@ -309,7 +317,6 @@ export class LayeredCommitHandler {
       }
     }
 
-    // If all files were cached, return early
     if (filesToProcess.length === 0) {
       this.logger.info("All files hit cache", {
         data: { fileCount: files.length },
@@ -317,7 +324,7 @@ export class LayeredCommitHandler {
       return results;
     }
 
-    // 2. Create Batches from filesToProcess
+    // 2. Create batches
     const batches: string[][] = [];
     let currentBatch: string[] = [];
     let currentBatchSize = 0;
@@ -353,10 +360,10 @@ export class LayeredCommitHandler {
       batches.push(currentBatch);
     }
 
-    // 3. Process Batches
+    // 3. Process batches
     for (let i = 0; i < batches.length; i++) {
       const batch = batches[i];
-      this.throwIfCancelled(token);
+      assertNotCancelled(token, this.logger);
 
       // === Rate Limiting ===
       const providerId = aiProvider.getId();
@@ -390,8 +397,14 @@ export class LayeredCommitHandler {
       });
 
       try {
-        const batchDiff = await scmProvider.getDiff(batch);
+        const batchDiff = batch
+          .map((filePath) => fileDiffMap.get(filePath))
+          .filter((diff): diff is string => Boolean(diff))
+          .join("\n\n");
         if (!batchDiff) {
+          for (const filePath of batch) {
+            failureReasons.set(filePath, "batch_diff_unavailable");
+          }
           continue;
         }
 
@@ -438,7 +451,6 @@ export class LayeredCommitHandler {
         // Parse JSON
         let parsed: any[];
         try {
-          // Try to find JSON array in the response
           const content = response.content;
           const jsonMatch = content.match(/\[[\s\S]*\]/);
           let jsonString = content;
@@ -451,35 +463,178 @@ export class LayeredCommitHandler {
           this.logger.warn("Failed to parse batch response", {
             data: { batch, content: response.content },
           });
+          for (const filePath of batch) {
+            failureReasons.set(filePath, "batch_json_parse_failed");
+          }
+
+          const fallbackResults = await this.generateFallbackForBatchFiles(
+            aiProvider,
+            requestParams,
+            scmProvider,
+            selectedModel,
+            config,
+            globalContext,
+            batch,
+            fileDiffMap,
+            failureReasons,
+          );
+
+          for (const fallbackResult of fallbackResults) {
+            results.push(fallbackResult);
+            const fileData = filesToProcess.find(
+              (f) => f.filePath === fallbackResult.filePath,
+            );
+            if (fileData) {
+              commitCacheService.set(fileData.cacheKey, fallbackResult.description);
+            }
+            failureReasons.delete(fallbackResult.filePath);
+          }
           continue;
         }
 
         if (Array.isArray(parsed)) {
+          const batchFileSet = new Set(batch);
+          const generatedFileSet = new Set<string>();
           for (const item of parsed) {
-            if (item.filePath && item.description) {
+            if (
+              item.filePath &&
+              item.description &&
+              batchFileSet.has(item.filePath)
+            ) {
               results.push({
                 filePath: item.filePath,
                 description: item.description,
               });
+              generatedFileSet.add(item.filePath);
 
-              // Cache individual file result
-              // We need to find the cacheKey for this file.
-              // We can look it up in filesToProcess.
               const fileData = filesToProcess.find(
-                (f) => f.filePath === item.filePath
+                (f) => f.filePath === item.filePath,
               );
               if (fileData) {
                 commitCacheService.set(fileData.cacheKey, item.description);
               }
+              failureReasons.delete(item.filePath);
+            }
+          }
+
+          const missingFiles = batch.filter((filePath) => !generatedFileSet.has(filePath));
+          if (missingFiles.length > 0) {
+            for (const filePath of missingFiles) {
+              failureReasons.set(filePath, "batch_missing_file_result");
+            }
+
+            const fallbackResults = await this.generateFallbackForBatchFiles(
+              aiProvider,
+              requestParams,
+              scmProvider,
+              selectedModel,
+              config,
+              globalContext,
+              missingFiles,
+              fileDiffMap,
+              failureReasons,
+            );
+
+            for (const fallbackResult of fallbackResults) {
+              results.push(fallbackResult);
+              const fileData = filesToProcess.find(
+                (f) => f.filePath === fallbackResult.filePath,
+              );
+              if (fileData) {
+                commitCacheService.set(fileData.cacheKey, fallbackResult.description);
+              }
+              failureReasons.delete(fallbackResult.filePath);
             }
           }
         }
       } catch (error) {
         this.logger.error("Batch processing failed", { error: error as Error });
+        for (const filePath of batch) {
+          failureReasons.set(filePath, (error as Error)?.message || "batch_processing_failed");
+        }
       }
     }
 
+    if (failureReasons.size > 0) {
+      this.logger.warn("Layered commit unresolved files", {
+        data: { failures: Array.from(failureReasons.entries()) },
+      });
+    }
+
     return results;
+  }
+
+  private async generateFallbackForBatchFiles(
+    aiProvider: AIProvider,
+    requestParams: AIRequestParams,
+    scmProvider: ISCMProvider,
+    selectedModel: AIModel,
+    config: any,
+    globalContext: string | undefined,
+    files: string[],
+    fileDiffMap: Map<string, string>,
+    failureReasons: Map<string, string>,
+  ): Promise<{ filePath: string; description: string }[]> {
+    const promptManager = PromptManagerService.getInstance();
+    const activePromptContent = await promptManager.getActivePromptContent(
+      PromptKey.LayeredCommitFile,
+    );
+    const fallbackResults: { filePath: string; description: string }[] = [];
+
+    for (const filePath of files) {
+      const fileDiff = fileDiffMap.get(filePath);
+      if (!fileDiff) {
+        failureReasons.set(filePath, "fallback_diff_unavailable");
+        continue;
+      }
+
+      try {
+        const variables = getLayeredCommitVariables({
+          config: config.features.commitFormat,
+          language: config.base.language,
+          filePath,
+          globalContext,
+          otherFiles: files.filter((candidate) => candidate !== filePath),
+        });
+
+        const systemPrompt = processPromptTemplate(activePromptContent, variables);
+        const contextManager = await this.contextBuilder.buildContextManager(
+          selectedModel,
+          systemPrompt,
+          scmProvider,
+          fileDiff,
+          config,
+          {
+            globalContext,
+          },
+        );
+
+        if (!aiProvider.generateCommit) {
+          failureReasons.set(filePath, "provider_not_support_non_streaming");
+          continue;
+        }
+
+        const response = await aiProvider.generateCommit({
+          ...requestParams,
+          messages: contextManager.buildMessages(),
+          diff: "",
+        });
+        const description = filterCodeBlockMarkers(response.content)?.trim();
+
+        if (description) {
+          fallbackResults.push({ filePath, description });
+        } else {
+          failureReasons.set(filePath, "fallback_empty_response");
+        }
+      } catch (error) {
+        failureReasons.set(
+          filePath,
+          error instanceof Error ? error.message : String(error),
+        );
+      }
+    }
+
+    return fallbackResults;
   }
 
   /**
@@ -487,11 +642,6 @@ export class LayeredCommitHandler {
    * @param token - VS Code 取消令牌
    */
   private throwIfCancelled(token: vscode.CancellationToken): void {
-    if (token.isCancellationRequested) {
-      this.logger.warn("用户取消了操作", {
-        operation: "handleLayeredCommit",
-      });
-      throw new Error(getMessage("user.cancelled.operation.error"));
-    }
+    assertNotCancelled(token, this.logger);
   }
 }

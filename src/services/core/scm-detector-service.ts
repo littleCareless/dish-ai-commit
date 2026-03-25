@@ -1,6 +1,7 @@
 import * as vscode from "vscode";
 import { multiRepositoryContextManager } from "@/scm/multi-repository-context-manager";
 import { ISCMProvider, SCMFactory } from "@/scm/scm-provider";
+import { extractResourceFilePathsOrUndefined } from "@/scm/utils/resource-state-utils";
 import { getMessage } from "@/utils/i18n";
 import { notify } from "@/utils/notification/notification-manager";
 import { Logger } from "@/utils/logger";
@@ -34,19 +35,6 @@ export class SCMDetectorService {
     return SCMDetectorService.instance;
   }
   /**
-   * 提取文件路径，优先使用 renameResourceUri（重命名后的文件）
-   */
-  private static extractFilePath(
-    state: vscode.SourceControlResourceState,
-  ): string | undefined {
-    const renamedPath = (state as any)?.renameResourceUri?.fsPath;
-    if (renamedPath) {
-      return renamedPath;
-    }
-    return (state as any)?._resourceUri?.fsPath || state?.resourceUri?.fsPath;
-  }
-
-  /**
    * 获取用户选中的文件列表
    * @param resourceStates - 源代码管理资源状态
    * @returns 文件路径列表，如果没有选择文件则返回undefined
@@ -56,27 +44,7 @@ export class SCMDetectorService {
       | vscode.SourceControlResourceState
       | vscode.SourceControlResourceState[],
   ): string[] | undefined {
-    if (!resourceStates) {
-      return undefined;
-    }
-
-    const states = Array.isArray(resourceStates)
-      ? resourceStates
-      : [resourceStates];
-
-    if (states.length === 0) {
-      return undefined;
-    }
-
-    const files = [
-      ...new Set(
-        states
-          .map((state) => this.extractFilePath(state))
-          .filter((path): path is string => Boolean(path)),
-      ),
-    ];
-
-    return files.length > 0 ? files : undefined;
+    return extractResourceFilePathsOrUndefined(resourceStates);
   }
 
   /**

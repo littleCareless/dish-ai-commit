@@ -344,11 +344,12 @@ export abstract class BaseCommand {
     options: {
       requireSelectedFiles?: boolean;
       validateModel?: boolean;
+      skipSCMDetection?: boolean;
       progress?: vscode.Progress<{ message?: string; increment?: number }>;
     } = {}
   ): Promise<CommandContext | undefined> {
     const prepareStartTime = Date.now();
-    this.logger.info(`[Chain] [Prepare] START - validateModel: ${options.validateModel}, requireSelectedFiles: ${options.requireSelectedFiles}`);
+    this.logger.info(`[Chain] [Prepare] START - validateModel: ${options.validateModel}, requireSelectedFiles: ${options.requireSelectedFiles}, skipSCMDetection: ${options.skipSCMDetection}`);
 
     // 1. 验证AI提供商服务条款
     this.logger.info(`[Chain] [Prepare] Step 1: Validating AI provider ToS`);
@@ -403,6 +404,23 @@ export abstract class BaseCommand {
     }
 
     this.logger.info(`[Chain] [Prepare] Step 3 COMPLETE - AI Context initialized${aiContext.aiProvider ? ` (Provider: ${aiContext.aiProvider.getName?.()})` : ''}`);
+
+    if (options.skipSCMDetection) {
+      const prepareDuration = Date.now() - prepareStartTime;
+      this.logger.info(
+        `[Chain] [Prepare] COMPLETE - Duration: ${prepareDuration}ms (SCM detection skipped)`,
+      );
+
+      return {
+        provider,
+        model,
+        providerConfig: config,
+        scmProvider: undefined as unknown as ISCMProvider,
+        selectedFiles: undefined,
+        repositoryPath: undefined,
+        ...aiContext,
+      };
+    }
 
     // 4. 检测SCM和文件
     if (options.progress) {

@@ -106,9 +106,13 @@ export class SvnProvider implements ISCMProvider {
   /**
    * 获取文件差异信息
    * @param {string[]} [files] - 可选的文件路径数组
+   * @param {"staged" | "all" | "auto"} [target] - 为接口兼容预留，SVN 忽略该参数
    * @returns {Promise<string | undefined>} 返回差异文本
    */
-  async getDiff(files?: string[]): Promise<string | undefined> {
+  async getDiff(
+    files?: string[],
+    _target?: "staged" | "all" | "auto",
+  ): Promise<string | undefined> {
     try {
       await this.ensureInitialized();
       return this.svnProvider?.getDiff(files);
