@@ -170,7 +170,7 @@ export class ProfileMessageHandler {
       }
 
       case UIRequest.ProfileExport: {
-        const { profileId } = message.data;
+        const { profileId, requestId } = message.data || {};
         console.log(
           `[ProfileMessageHandler] Handling exportProfile for profileId: ${profileId}`
         );
@@ -183,6 +183,11 @@ export class ProfileMessageHandler {
         });
 
         if (!uri) {
+          webview.postMessage({
+            command: ExtensionResponse.ProfileExported,
+            requestId,
+            payload: { success: false, canceled: true },
+          });
           break;
         }
 
@@ -205,14 +210,25 @@ export class ProfileMessageHandler {
           };
           await safeWriteJson(uri.fsPath, exportData);
           vscode.window.showInformationMessage(t("profile.export.success"));
+          webview.postMessage({
+            command: ExtensionResponse.ProfileExported,
+            requestId,
+            payload: { success: true, path: uri.fsPath },
+          });
         } catch (e) {
           const error = e instanceof Error ? e.message : "Unknown error";
           vscode.window.showErrorMessage(`Failed to export profile: ${error}`);
+          webview.postMessage({
+            command: ExtensionResponse.ProfileExported,
+            requestId,
+            error: `Failed to export profile: ${error}`,
+          });
         }
         break;
       }
 
       case UIRequest.ProfileImport: {
+        const { requestId } = message.data || {};
         console.log("[ProfileMessageHandler] Handling importProfile");
         const uris = await vscode.window.showOpenDialog({
           filters: { JSON: ["json"] },
@@ -221,6 +237,11 @@ export class ProfileMessageHandler {
         });
 
         if (!uris || uris.length === 0) {
+          webview.postMessage({
+            command: ExtensionResponse.ProfileImported,
+            requestId,
+            payload: { success: false, canceled: true },
+          });
           break;
         }
 
@@ -248,7 +269,8 @@ export class ProfileMessageHandler {
           // We'll just notify success and let the UI reload profiles.
           webview.postMessage({
             command: ExtensionResponse.ProfileImported,
-            data: { success: true },
+            requestId,
+            payload: { success: true },
           });
           vscode.window.showInformationMessage(
             t("profile.import.success.general")
@@ -264,7 +286,8 @@ export class ProfileMessageHandler {
           }
           webview.postMessage({
             command: ExtensionResponse.ProfileImported,
-            data: { success: false, error: error },
+            requestId,
+            payload: { success: false, error },
           });
           vscode.window.showErrorMessage(t("profile.import.failed", [error]));
         }

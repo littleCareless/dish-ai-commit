@@ -1,7 +1,10 @@
 import { exec } from "child_process";
 import { promisify } from "util";
+import { Logger } from "@/utils/logger";
 
 const execAsync = promisify(exec);
+const GIT_COMMIT_SEPARATOR = "<<DISH-COMMIT-END>>";
+const logger = Logger.getInstance("CommitLogStrategy");
 
 /**
  * 表示一个时间段的接口
@@ -120,11 +123,13 @@ function formatDateToString(date: string | Date | any): string {
       return formatDateToString(dateObj);
     }
   } catch (error) {
-    console.error("日期格式化错误:", error);
+    logger.error("日期格式化错误", {
+      error: error as Error,
+    });
   }
 
   // 无法转换时，返回当前日期
-  console.warn("无法识别的日期格式:", date, "使用当前日期代替");
+  logger.warn(`无法识别的日期格式，使用当前日期代替: ${String(date)}`);
   return formatDateToString(new Date());
 }
 
@@ -148,6 +153,17 @@ function formatPeriod(period: Period | null): Period {
  * Git提交记录策略实现类
  */
 export class GitCommitStrategy implements CommitLogStrategy {
+  private parseGitLogEntries(stdout: string): string[] {
+    if (!stdout?.trim()) {
+      return [];
+    }
+
+    return stdout
+      .split(GIT_COMMIT_SEPARATOR)
+      .map((entry) => entry.trim())
+      .filter((entry) => entry.length > 0);
+  }
+
   /**
    * 获取Git仓库的提交记录
    * @param workspacePath Git仓库路径
@@ -165,10 +181,13 @@ export class GitCommitStrategy implements CommitLogStrategy {
 
     // 构建git log命令,格式化输出提交信息
     // const command = `git log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --pretty=format:"%h - %an, %ar : %s" --author="${author}"`;
-    const command = `git log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n" --author="${author}"`;
+    const command = `git log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n${GIT_COMMIT_SEPARATOR}" --author="${author}"`;
 
-    const { stdout } = await execAsync(command, { cwd: workspacePath });
-    return stdout?.split("\n").filter((line) => line?.trim());
+    const { stdout } = await execAsync(command, {
+      cwd: workspacePath,
+      maxBuffer: 1024 * 1024 * 10,
+    });
+    return this.parseGitLogEntries(stdout);
   }
 
   /**
@@ -187,40 +206,27 @@ export class GitCommitStrategy implements CommitLogStrategy {
       return [];
     }
     const formattedPeriod = formatPeriod(period);
-    // 使用 --author="user1" --author="user2" ... 或者 --author="\(user1\|user2\)"
-    // 后者在某些git版本和shell下可能需要不同的转义
-    // 为了简单和兼容性，可以为每个用户构建author查询部分，然后用OR逻辑（虽然git log本身是AND）
-    // 或者更简单地，为每个用户分别查询然后合并，但效率较低。
-    // 一个更优化的方式是使用 --author="user1\|user2\|user3" 这种格式，需要确保用户名的安全处理
-    const authorQuery = users
-      .map((user) => {
-        const sanitizedUser = user
-          .replace(/\\/g, "\\\\") // 先转义反斜杠
-          .replace(/"/g, '\\"'); // 再转义双引号
-        return `--author="${sanitizedUser}"`;
-      })
-      .join(" "); // git log 多个 --author 是 AND 关系
-
     // 要实现 OR 关系，需要使用正则表达式
     const authorRegex = users
       .map((user) => user.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")) // 转义正则特殊字符
       .join("\\|"); // 构建 OR 正则表达式
 
-    // const command = `git log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n" ${authorQuery}`;
     // 使用 --author=<regex>
-    const command = `git log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --author="${authorRegex}" --all-match --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n"`;
+    const command = `git log --since="${formattedPeriod.startDate}" --until="${formattedPeriod.endDate}" --author="${authorRegex}" --all-match --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n${GIT_COMMIT_SEPARATOR}"`;
 
     try {
       const { stdout } = await execAsync(command, {
         cwd: workspacePath,
         maxBuffer: 1024 * 1024 * 10, // 增加缓冲区
       });
-      return stdout?.split("\n").filter((line) => line?.trim());
+      return this.parseGitLogEntries(stdout);
     } catch (error) {
       // 如果正则查询失败（例如某些git版本不支持），可以回退到为每个用户查询然后合并
-      console.error(
-        "Error getting commits for multiple users with regex, falling back to individual queries:",
-        error
+      logger.error(
+        "Error getting commits for multiple users with regex, falling back to individual queries",
+        {
+          error: error as Error,
+        },
       );
       let allCommits: string[] = [];
       for (const user of users) {
@@ -228,19 +234,20 @@ export class GitCommitStrategy implements CommitLogStrategy {
           formattedPeriod.startDate
         }" --until="${
           formattedPeriod.endDate
-        }" --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n" --author="${user.replace(
+        }" --pretty=format:"=== %h ===%nAuthor: %an%nDate: %ad%n%n%B%n${GIT_COMMIT_SEPARATOR}" --author="${user.replace(
           /"/g,
           '\\"'
         )}"`;
         try {
           const { stdout } = await execAsync(singleUserCommand, {
             cwd: workspacePath,
+            maxBuffer: 1024 * 1024 * 10,
           });
-          allCommits = allCommits.concat(
-            stdout?.split("\n").filter((line) => line?.trim())
-          );
+          allCommits = allCommits.concat(this.parseGitLogEntries(stdout));
         } catch (singleError) {
-          console.error(`Error getting commits for user ${user}:`, singleError);
+          logger.error(`Error getting commits for user ${user}`, {
+            error: singleError as Error,
+          });
         }
       }
       // 去重并按某种方式排序（例如，git log默认输出就是按日期逆序）
@@ -301,7 +308,7 @@ export class SvnCommitStrategy implements CommitLogStrategy {
       // 对用户名进行适当的清理或转义，以防注入（尽管这里是search参数）
       const safeUser = user.replace(/[^\w\s.-]/g, ""); // 简单清理
       const command = `svn log -r "{${formattedPeriod.startDate}}:{${formattedPeriod.endDate}}" --search="${safeUser}" --xml`;
-      console.log(`SVN command for user ${user}: ${command}`);
+      logger.debug(`SVN command for user ${user}: ${command}`);
       try {
         const { stdout } = await execAsync(command, {
           cwd: workspacePath,
@@ -310,7 +317,9 @@ export class SvnCommitStrategy implements CommitLogStrategy {
         const userCommits = this.parseXmlLogs(stdout);
         allCommits = allCommits.concat(userCommits);
       } catch (error) {
-        console.error(`Error getting SVN commits for user ${user}:`, error);
+        logger.error(`Error getting SVN commits for user ${user}`, {
+          error: error as Error,
+        });
         // 可以选择忽略错误继续为其他用户获取，或者抛出错误
       }
     }

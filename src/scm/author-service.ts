@@ -3,6 +3,7 @@ import { promisify } from "util";
 import { exec } from "child_process";
 import { SvnUtilsHelper } from "@/scm/svn/helpers/svn-utils-helper";
 import { getMessage } from "@/utils/i18n";
+import { Logger } from "@/utils/logger";
 
 const execAsync = promisify(exec);
 
@@ -11,6 +12,8 @@ const execAsync = promisify(exec);
  * 用于获取Git或SVN仓库的作者信息
  */
 export class AuthorService {
+  private readonly logger = Logger.getInstance("AuthorService");
+
   /**
    * 构造函数
    * @param workspacePath 工作区路径
@@ -112,7 +115,9 @@ export class AuthorService {
         .filter((author) => author); // 去除空行
       return Array.from(new Set(authors)); // 去重
     } catch (error) {
-      console.error("Error getting all Git authors:", error);
+      this.logger.error("Error getting all Git authors", {
+        error: error as Error,
+      });
       // 发生错误时可以返回空数组或抛出特定错误
       return [];
     }
@@ -127,8 +132,8 @@ export class AuthorService {
     // SVN 获取所有作者比较复杂，可能需要解析 `svn log --xml` 的完整输出
     // 或者依赖特定的 SVN 服务器配置和工具
     // 当前返回空数组作为占位符，提示用户这部分功能可能不完整
-    console.warn(
-      "Fetching all SVN authors is not fully implemented and may return an empty list."
+    this.logger.warn(
+      "Fetching all SVN authors is not fully implemented and may return an empty list.",
     );
     // 尝试从 `svn log` 中提取，这可能非常耗时且不精确
     try {
@@ -145,7 +150,9 @@ export class AuthorService {
       }
       return Array.from(authors);
     } catch (error) {
-      console.error("Error getting all SVN authors:", error);
+      this.logger.error("Error getting all SVN authors", {
+        error: error as Error,
+      });
       return [];
     }
   }

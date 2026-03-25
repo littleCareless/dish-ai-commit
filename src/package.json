@@ -762,7 +762,9 @@
     "prepare": "husky",
     "commit": "git add . && git-cz",
     "changelog": "standard-version -i CHANGELOG.zh-CN.md",
-    "update-config": "ts-node ./scripts/update-config.ts"
+    "update-config": "ts-node ./scripts/update-config.ts",
+    "protocol:audit": "ts-node ./scripts/protocol-audit.ts --format both",
+    "protocol:check": "ts-node ./scripts/protocol-audit.ts --format both --ci"
   },
   "devDependencies": {
     "@commitlint/cli": "^20.4.1",

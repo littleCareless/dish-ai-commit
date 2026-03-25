@@ -1,4 +1,5 @@
 import { useCallback, useEffect } from "react";
+import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 
 declare const acquireVsCodeApi: () => {
   postMessage(message: {
@@ -116,10 +117,10 @@ export function showInformationMessage(
     const callbackId = `callback_${Date.now()}_${Math.random()}`;
 
     const handler = (event: MessageEvent) => {
-      const { type, data } = event.data;
+      const { command, data } = event.data || {};
       if (
-        type === "showInformationMessageResponse" &&
-        data.callbackId === callbackId
+        command === ExtensionResponse.SystemMessageShown &&
+        data?.callbackId === callbackId
       ) {
         window.removeEventListener("message", handler);
         resolve(data.selection);
@@ -128,6 +129,6 @@ export function showInformationMessage(
 
     window.addEventListener("message", handler);
 
-    postMessage("showInformationMessage", { message, options, callbackId });
+    postMessage(UIRequest.SystemShowMessage, { message, options, callbackId });
   });
 }

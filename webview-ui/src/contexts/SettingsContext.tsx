@@ -82,23 +82,6 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
     }
   }, [handleProfilesUpdate]);
 
-  // 监听来自 VS Code 扩展的消息
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      const message = event.data;
-      if (message.command === "profilesUpdated") {
-        handleProfilesUpdate(
-          message.payload as { profiles: Profile[]; activeProfileId: string },
-        );
-      }
-    };
-
-    window.addEventListener("message", handleMessage);
-    return () => {
-      window.removeEventListener("message", handleMessage);
-    };
-  }, [handleProfilesUpdate]);
-
   // 组件挂载时加载数据
   useEffect(() => {
     loadData();
@@ -156,7 +139,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
         }
 
         await profileManager.setActiveProfile(profileId);
-        // 状态更新将由 'profilesUpdated' 消息触发
+        await loadData();
         console.log(
           "[SettingsContext] Profile activation requested:",
           profileId,
@@ -169,7 +152,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
         throw err;
       }
     },
-    [availableProfiles, editingProfile, hasUnsavedChanges],
+    [availableProfiles, editingProfile, hasUnsavedChanges, loadData],
   );
 
   const setEditingProfile = useCallback(
@@ -208,7 +191,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
           description,
         );
         await profileManager.saveProfile(newProfile);
-        // 状态更新将由 'profilesUpdated' 消息触发
+        await loadData();
         console.log(
           "[SettingsContext] Profile creation requested:",
           newProfile.id,
@@ -222,7 +205,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
         throw err;
       }
     },
-    [],
+    [loadData],
   );
 
   const deleteProfile = useCallback(
@@ -236,7 +219,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
           throw new Error("Cannot delete active profile");
         }
         await profileManager.deleteProfile(profileId);
-        // 状态更新将由 'profilesUpdated' 消息触发
+        await loadData();
         console.log("[SettingsContext] Profile deletion requested:", profileId);
       } catch (err) {
         const errorMsg =
@@ -246,7 +229,7 @@ export const SettingsProvider: React.FC<SettingsProviderProps> = ({
         throw err;
       }
     },
-    [availableProfiles, activeProfileId],
+    [availableProfiles, activeProfileId, loadData],
   );
 
   const updatePreferencesHandler = useCallback(

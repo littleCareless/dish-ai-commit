@@ -28,6 +28,8 @@
     "vsix": "turbo vsix --log-order grouped --output-logs new-only",
     "vsix:dev": "pnpm run build:dev && pnpm --filter dish-ai-commit run vsix",
     "vsix:prod": "pnpm run build:prod && pnpm --filter dish-ai-commit run vsix",
+    "protocol:audit": "pnpm --filter dish-ai-commit run protocol:audit",
+    "protocol:check": "pnpm --filter dish-ai-commit run protocol:check",
     "clean": "turbo clean --log-order grouped --output-logs new-only && rimraf dist out webview-ui/dist .turbo",
     "clean:all": "npm run clean && rimraf node_modules **/node_modules **/pnpm-lock.yaml **/package-lock.json **/yarn.lock pnpm-lock.yaml package-lock.json yarn.lock *.vsix",
     "quality-gate": "turbo quality-gate --log-order grouped --output-logs new-only",
