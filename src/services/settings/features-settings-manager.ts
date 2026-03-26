@@ -13,6 +13,7 @@ export interface FeaturesSettings {
   enableMergeCommit: boolean;
   enableBody: boolean;
   enableLayeredCommit: boolean;
+  enableSemanticGrouping: boolean;
   enableGlobalContext: boolean;
   useRecentCommitsAsReference: boolean;
   enableThirdPartyModelCatalog: boolean;
@@ -43,6 +44,7 @@ const DEFAULT_FEATURE_SETTINGS: FeaturesSettings = {
   enableMergeCommit: false,
   enableBody: true,
   enableLayeredCommit: false,
+  enableSemanticGrouping: false,
   enableGlobalContext: true,
   useRecentCommitsAsReference: false,
   enableThirdPartyModelCatalog: true,

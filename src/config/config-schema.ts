@@ -810,6 +810,12 @@ export const CONFIG_SCHEMA = {
         description:
           "Generate layered commit messages with global summary and per-file details / 生成分层提交信息，包含全局摘要和每个文件的详细描述",
       },
+      enableSemanticGrouping: {
+        type: "boolean",
+        default: false,
+        description:
+          "When multiple files are selected, perform semantic grouping and enable one-click staged group application / 当选择多个文件时，进行语义分组并支持一键应用分组到暂存区",
+      },
       enableGlobalContext: {
         // ✅ 新增
         type: "boolean",

@@ -23,6 +23,10 @@
       "label": "启用全局上下文",
       "description": "使用代码库中的全局上下文以获得更好的消息。"
     },
+    "enableSemanticGrouping": {
+      "label": "启用语义分组",
+      "description": "当选择多个文件时，先进行语义分组，并支持一键应用分组到暂存区。"
+    },
     "useRecentCommitsAsReference": {
       "label": "使用最近的提交作为参考",
       "description": "从最近的提交中学习以匹配项目的风格。"

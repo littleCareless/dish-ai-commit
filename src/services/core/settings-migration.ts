@@ -245,6 +245,10 @@ export class SettingsMigration {
         "features.commitFormat.enableLayeredCommit",
         false
       ),
+      enableSemanticGrouping: config.get(
+        "features.commitFormat.enableSemanticGrouping",
+        false
+      ),
       enableGlobalContext: config.get(
         "features.commitFormat.enableGlobalContext",
         true

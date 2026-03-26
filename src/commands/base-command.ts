@@ -125,6 +125,7 @@ export abstract class BaseCommand {
           enableEmoji: featureSettings.enableEmoji,
           enableBody: featureSettings.enableBody,
           enableLayeredCommit: featureSettings.enableLayeredCommit,
+          enableSemanticGrouping: featureSettings.enableSemanticGrouping,
           enableGlobalContext: featureSettings.enableGlobalContext,
         },
         commitMessage: {

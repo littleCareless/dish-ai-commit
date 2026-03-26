@@ -244,6 +244,7 @@ export class CommitChatMessageHandler extends BaseMessageHandler {
           enableEmoji: featureSettings.enableEmoji,
           enableBody: featureSettings.enableBody,
           enableLayeredCommit: featureSettings.enableLayeredCommit,
+          enableSemanticGrouping: featureSettings.enableSemanticGrouping,
           enableGlobalContext: featureSettings.enableGlobalContext,
         },
         commitMessage: {

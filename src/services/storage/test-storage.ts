@@ -187,6 +187,7 @@ export class StorageTest {
       enableMergeCommit: true,
       enableBody: false,
       enableLayeredCommit: true,
+      enableSemanticGrouping: true,
       enableGlobalContext: false,
       useRecentCommitsAsReference: true,
       simplifyDiff: true,

@@ -13,6 +13,7 @@ export interface FeaturesStorageData {
   enableMergeCommit: boolean;
   enableBody: boolean;
   enableLayeredCommit: boolean;
+  enableSemanticGrouping: boolean;
   enableGlobalContext: boolean;
   useRecentCommitsAsReference: boolean;
 
@@ -49,6 +50,7 @@ export class FeaturesStorage {
     enableMergeCommit: false,
     enableBody: true,
     enableLayeredCommit: false,
+    enableSemanticGrouping: false,
     enableGlobalContext: true,
     useRecentCommitsAsReference: false,
 

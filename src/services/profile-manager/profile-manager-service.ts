@@ -272,6 +272,7 @@ export class ProfileManagerService {
         enableMergeCommit: true,
         enableBody: true,
         enableLayeredCommit: false,
+        enableSemanticGrouping: false,
         enableGlobalContext: true,
         useRecentCommitsAsReference: false,
         enableThirdPartyModelCatalog: true,

@@ -35,6 +35,36 @@ export const modelConfigSchema = z.object({
 });
 export type ModelConfig = z.infer<typeof modelConfigSchema>;
 
+const featureOverrideEntrySchema = z.object({
+  topP: z.number().optional(),
+  topK: z.number().optional(),
+  presencePenalty: z.number().optional(),
+  frequencyPenalty: z.number().optional(),
+  stopSequences: z.string().optional(),
+});
+
+const featureOverridesSchema = z.preprocess((value) => {
+  if (typeof value !== "string") {
+    return value;
+  }
+
+  const normalized = value.trim();
+  if (!normalized) {
+    return {};
+  }
+
+  try {
+    const parsed = JSON.parse(normalized);
+    if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+      return parsed;
+    }
+  } catch {
+    return {};
+  }
+
+  return {};
+}, z.record(z.string(), featureOverrideEntrySchema));
+
 // Zod Schema for ProviderConfig
 export const providerConfigSchema = z.object({
   id: z.string(),
@@ -67,18 +97,7 @@ export const providerConfigSchema = z.object({
   stopSequences: z.string().optional(),
   enableReasoningExtraction: z.boolean().optional(),
   reasoningExtractionTagName: z.string().optional(),
-  featureOverrides: z
-    .record(
-      z.string(),
-      z.object({
-        topP: z.number().optional(),
-        topK: z.number().optional(),
-        presencePenalty: z.number().optional(),
-        frequencyPenalty: z.number().optional(),
-        stopSequences: z.string().optional(),
-      }),
-    )
-    .optional(),
+  featureOverrides: featureOverridesSchema.optional(),
   customModelSupportsPromptCache: z.boolean().optional(),
   customModelMaxTokens: z.number().optional(),
   customModelContextWindow: z.number().optional(),
@@ -141,6 +160,7 @@ export const featuresSchema = z.object({
   enableMergeCommit: z.boolean(),
   enableBody: z.boolean(),
   enableLayeredCommit: z.boolean(),
+  enableSemanticGrouping: z.boolean(),
   enableGlobalContext: z.boolean(),
   useRecentCommitsAsReference: z.boolean(),
   enableThirdPartyModelCatalog: z.boolean(),
@@ -341,6 +361,7 @@ export interface FeatureSettings {
   enableMergeCommit: boolean;
   enableBody: boolean;
   enableLayeredCommit: boolean;
+  enableSemanticGrouping: boolean;
   enableGlobalContext: boolean;
   useRecentCommitsAsReference: boolean;
   enableThirdPartyModelCatalog: boolean;

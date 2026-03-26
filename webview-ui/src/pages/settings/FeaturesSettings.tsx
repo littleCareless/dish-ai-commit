@@ -67,6 +67,7 @@ export const FeaturesSettings: React.FC = () => {
       enableMergeCommit: false,
       enableBody: true,
       enableLayeredCommit: false,
+      enableSemanticGrouping: false,
       enableGlobalContext: true,
       useRecentCommitsAsReference: false,
       enableThirdPartyModelCatalog: true,
@@ -233,6 +234,17 @@ export const FeaturesSettings: React.FC = () => {
               checked={features.enableGlobalContext}
               onCheckedChange={(enabled) =>
                 handleFeatureToggle("enableGlobalContext", enabled)
+              }
+            />
+            <FeatureSwitch
+              id="enable-semantic-grouping"
+              label={t("commitMessageGeneration.enableSemanticGrouping.label")}
+              description={t(
+                "commitMessageGeneration.enableSemanticGrouping.description",
+              )}
+              checked={features.enableSemanticGrouping}
+              onCheckedChange={(enabled) =>
+                handleFeatureToggle("enableSemanticGrouping", enabled)
               }
             />
             <FeatureSwitch

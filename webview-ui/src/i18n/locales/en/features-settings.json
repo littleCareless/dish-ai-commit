@@ -23,6 +23,10 @@
       "label": "Enable Global Context",
       "description": "Use global context from the codebase for better messages."
     },
+    "enableSemanticGrouping": {
+      "label": "Enable Semantic Grouping",
+      "description": "When multiple files are selected, group them semantically and allow one-click staged group application."
+    },
     "useRecentCommitsAsReference": {
       "label": "Use Recent Commits as Reference",
       "description": "Learn from recent commits to match the project's style."

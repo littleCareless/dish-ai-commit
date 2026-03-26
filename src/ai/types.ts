@@ -90,6 +90,7 @@ export interface AIRequestParams {
 
   /** 分层提交信息生成相关选项 */
   enableLayeredCommit?: boolean;
+  enableSemanticGrouping?: boolean;
 }
 
 /**

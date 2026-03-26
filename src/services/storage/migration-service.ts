@@ -407,6 +407,8 @@ export class MigrationService {
       enableMergeCommit: oldData.features?.enableMergeCommit ?? false,
       enableBody: oldData.features?.enableBody ?? true,
       enableLayeredCommit: oldData.features?.enableLayeredCommit ?? false,
+      enableSemanticGrouping:
+        oldData.features?.enableSemanticGrouping ?? false,
       enableGlobalContext: oldData.features?.enableGlobalContext ?? true,
       useRecentCommitsAsReference:
         oldData.features?.useRecentCommitsAsReference ?? false,
