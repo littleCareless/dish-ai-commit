@@ -85,3 +85,11 @@ export interface GenerationSession {
   input: NormalizedCommandInput;
   scmContext: GenerationSCMContext;
 }
+
+export interface SemanticCommitGroup {
+  id: string;
+  title: string;
+  reason: string;
+  files: string[];
+  commitMessage: string;
+}

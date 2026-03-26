@@ -6,8 +6,14 @@ import {
   GenerationNotification,
   GenerationResult,
 } from "@/commands/generate-commit/types";
+import { GroupedCommitUiService } from "@/commands/generate-commit/services/grouped-commit-ui-service";
 import { assertNotCancelled } from "@/commands/generate-commit/utils/cancellation";
 import { GlobalContextExtractor } from "@/commands/generate-commit/services/global-context-extractor";
+import {
+  SemanticGroupSession,
+  SemanticGroupSessionService,
+} from "@/commands/generate-commit/services/semantic-group-session-service";
+import { SemanticGroupingService } from "@/commands/generate-commit/services/semantic-grouping-service";
 import {
   applyCommitMessageToInput,
   normalizeCommitMessage,
@@ -18,6 +24,7 @@ import { ISCMProvider } from "@/scm/scm-provider";
 import { commitCacheService } from "@/services/cache/commit-cache-service";
 import { PromptManagerService } from "@/services/core/prompt-manager-service";
 import { RateLimiterService } from "@/services/core/rate-limiter-service";
+import { COMMANDS } from "@/constants";
 import { PromptKey } from "@shared/types/prompts";
 import { getMessage, formatMessage } from "@/utils/i18n";
 import { Logger } from "@/utils/logger";
@@ -39,12 +46,18 @@ export class LayeredCommitHandler {
   private contextBuilder: CommitContextBuilder;
   private messageBuilder: CommitMessageBuilder;
   private globalContextExtractor: GlobalContextExtractor;
+  private semanticGroupingService: SemanticGroupingService;
+  private groupedCommitUiService: GroupedCommitUiService;
+  private semanticGroupSessionService: SemanticGroupSessionService;
 
   constructor(logger: Logger) {
     this.logger = logger;
     this.contextBuilder = new CommitContextBuilder();
     this.messageBuilder = new CommitMessageBuilder();
     this.globalContextExtractor = new GlobalContextExtractor();
+    this.semanticGroupingService = new SemanticGroupingService(logger);
+    this.groupedCommitUiService = new GroupedCommitUiService(logger);
+    this.semanticGroupSessionService = SemanticGroupSessionService.getInstance();
   }
 
   /**
@@ -111,6 +124,33 @@ export class LayeredCommitHandler {
         "No prefetched diff snapshot available for layered generation.",
         "LAYERED_DIFF_SNAPSHOT_MISSING",
       );
+    }
+
+    const enableSemanticGrouping =
+      config?.features?.commitFormat?.enableSemanticGrouping === true;
+    if (enableSemanticGrouping) {
+      const existingSession = this.semanticGroupSessionService.getSession(
+        resultContext.repositoryPath,
+        selectedFiles,
+      );
+
+      if (existingSession) {
+        const resumedResult = await this.applySemanticGroupSession(
+          existingSession,
+          scmProvider,
+          selectedFiles,
+          resultContext,
+        );
+        if (resumedResult.status === "success") {
+          this.logger.logOperationEnd("handleLayeredCommit", undefined, {
+            data: {
+              fileCount: selectedFiles.length,
+              mode: "semantic-grouped-resume",
+            },
+          });
+        }
+        return resumedResult;
+      }
     }
 
     const enableGlobalContext =
@@ -214,6 +254,30 @@ export class LayeredCommitHandler {
       );
     }
 
+    if (enableSemanticGrouping) {
+      const groupedCommitResult = await this.tryHandleSemanticGroupedCommit(
+        aiProvider,
+        requestParams,
+        selectedModel,
+        scmProvider,
+        selectedFiles,
+        completeFileDescriptions,
+        progress,
+        resultContext,
+      );
+      if (groupedCommitResult) {
+        if (groupedCommitResult.status === "success") {
+          this.logger.logOperationEnd("handleLayeredCommit", undefined, {
+            data: {
+              fileCount: completeFileDescriptions.length,
+              mode: "semantic-grouped",
+            },
+          });
+        }
+        return groupedCommitResult;
+      }
+    }
+
     if (completeFileDescriptions.length > 0) {
       const layeredResult = await this.generateAndApplyLayeredSummary(
         aiProvider,
@@ -242,6 +306,129 @@ export class LayeredCommitHandler {
       "Layered commit generation ended in an unexpected state.",
       "LAYERED_UNEXPECTED_STATE",
     );
+  }
+
+  private async tryHandleSemanticGroupedCommit(
+    aiProvider: AIProvider,
+    requestParams: AIRequestParams,
+    selectedModel: AIModel,
+    scmProvider: ISCMProvider,
+    selectedFiles: string[],
+    fileChanges: { filePath: string; description: string }[],
+    progress: vscode.Progress<{ message?: string; increment?: number }>,
+    resultContext: LayeredResultContext,
+  ): Promise<GenerationResult | undefined> {
+    if (selectedFiles.length < 2 || fileChanges.length < 2) {
+      return undefined;
+    }
+
+    progress.report({
+      message: "Semantic grouping selected files...",
+    });
+
+    const language =
+      requestParams.languages || requestParams.language || "English";
+    const groupedChanges = await this.semanticGroupingService.groupChanges({
+      aiProvider,
+      requestParams,
+      selectedModel,
+      fileChanges,
+      repositoryPath: resultContext.repositoryPath,
+      language,
+    });
+
+    if (groupedChanges.length < 2) {
+      return undefined;
+    }
+
+    this.logger.info("Semantic grouping generated", {
+      data: {
+        fileCount: fileChanges.length,
+        groupCount: groupedChanges.length,
+      },
+    });
+
+    if (!resultContext.repositoryPath) {
+      return undefined;
+    }
+
+    const session = this.semanticGroupSessionService.saveSession(
+      resultContext.repositoryPath,
+      selectedFiles,
+      groupedChanges,
+    );
+
+    return this.applySemanticGroupSession(
+      session,
+      scmProvider,
+      selectedFiles,
+      resultContext,
+    );
+  }
+
+  private async applySemanticGroupSession(
+    session: SemanticGroupSession,
+    scmProvider: ISCMProvider,
+    selectedFiles: string[],
+    resultContext: LayeredResultContext,
+  ): Promise<GenerationResult> {
+    const applyResult = await this.groupedCommitUiService.pickAndApplyGroup({
+      groups: session.remainingGroups,
+      selectedFiles,
+      repositoryPath: resultContext.repositoryPath,
+      scmProvider,
+    });
+
+    if (applyResult.status === "cancelled") {
+      return {
+        status: "cancelled",
+        applied: false,
+        ...resultContext,
+      };
+    }
+
+    if (applyResult.status === "failed") {
+      return this.createFailedResult(
+        resultContext,
+        applyResult.error || "Failed to apply grouped commit result.",
+        "SEMANTIC_GROUP_APPLY_FAILED",
+      );
+    }
+
+    const selectedGroupId = applyResult.group?.id;
+    if (selectedGroupId) {
+      const remainingCount = this.semanticGroupSessionService.consumeGroup(
+        session.id,
+        selectedGroupId,
+      );
+
+      if (remainingCount > 0) {
+        const continueLabel = "继续下一组";
+        const choice = await vscode.window.showInformationMessage(
+          `还剩 ${remainingCount} 个分组。再次执行 Generate Commit 会直接使用缓存，不会再次调用 AI。`,
+          continueLabel,
+        );
+
+        if (choice === continueLabel) {
+          const syntheticResourceStates = selectedFiles.map((file) => {
+            return {
+              resourceUri: vscode.Uri.file(file),
+            } as vscode.SourceControlResourceState;
+          });
+          await vscode.commands.executeCommand(
+            COMMANDS.COMMIT.GENERATE,
+            ...syntheticResourceStates,
+          );
+        }
+      }
+    }
+
+    return {
+      status: "success",
+      applied: true,
+      message: applyResult.message,
+      ...resultContext,
+    };
   }
 
   /**
