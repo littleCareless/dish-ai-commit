@@ -11,8 +11,12 @@ import {
   ExtendedProviderConfig,
   ProviderMetadata,
 } from "@/types/provider-metadata";
+import i18next from "@/i18n/setup";
 import { postMessage } from "@/utils/vscode";
 import { ExtensionResponse, UIRequest } from "@shared/types/messages";
+
+const l = (zh: string, en: string): string =>
+  i18next.language?.toLowerCase().startsWith("en") ? en : zh;
 
 export class SecureStorage {
   private static instance: SecureStorage;
@@ -76,9 +80,16 @@ export class SecureStorage {
 
       console.log(`Provider config saved: ${providerId}`);
     } catch (error) {
-      console.error("Failed to save provider config:", error);
+      console.error(
+        l("保存提供商配置失败:", "Failed to save provider config:"),
+        error,
+      );
       throw this.createError(
-        `保存配置失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        `${l("保存配置失败", "Failed to save config")}: ${
+          error instanceof Error
+            ? error.message
+            : l("未知错误", "Unknown error")
+        }`,
         error,
       );
     }
@@ -109,7 +120,10 @@ export class SecureStorage {
           secureFields = JSON.parse(secureData) as Record<string, unknown>;
         }
       } catch (error) {
-        console.warn("Failed to load secure fields:", error);
+        console.warn(
+          l("加载安全字段失败:", "Failed to load secure fields:"),
+          error,
+        );
         // 继续执行，只是没有敏感字段
       }
 
@@ -124,7 +138,10 @@ export class SecureStorage {
 
       return config;
     } catch (error) {
-      console.error("Failed to load provider config:", error);
+      console.error(
+        l("加载提供商配置失败:", "Failed to load provider config:"),
+        error,
+      );
       return null;
     }
   }
@@ -141,14 +158,24 @@ export class SecureStorage {
       try {
         await this.deleteSecretValue(`provider.${providerId}.secure`);
       } catch (error) {
-        console.warn("Failed to delete secure fields:", error);
+        console.warn(
+          l("删除安全字段失败:", "Failed to delete secure fields:"),
+          error,
+        );
       }
 
       console.log(`Provider config deleted: ${providerId}`);
     } catch (error) {
-      console.error("Failed to delete provider config:", error);
+      console.error(
+        l("删除提供商配置失败:", "Failed to delete provider config:"),
+        error,
+      );
       throw this.createError(
-        `删除配置失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        `${l("删除配置失败", "Failed to delete config")}: ${
+          error instanceof Error
+            ? error.message
+            : l("未知错误", "Unknown error")
+        }`,
         error,
       );
     }
@@ -188,7 +215,10 @@ export class SecureStorage {
             }
           } catch (error) {
             console.warn(
-              `Failed to load secure fields for ${providerId}:`,
+              l(
+                `加载 ${providerId} 的安全字段失败:`,
+                `Failed to load secure fields for ${providerId}:`,
+              ),
               error,
             );
             result[providerId] = config as ExtendedProviderConfig;
@@ -198,7 +228,10 @@ export class SecureStorage {
 
       return result;
     } catch (error) {
-      console.error("Failed to load all provider configs:", error);
+      console.error(
+        l("加载所有提供商配置失败:", "Failed to load all provider configs:"),
+        error,
+      );
       return {};
     }
   }
@@ -260,7 +293,10 @@ export class SecureStorage {
               resolve();
             } else {
               reject(
-                new Error(event.data.error || "Failed to set global state"),
+                new Error(
+                  event.data.error ||
+                    l("设置全局状态失败", "Failed to set global state"),
+                ),
               );
             }
           }
@@ -275,22 +311,37 @@ export class SecureStorage {
           window.removeEventListener("message", messageHandler);
           // 如果超时，可能是因为不在 VSCode 环境中，尝试 fallback 到 localStorage
           console.warn(
-            "Global state save timeout, falling back to localStorage",
+            l(
+              "全局状态保存超时，回退到 localStorage",
+              "Global state save timeout, falling back to localStorage",
+            ),
           );
           try {
             localStorage.setItem(`config.${key}`, JSON.stringify(value));
             resolve();
           } catch {
             reject(
-              new Error("Global state save timeout and localStorage failed"),
+              new Error(
+                l(
+                  "全局状态保存超时且 localStorage 保存失败",
+                  "Global state save timeout and localStorage failed",
+                ),
+              ),
             );
           }
         }, 2000); // 缩短超时时间以便快速 fallback
       });
     } catch (error) {
-      console.error("Failed to set configuration value:", error);
+      console.error(
+        l("设置配置值失败:", "Failed to set configuration value:"),
+        error,
+      );
       throw this.createError(
-        `配置保存失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        `${l("配置保存失败", "Failed to save config")}: ${
+          error instanceof Error
+            ? error.message
+            : l("未知错误", "Unknown error")
+        }`,
         error,
       );
     }
@@ -343,7 +394,11 @@ export class SecureStorage {
             if (event.data.success) {
               resolve();
             } else {
-              reject(new Error(event.data.error || "Failed to set secret"));
+              reject(
+                new Error(
+                  event.data.error || l("设置密钥失败", "Failed to set secret"),
+                ),
+              );
             }
           }
         };
@@ -356,20 +411,34 @@ export class SecureStorage {
           window.removeEventListener("message", messageHandler);
           // Fallback to localStorage
           console.warn(
-            "Secret save timeout, falling back to localStorage (development mode)",
+            l(
+              "密钥保存超时，回退到 localStorage（开发模式）",
+              "Secret save timeout, falling back to localStorage (development mode)",
+            ),
           );
           try {
             localStorage.setItem(`secret.${key}`, value);
             resolve();
           } catch {
-            reject(new Error("Secret save timeout and localStorage failed"));
+            reject(
+              new Error(
+                l(
+                  "密钥保存超时且 localStorage 保存失败",
+                  "Secret save timeout and localStorage failed",
+                ),
+              ),
+            );
           }
         }, 2000);
       });
     } catch (error) {
-      console.error("Failed to set secret value:", error);
+      console.error(l("设置密钥值失败:", "Failed to set secret value:"), error);
       throw this.createError(
-        `密钥保存失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        `${l("密钥保存失败", "Failed to save secret")}: ${
+          error instanceof Error
+            ? error.message
+            : l("未知错误", "Unknown error")
+        }`,
         error,
       );
     }
@@ -401,7 +470,10 @@ export class SecureStorage {
         window.removeEventListener("message", messageHandler);
         // Fallback
         console.warn(
-          "Using localStorage for secrets in development mode (fallback)",
+          l(
+            "开发模式下回退为 localStorage 读取密钥",
+            "Using localStorage for secrets in development mode (fallback)",
+          ),
         );
         resolve(localStorage.getItem(`secret.${key}`));
       }, 2000);
@@ -436,7 +508,10 @@ export class SecureStorage {
           await this.deleteSecretValue(`provider.${providerId}.secure`);
         } catch (error) {
           console.warn(
-            `Failed to clear secure fields for ${providerId}:`,
+            l(
+              `清除 ${providerId} 的安全字段失败:`,
+              `Failed to clear secure fields for ${providerId}:`,
+            ),
             error,
           );
         }
@@ -444,9 +519,16 @@ export class SecureStorage {
 
       console.log("All provider configs cleared");
     } catch (error) {
-      console.error("Failed to clear all configs:", error);
+      console.error(
+        l("清除全部配置失败:", "Failed to clear all configs:"),
+        error,
+      );
       throw this.createError(
-        `清除配置失败: ${error instanceof Error ? error.message : "未知错误"}`,
+        `${l("清除配置失败", "Failed to clear configs")}: ${
+          error instanceof Error
+            ? error.message
+            : l("未知错误", "Unknown error")
+        }`,
         error,
       );
     }

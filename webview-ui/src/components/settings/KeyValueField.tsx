@@ -89,7 +89,7 @@ export const KeyValueField: React.FC<KeyValueFieldProps> = ({
           title={
             field.placeholder
               ? t(field.placeholder)
-              : t("settings-page.keyValue.addHeader", { ns: "settings-page" })
+              : t("keyValue.addHeader", { ns: "settings-page" })
           }
         >
           <svg
@@ -111,7 +111,7 @@ export const KeyValueField: React.FC<KeyValueFieldProps> = ({
 
       {localHeaders.length === 0 ? (
         <div className="text-sm text-muted-foreground py-2">
-          {t("settings-page.keyValue.noHeaders", { ns: "settings-page" })}
+          {t("keyValue.noHeaders", { ns: "settings-page" })}
         </div>
       ) : (
         <div className="space-y-2">
