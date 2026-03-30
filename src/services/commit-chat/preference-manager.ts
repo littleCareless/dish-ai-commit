@@ -1,4 +1,5 @@
 import { CommitSuggestion } from "@shared/types/messages";
+import { localize } from "@/services/commit-chat/language-utils";
 
 export interface UserPreference {
   id: string;
@@ -86,6 +87,10 @@ export class PreferenceManager {
   private learningData: LearningData[] = [];
   private listeners: Array<(preference: UserPreference) => void> = [];
 
+  private l(zh: string, en: string): string {
+    return localize(this.preference?.language || defaultPreference.language, zh, en);
+  }
+
   private constructor() {
     this.preference = this.loadPreference();
   }
@@ -119,7 +124,10 @@ export class PreferenceManager {
         };
       }
     } catch (error) {
-      console.error("加载用户偏好失败:", error);
+      console.error(
+        this.l("加载用户偏好失败:", "Failed to load user preferences:"),
+        error
+      );
     }
 
     return { ...defaultPreference };
@@ -135,7 +143,10 @@ export class PreferenceManager {
       );
       this.notifyListeners();
     } catch (error) {
-      console.error("保存用户偏好失败:", error);
+      console.error(
+        this.l("保存用户偏好失败:", "Failed to save user preferences:"),
+        error
+      );
     }
   }
 
@@ -315,7 +326,7 @@ export class PreferenceManager {
           text: this.generateSuggestionFromPattern(pattern.pattern, input),
           type: "custom",
           confidence: pattern.confidence,
-          description: `基于您的使用习惯`,
+          description: this.l("基于您的使用习惯", "Based on your usage patterns"),
         });
       }
     }
@@ -333,7 +344,7 @@ export class PreferenceManager {
           text: `${template}: ${input}`,
           type: "template",
           confidence: Math.min(count / 10, 0.9),
-          description: `您经常使用的模板`,
+          description: this.l("您经常使用的模板", "Your frequently used template"),
         });
       }
     }
@@ -443,8 +454,11 @@ export class PreferenceManager {
 
       this.savePreference();
     } catch (error) {
-      console.error("导入偏好数据失败:", error);
-      throw new Error("无效的偏好数据格式");
+      console.error(
+        this.l("导入偏好数据失败:", "Failed to import preference data:"),
+        error
+      );
+      throw new Error(this.l("无效的偏好数据格式", "Invalid preference data format"));
     }
   }
 
@@ -468,7 +482,13 @@ export class PreferenceManager {
       try {
         listener(this.preference);
       } catch (error) {
-        console.error("偏好监听器执行失败:", error);
+        console.error(
+          this.l(
+            "偏好监听器执行失败:",
+            "Preference listener execution failed:"
+          ),
+          error
+        );
       }
     });
   }

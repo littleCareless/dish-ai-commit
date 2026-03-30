@@ -1,4 +1,8 @@
 import { CommitSuggestion } from "@shared/types/messages";
+import {
+  localize,
+  resolveCommitChatLocale,
+} from "@/services/commit-chat/language-utils";
 
 export interface CommitTemplate {
   name: string;
@@ -104,6 +108,28 @@ export class SuggestionEngine {
   private projectContext: ProjectContext;
   private recentSuggestions: string[] = [];
 
+  private l(zh: string, en: string): string {
+    return localize(this.userPreferences.language, zh, en);
+  }
+
+  private getTemplateDescription(template: CommitTemplate): string {
+    const map: Record<string, { zh: string; en: string }> = {
+      feat: { zh: "新功能", en: "New feature" },
+      fix: { zh: "修复问题", en: "Bug fix" },
+      docs: { zh: "文档更新", en: "Documentation update" },
+      style: { zh: "代码格式调整", en: "Code style adjustment" },
+      refactor: { zh: "代码重构", en: "Code refactor" },
+      test: { zh: "测试相关", en: "Testing related" },
+      chore: { zh: "构建/工具相关", en: "Build/tooling related" },
+      emoji: { zh: "表情符号风格", en: "Emoji style" },
+    };
+    const text = map[template.name];
+    if (!text) {
+      return this.l(template.description, template.description);
+    }
+    return this.l(text.zh, text.en);
+  }
+
   constructor(
     userPreferences: Partial<UserPreference> = {},
     projectContext: Partial<ProjectContext> = {}
@@ -161,7 +187,7 @@ export class SuggestionEngine {
               text: this.formatTemplate(template, input),
               type: "template",
               confidence: 0.8,
-              description: template.description,
+              description: this.getTemplateDescription(template),
             });
           }
         }
@@ -171,10 +197,16 @@ export class SuggestionEngine {
     // 基于输入长度和内容生成建议
     if (input.length < 20) {
       suggestions.push({
-        text: `${input} - 完善描述`,
+        text:
+          resolveCommitChatLocale(this.userPreferences.language) === "en"
+            ? `${input} - improve description`
+            : `${input} - 完善描述`,
         type: "style",
         confidence: 0.6,
-        description: "建议添加更详细的描述",
+        description: this.l(
+          "建议添加更详细的描述",
+          "Consider adding a more detailed description"
+        ),
       });
     }
 
@@ -205,7 +237,7 @@ export class SuggestionEngine {
         text: this.formatTemplate(template, input),
         type: "template",
         confidence: 0.7,
-        description: template.description,
+        description: this.getTemplateDescription(template),
       });
     });
 
@@ -226,7 +258,10 @@ export class SuggestionEngine {
           text: `${commitType}: ${input}`,
           type: "convention",
           confidence: 0.6,
-          description: "基于最近提交的类型",
+          description: this.l(
+            "基于最近提交的类型",
+            "Based on recent commit type"
+          ),
         });
       }
     }
@@ -250,22 +285,25 @@ export class SuggestionEngine {
     const suggestions: CommitSuggestion[] = [];
 
     // 根据语言偏好生成建议
-    if (this.userPreferences.language === "en" && this.isChinese(input)) {
+    if (
+      resolveCommitChatLocale(this.userPreferences.language) === "en" &&
+      this.isChinese(input)
+    ) {
       suggestions.push({
         text: this.translateToEnglish(input),
         type: "style",
         confidence: 0.5,
-        description: "英文版本",
+        description: this.l("英文版本", "English version"),
       });
     } else if (
-      this.userPreferences.language === "zh" &&
+      resolveCommitChatLocale(this.userPreferences.language) === "zh" &&
       this.isEnglish(input)
     ) {
       suggestions.push({
         text: this.translateToChinese(input),
         type: "style",
         confidence: 0.5,
-        description: "中文版本",
+        description: this.l("中文版本", "Chinese version"),
       });
     }
 
@@ -275,7 +313,7 @@ export class SuggestionEngine {
         text: this.shortenMessage(input),
         type: "style",
         confidence: 0.7,
-        description: "缩短版本",
+        description: this.l("缩短版本", "Shortened version"),
       });
     }
 
@@ -336,7 +374,10 @@ export class SuggestionEngine {
       text: `${pattern}: ${input}`,
       type: "convention",
       confidence: 0.5,
-      description: `${framework} 相关`,
+      description:
+        resolveCommitChatLocale(this.userPreferences.language) === "en"
+          ? `${framework} related`
+          : `${framework} 相关`,
     }));
   }
 

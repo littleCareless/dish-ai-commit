@@ -7,6 +7,10 @@ import {
   SuggestionEngine,
   UserPreference,
 } from "@/services/commit-chat/suggestion-engine";
+import {
+  localize,
+  resolveCommitChatLocale,
+} from "@/services/commit-chat/language-utils";
 import { ChatMessage } from "@shared/types/messages";
 
 export interface CommitChatRequest {
@@ -57,6 +61,10 @@ export class CommitChatService {
   private conversationHistory: ChatMessage[] = [];
   private userPreferences: UserPreference;
   private projectContext: ProjectContext;
+
+  private l(zh: string, en: string): string {
+    return localize(this.userPreferences.language, zh, en);
+  }
 
   constructor(
     config: Partial<CommitChatConfig> = {},
@@ -227,8 +235,11 @@ export class CommitChatService {
       // 暂时返回模拟响应
       return this.generateMockResponse(message, context);
     } catch (error) {
-      console.error("AI 响应生成失败:", error);
-      return "抱歉，我暂时无法处理您的请求。请稍后再试。";
+      console.error(this.l("AI 响应生成失败:", "Failed to generate AI response:"), error);
+      return this.l(
+        "抱歉，我暂时无法处理您的请求。请稍后再试。",
+        "Sorry, I can't process your request right now. Please try again later."
+      );
     }
   }
 
@@ -237,7 +248,22 @@ export class CommitChatService {
     message: string,
     context: CommitChatRequest["context"]
   ): string {
-    const systemPrompt = `你是一个专业的 Git commit message 助手。你的任务是帮助用户生成清晰、准确、符合规范的 commit message。
+    const locale = resolveCommitChatLocale(this.userPreferences.language);
+    const systemPrompt =
+      locale === "en"
+        ? `You are a professional Git commit message assistant. Your task is to help users generate clear, accurate, and standard-compliant commit messages.
+
+User preferences:
+- Style: ${this.userPreferences.style}
+- Language: ${this.userPreferences.language}
+- Max length: ${this.userPreferences.maxLength}
+
+Project context:
+- Language: ${this.projectContext.language}
+- Framework: ${this.projectContext.framework || "Unknown"}
+
+Generate suitable commit messages based on user descriptions and provide useful suggestions.`
+        : `你是一个专业的 Git commit message 助手。你的任务是帮助用户生成清晰、准确、符合规范的 commit message。
 
 用户偏好:
 - 风格: ${this.userPreferences.style}
@@ -252,8 +278,23 @@ export class CommitChatService {
 
     const conversationContext = context.messages
       .slice(-5) // 只取最近5条消息作为上下文
-      .map((msg) => `${msg.type === "user" ? "用户" : "助手"}: ${msg.content}`)
+      .map((msg) =>
+        locale === "en"
+          ? `${msg.type === "user" ? "User" : "Assistant"}: ${msg.content}`
+          : `${msg.type === "user" ? "用户" : "助手"}: ${msg.content}`
+      )
       .join("\n");
+
+    if (locale === "en") {
+      return `${systemPrompt}
+
+Conversation history:
+${conversationContext}
+
+Current user input: ${message}
+
+Please generate a response:`;
+    }
 
     return `${systemPrompt}
 
@@ -270,12 +311,20 @@ ${conversationContext}
     message: string,
     context: CommitChatRequest["context"]
   ): string {
-    const responses = [
-      `我理解您想要 ${message}。让我为您生成一个合适的 commit message。`,
-      `根据您的描述 "${message}"，我建议使用以下格式的 commit message。`,
-      `好的，我来帮您优化这个 commit message。基于您的输入，我推荐以下方案。`,
-      `我明白您的需求。让我分析一下并为您提供最佳的 commit message 建议。`,
-    ];
+    const responses =
+      resolveCommitChatLocale(this.userPreferences.language) === "en"
+        ? [
+            `I understand you want ${message}. Let me generate a suitable commit message for you.`,
+            `Based on your description "${message}", I recommend the following commit message format.`,
+            `I'll help optimize this commit message. Based on your input, here's my recommendation.`,
+            `I understand your requirement. Let me analyze it and provide the best commit message suggestion.`,
+          ]
+        : [
+            `我理解您想要 ${message}。让我为您生成一个合适的 commit message。`,
+            `根据您的描述 "${message}"，我建议使用以下格式的 commit message。`,
+            `好的，我来帮您优化这个 commit message。基于您的输入，我推荐以下方案。`,
+            `我明白您的需求。让我分析一下并为您提供最佳的 commit message 建议。`,
+          ];
 
     return responses[Math.floor(Math.random() * responses.length)];
   }
@@ -338,10 +387,7 @@ ${conversationContext}
     const action = this.detectAction(message);
     const description = this.extractDescription(message);
 
-    if (
-      language === "Simplified Chinese" ||
-      language === "Traditional Chinese"
-    ) {
+    if (resolveCommitChatLocale(language) === "zh") {
       return `${action}${description}`;
     } else {
       return `${action} ${description}`;
@@ -438,33 +484,34 @@ ${conversationContext}
   // 检测动作
   private detectAction(message: string): string {
     const lowerMessage = message.toLowerCase();
+    const locale = resolveCommitChatLocale(this.userPreferences.language);
 
     if (lowerMessage.includes("添加") || lowerMessage.includes("add")) {
-      return "添加";
+      return locale === "en" ? "add" : "添加";
     } else if (lowerMessage.includes("修复") || lowerMessage.includes("fix")) {
-      return "修复";
+      return locale === "en" ? "fix" : "修复";
     } else if (
       lowerMessage.includes("更新") ||
       lowerMessage.includes("update")
     ) {
-      return "更新";
+      return locale === "en" ? "update" : "更新";
     } else if (
       lowerMessage.includes("删除") ||
       lowerMessage.includes("remove")
     ) {
-      return "删除";
+      return locale === "en" ? "remove" : "删除";
     } else if (
       lowerMessage.includes("重构") ||
       lowerMessage.includes("refactor")
     ) {
-      return "重构";
+      return locale === "en" ? "refactor" : "重构";
     } else if (
       lowerMessage.includes("优化") ||
       lowerMessage.includes("optimize")
     ) {
-      return "优化";
+      return locale === "en" ? "improve" : "优化";
     } else {
-      return "更新";
+      return locale === "en" ? "update" : "更新";
     }
   }
 
@@ -522,7 +569,21 @@ ${conversationContext}
     }
 
     // 基于关键词匹配
-    const keywords = ["添加", "修复", "更新", "删除", "重构", "优化"];
+    const keywords = [
+      "添加",
+      "修复",
+      "更新",
+      "删除",
+      "重构",
+      "优化",
+      "add",
+      "fix",
+      "update",
+      "remove",
+      "refactor",
+      "optimize",
+      "improve",
+    ];
     const hasKeyword = keywords.some((keyword) => message.includes(keyword));
     if (hasKeyword) {
       confidence += 0.2;
