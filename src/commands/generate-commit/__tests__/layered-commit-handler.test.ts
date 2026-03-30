@@ -408,4 +408,249 @@ describe("LayeredCommitHandler", () => {
     expect(results).toEqual([{ filePath: "a.ts", description: "desc a" }]);
     expect(acquireMock).not.toHaveBeenCalled();
   });
+
+  it("uses main prompt chain to generate grouped commit message after semantic grouping", async () => {
+    const handler = createHandler();
+    const args = createHandleArgs();
+    args.config.features.commitFormat.enableSemanticGrouping = true;
+
+    vi.spyOn(
+      (handler as any).globalContextExtractor,
+      "extractGlobalContext",
+    ).mockResolvedValue("");
+    vi.spyOn(handler as any, "processFilesInBatches").mockResolvedValue([
+      { filePath: "a.ts", description: "Update A" },
+      { filePath: "b.ts", description: "Update B" },
+    ]);
+    vi.spyOn(
+      (handler as any).semanticGroupingService,
+      "groupChanges",
+    ).mockResolvedValue({
+      groups: [
+        {
+          id: "g1",
+          title: "core",
+          reason: "core updates",
+          files: ["a.ts"],
+          commitMessage: "fix(src): legacy template",
+        },
+        {
+          id: "g2",
+          title: "ui",
+          reason: "ui updates",
+          files: ["b.ts"],
+          commitMessage: "fix(src): legacy template",
+        },
+      ],
+      fallbackUsed: false,
+    });
+
+    const generateSummarySpy = vi
+      .spyOn(handler as any, "generateLayeredSummaryMessage")
+      .mockResolvedValue("feat(core): regenerate grouped commit");
+
+    vi.spyOn(
+      (handler as any).groupedCommitUiService,
+      "pickAndApplyGroup",
+    ).mockImplementation(async (input: any) => {
+      const group = input.groups[0];
+      const message = await input.resolveCommitMessage(group);
+      return {
+        status: "applied",
+        group,
+        message,
+      };
+    });
+    vi.spyOn(
+      (handler as any).semanticGroupSessionService,
+      "consumeGroup",
+    ).mockReturnValue(0);
+
+    const result = await handler.handle(
+      args.aiProvider,
+      args.requestParams,
+      args.scmProvider,
+      args.selectedFiles,
+      args.token,
+      args.progress,
+      args.selectedModel,
+      args.config,
+      args.resultContext,
+      args.prefetchedDiffs,
+    );
+
+    expect(result.status).toBe("success");
+    expect(result.message).toBe("feat(core): regenerate grouped commit");
+    expect(generateSummarySpy).toHaveBeenCalled();
+  });
+
+  it("regenerates commit message from main prompt chain when resuming semantic group session", async () => {
+    const handler = createHandler();
+    const args = createHandleArgs();
+    args.config.features.commitFormat.enableSemanticGrouping = true;
+
+    vi.spyOn(
+      (handler as any).semanticGroupSessionService,
+      "getSession",
+    ).mockReturnValue({
+      id: "session-1",
+      repositoryPath: "/repo",
+      selectedFilesSignature: "a.ts\nb.ts",
+      remainingGroups: [
+        {
+          id: "g1",
+          title: "core",
+          reason: "core updates",
+          files: ["a.ts"],
+          commitMessage: "fix(src): legacy template",
+        },
+      ],
+      fileDescriptionsByPath: {
+        "a.ts": "update core logic",
+      },
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    });
+
+    const generateSummarySpy = vi
+      .spyOn(handler as any, "generateLayeredSummaryMessage")
+      .mockResolvedValue("feat(core): regenerated on resume");
+
+    vi.spyOn(
+      (handler as any).groupedCommitUiService,
+      "pickAndApplyGroup",
+    ).mockImplementation(async (input: any) => {
+      const group = input.groups[0];
+      const message = await input.resolveCommitMessage(group);
+      return {
+        status: "applied",
+        group,
+        message,
+      };
+    });
+
+    vi.spyOn(
+      (handler as any).semanticGroupSessionService,
+      "consumeGroup",
+    ).mockReturnValue(0);
+
+    const result = await handler.handle(
+      args.aiProvider,
+      args.requestParams,
+      args.scmProvider,
+      args.selectedFiles,
+      args.token,
+      args.progress,
+      args.selectedModel,
+      args.config,
+      args.resultContext,
+      args.prefetchedDiffs,
+    );
+
+    expect(result.status).toBe("success");
+    expect(result.message).toBe("feat(core): regenerated on resume");
+    expect(generateSummarySpy).toHaveBeenCalled();
+  });
+
+  it("returns immediately for current group and schedules next group continuation asynchronously", async () => {
+    vi.useFakeTimers();
+    try {
+      const handler = createHandler();
+      const args = createHandleArgs();
+      args.config.features.commitFormat.enableSemanticGrouping = true;
+
+      vi.spyOn(
+        (handler as any).globalContextExtractor,
+        "extractGlobalContext",
+      ).mockResolvedValue("");
+      vi.spyOn(handler as any, "processFilesInBatches").mockResolvedValue([
+        { filePath: "a.ts", description: "Update A" },
+        { filePath: "b.ts", description: "Update B" },
+      ]);
+      vi.spyOn(
+        (handler as any).semanticGroupingService,
+        "groupChanges",
+      ).mockResolvedValue({
+        groups: [
+          {
+            id: "g1",
+            title: "core",
+            reason: "core updates",
+            files: ["a.ts"],
+            commitMessage: "fix(src): legacy template",
+          },
+          {
+            id: "g2",
+            title: "ui",
+            reason: "ui updates",
+            files: ["b.ts"],
+            commitMessage: "fix(src): legacy template",
+          },
+        ],
+        fallbackUsed: false,
+      });
+
+      vi.spyOn(handler as any, "generateLayeredSummaryMessage").mockResolvedValue(
+        "feat(core): async continue",
+      );
+      vi.spyOn(
+        (handler as any).groupedCommitUiService,
+        "pickAndApplyGroup",
+      ).mockResolvedValue({
+        status: "applied",
+        group: {
+          id: "g1",
+          title: "core",
+          reason: "core updates",
+          files: ["a.ts"],
+          commitMessage: "feat(core): async continue",
+        },
+        message: "feat(core): async continue",
+      });
+      vi.spyOn(
+        (handler as any).semanticGroupSessionService,
+        "consumeGroup",
+      ).mockReturnValue(1);
+
+      const showInfoSpy = vi
+        .spyOn(vscode.window, "showInformationMessage")
+        .mockImplementation(
+          async (
+            _message: string,
+            _options: vscode.MessageOptions,
+            ...items: vscode.MessageItem[]
+          ) => {
+          return items[0] as any;
+          },
+        );
+      const executeCommandSpy = vi
+        .spyOn(vscode.commands, "executeCommand")
+        .mockResolvedValue(undefined as any);
+
+      const result = await handler.handle(
+        args.aiProvider,
+        args.requestParams,
+        args.scmProvider,
+        args.selectedFiles,
+        args.token,
+        args.progress,
+        args.selectedModel,
+        args.config,
+        args.resultContext,
+        args.prefetchedDiffs,
+      );
+
+      expect(result.status).toBe("success");
+      expect(showInfoSpy).not.toHaveBeenCalled();
+      expect(executeCommandSpy).not.toHaveBeenCalled();
+
+      await vi.runAllTimersAsync();
+      await Promise.resolve();
+
+      expect(showInfoSpy).toHaveBeenCalledTimes(1);
+      expect(executeCommandSpy).toHaveBeenCalledTimes(1);
+    } finally {
+      vi.useRealTimers();
+    }
+  });
 });

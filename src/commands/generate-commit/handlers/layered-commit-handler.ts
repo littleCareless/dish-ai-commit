@@ -137,8 +137,12 @@ export class LayeredCommitHandler {
       if (existingSession) {
         const resumedResult = await this.applySemanticGroupSession(
           existingSession,
+          aiProvider,
+          requestParams,
+          selectedModel,
           scmProvider,
           selectedFiles,
+          config,
           resultContext,
         );
         if (resumedResult.status === "success") {
@@ -264,6 +268,7 @@ export class LayeredCommitHandler {
         completeFileDescriptions,
         progress,
         resultContext,
+        config,
       );
       if (groupedCommitResult) {
         if (groupedCommitResult.status === "success") {
@@ -317,18 +322,21 @@ export class LayeredCommitHandler {
     fileChanges: { filePath: string; description: string }[],
     progress: vscode.Progress<{ message?: string; increment?: number }>,
     resultContext: LayeredResultContext,
+    config: any,
   ): Promise<GenerationResult | undefined> {
     if (selectedFiles.length < 2 || fileChanges.length < 2) {
       return undefined;
     }
 
     progress.report({
-      message: "Semantic grouping selected files...",
+      message: formatMessage("progress.semantic.grouping.start", [
+        String(fileChanges.length),
+      ]),
     });
 
     const language =
       requestParams.languages || requestParams.language || "English";
-    const groupedChanges = await this.semanticGroupingService.groupChanges({
+    const groupingResult = await this.semanticGroupingService.groupChanges({
       aiProvider,
       requestParams,
       selectedModel,
@@ -336,10 +344,31 @@ export class LayeredCommitHandler {
       repositoryPath: resultContext.repositoryPath,
       language,
     });
+    const groupedChanges = groupingResult.groups;
+
+    if (groupingResult.fallbackUsed) {
+      progress.report({
+        message: getMessage("progress.semantic.grouping.fallback"),
+      });
+      this.logger.warn("Semantic grouping fallback applied", {
+        operation: "LayeredCommitHandler.tryHandleSemanticGroupedCommit",
+        data: {
+          fallbackReason: groupingResult.fallbackReason || "unknown",
+          fileCount: fileChanges.length,
+          groupCount: groupedChanges.length,
+        },
+      });
+    }
 
     if (groupedChanges.length < 2) {
       return undefined;
     }
+
+    progress.report({
+      message: formatMessage("progress.semantic.grouping.complete", [
+        String(groupedChanges.length),
+      ]),
+    });
 
     this.logger.info("Semantic grouping generated", {
       data: {
@@ -356,20 +385,31 @@ export class LayeredCommitHandler {
       resultContext.repositoryPath,
       selectedFiles,
       groupedChanges,
+      Object.fromEntries(
+        fileChanges.map((fileChange) => [fileChange.filePath, fileChange.description]),
+      ),
     );
 
     return this.applySemanticGroupSession(
       session,
+      aiProvider,
+      requestParams,
+      selectedModel,
       scmProvider,
       selectedFiles,
+      config,
       resultContext,
     );
   }
 
   private async applySemanticGroupSession(
     session: SemanticGroupSession,
+    aiProvider: AIProvider,
+    requestParams: AIRequestParams,
+    selectedModel: AIModel,
     scmProvider: ISCMProvider,
     selectedFiles: string[],
+    config: any,
     resultContext: LayeredResultContext,
   ): Promise<GenerationResult> {
     const applyResult = await this.groupedCommitUiService.pickAndApplyGroup({
@@ -377,6 +417,21 @@ export class LayeredCommitHandler {
       selectedFiles,
       repositoryPath: resultContext.repositoryPath,
       scmProvider,
+      resolveCommitMessage: async (group) => {
+        const groupMessage = await this.generateSemanticGroupCommitMessage(
+          group,
+          session,
+          aiProvider,
+          requestParams,
+          selectedModel,
+          scmProvider,
+          config,
+        );
+        if (groupMessage) {
+          group.commitMessage = groupMessage;
+        }
+        return groupMessage;
+      },
     });
 
     if (applyResult.status === "cancelled") {
@@ -403,23 +458,7 @@ export class LayeredCommitHandler {
       );
 
       if (remainingCount > 0) {
-        const continueLabel = "继续下一组";
-        const choice = await vscode.window.showInformationMessage(
-          `还剩 ${remainingCount} 个分组。再次执行 Generate Commit 会直接使用缓存，不会再次调用 AI。`,
-          continueLabel,
-        );
-
-        if (choice === continueLabel) {
-          const syntheticResourceStates = selectedFiles.map((file) => {
-            return {
-              resourceUri: vscode.Uri.file(file),
-            } as vscode.SourceControlResourceState;
-          });
-          await vscode.commands.executeCommand(
-            COMMANDS.COMMIT.GENERATE,
-            ...syntheticResourceStates,
-          );
-        }
+        this.scheduleSemanticGroupContinuation(remainingCount, selectedFiles);
       }
     }
 
@@ -429,6 +468,54 @@ export class LayeredCommitHandler {
       message: applyResult.message,
       ...resultContext,
     };
+  }
+
+  private async generateSemanticGroupCommitMessage(
+    group: { id: string; files: string[]; commitMessage: string },
+    session: SemanticGroupSession,
+    aiProvider: AIProvider,
+    requestParams: AIRequestParams,
+    selectedModel: AIModel,
+    scmProvider: ISCMProvider,
+    config: any,
+  ): Promise<string | undefined> {
+    if (!aiProvider.generateCommit) {
+      return undefined;
+    }
+
+    const fileChanges = group.files
+      .map((filePath) => {
+        const description = session.fileDescriptionsByPath?.[filePath];
+        if (!description) {
+          return undefined;
+        }
+        return { filePath, description };
+      })
+      .filter((item): item is { filePath: string; description: string } => Boolean(item));
+
+    if (fileChanges.length === 0) {
+      return undefined;
+    }
+
+    try {
+      return await this.generateLayeredSummaryMessage(
+        aiProvider,
+        requestParams,
+        selectedModel,
+        scmProvider,
+        fileChanges,
+        config,
+      );
+    } catch (error) {
+      this.logger.warn("Generate semantic grouped commit message failed", {
+        operation: "LayeredCommitHandler.generateSemanticGroupCommitMessage",
+        data: {
+          groupId: group.id,
+          error: error instanceof Error ? error.message : String(error),
+        },
+      });
+      return undefined;
+    }
   }
 
   /**
@@ -459,72 +546,41 @@ export class LayeredCommitHandler {
       message: getMessage("progress.generating.layered.summary"),
     });
 
-    const formattedFileChanges = fileChanges
-      .map(
-        (change) =>
-          `File: ${change.filePath}\nDescription: ${change.description}`
-      )
-      .join("\n\n");
-
-    // Build a temporary params object for the system prompt, forcing merge commit behavior
-    // 使用从 profile 获取的配置，确保所有字段都从 profile 中获取
-    const summaryParams: AIRequestParams = {
-      ...config.features.commitMessage,
-      ...config.features.commitFormat,
-      ...config.features.codeAnalysis,
-      model: selectedModel,
-      scm: scmProvider.type ?? "git",
-      changeFiles: fileChanges.map((fc) => fc.filePath),
-      language: config.base.language,
-      languages: config.base.language,
-      diff: formattedFileChanges, // Use the descriptions as the "diff" for the summary
-      additionalContext: "",
-      workspaceRoot: requestParams.workspaceRoot, // 从 requestParams 获取 workspaceRoot
-      enableMergeCommit: true, // Force merge commit style for the summary
-      feature: "commit-generation",
-    };
-
-    const summarySystemPrompt = await getSystemPrompt(summaryParams);
-
-    const summaryContextManager =
-      await this.contextBuilder.buildLayeredSummaryContextManager(
+    let summaryMessage = "";
+    try {
+      summaryMessage = await this.generateLayeredSummaryMessage(
+        aiProvider,
+        requestParams,
         selectedModel,
-        summarySystemPrompt,
         scmProvider,
-        formattedFileChanges,
-        config
+        fileChanges,
+        config,
       );
-
-    const messages = summaryContextManager.buildMessages();
-
-    if (!aiProvider.generateCommit) {
-      this.logger.error("Provider 不支持非流式生成", {
-        data: { provider: aiProvider.getId() },
-      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error);
+      const isProviderUnsupported = message.includes(
+        "does not support non-streaming for layered commit summary",
+      );
+      if (isProviderUnsupported) {
+        return this.createFailedResult(
+          resultContext,
+          message,
+          "LAYERED_PROVIDER_UNSUPPORTED",
+        );
+      }
       return this.createFailedResult(
         resultContext,
-        `Provider ${aiProvider.getId()} does not support non-streaming for layered commit summary.`,
-        "LAYERED_PROVIDER_UNSUPPORTED",
+        message,
+        "LAYERED_SUMMARY_GENERATION_FAILED",
       );
     }
-
-    this.logger.debug("生成分层摘要", {
-      data: { messageCount: messages.length },
-    });
-
-    const summaryResponse = await aiProvider.generateCommit({
-      ...requestParams,
-      model: selectedModel,
-      messages,
-      diff: "", // Not needed for summary
-    });
 
     this.throwIfCancelled(token);
 
     try {
       const { message, applied } = await applyCommitMessageToInput(
         scmProvider,
-        summaryResponse.content,
+        summaryMessage,
       );
       if (!applied) {
         return this.createFailedResult(
@@ -556,6 +612,76 @@ export class LayeredCommitHandler {
         "LAYERED_APPLY_SUMMARY_FAILED",
       );
     }
+  }
+
+  private async generateLayeredSummaryMessage(
+    aiProvider: AIProvider,
+    requestParams: AIRequestParams,
+    selectedModel: AIModel,
+    scmProvider: ISCMProvider,
+    fileChanges: { filePath: string; description: string }[],
+    config: any,
+  ): Promise<string> {
+    if (!aiProvider.generateCommit) {
+      this.logger.error("Provider 不支持非流式生成", {
+        data: { provider: aiProvider.getId() },
+      });
+      throw new Error(
+        `Provider ${aiProvider.getId()} does not support non-streaming for layered commit summary.`,
+      );
+    }
+
+    const formattedFileChanges = fileChanges
+      .map(
+        (change) =>
+          `File: ${change.filePath}\nDescription: ${change.description}`,
+      )
+      .join("\n\n");
+
+    const summaryParams: AIRequestParams = {
+      ...config.features.commitMessage,
+      ...config.features.commitFormat,
+      ...config.features.codeAnalysis,
+      model: selectedModel,
+      scm: scmProvider.type ?? "git",
+      changeFiles: fileChanges.map((fc) => fc.filePath),
+      language: config.base.language,
+      languages: config.base.language,
+      diff: formattedFileChanges,
+      additionalContext: "",
+      workspaceRoot: requestParams.workspaceRoot,
+      enableMergeCommit: true,
+      feature: "commit-generation",
+    };
+
+    const summarySystemPrompt = await getSystemPrompt(summaryParams);
+    const summaryContextManager =
+      await this.contextBuilder.buildLayeredSummaryContextManager(
+        selectedModel,
+        summarySystemPrompt,
+        scmProvider,
+        formattedFileChanges,
+        config,
+      );
+    const messages = summaryContextManager.buildMessages();
+
+    this.logger.debug("生成分层摘要", {
+      data: { messageCount: messages.length },
+    });
+
+    const summaryResponse = await aiProvider.generateCommit({
+      ...requestParams,
+      model: selectedModel,
+      messages,
+      diff: "",
+    });
+
+    const normalizedSummary = normalizeCommitMessage(summaryResponse.content);
+    if (!normalizedSummary) {
+      throw new Error("Layered summary is empty after normalization.");
+    }
+
+    return normalizedSummary;
   }
 
   /**
@@ -1014,6 +1140,44 @@ export class LayeredCommitHandler {
       return normalized;
     }
     return fallback;
+  }
+
+  private scheduleSemanticGroupContinuation(
+    remainingCount: number,
+    selectedFiles: string[],
+  ): void {
+    const continueLabel = "继续下一组";
+    setTimeout(() => {
+      void Promise.resolve(
+        vscode.window.showInformationMessage(
+          `还剩 ${remainingCount} 个分组。再次执行 Generate Commit 会继续使用分组缓存并生成下一组提交信息。`,
+          continueLabel,
+        ),
+      )
+        .then((choice) => {
+          if (choice !== continueLabel) {
+            return undefined;
+          }
+          const syntheticResourceStates = selectedFiles.map((file) => {
+            return {
+              resourceUri: vscode.Uri.file(file),
+            } as vscode.SourceControlResourceState;
+          });
+          return vscode.commands.executeCommand(
+            COMMANDS.COMMIT.GENERATE,
+            ...syntheticResourceStates,
+          );
+        })
+        .catch((error: unknown) => {
+          this.logger.warn("Failed to continue semantic group session", {
+            operation: "LayeredCommitHandler.scheduleSemanticGroupContinuation",
+            data: {
+              remainingCount,
+              error: error instanceof Error ? error.message : String(error),
+            },
+          });
+        });
+    }, 0);
   }
 
   /**
