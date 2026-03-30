@@ -1,6 +1,5 @@
 import { AIModel, AIProvider, AIRequestParams } from "@/ai/types";
 import { SemanticCommitGroup } from "@/commands/generate-commit/types";
-import { normalizeCommitMessage } from "@/commands/generate-commit/utils/commit-formatter";
 import { Logger } from "@/utils/logger";
 import * as path from "path";
 import { z } from "zod";
@@ -9,7 +8,6 @@ const RawSemanticGroupSchema = z.object({
   title: z.string().trim().min(1),
   reason: z.string().trim().optional().default(""),
   files: z.array(z.string().trim().min(1)).min(1),
-  commitMessage: z.string().trim().optional().default(""),
 });
 
 const RawSemanticGroupingResponseSchema = z.object({
@@ -32,6 +30,12 @@ export interface SemanticGroupingInput {
   language: string;
 }
 
+export interface SemanticGroupingResult {
+  groups: SemanticCommitGroup[];
+  fallbackUsed: boolean;
+  fallbackReason?: string;
+}
+
 interface FileLookup {
   full: Map<string, string>;
   relative: Map<string, string[]>;
@@ -39,17 +43,25 @@ interface FileLookup {
 }
 
 const CHINESE_LANGUAGE_PATTERN = /(chinese|中文|汉语|简体|繁体)/i;
+const MIN_GROUP_COUNT = 2;
+const MAX_GROUP_COUNT = 8;
+
+class SemanticGroupingValidationError extends Error {}
 
 export class SemanticGroupingService {
   constructor(private readonly logger: Logger) {}
 
-  async groupChanges(input: SemanticGroupingInput): Promise<SemanticCommitGroup[]> {
+  async groupChanges(input: SemanticGroupingInput): Promise<SemanticGroupingResult> {
     if (input.fileChanges.length <= 1) {
-      return this.buildHeuristicGroups(
-        input.fileChanges,
-        input.repositoryPath,
-        input.language,
-      );
+      return {
+        groups: this.buildHeuristicGroups(
+          input.fileChanges,
+          input.repositoryPath,
+          input.language,
+        ),
+        fallbackUsed: true,
+        fallbackReason: "single_file_or_empty_selection",
+      };
     }
 
     const fallbackGroups = this.buildHeuristicGroups(
@@ -58,37 +70,65 @@ export class SemanticGroupingService {
       input.language,
     );
 
+    let firstError: Error | undefined;
     try {
-      const rawGroups = await this.groupWithAI(input);
-      const normalizedGroups = this.normalizeGroups(
-        rawGroups,
+      const firstAttemptGroups = await this.groupWithAI(input);
+      const normalized = this.normalizeAndValidateAiGroups(
+        firstAttemptGroups,
         input.fileChanges,
         input.repositoryPath,
-        input.language,
       );
-
-      if (normalizedGroups.length >= 2) {
-        return normalizedGroups;
-      }
-
-      if (normalizedGroups.length === 1 && input.fileChanges.length <= 6) {
-        return normalizedGroups;
-      }
-
-      return fallbackGroups;
+      return {
+        groups: normalized,
+        fallbackUsed: false,
+      };
     } catch (error) {
-      this.logger.warn("Semantic grouping generation failed, fallback to heuristic groups", {
+      firstError = error instanceof Error ? error : new Error(String(error));
+      this.logger.warn("Semantic grouping first AI attempt failed", {
         operation: "SemanticGroupingService.groupChanges",
         data: {
-          error: error instanceof Error ? error.message : String(error),
+          error: firstError.message,
           fileCount: input.fileChanges.length,
         },
       });
-      return fallbackGroups;
+    }
+
+    try {
+      const secondAttemptGroups = await this.groupWithAI(
+        input,
+        firstError?.message || "Unknown validation failure",
+      );
+      const normalized = this.normalizeAndValidateAiGroups(
+        secondAttemptGroups,
+        input.fileChanges,
+        input.repositoryPath,
+      );
+      return {
+        groups: normalized,
+        fallbackUsed: false,
+      };
+    } catch (error) {
+      const secondError = error instanceof Error ? error : new Error(String(error));
+      const fallbackReason = `first_attempt=${firstError?.message || "unknown"}; second_attempt=${secondError.message}`;
+      this.logger.warn("Semantic grouping AI attempts failed, fallback to heuristic groups", {
+        operation: "SemanticGroupingService.groupChanges",
+        data: {
+          fileCount: input.fileChanges.length,
+          fallbackReason,
+        },
+      });
+      return {
+        groups: fallbackGroups,
+        fallbackUsed: true,
+        fallbackReason,
+      };
     }
   }
 
-  private async groupWithAI(input: SemanticGroupingInput): Promise<RawSemanticGroup[]> {
+  private async groupWithAI(
+    input: SemanticGroupingInput,
+    retryFeedback?: string,
+  ): Promise<RawSemanticGroup[]> {
     const response = await input.aiProvider.generateCommit({
       ...input.requestParams,
       model: input.selectedModel,
@@ -96,11 +136,15 @@ export class SemanticGroupingService {
       messages: [
         {
           role: "system",
-          content: this.buildSystemPrompt(input.language),
+          content: this.buildSystemPrompt(input.language, retryFeedback),
         },
         {
           role: "user",
-          content: this.buildUserPrompt(input.fileChanges, input.repositoryPath),
+          content: this.buildUserPrompt(
+            input.fileChanges,
+            input.repositoryPath,
+            retryFeedback,
+          ),
         },
       ],
     });
@@ -108,25 +152,38 @@ export class SemanticGroupingService {
     return this.parseAIResponse(response.content);
   }
 
-  private buildSystemPrompt(language: string): string {
+  private buildSystemPrompt(language: string, retryFeedback?: string): string {
+    const feedbackSection = retryFeedback
+      ? [
+          "Previous response failed validation:",
+          retryFeedback,
+          "You MUST correct all issues and regenerate valid JSON.",
+        ].join("\n")
+      : "";
+
     return [
-      "You are a commit-planning assistant.",
+      "You are a senior commit-planning assistant.",
+      "Do deep semantic analysis before grouping.",
       `All natural language fields MUST be in ${language}.`,
-      "Return strict JSON only and do not include markdown fences or any additional text.",
+      "Return strict JSON only and do not include markdown fences or additional text.",
       "JSON schema:",
-      '{ "groups": [ { "title": "string", "reason": "string", "files": ["path"], "commitMessage": "conventional commit subject line" } ] }',
+      '{ "groups": [ { "title": "string", "reason": "string", "files": ["path"] } ] }',
       "Rules:",
-      "1) Group files by semantic intent, not by alphabetical order.",
+      "1) Group files by semantic intent, not by path proximity.",
       "2) Keep group count between 2 and 8 when possible.",
       "3) Every file must appear exactly once in groups.files.",
-      "4) commitMessage must be one single-line conventional commit subject.",
-      "5) Do not invent file paths.",
-    ].join("\n");
+      "4) Do not invent file paths.",
+      "5) Use concise, high-signal titles and reasons.",
+      feedbackSection,
+    ]
+      .filter(Boolean)
+      .join("\n");
   }
 
   private buildUserPrompt(
     fileChanges: FileChangeDescription[],
     repositoryPath?: string,
+    retryFeedback?: string,
   ): string {
     const lines = fileChanges.map((item, index) => {
       const relativePath = this.toRelativePath(item.filePath, repositoryPath);
@@ -143,12 +200,24 @@ export class SemanticGroupingService {
       ].join(" | ");
     });
 
+    const retrySection = retryFeedback
+      ? [
+          "",
+          "Previous output was invalid.",
+          `Validation error: ${this.escapePromptText(retryFeedback)}`,
+          "Fix the issue and output valid JSON only.",
+        ].join("\n")
+      : "";
+
     return [
       "Analyze these changed files and group them for separate commits:",
       lines.join("\n"),
+      retrySection,
       "",
       "Output JSON only.",
-    ].join("\n");
+    ]
+      .filter(Boolean)
+      .join("\n");
   }
 
   private parseAIResponse(content: string): RawSemanticGroup[] {
@@ -169,7 +238,7 @@ export class SemanticGroupingService {
       }
     }
 
-    throw new Error("Semantic grouping JSON parse failed");
+    throw new SemanticGroupingValidationError("semantic_grouping_json_parse_failed");
   }
 
   private extractJsonCandidates(content: string): string[] {
@@ -199,32 +268,43 @@ export class SemanticGroupingService {
     return [...new Set(candidates)];
   }
 
-  private normalizeGroups(
+  private normalizeAndValidateAiGroups(
     rawGroups: RawSemanticGroup[],
     fileChanges: FileChangeDescription[],
     repositoryPath: string | undefined,
-    language: string,
   ): SemanticCommitGroup[] {
+    const totalFiles = fileChanges.length;
+    const minGroups = Math.min(MIN_GROUP_COUNT, totalFiles);
+    const maxGroups = Math.min(MAX_GROUP_COUNT, totalFiles);
+    if (rawGroups.length < minGroups || rawGroups.length > maxGroups) {
+      throw new SemanticGroupingValidationError(
+        `invalid_group_count:${rawGroups.length},expected:${minGroups}-${maxGroups}`,
+      );
+    }
+
     const lookup = this.buildFileLookup(fileChanges, repositoryPath);
-    const fileDescriptions = new Map(
-      fileChanges.map((item) => [item.filePath, item.description]),
-    );
     const consumed = new Set<string>();
     const normalizedGroups: SemanticCommitGroup[] = [];
 
     for (const rawGroup of rawGroups) {
       const resolvedFiles: string[] = [];
-      for (const file of rawGroup.files) {
-        const resolved = this.resolveFilePath(file, lookup, repositoryPath);
-        if (!resolved || consumed.has(resolved)) {
-          continue;
+
+      for (const candidate of rawGroup.files) {
+        const resolved = this.resolveFilePath(candidate, lookup, repositoryPath);
+        if (!resolved) {
+          throw new SemanticGroupingValidationError(`invalid_file_path:${candidate}`);
+        }
+        if (consumed.has(resolved)) {
+          throw new SemanticGroupingValidationError(`duplicate_file_path:${resolved}`);
         }
         consumed.add(resolved);
         resolvedFiles.push(resolved);
       }
 
       if (resolvedFiles.length === 0) {
-        continue;
+        throw new SemanticGroupingValidationError(
+          `empty_group:${rawGroup.title || "untitled"}`,
+        );
       }
 
       const title = this.normalizeTitle(
@@ -233,37 +313,21 @@ export class SemanticGroupingService {
         repositoryPath,
       );
       const reason = rawGroup.reason?.trim() || title;
-      const commitMessage = this.normalizeGroupCommitMessage(
-        rawGroup.commitMessage,
-        title,
-        resolvedFiles,
-        fileDescriptions,
-        language,
-      );
 
       normalizedGroups.push({
         id: `group-${normalizedGroups.length + 1}`,
         title,
         reason,
         files: resolvedFiles,
-        commitMessage,
+        commitMessage: this.buildPendingCommitMessage(reason),
       });
     }
 
-    const missingFiles = fileChanges
-      .map((item) => item.filePath)
-      .filter((filePath) => !consumed.has(filePath));
-
-    if (missingFiles.length > 0) {
-      normalizedGroups.push(
-        this.buildFallbackGroup(
-          normalizedGroups.length + 1,
-          "misc",
-          missingFiles,
-          fileDescriptions,
-          language,
-          repositoryPath,
-        ),
+    if (consumed.size !== totalFiles) {
+      const expectedFiles = fileChanges.map((item) => item.filePath);
+      const missingFiles = expectedFiles.filter((file) => !consumed.has(file));
+      throw new SemanticGroupingValidationError(
+        `file_coverage_mismatch:missing=${missingFiles.join(",")}`,
       );
     }
 
@@ -305,7 +369,6 @@ export class SemanticGroupingService {
     repositoryPath?: string,
   ): string | undefined {
     const normalizedCandidate = this.normalizePath(candidate);
-
     const fromFull = lookup.full.get(normalizedCandidate);
     if (fromFull) {
       return fromFull;
@@ -352,9 +415,6 @@ export class SemanticGroupingService {
     repositoryPath: string | undefined,
     language: string,
   ): SemanticCommitGroup[] {
-    const descriptionMap = new Map(
-      fileChanges.map((item) => [item.filePath, item.description]),
-    );
     const topLevelBuckets = new Map<string, string[]>();
 
     for (const item of fileChanges) {
@@ -370,7 +430,7 @@ export class SemanticGroupingService {
     }
 
     let effectiveBuckets = topLevelBuckets;
-    if (effectiveBuckets.size <= 1 && fileChanges.length > 6) {
+    if (effectiveBuckets.size <= 1 && fileChanges.length > 1) {
       const extensionBuckets = new Map<string, string[]>();
       for (const item of fileChanges) {
         const extension =
@@ -391,7 +451,6 @@ export class SemanticGroupingService {
           groups.length + 1,
           key,
           files,
-          descriptionMap,
           language,
           repositoryPath,
         ),
@@ -404,7 +463,6 @@ export class SemanticGroupingService {
           1,
           "changes",
           fileChanges.map((item) => item.filePath),
-          descriptionMap,
           language,
           repositoryPath,
         ),
@@ -418,27 +476,19 @@ export class SemanticGroupingService {
     index: number,
     key: string,
     files: string[],
-    descriptions: Map<string, string>,
     language: string,
     repositoryPath?: string,
   ): SemanticCommitGroup {
     const normalizedKey = this.normalizePath(key) || "changes";
     const title = normalizedKey === "root" ? "root" : normalizedKey;
     const reason = this.buildFallbackReason(title, files, repositoryPath, language);
-    const commitMessage = this.normalizeGroupCommitMessage(
-      "",
-      title,
-      files,
-      descriptions,
-      language,
-    );
 
     return {
       id: `group-${index}`,
       title,
       reason,
       files,
-      commitMessage,
+      commitMessage: this.buildPendingCommitMessage(reason),
     };
   }
 
@@ -454,10 +504,10 @@ export class SemanticGroupingService {
         .map((file) => this.toRelativePath(file, repositoryPath))
         .join("、");
       const suffix = files.length > 3 ? "等文件" : "";
-      return `按路径/类型分组：${preview}${suffix}`;
+      return `按路径/类型自动分组：${preview}${suffix}`;
     }
 
-    return `Grouped by related area "${title}" based on file paths and change type.`;
+    return `Fallback grouped by related area "${title}" using path/type signals.`;
   }
 
   private normalizeTitle(
@@ -479,80 +529,8 @@ export class SemanticGroupingService {
     return path.extname(relativePath).replace(/^\./, "") || "changes";
   }
 
-  private normalizeGroupCommitMessage(
-    rawCommitMessage: string,
-    title: string,
-    files: string[],
-    descriptions: Map<string, string>,
-    language: string,
-  ): string {
-    const normalized = normalizeCommitMessage(rawCommitMessage);
-    const firstLine = normalized.split(/\r?\n/).map((line) => line.trim())[0] || "";
-    if (firstLine) {
-      return firstLine;
-    }
-
-    const type = this.inferCommitType(files, descriptions);
-    const scope = this.toScope(title);
-    if (this.isChineseLanguage(language)) {
-      return `${type}(${scope}): ${this.getChineseSubject(type, title)}`;
-    }
-    return `${type}(${scope}): update ${title} related changes`;
-  }
-
-  private inferCommitType(
-    files: string[],
-    descriptions: Map<string, string>,
-  ): "feat" | "fix" | "refactor" | "docs" | "test" | "chore" {
-    const mergedText = files
-      .map((file) => descriptions.get(file) || "")
-      .join(" ")
-      .toLowerCase();
-
-    if (/(fix|bug|hotfix|修复|错误|异常|缺陷)/i.test(mergedText)) {
-      return "fix";
-    }
-    if (/(refactor|cleanup|重构|优化结构|整理)/i.test(mergedText)) {
-      return "refactor";
-    }
-    if (/(test|spec|测试|用例)/i.test(mergedText)) {
-      return "test";
-    }
-    if (/(doc|readme|文档|说明)/i.test(mergedText)) {
-      return "docs";
-    }
-    if (/(add|new|introduce|support|新增|增加|支持)/i.test(mergedText)) {
-      return "feat";
-    }
-
-    return "chore";
-  }
-
-  private getChineseSubject(type: string, title: string): string {
-    if (type === "fix") {
-      return `修复${title}相关改动`;
-    }
-    if (type === "feat") {
-      return `完善${title}相关能力`;
-    }
-    if (type === "refactor") {
-      return `重构${title}相关代码`;
-    }
-    if (type === "docs") {
-      return `更新${title}相关文档`;
-    }
-    if (type === "test") {
-      return `补充${title}相关测试`;
-    }
-    return `调整${title}相关改动`;
-  }
-
-  private toScope(title: string): string {
-    const normalized = title
-      .toLowerCase()
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "");
-    return normalized || "changes";
+  private buildPendingCommitMessage(reason: string): string {
+    return reason || "pending semantic commit message generation";
   }
 
   private toRelativePath(filePath: string, repositoryPath?: string): string {
@@ -582,7 +560,7 @@ export class SemanticGroupingService {
       .replace(/\r?\n+/g, " ")
       .replace(/"/g, '\\"')
       .trim()
-      .slice(0, 320);
+      .slice(0, 500);
   }
 
   private isChineseLanguage(language: string): boolean {

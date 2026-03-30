@@ -5,6 +5,7 @@ export interface SemanticGroupSession {
   repositoryPath: string;
   selectedFilesSignature: string;
   remainingGroups: SemanticCommitGroup[];
+  fileDescriptionsByPath: Record<string, string>;
   createdAt: number;
   updatedAt: number;
 }
@@ -44,6 +45,7 @@ export class SemanticGroupSessionService {
         return {
           ...session,
           remainingGroups: [...session.remainingGroups],
+          fileDescriptionsByPath: { ...session.fileDescriptionsByPath },
         };
       }
     }
@@ -55,6 +57,7 @@ export class SemanticGroupSessionService {
     repositoryPath: string,
     selectedFiles: string[],
     groups: SemanticCommitGroup[],
+    fileDescriptionsByPath: Record<string, string> = {},
   ): SemanticGroupSession {
     const signature = this.buildSignature(selectedFiles);
     const normalizedRepo = this.normalizePath(repositoryPath);
@@ -73,6 +76,7 @@ export class SemanticGroupSessionService {
       repositoryPath,
       selectedFilesSignature: signature,
       remainingGroups: [...groups],
+      fileDescriptionsByPath: { ...fileDescriptionsByPath },
       createdAt: Date.now(),
       updatedAt: Date.now(),
     };
@@ -81,6 +85,7 @@ export class SemanticGroupSessionService {
     return {
       ...session,
       remainingGroups: [...session.remainingGroups],
+      fileDescriptionsByPath: { ...session.fileDescriptionsByPath },
     };
   }
 

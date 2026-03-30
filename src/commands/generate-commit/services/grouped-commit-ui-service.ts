@@ -19,6 +19,9 @@ export interface GroupedCommitApplyInput {
   selectedFiles: string[];
   repositoryPath?: string;
   scmProvider: ISCMProvider;
+  resolveCommitMessage?: (
+    group: SemanticCommitGroup,
+  ) => Promise<string | undefined>;
 }
 
 export interface GroupedCommitApplyResult {
@@ -64,9 +67,25 @@ export class GroupedCommitUiService {
       }
     }
 
+    let resolvedCommitMessage: string | undefined;
+    try {
+      resolvedCommitMessage = input.resolveCommitMessage
+        ? await input.resolveCommitMessage(pickedGroup)
+        : pickedGroup.commitMessage;
+    } catch (error) {
+      return {
+        status: "failed",
+        group: pickedGroup,
+        error:
+          error instanceof Error
+            ? error.message
+            : "Failed to resolve grouped commit message.",
+      };
+    }
+
     const applyResult = await applyCommitMessageToInput(
       input.scmProvider,
-      pickedGroup.commitMessage,
+      resolvedCommitMessage,
     );
     if (!applyResult.applied) {
       return {
