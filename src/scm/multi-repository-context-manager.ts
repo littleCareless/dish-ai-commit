@@ -486,6 +486,7 @@ export class MultiRepositoryContextManager
     resourceStates: vscode.SourceControlResourceState[],
   ): Promise<Map<string, GroupedRepositoryState>> {
     const groupedRepositories = new Map<string, GroupedRepositoryState>();
+    const repositoryFileSets = new Map<string, Set<string>>();
     const perRequestRepoCache = new Map<string, string | undefined>();
 
     this.logger.info(
@@ -532,6 +533,8 @@ export class MultiRepositoryContextManager
         MultiRepositoryContextManager.inferScmTypeFromState(state);
       const existingEntry = groupedRepositories.get(repoPath);
       if (!existingEntry) {
+        const initialFileSet = new Set([filePath]);
+        repositoryFileSets.set(repoPath, initialFileSet);
         groupedRepositories.set(repoPath, {
           files: [filePath],
           scmType: inferredScmType,
@@ -542,7 +545,16 @@ export class MultiRepositoryContextManager
         continue;
       }
 
-      existingEntry.files.push(filePath);
+      const repositoryFileSet =
+        repositoryFileSets.get(repoPath) ||
+        new Set(existingEntry.files);
+      if (!repositoryFileSets.has(repoPath)) {
+        repositoryFileSets.set(repoPath, repositoryFileSet);
+      }
+      if (!repositoryFileSet.has(filePath)) {
+        repositoryFileSet.add(filePath);
+        existingEntry.files.push(filePath);
+      }
       if (!existingEntry.scmType && inferredScmType) {
         existingEntry.scmType = inferredScmType;
       } else if (

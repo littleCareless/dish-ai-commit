@@ -40,4 +40,11 @@ vi.mock("vscode", () => ({
   commands: {
     executeCommand: async () => undefined,
   },
+  Uri: {
+    file: (filePath: string) => ({
+      fsPath: filePath,
+      path: filePath,
+      toString: () => filePath,
+    }),
+  },
 }));
