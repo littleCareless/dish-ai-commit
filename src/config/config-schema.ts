@@ -5,7 +5,91 @@
  */
 import { getAllProviderDisplayNames } from "@/config/provider-definitions";
 
-export const CONFIG_SCHEMA = {
+function detectPreferredLocale(): "zh" | "en" {
+  const nlsConfig = process.env.VSCODE_NLS_CONFIG;
+  if (nlsConfig) {
+    try {
+      const parsed = JSON.parse(nlsConfig) as { locale?: string };
+      const locale = String(parsed.locale || "").toLowerCase();
+      if (locale.startsWith("zh")) {
+        return "zh";
+      }
+      if (locale.startsWith("en")) {
+        return "en";
+      }
+    } catch {
+      // ignore parse failure
+    }
+  }
+
+  const envLocale = String(
+    process.env.LC_ALL || process.env.LC_MESSAGES || process.env.LANG || ""
+  ).toLowerCase();
+  if (envLocale.includes("zh")) {
+    return "zh";
+  }
+
+  return "en";
+}
+
+function localizeBilingualText(text: string, locale: "zh" | "en"): string {
+  const delimiter = " / ";
+  if (!text.includes(delimiter)) {
+    return text;
+  }
+
+  const index = text.indexOf(delimiter);
+  const left = text.slice(0, index).trim();
+  const right = text.slice(index + delimiter.length).trim();
+  if (!left || !right) {
+    return text;
+  }
+  return locale === "zh" ? right : left;
+}
+
+function localizeEnumDescription(text: string, locale: "zh" | "en"): string {
+  const match = text.match(/^(.+?)\s*\((.+)\)\s*$/);
+  if (!match) {
+    return text;
+  }
+
+  return locale === "zh" ? match[2].trim() : match[1].trim();
+}
+
+function localizeSchema<T>(schema: T): T {
+  const locale = detectPreferredLocale();
+
+  const visit = (value: unknown, key?: string): unknown => {
+    if (Array.isArray(value)) {
+      if (key === "enumDescriptions") {
+        return value.map((item) =>
+          typeof item === "string" ? localizeEnumDescription(item, locale) : item
+        );
+      }
+      return value.map((item) => visit(item));
+    }
+
+    if (value && typeof value === "object") {
+      const localized: Record<string, unknown> = {};
+      Object.entries(value as Record<string, unknown>).forEach(
+        ([childKey, childValue]) => {
+          localized[childKey] = visit(childValue, childKey);
+        }
+      );
+      return localized;
+    }
+
+    if (typeof value === "string" && key === "description") {
+      return localizeBilingualText(value, locale);
+    }
+
+    return value;
+  };
+
+  return visit(schema) as T;
+}
+
+const RAW_CONFIG_SCHEMA = {
   base: {
     // Basic configuration
     language: {
@@ -922,6 +1006,9 @@ export const CONFIG_SCHEMA = {
     },
   },
 } as const;
+
+export const CONFIG_SCHEMA: typeof RAW_CONFIG_SCHEMA =
+  localizeSchema(RAW_CONFIG_SCHEMA);
 
 /**
  * Base type for all configuration values with common properties
