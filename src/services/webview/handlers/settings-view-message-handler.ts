@@ -202,6 +202,8 @@ export class SettingsViewMessageHandler {
           case UIRequest.FeaturesSyncModelCatalog:
           case UIRequest.FeaturesGetModelCatalog:
           case UIRequest.FeaturesExecuteCommand:
+          case UIRequest.GetSyncToggleState:
+          case UIRequest.SetSyncToggleState:
             await this._featuresHandler.handle(message, webview);
             break;
 

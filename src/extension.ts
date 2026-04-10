@@ -18,6 +18,7 @@ import { PreferencesSettingsManager } from "./services/settings/preferences-sett
 import { FeaturesSettingsManager } from "./services/settings/features-settings-manager";
 import { ActivePromptStore } from "./services/settings/active-prompt-store";
 import { NotificationSettingsManager } from "./utils/notification/notification-settings-manager";
+import { SettingsSyncService } from "./config/services/settings-sync-service";
 
 /**
  * 在首次执行命令时激活扩展
@@ -51,6 +52,13 @@ export async function activate(context: vscode.ExtensionContext) {
     // 预加载 Feature 设置和 Prompt 状态，确保 legacy 数据在启动时完成迁移
     logger.info("Initializing feature settings manager...");
     await FeaturesSettingsManager.getInstance(context).initialize();
+
+    // Initialize SettingsSyncService for bidirectional settings.json <-> globalState sync
+    logger.info("Initializing settings sync service...");
+    const syncService = SettingsSyncService.initialize(context);
+    await syncService.initialSync();
+    await syncService.initializeToggle();
+    await syncService.initialProviderSync();
 
     logger.info("Initializing active prompt store...");
     await ActivePromptStore.getInstance(context).initialize();

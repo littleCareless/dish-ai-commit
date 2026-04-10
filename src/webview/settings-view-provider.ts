@@ -5,6 +5,8 @@ import { SettingsViewMessageHandler } from "@/services/webview/handlers/settings
 import { IndexingSettingsManager } from "@/services/settings/indexing-settings-manager";
 import { getWorkspacePath } from "@/core/utils/path";
 import { createHash } from "crypto";
+import { ConfigurationManager } from "@/config/configuration-manager";
+import { ExtensionResponse } from "@shared/types/messages";
 
 export class SettingsViewProvider implements vscode.WebviewViewProvider {
   public static readonly viewType = "dish-ai-commit.settingsView";
@@ -97,5 +99,18 @@ export class SettingsViewProvider implements vscode.WebviewViewProvider {
       null,
       this._disposables,
     );
+
+    // Subscribe to external config changes and forward to webview
+    const monitor = ConfigurationManager.getInstance().getConfigurationMonitor();
+    monitor.onExternalFeaturesChange = (changedKeys: string[]) => {
+      try {
+        this._view?.webview.postMessage({
+          command: ExtensionResponse.ExternalConfigChanged,
+          data: { changedKeys },
+        });
+      } catch {
+        // Webview may be disposed during shutdown
+      }
+    };
   }
 }

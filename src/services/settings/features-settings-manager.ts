@@ -1,4 +1,5 @@
 import { DISH_CONFIG_PREFIX } from "@/config/constants";
+import type { SyncResult } from "@/config/services/settings-sync-service";
 import * as vscode from "vscode";
 
 export interface FeaturesSettings {
@@ -35,7 +36,7 @@ export interface FeaturesSettings {
   generatePRSummary: boolean;
 }
 
-const DEFAULT_FEATURE_SETTINGS: FeaturesSettings = {
+export const DEFAULT_FEATURE_SETTINGS: FeaturesSettings = {
   largePromptAction: "useFallback",
   branchNamePostAction: "createAndCopy",
   branchNameSelectionMode: "autoFirst",
@@ -102,10 +103,11 @@ export class FeaturesSettingsManager {
 
   public async updateSettings(
     partialSettings: Partial<FeaturesSettings>,
-  ): Promise<void> {
+    dirtyKeys?: string[],
+  ): Promise<SyncResult> {
     const merged = { ...this._settings, ...partialSettings };
     this._settings = this.applyDefaults(merged);
-    await this.saveSettings();
+    return this.saveSettings(dirtyKeys);
   }
 
   private applyDefaults(
@@ -164,10 +166,25 @@ export class FeaturesSettingsManager {
     this._settings = this.applyDefaults(sanitized);
   }
 
-  private async saveSettings(): Promise<void> {
+  private async saveSettings(dirtyKeys?: string[]): Promise<SyncResult> {
     await this.context.globalState.update(
       FeaturesSettingsManager.STORAGE_KEY,
       this._settings,
     );
+
+    // Sync to settings.json (best-effort, capture result)
+    const { SettingsSyncService } = await import(
+      "@/config/services/settings-sync-service"
+    );
+    const syncService = SettingsSyncService.getInstance();
+    if (syncService) {
+      try {
+        return await syncService.syncFeaturesToSettingsJson(this._settings, dirtyKeys);
+      } catch (err) {
+        console.error("[FeaturesSettingsManager] Failed to sync to settings.json:", err);
+        return { synced: 0, failed: ["__sync_error__"], skipped: 0 };
+      }
+    }
+    return { synced: 0, failed: [], skipped: 0 };
   }
 }

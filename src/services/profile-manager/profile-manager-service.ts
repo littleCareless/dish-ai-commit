@@ -1,4 +1,5 @@
 import { DISH_CONFIG_PREFIX } from "@/config/constants";
+import { SettingsSyncService } from "@/config/services/settings-sync-service";
 import { ProviderProfileRepository } from "@/services/profile-manager/provider-profile-repository";
 import { ProviderStore } from "@/services/profile-manager/provider-store";
 import { ProviderProfiles } from "@/services/profile-manager/types";
@@ -87,6 +88,11 @@ export class ProfileManagerService {
 
       await this.providerStore.saveConfig(profileData);
       this.logger.info(`Profile '${profileData.name}' saved successfully.`);
+
+      // Sync provider config to settings.json (Direction B: secrets → settings.json)
+      SettingsSyncService.getInstance()?.syncProvidersToSettingsJson(profileData).catch((err) => {
+        console.error("[ProfileManagerService] Failed to sync provider config to settings.json:", err);
+      });
     } catch (error) {
       this.logger.logError(error as Error, "Failed to save profile", {
         operation,

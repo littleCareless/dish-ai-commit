@@ -162,6 +162,13 @@ export class ConfigurationManager {
   }
 
   /**
+   * Get the internal configuration monitor for subscribing to external change events.
+   */
+  public getConfigurationMonitor(): ConfigurationMonitor {
+    return this.monitor;
+  }
+
+  /**
    * 注册配置变更处理器
    */
   public registerConfigurationChangeHandler(

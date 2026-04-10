@@ -6,6 +6,7 @@ import { workspaceManager } from "@/services/core/workspace-manager";
 import { COMMANDS } from "@/constants";
 import { ThirdPartyModelCatalogSyncService } from "@/ai/model-registry/third-party-model-catalog-sync-service";
 import { ModelCustomStorage } from "@/services/storage/model-custom-storage";
+import { SettingsSyncService } from "@/config/services/settings-sync-service";
 import {
   PromptCategory,
   PromptKey,
@@ -55,12 +56,17 @@ export class FeaturesMessageHandler {
 
       case UIRequest.FeaturesSaveSettings:
         if (message.data) {
-          await this._settingsManager.updateSettings(message.data);
+          const { dirtyKeys, ...settingsData } = message.data;
+          const syncResult = await this._settingsManager.updateSettings(
+            settingsData,
+            Array.isArray(dirtyKeys) ? dirtyKeys : undefined,
+          );
           const settings = this._settingsManager.getSettings();
           await webview.postMessage({
             command: ExtensionResponse.FeaturesSettingsLoaded,
             data: {
               ...settings,
+              ...(syncResult ? { syncResult } : {}),
             },
           });
         }
@@ -265,6 +271,29 @@ export class FeaturesMessageHandler {
           });
         }
         break;
+
+      case UIRequest.GetSyncToggleState: {
+        const syncService = SettingsSyncService.getInstance();
+        const enabled = syncService?.isSyncEnabled ?? false;
+        await webview.postMessage({
+          command: ExtensionResponse.SyncToggleStateLoaded,
+          data: { enabled },
+        });
+        break;
+      }
+
+      case UIRequest.SetSyncToggleState: {
+        const syncService = SettingsSyncService.getInstance();
+        if (syncService) {
+          const enabled = Boolean(message.data?.enabled);
+          await syncService.setSyncEnabled(enabled);
+          await webview.postMessage({
+            command: ExtensionResponse.SyncToggleStateLoaded,
+            data: { enabled: syncService.isSyncEnabled },
+          });
+        }
+        break;
+      }
 
       case UIRequest.FeaturesExecuteCommand:
         try {

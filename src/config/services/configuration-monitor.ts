@@ -18,6 +18,7 @@
  */
 import { ConfigurationChangeHandler } from "@/config/services/configuration-change-handler";
 import { ConfigurationService } from "@/config/services/configuration-service";
+import { SettingsSyncService } from "@/config/services/settings-sync-service";
 import * as vscode from "vscode";
 
 /**
@@ -25,6 +26,13 @@ import * as vscode from "vscode";
  */
 export class ConfigurationMonitor {
   private readonly disposables: vscode.Disposable[] = [];
+
+  /**
+   * Callback invoked when features config changes externally (from settings.json),
+   * not triggered by our own globalState sync.
+   * Receives the list of changed dot-path keys (e.g. ["features.enableEmoji"]).
+   */
+  public onExternalFeaturesChange?: (changedKeys: string[]) => void;
 
   constructor(
     private configService: ConfigurationService,
@@ -59,46 +67,41 @@ export class ConfigurationMonitor {
     // 处理基础配置变更
     if (changedKeys.some((key) => key.startsWith("base."))) {
       console.log("Base configuration changed");
+      // Sync base language to preferences
+      SettingsSyncService.getInstance()?.syncFromSettingsJson(changedKeys).catch((err) => {
+        console.error("[ConfigurationMonitor] Failed to sync base config:", err);
+      });
     }
 
     // 处理功能配置变更
     if (changedKeys.some((key) => key.startsWith("features."))) {
       console.log("Features configuration changed");
+      // Notify webview about external config change
+      const featureKeys = changedKeys.filter((key) => key.startsWith("features."));
+      try {
+        this.onExternalFeaturesChange?.(featureKeys);
+      } catch (err) {
+        console.error("[ConfigurationMonitor] Error in onExternalFeaturesChange callback:", err);
+      }
+      // Sync features from settings.json → globalState
+      SettingsSyncService.getInstance()?.syncFromSettingsJson(changedKeys).catch((err) => {
+        console.error(
+          "[ConfigurationMonitor] Failed to sync features config:",
+          err
+        );
+      });
     }
   }
 
   public handleProviderConfigChanges(changedKeys: string[]): void {
-    // OpenAI 配置变更
-    if (changedKeys.some((key) => key.startsWith("providers.openai"))) {
-      // No longer need to reinitialize providers as they are created on demand.
-    }
-    // 其他提供商配置变更
-    if (changedKeys.some((key) => key.startsWith("providers.ollama"))) {
-      // No longer need to reinitialize providers as they are created on demand.
-      console.log(
-        "Ollama provider config changed. New instance will be created on next use."
-      );
-    }
+    const providerKeys = changedKeys.filter((key) => key.startsWith("providers."));
 
-    if (changedKeys.some((key) => key.startsWith("providers.zhipuai"))) {
-      // No longer need to reinitialize providers as they are created on demand.
-      console.log(
-        "ZhipuAI provider config changed. New instance will be created on next use."
-      );
-    }
-
-    if (changedKeys.some((key) => key.startsWith("providers.dashscope"))) {
-      // No longer need to reinitialize providers as they are created on demand.
-      console.log(
-        "DashScope provider config changed. New instance will be created on next use."
-      );
-    }
-
-    if (changedKeys.some((key) => key.startsWith("providers.doubao"))) {
-      // No longer need to reinitialize providers as they are created on demand.
-      console.log(
-        "Doubao provider config changed. New instance will be created on next use."
-      );
+    // Sync provider config from settings.json → secrets (active profile)
+    if (providerKeys.length > 0) {
+      console.log("Provider configuration changed, syncing to secrets:", providerKeys);
+      SettingsSyncService.getInstance()?.syncProvidersFromSettingsJson(providerKeys).catch((err) => {
+        console.error("[ConfigurationMonitor] Failed to sync provider config:", err);
+      });
     }
   }
 
