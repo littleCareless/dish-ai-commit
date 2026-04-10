@@ -53,6 +53,8 @@ export const FeaturesSettings: React.FC = () => {
   const [saveStatus, setSaveStatus] = useState<string | null>(null);
   const [externalChanges, setExternalChanges] = useState<string[]>([]);
   const saveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const dirtyFields = useRef<Set<string>>(new Set());
+  const [dirtyCount, setDirtyCount] = useState(0);
   const [features, setFeatures] = useState(() => {
     const cached = sessionStorage.getItem("featuresSettingsCache");
     if (cached) {
@@ -186,17 +188,11 @@ export const FeaturesSettings: React.FC = () => {
     };
   }, [t]);
 
-  const dirtyFields = useRef<Set<string>>(new Set());
-  const [dirtyCount, setDirtyCount] = useState(0);
-
-  const handleChange = useCallback(
-    (field: string, value: string | boolean | number) => {
-      dirtyFields.current.add(field);
-      setDirtyCount(dirtyFields.current.size);
-      setFeatures((prev: any) => ({ ...prev, [field]: value }));
-    },
-    [],
-  );
+  const handleChange = (field: string, value: string | boolean | number) => {
+    dirtyFields.current.add(field);
+    setDirtyCount(dirtyFields.current.size);
+    setFeatures((prev: any) => ({ ...prev, [field]: value }));
+  };
 
   const handleSyncToggle = useCallback(() => {
     const newState = !syncEnabled;

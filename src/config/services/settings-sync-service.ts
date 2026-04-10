@@ -51,9 +51,13 @@ const PROVIDER_SYNC_FIELDS = ["apiKey", "baseUrl", "endpoint", "defaultModel"] a
 /** Parse "providers.openai.apiKey" → { providerId: "openai", field: "apiKey" } */
 export function parseProviderKey(dotPath: string): { providerId: string; field: string } | null {
   const match = dotPath.match(/^providers\.([^.]+)\.(.+)$/);
-  if (!match) return null;
+  if (!match) {
+    return null;
+  }
   const [, providerId, field] = match;
-  if (!PROVIDER_SYNC_FIELDS.includes(field as any)) return null;
+  if (!PROVIDER_SYNC_FIELDS.includes(field as any)) {
+    return null;
+  }
   return { providerId, field };
 }
 
@@ -568,10 +572,14 @@ export class SettingsSyncService {
       );
       const profileManager = PM.getInstance();
       const activeProfileId = profileManager.getActiveProfileId();
-      if (!activeProfileId) return;
+      if (!activeProfileId) {
+        return;
+      }
 
       const profile = profileManager.getProfileById(activeProfileId);
-      if (!profile?.providers) return;
+      if (!profile?.providers) {
+        return;
+      }
 
       const config = vscode.workspace.getConfiguration(SECTION);
       let profileChanged = false;
@@ -579,7 +587,9 @@ export class SettingsSyncService {
       for (const [providerId, providerConfig] of Object.entries(profile.providers)) {
         for (const field of PROVIDER_SYNC_FIELDS) {
           // If profile already has the value, skip
-          if ((providerConfig as any)[field]) continue;
+          if ((providerConfig as any)[field]) {
+            continue;
+          }
 
           const dotPath = `providers.${providerId}.${field}`;
           const inspect = config.inspect(dotPath);
