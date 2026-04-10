@@ -49,7 +49,7 @@ vi.mock("@/scm/svn/svn-repository-manager", () => {
       findRepository = vi.fn(() => trackedRepositories[0] || undefined);
       findRepositoryAndPath = vi.fn(() => {
         const repo = trackedRepositories[0];
-        if (!repo) return undefined;
+        if (!repo) {return undefined;}
         const repoPath = repo.rootUri?.fsPath || repo.root;
         return repoPath ? { repository: repo, repositoryPath: repoPath } : undefined;
       });

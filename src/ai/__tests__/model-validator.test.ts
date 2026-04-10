@@ -6,7 +6,7 @@ import type { AIModel } from "@/ai/types";
 // ---------------------------------------------------------------------------
 vi.mock("@/utils/i18n/localization-manager", () => ({
   formatMessage: vi.fn((key: string, args?: string[]) => {
-    if (args) return `${key}: ${args.join(", ")}`;
+    if (args) {return `${key}: ${args.join(", ")}`;}
     return key;
   }),
 }));

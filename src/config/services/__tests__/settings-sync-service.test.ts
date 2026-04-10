@@ -240,7 +240,7 @@ describe("SettingsSyncService", () => {
     it("syncs feature keys from settings.json to globalState", async () => {
       const mockConfig = createMockConfig({
         get: vi.fn((key: string) => {
-          if (key === "features.commitFormat.enableEmoji") return false;
+          if (key === "features.commitFormat.enableEmoji") {return false;}
           return undefined;
         }),
       });

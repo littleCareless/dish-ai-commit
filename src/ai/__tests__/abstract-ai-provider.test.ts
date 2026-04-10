@@ -34,7 +34,7 @@ const { mockTokenStatsService, mockGenerateHelper, mockTokenizerService, mockFor
     };
 
     const mockFormat = vi.fn((key: string, args?: string[]) => {
-      if (args) return `${key}: ${args.join(", ")}`;
+      if (args) {return `${key}: ${args.join(", ")}`;}
       return key;
     });
 

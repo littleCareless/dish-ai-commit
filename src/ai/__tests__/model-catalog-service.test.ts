@@ -88,8 +88,8 @@ function createMockContext() {
       get: <T>(key: string, defaultValue?: T): T | undefined =>
         globalStore.has(key) ? (globalStore.get(key) as T) : defaultValue,
       update: async (key: string, value: unknown) => {
-        if (value === undefined) globalStore.delete(key);
-        else globalStore.set(key, value);
+        if (value === undefined) {globalStore.delete(key);}
+        else {globalStore.set(key, value);}
       },
     },
     workspaceState: {
@@ -122,7 +122,6 @@ describe("ModelCatalogService", () => {
 
   beforeAll(() => {
     // Access the singleton via getInstance; reset via prototype hack if needed
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     (ModelCatalogService as any).instance = undefined;
     service = ModelCatalogService.getInstance();
   });
