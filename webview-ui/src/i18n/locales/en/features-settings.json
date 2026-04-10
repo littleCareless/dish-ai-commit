@@ -1,6 +1,16 @@
 {
   "title": "Feature Settings",
   "description": "Enable or disable various features of the extension. These settings correspond to the configurations in your `settings.json`.",
+  "unsavedChanges": "{{count}} unsaved change(s)",
+  "saveChanges": "Save ({{count}} change(s))",
+  "saveStatus": {
+    "saved": "Saved to extension storage.",
+    "savedWithSync": "Saved to extension storage, and synced {{count}} change(s) to settings.json."
+  },
+  "externalChanges": {
+    "banner": "Configuration was updated externally. Click to refresh.",
+    "refreshButton": "Refresh"
+  },
   "commitMessageGeneration": {
     "title": "Commit Message Generation",
     "enableEmoji": {

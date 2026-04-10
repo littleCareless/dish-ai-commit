@@ -7,7 +7,7 @@ import { Switch } from "@/components/ui/switch";
 import { postMessage } from "@/utils/vscode";
 import { ExtensionResponse, UIRequest } from "@shared/types/messages";
 import { Code, GitCommit, Shield, Zap } from "lucide-react";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { routes } from "@/router/routes";
@@ -49,6 +49,10 @@ export const FeaturesSettings: React.FC = () => {
   const hasLoadedRef = useRef(false);
   const [executingAction, setExecutingAction] = useState<string | null>(null);
   const [quickActionMessage, setQuickActionMessage] = useState<string>("");
+  const [syncEnabled, setSyncEnabled] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<string | null>(null);
+  const [externalChanges, setExternalChanges] = useState<string[]>([]);
+  const saveStatusTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [features, setFeatures] = useState(() => {
     const cached = sessionStorage.getItem("featuresSettingsCache");
     if (cached) {
@@ -86,6 +90,15 @@ export const FeaturesSettings: React.FC = () => {
     };
   });
 
+  // Ref to track mounted state for safe async callbacks
+  const mountedRef = useRef(true);
+  useEffect(() => {
+    mountedRef.current = true;
+    return () => {
+      mountedRef.current = false;
+    };
+  }, []);
+
   useEffect(() => {
     if (hasLoadedRef.current) return;
     hasLoadedRef.current = true;
@@ -96,13 +109,41 @@ export const FeaturesSettings: React.FC = () => {
         message.data
       ) {
         setFeatures((prev: any) => {
-          const merged = { ...prev, ...message.data };
+          const { syncResult, ...restData } = message.data;
+          const merged = { ...prev, ...restData };
           sessionStorage.setItem(
             "featuresSettingsCache",
             JSON.stringify(merged),
           );
           return merged;
         });
+        // Clear dirty state after backend confirms save
+        dirtyFields.current.clear();
+        setDirtyCount(0);
+
+        // Show save status notification if syncResult is present
+        if (message.data.syncResult) {
+          const { synced } = message.data.syncResult;
+          // Use functional update to read latest syncEnabled
+          setSyncEnabled((currentSyncEnabled: boolean) => {
+            if (currentSyncEnabled && synced > 0) {
+              setSaveStatus(t("saveStatus.savedWithSync", { count: synced }));
+            } else {
+              setSaveStatus(t("saveStatus.saved"));
+            }
+            return currentSyncEnabled;
+          });
+          // Auto-dismiss after 3 seconds
+          if (saveStatusTimerRef.current) {
+            clearTimeout(saveStatusTimerRef.current);
+          }
+          saveStatusTimerRef.current = setTimeout(() => {
+            if (mountedRef.current) {
+              setSaveStatus(null);
+            }
+            saveStatusTimerRef.current = null;
+          }, 3000);
+        }
       }
       if (message.command === ExtensionResponse.FeaturesCommandExecuted) {
         const action = String(message.data?.action ?? "");
@@ -121,38 +162,73 @@ export const FeaturesSettings: React.FC = () => {
           );
         }
       }
+      if (message.command === ExtensionResponse.SyncToggleStateLoaded) {
+        setSyncEnabled(Boolean(message.data?.enabled));
+      }
+      if (message.command === ExtensionResponse.ExternalConfigChanged) {
+        const changedKeys: string[] = message.data?.changedKeys ?? [];
+        if (changedKeys.length > 0) {
+          setExternalChanges(changedKeys);
+        }
+      }
     };
 
     window.addEventListener("message", handleMessage);
     postMessage(UIRequest.FeaturesLoadSettings);
+    postMessage(UIRequest.GetSyncToggleState);
     return () => {
       window.removeEventListener("message", handleMessage);
       hasLoadedRef.current = false;
+      if (saveStatusTimerRef.current) {
+        clearTimeout(saveStatusTimerRef.current);
+        saveStatusTimerRef.current = null;
+      }
     };
   }, [t]);
 
-  const handleFeatureToggle = (
-    feature: keyof typeof features,
-    value: string | boolean | number,
-  ) => {
-    setFeatures((prev: any) => {
-      const updated = { ...prev, [feature]: value };
-      console.log("[FeaturesSettings] Toggling", feature, "to", value);
-      console.log("[FeaturesSettings] Previous state:", prev);
-      console.log("[FeaturesSettings] Sending to backend:", updated);
-      postMessage(UIRequest.FeaturesSaveSettings, updated);
-      return updated;
-    });
-  };
+  const dirtyFields = useRef<Set<string>>(new Set());
+  const [dirtyCount, setDirtyCount] = useState(0);
 
-  const handleMaxInputTokensChange = (value: string) => {
-    const parsed = Number(value);
-    if (!Number.isFinite(parsed) || parsed < 0) {
-      handleFeatureToggle("maxInputTokensPerRequest", 0);
-      return;
-    }
-    handleFeatureToggle("maxInputTokensPerRequest", Math.floor(parsed));
-  };
+  const handleChange = useCallback(
+    (field: string, value: string | boolean | number) => {
+      dirtyFields.current.add(field);
+      setDirtyCount(dirtyFields.current.size);
+      setFeatures((prev: any) => ({ ...prev, [field]: value }));
+    },
+    [],
+  );
+
+  const handleSyncToggle = useCallback(() => {
+    const newState = !syncEnabled;
+    setSyncEnabled(newState);
+    postMessage(UIRequest.SetSyncToggleState, { enabled: newState });
+  }, [syncEnabled]);
+
+  const handleMaxInputTokensChange = useCallback(
+    (value: string) => {
+      const parsed = Number(value);
+      if (!Number.isFinite(parsed) || parsed < 0) {
+        handleChange("maxInputTokensPerRequest", 0);
+        return;
+      }
+      handleChange("maxInputTokensPerRequest", Math.floor(parsed));
+    },
+    [handleChange],
+  );
+
+  const handleSave = useCallback(() => {
+    const dirtyKeys = Array.from(dirtyFields.current);
+    postMessage(UIRequest.FeaturesSaveSettings, {
+      ...features,
+      dirtyKeys,
+    });
+    // Dirty state cleared in handleMessage after backend confirmation
+  }, [features]);
+
+  const handleRefreshExternalChanges = useCallback(() => {
+    setExternalChanges([]);
+    postMessage(UIRequest.FeaturesLoadSettings);
+  }, []);
 
   const handleExecuteCommand = (action: string) => {
     setExecutingAction(action);
@@ -175,6 +251,52 @@ export const FeaturesSettings: React.FC = () => {
         <p className="text-muted-foreground mb-4">{t("description")}</p>
       </div>
 
+      {dirtyCount > 0 && (
+        <div className="flex items-center gap-3 sticky top-0 z-10 bg-background/95 backdrop-blur py-2 px-3 rounded-md border">
+          <span className="text-sm text-muted-foreground">
+            {t("unsavedChanges", { count: dirtyCount })}
+          </span>
+          <Button onClick={handleSave}>
+            {t("saveChanges", { count: dirtyCount })}
+          </Button>
+        </div>
+      )}
+
+      {saveStatus && (
+        <div className="py-2 px-3 rounded-md border bg-green-500/10 border-green-500/30 text-sm text-green-700 dark:text-green-400">
+          {saveStatus}
+        </div>
+      )}
+
+      {externalChanges.length > 0 && (
+        <div className="flex items-center justify-between gap-3 py-2 px-3 rounded-md border bg-yellow-500/10 border-yellow-500/30">
+          <span className="text-sm text-yellow-700 dark:text-yellow-400">
+            {t("externalChanges.banner")}
+          </span>
+          <Button onClick={handleRefreshExternalChanges} appearance="secondary">
+            {t("externalChanges.refreshButton")}
+          </Button>
+        </div>
+      )}
+
+      {/* Sync Toggle Banner */}
+      <div className="flex items-center justify-between py-2 px-3 rounded-md border bg-muted/30">
+        <div className="flex flex-col">
+          <Label htmlFor="sync-toggle">
+            {t("syncToggle.label", {
+              defaultValue: "Sync feature config to settings.json",
+            })}
+          </Label>
+          <p className="text-sm text-muted-foreground">
+            {t("syncToggle.description", {
+              defaultValue:
+                "When enabled, feature settings are written to VS Code settings.json for external access",
+            })}
+          </p>
+        </div>
+        <Switch checked={syncEnabled} onCheckedChange={handleSyncToggle} />
+      </div>
+
       <div className="grid gap-4">
         {/* Commit Message Generation */}
         <Card>
@@ -191,7 +313,7 @@ export const FeaturesSettings: React.FC = () => {
               description={t("commitMessageGeneration.enableEmoji.description")}
               checked={features.enableEmoji}
               onCheckedChange={(enabled) =>
-                handleFeatureToggle("enableEmoji", enabled)
+                handleChange("enableEmoji", enabled)
               }
             />
             <FeatureSwitch
@@ -202,7 +324,7 @@ export const FeaturesSettings: React.FC = () => {
               )}
               checked={features.enableMergeCommit}
               onCheckedChange={(enabled) =>
-                handleFeatureToggle("enableMergeCommit", enabled)
+                handleChange("enableMergeCommit", enabled)
               }
             />
             <FeatureSwitch
@@ -210,9 +332,7 @@ export const FeaturesSettings: React.FC = () => {
               label={t("commitMessageGeneration.enableBody.label")}
               description={t("commitMessageGeneration.enableBody.description")}
               checked={features.enableBody}
-              onCheckedChange={(enabled) =>
-                handleFeatureToggle("enableBody", enabled)
-              }
+              onCheckedChange={(enabled) => handleChange("enableBody", enabled)}
             />
             <FeatureSwitch
               id="enable-layered-commit"
@@ -222,7 +342,7 @@ export const FeaturesSettings: React.FC = () => {
               )}
               checked={features.enableLayeredCommit}
               onCheckedChange={(enabled) =>
-                handleFeatureToggle("enableLayeredCommit", enabled)
+                handleChange("enableLayeredCommit", enabled)
               }
             />
             <FeatureSwitch
@@ -233,7 +353,7 @@ export const FeaturesSettings: React.FC = () => {
               )}
               checked={features.enableGlobalContext}
               onCheckedChange={(enabled) =>
-                handleFeatureToggle("enableGlobalContext", enabled)
+                handleChange("enableGlobalContext", enabled)
               }
             />
             <FeatureSwitch
@@ -244,7 +364,7 @@ export const FeaturesSettings: React.FC = () => {
               )}
               checked={features.enableSemanticGrouping}
               onCheckedChange={(enabled) =>
-                handleFeatureToggle("enableSemanticGrouping", enabled)
+                handleChange("enableSemanticGrouping", enabled)
               }
             />
             <FeatureSwitch
@@ -257,7 +377,7 @@ export const FeaturesSettings: React.FC = () => {
               )}
               checked={features.useRecentCommitsAsReference}
               onCheckedChange={(enabled) =>
-                handleFeatureToggle("useRecentCommitsAsReference", enabled)
+                handleChange("useRecentCommitsAsReference", enabled)
               }
             />
             <div className="flex items-center justify-between py-2">
@@ -272,7 +392,7 @@ export const FeaturesSettings: React.FC = () => {
               <Select
                 value={features.largePromptAction}
                 onValueChange={(value) =>
-                  handleFeatureToggle("largePromptAction", value)
+                  handleChange("largePromptAction", value)
                 }
                 className="w-56"
               >
@@ -305,7 +425,7 @@ export const FeaturesSettings: React.FC = () => {
               <Select
                 value={features.branchNamePostAction}
                 onValueChange={(value) =>
-                  handleFeatureToggle("branchNamePostAction", value)
+                  handleChange("branchNamePostAction", value)
                 }
                 className="w-56"
               >
@@ -340,7 +460,7 @@ export const FeaturesSettings: React.FC = () => {
               <Select
                 value={features.branchNameSelectionMode}
                 onValueChange={(value) =>
-                  handleFeatureToggle("branchNameSelectionMode", value)
+                  handleChange("branchNameSelectionMode", value)
                 }
                 className="w-56"
               >
@@ -372,7 +492,7 @@ export const FeaturesSettings: React.FC = () => {
               <Select
                 value={features.branchCreationFailureAction}
                 onValueChange={(value) =>
-                  handleFeatureToggle("branchCreationFailureAction", value)
+                  handleChange("branchCreationFailureAction", value)
                 }
                 className="w-56"
               >
@@ -408,7 +528,7 @@ export const FeaturesSettings: React.FC = () => {
               )}
               checked={features.enableThirdPartyModelCatalog}
               onCheckedChange={(enabled) =>
-                handleFeatureToggle("enableThirdPartyModelCatalog", enabled)
+                handleChange("enableThirdPartyModelCatalog", enabled)
               }
             />
             <FeatureSwitch
@@ -419,7 +539,7 @@ export const FeaturesSettings: React.FC = () => {
               )}
               checked={features.enableAdaptiveInputLimitLearning}
               onCheckedChange={(enabled) =>
-                handleFeatureToggle("enableAdaptiveInputLimitLearning", enabled)
+                handleChange("enableAdaptiveInputLimitLearning", enabled)
               }
             />
             <div className="flex items-center justify-between py-2">
@@ -434,7 +554,7 @@ export const FeaturesSettings: React.FC = () => {
               <Select
                 value={features.diffTruncationStrategy}
                 onValueChange={(value) =>
-                  handleFeatureToggle("diffTruncationStrategy", value)
+                  handleChange("diffTruncationStrategy", value)
                 }
                 className="w-56"
               >
@@ -541,7 +661,7 @@ export const FeaturesSettings: React.FC = () => {
               description={t("codeAnalysis.simplifyDiff.description")}
               checked={features.simplifyDiff}
               onCheckedChange={(enabled) =>
-                handleFeatureToggle("simplifyDiff", enabled)
+                handleChange("simplifyDiff", enabled)
               }
             />
             <FeatureSwitch
@@ -550,7 +670,7 @@ export const FeaturesSettings: React.FC = () => {
               description={t("codeAnalysis.autoDetectStaged.description")}
               checked={features.autoDetectStaged}
               onCheckedChange={(enabled) =>
-                handleFeatureToggle("autoDetectStaged", enabled)
+                handleChange("autoDetectStaged", enabled)
               }
             />
             <FeatureSwitch
@@ -559,7 +679,7 @@ export const FeaturesSettings: React.FC = () => {
               description={t("codeAnalysis.fallbackToAll.description")}
               checked={features.fallbackToAll}
               onCheckedChange={(enabled) =>
-                handleFeatureToggle("fallbackToAll", enabled)
+                handleChange("fallbackToAll", enabled)
               }
             />
           </CardContent>

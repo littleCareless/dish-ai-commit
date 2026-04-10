@@ -1,6 +1,16 @@
 {
   "title": "功能设置",
   "description": "启用或禁用扩展的各种功能。",
+  "unsavedChanges": "{{count}} 项未保存的更改",
+  "saveChanges": "保存（{{count}} 项更改）",
+  "saveStatus": {
+    "saved": "已保存到插件存储。",
+    "savedWithSync": "已保存到插件存储，并同步 {{count}} 项变更到 settings.json。"
+  },
+  "externalChanges": {
+    "banner": "配置已外部更新，点击刷新。",
+    "refreshButton": "刷新"
+  },
   "commitMessageGeneration": {
     "title": "提交信息生成",
     "enableEmoji": {
