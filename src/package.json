@@ -143,6 +143,7 @@
           "type": "string",
           "default": "Simplified Chinese",
           "description": "%extension.contributes.configuration.properties.dish-ai-commit.base.language.description%",
+          "order": 1,
           "enum": [
             "Simplified Chinese",
             "Traditional Chinese",
@@ -170,6 +171,7 @@
           "type": "string",
           "default": "OpenAI",
           "description": "%extension.contributes.configuration.properties.dish-ai-commit.base.provider.description%",
+          "order": 2,
           "enum": [
             "OpenAI",
             "Ollama",
@@ -209,287 +211,344 @@
           "type": "string",
           "default": "gpt-3.5-turbo",
           "description": "%extension.contributes.configuration.properties.dish-ai-commit.base.model.description%",
+          "order": 3,
           "scope": "machine"
         },
         "dish-ai-commit.providers.openai.apiKey": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.openai.apiKey.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.openai.apiKey.description%",
+          "order": 10
         },
         "dish-ai-commit.providers.openai.baseUrl": {
           "type": "string",
           "default": "https://api.openai.com/v1",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.openai.baseUrl.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.openai.baseUrl.description%",
+          "order": 11
         },
         "dish-ai-commit.providers.xiaomi.apiKey": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.xiaomi.apiKey.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.xiaomi.apiKey.description%",
+          "order": 12
         },
         "dish-ai-commit.providers.zhipu.apiKey": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.zhipu.apiKey.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.zhipu.apiKey.description%",
+          "order": 13
         },
         "dish-ai-commit.providers.dashscope.apiKey": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.dashscope.apiKey.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.dashscope.apiKey.description%",
+          "order": 14
         },
         "dish-ai-commit.providers.doubao.apiKey": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.doubao.apiKey.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.doubao.apiKey.description%",
+          "order": 15
         },
         "dish-ai-commit.providers.ollama.baseUrl": {
           "type": "string",
           "default": "http://localhost:11434",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.ollama.baseUrl.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.ollama.baseUrl.description%",
+          "order": 16
         },
         "dish-ai-commit.providers.gemini.apiKey": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.gemini.apiKey.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.gemini.apiKey.description%",
+          "order": 17
         },
         "dish-ai-commit.providers.baiduQianfan.apiKey": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.baiduQianfan.apiKey.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.baiduQianfan.apiKey.description%",
+          "order": 18
         },
         "dish-ai-commit.providers.deepseek.apiKey": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.deepseek.apiKey.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.deepseek.apiKey.description%",
+          "order": 19
         },
         "dish-ai-commit.providers.siliconflow.apiKey": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.siliconflow.apiKey.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.siliconflow.apiKey.description%",
+          "order": 20
         },
         "dish-ai-commit.providers.openrouter.apiKey": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.openrouter.apiKey.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.openrouter.apiKey.description%",
+          "order": 21
         },
         "dish-ai-commit.providers.perplexity.apiKey": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.perplexity.apiKey.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.perplexity.apiKey.description%",
+          "order": 22
         },
         "dish-ai-commit.providers.premai.apiKey": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.premai.apiKey.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.premai.apiKey.description%",
+          "order": 23
         },
         "dish-ai-commit.providers.premai.baseUrl": {
           "type": "string",
           "default": "https://api.premai.com/",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.premai.baseUrl.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.premai.baseUrl.description%",
+          "order": 24
         },
         "dish-ai-commit.providers.together.apiKey": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.together.apiKey.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.together.apiKey.description%",
+          "order": 25
         },
         "dish-ai-commit.providers.together.baseUrl": {
           "type": "string",
           "default": "https://api.together.xyz/",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.together.baseUrl.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.together.baseUrl.description%",
+          "order": 26
         },
         "dish-ai-commit.providers.xai.apiKey": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.xai.apiKey.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.xai.apiKey.description%",
+          "order": 27
         },
         "dish-ai-commit.providers.anthropic.apiKey": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.anthropic.apiKey.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.anthropic.apiKey.description%",
+          "order": 28
         },
         "dish-ai-commit.providers.mistral.apiKey": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.mistral.apiKey.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.mistral.apiKey.description%",
+          "order": 29
         },
         "dish-ai-commit.providers.azureOpenai.apiKey": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.azureOpenai.apiKey.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.azureOpenai.apiKey.description%",
+          "order": 30
         },
         "dish-ai-commit.providers.azureOpenai.endpoint": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.azureOpenai.endpoint.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.azureOpenai.endpoint.description%",
+          "order": 31
         },
         "dish-ai-commit.providers.azureOpenai.apiVersion": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.azureOpenai.apiVersion.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.azureOpenai.apiVersion.description%",
+          "order": 32
         },
         "dish-ai-commit.providers.azureOpenai.orgId": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.azureOpenai.orgId.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.azureOpenai.orgId.description%",
+          "order": 33
         },
         "dish-ai-commit.providers.cloudflare.apiKey": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.cloudflare.apiKey.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.cloudflare.apiKey.description%",
+          "order": 34
         },
         "dish-ai-commit.providers.cloudflare.accountId": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.cloudflare.accountId.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.cloudflare.accountId.description%",
+          "order": 35
         },
         "dish-ai-commit.providers.vertexai.projectId": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.vertexai.projectId.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.vertexai.projectId.description%",
+          "order": 36
         },
         "dish-ai-commit.providers.vertexai.location": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.vertexai.location.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.vertexai.location.description%",
+          "order": 37
         },
         "dish-ai-commit.providers.vertexai.apiEndpoint": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.vertexai.apiEndpoint.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.vertexai.apiEndpoint.description%",
+          "order": 38
         },
         "dish-ai-commit.providers.vertexai.googleAuthOptions": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.vertexai.googleAuthOptions.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.vertexai.googleAuthOptions.description%",
+          "order": 39
         },
         "dish-ai-commit.providers.groq.apiKey": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.groq.apiKey.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.groq.apiKey.description%",
+          "order": 40
         },
         "dish-ai-commit.providers.lmstudio.baseUrl": {
           "type": "string",
           "default": "http://localhost:1234/v1",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.lmstudio.baseUrl.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.lmstudio.baseUrl.description%",
+          "order": 41
         },
         "dish-ai-commit.providers.iflow.apiKey": {
           "type": "string",
           "default": "",
-          "description": "API Key for Alibaba iFlow"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.iflow.apiKey.description%",
+          "order": 42
         },
         "dish-ai-commit.providers.iflow.baseUrl": {
           "type": "string",
           "default": "https://iflow.alibaba.com/v1",
-          "description": "Base URL for Alibaba iFlow"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.iflow.baseUrl.description%",
+          "order": 43
         },
         "dish-ai-commit.providers.volcano.apiKey": {
           "type": "string",
           "default": "",
-          "description": "API Key for ByteDance Volcano"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.volcano.apiKey.description%",
+          "order": 44
         },
         "dish-ai-commit.providers.volcano.baseUrl": {
           "type": "string",
           "default": "https://ark.cn-beijing.volces.com/api/v3",
-          "description": "Base URL for ByteDance Volcano"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.volcano.baseUrl.description%",
+          "order": 45
         },
         "dish-ai-commit.providers.modelscope.apiKey": {
           "type": "string",
           "default": "",
-          "description": "API Key for ModelScope"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.modelscope.apiKey.description%",
+          "order": 46
         },
         "dish-ai-commit.providers.modelscope.baseUrl": {
           "type": "string",
           "default": "https://api-inference.modelscope.cn/v1",
-          "description": "Base URL for ModelScope"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.modelscope.baseUrl.description%",
+          "order": 47
         },
         "dish-ai-commit.providers.kat.apiKey": {
           "type": "string",
           "default": "",
-          "description": "API Key for Kuaishou KAT"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.kat.apiKey.description%",
+          "order": 48
         },
         "dish-ai-commit.providers.kat.baseUrl": {
           "type": "string",
           "default": "https://api.kat.kuaishou.com/v1",
-          "description": "Base URL for Kuaishou KAT"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.kat.baseUrl.description%",
+          "order": 49
         },
         "dish-ai-commit.providers.longcat.apiKey": {
           "type": "string",
           "default": "",
-          "description": "API Key for Meituan LongCat"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.longcat.apiKey.description%",
+          "order": 50
         },
         "dish-ai-commit.providers.longcat.baseUrl": {
           "type": "string",
           "default": "https://api.longcat.meituan.com/v1",
-          "description": "Base URL for Meituan LongCat"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.longcat.baseUrl.description%",
+          "order": 51
         },
         "dish-ai-commit.providers.qiniu.apiKey": {
           "type": "string",
           "default": "",
-          "description": "API Key for Qiniu AI"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.qiniu.apiKey.description%",
+          "order": 52
         },
         "dish-ai-commit.providers.qiniu.baseUrl": {
           "type": "string",
           "default": "https://api.qiniu.com/v1",
-          "description": "Base URL for Qiniu AI"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.qiniu.baseUrl.description%",
+          "order": 53
         },
         "dish-ai-commit.providers.nvidia.apiKey": {
           "type": "string",
           "default": "",
-          "description": "API Key for NVIDIA NIM"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.nvidia.apiKey.description%",
+          "order": 54
         },
         "dish-ai-commit.providers.nvidia.baseUrl": {
           "type": "string",
           "default": "https://integrate.api.nvidia.com/v1",
-          "description": "Base URL for NVIDIA NIM"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.nvidia.baseUrl.description%",
+          "order": 55
         },
         "dish-ai-commit.providers.cerebras.apiKey": {
           "type": "string",
           "default": "",
-          "description": "API Key for Cerebras"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.cerebras.apiKey.description%",
+          "order": 56
         },
         "dish-ai-commit.providers.cerebras.baseUrl": {
           "type": "string",
           "default": "https://api.cerebras.ai/v1",
-          "description": "Base URL for Cerebras"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.cerebras.baseUrl.description%",
+          "order": 57
         },
         "dish-ai-commit.providers.codebuddy.apiKey": {
           "type": "string",
           "default": "",
-          "description": "API Key for Tencent CodeBuddy"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.codebuddy.apiKey.description%",
+          "order": 58
         },
         "dish-ai-commit.providers.codebuddy.baseUrl": {
           "type": "string",
           "default": "https://api.codebuddy.tencent.com/v1",
-          "description": "Base URL for Tencent CodeBuddy"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.codebuddy.baseUrl.description%",
+          "order": 59
         },
         "dish-ai-commit.providers.codeflicker.apiKey": {
           "type": "string",
           "default": "",
-          "description": "API Key for Kuaishou CodeFlicker"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.codeflicker.apiKey.description%",
+          "order": 60
         },
         "dish-ai-commit.providers.codeflicker.baseUrl": {
           "type": "string",
           "default": "https://api.codeflicker.kuaishou.com/v1",
-          "description": "Base URL for Kuaishou CodeFlicker"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.codeflicker.baseUrl.description%",
+          "order": 61
         },
         "dish-ai-commit.providers.tongyi.apiKey": {
           "type": "string",
           "default": "",
-          "description": "API Key for Tongyi Lingma"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.tongyi.apiKey.description%",
+          "order": 62
         },
         "dish-ai-commit.providers.tongyi.baseUrl": {
           "type": "string",
           "default": "https://dashscope.aliyuncs.com/compatible-mode/v1",
-          "description": "Base URL for Tongyi Lingma"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.providers.tongyi.baseUrl.description%",
+          "order": 63
         },
         "dish-ai-commit.features.suppressNonCriticalWarnings": {
           "type": "boolean",
           "default": true,
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.suppressNonCriticalWarnings.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.suppressNonCriticalWarnings.description%",
+          "order": 70
         },
         "dish-ai-commit.features.codeAnalysis.diffTarget": {
           "type": "string",
           "default": "auto",
           "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.codeAnalysis.diffTarget.description%",
+          "order": 80,
           "enum": [
             "staged",
             "all",
@@ -499,52 +558,62 @@
         "dish-ai-commit.features.codeAnalysis.autoDetectStaged": {
           "type": "boolean",
           "default": true,
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.codeAnalysis.autoDetectStaged.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.codeAnalysis.autoDetectStaged.description%",
+          "order": 81
         },
         "dish-ai-commit.features.codeAnalysis.fallbackToAll": {
           "type": "boolean",
           "default": true,
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.codeAnalysis.fallbackToAll.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.codeAnalysis.fallbackToAll.description%",
+          "order": 82
         },
         "dish-ai-commit.features.codeAnalysis.simplifyDiff": {
           "type": "boolean",
           "default": false,
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.codeAnalysis.simplifyDiff.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.codeAnalysis.simplifyDiff.description%",
+          "order": 83
         },
         "dish-ai-commit.features.commitFormat.enableEmoji": {
           "type": "boolean",
           "default": true,
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitFormat.enableEmoji.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitFormat.enableEmoji.description%",
+          "order": 90
         },
         "dish-ai-commit.features.commitFormat.enableMergeCommit": {
           "type": "boolean",
           "default": false,
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitFormat.enableMergeCommit.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitFormat.enableMergeCommit.description%",
+          "order": 91
         },
         "dish-ai-commit.features.commitFormat.enableBody": {
           "type": "boolean",
           "default": true,
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitFormat.enableBody.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitFormat.enableBody.description%",
+          "order": 92
         },
         "dish-ai-commit.features.commitFormat.enableLayeredCommit": {
           "type": "boolean",
           "default": false,
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitFormat.enableLayeredCommit.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitFormat.enableLayeredCommit.description%",
+          "order": 93
         },
         "dish-ai-commit.features.commitFormat.enableGlobalContext": {
           "type": "boolean",
           "default": true,
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitFormat.enableGlobalContext.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitFormat.enableGlobalContext.description%",
+          "order": 94
         },
         "dish-ai-commit.features.commitMessage.systemPrompt": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitMessage.systemPrompt.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitMessage.systemPrompt.description%",
+          "order": 100
         },
         "dish-ai-commit.features.commitMessage.largePromptAction": {
           "type": "string",
           "default": "useFallback",
           "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitMessage.largePromptAction.description%",
+          "order": 101,
           "enum": [
             "ask",
             "useFallback",
@@ -554,27 +623,32 @@
         "dish-ai-commit.features.commitMessage.useRecentCommitsAsReference": {
           "type": "boolean",
           "default": false,
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitMessage.useRecentCommitsAsReference.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.commitMessage.useRecentCommitsAsReference.description%",
+          "order": 102
         },
         "dish-ai-commit.features.weeklyReport.systemPrompt": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.weeklyReport.systemPrompt.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.weeklyReport.systemPrompt.description%",
+          "order": 110
         },
         "dish-ai-commit.features.codeReview.systemPrompt": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.codeReview.systemPrompt.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.codeReview.systemPrompt.description%",
+          "order": 120
         },
         "dish-ai-commit.features.branchName.systemPrompt": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.branchName.systemPrompt.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.branchName.systemPrompt.description%",
+          "order": 130
         },
         "dish-ai-commit.features.branchName.postAction": {
           "type": "string",
           "default": "createAndCopy",
           "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.branchName.postAction.description%",
+          "order": 131,
           "enum": [
             "ask",
             "createAndCopy",
@@ -585,6 +659,7 @@
           "type": "string",
           "default": "autoFirst",
           "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.branchName.selectionMode.description%",
+          "order": 132,
           "enum": [
             "autoFirst",
             "quickPick"
@@ -594,6 +669,7 @@
           "type": "string",
           "default": "copyOnly",
           "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.branchName.createFailureAction.description%",
+          "order": 133,
           "enum": [
             "ask",
             "copyOnly"
@@ -602,22 +678,62 @@
         "dish-ai-commit.features.prSummary.baseBranch": {
           "type": "string",
           "default": "origin/main",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.prSummary.baseBranch.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.prSummary.baseBranch.description%",
+          "order": 140
         },
         "dish-ai-commit.features.prSummary.headBranch": {
           "type": "string",
           "default": "HEAD",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.prSummary.headBranch.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.prSummary.headBranch.description%",
+          "order": 141
         },
         "dish-ai-commit.features.prSummary.systemPrompt": {
           "type": "string",
           "default": "",
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.prSummary.systemPrompt.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.prSummary.systemPrompt.description%",
+          "order": 142
         },
         "dish-ai-commit.features.prSummary.commitLogLimit": {
           "type": "number",
           "default": 20,
-          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.prSummary.commitLogLimit.description%"
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.prSummary.commitLogLimit.description%",
+          "order": 143
+        },
+        "dish-ai-commit.features.enableThirdPartyModelCatalog": {
+          "type": "boolean",
+          "default": true,
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.enableThirdPartyModelCatalog.description%",
+          "order": 150
+        },
+        "dish-ai-commit.features.enableAdaptiveInputLimitLearning": {
+          "type": "boolean",
+          "default": true,
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.enableAdaptiveInputLimitLearning.description%",
+          "order": 151
+        },
+        "dish-ai-commit.features.weeklyReport": {
+          "type": "boolean",
+          "default": true,
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.weeklyReport.description%",
+          "order": 160
+        },
+        "dish-ai-commit.features.codeReview": {
+          "type": "boolean",
+          "default": true,
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.codeReview.description%",
+          "order": 161
+        },
+        "dish-ai-commit.features.generateBranchName": {
+          "type": "boolean",
+          "default": true,
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.generateBranchName.description%",
+          "order": 162
+        },
+        "dish-ai-commit.features.generatePRSummary": {
+          "type": "boolean",
+          "default": true,
+          "description": "%extension.contributes.configuration.properties.dish-ai-commit.features.generatePRSummary.description%",
+          "order": 163
         }
       }
     },
