@@ -69,7 +69,7 @@ export function createLoggerNotificationDeps(overrides?: {
  */
 export function createMockStorageManager(
   initialValues?: Record<string, unknown>,
-) {
+): any {
   const store = new Map<string, unknown>(
     Object.entries(initialValues ?? {}),
   );

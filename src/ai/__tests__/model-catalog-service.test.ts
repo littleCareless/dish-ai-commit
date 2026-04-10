@@ -56,8 +56,8 @@ const mockSyncAll = vi.fn(async () => ({
   errors: [],
 }));
 
-const mockGetEntry = vi.fn(() => null);
-const mockGetAllEntries = vi.fn(() => []);
+const mockGetEntry = vi.fn<() => any>(() => null);
+const mockGetAllEntries = vi.fn<() => any[]>(() => []);
 
 vi.mock("@/ai/model-registry/third-party-model-catalog-sync-service", () => ({
   ThirdPartyModelCatalogSyncService: {
@@ -472,7 +472,7 @@ describe("ModelCatalogService", () => {
         success: false,
         totalEntries: 0,
         updatedEntries: 0,
-        errors: ["OpenRouter sync failed: HTTP 500"],
+        errors: ["OpenRouter sync failed: HTTP 500"] as any,
       });
 
       const result = await service.syncThirdPartyCatalog();

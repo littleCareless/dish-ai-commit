@@ -1292,11 +1292,13 @@ describe("StreamingGenerationHelper performStreamingGeneration pipeline", () => 
         provider: { id: "openai", name: "OpenAI" },
         maxTokens: { input: 128000, output: 4096 },
       } as any,
+      input: {} as any,
+      scmContext: {} as any,
       ...overrides,
     };
   }
 
-  function createTarget(overrides: Record<string, any> = {}) {
+  function createTarget(overrides: Record<string, any> = {}): any {
     return {
       repositoryPath: "/repo",
       scmProvider: {
@@ -1310,7 +1312,7 @@ describe("StreamingGenerationHelper performStreamingGeneration pipeline", () => 
         repository: {
           path: "/repo",
           name: "repo",
-          type: "git",
+          type: "git" as const,
           isActive: true,
         },
       },
@@ -1445,7 +1447,7 @@ describe("StreamingGenerationHelper performStreamingGeneration pipeline", () => 
 
     // Override the streaming handler to return empty
     const StreamingHandler = (await import("@/commands/generate-commit/handlers/streaming-handler")).StreamingHandler;
-    const streamingInstance = new StreamingHandler();
+    const streamingInstance = new (StreamingHandler as any)();
     streamingInstance.handle = vi.fn(async () => "   ");
 
     // Create a new helper so it picks up the mock

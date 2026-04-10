@@ -15,7 +15,7 @@ import { vi } from "vitest";
 // Individual surface factories
 // ---------------------------------------------------------------------------
 
-export function createMockWorkspace(overrides?: Record<string, unknown>) {
+export function createMockWorkspace(overrides?: Record<string, unknown>): any {
   const configStore = new Map<string, unknown>();
 
   return {
@@ -56,7 +56,7 @@ export function createMockWorkspace(overrides?: Record<string, unknown>) {
   };
 }
 
-export function createMockWindow(overrides?: Record<string, unknown>) {
+export function createMockWindow(overrides?: Record<string, unknown>): any {
   return {
     createOutputChannel: vi.fn(() => ({
       trace: vi.fn(),
@@ -130,7 +130,7 @@ export function createMockWindow(overrides?: Record<string, unknown>) {
   };
 }
 
-export function createMockCommands(overrides?: Record<string, unknown>) {
+export function createMockCommands(overrides?: Record<string, unknown>): any {
   return {
     executeCommand: vi.fn(async () => undefined),
     registerCommand: vi.fn(() => ({ dispose: vi.fn() })),
@@ -204,7 +204,7 @@ export function createMockDisposable() {
   }));
 }
 
-export function createMockEventEmitter<T = unknown>() {
+export function createMockEventEmitter<T = unknown>(): any {
   const listeners: Array<(e: T) => unknown> = [];
   return {
     event: vi.fn((callback: (e: T) => unknown) => {
@@ -224,7 +224,7 @@ export function createMockEventEmitter<T = unknown>() {
 // CancellationTokenSource
 // ---------------------------------------------------------------------------
 
-export function createMockCancellationTokenSource() {
+export function createMockCancellationTokenSource(): any {
   let cancelled = false;
   const listeners: Array<() => void> = [];
   return {
@@ -249,7 +249,7 @@ export function createMockCancellationTokenSource() {
 // SCM API
 // ---------------------------------------------------------------------------
 
-export function createMockSCM() {
+export function createMockSCM(): any {
   return {
     sourceControls: [] as unknown[],
     createSourceControl: vi.fn(() => ({
@@ -280,7 +280,7 @@ export interface MockVSCodeOptions {
  * Returns a plain object suitable for `vi.mock("vscode", () => ...)`.
  * Each top-level property corresponds to a `vscode` export.
  */
-export function createMockVSCode(options?: MockVSCodeOptions) {
+export function createMockVSCode(options?: MockVSCodeOptions): any {
   const Disposable = createMockDisposable();
   return {
     // Namespaces

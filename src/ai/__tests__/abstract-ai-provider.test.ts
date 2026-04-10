@@ -143,8 +143,10 @@ const DEFAULT_MODEL: AIModel = {
 };
 
 class StubAIProvider extends AbstractAIProvider {
-  private mockExecuteAIRequest: typeof AbstractAIProvider.prototype.executeAIRequest;
-  private mockExecuteAIStreamRequest: typeof AbstractAIProvider.prototype.executeAIStreamRequest;
+  // @ts-ignore - mock fields for testing
+  private _mockReq: any;
+  // @ts-ignore - mock fields for testing
+  private _mockStream: any;
 
   constructor(
     options: {
@@ -160,10 +162,10 @@ class StubAIProvider extends AbstractAIProvider {
       ...options.executeResponse,
     };
 
-    this.mockExecuteAIRequest = vi.fn(async () => defaultResponse);
+    this._mockReq = vi.fn(async () => defaultResponse);
 
     const chunks = options.streamChunks ?? ["chunk1 ", "chunk2 ", "chunk3"];
-    this.mockExecuteAIStreamRequest = vi.fn(async () => {
+    this._mockStream = vi.fn(async () => {
       async function* gen() {
         for (const c of chunks) {
           yield c;
@@ -177,7 +179,7 @@ class StubAIProvider extends AbstractAIProvider {
     params: AIRequestParams,
     options?: any,
   ): Promise<any> {
-    return this.mockExecuteAIRequest(params, options);
+    return this._mockReq(params, options);
   }
 
   protected async buildProviderMessages(params: AIRequestParams): Promise<any> {
@@ -188,7 +190,7 @@ class StubAIProvider extends AbstractAIProvider {
     params: AIRequestParams,
     options?: any,
   ): Promise<AsyncIterable<string>> {
-    return this.mockExecuteAIStreamRequest(params, options);
+    return this._mockStream(params, options);
   }
 
   protected getDefaultModel(): AIModel {
@@ -216,11 +218,11 @@ class StubAIProvider extends AbstractAIProvider {
   }
 
   // Expose for test assertions
-  get mockExecute() {
-    return this.mockExecuteAIRequest;
+  get mockExecute(): any {
+    return this._mockReq;
   }
-  get mockStream() {
-    return this.mockExecuteAIStreamRequest;
+  get mockStream(): any {
+    return this._mockStream;
   }
 }
 
@@ -341,7 +343,7 @@ describe("AbstractAIProvider (StubAIProvider)", () => {
 
     it("throws wrapped error on failure", async () => {
       const failingProvider = new StubAIProvider();
-      (failingProvider as any).mockExecuteAIRequest = vi.fn(async () => {
+      (failingProvider as any)._mockReq = vi.fn(async () => {
         throw new Error("API connection failed");
       });
       failingProvider.setGlobalConfig({
@@ -392,7 +394,7 @@ describe("AbstractAIProvider (StubAIProvider)", () => {
 
     it("throws wrapped error on stream failure", async () => {
       const failingProvider = new StubAIProvider();
-      (failingProvider as any).mockExecuteAIStreamRequest = vi.fn(async () => {
+      (failingProvider as any)._mockStream = vi.fn(async () => {
         throw new Error("Stream connection failed");
       });
       failingProvider.setGlobalConfig({
@@ -493,7 +495,7 @@ describe("AbstractAIProvider (StubAIProvider)", () => {
 
     it("throws wrapped error on failure", async () => {
       const failingProvider = new StubAIProvider();
-      (failingProvider as any).mockExecuteAIRequest = vi.fn(async () => {
+      (failingProvider as any)._mockReq = vi.fn(async () => {
         throw new Error("Review failed");
       });
       failingProvider.setGlobalConfig({
@@ -527,7 +529,7 @@ describe("AbstractAIProvider (StubAIProvider)", () => {
 
     it("throws wrapped error on failure", async () => {
       const failingProvider = new StubAIProvider();
-      (failingProvider as any).mockExecuteAIRequest = vi.fn(async () => {
+      (failingProvider as any)._mockReq = vi.fn(async () => {
         throw new Error("Branch name failed");
       });
       failingProvider.setGlobalConfig({
@@ -584,7 +586,7 @@ describe("AbstractAIProvider (StubAIProvider)", () => {
 
     it("throws wrapped error on failure", async () => {
       const failingProvider = new StubAIProvider();
-      (failingProvider as any).mockExecuteAIRequest = vi.fn(async () => {
+      (failingProvider as any)._mockReq = vi.fn(async () => {
         throw new Error("Report generation failed");
       });
       failingProvider.setGlobalConfig({
@@ -630,7 +632,7 @@ describe("AbstractAIProvider (StubAIProvider)", () => {
 
     it("throws wrapped error on failure", async () => {
       const failingProvider = new StubAIProvider();
-      (failingProvider as any).mockExecuteAIRequest = vi.fn(async () => {
+      (failingProvider as any)._mockReq = vi.fn(async () => {
         throw new Error("Layered commit failed");
       });
       failingProvider.setGlobalConfig({

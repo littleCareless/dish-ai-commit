@@ -20,7 +20,7 @@ export interface MockSCMProviderOptions {
 /**
  * Creates a mock that satisfies the `ISCMProvider` interface.
  */
-export function createMockSCMProvider(options: MockSCMProviderOptions = {}) {
+export function createMockSCMProvider(options: MockSCMProviderOptions = {}): any {
   const {
     type = "git",
     available = true,
@@ -114,7 +114,7 @@ export function createWorkspaceFolder(
  */
 export function createMockGitProviderFactory(
   provider?: ReturnType<typeof createMockSCMProvider>,
-) {
+): any {
   const mockProvider = provider ?? createMockSCMProvider({ type: "git" });
   return {
     createGitProvider: vi.fn(() => mockProvider),
@@ -127,7 +127,7 @@ export function createMockGitProviderFactory(
  */
 export function createMockSvnProviderFactory(
   provider?: ReturnType<typeof createMockSCMProvider>,
-) {
+): any {
   const mockProvider = provider ?? createMockSCMProvider({ type: "svn" });
   return {
     createSvnProvider: vi.fn(() => mockProvider),

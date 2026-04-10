@@ -22,7 +22,7 @@ export function createMockContext(options?: {
   globalStateValues?: Record<string, unknown>;
   workspaceStateValues?: Record<string, unknown>;
   secretValues?: Record<string, string>;
-}) {
+}): any {
   const globalStore = new Map<string, unknown>(
     Object.entries(options?.globalStateValues ?? {}),
   );

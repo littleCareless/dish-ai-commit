@@ -76,6 +76,9 @@ function createRepositoryContext(repoPath = "/workspace/repo") {
       isActive: true,
       repository: {
         path: repoPath,
+        name: "repo",
+        type: "git" as const,
+        isActive: true,
         rootUri: { fsPath: repoPath },
       },
     },

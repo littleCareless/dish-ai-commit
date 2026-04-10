@@ -490,7 +490,7 @@ describe("CommitGenerationOrchestrator", () => {
     const session = await orchestrator.createSession(createInput());
 
     expect(session?.scmContext.mode).toBe("cross");
-    expect(session?.scmContext.targets[1]?.detectionError).toContain("detection exploded");
+    expect((session?.scmContext as any).targets[1]?.detectionError).toContain("detection exploded");
   });
 
   it("returns undefined when cross-repo detection produces no targets", async () => {

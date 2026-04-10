@@ -15,7 +15,7 @@ export type MockConfigValues = Record<string, unknown>;
 /**
  * Creates a mock `WorkspaceConfiguration` that stores values in-memory.
  */
-export function createMockConfiguration(initialValues?: MockConfigValues) {
+export function createMockConfiguration(initialValues?: MockConfigValues): any {
   const store = new Map<string, unknown>(Object.entries(initialValues ?? {}));
 
   return {
@@ -47,7 +47,7 @@ export function createMockExtensionContext(overrides?: {
   storageUri?: { fsPath: string };
   globalStorageUri?: { fsPath: string };
   logUri?: { fsPath: string };
-}) {
+}): any {
   const globalStore = new Map<string, unknown>(
     Object.entries(overrides?.globalStateValues ?? {}),
   );
