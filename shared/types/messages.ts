@@ -67,6 +67,8 @@ export enum UIRequest {
   FeaturesSyncModelCatalog = "features.syncModelCatalog",
   FeaturesGetModelCatalog = "features.getModelCatalog",
   FeaturesExecuteCommand = "features.executeCommand",
+  GetSyncToggleState = "features.getSyncToggleState",
+  SetSyncToggleState = "features.setSyncToggleState",
 
   // ===== Usage Module =====
   UsageGetStats = "usage.getStats",
@@ -191,6 +193,8 @@ export enum ExtensionResponse {
   FeaturesModelCatalogSynced = "features.modelCatalogSynced",
   FeaturesModelCatalogLoaded = "features.modelCatalogLoaded",
   FeaturesCommandExecuted = "features.commandExecuted",
+  SyncToggleStateLoaded = "features.syncToggleStateLoaded",
+  ExternalConfigChanged = "features.externalConfigChanged",
   Error = "error",
 
   // ===== Usage Module =====
