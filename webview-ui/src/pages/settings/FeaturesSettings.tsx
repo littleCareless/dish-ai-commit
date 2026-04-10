@@ -111,7 +111,8 @@ export const FeaturesSettings: React.FC = () => {
         message.data
       ) {
         setFeatures((prev: any) => {
-          const { syncResult: _syncResult, ...restData } = message.data;
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+          const { syncResult, ...restData } = message.data;
           const merged = { ...prev, ...restData };
           sessionStorage.setItem(
             "featuresSettingsCache",
