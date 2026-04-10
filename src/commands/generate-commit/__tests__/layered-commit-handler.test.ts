@@ -615,12 +615,9 @@ describe("LayeredCommitHandler", () => {
       const showInfoSpy = vi
         .spyOn(vscode.window, "showInformationMessage")
         .mockImplementation(
-          async (
-            _message: string,
-            _options: vscode.MessageOptions,
-            ...items: vscode.MessageItem[]
-          ) => {
-          return items[0] as any;
+          async (...args: any[]) => {
+            const items = args.slice(1);
+            return items[0] as any;
           },
         );
       const executeCommandSpy = vi
@@ -652,5 +649,127 @@ describe("LayeredCommitHandler", () => {
     } finally {
       vi.useRealTimers();
     }
+  });
+
+  it("returns failed result when no files are selected", async () => {
+    const handler = createHandler();
+    const args = createHandleArgs();
+    args.selectedFiles = [];
+
+    const result = await handler.handle(
+      args.aiProvider,
+      args.requestParams,
+      args.scmProvider,
+      args.selectedFiles,
+      args.token,
+      args.progress,
+      args.selectedModel,
+      args.config,
+      args.resultContext,
+      args.prefetchedDiffs,
+    );
+
+    expect(result.status).toBe("failed");
+    expect(result.errorCode).toBe("LAYERED_NO_FILES_SELECTED");
+    expect(result.notification?.level).toBe("warn");
+  });
+
+  it("returns failed result when no prefetched diffs are available", async () => {
+    const handler = createHandler();
+    const args = createHandleArgs();
+    args.prefetchedDiffs = new Map();
+
+    const result = await handler.handle(
+      args.aiProvider,
+      args.requestParams,
+      args.scmProvider,
+      args.selectedFiles,
+      args.token,
+      args.progress,
+      args.selectedModel,
+      args.config,
+      args.resultContext,
+      args.prefetchedDiffs,
+    );
+
+    expect(result.status).toBe("failed");
+    expect(result.errorCode).toBe("LAYERED_DIFF_SNAPSHOT_MISSING");
+  });
+
+  it("returns failed result when prefetched diffs is undefined", async () => {
+    const handler = createHandler();
+    const args = createHandleArgs();
+    args.selectedFiles = ["a.ts"];
+    // Simulate scmProvider that returns no diff, so prefetchedDiffs will be empty
+
+    const result = await handler.handle(
+      args.aiProvider,
+      args.requestParams,
+      args.scmProvider,
+      args.selectedFiles,
+      args.token,
+      args.progress,
+      args.selectedModel,
+      args.config,
+      args.resultContext,
+      undefined,
+    );
+
+    // With undefined prefetchedDiffs, the handler creates an empty Map, then fails
+    expect(result.status).toBe("failed");
+    expect(result.errorCode).toBe("LAYERED_DIFF_SNAPSHOT_MISSING");
+  });
+
+  it("skips file with missing diff in processFilesInBatches", async () => {
+    const handler = createHandler();
+
+    const aiProvider = {
+      getId: () => "openai",
+      generateCommit: vi.fn(),
+    } as any;
+
+    const config = createConfig();
+    // Empty diff map - no diff available for the file
+    const fileDiffMap = new Map<string, string>();
+
+    const results = await (handler as any).processFilesInBatches(
+      ["a.ts"],
+      { type: "git" } as any,
+      aiProvider,
+      {} as any,
+      config,
+      "",
+      { isCancellationRequested: false } as any,
+      { report: vi.fn() } as any,
+      { id: "test-model" } as any,
+      fileDiffMap,
+    );
+
+    expect(results).toEqual([]);
+    expect(aiProvider.generateCommit).not.toHaveBeenCalled();
+  });
+
+  it("resolves rate limit values with valid config", async () => {
+    const handler = createHandler();
+    const result = (handler as any).resolveRateLimitValue(10, 20);
+    expect(result).toBe(10);
+  });
+
+  it("falls back to default when rate limit config is invalid", async () => {
+    const handler = createHandler();
+    const result = (handler as any).resolveRateLimitValue(undefined, 20);
+    expect(result).toBe(20);
+  });
+
+  it("falls back to default when rate limit config is NaN", async () => {
+    const handler = createHandler();
+    const result = (handler as any).resolveRateLimitValue("invalid", 20);
+    expect(result).toBe(20);
+  });
+
+  it("falls back to default when rate limit config is zero", async () => {
+    const handler = createHandler();
+    const result = (handler as any).resolveRateLimitValue(0, 20);
+    expect(result).toBe(20);
   });
 });

@@ -330,4 +330,188 @@ describe("CommitGenerationOrchestrator", () => {
     expect(session.scmContext.target.repositoryPath).toBe("/repo-safe");
     expect(session.scmContext.target.selectedFiles).toEqual(["/repo-safe/a.ts"]);
   });
+
+  it("returns undefined when prepare returns no context", async () => {
+    vi.mocked(
+      multiRepositoryContextManager.groupResourceStatesByRepository,
+    ).mockResolvedValue(new Map());
+
+    const prepare = vi.fn().mockResolvedValue(undefined);
+    const orchestrator = new CommitGenerationOrchestrator({
+      prepare,
+      logger: { warn: vi.fn() } as any,
+    });
+
+    const session = await orchestrator.createSession(createInput());
+
+    expect(session).toBeUndefined();
+  });
+
+  it("returns undefined when aiProvider is missing from context", async () => {
+    vi.mocked(
+      multiRepositoryContextManager.groupResourceStatesByRepository,
+    ).mockResolvedValue(new Map());
+
+    const prepare = vi.fn().mockResolvedValue(
+      createPrepareContext({
+        aiProvider: undefined,
+      }),
+    );
+    const orchestrator = new CommitGenerationOrchestrator({
+      prepare,
+      logger: { warn: vi.fn() } as any,
+    });
+
+    const session = await orchestrator.createSession(createInput());
+
+    expect(session).toBeUndefined();
+    expect(notify.error).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.arrayContaining(["openai", "gpt-test"]),
+    );
+  });
+
+  it("returns undefined when selectedModel is missing from context", async () => {
+    vi.mocked(
+      multiRepositoryContextManager.groupResourceStatesByRepository,
+    ).mockResolvedValue(new Map());
+
+    const prepare = vi.fn().mockResolvedValue(
+      createPrepareContext({
+        selectedModel: undefined,
+      }),
+    );
+    const orchestrator = new CommitGenerationOrchestrator({
+      prepare,
+      logger: { warn: vi.fn() } as any,
+    });
+
+    const session = await orchestrator.createSession(createInput());
+
+    expect(session).toBeUndefined();
+  });
+
+  it("returns undefined when fallback single-repo has no scmProvider", async () => {
+    vi.mocked(
+      multiRepositoryContextManager.groupResourceStatesByRepository,
+    ).mockResolvedValue(new Map());
+
+    const prepare = vi.fn().mockResolvedValue(
+      createPrepareContext({
+        scmProvider: undefined,
+        selectedFiles: ["/repo/a.ts"],
+        repositoryPath: "/repo",
+      }),
+    );
+    const orchestrator = new CommitGenerationOrchestrator({
+      prepare,
+      logger: { warn: vi.fn() } as any,
+    });
+
+    const session = await orchestrator.createSession(createInput());
+
+    expect(session).toBeUndefined();
+    expect(notify.error).toHaveBeenCalledWith(expect.any(String));
+  });
+
+  it("returns undefined when fallback single-repo has no repositoryPath", async () => {
+    vi.mocked(
+      multiRepositoryContextManager.groupResourceStatesByRepository,
+    ).mockResolvedValue(new Map());
+
+    const prepare = vi.fn().mockResolvedValue(
+      createPrepareContext({
+        scmProvider: { type: "git" } as any,
+        selectedFiles: ["/repo/a.ts"],
+        repositoryPath: undefined,
+      }),
+    );
+    const orchestrator = new CommitGenerationOrchestrator({
+      prepare,
+      logger: { warn: vi.fn() } as any,
+    });
+
+    const session = await orchestrator.createSession(createInput());
+
+    expect(session).toBeUndefined();
+    expect(notify.warn).toHaveBeenCalledWith(
+      expect.any(String),
+      expect.anything(),
+    );
+  });
+
+  it("returns undefined when grouped single-repo detection fails to find scmProvider", async () => {
+    vi.mocked(
+      multiRepositoryContextManager.groupResourceStatesByRepository,
+    ).mockResolvedValue(
+      new Map([
+        ["/repo-a", { files: ["/repo-a/a.ts"], scmType: "git" as const }],
+      ]),
+    );
+    detectSCMProviderMock.mockResolvedValueOnce(undefined);
+
+    const prepare = vi.fn().mockResolvedValue(createPrepareContext());
+    const orchestrator = new CommitGenerationOrchestrator({
+      prepare,
+      logger: { warn: vi.fn() } as any,
+    });
+
+    const session = await orchestrator.createSession(createInput());
+
+    expect(session).toBeUndefined();
+    expect(notify.error).toHaveBeenCalledWith(expect.any(String));
+  });
+
+  it("handles error during buildTargetForRepository gracefully", async () => {
+    vi.mocked(
+      multiRepositoryContextManager.groupResourceStatesByRepository,
+    ).mockResolvedValue(
+      new Map([
+        ["/repo-a", { files: ["/repo-a/a.ts"], scmType: "git" as const }],
+        ["/repo-b", { files: ["/repo-b/b.ts"], scmType: "svn" as const }],
+      ]),
+    );
+    detectSCMProviderMock
+      .mockResolvedValueOnce({
+        scmProvider: { type: "git" } as any,
+        selectedFiles: ["/repo-a/a.ts"],
+        repositoryPath: "/repo-a",
+      })
+      .mockImplementationOnce(() => {
+        throw new Error("detection exploded");
+      });
+
+    const prepare = vi.fn().mockResolvedValue(createPrepareContext());
+    const orchestrator = new CommitGenerationOrchestrator({
+      prepare,
+      logger: { warn: vi.fn() } as any,
+    });
+
+    const session = await orchestrator.createSession(createInput());
+
+    expect(session?.scmContext.mode).toBe("cross");
+    expect(session?.scmContext.targets[1]?.detectionError).toContain("detection exploded");
+  });
+
+  it("returns undefined when cross-repo detection produces no targets", async () => {
+    vi.mocked(
+      multiRepositoryContextManager.groupResourceStatesByRepository,
+    ).mockResolvedValue(
+      new Map([
+        ["/repo-a", { files: ["/repo-a/a.ts"] }],
+      ]),
+    );
+    detectSCMProviderMock.mockResolvedValueOnce(undefined);
+
+    const prepare = vi.fn().mockResolvedValue(createPrepareContext());
+    const orchestrator = new CommitGenerationOrchestrator({
+      prepare,
+      logger: { warn: vi.fn() } as any,
+    });
+
+    const session = await orchestrator.createSession(createInput());
+
+    // With 1 grouped repo and no scmProvider, buildSingleRepositoryTargetFromGrouped returns undefined
+    expect(session).toBeUndefined();
+  });
 });

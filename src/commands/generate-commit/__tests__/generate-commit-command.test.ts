@@ -183,4 +183,120 @@ describe("GenerateCommitCommand single-repository notifications", () => {
     );
     expect(showCommitSuccessNotification).toHaveBeenCalledTimes(1);
   });
+
+  it("does not show system notification for cancelled result", async () => {
+    const command = new GenerateCommitCommand({} as any);
+
+    await (command as any).handleSingleRepositoryResult({
+      status: "cancelled",
+      applied: false,
+      requestId: "req-cancel",
+    });
+
+    expect(showCommitSuccessNotification).not.toHaveBeenCalled();
+    expect(notify.error).not.toHaveBeenCalled();
+  });
+
+  it("does not show system notification for too_large result", async () => {
+    const command = new GenerateCommitCommand({} as any);
+
+    await (command as any).handleSingleRepositoryResult({
+      status: "too_large",
+      applied: false,
+      requestId: "req-large",
+    });
+
+    expect(showCommitSuccessNotification).not.toHaveBeenCalled();
+    expect(notify.error).not.toHaveBeenCalled();
+  });
+
+  it("shows error notification for failed result without notification payload", async () => {
+    const command = new GenerateCommitCommand({} as any);
+
+    await (command as any).handleSingleRepositoryResult({
+      status: "failed",
+      applied: false,
+      requestId: "req-fail",
+      error: "Generation failed unexpectedly",
+    });
+
+    expect(notify.error).toHaveBeenCalledWith(
+      "generate.commit.failed",
+      ["Generation failed unexpectedly"],
+    );
+  });
+});
+
+describe("GenerateCommitCommand cross-repository failed list", () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it("shows failed repository names in warning notification", async () => {
+    const command = new GenerateCommitCommand({} as any);
+    const result = createCrossRepoResult({
+      total: 3,
+      successCount: 1,
+      failureCount: 2,
+      results: [
+        {
+          repoPath: "/repo-a",
+          status: "success",
+          applied: true,
+          requestId: "req-1",
+        },
+        {
+          repoPath: "/repo-b",
+          status: "failed",
+          applied: false,
+          requestId: "req-1",
+        },
+        {
+          repoPath: "/repo-c",
+          status: "failed",
+          applied: false,
+          requestId: "req-1",
+        },
+      ],
+    });
+
+    await (command as any).notifyCrossRepositorySummary(result);
+
+    expect(notify.warn).toHaveBeenCalledWith(
+      "generate.commit.cross.repository.partial",
+      [1, 2],
+    );
+    expect(notify.warn).toHaveBeenCalledWith(
+      "generate.commit.cross.repository.failed.list",
+      ["repo-b, repo-c"],
+    );
+  });
+
+  it("limits failed repository names to 5 in warning", async () => {
+    const command = new GenerateCommitCommand({} as any);
+    const result = createCrossRepoResult({
+      total: 7,
+      successCount: 1,
+      failureCount: 6,
+      results: [
+        { repoPath: "/repo-a", status: "success", applied: true, requestId: "req-1" },
+        ...Array.from({ length: 6 }, (_, i) => ({
+          repoPath: `/repo-${String.fromCharCode(98 + i)}`,
+          status: "failed" as const,
+          applied: false,
+          requestId: "req-1",
+        })),
+      ],
+    });
+
+    await (command as any).notifyCrossRepositorySummary(result);
+
+    const failedListCall = (notify.warn as any).mock.calls.find(
+      (call: any[]) => call[0] === "generate.commit.cross.repository.failed.list",
+    );
+    expect(failedListCall).toBeDefined();
+    const names = failedListCall![1][0] as string;
+    const nameCount = names.split(", ").length;
+    expect(nameCount).toBe(5);
+  });
 });
