@@ -111,7 +111,7 @@ export const FeaturesSettings: React.FC = () => {
         message.data
       ) {
         setFeatures((prev: any) => {
-          const { syncResult, ...restData } = message.data;
+          const { syncResult: _syncResult, ...restData } = message.data;
           const merged = { ...prev, ...restData };
           sessionStorage.setItem(
             "featuresSettingsCache",
@@ -188,11 +188,16 @@ export const FeaturesSettings: React.FC = () => {
     };
   }, [t]);
 
-  const handleChange = (field: string, value: string | boolean | number) => {
-    dirtyFields.current.add(field);
-    setDirtyCount(dirtyFields.current.size);
-    setFeatures((prev: any) => ({ ...prev, [field]: value }));
-  };
+  const handleChange = useCallback(
+    (field: string, value: string | boolean | number) => {
+      dirtyFields.current.add(field);
+      setDirtyCount(dirtyFields.current.size);
+      setFeatures((prev: any) => ({ ...prev, [field]: value }));
+    },
+    // setDirtyCount and setFeatures are stable React setState functions
+    // dirtyFields is a ref (stable identity)
+    [],
+  );
 
   const handleSyncToggle = useCallback(() => {
     const newState = !syncEnabled;
