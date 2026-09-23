@@ -1,0 +1,239 @@
+{
+  "id": "IMPL-003",
+  "title": "Sync toggle control and core config classification (F-002 + F-003)",
+  "description": "Implement 2 features: (1) A global sync toggle stored in globalState (key: dish_config_sync_toggle, default false) controlling whether Feature Config writes to settings.json. When toggle transitions OFF->ON, immediately sync all non-default Feature Config. When ON->OFF, stop future sync but do not delete existing entries. (2) Core config classification (isCoreConfigKey/isFeatureConfigKey) that ensures base.* and providers.* always sync regardless of toggle state. The toggle UI is a banner at top of Features tab.",
+  "status": "pending",
+  "type": "feature",
+  "scope": "src/config/services + webview-ui",
+  "action": "Implement",
+  "depends_on": ["IMPL-002"],
+  "focus_paths": [
+    "src/config/services/settings-sync-service.ts",
+    "src/services/webview/handlers/settings/features-message-handler.ts",
+    "webview-ui/src/pages/settings/FeaturesSettings.tsx",
+    "shared/types/messages.ts"
+  ],
+
+  "convergence": {
+    "criteria": [
+      "SettingsSyncService has 2 exported functions: isCoreConfigKey(dotPath) and isFeatureConfigKey(dotPath)",
+      "CORE_CONFIG_PREFIXES array contains 2 entries: ['base.', 'providers.']",
+      "SettingsSyncService has SYNC_TOGGLE_KEY constant = 'dish_config_sync_toggle'",
+      "isSyncEnabled getter reads from globalState with default false",
+      "setSyncEnabled(true) triggers immediate full sync of non-default Feature Config",
+      "setSyncEnabled(false) returns without deleting existing entries",
+      "syncFeaturesToSettingsJson checks: core keys always sync, feature keys check toggle",
+      "Features tab shows sync toggle banner at top with Switch control",
+      "2 new UIRequest enum values: GetSyncToggleState, SetSyncToggleState",
+      "2 new ExtensionResponse enum values: SyncToggleStateLoaded",
+      "Existing user detection in initialize(): if globalState has feature data, default toggle ON",
+      "Verify by: grep -c 'isCoreConfigKey\\|isFeatureConfigKey\\|SYNC_TOGGLE_KEY' src/config/services/settings-sync-service.ts (>= 6)"
+    ],
+    "verification": "grep -c 'isCoreConfigKey\\|isFeatureConfigKey\\|SYNC_TOGGLE_KEY' src/config/services/settings-sync-service.ts",
+    "definition_of_done": "Sync toggle gates Feature Config sync, Core Config always syncs, toggle UI visible in Features tab"
+  },
+
+  "files": [
+    {
+      "path": "src/config/services/settings-sync-service.ts",
+      "action": "modify",
+      "change": "Add SYNC_TOGGLE_KEY, isSyncEnabled getter, setSyncEnabled method, isCoreConfigKey/isFeatureConfigKey functions, update syncFeaturesToSettingsJson to respect toggle for feature keys"
+    },
+    {
+      "path": "src/services/webview/handlers/settings/features-message-handler.ts",
+      "action": "modify",
+      "change": "Add 2 cases: GetSyncToggleState and SetSyncToggleState message handlers"
+    },
+    {
+      "path": "webview-ui/src/pages/settings/FeaturesSettings.tsx",
+      "action": "modify",
+      "change": "Add sync toggle banner component at top of Features tab with Switch, query toggle state on mount, post SetSyncToggleState on change"
+    },
+    {
+      "path": "shared/types/messages.ts",
+      "action": "modify",
+      "change": "Add 2 UIRequest values (GetSyncToggleState, SetSyncToggleState) and 1 ExtensionResponse value (SyncToggleStateLoaded)"
+    }
+  ],
+
+  "implementation": [
+    {
+      "step": 1,
+      "title": "Add core config classification functions to SettingsSyncService",
+      "description": "Add isCoreConfigKey and isFeatureConfigKey as exported functions. Add CORE_CONFIG_PREFIXES constant.",
+      "modification_points": [
+        "Add 1 constant: CORE_CONFIG_PREFIXES = ['base.', 'providers.']",
+        "Add 2 exported functions: isCoreConfigKey(dotPath) and isFeatureConfigKey(dotPath)",
+        "Functions use prefix-based matching"
+      ],
+      "logic_flow": [
+        "Define CORE_CONFIG_PREFIXES array",
+        "Implement isCoreConfigKey: check if dotPath starts with any prefix",
+        "Implement isFeatureConfigKey: check if dotPath starts with 'features.'",
+        "Export both functions for use by other modules"
+      ],
+      "depends_on": [],
+      "output": "config_classification"
+    },
+    {
+      "step": 2,
+      "title": "Add sync toggle to SettingsSyncService",
+      "description": "Add SYNC_TOGGLE_KEY, isSyncEnabled getter, setSyncEnabled method with immediate sync on enable. Update syncFeaturesToSettingsJson to check toggle for feature keys.",
+      "modification_points": [
+        "Add 1 constant: SYNC_TOGGLE_KEY = 'dish_config_sync_toggle'",
+        "Add 1 getter: isSyncEnabled (reads from globalState, default false)",
+        "Add 1 method: setSyncEnabled(enabled: boolean) with immediate sync when true",
+        "Modify syncFeaturesToSettingsJson: add toggle check for feature keys, core keys bypass",
+        "Add 1 initialize() method: detect existing user and set toggle default"
+      ],
+      "logic_flow": [
+        "Add SYNC_TOGGLE_KEY and isSyncEnabled getter",
+        "setSyncEnabled: update globalState, if true trigger syncFeaturesToSettingsJson with all non-defaults",
+        "In syncFeaturesToSettingsJson: for each key, check isCoreConfigKey first (always sync), then isFeatureConfigKey + toggle",
+        "initialize(): check if globalState has existing feature data, if yes set toggle default to true"
+      ],
+      "depends_on": [1],
+      "output": "sync_toggle_service"
+    },
+    {
+      "step": 3,
+      "title": "Add sync toggle message handlers",
+      "description": "Add GetSyncToggleState and SetSyncToggleState cases to FeaturesMessageHandler.",
+      "modification_points": [
+        "Add 2 switch cases in handle() method for GetSyncToggleState and SetSyncToggleState",
+        "GetSyncToggleState: read from SettingsSyncService.isSyncEnabled and post SyncToggleStateLoaded",
+        "SetSyncToggleState: call SettingsSyncService.setSyncEnabled and post SyncToggleStateLoaded with result"
+      ],
+      "logic_flow": [
+        "Add GetSyncToggleState handler: get sync service instance, read isSyncEnabled, post response",
+        "Add SetSyncToggleState handler: get sync service instance, call setSyncEnabled(message.data.enabled), post response"
+      ],
+      "depends_on": [2],
+      "output": "toggle_handlers"
+    },
+    {
+      "step": 4,
+      "title": "Add sync toggle banner to FeaturesSettings.tsx",
+      "description": "Add a banner component at the top of the Features tab with a Switch control for the sync toggle. Query state on mount, post SetSyncToggleState on change.",
+      "modification_points": [
+        "Add 1 state: const [syncEnabled, setSyncEnabled] = useState(false)",
+        "Add toggle state query in useEffect (on mount)",
+        "Add 1 ExtensionResponse handler: SyncToggleStateLoaded",
+        "Add 1 banner div with Switch at top of JSX, before feature cards grid"
+      ],
+      "logic_flow": [
+        "Add syncEnabled state",
+        "On mount: postMessage(UIRequest.GetSyncToggleState)",
+        "Handle SyncToggleStateLoaded response: update syncEnabled state",
+        "On switch change: postMessage(UIRequest.SetSyncToggleState, { enabled: !syncEnabled })",
+        "Render banner: label '同步功能配置到 settings.json' + Switch"
+      ],
+      "depends_on": [3],
+      "output": "toggle_ui"
+    },
+    {
+      "step": 5,
+      "title": "Add new message enum values",
+      "description": "Add 2 UIRequest and 1 ExtensionResponse enum values for sync toggle communication.",
+      "modification_points": [
+        "Add 2 values to UIRequest enum in Features Module section: GetSyncToggleState, SetSyncToggleState",
+        "Add 1 value to ExtensionResponse enum in Features Module section: SyncToggleStateLoaded"
+      ],
+      "logic_flow": [
+        "Add 'GetSyncToggleState = \"features.getSyncToggleState\"' to UIRequest",
+        "Add 'SetSyncToggleState = \"features.setSyncToggleState\"' to UIRequest",
+        "Add 'SyncToggleStateLoaded = \"features.syncToggleStateLoaded\"' to ExtensionResponse"
+      ],
+      "depends_on": [],
+      "output": "message_enums"
+    }
+  ],
+
+  "pre_analysis": [
+    {
+      "step": "load_context_package",
+      "action": "Load context package",
+      "commands": [
+        "Read(.workflow/active/WFS-config-simplification/.process/context-package.json)"
+      ],
+      "output_to": "context_package",
+      "on_error": "fail"
+    },
+    {
+      "step": "load_brainstorm_artifacts",
+      "action": "Load F-002 sync toggle and F-003 core config specs",
+      "commands": [
+        "Read(.workflow/active/WFS-config-simplification/.brainstorming/feature-specs/F-002-sync-toggle-control.md)",
+        "Read(.workflow/active/WFS-config-simplification/.brainstorming/feature-specs/F-003-core-config-always-sync.md)"
+      ],
+      "output_to": "brainstorm_context",
+      "on_error": "skip_optional"
+    },
+    {
+      "step": "analyze_current_sync_service",
+      "action": "Review current syncFeaturesToSettingsJson implementation for modification points",
+      "commands": [
+        "bash(grep -n 'syncFeaturesToSettingsJson\\|_syncSource\\|REVERSE_FEATURE_MAP' src/config/services/settings-sync-service.ts)"
+      ],
+      "output_to": "current_sync_impl"
+    }
+  ],
+
+  "artifacts": [
+    {
+      "type": "feature_spec",
+      "source": "brainstorm_feature_specs",
+      "path": ".workflow/active/WFS-config-simplification/.brainstorming/feature-specs/F-002-sync-toggle-control.md",
+      "feature_id": "F-002",
+      "priority": "highest",
+      "usage": "Sync toggle storage, UI placement, default behavior, and toggle lifecycle"
+    },
+    {
+      "type": "feature_spec",
+      "source": "brainstorm_feature_specs",
+      "path": ".workflow/active/WFS-config-simplification/.brainstorming/feature-specs/F-003-core-config-always-sync.md",
+      "feature_id": "F-003",
+      "priority": "highest",
+      "usage": "Core config classification functions and unconditional sync path"
+    }
+  ],
+
+  "inherited": {
+    "from": "IMPL-002",
+    "context": [
+      "SettingsSyncService.syncFeaturesToSettingsJson with dirtyKeys support"
+    ]
+  },
+
+  "context_package_path": ".workflow/active/WFS-config-simplification/.process/context-package.json",
+  "cli_execution": {
+    "id": "WFS-config-simplification-IMPL-003",
+    "strategy": "resume",
+    "resume_from": "WFS-config-simplification-IMPL-002"
+  },
+
+  "meta": {
+    "type": "feature",
+    "agent": "@code-developer",
+    "execution_group": null,
+    "module": null,
+    "execution_config": {
+      "method": "agent",
+      "cli_tool": null,
+      "enable_resume": false
+    }
+  },
+
+  "reference": {},
+  "rationale": {
+    "why": "Sync toggle gives users control over settings.json writes; core config classification ensures essential settings are always discoverable",
+    "approach": "Toggle in globalState to avoid circular dependency; prefix-based classification for simplicity"
+  },
+  "risks": [
+    {
+      "risk": "User disables sync then manually edits settings.json",
+      "mitigation": "Direction A (settings.json -> globalState) is NOT gated by toggle - manual edits are respected"
+    }
+  ],
+  "test": {}
+}

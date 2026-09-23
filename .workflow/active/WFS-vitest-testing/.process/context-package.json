@@ -1,0 +1,270 @@
+{
+  "metadata": {
+    "session_id": "WFS-vitest-testing",
+    "created_at": "2026-04-10",
+    "task_description": "Add comprehensive Vitest unit testing system for AI Provider, SCM, Configuration/Settings, and Command Orchestration layers",
+    "mode": "plan"
+  },
+  "project_context": {
+    "framework": "vscode-extension",
+    "language": "TypeScript",
+    "test_framework": "vitest",
+    "build_system": "esbuild + turbo + pnpm",
+    "architecture_patterns": [
+      "dependency-injection (constructor)",
+      "strategy-pattern (AI providers, SCM providers)",
+      "factory-pattern (AIProviderFactory, SCMFactory)",
+      "event-driven (ConfigurationMonitor)",
+      "singleton (ConfigurationManager)"
+    ],
+    "existing_test_count": 20,
+    "existing_test_dirs": [
+      "src/__tests__/",
+      "src/ai/model-registry/__tests__/",
+      "src/scm/__tests__/",
+      "src/commands/generate-commit/__tests__/",
+      "src/commands/generate-commit/handlers/__tests__/",
+      "src/utils/__tests__/",
+      "src/scripts/__tests__/",
+      "src/services/core/__tests__/",
+      "src/services/cache/__tests__/",
+      "src/services/webview/handlers/settings/__tests__/"
+    ],
+    "mock_strategy": {
+      "vscode_api": "vi.mock('vscode') with setup.ts baseline + per-test overrides",
+      "child_process": "vi.mock for execSync in SCM tests",
+      "ai_sdk": "vi.mock for provider SDK clients",
+      "logger": "vi.mock('@/utils/logger')",
+      "notification": "vi.mock('@/utils/notification')"
+    }
+  },
+  "project_guidelines": {
+    "test_colocation": "__tests__ directories alongside source files",
+    "import_style": "vitest imports (describe, it, expect, vi, beforeEach)",
+    "mock_style": "vi.mock() + vi.hoisted() for complex inter-dependent mocks",
+    "assertion_style": "expect() with toEqual, toBe, toHaveBeenCalledWith",
+    "test_timeout": "10s default, 5s hooks"
+  },
+  "prioritized_context": {
+    "user_intent": {
+      "goal": "Add comprehensive Vitest unit testing for regression protection across AI Provider, SCM, Configuration, and Command layers",
+      "scope": "6 features: test infrastructure, commit generation, SCM layer, config/settings, AI provider, service layer",
+      "key_constraints": [
+        "MUST use existing Vitest framework",
+        "MUST mock all external dependencies",
+        "MUST be runnable in CI without VS Code instance",
+        "MUST NOT modify production code for testability",
+        "SHOULD follow existing test patterns",
+        "SHOULD achieve fast test execution (< 30s total)"
+      ]
+    },
+    "priority_tiers": {
+      "critical": [
+        {
+          "path": "src/scm/__tests__/setup.ts",
+          "relevance": 1.0,
+          "rationale": "Base VS Code mock setup - foundation for all tests"
+        },
+        {
+          "path": "vitest.config.ts",
+          "relevance": 1.0,
+          "rationale": "Test framework configuration"
+        },
+        {
+          "path": "src/commands/generate-commit/__tests__/streaming-generation-helper.test.ts",
+          "relevance": 0.95,
+          "rationale": "Most changed file (24x), P0 target, existing tests to extend"
+        },
+        {
+          "path": "src/commands/generate-commit/streaming-generation-helper.ts",
+          "relevance": 0.95,
+          "rationale": "Primary test target - 1409 lines, 24 changes"
+        }
+      ],
+      "high": [
+        {
+          "path": "src/scm/multi-repository-context-manager.ts",
+          "relevance": 0.9,
+          "rationale": "Path boundary matching - highest regression risk in SCM"
+        },
+        {
+          "path": "src/ai/ai-provider-factory.ts",
+          "relevance": 0.85,
+          "rationale": "35+ switch cases, factory pattern test target"
+        },
+        {
+          "path": "src/config/services/configuration-monitor.ts",
+          "relevance": 0.85,
+          "rationale": "Event-driven config routing, 0 tests"
+        },
+        {
+          "path": "src/config/services/settings-sync-service.ts",
+          "relevance": 0.85,
+          "rationale": "Bi-directional sync with anti-loop protection"
+        },
+        {
+          "path": "src/scm/smart-diff-selector.ts",
+          "relevance": 0.8,
+          "rationale": "Auto-detection logic, 0 tests"
+        },
+        {
+          "path": "src/scm/staged-content-detector.ts",
+          "relevance": 0.8,
+          "rationale": "Staged content detection, 0 tests"
+        },
+        {
+          "path": "src/scm/svn/",
+          "relevance": 0.8,
+          "rationale": "6 SVN files with 0 tests"
+        }
+      ],
+      "medium": [
+        {
+          "path": "src/ai/providers/abstract-ai-provider.ts",
+          "relevance": 0.7,
+          "rationale": "1118 lines, 7 generation methods"
+        },
+        {
+          "path": "src/services/settings/features-settings-manager.ts",
+          "relevance": 0.7,
+          "rationale": "Default value merging logic"
+        },
+        {
+          "path": "src/services/profile-manager/profile-manager-service.ts",
+          "relevance": 0.7,
+          "rationale": "Profile CRUD operations"
+        },
+        {
+          "path": "src/commands/generate-commit/layered-commit-handler.ts",
+          "relevance": 0.7,
+          "rationale": "1190 lines, 18 changes"
+        },
+        {
+          "path": "src/services/prompt/",
+          "relevance": 0.6,
+          "rationale": "Prompt template management"
+        },
+        {
+          "path": "src/services/cache/commit-cache-service.ts",
+          "relevance": 0.6,
+          "rationale": "Cache invalidation logic"
+        }
+      ],
+      "low": [
+        {
+          "path": "src/ai/providers/*.ts (individual)",
+          "relevance": 0.4,
+          "rationale": "Thin wrappers, base class covers 80%+ logic"
+        },
+        {
+          "path": "src/config/config-generator.ts",
+          "relevance": 0.4,
+          "rationale": "Static config generation"
+        },
+        {
+          "path": "src/services/preferences/",
+          "relevance": 0.4,
+          "rationale": "P2 priority, lower ROI"
+        }
+      ]
+    },
+    "dependency_order": [
+      "F-001-test-infrastructure",
+      "F-002-commit-generation-tests",
+      "F-003-scm-layer-tests",
+      "F-004-config-settings-tests",
+      "F-005-ai-provider-tests",
+      "F-006-service-layer-tests"
+    ],
+    "sorting_rationale": "F-001 is prerequisite for all; F-002/F-003 are P0 (highest regression risk); F-004 is P1; F-005/F-006 are P2"
+  },
+  "assets": {
+    "brainstorm_artifacts": {
+      "session_id": "WFS-vitest-testing",
+      "guidance_spec": ".brainstorming/guidance-specification.md",
+      "feature_index": ".brainstorming/feature-index.json",
+      "feature_specs_dir": ".brainstorming/feature-specs/",
+      "feature_count": 6,
+      "features": [
+        {
+          "id": "F-001",
+          "name": "test-infrastructure",
+          "priority": "P0",
+          "effort": "1-2 days"
+        },
+        {
+          "id": "F-002",
+          "name": "commit-generation-tests",
+          "priority": "P0",
+          "effort": "8-10 days"
+        },
+        {
+          "id": "F-003",
+          "name": "scm-layer-tests",
+          "priority": "P0",
+          "effort": "6-8 days"
+        },
+        {
+          "id": "F-004",
+          "name": "config-settings-tests",
+          "priority": "P1",
+          "effort": "5-7 days"
+        },
+        {
+          "id": "F-005",
+          "name": "ai-provider-tests",
+          "priority": "P2",
+          "effort": "3-4 days"
+        },
+        {
+          "id": "F-006",
+          "name": "service-layer-tests",
+          "priority": "P2",
+          "effort": "3-5 days"
+        }
+      ]
+    }
+  },
+  "dependencies": {
+    "external_mocking_needed": [
+      "vscode (workspace, window, commands, extensions, Uri, EventEmitter)",
+      "child_process (execSync for git/svn commands)",
+      "AI SDK clients (openai, anthropic, google-generativeai, etc.)"
+    ],
+    "internal_mocking_needed": [
+      "@/utils/logger",
+      "@/utils/notification",
+      "@/services/core/token-stats-service",
+      "@/services/core/scm-detector-service",
+      "@/config/provider-definitions",
+      "@/ai/utils/generate-helper"
+    ],
+    "shared_utilities_to_create": [
+      "createMockContext() - ExtensionContext factory",
+      "createMockConfiguration() - VS Code configuration mock",
+      "createMockSCMProvider() - SCM provider mock",
+      "createMockAIProvider() - AI provider mock",
+      "Diff fixtures, commit message fixtures, config state fixtures"
+    ]
+  },
+  "conflict_detection": {
+    "risk_level": "low",
+    "reasoning": "Adding tests only; no production code changes expected. Test files are new, no overlap with existing tests. Only F-001 modifies existing setup.ts which needs care.",
+    "potential_conflicts": [
+      {
+        "file": "src/scm/__tests__/setup.ts",
+        "risk": "medium",
+        "reason": "F-001 needs to extend this file; existing tests must still pass"
+      }
+    ],
+    "mitigation": "F-001 task should run existing test suite after modifying setup.ts to verify no regression"
+  },
+  "statistics": {
+    "source_files_to_test": 30,
+    "new_test_files": 18,
+    "existing_test_files_to_extend": 7,
+    "total_test_files": 25,
+    "estimated_effort_days": "26-36",
+    "modules_covered": 4
+  }
+}

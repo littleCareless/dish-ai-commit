@@ -1,0 +1,182 @@
+{
+  "id": "IMPL-002",
+  "title": "Backend dirtyKeys processing and sync result response (F-001 backend)",
+  "description": "Extend FeaturesMessageHandler to accept optional dirtyKeys from the save message. When dirtyKeys is provided, pass it to SettingsSyncService.syncFeaturesToSettingsJson for targeted sync. Enhance the save response to include a syncResult object (synced count, failed keys, skipped count). When dirtyKeys is absent, fall back to current full-sync behavior for backward compatibility.",
+  "status": "pending",
+  "type": "feature",
+  "scope": "src/services/webview/handlers/settings",
+  "action": "Implement",
+  "depends_on": ["IMPL-001"],
+  "focus_paths": [
+    "src/services/webview/handlers/settings/features-message-handler.ts",
+    "src/config/services/settings-sync-service.ts",
+    "src/services/settings/features-settings-manager.ts"
+  ],
+
+  "convergence": {
+    "criteria": [
+      "FeaturesMessageHandler.FeaturesSaveSettings case reads message.dirtyKeys from incoming message (line ~56-66)",
+      "FeaturesSettingsManager.updateSettings() accepts optional dirtyKeys parameter and passes to sync service",
+      "SettingsSyncService.syncFeaturesToSettingsJson() accepts optional dirtyKeys: string[] parameter",
+      "When dirtyKeys provided: sync only specified keys (targeted sync)",
+      "When dirtyKeys absent: sync all keys (backward compatible fallback)",
+      "Save response includes syncResult: { synced: number, failed: string[], skipped: number }",
+      "Verify by: grep -c 'dirtyKeys' src/services/webview/handlers/settings/features-message-handler.ts (>= 2)"
+    ],
+    "verification": "grep -c 'dirtyKeys' src/services/webview/handlers/settings/features-message-handler.ts",
+    "definition_of_done": "Backend processes dirtyKeys for targeted sync, returns sync result in response, backward compatible"
+  },
+
+  "files": [
+    {
+      "path": "src/services/webview/handlers/settings/features-message-handler.ts",
+      "action": "modify",
+      "change": "Extract dirtyKeys from message, pass to updateSettings, include syncResult in response"
+    },
+    {
+      "path": "src/services/settings/features-settings-manager.ts",
+      "action": "modify",
+      "change": "Add dirtyKeys parameter to updateSettings(), pass to SettingsSyncService"
+    },
+    {
+      "path": "src/config/services/settings-sync-service.ts",
+      "action": "modify",
+      "change": "Add dirtyKeys parameter to syncFeaturesToSettingsJson(), filter sync to only dirty keys when provided"
+    }
+  ],
+
+  "implementation": [
+    {
+      "step": 1,
+      "title": "Extend SettingsSyncService.syncFeaturesToSettingsJson with dirtyKeys",
+      "description": "Add optional dirtyKeys parameter. When provided, iterate only specified keys instead of all REVERSE_FEATURE_MAP entries. When absent, keep current behavior (sync all).",
+      "modification_points": [
+        "Modify syncFeaturesToSettingsJson() signature: add dirtyKeys?: string[] parameter",
+        "Add 1 filtering logic: if dirtyKeys provided, filter REVERSE_FEATURE_MAP to only dirty entries",
+        "Return SyncResult: { synced: number, failed: string[], skipped: number }"
+      ],
+      "logic_flow": [
+        "Add dirtyKeys parameter to syncFeaturesToSettingsJson()",
+        "If dirtyKeys provided: filter entries to only those matching dirtyKeys",
+        "If dirtyKeys absent: use all entries (current behavior)",
+        "Count synced, failed, and skipped keys",
+        "Return SyncResult object"
+      ],
+      "depends_on": [],
+      "output": "targeted_sync_service"
+    },
+    {
+      "step": 2,
+      "title": "Extend FeaturesSettingsManager.updateSettings with dirtyKeys",
+      "description": "Add dirtyKeys parameter and pass through to SettingsSyncService. Capture and return SyncResult.",
+      "modification_points": [
+        "Modify updateSettings() signature: add dirtyKeys?: string[]",
+        "Pass dirtyKeys to SettingsSyncService.syncFeaturesToSettingsJson()",
+        "Return SyncResult from the sync call"
+      ],
+      "logic_flow": [
+        "Add dirtyKeys param to updateSettings()",
+        "Update saveSettings() call chain to pass dirtyKeys",
+        "Capture SyncResult from sync service",
+        "Return SyncResult to caller"
+      ],
+      "depends_on": [1],
+      "output": "settings_manager_dirty"
+    },
+    {
+      "step": 3,
+      "title": "Update FeaturesMessageHandler to extract dirtyKeys and return syncResult",
+      "description": "Extract dirtyKeys from incoming save message, pass to updateSettings, include syncResult in FeaturesSettingsLoaded response.",
+      "modification_points": [
+        "Modify FeaturesSaveSettings case (lines 56-66): extract message.dirtyKeys",
+        "Pass dirtyKeys to _settingsManager.updateSettings(message.data, dirtyKeys)",
+        "Include syncResult in FeaturesSettingsLoaded response"
+      ],
+      "logic_flow": [
+        "Read dirtyKeys from message.dirtyKeys",
+        "Pass dirtyKeys to updateSettings call",
+        "Capture SyncResult from updateSettings",
+        "Add syncResult to FeaturesSettingsLoaded response data"
+      ],
+      "depends_on": [2],
+      "output": "message_handler_dirty"
+    }
+  ],
+
+  "pre_analysis": [
+    {
+      "step": "load_context_package",
+      "action": "Load context package for artifact paths",
+      "commands": [
+        "Read(.workflow/active/WFS-config-simplification/.process/context-package.json)"
+      ],
+      "output_to": "context_package",
+      "on_error": "fail"
+    },
+    {
+      "step": "load_brainstorm_artifacts",
+      "action": "Load F-001 feature spec for backend contract",
+      "commands": [
+        "Read(.workflow/active/WFS-config-simplification/.brainstorming/feature-specs/F-001-dirty-state-tracking.md)"
+      ],
+      "output_to": "brainstorm_context",
+      "on_error": "skip_optional"
+    },
+    {
+      "step": "analyze_current_sync_flow",
+      "action": "Trace current save flow from handler through manager to sync service",
+      "commands": [
+        "bash(grep -n 'FeaturesSaveSettings\\|updateSettings\\|syncFeaturesToSettingsJson' src/services/webview/handlers/settings/features-message-handler.ts src/services/settings/features-settings-manager.ts src/config/services/settings-sync-service.ts)"
+      ],
+      "output_to": "current_sync_flow"
+    }
+  ],
+
+  "artifacts": [
+    {
+      "type": "feature_spec",
+      "source": "brainstorm_feature_specs",
+      "path": ".workflow/active/WFS-config-simplification/.brainstorming/feature-specs/F-001-dirty-state-tracking.md",
+      "feature_id": "F-001",
+      "priority": "highest",
+      "usage": "Backend message contract extension and SyncResult interface"
+    }
+  ],
+
+  "inherited": {
+    "from": "IMPL-001",
+    "context": ["Frontend dirtyFields pattern and dirtyKeys message format"]
+  },
+
+  "context_package_path": ".workflow/active/WFS-config-simplification/.process/context-package.json",
+  "cli_execution": {
+    "id": "WFS-config-simplification-IMPL-002",
+    "strategy": "resume",
+    "resume_from": "WFS-config-simplification-IMPL-001"
+  },
+
+  "meta": {
+    "type": "feature",
+    "agent": "@code-developer",
+    "execution_group": null,
+    "module": null,
+    "execution_config": {
+      "method": "agent",
+      "cli_tool": null,
+      "enable_resume": false
+    }
+  },
+
+  "reference": {},
+  "rationale": {
+    "why": "Backend must process dirtyKeys for targeted sync, reducing unnecessary settings.json writes",
+    "approach": "Filter REVERSE_FEATURE_MAP by dirtyKeys, return SyncResult for frontend feedback"
+  },
+  "risks": [
+    {
+      "risk": "dirtyKeys contains keys not in REVERSE_FEATURE_MAP",
+      "mitigation": "Skip unknown keys silently (they are not syncable to settings.json)"
+    }
+  ],
+  "test": {}
+}

@@ -1,0 +1,70 @@
+{
+  "version": "1.0",
+  "generated_at": "2026-04-09",
+  "session_id": "WFS-config-simplification",
+  "feature_mode": true,
+  "features": [
+    {
+      "id": "F-001",
+      "slug": "dirty-state-tracking",
+      "name": "Webview UI前端追踪变更字段，保存时仅发送dirty字段到后端",
+      "priority": "High",
+      "spec_path": "feature-specs/F-001-dirty-state-tracking.md",
+      "contributing_roles": [
+        "system-architect",
+        "ux-expert",
+        "product-manager"
+      ],
+      "cross_cutting_refs": ["F-002", "F-006"]
+    },
+    {
+      "id": "F-002",
+      "slug": "sync-toggle-control",
+      "name": "全局同步开关，控制功能配置是否写入settings.json，默认关闭",
+      "priority": "High",
+      "spec_path": "feature-specs/F-002-sync-toggle-control.md",
+      "contributing_roles": [
+        "system-architect",
+        "ux-expert",
+        "product-manager"
+      ],
+      "cross_cutting_refs": ["F-001", "F-003", "F-004", "F-006"]
+    },
+    {
+      "id": "F-003",
+      "slug": "core-config-always-sync",
+      "name": "核心配置始终同步到settings.json，不受开关影响",
+      "priority": "High",
+      "spec_path": "feature-specs/F-003-core-config-always-sync.md",
+      "contributing_roles": ["system-architect", "product-manager"],
+      "cross_cutting_refs": ["F-002", "F-004"]
+    },
+    {
+      "id": "F-004",
+      "slug": "profile-switch-replacement",
+      "name": "Profile切换时全量替换settings.json中的配置，清理旧值",
+      "priority": "Medium",
+      "spec_path": "feature-specs/F-004-profile-switch-replacement.md",
+      "contributing_roles": ["system-architect"],
+      "cross_cutting_refs": ["F-002", "F-003"]
+    },
+    {
+      "id": "F-005",
+      "slug": "vscode-settings-description",
+      "name": "优化package.json中配置项的描述、分组和排序",
+      "priority": "Medium",
+      "spec_path": "feature-specs/F-005-vscode-settings-description.md",
+      "contributing_roles": ["ux-expert"],
+      "cross_cutting_refs": []
+    },
+    {
+      "id": "F-006",
+      "slug": "save-status-notification",
+      "name": "配置保存后的状态通知（已保存 + 已同步提示）",
+      "priority": "Low",
+      "spec_path": "feature-specs/F-006-save-status-notification.md",
+      "contributing_roles": ["ux-expert"],
+      "cross_cutting_refs": ["F-001", "F-002"]
+    }
+  ]
+}

@@ -1,0 +1,225 @@
+{
+  "id": "IMPL-005",
+  "title": "AI Provider Layer Tests",
+  "description": "Create unit tests for 3 AI provider modules: (1) ai-provider-factory.test.ts covering 20+ provider type mappings (parameterized tests), OpenAI-compatible provider ID passing, unknown provider error handling, sanitizeConfigForLog sensitive key masking (apiKey, token, secret, password), maskSensitiveValue edge cases (short/long/non-string values), getAllProviders count; (2) abstract-provider-stub.test.ts covering 7 generation method variants (generateCommit with/without messages, generateCommitStream wrapper, generateCommitWithFunctionCalling tool formatting), and handleContextLengthError known/unknown pattern handling; (3) 2 model-registry tests (model-catalog-service.test.ts, model-validator.test.ts) for catalog sync and model validation.",
+  "status": "completed",
+  "type": "test-gen",
+  "scope": "src/ai",
+  "action": "Implement",
+  "depends_on": ["IMPL-004"],
+  "focus_paths": [
+    "src/ai/__tests__/",
+    "src/ai/providers/__tests__/",
+    "src/ai/model-registry/__tests__/"
+  ],
+  "convergence": {
+    "criteria": [
+      "4 new test files created: [ai-provider-factory.test.ts, abstract-provider-stub.test.ts, model-catalog-service.test.ts, model-validator.test.ts] — verify by find src/ai -name '*.test.ts' | wc -l >= 5",
+      "ai-provider-factory covers all switch cases via parameterized tests — verify by grep 'test.each\\|for.*provider' in factory test",
+      "Sensitive value masking covers 3 edge cases: [short string <=8 chars, long string >8 chars, non-string value] — verify by grep 'maskSensitive\\|sanitize' in test",
+      "Abstract provider covers 7 generation method differences — verify by grep 'generateCommit\\|generateStream\\|FunctionCalling' in stub test",
+      "All tests pass — verify by npx vitest run src/ai (exit code 0)"
+    ],
+    "verification": "npx vitest run src/ai && find src/ai -name '*.test.ts' | wc -l",
+    "definition_of_done": "AI provider layer has factory, abstract base, and model registry tests covering provider creation, sensitive value masking, and generation method variants"
+  },
+  "files": [
+    {
+      "path": "src/ai/__tests__/ai-provider-factory.test.ts",
+      "action": "create",
+      "change": "New test file: parameterized tests for 20+ provider type mappings, OpenAI-compatible provider ID passing, unknown provider error, sanitizeConfigForLog masking, maskSensitiveValue edge cases, getAllProviders count"
+    },
+    {
+      "path": "src/ai/providers/__tests__/abstract-provider-stub.test.ts",
+      "action": "create",
+      "change": "New test file: create minimal concrete stub of AbstractAIProvider, test 7 generation method variants, handleContextLengthError with known/unknown patterns"
+    },
+    {
+      "path": "src/ai/model-registry/__tests__/model-catalog-service.test.ts",
+      "action": "create",
+      "change": "New test file: catalog sync, model listing, cache invalidation"
+    },
+    {
+      "path": "src/ai/model-registry/__tests__/model-validator.test.ts",
+      "action": "create",
+      "change": "New test file: model validation rules, invalid model rejection, model capability checks"
+    }
+  ],
+  "implementation": [
+    {
+      "step": 1,
+      "title": "Analyze AI provider source files",
+      "description": "Read ai-provider-factory.ts, abstract-ai-provider.ts, and model-registry files to understand interfaces",
+      "modification_points": [
+        "Read ai-provider-factory.ts: extract all switch cases and provider mappings",
+        "Read abstract-ai-provider.ts: identify 7 generation method signatures and handleContextLengthError",
+        "Read model-registry service files for catalog and validator interfaces"
+      ],
+      "logic_flow": [
+        "Read ai-provider-factory.ts and extract provider type enum/switch mapping",
+        "Read abstract-ai-provider.ts and list all public methods",
+        "Read model-registry service files",
+        "Document test scenarios per source file"
+      ],
+      "depends_on": [],
+      "output": "provider_interface_analysis"
+    },
+    {
+      "step": 2,
+      "title": "Create ai-provider-factory tests",
+      "description": "Create comprehensive parameterized tests for provider factory covering all switch cases",
+      "modification_points": [
+        "Create test.each table for 20+ provider type -> Provider class mappings",
+        "Test sanitizeConfigForLog masks: apiKey, token, secret, password keys",
+        "Test maskSensitiveValue: short string (<=8), long string (>8), non-string",
+        "Test unknown provider type throws error with i18n message",
+        "Test getAllProviders returns correct count"
+      ],
+      "logic_flow": [
+        "Mock @/config/provider-definitions for provider registry",
+        "Mock @/services/settings for config access",
+        "Create parameterized test table for provider mappings",
+        "Create describe blocks for utility functions (sanitize, mask)",
+        "Verify all tests pass"
+      ],
+      "depends_on": [1],
+      "output": "factory_tests"
+    },
+    {
+      "step": 3,
+      "title": "Create abstract-provider-stub and model-registry tests",
+      "description": "Create concrete stub of AbstractAIProvider for testing and model registry service tests",
+      "modification_points": [
+        "Create minimal concrete stub extending AbstractAIProvider",
+        "Test generateCommit() with and without messages branch",
+        "Test generateCommitStream() wraps stream iterator and records token usage",
+        "Test handleContextLengthError() with known and unknown patterns",
+        "Create model-catalog-service and model-validator tests"
+      ],
+      "logic_flow": [
+        "Create MockAIProvider stub implementing required abstract methods",
+        "Test generation method variants using stub",
+        "Mock @/ai/utils/generate-helper and @/services/core/token-stats-service",
+        "Create model-registry tests for catalog sync and validation",
+        "Verify all tests pass"
+      ],
+      "depends_on": [2],
+      "output": "provider_tests"
+    }
+  ],
+  "pre_analysis": [
+    {
+      "step": "load_context_package",
+      "action": "Load context package for artifact paths and smart context",
+      "commands": [
+        "Read(.workflow/active/WFS-vitest-testing/.process/context-package.json)"
+      ],
+      "output_to": "context_package",
+      "on_error": "fail"
+    },
+    {
+      "step": "load_brainstorm_artifacts",
+      "action": "Load feature spec F-005 for AI provider test requirements",
+      "commands": [
+        "Read(.workflow/active/WFS-vitest-testing/.brainstorming/feature-specs/F-005-ai-provider-tests.md)"
+      ],
+      "output_to": "brainstorm_context",
+      "on_error": "skip_optional"
+    },
+    {
+      "step": "analyze_ai_source_files",
+      "action": "Read AI provider source files for interface analysis",
+      "commands": [
+        "Read(src/ai/ai-provider-factory.ts)",
+        "Read(src/ai/providers/abstract-ai-provider.ts)",
+        "bash(find src/ai/model-registry -name '*.ts' -not -name '*.test.ts' | head -10)"
+      ],
+      "output_to": "ai_source_analysis"
+    },
+    {
+      "step": "analyze_existing_ai_tests",
+      "action": "Read existing AI test for pattern reference",
+      "commands": [
+        "Read(src/ai/model-registry/__tests__/adaptive-model-limit-service.test.ts)"
+      ],
+      "output_to": "existing_ai_tests"
+    }
+  ],
+  "artifacts": [
+    {
+      "type": "feature_spec",
+      "source": "brainstorm_feature_specs",
+      "path": ".workflow/active/WFS-vitest-testing/.brainstorming/feature-specs/F-005-ai-provider-tests.md",
+      "feature_id": "F-005",
+      "priority": "medium",
+      "usage": "AI provider test scenarios, mock strategy, and acceptance criteria"
+    }
+  ],
+  "inherited": {
+    "from": "IMPL-001",
+    "context": [
+      "Shared mock factories (ai-providers, logger)",
+      "createMockContext() helper"
+    ]
+  },
+  "context_package_path": ".workflow/active/WFS-vitest-testing/.process/context-package.json",
+  "cli_execution": {
+    "id": "WFS-vitest-testing-IMPL-005",
+    "strategy": "resume",
+    "resume_from": "WFS-vitest-testing-IMPL-004"
+  },
+  "meta": {
+    "type": "test-gen",
+    "agent": "@code-developer",
+    "execution_group": null,
+    "module": null,
+    "execution_config": {
+      "method": "agent",
+      "cli_tool": null,
+      "enable_resume": false
+    },
+    "test_framework": "vitest",
+    "coverage_target": "75%"
+  },
+  "reference": {
+    "feature_spec": "F-005-ai-provider-tests",
+    "priority": "P2",
+    "effort": "3-4 days"
+  },
+  "rationale": {
+    "why": "Factory has 35+ switch cases (high regression risk for provider additions). Abstract provider covers 80%+ of all provider logic. ROI is good despite P2 priority.",
+    "approach": "Create concrete MockAIProvider stub for abstract class testing. Use parameterized tests for factory switch cases. Focus on shared behavior in abstract class rather than individual thin wrappers."
+  },
+  "risks": [
+    {
+      "risk": "AbstractAIProvider has complex constructor dependencies",
+      "mitigation": "Use DI helpers from IMPL-001; create minimal stub with only required methods",
+      "severity": "medium"
+    }
+  ],
+  "test": {
+    "reusable_tools": [
+      "src/__tests__/mocks/ai-providers.ts",
+      "src/__tests__/mocks/logger.ts",
+      "src/__tests__/helpers/mock-context.ts",
+      "src/__tests__/helpers/di-helpers.ts"
+    ],
+    "commands": {
+      "run_tests": "npx vitest run src/ai",
+      "run_coverage": "npx vitest run --coverage src/ai",
+      "run_specific": "npx vitest run src/ai/__tests__/ai-provider-factory.test.ts"
+    }
+  },
+  "status_history": [
+    {
+      "from": "pending",
+      "to": "in_progress",
+      "changed_at": "2026-04-10T09:00:38+08:00"
+    },
+    {
+      "from": "in_progress",
+      "to": "completed",
+      "changed_at": "2026-04-10T09:12:21+08:00"
+    }
+  ]
+}

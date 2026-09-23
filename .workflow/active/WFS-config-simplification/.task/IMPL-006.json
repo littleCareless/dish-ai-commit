@@ -1,0 +1,193 @@
+{
+  "id": "IMPL-006",
+  "title": "Save status notification and external change detection (F-006)",
+  "description": "Implement 2-tier save feedback: (1) Inline micro-feedback in FeaturesSettings.tsx after successful save - show confirmation message that differs based on sync toggle state (toggle OFF: '已保存到插件存储', toggle ON: '已保存到插件存储，并同步 N 项变更到 settings.json'). (2) External change detection via ConfigurationMonitor - when webview is open and settings.json changes externally, post message to webview to show refresh banner.",
+  "status": "pending",
+  "type": "feature",
+  "scope": "webview-ui + src/config/services",
+  "action": "Implement",
+  "depends_on": ["IMPL-003", "IMPL-005"],
+  "focus_paths": [
+    "webview-ui/src/pages/settings/FeaturesSettings.tsx",
+    "src/config/services/configuration-monitor.ts",
+    "src/services/webview/handlers/settings/features-message-handler.ts",
+    "shared/types/messages.ts"
+  ],
+
+  "convergence": {
+    "criteria": [
+      "FeaturesSettings.tsx has 1 saveStatus state for inline notification",
+      "After save response with syncResult: show '已保存到插件存储' when toggle OFF or syncResult.synced === 0",
+      "After save response with syncResult: show '已保存到插件存储，并同步 N 项变更到 settings.json' when toggle ON and synced > 0",
+      "Notification auto-dismisses after 3 seconds",
+      "ConfigurationMonitor detects external feature config changes and posts ExternalConfigChanged to webview",
+      "FeaturesSettings.tsx handles ExternalConfigChanged message and shows refresh banner",
+      "1 new ExtensionResponse enum value: ExternalConfigChanged",
+      "Notification uses inline webview display, NOT vscode.window.showInformationMessage",
+      "Verify by: grep -c 'saveStatus\\|ExternalConfigChanged' webview-ui/src/pages/settings/FeaturesSettings.tsx (>= 3)"
+    ],
+    "verification": "grep -c 'saveStatus\\|ExternalConfigChanged' webview-ui/src/pages/settings/FeaturesSettings.tsx",
+    "definition_of_done": "Save feedback shows in webview with sync-aware messaging, external changes trigger refresh banner"
+  },
+
+  "files": [
+    {
+      "path": "webview-ui/src/pages/settings/FeaturesSettings.tsx",
+      "action": "modify",
+      "change": "Add saveStatus state, sync-aware notification after save, ExternalConfigChanged handler with refresh banner"
+    },
+    {
+      "path": "src/config/services/configuration-monitor.ts",
+      "action": "modify",
+      "change": "Add webview reference posting ExternalConfigChanged when external feature config change detected"
+    },
+    {
+      "path": "src/services/webview/handlers/settings/features-message-handler.ts",
+      "action": "modify",
+      "change": "Include syncResult in save response (already from IMPL-002), add external change notification passthrough"
+    },
+    {
+      "path": "shared/types/messages.ts",
+      "action": "modify",
+      "change": "Add 1 ExtensionResponse value: ExternalConfigChanged"
+    }
+  ],
+
+  "implementation": [
+    {
+      "step": 1,
+      "title": "Add save status notification to FeaturesSettings",
+      "description": "Add saveStatus state and render sync-aware notification after save. Different messages based on toggle state and sync result.",
+      "modification_points": [
+        "Add 1 state: const [saveStatus, setSaveStatus] = useState<string | null>(null)",
+        "In FeaturesSettingsLoaded handler: check for syncResult and set saveStatus accordingly",
+        "Render 1 notification div below save button showing saveStatus text",
+        "Auto-dismiss saveStatus after 3 seconds using setTimeout"
+      ],
+      "logic_flow": [
+        "After receiving FeaturesSettingsLoaded with syncResult, compose status message",
+        "If syncEnabled and syncResult.synced > 0: show sync count message",
+        "Otherwise: show simple saved message",
+        "Clear dirtyFields and saveStatus after 3-second timeout"
+      ],
+      "depends_on": [],
+      "output": "save_notification"
+    },
+    {
+      "step": 2,
+      "title": "Add external change detection in ConfigurationMonitor",
+      "description": "When ConfigurationMonitor detects feature config changes that originated from settings.json (not from globalState sync), notify the active webview via ExternalConfigChanged message.",
+      "modification_points": [
+        "In handleConfigurationChange (features branch, lines 70-79): add webview notification",
+        "Add 1 webview reference mechanism (via SettingsViewProvider or similar)",
+        "Post ExtensionResponse.ExternalConfigChanged with changed keys"
+      ],
+      "logic_flow": [
+        "Check if _syncSource is 'globalState' (our own write) - if so, skip notification",
+        "If external change: post ExternalConfigChanged to active webview panel",
+        "Include changedKeys in the message data"
+      ],
+      "depends_on": [],
+      "output": "external_detection"
+    },
+    {
+      "step": 3,
+      "title": "Add refresh banner for external changes in frontend",
+      "description": "Handle ExternalConfigChanged message in FeaturesSettings.tsx and show a refresh banner.",
+      "modification_points": [
+        "Add 1 handler in message event listener for ExtensionResponse.ExternalConfigChanged",
+        "Add 1 state: const [externalChanges, setExternalChanges] = useState<string[]>([])",
+        "Render 1 banner when externalChanges.length > 0: '配置已外部更新，点击刷新'",
+        "On banner click: reload settings and clear externalChanges"
+      ],
+      "logic_flow": [
+        "Listen for ExternalConfigChanged message",
+        "Set externalChanges state with changed keys",
+        "Show banner with refresh action",
+        "On refresh: postMessage(UIRequest.FeaturesLoadSettings) and clear externalChanges"
+      ],
+      "depends_on": [1, 2],
+      "output": "refresh_banner"
+    }
+  ],
+
+  "pre_analysis": [
+    {
+      "step": "load_context_package",
+      "action": "Load context package",
+      "commands": [
+        "Read(.workflow/active/WFS-config-simplification/.process/context-package.json)"
+      ],
+      "output_to": "context_package",
+      "on_error": "fail"
+    },
+    {
+      "step": "load_brainstorm_artifacts",
+      "action": "Load F-006 save status notification spec",
+      "commands": [
+        "Read(.workflow/active/WFS-config-simplification/.brainstorming/feature-specs/F-006-save-status-notification.md)"
+      ],
+      "output_to": "brainstorm_context",
+      "on_error": "skip_optional"
+    },
+    {
+      "step": "analyze_webview_notification",
+      "action": "Find how webview panels are accessed for posting messages from backend",
+      "commands": [
+        "bash(grep -rn 'postMessage\\|WebviewPanel\\|SettingsViewProvider' src/webview/ src/config/services/configuration-monitor.ts --include='*.ts' | head -20)"
+      ],
+      "output_to": "webview_access_pattern"
+    }
+  ],
+
+  "artifacts": [
+    {
+      "type": "feature_spec",
+      "source": "brainstorm_feature_specs",
+      "path": ".workflow/active/WFS-config-simplification/.brainstorming/feature-specs/F-006-save-status-notification.md",
+      "feature_id": "F-006",
+      "priority": "high",
+      "usage": "Two-tier feedback pattern and external change detection design"
+    }
+  ],
+
+  "inherited": {
+    "from": "IMPL-003",
+    "context": ["syncEnabled state from toggle", "syncResult from IMPL-002"]
+  },
+
+  "context_package_path": ".workflow/active/WFS-config-simplification/.process/context-package.json",
+  "cli_execution": {
+    "id": "WFS-config-simplification-IMPL-006",
+    "strategy": "merge_fork",
+    "merge_from": [
+      "WFS-config-simplification-IMPL-003",
+      "WFS-config-simplification-IMPL-005"
+    ]
+  },
+
+  "meta": {
+    "type": "feature",
+    "agent": "@code-developer",
+    "execution_group": null,
+    "module": null,
+    "execution_config": {
+      "method": "agent",
+      "cli_tool": null,
+      "enable_resume": false
+    }
+  },
+
+  "reference": {},
+  "rationale": {
+    "why": "Users need confirmation that settings were persisted and awareness of sync behavior",
+    "approach": "Inline webview notifications instead of disruptive vscode popups"
+  },
+  "risks": [
+    {
+      "risk": "Frequent external changes causing notification fatigue",
+      "mitigation": "Debounce notifications (max once per 5 seconds) per spec recommendation"
+    }
+  ],
+  "test": {}
+}

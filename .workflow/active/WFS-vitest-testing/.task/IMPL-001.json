@@ -1,0 +1,309 @@
+{
+  "id": "IMPL-001",
+  "title": "Shared Test Infrastructure Layer",
+  "description": "Build shared test infrastructure to support all subsequent testing tasks: extend existing setup.ts with complete VS Code API coverage, create 6 mock factory modules (vscode, ai-providers, scm-providers, configuration, logger, notification), extract createMockContext() to shared location, and create 3 data fixture modules (diff-samples, commit-messages, config-states). This is the prerequisite for all other tasks.",
+  "status": "completed",
+  "type": "test-gen",
+  "scope": "src/__tests__",
+  "action": "Implement",
+  "depends_on": [],
+  "focus_paths": [
+    "src/__tests__/setup.ts",
+    "src/__tests__/mocks/",
+    "src/__tests__/fixtures/",
+    "src/__tests__/helpers/",
+    "src/scm/__tests__/setup.ts"
+  ],
+  "convergence": {
+    "criteria": [
+      "6 mock factory modules created: [vscode.ts, ai-providers.ts, scm-providers.ts, configuration.ts, logger.ts, notification.ts] — verify by ls src/__tests__/mocks/*.ts | wc -l = 6",
+      "3 fixture modules created: [diff-samples.ts, commit-messages.ts, config-states.ts] — verify by ls src/__tests__/fixtures/*.ts | wc -l = 3",
+      "2 helper modules created: [mock-context.ts, di-helpers.ts] — verify by ls src/__tests__/helpers/*.ts | wc -l >= 2",
+      "setup.ts covers all missing VS Code API surfaces (extensions, EventEmitter, Disposable, CancellationTokenSource, etc.)",
+      "Existing 20 test files still pass — verify by npx vitest run (exit code 0)"
+    ],
+    "verification": "npx vitest run && ls src/__tests__/mocks/*.ts | wc -l && ls src/__tests__/fixtures/*.ts | wc -l && ls src/__tests__/helpers/*.ts | wc -l",
+    "definition_of_done": "Shared test infrastructure ready for all module-specific test tasks with zero regression in existing tests"
+  },
+  "files": [
+    {
+      "path": "src/scm/__tests__/setup.ts",
+      "action": "modify",
+      "change": "Extend with complete VS Code API mock coverage (extensions, EventEmitter, Disposable, CancellationTokenSource, QuickPickItem, etc.)"
+    },
+    {
+      "path": "src/__tests__/setup.ts",
+      "action": "create",
+      "change": "Global test setup file that re-exports extended VS Code mock"
+    },
+    {
+      "path": "src/__tests__/mocks/vscode.ts",
+      "action": "create",
+      "change": "Full VS Code API mock factory with createMockVSCode() and per-surface overrides"
+    },
+    {
+      "path": "src/__tests__/mocks/ai-providers.ts",
+      "action": "create",
+      "change": "AI provider mock factory: createMockAIProvider(), createMockStreamingResponse()"
+    },
+    {
+      "path": "src/__tests__/mocks/scm-providers.ts",
+      "action": "create",
+      "change": "SCM provider mock factory: createMockSCMProvider(), createResourceState(), createWorkspaceFolder()"
+    },
+    {
+      "path": "src/__tests__/mocks/configuration.ts",
+      "action": "create",
+      "change": "Config mock factory: createMockConfiguration(), createMockExtensionContext()"
+    },
+    {
+      "path": "src/__tests__/mocks/logger.ts",
+      "action": "create",
+      "change": "Shared Logger mock: createMockLogger()"
+    },
+    {
+      "path": "src/__tests__/mocks/notification.ts",
+      "action": "create",
+      "change": "Shared Notification mock: createMockNotification()"
+    },
+    {
+      "path": "src/__tests__/fixtures/diff-samples.ts",
+      "action": "create",
+      "change": "Diff sample data: single-file diff, multi-file diff, SVN diff, empty diff, binary diff"
+    },
+    {
+      "path": "src/__tests__/fixtures/commit-messages.ts",
+      "action": "create",
+      "change": "Commit message fixtures: conventional, emoji, body, multi-line formats"
+    },
+    {
+      "path": "src/__tests__/fixtures/config-states.ts",
+      "action": "create",
+      "change": "Configuration state presets: default config, partial config, full config"
+    },
+    {
+      "path": "src/__tests__/helpers/mock-context.ts",
+      "action": "create",
+      "change": "Extract createMockContext() from adaptive-model-limit-service.test.ts"
+    },
+    {
+      "path": "src/__tests__/helpers/di-helpers.ts",
+      "action": "create",
+      "change": "Constructor argument builders for DI pattern classes"
+    }
+  ],
+  "implementation": [
+    {
+      "step": 1,
+      "title": "Analyze existing setup.ts and identify missing VS Code API surfaces",
+      "description": "Read src/scm/__tests__/setup.ts and grep all test files for vscode API usage to identify missing mock surfaces",
+      "modification_points": [
+        "Grep all test files for 'vscode.' usage patterns",
+        "Compare existing setup.ts mock surfaces with actual usage",
+        "List missing surfaces: EventEmitter, Disposable, CancellationTokenSource, extensions.getExtension, QuickPickItem, etc."
+      ],
+      "logic_flow": [
+        "Read src/scm/__tests__/setup.ts baseline",
+        "Run: grep -rh 'vscode\\.' src/**/*.test.ts | sort -u to find all API usages",
+        "Cross-reference with setup.ts mock to find gaps",
+        "Document missing surfaces"
+      ],
+      "depends_on": [],
+      "output": "missing_surfaces_list"
+    },
+    {
+      "step": 2,
+      "title": "Create mock factory modules",
+      "description": "Create 6 mock factory files under src/__tests__/mocks/ with typed mock factories",
+      "modification_points": [
+        "Create 6 files: vscode.ts, ai-providers.ts, scm-providers.ts, configuration.ts, logger.ts, notification.ts",
+        "Each factory returns typed mock objects using vi.fn()",
+        "vscode.ts: complete API surface with createMockVSCode() and per-surface override functions",
+        "ai-providers.ts: createMockAIProvider() with configurable generate/generateStream responses",
+        "scm-providers.ts: createMockSCMProvider(), createResourceState(fsPath), createWorkspaceFolder(fsPath)",
+        "configuration.ts: createMockConfiguration(overrides), createMockExtensionContext(secrets)",
+        "logger.ts: createMockLogger() matching Logger interface",
+        "notification.ts: createMockNotification() matching notify interface"
+      ],
+      "logic_flow": [
+        "Create mocks directory under src/__tests__/",
+        "Implement vscode.ts with all missing surfaces from step 1",
+        "Implement remaining 5 factory modules following vi.mock + vi.hoisted patterns from existing tests",
+        "Ensure all factories support TypeScript type checking"
+      ],
+      "depends_on": [1],
+      "output": "mock_factories"
+    },
+    {
+      "step": 3,
+      "title": "Create data fixture and helper modules",
+      "description": "Create 3 fixture modules and 2 helper modules for shared test data and utilities",
+      "modification_points": [
+        "Create fixtures/diff-samples.ts: 5 diff samples (single-file, multi-file, SVN, empty, binary)",
+        "Create fixtures/commit-messages.ts: 4 message formats (conventional, emoji, body, multi-line)",
+        "Create fixtures/config-states.ts: 3 config presets (default, partial, full)",
+        "Create helpers/mock-context.ts: extract createMockContext() pattern",
+        "Create helpers/di-helpers.ts: constructor argument builders"
+      ],
+      "logic_flow": [
+        "Create fixtures and helpers directories",
+        "Extract real diff output patterns from existing tests for fixtures",
+        "Extract createMockContext() from adaptive-model-limit-service.test.ts",
+        "Build DI helpers based on constructor injection patterns"
+      ],
+      "depends_on": [2],
+      "output": "fixtures_and_helpers"
+    },
+    {
+      "step": 4,
+      "title": "Extend setup.ts and create global setup file",
+      "description": "Modify existing setup.ts with extended VS Code mock, create src/__tests__/setup.ts as global entry point",
+      "modification_points": [
+        "Modify src/scm/__tests__/setup.ts: add missing VS Code API surfaces while preserving backward compatibility",
+        "Create src/__tests__/setup.ts: re-exports shared mocks and sets up global test environment"
+      ],
+      "logic_flow": [
+        "Add missing surfaces to existing setup.ts (additive only, no removals)",
+        "Verify existing SCM tests still pass",
+        "Create global setup.ts that imports and re-exports shared mocks",
+        "Run full test suite to verify zero regression"
+      ],
+      "depends_on": [2, 3],
+      "output": "extended_setup"
+    },
+    {
+      "step": 5,
+      "title": "Validate infrastructure with smoke tests",
+      "description": "Run existing test suite to verify no regressions and verify all mock factories are importable",
+      "modification_points": [
+        "Run npx vitest run and verify exit code 0",
+        "Verify all 20 existing test files pass",
+        "Verify mock imports resolve correctly"
+      ],
+      "logic_flow": [
+        "Run npx vitest run",
+        "Check all 20 tests pass",
+        "Verify import paths for mock factories",
+        "Document any issues found"
+      ],
+      "depends_on": [4],
+      "output": "validation_result"
+    }
+  ],
+  "pre_analysis": [
+    {
+      "step": "load_context_package",
+      "action": "Load context package for artifact paths and smart context",
+      "commands": [
+        "Read(.workflow/active/WFS-vitest-testing/.process/context-package.json)"
+      ],
+      "output_to": "context_package",
+      "on_error": "fail"
+    },
+    {
+      "step": "load_brainstorm_artifacts",
+      "action": "Load feature spec F-001 for detailed requirements",
+      "commands": [
+        "Read(.workflow/active/WFS-vitest-testing/.brainstorming/feature-specs/F-001-test-infrastructure.md)"
+      ],
+      "output_to": "brainstorm_context",
+      "on_error": "skip_optional"
+    },
+    {
+      "step": "analyze_existing_setup",
+      "action": "Analyze existing setup.ts and VS Code API usage patterns",
+      "commands": [
+        "Read(src/scm/__tests__/setup.ts)",
+        "bash(grep -rh 'vscode\\.' src/ --include='*.test.ts' | sed 's/.*vscode\\.//' | sed 's/[(.].*//' | sort -u | head -30)"
+      ],
+      "output_to": "vscode_api_usage"
+    },
+    {
+      "step": "analyze_existing_mock_patterns",
+      "action": "Analyze existing mock patterns across test files",
+      "commands": [
+        "bash(grep -rh 'vi.mock(' src/ --include='*.test.ts' | sort -u)",
+        "bash(grep -rh 'vi.hoisted(' src/ --include='*.test.ts' | head -20)"
+      ],
+      "output_to": "mock_patterns"
+    },
+    {
+      "step": "analyze_create_mock_context",
+      "action": "Extract createMockContext pattern from existing tests",
+      "commands": [
+        "bash(grep -A 30 'createMockContext' src/ai/model-registry/__tests__/adaptive-model-limit-service.test.ts | head -40)"
+      ],
+      "output_to": "mock_context_pattern"
+    }
+  ],
+  "artifacts": [
+    {
+      "type": "feature_spec",
+      "source": "brainstorm_feature_specs",
+      "path": ".workflow/active/WFS-vitest-testing/.brainstorming/feature-specs/F-001-test-infrastructure.md",
+      "feature_id": "F-001",
+      "priority": "highest",
+      "usage": "Test infrastructure requirements, mock factory specifications, fixture definitions"
+    }
+  ],
+  "inherited": {},
+  "context_package_path": ".workflow/active/WFS-vitest-testing/.process/context-package.json",
+  "cli_execution": {
+    "id": "WFS-vitest-testing-IMPL-001",
+    "strategy": "new"
+  },
+  "meta": {
+    "type": "test-gen",
+    "agent": "@code-developer",
+    "execution_group": null,
+    "module": null,
+    "execution_config": {
+      "method": "agent",
+      "cli_tool": null,
+      "enable_resume": false
+    },
+    "test_framework": "vitest",
+    "coverage_target": "N/A (infrastructure only)"
+  },
+  "reference": {
+    "feature_spec": "F-001-test-infrastructure",
+    "priority": "P0",
+    "effort": "1-2 days"
+  },
+  "rationale": {
+    "why": "All 6 features depend on shared mock factories, fixtures, and helpers. Building this first eliminates 30-40% code duplication across subsequent tasks.",
+    "approach": "Extend existing setup.ts additively (no breaking changes), create new mock/fixture/helper directories following vi.mock + vi.hoisted patterns from existing tests"
+  },
+  "risks": [
+    {
+      "risk": "Extending setup.ts breaks existing tests",
+      "mitigation": "Additive-only changes; run full test suite after modification",
+      "severity": "medium"
+    }
+  ],
+  "test": {
+    "reusable_tools": ["src/scm/__tests__/setup.ts"],
+    "commands": {
+      "run_tests": "npx vitest run",
+      "run_coverage": "npx vitest run --coverage",
+      "run_specific": "npx vitest run src/__tests__"
+    }
+  },
+  "status_history": [
+    {
+      "from": "pending",
+      "to": "in_progress",
+      "changed_at": "2026-04-10T08:22:44+08:00"
+    },
+    {
+      "from": "in_progress",
+      "to": "completed",
+      "changed_at": "2026-04-10T08:29:05+08:00"
+    },
+    {
+      "from": "in_progress",
+      "to": "completed",
+      "changed_at": "2026-04-10T08:29:28+08:00"
+    }
+  ]
+}

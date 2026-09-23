@@ -1,0 +1,75 @@
+{
+  "summary": "Comprehensive Vitest unit testing for AI Provider, SCM, Configuration, and Command layers with shared test infrastructure",
+  "approach": "Build shared test infrastructure first (mock factories, fixtures, helpers), then add module-specific tests in priority order: P0 commit generation + SCM (parallelizable), P1 config/settings, P2 AI provider + services (parallelizable). Each task produces independently testable output with measurable acceptance criteria.",
+  "task_ids": [
+    "IMPL-001",
+    "IMPL-002",
+    "IMPL-003",
+    "IMPL-004",
+    "IMPL-005",
+    "IMPL-006"
+  ],
+  "task_count": 6,
+  "complexity": "High",
+  "estimated_time": "26-36 days total (P0: 15-20 days, P1: 5-7 days, P2: 6-9 days)",
+  "recommended_execution": "Phased",
+  "shared_context": {
+    "tech_stack": [
+      "TypeScript",
+      "Vitest",
+      "VS Code Extension API",
+      "esbuild",
+      "turbo",
+      "pnpm"
+    ],
+    "conventions": [
+      "vi.mock() + vi.hoisted() mock style",
+      "describe/it/expect assertion style",
+      "__tests__ co-location pattern",
+      "10s test timeout, 5s hook timeout"
+    ],
+    "test_framework": "vitest",
+    "build_system": "esbuild + turbo + pnpm",
+    "existing_test_count": 20,
+    "new_test_files_planned": 18,
+    "modules_covered": 4
+  },
+  "execution_phases": {
+    "phase_1_infrastructure": {
+      "tasks": ["IMPL-001"],
+      "description": "Shared test infrastructure - prerequisite for all",
+      "parallel": false
+    },
+    "phase_2_p0_critical": {
+      "tasks": ["IMPL-002", "IMPL-003"],
+      "description": "P0 critical tests - highest regression risk",
+      "parallel": true
+    },
+    "phase_3_p1_config": {
+      "tasks": ["IMPL-004"],
+      "description": "P1 configuration/settings tests",
+      "parallel": false
+    },
+    "phase_4_p2_services": {
+      "tasks": ["IMPL-005", "IMPL-006"],
+      "description": "P2 AI provider and service layer tests",
+      "parallel": true
+    }
+  },
+  "dependency_graph": {
+    "IMPL-001": [],
+    "IMPL-002": ["IMPL-001"],
+    "IMPL-003": ["IMPL-001"],
+    "IMPL-004": ["IMPL-002", "IMPL-003"],
+    "IMPL-005": ["IMPL-004"],
+    "IMPL-006": ["IMPL-004"]
+  },
+  "_metadata": {
+    "timestamp": "2026-04-10T00:00:00.000Z",
+    "source": "action-planning-agent",
+    "planning_mode": "agent-based",
+    "plan_type": "test-gen",
+    "schema_version": "2.0",
+    "session_id": "WFS-vitest-testing"
+  }
+}

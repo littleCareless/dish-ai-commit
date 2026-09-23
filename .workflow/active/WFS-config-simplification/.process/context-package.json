@@ -1,0 +1,143 @@
+{
+  "metadata": {
+    "session_id": "WFS-config-simplification",
+    "generated_at": "2026-04-09",
+    "mode": "plan",
+    "complexity": "medium"
+  },
+  "project_context": {
+    "type": "vscode-extension",
+    "framework": "VSCode Extension API + React Webview",
+    "architecture_patterns": [
+      "Singleton pattern for settings managers",
+      "Message-passing (webview <-> extension)",
+      "Observer pattern (ConfigurationMonitor)",
+      "Bidirectional sync with anti-loop protection"
+    ]
+  },
+  "prioritized_context": {
+    "user_intent": {
+      "goal": "Unify webview UI and settings.json configuration experience for consistent plugin usage",
+      "scope": "Configuration services, settings managers, webview UI sync",
+      "key_constraints": [
+        "Bidirectional sync between webview UI and settings.json",
+        "No default value pollution in settings.json",
+        "Both user groups must have identical experience",
+        "Backward compatibility with existing settings.json values"
+      ]
+    },
+    "priority_tiers": {
+      "critical": [
+        {
+          "path": "src/config/services/settings-sync-service.ts",
+          "relevance": 1.0,
+          "rationale": "Core bidirectional sync service - primary implementation target for F-002, F-003"
+        },
+        {
+          "path": "src/services/settings/features-settings-manager.ts",
+          "relevance": 0.95,
+          "rationale": "Feature settings storage - needs dirtyKeys support for F-001"
+        },
+        {
+          "path": "src/services/webview/handlers/settings/features-message-handler.ts",
+          "relevance": 0.9,
+          "rationale": "Webview message handler - needs dirtyKeys message contract extension for F-001"
+        }
+      ],
+      "high": [
+        {
+          "path": "src/config/services/configuration-monitor.ts",
+          "relevance": 0.85,
+          "rationale": "Config change listener - triggers sync from settings.json side"
+        },
+        {
+          "path": "src/extension.ts",
+          "relevance": 0.8,
+          "rationale": "Extension activation - SettingsSyncService initialization and initialSync"
+        },
+        {
+          "path": "webview-ui/src/pages/settings/FeaturesSettings.tsx",
+          "relevance": 0.85,
+          "rationale": "Frontend component - needs dirty state tracking (F-001), save button, sync toggle banner (F-002)"
+        }
+      ],
+      "medium": [
+        {
+          "path": "shared/types/messages.ts",
+          "relevance": 0.7,
+          "rationale": "Message type definitions - needs new UIRequest types for sync toggle"
+        },
+        {
+          "path": "src/package.json",
+          "relevance": 0.6,
+          "rationale": "Config schema - needs description improvements for F-005"
+        }
+      ]
+    },
+    "dependency_order": [
+      "shared/types/messages.ts",
+      "src/config/services/settings-sync-service.ts",
+      "src/services/settings/features-settings-manager.ts",
+      "src/services/webview/handlers/settings/features-message-handler.ts",
+      "src/config/services/configuration-monitor.ts",
+      "webview-ui/src/pages/settings/FeaturesSettings.tsx",
+      "src/extension.ts"
+    ],
+    "sorting_rationale": "Based on data flow: types first, then sync service (core), then managers/handlers (middleware), then frontend, then activation"
+  },
+  "assets": {
+    "brainstorm_artifacts": {
+      "guidance_spec": ".workflow/active/WFS-config-simplification/.brainstorming/guidance-specification.md",
+      "feature_index": ".workflow/active/WFS-config-simplification/.brainstorming/feature-index.json",
+      "feature_specs": [
+        ".workflow/active/WFS-config-simplification/.brainstorming/feature-specs/F-001-dirty-state-tracking.md",
+        ".workflow/active/WFS-config-simplification/.brainstorming/feature-specs/F-002-sync-toggle-control.md",
+        ".workflow/active/WFS-config-simplification/.brainstorming/feature-specs/F-003-core-config-always-sync.md",
+        ".workflow/active/WFS-config-simplification/.brainstorming/feature-specs/F-004-profile-switch-replacement.md",
+        ".workflow/active/WFS-config-simplification/.brainstorming/feature-specs/F-005-vscode-settings-description.md",
+        ".workflow/active/WFS-config-simplification/.brainstorming/feature-specs/F-006-save-status-notification.md"
+      ]
+    }
+  },
+  "dependencies": {
+    "feature_dependencies": {
+      "F-001": { "depends_on": [], "required_by": ["F-002", "F-006"] },
+      "F-002": {
+        "depends_on": ["F-001"],
+        "required_by": ["F-003", "F-004", "F-006"]
+      },
+      "F-003": { "depends_on": ["F-002"], "required_by": ["F-004"] },
+      "F-004": { "depends_on": ["F-002", "F-003"], "required_by": [] },
+      "F-005": { "depends_on": [], "required_by": [] },
+      "F-006": { "depends_on": ["F-001", "F-002"], "required_by": [] }
+    },
+    "implementation_order": [
+      "F-001",
+      "F-002",
+      "F-003",
+      "F-004",
+      "F-005",
+      "F-006"
+    ]
+  },
+  "conflict_detection": {
+    "risk_level": "low",
+    "rationale": "Brainstorm session already resolved all architectural decisions. Settings-sync-service.ts already implements bidirectional sync. Changes are additive (dirty tracking, toggle, classification) rather than structural.",
+    "potential_conflicts": [
+      {
+        "area": "SettingsSyncService",
+        "risk": "low",
+        "description": "New file, no existing consumers to conflict with",
+        "mitigation": "N/A"
+      }
+    ]
+  },
+  "constraints": [
+    "MUST NOT break backward compatibility with existing settings.json values",
+    "MUST support both global and workspace scope",
+    "Sync toggle stored in globalState, not settings.json",
+    "globalState remains runtime source of truth",
+    "API keys remain in Secret Storage (not settings.json directly)",
+    "dirtyKeys field is optional for backward compatibility"
+  ]
+}

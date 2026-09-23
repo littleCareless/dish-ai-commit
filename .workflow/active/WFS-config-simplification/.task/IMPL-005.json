@@ -1,0 +1,141 @@
+{
+  "id": "IMPL-005",
+  "title": "VSCode settings.json description and ordering optimization (F-005)",
+  "description": "Improve package.json contributes.configuration entries with logical ordering via 'order' property and enhanced descriptions. Base config gets order 1-10, providers 11-40, features.commitFormat 41-50, features.codeAnalysis 51-60, features.commitMessage 61-70, features.branchName 71-80, features.prSummary 81-90. Key settings descriptions add note about Webview UI availability.",
+  "status": "pending",
+  "type": "feature",
+  "scope": "src",
+  "action": "Implement",
+  "depends_on": [],
+  "focus_paths": ["src/package.json"],
+
+  "convergence": {
+    "criteria": [
+      "All contributes.configuration.properties entries have 'order' property",
+      "Order values follow grouping: base.* 1-10, providers.* 11-40, features.commitFormat.* 41-50, features.codeAnalysis.* 51-60, features.commitMessage.* 61-70, features.branchName.* 71-80, features.prSummary.* 81-90",
+      "At least 3 key settings descriptions include webview UI note: 'Also configurable in the extension sidebar settings panel.'",
+      "No regression in existing settings display",
+      "Verify by: grep -c '\"order\"' src/package.json (count matches property count)"
+    ],
+    "verification": "grep -c '\"order\"' src/package.json",
+    "definition_of_done": "VSCode Settings Editor shows dish-ai-commit settings in logical groups with improved descriptions"
+  },
+
+  "files": [
+    {
+      "path": "src/package.json",
+      "action": "modify",
+      "change": "Add 'order' property to all configuration entries, enhance descriptions for key settings with Webview UI note"
+    }
+  ],
+
+  "implementation": [
+    {
+      "step": 1,
+      "title": "Add order property to all configuration entries",
+      "description": "Add 'order' property to each configuration property in package.json contributes.configuration.properties following the grouping scheme.",
+      "modification_points": [
+        "Add 'order' property to all ~25 base/providers/features configuration entries",
+        "Group ordering: base.* (1-10), providers.* (11-40), features by subcategory (41-90)",
+        "Each entry gets a unique sequential order within its group"
+      ],
+      "logic_flow": [
+        "List all configuration properties from contributes.configuration.properties",
+        "Categorize each into group (base, providers, features.commitFormat, etc.)",
+        "Assign order values following the specified ranges",
+        "Add order property to each entry in package.json"
+      ],
+      "depends_on": [],
+      "output": "ordered_config"
+    },
+    {
+      "step": 2,
+      "title": "Enhance descriptions with Webview UI notes",
+      "description": "Add note to key settings descriptions indicating they are also configurable via the extension's sidebar settings panel.",
+      "modification_points": [
+        "Update description for at least 3 key settings (enableEmoji, diffTarget, largePromptAction)",
+        "Append: ' Also configurable in the extension sidebar settings panel.'"
+      ],
+      "logic_flow": [
+        "Identify key user-facing settings from each category",
+        "Append webview UI note to their descriptions",
+        "Keep existing description text intact, just append the note"
+      ],
+      "depends_on": [1],
+      "output": "enhanced_descriptions"
+    }
+  ],
+
+  "pre_analysis": [
+    {
+      "step": "load_context_package",
+      "action": "Load context package",
+      "commands": [
+        "Read(.workflow/active/WFS-config-simplification/.process/context-package.json)"
+      ],
+      "output_to": "context_package",
+      "on_error": "fail"
+    },
+    {
+      "step": "load_brainstorm_artifacts",
+      "action": "Load F-005 vscode settings description spec",
+      "commands": [
+        "Read(.workflow/active/WFS-config-simplification/.brainstorming/feature-specs/F-005-vscode-settings-description.md)"
+      ],
+      "output_to": "brainstorm_context",
+      "on_error": "skip_optional"
+    },
+    {
+      "step": "list_current_config_properties",
+      "action": "List all current configuration property keys and their descriptions",
+      "commands": [
+        "bash(node -e \"const p=require('./src/package.json'); const props=p.contributes?.configuration?.properties || {}; Object.keys(props).forEach(k => console.log(k))\")"
+      ],
+      "output_to": "current_properties"
+    }
+  ],
+
+  "artifacts": [
+    {
+      "type": "feature_spec",
+      "source": "brainstorm_feature_specs",
+      "path": ".workflow/active/WFS-config-simplification/.brainstorming/feature-specs/F-005-vscode-settings-description.md",
+      "feature_id": "F-005",
+      "priority": "high",
+      "usage": "Configuration ordering scheme and description enhancement guidelines"
+    }
+  ],
+
+  "inherited": {},
+
+  "context_package_path": ".workflow/active/WFS-config-simplification/.process/context-package.json",
+  "cli_execution": {
+    "id": "WFS-config-simplification-IMPL-005",
+    "strategy": "new"
+  },
+
+  "meta": {
+    "type": "feature",
+    "agent": "@code-developer",
+    "execution_group": "parallel-pkg-json",
+    "module": null,
+    "execution_config": {
+      "method": "agent",
+      "cli_tool": null,
+      "enable_resume": false
+    }
+  },
+
+  "reference": {},
+  "rationale": {
+    "why": "Improve discoverability of settings in VSCode Settings Editor for users who prefer settings.json",
+    "approach": "Order property for logical grouping, description notes for cross-referencing with Webview UI"
+  },
+  "risks": [
+    {
+      "risk": "'order' property not supported in older VSCode versions",
+      "mitigation": "Test on VSCode 1.85+; order property is simply ignored if unsupported"
+    }
+  ],
+  "test": {}
+}

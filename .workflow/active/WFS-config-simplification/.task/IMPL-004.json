@@ -1,0 +1,136 @@
+{
+  "id": "IMPL-004",
+  "title": "Profile switch with full settings.json replacement (F-004)",
+  "description": "Implement two-phase profile switch: Phase 1 clears all feature entries from settings.json, Phase 2 writes new profile's non-default values. Core config (base.*, providers.*) always updates regardless of toggle. Feature config respects sync toggle state - clear always, write only if toggle ON. This prevents stale entries from previous profiles remaining in settings.json.",
+  "status": "pending",
+  "type": "feature",
+  "scope": "src/config/services",
+  "action": "Implement",
+  "depends_on": ["IMPL-003"],
+  "focus_paths": ["src/config/services/settings-sync-service.ts"],
+
+  "convergence": {
+    "criteria": [
+      "syncOnProfileSwitch() method updated with 2-phase clear-then-write logic",
+      "Phase 1: iterates all REVERSE_FEATURE_MAP entries and clears those with globalValue or workspaceValue defined",
+      "Phase 2: iterates again, writes non-default values respecting toggle state",
+      "Core config keys (isCoreConfigKey) always written regardless of toggle",
+      "Feature config keys written only if isSyncEnabled is true AND value !== default",
+      "Verify by: grep -c 'Phase 1\\|Phase 2\\|isCoreConfigKey' src/config/services/settings-sync-service.ts (>= 3)"
+    ],
+    "verification": "grep -c 'Phase 1\\|Phase 2\\|isCoreConfigKey' src/config/services/settings-sync-service.ts",
+    "definition_of_done": "Profile switch performs full replacement of settings.json entries, respecting toggle and core config classification"
+  },
+
+  "files": [
+    {
+      "path": "src/config/services/settings-sync-service.ts",
+      "action": "modify",
+      "change": "Replace syncOnProfileSwitch implementation with two-phase clear-then-write logic using isCoreConfigKey classification and toggle check"
+    }
+  ],
+
+  "implementation": [
+    {
+      "step": 1,
+      "title": "Rewrite syncOnProfileSwitch with two-phase strategy",
+      "description": "Replace the current simple syncOnProfileSwitch with a two-phase implementation: clear all feature entries, then write new profile values respecting core/feature classification and toggle state.",
+      "modification_points": [
+        "Replace syncOnProfileSwitch() method body (lines 231-233)",
+        "Add Phase 1 loop: clear all REVERSE_FEATURE_MAP entries that have globalValue or workspaceValue",
+        "Add Phase 2 loop: write non-default values with isCoreConfigKey check and toggle check"
+      ],
+      "logic_flow": [
+        "Set _syncSource to 'globalState'",
+        "Phase 1: For each REVERSE_FEATURE_MAP entry, inspect config, clear if has user-defined value",
+        "Phase 2: For each entry, get value from settings param, get default from DEFAULT_FEATURE_SETTINGS",
+        "If isCoreConfigKey(dotPath) and value !== default: write",
+        "If isFeatureConfigKey(dotPath) and isSyncEnabled and value !== default: write",
+        "Reset _syncSource to 'none' in finally block"
+      ],
+      "depends_on": [],
+      "output": "profile_switch_v2"
+    }
+  ],
+
+  "pre_analysis": [
+    {
+      "step": "load_context_package",
+      "action": "Load context package",
+      "commands": [
+        "Read(.workflow/active/WFS-config-simplification/.process/context-package.json)"
+      ],
+      "output_to": "context_package",
+      "on_error": "fail"
+    },
+    {
+      "step": "load_brainstorm_artifacts",
+      "action": "Load F-004 profile switch spec",
+      "commands": [
+        "Read(.workflow/active/WFS-config-simplification/.brainstorming/feature-specs/F-004-profile-switch-replacement.md)"
+      ],
+      "output_to": "brainstorm_context",
+      "on_error": "skip_optional"
+    },
+    {
+      "step": "analyze_current_profile_switch",
+      "action": "Review current syncOnProfileSwitch and profile manager call sites",
+      "commands": [
+        "bash(grep -rn 'syncOnProfileSwitch' src/ --include='*.ts')",
+        "bash(grep -n 'REVERSE_FEATURE_MAP\\|config.inspect\\|config.update' src/config/services/settings-sync-service.ts)"
+      ],
+      "output_to": "current_profile_switch"
+    }
+  ],
+
+  "artifacts": [
+    {
+      "type": "feature_spec",
+      "source": "brainstorm_feature_specs",
+      "path": ".workflow/active/WFS-config-simplification/.brainstorming/feature-specs/F-004-profile-switch-replacement.md",
+      "feature_id": "F-004",
+      "priority": "high",
+      "usage": "Two-phase replacement strategy and toggle-aware profile switch"
+    }
+  ],
+
+  "inherited": {
+    "from": "IMPL-003",
+    "context": [
+      "isCoreConfigKey/isFeatureConfigKey classification functions",
+      "isSyncEnabled toggle getter"
+    ]
+  },
+
+  "context_package_path": ".workflow/active/WFS-config-simplification/.process/context-package.json",
+  "cli_execution": {
+    "id": "WFS-config-simplification-IMPL-004",
+    "strategy": "resume",
+    "resume_from": "WFS-config-simplification-IMPL-003"
+  },
+
+  "meta": {
+    "type": "feature",
+    "agent": "@code-developer",
+    "execution_group": null,
+    "module": null,
+    "execution_config": {
+      "method": "agent",
+      "cli_tool": null,
+      "enable_resume": false
+    }
+  },
+
+  "reference": {},
+  "rationale": {
+    "why": "Prevent stale entries from previous profiles in settings.json",
+    "approach": "Two-phase clear-then-write ensures clean state before applying new profile"
+  },
+  "risks": [
+    {
+      "risk": "Phase 1 completes but Phase 2 fails, leaving settings.json partially cleared",
+      "mitigation": "globalState always has correct profile data; next sync cycle will fix. Non-atomic but safe due to globalState fallback."
+    }
+  ],
+  "test": {}
+}

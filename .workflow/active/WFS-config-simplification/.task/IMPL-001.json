@@ -1,0 +1,175 @@
+{
+  "id": "IMPL-001",
+  "title": "Frontend dirty state tracking and explicit save button (F-001)",
+  "description": "Implement dirty state tracking in FeaturesSettings.tsx using a Set<string> to track which fields the user actually modified. Replace the current save-on-every-toggle behavior with an explicit 'Save (N changes)' button. The save operation sends the full data object plus an optional dirtyKeys array to the backend. When dirtyKeys is absent, backend falls back to current full-sync behavior for backward compatibility.",
+  "status": "completed",
+  "type": "feature",
+  "scope": "webview-ui/src/pages/settings",
+  "action": "Implement",
+  "depends_on": [],
+  "focus_paths": [
+    "webview-ui/src/pages/settings/FeaturesSettings.tsx",
+    "shared/types/messages.ts"
+  ],
+  "convergence": {
+    "criteria": [
+      "FeaturesSettings.tsx contains 1 useRef<Set<string>> for dirtyFields tracking",
+      "1 handleChange function replaces direct handleFeatureToggle for all field changes, adding field to dirtyFields set",
+      "1 explicit Save button with count display: 'Save (N changes)' appears when dirtyFields.size > 0",
+      "Save button disappears (hidden) after successful save when dirtyFields is cleared",
+      "postMessage call in handleSave includes dirtyKeys: Array.from(dirtyFields.current)",
+      "UIRequest.FeaturesSaveSettings message format supports optional dirtyKeys field",
+      "Backward compatibility maintained: save without dirtyKeys still works identically",
+      "Verify by: grep -c 'dirtyFields' webview-ui/src/pages/settings/FeaturesSettings.tsx (>= 5 occurrences)"
+    ],
+    "verification": "grep -c 'dirtyFields' webview-ui/src/pages/settings/FeaturesSettings.tsx",
+    "definition_of_done": "Features tab shows explicit Save button with dirty count; save sends dirtyKeys array; backward compatible"
+  },
+  "files": [
+    {
+      "path": "webview-ui/src/pages/settings/FeaturesSettings.tsx",
+      "action": "modify",
+      "change": "Add useRef<Set<string>> dirtyFields, replace handleFeatureToggle with handleChange that tracks dirty state, add explicit Save button component, update save handler to include dirtyKeys"
+    },
+    {
+      "path": "shared/types/messages.ts",
+      "action": "modify",
+      "change": "Add optional dirtyKeys field support in FeaturesSaveSettings message contract (no new enum value needed, just documented in existing message.data)"
+    }
+  ],
+  "implementation": [
+    {
+      "step": 1,
+      "title": "Add dirty state tracking to FeaturesSettings component",
+      "description": "Add useRef<Set<keyof FeaturesSettings>> for dirtyFields. Create handleChange function that adds field to set and updates local state. Replace all handleFeatureToggle calls with handleChange.",
+      "modification_points": [
+        "Add 1 useRef: dirtyFields = useRef<Set<keyof FeaturesSettings>>(new Set())",
+        "Create 1 handleChange function replacing handleFeatureToggle (lines 134-146)",
+        "Update 14 FeatureSwitch onCheckedChange handlers to use handleChange",
+        "Update 5 Select onValueChange handlers to use handleChange",
+        "Update 1 Input onChange handler to use handleChange"
+      ],
+      "logic_flow": [
+        "Add dirtyFields ref at component top level",
+        "Create handleChange(field, value) that calls dirtyFields.current.add(field) + setFeatures",
+        "Replace all handleFeatureToggle calls in JSX with handleChange",
+        "Add dirtyFields state to trigger re-render: const [dirtyCount, setDirtyCount] = useState(0)"
+      ],
+      "depends_on": [],
+      "output": "dirty_tracking_state"
+    },
+    {
+      "step": 2,
+      "title": "Add explicit Save button with dirty count",
+      "description": "Add a Save button above the feature cards that shows 'Save (N changes)' when dirtyFields.size > 0. Button triggers handleSave which sends dirtyKeys to backend.",
+      "modification_points": [
+        "Add 1 handleSave function that posts message with dirtyKeys and clears dirtyFields",
+        "Add 1 Save button component in JSX (conditionally rendered when dirtyCount > 0)",
+        "Remove immediate postMessage from handleChange (move to handleSave only)"
+      ],
+      "logic_flow": [
+        "Create handleSave() that posts {command: FeaturesSaveSettings, data: localSettings, dirtyKeys: Array.from(dirtyFields.current)}",
+        "After postMessage, clear dirtyFields and reset dirtyCount",
+        "Add Save button JSX with conditional rendering: {dirtyCount > 0 && <Button>...}",
+        "Handle ExtensionResponse.FeaturesSettingsLoaded to confirm save success"
+      ],
+      "depends_on": [1],
+      "output": "save_button_ui"
+    },
+    {
+      "step": 3,
+      "title": "Verify backward compatibility",
+      "description": "Ensure existing behavior is preserved when dirtyKeys is not sent. Backend should handle both old-style (no dirtyKeys) and new-style (with dirtyKeys) messages identically.",
+      "modification_points": [
+        "Verify FeaturesMessageHandler handles message.data with and without dirtyKeys",
+        "dirtyKeys is optional - backend ignores when absent"
+      ],
+      "logic_flow": [
+        "Review message handler: confirm it reads message.data without requiring dirtyKeys",
+        "Verify save response still sends FeaturesSettingsLoaded with full settings",
+        "Test: save without dirtyKeys works identically to current behavior"
+      ],
+      "depends_on": [2],
+      "output": "compatibility_verified"
+    }
+  ],
+  "pre_analysis": [
+    {
+      "step": "load_context_package",
+      "action": "Load context package for artifact paths and smart context",
+      "commands": [
+        "Read(.workflow/active/WFS-config-simplification/.process/context-package.json)"
+      ],
+      "output_to": "context_package",
+      "on_error": "fail"
+    },
+    {
+      "step": "load_brainstorm_artifacts",
+      "action": "Load F-001 dirty state tracking feature spec",
+      "commands": [
+        "Read(.workflow/active/WFS-config-simplification/.brainstorming/feature-specs/F-001-dirty-state-tracking.md)"
+      ],
+      "output_to": "brainstorm_context",
+      "on_error": "skip_optional"
+    },
+    {
+      "step": "analyze_current_frontend",
+      "action": "Analyze current FeaturesSettings.tsx handleFeatureToggle pattern and all field handlers",
+      "commands": [
+        "bash(grep -n 'handleFeatureToggle\\|onCheckedChange\\|onValueChange\\|onChange' webview-ui/src/pages/settings/FeaturesSettings.tsx)"
+      ],
+      "output_to": "current_handlers"
+    }
+  ],
+  "artifacts": [
+    {
+      "type": "feature_spec",
+      "source": "brainstorm_feature_specs",
+      "path": ".workflow/active/WFS-config-simplification/.brainstorming/feature-specs/F-001-dirty-state-tracking.md",
+      "feature_id": "F-001",
+      "priority": "highest",
+      "usage": "Dirty state tracking design decisions and interface contract"
+    }
+  ],
+  "inherited": {},
+  "context_package_path": ".workflow/active/WFS-config-simplification/.process/context-package.json",
+  "cli_execution": {
+    "id": "WFS-config-simplification-IMPL-001",
+    "strategy": "new"
+  },
+  "meta": {
+    "type": "feature",
+    "agent": "@code-developer",
+    "execution_group": null,
+    "module": null,
+    "execution_config": {
+      "method": "agent",
+      "cli_tool": null,
+      "enable_resume": false
+    }
+  },
+  "reference": {},
+  "rationale": {
+    "why": "Foundational feature that enables targeted sync by tracking which fields user modified",
+    "approach": "Set<string> for O(1) dirty tracking, explicit save button to replace auto-save-on-toggle"
+  },
+  "risks": [
+    {
+      "risk": "User modifies field, reverts to original, field still in dirtyKeys",
+      "mitigation": "Acceptable - sync service already checks current === defaultValue"
+    }
+  ],
+  "test": {},
+  "status_history": [
+    {
+      "from": "pending",
+      "to": "in_progress",
+      "changed_at": "2026-04-09T12:13:10+08:00"
+    },
+    {
+      "from": "in_progress",
+      "to": "completed",
+      "changed_at": "2026-04-09T12:18:12+08:00"
+    }
+  ]
+}

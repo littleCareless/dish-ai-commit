@@ -1,0 +1,254 @@
+{
+  "id": "IMPL-003",
+  "title": "SCM Layer Tests (Git/SVN)",
+  "description": "Add and extend unit tests for SCM layer covering 5 modules: (1) create smart-diff-selector.test.ts with 4 scenarios (staged selection, unstaged fallback, auto mode, empty repo); (2) create staged-content-detector.test.ts with 3 scenarios (single-file staged, multi-file staged, no staged content); (3) create 2 new SVN test files (svn-provider.test.ts, svn-diff-helper.test.ts) covering SVN diff, status parsing, commit, streaming input; (4) extend multi-repository-context-manager.test.ts with path boundary safety and mixed SCM types.",
+  "status": "completed",
+  "type": "test-gen",
+  "scope": "src/scm",
+  "action": "Implement",
+  "depends_on": ["IMPL-001"],
+  "focus_paths": ["src/scm/__tests__/"],
+  "convergence": {
+    "criteria": [
+      "4 new test files created: [smart-diff-selector.test.ts, staged-content-detector.test.ts, svn-provider.test.ts, svn-diff-helper.test.ts] — verify by ls src/scm/__tests__/*.test.ts | wc -l >= 8",
+      "1 existing test file expanded: [multi-repository-context-manager.test.ts] — verify new test cases added",
+      "smart-diff-selector covers all 4 target modes: [staged, all, auto, empty] — verify by grep 'staged\\|unstaged\\|auto\\|empty' in test file",
+      "SVN modules elevated from 0 to basic coverage — verify by npx vitest run src/scm/__tests__/svn",
+      "Path boundary matching tests cover edge cases: [/repo vs /repo-tools] — verify by grep 'boundary\\|repo-tools' in test file",
+      "All tests pass — verify by npx vitest run src/scm (exit code 0)"
+    ],
+    "verification": "npx vitest run src/scm && ls src/scm/__tests__/*.test.ts | wc -l",
+    "definition_of_done": "SCM layer has comprehensive tests for Git/SVN operations, diff selection, staged detection, and multi-repo management"
+  },
+  "files": [
+    {
+      "path": "src/scm/__tests__/smart-diff-selector.test.ts",
+      "action": "create",
+      "change": "New test file: 4 scenarios for target selection (staged, unstaged fallback to all, auto mode, empty repo), auto detection exception handling"
+    },
+    {
+      "path": "src/scm/__tests__/staged-content-detector.test.ts",
+      "action": "create",
+      "change": "New test file: 3 scenarios for staged content detection (single-file, multi-file, no staged content returns empty)"
+    },
+    {
+      "path": "src/scm/__tests__/svn-provider.test.ts",
+      "action": "create",
+      "change": "New test file: SVN diff acquisition, SVN status parsing, SVN commit execution, SVN streaming input"
+    },
+    {
+      "path": "src/scm/__tests__/svn-diff-helper.test.ts",
+      "action": "create",
+      "change": "New test file: SVN diff format parsing, unified diff extraction from SVN output"
+    },
+    {
+      "path": "src/scm/__tests__/multi-repository-context-manager.test.ts",
+      "action": "modify",
+      "change": "Add test cases for: path boundary safety matching, mixed SCM types (git + svn), undefined resourceUri handling"
+    }
+  ],
+  "implementation": [
+    {
+      "step": 1,
+      "title": "Analyze SCM source files and existing tests",
+      "description": "Read all SCM source files and existing tests to understand interfaces and coverage gaps",
+      "modification_points": [
+        "Read 4 source files: smart-diff-selector.ts, staged-content-detector.ts, svn-provider.ts, svn-diff-helper.ts",
+        "Read existing multi-repository-context-manager.test.ts for patterns",
+        "Map class interfaces and public methods to test"
+      ],
+      "logic_flow": [
+        "Read smart-diff-selector.ts and identify selectDiffTarget/getDiffWithTarget methods",
+        "Read staged-content-detector.ts and identify detectStagedContent method",
+        "Read svn-provider.ts and identify diff/status/commit/streaming methods",
+        "Read svn-diff-helper.ts and identify parsing methods",
+        "Read existing multi-repo test for pattern reference"
+      ],
+      "depends_on": [],
+      "output": "scm_interface_analysis"
+    },
+    {
+      "step": 2,
+      "title": "Create smart-diff-selector and staged-content-detector tests",
+      "description": "Create 2 new test files for diff selection and staged content detection",
+      "modification_points": [
+        "Create smart-diff-selector.test.ts with 4 describe blocks for target modes",
+        "Create staged-content-detector.test.ts with 3 describe blocks for detection scenarios",
+        "Mock child_process.execSync for git/svn commands",
+        "Mock vscode.workspace for workspace folder state"
+      ],
+      "logic_flow": [
+        "Use vi.mock('child_process') for execSync",
+        "Use shared mocks from IMPL-001 (logger, scm-providers)",
+        "Implement smart-diff-selector tests with mocked diff responses",
+        "Implement staged-content-detector tests with mocked SCM state",
+        "Verify all new tests pass"
+      ],
+      "depends_on": [1],
+      "output": "diff_tests"
+    },
+    {
+      "step": 3,
+      "title": "Create SVN provider and diff helper tests",
+      "description": "Create 2 new test files for SVN operations (currently 0 tests)",
+      "modification_points": [
+        "Create svn-provider.test.ts covering: SVN diff acquisition, SVN status parsing, SVN commit execution, SVN streaming input",
+        "Create svn-diff-helper.test.ts covering: SVN diff format parsing, unified diff extraction",
+        "Mock child_process.execSync for SVN command simulation"
+      ],
+      "logic_flow": [
+        "Mock child_process.execSync to return SVN command outputs",
+        "Create SVN status output fixture for parsing tests",
+        "Test SVN provider methods with mock command responses",
+        "Test SVN diff helper parsing with sample SVN diff output",
+        "Verify all new tests pass"
+      ],
+      "depends_on": [1],
+      "output": "svn_tests"
+    },
+    {
+      "step": 4,
+      "title": "Extend multi-repository-context-manager tests",
+      "description": "Add path boundary safety, mixed SCM types, and undefined resourceUri tests",
+      "modification_points": [
+        "Add test cases for path boundary matching: /repo vs /repo-tools",
+        "Add test cases for mixed SCM types (git + svn coexistence)",
+        "Add test cases for undefined resourceUri handling"
+      ],
+      "logic_flow": [
+        "Read existing test to understand current mock setup",
+        "Add new describe block for edge cases",
+        "Use createWorkspaceFolder() fixture from IMPL-001",
+        "Test boundary cases with overlapping paths",
+        "Verify all tests pass"
+      ],
+      "depends_on": [2, 3],
+      "output": "extended_repo_tests"
+    }
+  ],
+  "pre_analysis": [
+    {
+      "step": "load_context_package",
+      "action": "Load context package for artifact paths and smart context",
+      "commands": [
+        "Read(.workflow/active/WFS-vitest-testing/.process/context-package.json)"
+      ],
+      "output_to": "context_package",
+      "on_error": "fail"
+    },
+    {
+      "step": "load_brainstorm_artifacts",
+      "action": "Load feature spec F-003 for SCM layer test requirements",
+      "commands": [
+        "Read(.workflow/active/WFS-vitest-testing/.brainstorming/feature-specs/F-003-scm-layer-tests.md)"
+      ],
+      "output_to": "brainstorm_context",
+      "on_error": "skip_optional"
+    },
+    {
+      "step": "analyze_scm_source_files",
+      "action": "Read SCM source files to understand interfaces",
+      "commands": [
+        "Read(src/scm/smart-diff-selector.ts)",
+        "Read(src/scm/staged-content-detector.ts)",
+        "bash(find src/scm/svn -name '*.ts' -not -name '*.test.ts' | head -10)"
+      ],
+      "output_to": "scm_source_analysis"
+    },
+    {
+      "step": "analyze_existing_scm_tests",
+      "action": "Read existing SCM test files for pattern reference",
+      "commands": [
+        "Read(src/scm/__tests__/multi-repository-context-manager.test.ts)",
+        "Read(src/scm/__tests__/git-provider-routing.test.ts)"
+      ],
+      "output_to": "existing_scm_tests"
+    }
+  ],
+  "artifacts": [
+    {
+      "type": "feature_spec",
+      "source": "brainstorm_feature_specs",
+      "path": ".workflow/active/WFS-vitest-testing/.brainstorming/feature-specs/F-003-scm-layer-tests.md",
+      "feature_id": "F-003",
+      "priority": "highest",
+      "usage": "SCM layer test scenarios, mock strategy, fixture requirements, and acceptance criteria"
+    }
+  ],
+  "inherited": {
+    "from": "IMPL-001",
+    "context": [
+      "Shared mock factories (logger, scm-providers, vscode)",
+      "Shared fixtures (diff-samples)",
+      "createMockContext() helper",
+      "createResourceState() fixture",
+      "createWorkspaceFolder() fixture"
+    ]
+  },
+  "context_package_path": ".workflow/active/WFS-vitest-testing/.process/context-package.json",
+  "cli_execution": {
+    "id": "WFS-vitest-testing-IMPL-003",
+    "strategy": "fork",
+    "resume_from": "WFS-vitest-testing-IMPL-001"
+  },
+  "meta": {
+    "type": "test-gen",
+    "agent": "@code-developer",
+    "execution_group": "parallel-p0",
+    "module": null,
+    "execution_config": {
+      "method": "agent",
+      "cli_tool": null,
+      "enable_resume": false
+    },
+    "test_framework": "vitest",
+    "coverage_target": "70%"
+  },
+  "reference": {
+    "feature_spec": "F-003-scm-layer-tests",
+    "priority": "P0",
+    "effort": "6-8 days"
+  },
+  "rationale": {
+    "why": "SCM module has 143 changes and 3 bug fixes. SVN has zero tests. Path boundary matching (/repo vs /repo-tools) is highest regression risk.",
+    "approach": "Create new test files for untested modules, extend existing multi-repo test with edge cases. Can parallelize with IMPL-002 since both depend only on IMPL-001."
+  },
+  "risks": [
+    {
+      "risk": "SVN provider may have tight coupling to child_process making mocking difficult",
+      "mitigation": "Use vi.mock('child_process') at module level with vi.hoisted() for flexible response control",
+      "severity": "low"
+    }
+  ],
+  "test": {
+    "reusable_tools": [
+      "src/__tests__/mocks/logger.ts",
+      "src/__tests__/mocks/scm-providers.ts",
+      "src/__tests__/mocks/vscode.ts",
+      "src/__tests__/fixtures/diff-samples.ts",
+      "src/scm/__tests__/setup.ts"
+    ],
+    "commands": {
+      "run_tests": "npx vitest run src/scm",
+      "run_coverage": "npx vitest run --coverage src/scm",
+      "run_specific": "npx vitest run src/scm/__tests__/smart-diff-selector.test.ts"
+    }
+  },
+  "status_history": [
+    {
+      "from": "pending",
+      "to": "in_progress",
+      "changed_at": "2026-04-10T08:31:10+08:00"
+    },
+    {
+      "from": "in_progress",
+      "to": "completed",
+      "changed_at": "2026-04-10T08:43:16+08:00"
+    },
+    {
+      "from": "in_progress",
+      "to": "completed",
+      "changed_at": "2026-04-10T08:48:42+08:00"
+    }
+  ]
+}

@@ -1,0 +1,261 @@
+{
+  "id": "IMPL-002",
+  "title": "Commit Generation Pipeline Tests",
+  "description": "Expand and create unit tests for the commit generation pipeline covering 5 key modules: (1) extend streaming-generation-helper.test.ts to cover system prompt hash, combined diff parsing, error mapping (RequestTooLargeError/too_large, cancel/cancelled), and fallbackToAll logic; (2) extend commit-generation-orchestrator.test.ts for single-repo reuse, cross-repo grouping, and crash fallback; (3) extend generate-commit-command.test.ts for cross-repo summary scenarios; (4) extend layered-commit-handler.test.ts for file-level diff extraction and regex parsing; (5) verify function-calling-handler.test.ts coverage is adequate.",
+  "status": "completed",
+  "type": "test-gen",
+  "scope": "src/commands/generate-commit",
+  "action": "Implement",
+  "depends_on": ["IMPL-001"],
+  "focus_paths": [
+    "src/commands/generate-commit/__tests__/",
+    "src/commands/generate-commit/handlers/__tests__/"
+  ],
+  "convergence": {
+    "criteria": [
+      "4 existing test files expanded: [streaming-generation-helper.test.ts, commit-generation-orchestrator.test.ts, generate-commit-command.test.ts, layered-commit-handler.test.ts] — verify each has new test cases added",
+      "1 existing test file verified: [function-calling-handler.test.ts] — confirm adequate coverage",
+      "streaming-generation-helper test coverage >= 80% — verify by npx vitest run --coverage src/commands/generate-commit/__tests__/streaming-generation-helper.test.ts",
+      "All cross-repository scenarios covered: [all-success, partial-success, cancelled] — verify by grep 'cross-repo\\|multi-repo\\|partial' in test file",
+      "Error mapping tests cover all ResultType variants — verify by grep 'too_large\\|cancelled' in streaming test",
+      "All tests pass — verify by npx vitest run (exit code 0)"
+    ],
+    "verification": "npx vitest run src/commands/generate-commit && npx vitest run src/commands/generate-commit/handlers",
+    "definition_of_done": "Commit generation pipeline has comprehensive unit tests covering streaming, orchestration, error mapping, and cross-repo scenarios"
+  },
+  "files": [
+    {
+      "path": "src/commands/generate-commit/__tests__/streaming-generation-helper.test.ts",
+      "action": "modify",
+      "change": "Add test cases for: system prompt hash changes on SCM type/workspace/prompt variation, combined diff parsing maps file hunks to absolute paths, error mapping (RequestTooLargeError->too_large, cancel->cancelled), fallbackToAll=false with auto detection exception"
+    },
+    {
+      "path": "src/commands/generate-commit/__tests__/commit-generation-orchestrator.test.ts",
+      "action": "modify",
+      "change": "Add test cases for: single-repo reuse of grouped result and skip SCM detection, cross-repo grouping by repo with per-repo SCM detection, crash fallback (multi-resource abort, single-resource fallback)"
+    },
+    {
+      "path": "src/commands/generate-commit/__tests__/generate-commit-command.test.ts",
+      "action": "modify",
+      "change": "Add test cases for: cross-repo summary (all success, partial success, cancelled), single-repo success notification + system notification"
+    },
+    {
+      "path": "src/commands/generate-commit/__tests__/layered-commit-handler.test.ts",
+      "action": "modify",
+      "change": "Add test cases for: file-level diff extraction, regex parsing of diff hunks, layered commit generation flow"
+    },
+    {
+      "path": "src/commands/generate-commit/handlers/__tests__/function-calling-handler.test.ts",
+      "action": "modify",
+      "change": "Review and verify existing coverage is adequate; add missing edge case tests if gaps found"
+    }
+  ],
+  "implementation": [
+    {
+      "step": 1,
+      "title": "Analyze existing commit generation tests to identify gaps",
+      "description": "Read all 5 existing test files and their source files to map coverage gaps",
+      "modification_points": [
+        "Read 5 existing test files and corresponding source files",
+        "Map test coverage gaps per source file",
+        "Identify untested branches and error paths"
+      ],
+      "logic_flow": [
+        "Read streaming-generation-helper.test.ts and streaming-generation-helper.ts",
+        "Read commit-generation-orchestrator.test.ts and commit-generation-orchestrator.ts",
+        "Read generate-commit-command.test.ts and generate-commit-command.ts",
+        "Read layered-commit-handler.test.ts and layered-commit-handler.ts",
+        "Read function-calling-handler.test.ts and function-calling-handler.ts",
+        "Document coverage gaps for each module"
+      ],
+      "depends_on": [],
+      "output": "coverage_gap_analysis"
+    },
+    {
+      "step": 2,
+      "title": "Extend streaming-generation-helper tests",
+      "description": "Add test cases for system prompt hash, combined diff parsing, error mapping, and fallbackToAll logic",
+      "modification_points": [
+        "Add 4+ test describe blocks for uncovered scenarios",
+        "Test system prompt hash changes when: SCM type changes, workspace changes, prompt template changes",
+        "Test combined diff parsing: file hunk to absolute path mapping",
+        "Test error mapping: RequestTooLargeError -> too_large, cancel -> cancelled",
+        "Test fallbackToAll=false behavior with auto detection exception"
+      ],
+      "logic_flow": [
+        "Use shared mocks from IMPL-001 (generate-helper, notification, staged-content-detector, smart-diff-selector)",
+        "Add describe block for 'system prompt hash'",
+        "Add describe block for 'combined diff parsing'",
+        "Add describe block for 'error mapping'",
+        "Add describe block for 'fallbackToAll logic'",
+        "Run tests to verify"
+      ],
+      "depends_on": [1],
+      "output": "streaming_tests"
+    },
+    {
+      "step": 3,
+      "title": "Extend orchestrator, command, and layered-commit tests",
+      "description": "Add test cases for cross-repo scenarios, crash fallback, and layered diff extraction",
+      "modification_points": [
+        "Extend orchestrator tests: 3 scenarios (single-repo reuse, cross-repo grouping, crash fallback)",
+        "Extend command tests: 3 cross-repo summary states (all success, partial, cancelled)",
+        "Extend layered-commit tests: file-level diff extraction, regex parsing"
+      ],
+      "logic_flow": [
+        "Use shared mocks from IMPL-001 (multi-repository-context-manager, scm-detector, notification)",
+        "Add cross-repo scenario tests to orchestrator",
+        "Add summary notification tests to command",
+        "Add diff extraction tests to layered-commit-handler",
+        "Verify function-calling-handler coverage is adequate"
+      ],
+      "depends_on": [2],
+      "output": "pipeline_tests"
+    },
+    {
+      "step": 4,
+      "title": "Run full test suite and verify coverage",
+      "description": "Run all commit generation tests and verify coverage targets",
+      "modification_points": [
+        "Run npx vitest run src/commands/generate-commit",
+        "Verify streaming-generation-helper coverage >= 80%",
+        "Verify commit-generation-orchestrator coverage >= 80%"
+      ],
+      "logic_flow": [
+        "Run tests with coverage for commit generation module",
+        "Check coverage report for each target file",
+        "Add additional tests if coverage gaps remain",
+        "Verify all tests pass"
+      ],
+      "depends_on": [3],
+      "output": "coverage_verification"
+    }
+  ],
+  "pre_analysis": [
+    {
+      "step": "load_context_package",
+      "action": "Load context package for artifact paths and smart context",
+      "commands": [
+        "Read(.workflow/active/WFS-vitest-testing/.process/context-package.json)"
+      ],
+      "output_to": "context_package",
+      "on_error": "fail"
+    },
+    {
+      "step": "load_brainstorm_artifacts",
+      "action": "Load feature spec F-002 for commit generation test requirements",
+      "commands": [
+        "Read(.workflow/active/WFS-vitest-testing/.brainstorming/feature-specs/F-002-commit-generation-tests.md)"
+      ],
+      "output_to": "brainstorm_context",
+      "on_error": "skip_optional"
+    },
+    {
+      "step": "analyze_existing_tests",
+      "action": "Read all existing commit generation test files to understand current coverage",
+      "commands": [
+        "Read(src/commands/generate-commit/__tests__/streaming-generation-helper.test.ts)",
+        "Read(src/commands/generate-commit/__tests__/commit-generation-orchestrator.test.ts)",
+        "Read(src/commands/generate-commit/__tests__/generate-commit-command.test.ts)",
+        "Read(src/commands/generate-commit/__tests__/layered-commit-handler.test.ts)",
+        "Read(src/commands/generate-commit/handlers/__tests__/function-calling-handler.test.ts)"
+      ],
+      "output_to": "existing_test_coverage"
+    },
+    {
+      "step": "analyze_source_files",
+      "action": "Read source files to identify untested code paths",
+      "commands": [
+        "Read(src/commands/generate-commit/utils/streaming-generation-helper.ts)",
+        "Read(src/commands/generate-commit/commit-generation-orchestrator.ts)",
+        "Read(src/commands/generate-commit/layered-commit-handler.ts)"
+      ],
+      "output_to": "source_analysis"
+    }
+  ],
+  "artifacts": [
+    {
+      "type": "feature_spec",
+      "source": "brainstorm_feature_specs",
+      "path": ".workflow/active/WFS-vitest-testing/.brainstorming/feature-specs/F-002-commit-generation-tests.md",
+      "feature_id": "F-002",
+      "priority": "highest",
+      "usage": "Commit generation test scenarios, mock strategy, and acceptance criteria"
+    }
+  ],
+  "inherited": {
+    "from": "IMPL-001",
+    "context": [
+      "Shared mock factories (logger, notification, ai-providers, scm-providers)",
+      "Shared fixtures (diff-samples, commit-messages)",
+      "createMockContext() helper"
+    ]
+  },
+  "context_package_path": ".workflow/active/WFS-vitest-testing/.process/context-package.json",
+  "cli_execution": {
+    "id": "WFS-vitest-testing-IMPL-002",
+    "strategy": "resume",
+    "resume_from": "WFS-vitest-testing-IMPL-001"
+  },
+  "meta": {
+    "type": "test-gen",
+    "agent": "@code-developer",
+    "execution_group": "parallel-p0",
+    "module": null,
+    "execution_config": {
+      "method": "agent",
+      "cli_tool": null,
+      "enable_resume": false
+    },
+    "test_framework": "vitest",
+    "coverage_target": "80%"
+  },
+  "reference": {
+    "feature_spec": "F-002-commit-generation-tests",
+    "priority": "P0",
+    "effort": "8-10 days"
+  },
+  "rationale": {
+    "why": "streaming-generation-helper.ts has 24x changes (highest in project), commit generation accounts for 25% of all code changes. Highest regression risk area.",
+    "approach": "Extend existing tests (not rewrite) with new describe blocks for uncovered scenarios, using shared mocks from IMPL-001"
+  },
+  "risks": [
+    {
+      "risk": "Existing tests have complex mock setup that may conflict with new shared mocks",
+      "mitigation": "Use vi.hoisted() pattern from existing tests; shared mocks provide defaults, per-test overrides with vi.mock at file level",
+      "severity": "low"
+    }
+  ],
+  "test": {
+    "reusable_tools": [
+      "src/__tests__/mocks/logger.ts",
+      "src/__tests__/mocks/notification.ts",
+      "src/__tests__/mocks/scm-providers.ts",
+      "src/__tests__/fixtures/diff-samples.ts",
+      "src/__tests__/fixtures/commit-messages.ts",
+      "src/__tests__/helpers/mock-context.ts"
+    ],
+    "commands": {
+      "run_tests": "npx vitest run src/commands/generate-commit",
+      "run_coverage": "npx vitest run --coverage src/commands/generate-commit",
+      "run_specific": "npx vitest run src/commands/generate-commit/__tests__/streaming-generation-helper.test.ts"
+    }
+  },
+  "status_history": [
+    {
+      "from": "pending",
+      "to": "in_progress",
+      "changed_at": "2026-04-10T08:30:49+08:00"
+    },
+    {
+      "from": "in_progress",
+      "to": "completed",
+      "changed_at": "2026-04-10T08:48:12+08:00"
+    },
+    {
+      "from": "in_progress",
+      "to": "completed",
+      "changed_at": "2026-04-10T08:48:41+08:00"
+    }
+  ]
+}

@@ -1,0 +1,206 @@
+{
+  "id": "IMPL-006",
+  "title": "Service Layer Tests (Prompt/Cache/Command Parser)",
+  "description": "Create unit tests for 3 service modules: (1) prompt-manager-service.test.ts covering template loading and caching, variable substitution logic, and default prompt fallback; (2) commit-cache-service.test.ts covering cache key generation (already has partial tests, extend with cache invalidation and size limit scenarios); (3) command-parser.test.ts covering command string parsing, argument extraction and validation, and edge cases (empty string, special characters).",
+  "status": "completed",
+  "type": "test-gen",
+  "scope": "src/services, src/commands/generate-commit/utils",
+  "action": "Implement",
+  "depends_on": ["IMPL-004"],
+  "focus_paths": [
+    "src/services/prompt/__tests__/",
+    "src/services/cache/__tests__/",
+    "src/commands/generate-commit/utils/__tests__/"
+  ],
+  "convergence": {
+    "criteria": [
+      "2 new test files created: [prompt-manager-service.test.ts, command-parser.test.ts] — verify by ls src/services/prompt/__tests__/*.test.ts src/commands/generate-commit/utils/__tests__/*.test.ts | wc -l >= 2",
+      "1 existing test file extended: [commit-cache-service.test.ts] — verify new test cases added for invalidation and size limit",
+      "prompt-manager covers 3 scenarios: [template loading, variable substitution, default fallback] — verify by grep 'template\\|variable\\|fallback' in test",
+      "command-parser covers edge cases: [empty string, special characters, argument extraction] — verify by grep 'empty\\|special\\|argument' in test",
+      "All tests pass — verify by npx vitest run src/services/prompt src/services/cache src/commands/generate-commit/utils/__tests__ (exit code 0)"
+    ],
+    "verification": "npx vitest run src/services/prompt src/services/cache && npx vitest run src/commands/generate-commit/utils/__tests__/command-parser.test.ts",
+    "definition_of_done": "Service layer has unit tests for prompt management, cache operations, and command parsing"
+  },
+  "files": [
+    {
+      "path": "src/services/prompt/__tests__/prompt-manager-service.test.ts",
+      "action": "create",
+      "change": "New test file: template loading and caching, variable substitution logic (${var}, {var} patterns), default prompt fallback behavior"
+    },
+    {
+      "path": "src/services/cache/__tests__/commit-cache-service.test.ts",
+      "action": "modify",
+      "change": "Extend existing test file: add cache invalidation scenarios, cache size limit enforcement, cache entry expiry"
+    },
+    {
+      "path": "src/commands/generate-commit/utils/__tests__/command-parser.test.ts",
+      "action": "create",
+      "change": "New test file: command string parsing, argument extraction and validation, edge cases (empty string, special characters, malformed input)"
+    }
+  ],
+  "implementation": [
+    {
+      "step": 1,
+      "title": "Analyze service source files",
+      "description": "Read prompt-manager-service.ts, commit-cache-service.ts, and command-parser source files",
+      "modification_points": [
+        "Read prompt-manager-service.ts (837 lines) for template loading and variable substitution interfaces",
+        "Read commit-cache-service.ts for cache operations and invalidation logic",
+        "Read command-parser source (559 lines) for parsing interface"
+      ],
+      "logic_flow": [
+        "Read prompt-manager-service.ts: identify template loading, caching, variable substitution methods",
+        "Read existing commit-cache-service.test.ts: identify covered and uncovered scenarios",
+        "Find and read command-parser source file",
+        "Document test scenarios per source file"
+      ],
+      "depends_on": [],
+      "output": "service_interface_analysis"
+    },
+    {
+      "step": 2,
+      "title": "Create prompt-manager and command-parser tests",
+      "description": "Create 2 new test files for prompt management and command parsing",
+      "modification_points": [
+        "Create prompt-manager-service.test.ts: template loading, caching verification, variable substitution (${var}, {var}), default fallback",
+        "Create command-parser.test.ts: parse command strings, extract arguments, validate inputs, edge cases (empty, special chars)"
+      ],
+      "logic_flow": [
+        "Mock @/utils/logger for prompt-manager tests",
+        "Create template fixtures for prompt-manager testing",
+        "Test variable substitution with various patterns",
+        "Test command-parser with valid and invalid inputs",
+        "Verify all new tests pass"
+      ],
+      "depends_on": [1],
+      "output": "new_service_tests"
+    },
+    {
+      "step": 3,
+      "title": "Extend commit-cache-service tests",
+      "description": "Add cache invalidation and size limit tests to existing test file",
+      "modification_points": [
+        "Add cache invalidation test: verify cached entry is cleared after invalidation",
+        "Add cache size limit test: verify eviction when limit exceeded",
+        "Add cache entry expiry test: verify expired entries are not returned"
+      ],
+      "logic_flow": [
+        "Read existing test to understand mock setup pattern",
+        "Add new describe block for invalidation scenarios",
+        "Add describe block for size limit enforcement",
+        "Verify all tests pass (new + existing)"
+      ],
+      "depends_on": [2],
+      "output": "extended_cache_tests"
+    }
+  ],
+  "pre_analysis": [
+    {
+      "step": "load_context_package",
+      "action": "Load context package for artifact paths and smart context",
+      "commands": [
+        "Read(.workflow/active/WFS-vitest-testing/.process/context-package.json)"
+      ],
+      "output_to": "context_package",
+      "on_error": "fail"
+    },
+    {
+      "step": "load_brainstorm_artifacts",
+      "action": "Load feature spec F-006 for service layer test requirements",
+      "commands": [
+        "Read(.workflow/active/WFS-vitest-testing/.brainstorming/feature-specs/F-006-service-layer-tests.md)"
+      ],
+      "output_to": "brainstorm_context",
+      "on_error": "skip_optional"
+    },
+    {
+      "step": "analyze_service_source_files",
+      "action": "Read service source files for interface analysis",
+      "commands": [
+        "bash(find src/services/prompt -name '*.ts' -not -name '*.test.ts' | head -5)",
+        "bash(find src/commands/generate-commit/utils -name '*command-parser*' -o -name '*parser*' | head -5)",
+        "Read(src/services/cache/__tests__/commit-cache-service.test.ts)"
+      ],
+      "output_to": "service_source_analysis"
+    }
+  ],
+  "artifacts": [
+    {
+      "type": "feature_spec",
+      "source": "brainstorm_feature_specs",
+      "path": ".workflow/active/WFS-vitest-testing/.brainstorming/feature-specs/F-006-service-layer-tests.md",
+      "feature_id": "F-006",
+      "priority": "medium",
+      "usage": "Service layer test scenarios, mock strategy, and acceptance criteria"
+    }
+  ],
+  "inherited": {
+    "from": "IMPL-001",
+    "context": [
+      "Shared mock factories (logger, configuration)",
+      "createMockContext() helper"
+    ]
+  },
+  "context_package_path": ".workflow/active/WFS-vitest-testing/.process/context-package.json",
+  "cli_execution": {
+    "id": "WFS-vitest-testing-IMPL-006",
+    "strategy": "fork",
+    "resume_from": "WFS-vitest-testing-IMPL-004"
+  },
+  "meta": {
+    "type": "test-gen",
+    "agent": "@code-developer",
+    "execution_group": "parallel-p2",
+    "module": null,
+    "execution_config": {
+      "method": "agent",
+      "cli_tool": null,
+      "enable_resume": false
+    },
+    "test_framework": "vitest",
+    "coverage_target": "70%"
+  },
+  "reference": {
+    "feature_spec": "F-006-service-layer-tests",
+    "priority": "P2",
+    "effort": "3-5 days"
+  },
+  "rationale": {
+    "why": "Prompt manager is on the commit generation critical path. Command parser has pure logic with high test ROI. Cache service needs invalidation coverage for regression protection.",
+    "approach": "Create new test files for untested modules, extend existing cache test with invalidation scenarios. Can parallelize with IMPL-005 since both depend on IMPL-004."
+  },
+  "risks": [
+    {
+      "risk": "Prompt manager may have file system dependencies for template loading",
+      "mitigation": "Mock file system reads using vi.mock('fs') or inject template content via config",
+      "severity": "low"
+    }
+  ],
+  "test": {
+    "reusable_tools": [
+      "src/__tests__/mocks/logger.ts",
+      "src/__tests__/mocks/configuration.ts",
+      "src/__tests__/helpers/mock-context.ts",
+      "src/__tests__/fixtures/config-states.ts"
+    ],
+    "commands": {
+      "run_tests": "npx vitest run src/services/prompt src/services/cache src/commands/generate-commit/utils/__tests__",
+      "run_coverage": "npx vitest run --coverage src/services/prompt src/services/cache",
+      "run_specific": "npx vitest run src/services/prompt/__tests__/prompt-manager-service.test.ts"
+    }
+  },
+  "status_history": [
+    {
+      "from": "pending",
+      "to": "in_progress",
+      "changed_at": "2026-04-10T09:00:38+08:00"
+    },
+    {
+      "from": "in_progress",
+      "to": "completed",
+      "changed_at": "2026-04-10T09:12:21+08:00"
+    }
+  ]
+}

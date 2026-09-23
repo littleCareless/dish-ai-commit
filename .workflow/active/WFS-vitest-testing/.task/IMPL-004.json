@@ -1,0 +1,245 @@
+{
+  "id": "IMPL-004",
+  "title": "Configuration/Settings Layer Tests",
+  "description": "Create unit tests for 3 configuration modules and 1 settings module covering: (1) configuration-monitor.test.ts with 6 scenarios (provider key routing, base config routing, features routing, mixed key handling, unknown key filtering, dispose cleanup); (2) settings-sync-service.test.ts with 6 scenarios (key parsing, non-sync field rejection, key classification, syncFromSettingsJson, syncToSettingsJson, anti-loop protection); (3) features-settings-manager.test.ts with 3 scenarios (default merging, getSettings merge, updateSettings persistence); (4) additional config-service.test.ts and profile-manager-service.test.ts if time permits.",
+  "status": "completed",
+  "type": "test-gen",
+  "scope": "src/config, src/services/settings",
+  "action": "Implement",
+  "depends_on": ["IMPL-002", "IMPL-003"],
+  "focus_paths": [
+    "src/config/services/__tests__/",
+    "src/services/settings/__tests__/",
+    "src/services/profile-manager/__tests__/"
+  ],
+  "convergence": {
+    "criteria": [
+      "3 MUST-have test files created: [configuration-monitor.test.ts, settings-sync-service.test.ts, features-settings-manager.test.ts] — verify by ls src/config/services/__tests__/*.test.ts src/services/settings/__tests__/*.test.ts | wc -l >= 3",
+      "configuration-monitor covers all key type routing: [providers, base, features, mixed, unknown] — verify by grep 'provider\\|base\\.\\|features\\|mixed\\|unknown' in test",
+      "settings-sync-service anti-loop protection tested — verify by grep 'anti-loop\\|_syncSource\\|loop' in test",
+      "features-settings-manager default merging tested — verify by grep 'default\\|merge' in test",
+      "2 SHOULD-have test files created: [configuration-service.test.ts, profile-manager-service.test.ts] — if effort allows",
+      "All tests pass — verify by npx vitest run src/config src/services/settings src/services/profile-manager (exit code 0)"
+    ],
+    "verification": "npx vitest run src/config/services src/services/settings src/services/profile-manager",
+    "definition_of_done": "Configuration and settings layer has comprehensive unit tests covering key routing, bidirectional sync, anti-loop protection, and default value merging"
+  },
+  "files": [
+    {
+      "path": "src/config/services/__tests__/configuration-monitor.test.ts",
+      "action": "create",
+      "change": "New test file: 6 scenarios for config change routing — provider key triggers provider sync, base key triggers base sync, features key triggers features sync, mixed key triggers multiple handlers, unknown key triggers no handler, dispose cleans all listeners"
+    },
+    {
+      "path": "src/config/services/__tests__/settings-sync-service.test.ts",
+      "action": "create",
+      "change": "New test file: 6 scenarios — parseProviderKey parsing, non-sync field rejection, isCoreConfigKey/isFeatureConfigKey classification, syncFromSettingsJson writes to secrets, syncToSettingsJson writes non-defaults, _syncSource anti-loop tracking"
+    },
+    {
+      "path": "src/services/settings/__tests__/features-settings-manager.test.ts",
+      "action": "create",
+      "change": "New test file: 3 scenarios — missing key applies defaults, getSettings merges defaults+stored, updateSettings persists and triggers sync"
+    },
+    {
+      "path": "src/config/services/__tests__/configuration-service.test.ts",
+      "action": "create",
+      "change": "New test file (SHOULD): basic read/write config, singleton pattern verification"
+    },
+    {
+      "path": "src/services/profile-manager/__tests__/profile-manager-service.test.ts",
+      "action": "create",
+      "change": "New test file (SHOULD): profile CRUD operations, profile switching"
+    }
+  ],
+  "implementation": [
+    {
+      "step": 1,
+      "title": "Analyze configuration source files",
+      "description": "Read configuration-monitor.ts, settings-sync-service.ts, and features-settings-manager.ts to understand interfaces and test targets",
+      "modification_points": [
+        "Read 3 primary source files to extract public method signatures",
+        "Identify event-driven patterns in ConfigurationMonitor",
+        "Map configuration key prefix routing logic"
+      ],
+      "logic_flow": [
+        "Read configuration-monitor.ts: identify handleConfigurationChange method and key routing",
+        "Read settings-sync-service.ts: identify parseProviderKey, sync methods, _syncSource",
+        "Read features-settings-manager.ts: identify getSettings, updateSettings methods",
+        "Document test scenarios per source file"
+      ],
+      "depends_on": [],
+      "output": "config_interface_analysis"
+    },
+    {
+      "step": 2,
+      "title": "Create configuration-monitor tests",
+      "description": "Create test file covering all key type routing scenarios and event listener lifecycle",
+      "modification_points": [
+        "Mock vscode.workspace.onDidChangeConfiguration for manual trigger mechanism",
+        "Mock vscode.workspace.getConfiguration for controlled config values",
+        "Create 6 describe blocks for each routing scenario",
+        "Test dispose cleanup verification"
+      ],
+      "logic_flow": [
+        "Use vi.mock('vscode') from shared setup",
+        "Create mock onDidChangeConfiguration that captures callback for manual triggering",
+        "Test each key prefix routing independently",
+        "Test mixed key scenario",
+        "Test dispose behavior",
+        "Verify all tests pass"
+      ],
+      "depends_on": [1],
+      "output": "monitor_tests"
+    },
+    {
+      "step": 3,
+      "title": "Create settings-sync-service tests",
+      "description": "Create test file covering key parsing, sync operations, and anti-loop protection",
+      "modification_points": [
+        "Test parseProviderKey for all provider key formats",
+        "Test isCoreConfigKey and isFeatureConfigKey classification",
+        "Test syncFromSettingsJson and syncToSettingsJson bidirectional sync",
+        "Test _syncSource tracking for anti-loop protection"
+      ],
+      "logic_flow": [
+        "Mock createMockContext() from IMPL-001 for ExtensionContext",
+        "Mock secrets.write and secrets.get for sync operations",
+        "Test key parsing with various provider key formats",
+        "Test sync operations with controlled config state",
+        "Test anti-loop by verifying sync source tracking prevents re-sync",
+        "Verify all tests pass"
+      ],
+      "depends_on": [1],
+      "output": "sync_tests"
+    },
+    {
+      "step": 4,
+      "title": "Create features-settings-manager tests and optional SHOULD-have tests",
+      "description": "Create test file for default value merging and optional config-service/profile-manager tests",
+      "modification_points": [
+        "Test default value merging when keys are missing",
+        "Test getSettings returns merged defaults + stored values",
+        "Test updateSettings persists and triggers sync notification",
+        "If effort allows: create configuration-service.test.ts and profile-manager-service.test.ts"
+      ],
+      "logic_flow": [
+        "Mock getConfiguration to return partial config",
+        "Test default merging behavior",
+        "Test update path triggers correct sync",
+        "Create SHOULD-have test files if primary tests are complete",
+        "Run full test suite"
+      ],
+      "depends_on": [2, 3],
+      "output": "settings_tests"
+    }
+  ],
+  "pre_analysis": [
+    {
+      "step": "load_context_package",
+      "action": "Load context package for artifact paths and smart context",
+      "commands": [
+        "Read(.workflow/active/WFS-vitest-testing/.process/context-package.json)"
+      ],
+      "output_to": "context_package",
+      "on_error": "fail"
+    },
+    {
+      "step": "load_brainstorm_artifacts",
+      "action": "Load feature spec F-004 for config/settings test requirements",
+      "commands": [
+        "Read(.workflow/active/WFS-vitest-testing/.brainstorming/feature-specs/F-004-config-settings-tests.md)"
+      ],
+      "output_to": "brainstorm_context",
+      "on_error": "skip_optional"
+    },
+    {
+      "step": "analyze_config_source_files",
+      "action": "Read config source files to understand interfaces",
+      "commands": [
+        "Read(src/config/services/configuration-monitor.ts)",
+        "Read(src/config/services/settings-sync-service.ts)",
+        "Read(src/services/settings/features-settings-manager.ts)"
+      ],
+      "output_to": "config_source_analysis"
+    }
+  ],
+  "artifacts": [
+    {
+      "type": "feature_spec",
+      "source": "brainstorm_feature_specs",
+      "path": ".workflow/active/WFS-vitest-testing/.brainstorming/feature-specs/F-004-config-settings-tests.md",
+      "feature_id": "F-004",
+      "priority": "high",
+      "usage": "Config/settings test scenarios, mock strategy, and acceptance criteria"
+    }
+  ],
+  "inherited": {
+    "from": "IMPL-001",
+    "context": [
+      "Shared mock factories (configuration, logger, vscode)",
+      "createMockContext() helper",
+      "config-states fixture"
+    ]
+  },
+  "context_package_path": ".workflow/active/WFS-vitest-testing/.process/context-package.json",
+  "cli_execution": {
+    "id": "WFS-vitest-testing-IMPL-004",
+    "strategy": "resume",
+    "resume_from": "WFS-vitest-testing-IMPL-002"
+  },
+  "meta": {
+    "type": "test-gen",
+    "agent": "@code-developer",
+    "execution_group": null,
+    "module": null,
+    "execution_config": {
+      "method": "agent",
+      "cli_tool": null,
+      "enable_resume": false
+    },
+    "test_framework": "vitest",
+    "coverage_target": "75%"
+  },
+  "reference": {
+    "feature_spec": "F-004-config-settings-tests",
+    "priority": "P1",
+    "effort": "5-7 days"
+  },
+  "rationale": {
+    "why": "Config module has 41 changes and 0 tests. Settings-sync anti-loop protection is critical (missing test = potential infinite loop). Event-driven ConfigurationMonitor routing is high regression risk.",
+    "approach": "Create new test files (no existing config tests to extend). Focus on event-driven mock pattern for ConfigurationMonitor and state tracking for sync anti-loop."
+  },
+  "risks": [
+    {
+      "risk": "ConfigurationMonitor singleton pattern may require special initialization",
+      "mitigation": "Research constructor dependencies and use DI helpers from IMPL-001",
+      "severity": "medium"
+    }
+  ],
+  "test": {
+    "reusable_tools": [
+      "src/__tests__/mocks/configuration.ts",
+      "src/__tests__/mocks/logger.ts",
+      "src/__tests__/mocks/vscode.ts",
+      "src/__tests__/helpers/mock-context.ts",
+      "src/__tests__/fixtures/config-states.ts"
+    ],
+    "commands": {
+      "run_tests": "npx vitest run src/config/services src/services/settings src/services/profile-manager",
+      "run_coverage": "npx vitest run --coverage src/config/services",
+      "run_specific": "npx vitest run src/config/services/__tests__/configuration-monitor.test.ts"
+    }
+  },
+  "status_history": [
+    {
+      "from": "pending",
+      "to": "in_progress",
+      "changed_at": "2026-04-10T08:49:40+08:00"
+    },
+    {
+      "from": "in_progress",
+      "to": "completed",
+      "changed_at": "2026-04-10T09:00:22+08:00"
+    }
+  ]
+}

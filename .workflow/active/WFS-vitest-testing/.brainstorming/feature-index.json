@@ -1,0 +1,73 @@
+{
+  "session_id": "WFS-vitest-testing",
+  "synthesized_at": "2026-04-10",
+  "feature_count": 6,
+  "features": [
+    {
+      "id": "F-001",
+      "name": "test-infrastructure",
+      "title": "共享测试基础设施层",
+      "priority": "P0",
+      "roles_contributing": ["system-architect", "test-strategist"],
+      "source_files": [
+        "system-architect/analysis.md",
+        "test-strategist/analysis.md"
+      ]
+    },
+    {
+      "id": "F-002",
+      "name": "commit-generation-tests",
+      "title": "提交生成管道测试",
+      "priority": "P0",
+      "roles_contributing": ["test-strategist", "product-manager"],
+      "source_files": [
+        "test-strategist/analysis.md",
+        "product-manager/analysis.md"
+      ]
+    },
+    {
+      "id": "F-003",
+      "name": "scm-layer-tests",
+      "title": "SCM 层测试 (Git/SVN)",
+      "priority": "P0",
+      "roles_contributing": ["test-strategist", "product-manager"],
+      "source_files": [
+        "test-strategist/analysis.md",
+        "product-manager/analysis.md"
+      ]
+    },
+    {
+      "id": "F-004",
+      "name": "config-settings-tests",
+      "title": "配置/设置层测试",
+      "priority": "P1",
+      "roles_contributing": ["test-strategist", "system-architect"],
+      "source_files": [
+        "test-strategist/analysis.md",
+        "system-architect/analysis.md"
+      ]
+    },
+    {
+      "id": "F-005",
+      "name": "ai-provider-tests",
+      "title": "AI Provider 层测试",
+      "priority": "P2",
+      "roles_contributing": ["test-strategist", "system-architect"],
+      "source_files": [
+        "test-strategist/analysis.md",
+        "system-architect/analysis.md"
+      ]
+    },
+    {
+      "id": "F-006",
+      "name": "service-layer-tests",
+      "title": "服务层测试 (Prompt/Cache/Settings)",
+      "priority": "P2",
+      "roles_contributing": ["product-manager", "test-strategist"],
+      "source_files": [
+        "product-manager/analysis.md",
+        "test-strategist/analysis.md"
+      ]
+    }
+  ]
+}
